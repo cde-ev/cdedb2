@@ -80,11 +80,9 @@
             {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": event['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_configure_additional_questionnaire'), icon='plus-square') }}
-            {% if has_constraints %}
-                {{ util.href(cdedblink("event/constraint_violations", {"event_id": event['id']}),
-                             gettext("Constraint Violations"), aclass="list-group-item",
-                             active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
-            {% endif %}
+            {{ util.href(cdedblink("event/constraint_violations", {"event_id": event['id']}),
+                         gettext("Constraint Violations"), aclass="list-group-item",
+                         active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": event['id']}), gettext("Log"), aclass="list-group-item",
                          icon="far fa-list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>

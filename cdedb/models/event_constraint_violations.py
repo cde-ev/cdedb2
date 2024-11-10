@@ -6,12 +6,15 @@ import dataclasses
 import itertools
 from abc import abstractmethod
 from functools import cached_property
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import CdEDBObject, make_persona_name, n_
+from cdedb.common import AgeClasses, CdEDBObject, make_persona_name, n_
 from cdedb.common.sorting import xsorted
+
+if TYPE_CHECKING:
+    from cdedb.frontend.event.course import CourseAttendees
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -77,15 +80,14 @@ class ConstraintViolation:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class MEPConstraintViolation(ConstraintViolation):
+class MutuallyExclusiveParticipationCV(ConstraintViolation):
     registration: CdEDBObject
     persona: CdEDBObject
     part_group: models.PartGroup
 
     @classmethod
     def check(  # type: ignore[override]
-            cls, event: models.Event,
-            *,
+            cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
             mep_group: models.PartGroup,
@@ -154,15 +156,14 @@ class MEPConstraintViolation(ConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class CCSConstraintViolation(ConstraintViolation):
+class CourseChoiceSyncCV(ConstraintViolation):
     registration: CdEDBObject
     persona: CdEDBObject
     track_group: models.TrackGroup
 
     @classmethod
     def check(  # type: ignore[override]
-            cls, event: models.Event,
-            *,
+            cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
             ccs_group: models.TrackGroup,
@@ -207,14 +208,13 @@ class CCSConstraintViolation(ConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class MECConstraintViolation(ConstraintViolation):
+class MutuallyExclusiveCoursesCV(ConstraintViolation):
     course: CdEDBObject
     track_group: models.TrackGroup
 
     @classmethod
     def check(  # type: ignore[override]
-            cls, event: models.Event,
-            *,
+            cls, event: models.Event, *,
             course: CdEDBObject,
             mec_group: models.TrackGroup,
     ) -> Self | None:
@@ -244,3 +244,271 @@ class MECConstraintViolation(ConstraintViolation):
 
     def get_link_params(self) -> tuple[str, CdEDBObject]:
         return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CancelledWithAttendeesCV(ConstraintViolation):
+    course: CdEDBObject
+    track: models.CourseTrack
+
+    num: int
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            course: CdEDBObject,
+            attendees: "CourseAttendees",
+            track: models.CourseTrack,
+    ) -> Self | None:
+        """Return a validation if the course is cancelled but has attendees."""
+        if track.id not in course['segments']:
+            if attendees.involved:
+                return cls(
+                    event=event,
+                    severity=3,
+                    course=course,
+                    track=track,
+                    num=attendees.num_involved,
+                )
+        elif track.id not in course['active_segments']:
+            if attendees.involved:
+                return cls(
+                    event=event,
+                    severity=2,
+                    course=course,
+                    track=track,
+                    num=attendees.num_involved,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.severity >= 3:
+            msg = n_("%(link)s is not offered in %(track)s but has %(num)s attendees.")
+        else:
+            msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
+        params = {
+            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "track": self.track.shortname,
+            "num": self.num,
+        }
+        return msg, params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectNumAttendeesCV(ConstraintViolation):
+    course: CdEDBObject
+    track: models.CourseTrack
+
+    num: int
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            course: CdEDBObject,
+            attendees: "CourseAttendees",
+            track: models.CourseTrack,
+    ) -> Self | None:
+        """Return a violation if the course has too few or too many attendees."""
+        if track.id in course['active_segments']:
+            if (
+                    course['min_size'] is not None
+                    and attendees.num_involved_learners < course['min_size']
+                    or
+                    course['max_size'] is not None
+                    and attendees.num_involved_learners > course['max_size']
+            ):
+                return cls(
+                    event=event,
+                    severity=1 if attendees.num_involved_learners else 0,
+                    course=course,
+                    track=track,
+                    num=attendees.num_involved_learners,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.course['min_size'] and self.num < self.course['min_size']:
+            msg = n_("%(link)s has too few attendees (%(num)s < %(min_size)s) in %(track)s.")
+        else:
+            msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s) in %(track)s.")
+        params = {
+            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "num": self.num,
+            "track": self.track.shortname,
+            "min_size": self.course['min_size'],
+            "max_size": self.course['max_size'],
+        }
+        return msg, params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LonelyAttendeesCV(ConstraintViolation):
+    course: CdEDBObject
+    track: models.CourseTrack
+
+    num_learners: int
+    num_instructors: int
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event,
+            course: CdEDBObject,
+            attendees: "CourseAttendees",
+            track: models.CourseTrack,
+    ) -> Self | None:
+        """Return a violation if the course has attendees but no instructors."""
+        if track.id in course['active_segments']:
+            if bool(attendees.involved_learners) != bool(attendees.involved_instructors):
+                return cls(
+                    event=event,
+                    severity=1,
+                    course=course,
+                    track=track,
+                    num_learners=attendees.num_involved_learners,
+                    num_instructors=attendees.num_involved_instructors,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.num_learners:
+            msg = n_("%(link)s has %(num)s attendees but no instructors in %(track)s.")
+        else:
+            msg = n_("%(link)s has %(num)s instructors but no attendees in %(track)s.")
+        params = {
+            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "track": self.track.shortname,
+            "num": self.num_learners or self.num_instructors,
+        }
+        return msg, params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NoCourseAssignedCV(ConstraintViolation):
+    registration: CdEDBObject
+    persona: CdEDBObject
+    track: models.CourseTrack
+
+    @classmethod
+    def check(
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            track: models.CourseTrack,
+    ) -> Self | None:
+        reg_track = registration['tracks'][track.id]
+        reg_part = registration['parts'][track.part_id]
+        if not reg_part['status'].is_present():
+            return None
+        if reg_track['course_id'] is None:
+            return cls(
+                event=event,
+                severity=0 if (
+                        persona['id'] in event.orgas
+                        or reg_part['age'] == AgeClasses.u10
+                        or reg_part['status'] != const.RegistrationPartStati.participant
+                ) else 1,
+                registration=registration,
+                persona=persona,
+                track=track,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        msg = n_("%(link)s is not assigned to a course in %(track)s.")
+        params = {
+            "link": make_persona_name(self.persona),
+            "track": self.track.shortname,
+        }
+        return msg, params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_registration", {'registration_id': self.registration['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectCourseAssignedCV(ConstraintViolation):
+    registration: CdEDBObject
+    persona: CdEDBObject
+    track: models.CourseTrack
+
+    assigned_course: CdEDBObject | None = None
+    instructed_course: CdEDBObject | None = None
+
+    @classmethod
+    def check(
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            track: models.CourseTrack,
+            assigned_course: CdEDBObject | None,
+            instructed_course: CdEDBObject | None,
+    ) -> Self | None:
+        """
+        Return a violation if the registration is assigned to an unchosen course.
+        """
+        reg_track = registration['tracks'][track.id]
+        reg_part = registration['parts'][track.part_id]
+        if not reg_part['status'].is_present() or assigned_course is None:
+            return None
+        if (
+                instructed_course
+                and track.id in instructed_course['active_segments']
+                and instructed_course['id'] != assigned_course['id']
+        ):
+            return cls(
+                event=event,
+                severity=1,
+                registration=registration,
+                persona=persona,
+                track=track,
+                assigned_course=assigned_course,
+                instructed_course=instructed_course,
+            )
+        if (
+                assigned_course['id'] not in reg_track['choices']
+                and (
+                    instructed_course is None
+                    or assigned_course['id'] != instructed_course['id']
+                )
+        ):
+            return cls(
+                event=event,
+                severity=1,
+                registration=registration,
+                persona=persona,
+                track=track,
+                assigned_course=assigned_course,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.instructed_course:
+            msg = n_("%(link)s does not instruct their course (%(instructed_course)s)"
+                     " in %(track)s.")
+        else:
+            msg = n_("%(link)s did not choose their assigned course"
+                     " (%(assigned_course)s) in %(track)s.")
+
+        params = {
+            "link": make_persona_name(self.persona),
+            "track": self.track.shortname,
+            "assigned_course":
+                f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
+            "instructed_course":
+                f"{self.instructed_course['nr']}."
+                f" {self.instructed_course['shortname']}"
+                if self.instructed_course else None,
+        }
+        return msg, params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_registration", {'registration_id': self.registration['id']}

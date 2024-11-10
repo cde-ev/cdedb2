@@ -35,13 +35,6 @@
 {%- endmacro %}
 
 {% block content %}
-    {% if has_constraints %}
-        <div class="p">
-            {% trans link=util.href(cdedblink('event/constraint_violations'), gettext("Constraint Violations")) %}
-                See also: {{ link }}.
-            {% endtrans %}
-        </div>
-    {% endif %}
     <div class="row">
         {% for key, heading, icon, panelclass in (
                 ('cancelled_with_p', gettext("Cancelled courses with participants"), 'ban', 'danger'),

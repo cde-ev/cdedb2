@@ -14,13 +14,13 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% if not violations_by_class %}
+    {% if not all %}
         {% trans %}
             There are currently no constraints being violated.
         {% endtrans %}
     {% endif %}
 
-    {% for class_name, violations in violations_by_class.items()|sort %}
+    {% for class_name, violations in by_class.items() if max_severity_by_class[class_name] > 0 %}
         <h2 class="heading-underline" id="{{ class_name }}">
             {{ gettext(class_name) }}
             {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen.html#typ-" + class_name) }}

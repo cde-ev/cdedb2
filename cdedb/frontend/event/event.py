@@ -141,10 +141,8 @@ class EventEventMixin(EventBaseFrontend):
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
             params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
-            constraint_violations = self.get_constraint_violations(
-                rs, event_id, registration_id=None, course_id=None)
-            params['violation_severity'] = constraint_violations['max_severity']
-            params['violations_by_class'] = constraint_violations['by_class']
+            params['constraint_violations'] = self.get_constraint_violations(
+                rs, rs.ambience['event'], registration_id=None, course_id=None)
         elif not rs.ambience['event'].is_visible_for(rs.user, is_registered,
                                                      privileged=True):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))

@@ -143,6 +143,7 @@ class CourseAttendees:
     def num_filtered(self) -> int:
         return len(self.filtered)
 
+
 @dataclass(frozen=True)
 class Attendees:
     _course_attendee_counts: dict[int, dict[int, CourseAttendees]]
@@ -303,9 +304,8 @@ class EventCourseMixin(EventBaseFrontend):
                 courses[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
 
             constraint_violations = self.get_constraint_violations(
-                rs, event_id, registration_id=-1, course_id=course_id)
-            params['violations'] = constraint_violations['all']
-            params['violation_severity'] = constraint_violations['max_severity']
+                rs, rs.ambience['event'], registration_id=-1, course_id=course_id)
+            params['constraint_violations'] = constraint_violations
 
         return self.render(rs, "course/show_course", params)
 

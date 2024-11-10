@@ -32,6 +32,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
+    determine_age_class,
     merge_dicts,
     unwrap,
 )
@@ -56,10 +57,15 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.event_constraint_violations import (
-    CCSConstraintViolation,
+    CancelledWithAttendeesCV,
     ConstraintViolation,
-    MECConstraintViolation,
-    MEPConstraintViolation,
+    CourseChoiceSyncCV,
+    IncorrectCourseAssignedCV,
+    IncorrectNumAttendeesCV,
+    LonelyAttendeesCV,
+    MutuallyExclusiveCoursesCV,
+    MutuallyExclusiveParticipationCV,
+    NoCourseAssignedCV,
 )
 
 
@@ -84,13 +90,6 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
-            params['has_constraints'] = any(
-                not pg.constraint_type.is_stats()
-                for pg in rs.ambience['event'].part_groups.values()
-            ) or any(
-                tg.constraint_type
-                for tg in rs.ambience['event'].track_groups.values()
-            )
 
         return super().render(rs, templatename, params=params)
 
@@ -421,7 +420,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = event.part_groups[part_group_id].parts.values()
         return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
-    def get_constraint_violations(self, rs: RequestState, event_id: int, *,
+    def get_constraint_violations(self, rs: RequestState, event: models.Event, *,
                                   registration_id: Optional[int],
                                   course_id: Optional[int]) -> CdEDBObject:
         """
@@ -433,6 +432,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         :param course_id: Same as `registration_id`.
         :return: A collection of data pertaining to the constraint violations.
         """
+        violations: list[ConstraintViolation] = []
+
         pgs_by_type = collections.defaultdict(list)
         for pg in xsorted(rs.ambience['event'].part_groups.values()):
             pgs_by_type[pg.constraint_type].append(pg)
@@ -441,17 +442,17 @@ class EventBaseFrontend(AbstractUserFrontend):
         for tg in xsorted(rs.ambience['event'].track_groups.values()):
             tgs_by_type[tg.constraint_type].append(tg)
 
-        violations: list[ConstraintViolation] = []
+        sorted_tracks = xsorted(event.tracks.values())
 
         # Retrieve registrations.
         if registration_id is None:
             registrations = self.eventproxy.get_registrations(
-                rs, self.eventproxy.list_registrations(rs, event_id))
+                rs, self.eventproxy.list_registrations(rs, event.id))
         elif registration_id < 0:
             registrations = {}
         else:
             registrations = self.eventproxy.get_registrations(rs, (registration_id,))
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_event_users(
             rs, [reg['persona_id'] for reg in registrations.values()],
         )
         registrations = dict(keydictsort_filter(
@@ -459,14 +460,28 @@ class EventBaseFrontend(AbstractUserFrontend):
             lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
         ))
 
+        # Retrieve courses.
+        all_courses = self.eventproxy.get_courses(
+            rs, self.eventproxy.list_courses(rs, event.id))
+        if course_id is None:
+            courses = all_courses
+        elif course_id < 0:
+            courses = {}
+        else:
+            courses = self.eventproxy.get_courses(rs, (course_id,))
+
         for reg_id, reg in registrations.items():
+            for part in event.parts.values():
+                reg['parts'][part.id]['age'] = determine_age_class(
+                    personas[reg['persona_id']]['birthday'], part.part_begin)
+
             violations.extend(
                 mep_violation for mep_group in pgs_by_type[
                     const.EventPartGroupType.mutually_exclusive_participants
                 ]
                 if (
-                    mep_violation := MEPConstraintViolation.check(
-                        rs.ambience['event'],
+                    mep_violation := MutuallyExclusiveParticipationCV.check(
+                        event,
                         registration=reg,
                         persona=personas[reg['persona_id']],
                         mep_group=mep_group,
@@ -479,8 +494,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                     const.CourseTrackGroupType.course_choice_sync
                 ]
                 if (
-                    ccs_violation := CCSConstraintViolation.check(
-                        rs.ambience['event'],
+                    ccs_violation := CourseChoiceSyncCV.check(
+                        event,
                         registration=reg,
                         persona=personas[reg['persona_id']],
                         ccs_group=ccs_group,
@@ -488,13 +503,41 @@ class EventBaseFrontend(AbstractUserFrontend):
                 )
             )
 
-        if course_id is None:
-            courses = self.eventproxy.get_courses(
-                rs, self.eventproxy.list_courses(rs, event_id))
-        elif course_id < 0:
-            courses = {}
-        else:
-            courses = self.eventproxy.get_courses(rs, (course_id,))
+            violations.extend(
+                nca_violation for track in sorted_tracks
+                if (
+                    nca_violation := NoCourseAssignedCV.check(
+                        event,
+                        registration=reg,
+                        persona=personas[reg['persona_id']],
+                        track=track,
+                    )
+                )
+            )
+
+            violations.extend(
+                ica_violation for track in sorted_tracks
+                if (
+                    ica_violation := IncorrectCourseAssignedCV.check(
+                        event,
+                        registration=reg,
+                        persona=personas[reg['persona_id']],
+                        track=track,
+                        assigned_course=all_courses.get(
+                            reg['tracks'][track.id]['course_id'],
+                        ),
+                        instructed_course=all_courses.get(
+                            reg['tracks'][track.id]['course_instructor'],
+                        ),
+                    )
+                )
+            )
+        _choice_counts, course_attendees = self.get_course_stats(rs, event)
+        attendee_violation_classes = [
+            CancelledWithAttendeesCV,
+            IncorrectNumAttendeesCV,
+            LonelyAttendeesCV,
+        ]
 
         for course in xsorted(courses.values()):
             violations.extend(
@@ -502,37 +545,60 @@ class EventBaseFrontend(AbstractUserFrontend):
                     const.CourseTrackGroupType.mutually_exclusive_courses
                 ]
                 if (
-                    mec_violation := MECConstraintViolation.check(
-                        rs.ambience['event'],
+                    mec_violation := MutuallyExclusiveCoursesCV.check(
+                        event,
                         course=course,
                         mec_group=mec_group,
                     )
                 )
             )
 
-        max_severity = max((v.severity for v in violations), default=0)
+            for violation_class in attendee_violation_classes:
+                violations.extend(
+                    violation for track in sorted_tracks
+                    if (
+                        violation := violation_class.check(
+                            event,
+                            course=course,
+                            attendees=course_attendees[course['id'], track.id],
+                            track=track,
+                        )
+                    )
+                )
+
         violations_by_class = collections.defaultdict(list)
         for violation in violations:
             violations_by_class[violation.__class__.__name__].append(violation)
+
+        max_severity_by_class = {
+            violation_class_name: max(violation.severity for violation in violations)
+            for violation_class_name, violations in violations_by_class.items()
+        }
+        max_severity = max(max_severity_by_class.values(), default=0)
+
+        violations_by_class = {
+            violation_class_name: violations
+            for violation_class_name, violations in xsorted(
+                violations_by_class.items(),
+                key=lambda item: (-max_severity_by_class[item[0]], item[0]),
+            )
+        }
         return {
+            'all': violations,
+            'by_class': violations_by_class,
             'max_severity': max_severity,
+            'max_severity_by_class': max_severity_by_class,
             'registrations': registrations,
             'personas': personas,
             'courses': courses,
-            'all': violations,
-            'by_class': violations_by_class,
         }
 
     @access("event")
     @event_guard()
     def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
         params = self.get_constraint_violations(
-            rs, event_id, registration_id=None, course_id=None)
-        return self.render(rs, "base/constraint_violations", {
-            'violations_by_class': params['by_class'],
-            'max_severity': params['max_severity'],
-            'personas': params['personas'],
-        })
+            rs, rs.ambience['event'], registration_id=None, course_id=None)
+        return self.render(rs, "base/constraint_violations", params)
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")

@@ -89,9 +89,9 @@
             {{ ambience['registration']['orga_notes']|md }}
         {% endcall %}
     {% endif %}
-    {% if violations %}
-        {% call generic_event.constraint_violations_panel(violation_severity) %}
-            {{ generic_event.list_violations("constraint-violations", violations) }}
+    {% if constraint_violations['max_severity'] > 0 %}
+        {% call generic_event.constraint_violations_panel(constraint_violations['max_severity']) %}
+            {{ generic_event.list_violations("constraint-violations", constraint_violations['all']) }}
         {% endcall %}
     {% endif %}
 

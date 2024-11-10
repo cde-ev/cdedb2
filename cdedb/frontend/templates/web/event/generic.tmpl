@@ -357,10 +357,13 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro list_violations(class_name, violations, link=False) %}
+{% macro list_violations(class_name, violations, link=False, min_severity=1) %}
     <ul id="{{ class_name }}-list">
-        {% for violation in violations %}
-            <li class="{{ "text-warning" if violation.severity <= 1 else "text-danger" }}">
+        {% for violation in violations if violation.severity >= min_severity %}
+            <li class="{{ "text-muted" if violation.severity <= 0 else
+                          ("text-warning" if violation.severity <= 1 else
+                           ("text-danger" if violation.severity <= 2 else
+                            "text-danger fw-bold")) }}">
                 {% set msg, params = violation.get_translation() %}
                 {% if link %}
                     {% set link_target, link_params = violation.get_link_params() %}

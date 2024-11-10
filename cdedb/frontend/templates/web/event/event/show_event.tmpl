@@ -353,24 +353,19 @@
                 {% endcall %}
             </div>
 
-            {% if has_constraints %}
+            {% if constraint_violations['max_severity'] > 0 %}
             <div class="col-md-6" id="constraint-violations">
-                {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
-                    {% if not violations_by_class %}
-                        {% trans %}
-                            There are currently no constraints being violated.
-                        {% endtrans %}
-                    {% else %}
-                        <ul>
-                            {% for class_name, violations in violations_by_class.items()|sort %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
-                                    {% trans count=violations|length, class_name=gettext(class_name) %}
-                                        There are {{ count }} {{ class_name }} violations.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
+                {% call generic.constraint_violations_panel(constraint_violations['max_severity'], link_title=True) %}
+                    <ul>
+                        {% for class_name, violations in constraint_violations['by_class'].items()|sort
+                                if constraint_violations['max_severity_by_class'][class_name] > 0 %}
+                            <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                {% trans count=violations|selectattr("severity", "greaterthan", 0)|list|length, class_name=gettext(class_name) %}
+                                    There are {{ count }} "{{ class_name }}" violations.
+                                {% endtrans %}
+                            </a></li>
+                        {% endfor %}
+                    </ul>
                 {% endcall %}
             </div>
             {% endif %}
