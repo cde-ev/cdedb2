@@ -681,35 +681,34 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        payload: Union[Iterable[bytes], bytes]
+        payload: PathLike | str | IO[bytes]
         if path:
-            f = pathlib.Path(path).open("rb")
-            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
+            payload = path
         elif afile:
             # Setting the buffer to 0 might be technically wrong in some theoretical
             # case, but this is much more easily usable.
             afile.seek(0)
-            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
+            payload = afile
         elif data:
             if isinstance(data, str):
-                payload = data.encode(encoding)
+                payload = io.BytesIO(data.encode(encoding))
             elif isinstance(data, bytes):
-                payload = data
+                payload = io.BytesIO(data)
             else:
                 raise ValueError(n_("Invalid input type."))
         else:
             raise RuntimeError(n_("Impossible."))
 
-        extra_args = {}
-        if mimetype is not None:
-            extra_args['mimetype'] = mimetype
-        headers = []
-        disposition = "inline" if inline else "attachment"
-        if filename is not None:
-            disposition += f'; filename="{filename}"'
-        headers.append(('Content-Disposition', disposition))
-        headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
+        response = cast(Response, werkzeug.utils.send_file(
+            payload,
+            environ=rs.request.environ,
+            mimetype=mimetype,
+            as_attachment=not inline,
+            download_name=filename,
+            response_class=Response,
+        ))
+        response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        return response
 
     @staticmethod
     def send_json(rs: RequestState, data: Any, sort_keys: bool = False) -> Response:
