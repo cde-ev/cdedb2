@@ -1887,7 +1887,7 @@ class EventRegistrationBackend(EventBaseBackend):
                         raise RuntimeError(n_("Inconsistent state."))
                     elif prev_ct and prev_ct.ttime > ttime1:
                         raise ValueError(n_("Must be after previous checkout."))
-                    if transition.ttime != ttime1:
+                    if (ttime1 - transition.ttime).seconds == 0:
                         msg = (self._make_ct_log_message(rs, transition)
                                + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
                         transition.ttime = ttime1
@@ -1910,7 +1910,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     if ((next_ct := next(iterator, None))
                             and transition.ttime > next_ct.ttime):
                         raise ValueError(n_("Must be before next checkin."))
-                    if transition.ttime != ttime2:
+                    if (ttime2 - transition.ttime).seconds == 0:
                         msg = (self._make_ct_log_message(rs, transition)
                                + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
                         transition.ttime = ttime2
