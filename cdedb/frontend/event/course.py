@@ -10,12 +10,14 @@ import collections
 from collections import OrderedDict
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Optional, cast
+from functools import cached_property
+from typing import Optional, cast, overload
 
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
     CourseChoiceToolActions,
@@ -66,6 +68,103 @@ _HIDDEN_COURSES_QUERY = Query(
         ),
     ],
 )
+
+
+@dataclass(frozen=True)
+class ChoiceCounts:
+    # dict mapping (course_id, track_id) to list of choice counts.
+    _choice_counts: dict[int, dict[int, list[int]]]
+
+    @overload
+    def get(self, course_id: int) -> dict[int, list[int]]: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int) -> list[int]: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int, rank: int) -> int: ...
+
+    def get(
+            self,
+            course_id: int,
+            track_id: int | None = None,
+            rank: int | None = None,
+    ) -> dict[int, list[int]] | list[int] | int:
+        by_track = self._choice_counts[course_id]
+        if track_id is None:
+            return by_track
+        counts = by_track[track_id]
+        if rank is None:
+            return counts
+        return counts[rank]
+
+    def __getitem__(
+            self, item: tuple[int] | tuple[int, int] | tuple[int, int, int],
+    ) -> dict[int, list[int]] | list[int] | int:
+        return self.get(*item)
+
+
+@dataclass(frozen=True)
+class CourseAttendees:
+    involved_learners: list[CdEDBObject]
+    involved_instructors: list[CdEDBObject]
+    filtered_learners: list[CdEDBObject]
+    filtered_instructors: list[CdEDBObject]
+
+    @cached_property
+    def involved(self) -> list[CdEDBObject]:
+        return self.involved_learners + self.involved_instructors
+
+    @cached_property
+    def filtered(self) -> list[CdEDBObject]:
+        return self.filtered_learners + self.filtered_instructors
+
+    @cached_property
+    def num_involved_learners(self) -> int:
+        return len(self.involved_learners)
+
+    @cached_property
+    def num_involved_instructors(self) -> int:
+        return len(self.involved_instructors)
+
+    @cached_property
+    def num_learners_filtered(self) -> int:
+        return len(self.filtered_learners)
+
+    @cached_property
+    def num_instructors_filtered(self) -> int:
+        return len(self.filtered_instructors)
+
+    @cached_property
+    def num_involved(self) -> int:
+        return len(self.involved)
+
+    @cached_property
+    def num_filtered(self) -> int:
+        return len(self.filtered)
+
+@dataclass(frozen=True)
+class Attendees:
+    _course_attendee_counts: dict[int, dict[int, CourseAttendees]]
+
+    @overload
+    def get(self, course_id: int) -> dict[int, CourseAttendees]: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int) -> CourseAttendees: ...
+
+    def get(
+            self, course_id: int, track_id: int | None = None,
+    ) -> dict[int, CourseAttendees] | CourseAttendees:
+        by_track = self._course_attendee_counts[course_id]
+        if track_id is None:
+            return by_track
+        return by_track[track_id]
+
+    def __getitem__(
+            self, item: tuple[int] | tuple[int, int],
+    ) -> dict[int, CourseAttendees] | CourseAttendees:
+        return self.get(*item)
 
 
 class EventCourseMixin(EventBaseFrontend):
@@ -698,6 +797,60 @@ class EventCourseMixin(EventBaseFrontend):
              'ids': ",".join(str(i) for i in ids),
              'include_active': include_active})
 
+    def get_course_stats(
+            self, rs: RequestState, event: models.Event, *,
+            include_states: Collection[const.RegistrationPartStati] = (),
+    ) -> tuple[ChoiceCounts, Attendees]:
+        """Generate choice counts and attendee counts"""
+        course_ids = self.eventproxy.list_courses(rs, event.id)
+        registration_ids = self.eventproxy.list_registrations(rs, event.id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+
+        choice_counts_data = {
+            course_id: {
+                track_id: [0] * track.num_choices
+                for track_id, track in event.tracks.items()
+            }
+            for course_id in course_ids
+        }
+        involved_attendees_lists = collections.defaultdict(list)
+        for reg in registrations.values():
+            for track_id, track in event.tracks.items():
+                if reg['parts'][track.part_id]['status'] in include_states:
+                    for rank, course_id in enumerate(
+                          reg['tracks'][track_id]['choices'],
+                    ):
+                        if rank >= track.num_choices:
+                            break
+                        choice_counts_data[course_id][track_id][rank] += 1
+                course_id = reg['tracks'][track_id]['course_id']
+                if (
+                        reg['parts'][track.part_id]['status'].is_involved()
+                        and course_id is not None
+                ):
+                    involved_attendees_lists[(course_id, track_id)].append(reg)
+
+        assign_counts = Attendees({
+            course_id: {
+                track_id: CourseAttendees(
+                    [reg for reg in involved_attendees_lists[(course_id, track_id)]
+                        if reg['tracks'][track_id]['course_instructor'] != course_id],
+                    [reg for reg in involved_attendees_lists[(course_id, track_id)]
+                        if reg['tracks'][track_id]['course_instructor'] == course_id],
+                    [reg for reg in involved_attendees_lists[(course_id, track_id)]
+                        if reg['tracks'][track_id]['course_instructor'] != course_id
+                        and (reg['parts'][track.part_id]['status'] in include_states)],
+                    [reg for reg in involved_attendees_lists[(course_id, track_id)]
+                        if reg['tracks'][track_id]['course_instructor'] == course_id
+                        and (reg['parts'][track.part_id]['status'] in include_states)],
+                )
+                for track_id, track in event.tracks.items()
+            }
+            for course_id in course_ids
+        })
+
+        return ChoiceCounts(choice_counts_data), assign_counts
+
     @access("event")
     @event_guard()
     @REQUESTdata("include_active")
@@ -715,10 +868,6 @@ class EventCourseMixin(EventBaseFrontend):
         else:
             include_states = (const.RegistrationPartStati.participant,)
 
-        event = rs.ambience['event']
-        tracks = event.tracks
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         hidden_courses = {
@@ -726,48 +875,10 @@ class EventCourseMixin(EventBaseFrontend):
             for course_id, course in courses.items()
             if not course['is_visible']
         }
-        # Generate choice counts and helper lists for attendee counts
-        choice_counts = {(course_id, track_id): [0] * track.num_choices
-                         for track_id, track in tracks.items()
-                         for course_id in course_ids}
-        involved_attendees_lists = collections.defaultdict(list)
-        for reg in registrations.values():
-            for track_id, track in tracks.items():
-                if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
-                    for i, choice in enumerate(reg['tracks'][track_id]['choices']):
-                        if i >= track.num_choices:
-                            break
-                        choice_counts[(choice, track_id)][i] += 1
-                course_id = reg['tracks'][track_id]['course_id']
-                if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
-                        and course_id is not None):
-                    involved_attendees_lists[(course_id, track_id)].append(reg)
 
-        @dataclass(frozen=True)
-        class CourseTrackAssignCounts:
-            num_involved_learners: int
-            num_involved_instructors: int
-            num_learners_filtered: int
-            num_instructors_filtered: int
-
-        assign_counts = {
-            (course_id, track_id): CourseTrackAssignCounts(
-                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
-                    if reg['tracks'][track_id]['course_instructor'] != course_id),
-                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
-                    if reg['tracks'][track_id]['course_instructor'] == course_id),
-                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
-                    if reg['tracks'][track_id]['course_instructor'] != course_id
-                    and (reg['parts'][tracks[track_id].part_id]['status']
-                            in include_states)),
-                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
-                    if reg['tracks'][track_id]['course_instructor'] == course_id
-                    and (reg['parts'][tracks[track_id].part_id]['status']
-                        in include_states)),
-            )
-            for track_id in tracks
-            for course_id in course_ids
-        }
+        choice_counts, assign_counts = self.get_course_stats(
+            rs, rs.ambience['event'], include_states=include_states,
+        )
 
         return self.render(rs, "course/course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
