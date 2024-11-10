@@ -22,7 +22,7 @@ with s:
         update: CdEDBObject = {}
         for k in ('given_names', 'family_name', 'legal_given_names', 'nickname'):
             old = persona[k]
-            if persona[k] != (new := " ".join(persona[k].split()).strip()):
+            if old is not None and old != (new := " ".join(old.split()).strip()):
                 update[k] = persona[k] = new
                 print(f"({persona_id})[{k[0]}]: {old!r} -> {new!r}")
 
