@@ -1986,7 +1986,7 @@ class CoreBaseBackend(AbstractBackend):
                     ON rparts.registration_id = regs.id
                 WHERE
                     regs.event_id = %s"""
-            data = self.query_all(rs, query,  [event_id])
+            data = self.query_all(rs, query, [event_id])
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
             if not (same_event and (rs.user.persona_id in all_users_inscope or

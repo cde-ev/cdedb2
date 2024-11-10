@@ -94,14 +94,14 @@ class RegistrationPartStati(CdEIntEnum):
 
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
-        return self in (RegistrationPartStati.participant,
-                        RegistrationPartStati.guest)
+        return self in {RegistrationPartStati.participant,
+                        RegistrationPartStati.guest}
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""
-        return self in (RegistrationPartStati.applied,
+        return self in {RegistrationPartStati.applied,
                         RegistrationPartStati.participant,
-                        RegistrationPartStati.waitlist)
+                        RegistrationPartStati.waitlist}
 
 
 @enum.unique

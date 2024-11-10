@@ -417,9 +417,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
-        else:
-            if not self.is_privileged(rs, EventPrivileges.basic_read):
-                raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
+        elif not self.is_privileged(rs, EventPrivileges.basic_read):
+            raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
         if 'parts' not in rs.values:
@@ -755,7 +754,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             fields_by_name = {
                 f"fields.{f.field_name}": f for f in event.fields.values()}
             for key, val in tmp_fields.items():
-                if val == "" and fields_by_name[key].entries:
+                if not val and fields_by_name[key].entries:
                     rs.append_validation_error(
                         (key, ValueError(n_("Must not be empty."))))
 
@@ -985,7 +984,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         values: CdEDBObject = {
             f"reg.{key}": val
             for key, val in registration.items()
-            if key not in ("parts", "tracks", "fields")
+            if key not in {"parts", "tracks", "fields"}
         }
         for part_id, reg_part in registration['parts'].items():
             values |= {

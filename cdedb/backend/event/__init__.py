@@ -225,7 +225,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -475,16 +475,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             for key, value in new.items():
                 if key not in old:
                     delta[key] = value
+                elif value == old[key]:
+                    pass
+                elif isinstance(value, collections.abc.Mapping):
+                    d, p = dict_diff(old[key], value)
+                    if d:
+                        delta[key], previous[key] = d, p
                 else:
-                    if value == old[key]:
-                        pass
-                    elif isinstance(value, collections.abc.Mapping):
-                        d, p = dict_diff(old[key], value)
-                        if d:
-                            delta[key], previous[key] = d, p
-                    else:
-                        delta[key] = value
-                        previous[key] = old[key]
+                    delta[key] = value
+                    previous[key] = old[key]
             return delta, previous
 
         with Atomizer(rs):

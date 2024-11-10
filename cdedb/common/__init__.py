@@ -634,7 +634,7 @@ def compute_checkdigit(value: int) -> str:
     tmp = value
     while tmp > 0:
         digits.append(tmp % 10)
-        tmp = tmp // 10
+        tmp //= 10
     dsum = sum((i + 2) * d for i, d in enumerate(digits))
     return "0123456789X"[-dsum % 11]
 
@@ -702,7 +702,7 @@ def int_to_words(num: int, lang: str) -> str:
         tmp = num
         while tmp > 0:
             number_words.append(_small_int_to_words(tmp % 1000, lang))
-            tmp = tmp // 1000
+            tmp //= 1000
         ret = ""
         for number_word, multiplier in reversed(tuple(zip(number_words,
                                                           multipliers))):
@@ -725,7 +725,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
     def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
-        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
+        import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -831,12 +831,12 @@ class LodgementsSortkeys(enum.Enum):
     total_camping_mat = 21
 
     def is_used_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_camping_mat)
+        return self in {LodgementsSortkeys.used_regular,
+                        LodgementsSortkeys.used_camping_mat}
 
     def is_total_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_camping_mat)
+        return self in {LodgementsSortkeys.total_regular,
+                        LodgementsSortkeys.total_camping_mat}
 
 
 @enum.unique

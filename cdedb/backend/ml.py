@@ -761,7 +761,7 @@ class MlBackend(AbstractBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1381,7 +1381,7 @@ class MlBackend(AbstractBackend):
             # periodic cleanup enabled.
             mailinglist_ids = {
                 ml_id for ml_id, ml in ml_data.items()
-                if ml_data[ml_id].periodic_cleanup(rs) and ml.is_active}
+                if ml.periodic_cleanup(rs) and ml.is_active}
 
             # Gather old subscription data.
             old_subscribers = self.get_many_subscription_states(

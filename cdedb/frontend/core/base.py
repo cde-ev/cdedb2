@@ -459,7 +459,7 @@ class CoreBaseFrontend(AbstractFrontend):
                        persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
-                if sub == "":
+                if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
                 else:
                     prefix = 'ADR;TYPE=intl,home,postal:;'
@@ -867,11 +867,10 @@ class CoreBaseFrontend(AbstractFrontend):
                         eventual_status[f][anchor] = stati.nacked
                     if (this_status == stati.pending
                             and (eventual_status[f][anchor]
-                                 not in (stati.committed, stati.nacked))):
+                                 not in {stati.committed, stati.nacked})):
                         eventual_status[f][anchor] = stati.pending
         persona_ids = {e['submitted_by'] for e in history.values()}
-        persona_ids = persona_ids | {e['reviewed_by'] for e in history.values()
-                                     if e['reviewed_by']}
+        persona_ids |= {e['reviewed_by'] for e in history.values() if e['reviewed_by']}
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "show_history", {
             'entries': history, 'constants': constants, 'current': current,
@@ -1390,11 +1389,12 @@ class CoreBaseFrontend(AbstractFrontend):
         persona_ids = set(itertools.chain.from_iterable(admins.values()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        for admin in admins:
-            admins[admin] = xsorted(
-                admins[admin],
-                key=lambda anid: EntitySorter.persona(personas[anid]),
+        admins = {
+            admin_role: xsorted(
+                admin_users, key=lambda anid: EntitySorter.persona(personas[anid]),
             )
+            for admin_role, admin_users in admins.items()
+        }
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})

@@ -10,7 +10,8 @@ import argparse
 import hmac
 import json
 import pathlib
-from typing import Collection, Dict, Optional
+from collections.abc import Collection
+from typing import Dict, Optional
 
 
 def encrypt_vote(salt: str, secret: str, vote: str) -> str:

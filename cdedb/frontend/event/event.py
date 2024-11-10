@@ -1199,14 +1199,13 @@ class EventEventMixin(EventBaseFrontend):
                         n_("Some of these users are not event users."),
                     )),
                 )
-        else:
-            if create_orga_list or create_participant_list:
-                # mailinglists require moderators
-                rs.append_validation_error(
-                    ("orga_ids", ValueError(
-                        n_("Must not be empty in order to create a mailinglist."),
-                    )),
-                )
+        elif create_orga_list or create_participant_list:
+            # mailinglists require moderators
+            rs.append_validation_error(
+                ("orga_ids", ValueError(
+                    n_("Must not be empty in order to create a mailinglist."),
+                )),
+            )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
         assert data is not None

@@ -51,7 +51,7 @@ class TestApplication(FrontendTest):
 
             # pretend we are not in testmode to create an error page
             def config_mock_getitem(key: str) -> Any:
-                if key in ["CDEDB_DEV", "CDEDB_TEST"]:
+                if key in {"CDEDB_DEV", "CDEDB_TEST"}:
                     return False
                 return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem
@@ -81,7 +81,7 @@ class TestApplication(FrontendTest):
 
             # pretend we are not in testmode to create an error page
             def config_mock_getitem(key: str) -> Any:
-                if key in ["CDEDB_DEV", "CDEDB_TEST"]:
+                if key in {"CDEDB_DEV", "CDEDB_TEST"}:
                     return False
                 return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem

@@ -74,7 +74,7 @@ class GenericLogFilter:
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
             if -self.offset < self.length:  # pylint: disable=invalid-unary-operand-type
-                self.length = self.length + self.offset
+                self.length += self.offset
             self.offset = 0
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
@@ -130,7 +130,7 @@ class GenericLogFilter:
         return [
             (field.name, requestdict_field_spec(field))
             for field in dataclasses.fields(cls)
-            if field.name not in ("_offset", "_length")
+            if field.name not in {"_offset", "_length"}
         ]
 
     def to_validation(self) -> CdEDBObject:

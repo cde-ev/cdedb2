@@ -4658,7 +4658,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
 
         f['agree_unlocked_download'].checked = True
         self.submit(f)
-        with open(self.testfile_dir / "event_export.json") as datafile:
+        with open(
+                self.testfile_dir / "event_export.json", encoding="utf-8",
+        ) as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
@@ -5403,7 +5405,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         self.traverse({'href': '/event/event/1/download/partial'})
         result = json.loads(self.response.text)
-        with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
+        with open(
+                self.testfile_dir / "TestAka_partial_export_event.json",
+                encoding="utf-8",
+        ) as f:
             expectation = json.load(f)
         expectation['timestamp'] = result['timestamp']
         for reg_id, reg in result['registrations'].items():
