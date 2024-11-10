@@ -572,6 +572,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set(vtypes.ID, event_ids)
         if not all(is_privileged(rs, EventPrivileges.registrations_read, event_id=anid)
+                   or is_privileged(rs, EventPrivileges.log_read, event_id=anid)
                    for anid in event_ids):
             raise PrivilegeError(n_("Not privileged."))
 

@@ -62,7 +62,7 @@
                         {{ util.href(
                             cdedblink("event/change_orga_token", {'orga_token_id': token.id}),
                             title=gettext("Change orga token '%(title)s'")|format(title=token.title),
-                            label=util.make_icon("pen"),
+                            label=util.make_icon("pen"), readonly=not is_privileged_for("change_orga_token"),
                             anid="orga_token_{}_change".format(token.id),
                             aclass="btn btn-sm btn-warning") }}
                         {% if not token.atime %}
@@ -72,7 +72,8 @@
                                 {{ util.anti_csrf_token("event/delete_orga_token") }}
                                 {{ util.input_submit(
                                     title=gettext("Delete orga token '%(title)s'")|format(title=token.title),
-                                    label=util.make_icon("trash-alt"), icon=none, readonly=token.atime,
+                                    label=util.make_icon("trash-alt"), icon=none,
+                                    readonly=token.atime or not is_privileged_for('delete_orga_token'),
                                     aclass="btn btn-sm btn-danger") }}
                             </form>
                         {% elif not token.rtime %}
@@ -83,6 +84,7 @@
                                 {{ util.input_submit(
                                     title=gettext("Revoke orga token '%(title)s'")|format(title=token.title),
                                     label=util.make_icon("fire"), icon=none,
+                                    readonly=not is_privileged_for('revoke_orga_token'),
                                     aclass="btn btn-sm btn-danger") }}
                             </form>
                         {% endif %}

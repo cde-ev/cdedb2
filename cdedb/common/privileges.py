@@ -1,11 +1,25 @@
+"""Central facility for more fine-grained privilege checks per realm."""
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
 
 
 class EventPrivileges(Flag):
-    # Generally, this is not adapted in a way to work reliably if you have write, but
-    # no read permissions.
+    """Representation of fine-grained event privileges.
+
+    This diffrentiates four areas (the "large" entities lodgement, course, registration
+    and the basic event information) and allows to award read and write permissions for
+    each individually.
+    For reading registrations, this is somewhat more involved: There are privileges for
+    * accessing registrations in the backend, with now comprehensive frontend access
+    * accessing aggregated registration data, lacking personal data
+    * accessing all registration data in the frontend includes the references to
+      lodgements and courses, which is why it automatically contains them.
+      and
+    Also, there are some shorthands or special cases handled separately.
+    Generally, this is not adapted in a way to work reliably if you have write, but
+    no read permissions, and the frontend might have slight malfunctions for novel
+    privilege combinations."""
     basic_read = auto()
     basic_write = auto()
     courses_read = auto()
@@ -34,11 +48,18 @@ class EventPrivileges(Flag):
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
                         event_id: int) -> bool:
+
     return is_privileged_event_user(rs.user, required_privilege, event_id)
 
 
 def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
                              event_id: int) -> bool:
+    """Check whether `user` has `required_privilege` relative to a given `event_id`.
+
+    This also encodes which permission each (generalized) role is supposed to have
+    access to. This only needs the `user`, which allows it to be easily  referred to
+    from templates.
+    """
     EP = EventPrivileges
     orga_privileges = ~EP.conclude
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read |

@@ -607,8 +607,8 @@
 {% endmacro %}
 
 {% macro query_result_dynamic_action(
-        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
-    <button type="button" class="btn btn-sm {{ aclass }}">
+        label, icon, target, readonly=False, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" {% if readonly %}disabled="disabled"{% endif %} class="btn btn-sm {{ aclass }}">
         {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
         <script nonce="{{ csp_nonce }}">
             $('.query-result-dynamic-actions').show();

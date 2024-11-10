@@ -48,7 +48,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
-from cdedb.common.privileges import is_privileged_event_user, EventPrivileges
+from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
     QuerySpec,

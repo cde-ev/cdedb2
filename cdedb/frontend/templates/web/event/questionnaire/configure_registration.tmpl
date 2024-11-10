@@ -55,7 +55,7 @@
                 </button>
             </p>
         </div>
-        {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
+        {{ util.input_submit(label=gettext("Save"), readonly=not is_privileged_for('configure_registration')) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {

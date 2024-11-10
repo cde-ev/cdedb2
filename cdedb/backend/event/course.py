@@ -136,7 +136,8 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
             assert current is not None
-            if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
+            if not is_privileged(rs, EventPrivileges.courses_write,
+                                 current['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
 
             cdata = {k: v for k, v in data.items()

@@ -126,7 +126,7 @@ class EventCourseMixin(EventBaseFrontend):
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
         # TODO Differentiate by EventPrivileges.registrations_read and _stats
-        if True:
+        if True:  # pylint: disable=using-constant-test
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             all_registrations = self.eventproxy.get_registrations(
                 rs, registration_ids)

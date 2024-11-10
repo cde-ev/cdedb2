@@ -690,7 +690,8 @@ class EventEventMixin(EventBaseFrontend):
         return self._get_payment_query_base(event, constraints, fee)
 
     @access("event")
-    @event_guard(EventPrivileges.basic_read)
+    # TODO Be more lenient here (for finance_admins and auditors)
+    @event_guard(EventPrivileges.registrations_stats)
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
