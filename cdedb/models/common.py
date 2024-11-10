@@ -26,7 +26,7 @@ from cdedb.uncommon.intenum import CdEIntEnum
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+    from cdedb.database.query import (
         DatabaseValue_s,
     )
 

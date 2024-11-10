@@ -496,8 +496,8 @@ class EventCourseMixin(EventBaseFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id].part_id]
-        for course_id_, course in courses.items():  # pylint: disable=redefined-argument-from-local
-            for track in tracks.values():  # pylint: disable=redefined-argument-from-local
+        for course_id_, course in courses.items():
+            for track in tracks.values():
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()
