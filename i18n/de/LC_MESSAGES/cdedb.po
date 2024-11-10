@@ -10708,14 +10708,32 @@ msgstr ""
 "Vornamen ist, wird er auch an den meisten anderen Stellen in der CdE-"
 "Datenbank anstelle Deiner vollständigen Vornamen verwendet."
 
+msgid "Prefixed academic degree or similar."
+msgstr "Vorangestellter akademischer Grad o.ä."
+
+msgid "For salutation, mailing, nametags and event notices. First name usually used."
+msgstr "Für Anrede, Postversand, Namensschilder und Veranstaltungsaushänge. Üblicherweise geführter Vorname."
+
+msgid "For direct debits and donation receipts. Only visible to %(orgas_and_admins)s."
+msgstr "Für Lastschriften und Spendenbescheinigungen. Nur für %(orgas_and_admins)s sichtbar."
+
+msgid "For nametags and event noticies."
+msgstr "Für Namensschilder und Veranstaltungsaushänge."
+
+msgid "Original family name after the current family name has changed, for example through marriage."
+msgstr "Ursprünglicher Familienname, nachdem sich der aktuelle Familienname durch beispielsweise Heirat geändert hat."
+
+msgid "Suffixed academic degree or similar."
+msgstr "Nachgestellter akademischer Grad o.ä."
+
 #: cdedb/frontend/templates/web/core/change_user.tmpl:41
 #: cdedb/frontend/templates/web/core/change_user.tmpl:44
 #, python-format
 msgid ""
-"Needed for lodgement assignment at events. Only visible to "
+"For lodgement assignment at events. Only visible to "
 "%(orgas_and_admins)s."
 msgstr ""
-"Benötigt für die Unterkunftseinteilung auf Veranstaltungen. Nur für "
+"Für die Unterkunftseinteilung auf Veranstaltungen. Nur für "
 "%(orgas_and_admins)s sichtbar."
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:42

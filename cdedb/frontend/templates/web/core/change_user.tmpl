@@ -25,20 +25,27 @@
         {{ util.input_hidden(name="generation") }}
 
         {{ util.h(n_("Personal Information"), level=4, underline=True) }}
-        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
-        {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
-        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
-        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"),
+            info=gettext("Prefixed academic degree or similar.")) }}
+        {{ util.form_input_text(name="given_names", label=gettext("Given Names"),
+            info=gettext("For salutation, mailing, nametags and event notices. First name usually used.")) }}
+        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
+            info=gettext("For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
+                    orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname"),
+            info=gettext("For nametags and event noticies.")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields %}
-            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
+            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
+                info=gettext("Original family name after the current family name has changed, for example through marriage.")) }}
         {% endif %}
-        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"),
+                info=gettext("Suffixed academic degree or similar.")) }}
 
         {% if 'gender' in shown_fields %}
             {{ util.form_input_select(
                 name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
-                info=gettext("Needed for lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
+                info=gettext("For lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
         {% if "pronouns" in shown_fields %}
