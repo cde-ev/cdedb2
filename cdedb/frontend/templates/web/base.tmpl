@@ -207,7 +207,7 @@
                         {% if defect_username or mls_with_defect_explicits %}
                             <div class="alert alert-danger" role="alert">
                                 {% trans %}
-                                    The following email addresses are marked as defect, so you will no longer receive any emails for them.
+                                    The following email addresses are marked as defect, so you will no longer receive any emails for them. To remedy this, please contact the administrators.
                                 {% endtrans %}
                                 <ul>
                                     {% if defect_username %}
@@ -217,7 +217,7 @@
                                     {% endif %}
                                     {% for address, mls in mls_with_defect_explicits.items() %}
                                         <li>
-                                            {{ address }} (subscribed to
+                                            {{ address }} ({% trans %}subscribed to{% endtrans %}
                                             {% for ml in mls -%}
                                                 {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': ml.id}), ml.title) }}
                                                 {%- if not loop.last %}, {% endif -%}

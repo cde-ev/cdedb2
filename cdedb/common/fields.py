@@ -111,7 +111,8 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field_id",
-    "field_definition_notes", "website_url", "notify_on_registration",
+    "reimbursement_iban_field_id", "field_definition_notes", "website_url",
+    "notify_on_registration",
 )
 
 #: Fields of an event part organized via CdEDB
@@ -222,11 +223,16 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: dict[
     str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]] = {
-    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
-    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
+    'lodge_field':
+        ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'reimbursement_field':
+        ({const.FieldDatatypes.iban}, {const.FieldAssociations.registration}),
+    'camping_mat':
+        ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'course_room':
+        ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'waitlist':
+        ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
 }
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",

@@ -2442,6 +2442,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
+    'reimbursement_iban_field_id': Optional[ID],
     'website_url': Optional[Url],
     'notify_on_registration': const.NotifyOnRegistration,
 }
@@ -2785,9 +2786,14 @@ def _event_field(
         val["entries"] = None
     if "entries" in val and val["entries"] is not None:
         if isinstance(val["entries"], str):
-            val["entries"] = dict(
-                [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
-            )
+            try:
+                val["entries"] = dict(
+                    [y.strip() for y in x.split(';', 1)]
+                     for x in val["entries"].split('\n')
+                )
+            except ValueError as e:
+                raise ValidationSummary(ValueError(
+                    'entries', n_("Value not well-formed."))) from e
         elif isinstance(val['entries'], list):
             with errs:
                 try:
@@ -3167,19 +3173,8 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes = {
-        const.FieldDatatypes.str: Optional[str],
-        const.FieldDatatypes.bool: Optional[bool],
-        const.FieldDatatypes.int: Optional[int],
-        const.FieldDatatypes.float: Optional[float],
-        const.FieldDatatypes.date: Optional[datetime.date],
-        const.FieldDatatypes.datetime: Optional[datetime.datetime],
-        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
-        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
-        const.FieldDatatypes.phone: Optional[str],
-    }
     optional_fields: TypeMapping = {
-        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
+        str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
@@ -3286,16 +3281,27 @@ def _lodgement(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-# TODO is kind optional?
-# TODO make argname non-optional
+FIELD_DATATYPE_VALIDATORS = {
+    const.FieldDatatypes.str: str,
+    const.FieldDatatypes.bool: bool,
+    const.FieldDatatypes.int: int,
+    const.FieldDatatypes.float: float,
+    const.FieldDatatypes.date: datetime.date,
+    const.FieldDatatypes.datetime: datetime.datetime,
+    const.FieldDatatypes.non_negative_int: NonNegativeInt,
+    const.FieldDatatypes.non_negative_float: NonNegativeFloat,
+    const.FieldDatatypes.phone: Phone,
+    const.FieldDatatypes.iban: IBAN,
+}
+
+
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: Optional[str] = None, *, kind: FieldDatatypes, **kwargs: Any,
+    val: Any, argname: str, *, kind: FieldDatatypes, **kwargs: Any,
 ) -> ByFieldDatatype:
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[
-        Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore[index]
+    val: Any = _ALL_TYPED[Optional[FIELD_DATATYPE_VALIDATORS[kind]]  # type: ignore[index]
     ](val, argname, **kwargs)
 
     if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
@@ -4178,7 +4184,7 @@ def _serialized_event_configuration(
                         "lodge_field_id", n_("Unknown lodge field.")))
             else:
                 field = current.fields[lodge_field]
-                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge_field']
                 if field.association not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
@@ -4189,6 +4195,31 @@ def _serialized_event_configuration(
                         raise ValidationSummary(ValueError(
                             "lodge_field_id",
                             n_("Lodge field must have type 'string'.")))
+        if reimbursement_field := val.get('reimbursement_iban_field_id'):
+            if reimbursement_field not in current.fields:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "reimbursement_iban_field_id",
+                        n_("Unknown reimbursement IBAN field."),
+                    ))
+            else:
+                field = current.fields[reimbursement_field]
+                legal_kinds, legal_associations = \
+                    EVENT_FIELD_SPEC['reimbursement_field']
+                if field.association not in legal_associations:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_(
+                                "Reimbursement IBAN field must be a registration"
+                                " field.",
+                            ),
+                        ))
+                if field.kind not in legal_kinds:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_("Reimbursement IBAN field must have type 'IBAN'.")))
 
     if errs:
         raise errs
@@ -4766,7 +4797,7 @@ def _query_input(
                 # TODO do not allow None
                 try:
                     vv: Any = _ALL_TYPED[
-                        Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                        Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                     ](
                         v, field, **kwargs)
                 except ValidationSummary as e:
@@ -4811,7 +4842,7 @@ def _query_input(
         else:
             try:
                 value = _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                 ](
                     value, field, **kwargs)
             except ValidationSummary as e:
@@ -4927,14 +4958,14 @@ def _query(
 
         elif operator in MULTI_VALUE_OPERATORS:
             validator: Callable[..., Any] = _ALL_TYPED[
-                Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore[index]
+                Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
                 with errs:
                     validator(v, f"constraints/{field}", **kwargs)
         else:
             try:
                 _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[val.spec[field].type]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]  # type: ignore[index]
                 ](
                     value,
                     f"constraints/{field}",

@@ -566,4 +566,4 @@ class EventDownloadMixin(EventBaseFrontend):
         event_id = unwrap(events.keys())
         ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
         ret['message'] = "success"
-        return self.send_json(rs, ret)
+        return self.send_json(rs, ret, sort_keys=True)

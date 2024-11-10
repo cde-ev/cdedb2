@@ -481,6 +481,21 @@ class TestEventFrontend(FrontendTest):
         self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
+    def test_no_soft_limit(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertTitle("Große Testakademie 2222")
+        with self.switch_user('garcia'):
+            self.traverse("Veranstaltungen", "Große Testakademie", "Konfiguration")
+            f = self.response.forms['changeeventform']
+            f['registration_soft_limit'] = ""
+            f['registration_hard_limit'] = "2222-05-01T00:00:00"
+            self.submit(f)
+            self.assertTitle("Große Testakademie 2222")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("30.10.2000, 01:00:00 – 01.05.2222, 00:00:00")
+
+    @as_users("anton", "berta")
     def test_no_hard_limit(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
@@ -1018,9 +1033,14 @@ class TestEventFrontend(FrontendTest):
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'] = const.FieldDatatypes.str
-        f['entries_-1'] = """all;everything goes
+        f['entries_-1'] = """everything goes!
         vegetarian;no meat
         vegan;plants only"""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('entries_-1', "Falsch formatierte Eingabe.")
+        f['entries_-1'] = """all;everything goes
+                vegetarian;no meat
+                vegan;plants only"""
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
@@ -6435,7 +6455,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         f['track_min_choices_8'] = 9
         self.submit(f)
         event = self.event.get_event(self.key, 4)
-        for track in unwrap(event.tracks[8].track_groups).tracks.values():
+        for track in event.track_groups[1].tracks.values():
             self.assertEqual(track.num_choices, 10)
             self.assertEqual(track.min_choices, 9)
 
@@ -7176,3 +7196,79 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
                     self.key, const.SubscriptionAction.add_subscriber,
                     exclusive_ml.id, persona_id,
                 )
+
+    @event_keeper
+    @as_users("garcia")
+    def test_reimbursement_iban_field(self) -> None:
+        # Create a new string datafield.
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f["create_-1"] = True
+        f["field_name_-1"] = "iban"
+        f["association_-1"] = const.FieldAssociations.registration
+        f["kind_-1"] = const.FieldDatatypes.str
+        self.submit(f)
+
+        # Enter a valid IBAN.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Inga"
+        self.submit(f)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        f["fields.iban"] = iban = "DE26 3702 0500 0008 0689 00"
+        self.submit(f)
+        self.assertPresence(iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual(iban, f["fields.iban"].value)
+
+        # Enter an invalid IBAN.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Anton"
+        self.submit(f)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        f["fields.iban"] = non_iban = "random bullshit"
+        self.submit(f)
+        self.assertPresence(non_iban)
+
+        # Change datatype to IBAN.
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f['kind_1001'] = const.FieldDatatypes.iban
+        self.submit(f)
+
+        # Check conversions.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Inga"
+        self.submit(f)
+        self.assertPresence(iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual(iban.replace(" ", ""), f["fields.iban"].value)
+
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Anton"
+        self.submit(f)
+        self.assertNonPresence(non_iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual("", f["fields.iban"].value)
+
+        # Configure reimbursement field.
+        self.traverse("Konfiguration")
+        f = self.response.forms["changeeventform"]
+        f["reimbursement_iban_field_id"] = 1001
+        self.submit(f)
+        self.assertNonPresence(non_iban)
+        self.traverse(
+            "Teilnahmebeiträge", "Beitrags-Statistik",
+            {"linkid": "surplus_query"},
+        )
+        self.assertPresence("Inga", div="result-container")
+        self.assertPresence(iban, div="result-container")
