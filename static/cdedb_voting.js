@@ -335,15 +335,12 @@ if (!String.prototype.format) {
             
             // Parse stages
             var stages = preflist.split('>');
-            var bar_option = false;
+            var above_bar = true;
             
             // Create first spacer
             var $sp = createSpacer().appendTo($container);
             if (bar_shortname) {
-                if (bar_option)
-                    $sp.addClass('negative');
-                else 
-                    $sp.addClass('positive');
+                $sp.addClass('positive');
             }
             
             // Create stage boxes and spacers
@@ -358,28 +355,28 @@ if (!String.prototype.format) {
                     if ($cand) {
                         $stage.append($cand).append(' ');
                     } else if (bar_shortname && stage_candidates[j] == bar_shortname) {
-                        bar_option = true;
+                        above_bar = false;
                         is_neutral = true;
                         $stage.addClass('neutral');
                         $stage.append($('<div></div>', {'class': 'label'}).text(labels['bar_name']));
                     }
                 }
                 if (bar_shortname && !is_neutral) {
-                    if (bar_option) {
-                        $stage.addClass('negative');
-                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['rejected']));
-                    } else {
+                    if (above_bar) {
                         $stage.addClass('positive');
                         $stage.append($('<div></div>', {'class': 'label'}).text(labels['accepted']));
+                    } else {
+                        $stage.addClass('negative');
+                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['rejected']));
                     }
                 }
                 
                 var $sp = createSpacer().appendTo($container);
                 if (bar_shortname) {
-                    if (bar_option)
-                        $sp.addClass('negative');
-                    else 
+                    if (above_bar)
                         $sp.addClass('positive');
+                    else 
+                        $sp.addClass('negative');
                 }
             }
             
@@ -390,9 +387,9 @@ if (!String.prototype.format) {
                     missing_candidates.push(candidate_list[i])
             }
             
-            if (missing_candidates.length > 0 || (bar_shortname && !bar_option)) {
+            if (missing_candidates.length > 0 || (bar_shortname && above_bar)) {
                 // If use_bar and bar has been added yet, add missing_candidates to neutral stage
-                if (bar_shortname && bar_option) {
+                if (bar_shortname && !above_bar) {
                     var $neutral_stage = $container.children('.prefvote_stage.neutral');
                     for (var i = 0; i < missing_candidates.length; i++)
                         $neutral_stage.append(missing_candidates[i]);

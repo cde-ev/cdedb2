@@ -908,6 +908,30 @@ tr.drow-delete>td, tr.drow-delete1>td {
     border-color: rgba(36,87,130,1);
     color: rgba(36,87,130,1);
 }
+.prefvote_container.active .prefvote_spacer.positive .prefvote_spacer_line {
+    border-color: rgb(131, 192, 151);
+    color: rgb(131, 192, 151);
+}
+.prefvote_container .prefvote_spacer.positive.dragover .prefvote_spacer_line {
+    border-color: rgb(15, 71, 24);
+    color: rgb(15, 71, 24);
+}
+.prefvote_container.active .prefvote_spacer.positive:hover .prefvote_spacer_line {
+    border-color: rgb(0, 128, 6);
+    color: rgb(0, 128, 6);
+}
+.prefvote_container.active .prefvote_spacer.negative .prefvote_spacer_line {
+    border-color: rgb(189, 128, 128);
+    color: rgb(189, 128, 128);
+}
+.prefvote_container .prefvote_spacer.negative.dragover .prefvote_spacer_line {
+    border-color: rgb(121, 0, 6);
+    color: rgb(121, 0, 6);
+}
+.prefvote_container.active .prefvote_spacer.negative:hover .prefvote_spacer_line {
+    border-color: rgb(172, 0, 0);
+    color: rgb(172, 0, 0);
+}
 .prefvote_spacer_plus {
     position: absolute;
     translate: 0 -50%;
