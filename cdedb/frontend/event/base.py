@@ -576,13 +576,10 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         max_severity = max(max_severity_by_class.values(), default=0)
 
-        violations_by_class = {
-            violation_class_name: violations
-            for violation_class_name, violations in xsorted(
-                violations_by_class.items(),
-                key=lambda item: (-max_severity_by_class[item[0]], item[0]),
-            )
-        }
+        violations_by_class = dict(xsorted(
+            violations_by_class.items(),
+            key=lambda item: (-max_severity_by_class[item[0]], item[0]),
+        ))
         return {
             'all': violations,
             'by_class': violations_by_class,
