@@ -61,7 +61,7 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = 9
+    EVENT_LOG_OFFSET = 11
 
     def _set_payment_info(
         self, reg_id: int, event_id: int, amount_paid: decimal.Decimal,
@@ -4839,9 +4839,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
     @as_users("garcia")
     def test_checkin(self) -> None:
         # multi-part
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/checkin'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Checkin")
         self.assertTitle("Checkin (Große Testakademie 2222)")
 
         # Check the display of custom datafields.
@@ -4902,12 +4900,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertNotIn('checkinform2', self.response.forms)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("Eingecheckt.",
+        self.assertPresence("Checkin",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
         # single-part
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/3/show'},
-                      {'href': '/event/event/3/checkin'})
+        self.traverse("Veranstaltungen", "CyberTestAkademie", "Checkin")
         self.assertTitle("Checkin (CyberTestAkademie)")
         self.assertPresence("Daniel D. Dino")
         self.assertPresence("Olaf Olafson")
@@ -4921,16 +4917,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.submit(f)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
-        self.assertPresence("Eingecheckt.", div="1-1003")
+        self.assertPresence("Checkin", div="1-1003")
 
+    @unittest.skip("skip functionality not longer needed TODO: remove completely")
     @as_users("garcia")
     def test_checkin_concurrent_modification(self) -> None:
         # Test the special measures of the 'Edit' button at the Checkin page,
         # that ensure that the checkin state is not overriden by the
         # change_registration form
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/checkin'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Checkin")
         f = self.response.forms['checkinform2']
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f2 = self.response.forms['changeregistrationform']
@@ -4941,6 +4936,45 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertPresence("Kellerverlies")
         # ... but the checkin is still valid
         self.assertNonPresence("—", div="checkin-time")
+
+    @as_users("garcia")
+    def test_checkin_transitions(self) -> None:
+        self.get('/event/event/1/registration/6/show')
+        self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
+        self.assertPresence("22.02.2022, 18:00:00 – 23.02.2022, 10:00:00")
+
+        f = self.response.forms['changetransitionsform1']
+        f['ttime2_2'] = "2222-02-01T10:00:00+02:00"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('ttime2_2', "Muss in der Vergangenheit liegen.")
+
+        self.assertNotIn('checkoutform', self.response.forms)
+        self.submit(self.response.forms['checkinform'])  # check Berta in
+        self.assertNotIn('checkinform', self.response.forms)
+        self.submit(self.response.forms['checkoutform'])  # check Berta out again
+
+        f = self.response.forms['changetransitionsform1']
+        f['ttime2_2'] = now()
+        original_checkin = f['ttime1_1'].value
+        f['ttime1_1'] = now()
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'ttime2_2', "Checkout muss vor folgendem Checkin sein.")
+        self.assertValidationError('ttime1_1', "Checkout muss nach Checkin liegen.")
+
+        f = self.response.forms['changetransitionsform2']
+        f['ttime1_1001'] = "2000-01-01T00:00:00+02:00"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'ttime1_1001', "Checkin muss nach vorhergehendem Checkout sein.")
+
+        f = self.response.forms['changetransitionsform1']
+        f['ttime1_1'] = original_checkin
+        f['ttime2_2'] = "2022-02-28T10:00:00+01:00"
+        self.submit(f, verbose=True)
+        self.assertPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
+        self.submit(self.response.forms['deletetransitionsform1'])
+        self.assertNonPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:

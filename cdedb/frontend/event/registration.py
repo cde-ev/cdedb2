@@ -1727,16 +1727,15 @@ class EventRegistrationMixin(EventBaseFrontend):
                                    registration_id: vtypes.ID, tid1: vtypes.ID,
                                    tid2: Optional[vtypes.ID] = None) -> Response:
         """Change the time a participant was present."""
-        if rs.has_validation_errors():
-            return self.show_registration(rs, event_id, registration_id)
-        registration = self.eventproxy.get_registration(rs, registration_id)
-
         ttime1 = unwrap(request_extractor(rs, {f'ttime1_{tid1}': datetime.datetime}))
         ttime2 = None
         if tid2 is not None:
             ttime2 = unwrap(request_extractor(
                 rs, {f'ttime2_{tid2}': datetime.datetime}))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
 
+        registration = self.eventproxy.get_registration(rs, registration_id)
         chronologic = xsorted(registration['checkin_transitions'])
         # check positive timespan in past
         if ttime1 > now():

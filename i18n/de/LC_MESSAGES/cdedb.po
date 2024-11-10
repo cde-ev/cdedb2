@@ -5909,11 +5909,11 @@ msgstr "Inkonsistente Daten."
 
 #: cdedb/frontend/event/registration.py:1760
 msgid "Checkin must be after previous checkout."
-msgstr "Checkin muss nach dem vorhergehenden Checkout sein."
+msgstr "Checkin muss nach vorhergehendem Checkout sein."
 
 #: cdedb/frontend/event/registration.py:1765
 msgid "Checkout must be before next checkin."
-msgstr "Checkout muss vor dem folgenden Checkin sein."
+msgstr "Checkout muss vor folgendem Checkin sein."
 
 #: cdedb/frontend/ml/__init__.py:46
 msgid "Skipping mailman request in dev/offline mode."

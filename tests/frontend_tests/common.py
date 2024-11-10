@@ -109,7 +109,8 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual("20 Stunden, 0 Minuten", td_filter(td(hours=20)))
         self.assertEqual("20 Stunden, 0 Minuten", td_filter(td(hours=20, seconds=42)))
         self.assertEqual("20 Stunden, 42 Minuten", td_filter(td(hours=20, minutes=42)))
-        self.assertEqual("10 Minuten, 0 Sekunden", td_filter(td(minutes=10, microseconds=42)))
+        self.assertEqual("10 Minuten, 0 Sekunden", td_filter(td(minutes=10,
+                                                                microseconds=42)))
 
     def test_cdedbid_filter(self) -> None:
         self.assertEqual("DB-1-9", cdedbid_filter(1))

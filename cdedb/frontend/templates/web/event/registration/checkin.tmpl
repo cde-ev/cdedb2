@@ -149,8 +149,8 @@
                                 {{ util.input_hidden(name="part_ids", value=part_id) }}
                             {% endfor %}
                             {{ util.input_hidden(name="from_checkin_page", value="True") }}
+                            {{ util.input_hidden(name="ttype", value=enums.CheckinTransitionType.checked_in) }}
                             {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                                 name='ttype', value=enums.CheckinTransitionType.checked_in,
                                                  readonly=is_locked) }}
                         </form>
                     </div>
