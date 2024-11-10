@@ -245,6 +245,7 @@ if (!String.prototype.format) {
             $sp.on('dragleave',dragleave);
             $sp.on('click',spacer_click);
             $sp.on('keydown',getKeyboardHandler(spacer_click));
+            $sp.append('<div class="prefvote_spacer_line"><i class="prefvote_spacer_plus fa-solid fa-circle-plus"></i></div>');
             return $sp;
         }
         /** Create a new .prefvote_stage box and return jQuery reference. */
@@ -303,7 +304,10 @@ if (!String.prototype.format) {
                 candidate_list[shortname] = $cand;
                 $cand.on('dragstart',function(e) {
                     e.originalEvent.dataTransfer.setData('text', $(this).attr('data-shortname'));
-                    $container.removeClass('active').find('.prefvote_candidate').removeClass('active');
+                    $container.addClass('active').find('.prefvote_candidate').removeClass('active');
+                });
+                $cand.on('dragend',function(e) {
+                    $container.removeClass('active');
                 });
                 $cand.click(candidate_click);
                 $cand.on('keydown',getKeyboardHandler(candidate_click));
