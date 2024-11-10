@@ -302,9 +302,9 @@ class TestCoreFrontend(FrontendTest):
                   "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
-                 "FN:Bertålotta Beispiel",
-                 "N:Beispiel;Bertålotta;;Dr.;MdB",
-                 "NICKNAME:Bertå",
+                 "FN:Bertå Beispiel",
+                 "N:Beispiel;Bertå;;Dr.;MdB",
+                 "NICKNAME:Bindi",
                  "TEL;TYPE=HOME:+495432987654321",
                  "TEL;TYPE=CELL:+4916312345678",
                  "END:VCARD"]
@@ -702,10 +702,10 @@ class TestCoreFrontend(FrontendTest):
         f['include_archived'].checked = False
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
-        self.assertPresence("Charly C.", div='query-result')
-        self.assertPresence("Garcia G.", div='query-result')
+        self.assertPresence("Charly", div='query-result')
+        self.assertPresence("Garcia", div='query-result')
         self.assertPresence("Inga", div='query-result')
         self.assertPresence("Rowena", div='query-result')
         self.assertPresence("Annika", div='query-result')
@@ -719,10 +719,10 @@ class TestCoreFrontend(FrontendTest):
         f['include_archived'].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
-        self.assertPresence("Charly C.", div='query-result')
-        self.assertPresence("Garcia G.", div='query-result')
+        self.assertPresence("Charly", div='query-result')
+        self.assertPresence("Garcia", div='query-result')
         self.assertPresence("Inga", div='query-result')
         self.assertPresence("Rowena", div='query-result')
         self.assertPresence("Annika", div='query-result')
@@ -734,7 +734,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['location2'] = "Hyrule"
         f['country2'] = "HY"
         f['specialisation'] = "Okarinas"
@@ -798,11 +798,11 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
 
     @as_users("vera")
@@ -811,7 +811,7 @@ class TestCoreFrontend(FrontendTest):
                       {'href': '/core/persona/22/adminchange'})
         self.assertTitle("Vera Verwaltung bearbeiten")
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
@@ -1207,7 +1207,7 @@ class TestCoreFrontend(FrontendTest):
         self.response = save.click(description="Alle Admins")
         self.assertPresence("Ergebnis [16]", div='query-results')
         self.assertPresence("Akira", div='query-result')
-        self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Anton", div='query-result')
         self.assertPresence("Annika", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
         self.assertPresence("Quintus", div='query-result')
@@ -1369,7 +1369,7 @@ class TestCoreFrontend(FrontendTest):
         self._initialize_privilege_change(user, user, user, new_privileges)
         self.login(user)
         self.traverse({'description': "Admin-Änderungen"},
-                      {'description': "A. Administrator"})
+                      {'description': "Anton Administrator"})
         self.assertPresence(
             "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
             div="notifications")
@@ -1652,7 +1652,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N. Geburtsdatum N/A Geschlecht keine Angabe"
+        self.assertPresence("Name N. N. Bürgerlicher Name N. N."
+                            " Geburtsdatum N/A Geschlecht keine Angabe"
                             " Pronomen – Pronomen auf Namensschild Nein",
                             div='personal-information', exact=True)
         self.assertNonPresence("archiviert")
@@ -1666,7 +1667,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("22,20 €", div='balance')
         self.assertNonPresence("Probemitgliedschaft")
         self.traverse({'description': 'Guthaben anpassen'})
-        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        self.assertTitle("Guthaben anpassen für Ferdinand Findus")
         # Test form default values
         f = self.response.forms['modifybalanceform']
         self.assertEqual(f['new_balance'].value, "22.20")
@@ -1674,12 +1675,12 @@ class TestCoreFrontend(FrontendTest):
         # Test 'Nothing changed!' info
         self.submit(f, check_notification=False)
         self.assertPresence("Keine Änderungen", div="notifications")
-        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        self.assertTitle("Guthaben anpassen für Ferdinand Findus")
         # Test missing change note entry warning
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
         self.submit(f, check_notification=False)
-        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        self.assertTitle("Guthaben anpassen für Ferdinand Findus")
         self.assertValidationError("change_note", "Darf nicht leer sein.")
         # Test changing balance
         f = self.response.forms['modifybalanceform']
@@ -1946,14 +1947,14 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/persona/2/adminchange'})
         self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.traverse({'description': 'Änderungshistorie'})
-        self.assertTitle("Änderungshistorie von Bertålotta Beispiel")
+        self.assertTitle("Änderungshistorie von Bertå Beispiel")
         self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
         self.assertNonPresence("Automatisiert")
@@ -2008,35 +2009,35 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT['inga'])
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
-        self.assertPresence("Anton Armin A. Administrator", div="meta")
+        self.assertPresence("Anton Administrator", div="meta")
         self.assertPresence("Martin Meiste", div="meta")
-        self.assertPresence("Anton Armin A. Administrator", div="core")
+        self.assertPresence("Anton Administrator", div="core")
         self.assertNonPresence("Martin Meister", div="core")
-        self.assertNonPresence("Bertålotta Beispiel", div="core")
-        self.assertPresence("Anton Armin A. Administrator", div="cde")
-        self.assertPresence("Ferdinand F. Findus", div="cde")
-        self.assertPresence("Anton Armin A. Administrator", div="finance")
-        self.assertPresence("Ferdinand F. Findus", div="finance")
-        self.assertPresence("Anton Armin A. Administrator", div="event")
-        self.assertPresence("Ferdinand F. Findus", div="event")
-        self.assertPresence("Bertålotta Beispiel", div="event")
+        self.assertNonPresence("Bertå Beispiel", div="core")
+        self.assertPresence("Anton Administrator", div="cde")
+        self.assertPresence("Ferdinand Findus", div="cde")
+        self.assertPresence("Anton Administrator", div="finance")
+        self.assertPresence("Ferdinand Findus", div="finance")
+        self.assertPresence("Anton Administrator", div="event")
+        self.assertPresence("Ferdinand Findus", div="event")
+        self.assertPresence("Bertå Beispiel", div="event")
         self.assertPresence("Nina Neubauer", div="ml")
         self.assertPresence("Ludwig Lokus", div="cdelokal")
-        self.assertPresence("Anton Armin A. Administrator", div="assembly")
-        self.assertPresence("Ferdinand F. Findus", div="assembly")
-        self.assertPresence("Bertålotta Beispiel", div="assembly")
+        self.assertPresence("Anton Administrator", div="assembly")
+        self.assertPresence("Ferdinand Findus", div="assembly")
+        self.assertPresence("Bertå Beispiel", div="assembly")
         self.logout()
         self.login(USER_DICT["janis"])
         self.traverse({'description': 'Administratorenübersicht'})
         self.assertTitle("Administratorenübersicht")
-        self.assertPresence("Anton Armin A. Administrator", div="core")
-        self.assertNonPresence("Bertålotta Beispiel")
+        self.assertPresence("Anton Administrator", div="core")
+        self.assertNonPresence("Bertå Beispiel")
 
     @as_users("vera")
     def test_trivial_promotion(self) -> None:
         self.admin_view_profile('emilia')
         self.traverse({'description': 'Bereich hinzufügen'})
-        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
+        self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
         f['target_realm'].force_value("event")
@@ -2044,7 +2045,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Keine Änderung erforderlich.", div='notifications')
         f['target_realm'] = "cde"
         self.submit(f)
-        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
+        self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False)
         f = self.response.forms['promotionform']
@@ -2063,7 +2064,7 @@ class TestCoreFrontend(FrontendTest):
         # self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
         f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
-        self.assertTitle("Emilia E. Eventis")
+        self.assertTitle("Emilia Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
@@ -3081,7 +3082,7 @@ class TestCoreFrontend(FrontendTest):
             f'/core/api/resolve?username=anton{at}example.cde',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
-            "given_names": "Anton Armin A.",
+            "given_names": USER_DICT["anton"]["given_names"],
             "family_name": "Administrator",
             "is_member": True,
             "personas.id": 1,
@@ -3217,7 +3218,7 @@ LG Emilia
             receipt = self.fetch_mail_content(1)
 
             self.assertIn(msg, sent)
-            self.assertIn("Emilia E. Eventis", sent)
+            self.assertIn("Emilia Eventis", sent)
             self.assertIn(msg, receipt)
             self.assertIn(subject, receipt)
             self.assertIn("Anonym: Nein", receipt)
@@ -3234,7 +3235,7 @@ LG Emilia
             self.assertNotIn("Emilia", sent_anonymous)
             self.assertIn(msg_anonymous, receipt_anonymous)
             self.assertIn(subject, receipt_anonymous)
-            self.assertIn("Emmy", receipt_anonymous)
+            self.assertIn("Emilia", receipt_anonymous)
             self.assertIn("Anonym: Ja", receipt_anonymous)
             self.assertIn(
                 "Die Empfänger können auf deine Nachricht antworten",
@@ -3279,7 +3280,7 @@ LG Emilia
 
             self.assertIn(reply_msg, reply)
             self.assertIn(subject, reply)
-            self.assertIn("Emmy", reply)
+            self.assertIn("Emilia", reply)
             self.assertIn(
                 "Zu diesem Zwecke wurde die Anonymität deiner Nachricht"
                 " __nicht__ aufgehoben.",

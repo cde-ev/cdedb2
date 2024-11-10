@@ -42,6 +42,7 @@ PERSONA_TEMPLATE = {
         "username": 'zelda@example.cde',
         "title": "Dr.",
         "given_names": "Zelda",
+        "legal_given_names": "Zelda",
         "family_name": "Zeruda-Hime",
         "name_supplement": 'von und zu',
         "birthday": "1987-06-05",
@@ -223,15 +224,13 @@ class TestCdEFrontend(FrontendTest):
         # Make sure all country codes are translated
         self.assertNonPresence("CountryCode")
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['location2'] = "Hyrule"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+        self.assertPresence("(Zelda)", div='personal-information')
         # Make sure hiding functionality works as extended
         self.traverse("Bearbeiten")
         f = self.response.forms['changedataform']
@@ -252,8 +251,7 @@ class TestCdEFrontend(FrontendTest):
             f = self.response.forms['quickregistrationform']
             f['phrase'] = "Bert"
             self.submit(f)
-            self.assertTitle(
-                "Anmeldung von Bertålotta Beispiel (Große Testakademie 2222)")
+            self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
             self.assertPresence("Im Garten 77")
             self.traverse("DB-2-7")
             self.assertPresence("Im Garten 77", div='hidden-address')
@@ -271,7 +269,7 @@ class TestCdEFrontend(FrontendTest):
         f['free_form'] = "Jabberwocky for the win."
         self.submit(f)
         self.assertPresence("Zelda", div='personal-information')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Zelda Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
         self.traverse("Bearbeiten")
@@ -299,7 +297,7 @@ class TestCdEFrontend(FrontendTest):
         f['free_form'] = "Spiele gerne Okarina."
         self.submit(f)
         self.assertPresence("Link", div='personal-information')
-        self.assertTitle("Olaf Olafson")
+        self.assertTitle("Link Olafson")
         self.assertPresence("21.11.1998", div='personal-information')
         self.assertPresence("Spiele gerne Okarina.", div='additional')
 
@@ -363,7 +361,7 @@ class TestCdEFrontend(FrontendTest):
         f['given_names'] = "Zelda"
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
-        self.assertTitle("Bertålotta Beispiel bearbeiten")
+        self.assertTitle("Zelda Beispiel bearbeiten")
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         f = self.response.forms['changedataform']
         self.assertEqual("Zelda", f['given_names'].value)
@@ -453,7 +451,7 @@ class TestCdEFrontend(FrontendTest):
 
         count = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
         for search, title in itertools.cycle((
-                ("Anton Armin", "Anton Administrator"),
+                ("Anton", "Anton Administrator"),
                 ("Inga Iota", "Inga Iota"))):
             count -= 1
             f['qval_fulltext'] = search
@@ -560,7 +558,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton Armin A. Administrator", div='result')
+        self.assertPresence("Anton Administrator", div='result')
         self.assertPresence("Inga Iota", div='result')
 
         # by zip: lower
@@ -571,8 +569,8 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Bertålotta Beispiel", div='result')
-        self.assertPresence("Ferdinand F. Findus", div='result')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='result')
+        self.assertPresence("Ferdinand Findus", div='result')
 
         # by zip: upper and lower
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -599,7 +597,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Bertålotta Beispiel", div='result')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='result')
         self.assertPresence("Inga Iota", div='result')
 
         # Test error displaying for invalid search input
@@ -673,12 +671,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Inga Iota")
 
     @prepsql("""
-        UPDATE core.personas SET postal_code = '47239' WHERE display_name = 'Anton';
+        UPDATE core.personas SET postal_code = '47239' WHERE given_names = 'Anton';
         UPDATE core.personas SET postal_code = '47447' WHERE family_name = 'Beispiel';
-        UPDATE core.personas SET postal_code = '47802' WHERE display_name = 'Charly';
-        UPDATE core.personas SET is_searchable = True  WHERE display_name = 'Charly';
-        UPDATE core.personas SET postal_code = '45145' WHERE display_name = 'Inga';
-        UPDATE core.personas SET postal_code = '50189' WHERE display_name = 'Olaf';
+        UPDATE core.personas SET postal_code = '47802' WHERE given_names = 'Charly';
+        UPDATE core.personas SET is_searchable = True  WHERE given_names = 'Charly';
+        UPDATE core.personas SET postal_code = '45145' WHERE given_names = 'Inga';
+        UPDATE core.personas SET postal_code = '50189' WHERE given_names = 'Olaf';
     """)
     @as_users("berta")
     def test_member_search_nearby_postal_codes(self) -> None:
@@ -874,12 +872,12 @@ class TestCdEFrontend(FrontendTest):
         expectation = "\n".join((
             'personas.id;given_names;family_name;username;birthday;decided_search;'
             'free_form',
-            '2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;'
+            '2;Bertå;Beispiel;berta@example.cde;1981-02-11;True;'
             '"Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen"',
-            '3;Charly C.;Clown;charly@example.cde;1984-05-13;True;'
+            '3;Charly;Clown;charly@example.cde;1984-05-13;True;'
             '"Ich bin ein ""Künstler""; im weiteren Sinne."',
-            '4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;',
-            '6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;',
+            '4;Daniel;Dino;daniel@example.cde;1963-02-19;False;',
+            '6;Ferdinand;Findus;ferdinand@example.cde;1988-01-01;True;',
             '',
         )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
@@ -904,28 +902,28 @@ class TestCdEFrontend(FrontendTest):
              'decided_search': True,
              'family_name': 'Beispiel',
              'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
-             'given_names': 'Bertålotta',
+             'given_names': 'Bertå',
              'personas.id': 2,
              'username': 'berta@example.cde'},
             {'birthday': '1984-05-13',
              'decided_search': True,
              'family_name': 'Clown',
              'free_form': 'Ich bin ein "Künstler"; im weiteren Sinne.',
-             'given_names': 'Charly C.',
+             'given_names': 'Charly',
              'personas.id': 3,
              'username': 'charly@example.cde'},
             {'birthday': '1963-02-19',
              'decided_search': False,
              'family_name': 'Dino',
              'free_form': None,
-             'given_names': 'Daniel D.',
+             'given_names': 'Daniel',
              'personas.id': 4,
              'username': 'daniel@example.cde'},
             {'birthday': '1988-01-01',
              'decided_search': True,
              'family_name': 'Findus',
              'free_form': None,
-             'given_names': 'Ferdinand F.',
+             'given_names': 'Ferdinand',
              'personas.id': 6,
              'username': 'ferdinand@example.cde'}]
         self.assertEqual(expectation, json.loads(self.response.body.decode('utf-8')))
@@ -1036,8 +1034,8 @@ class TestCdEFrontend(FrontendTest):
     def test_iban_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
-                      {'description': 'Bertålotta Beispiel'})
-        self.assertTitle('Einzugsermächtigung Bertålotta Beispiel')
+                      {'description': 'Bertå Beispiel'})
+        self.assertTitle('Einzugsermächtigung Bertå Beispiel')
         # the iban should be visible for finance admins
         self.assertPresence("DE12 5001 0517 0648 4898 90", div='iban', exact=True)
 
@@ -1053,7 +1051,7 @@ class TestCdEFrontend(FrontendTest):
     def test_iban_non_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigung'})
-        self.assertTitle('Einzugsermächtigung Bertålotta Beispiel')
+        self.assertTitle('Einzugsermächtigung Bertå Beispiel')
         # the full iban should not be visible for non-finance admins ...
         self.assertNonPresence("DE12 5001 0517 0648 4898 90")
         # ... only a hidden form should be shown
@@ -1064,8 +1062,8 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('berta')
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
-                      {'description': 'Bertålotta Beispiel'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+                      {'description': 'Bertå Beispiel'})
+        self.assertTitle("Einzugsermächtigung Bertå Beispiel")
         self.assertPresence("42,23 €", div='donation', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
@@ -1166,9 +1164,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
-        self.assertPresence("Bertålotta Beispiel", div='active-authorizations')
+        self.assertPresence("Bertå Beispiel", div='active-authorizations')
         self.assertPresence("Akira Abukara", div='inactive-authorizations')
-        self.assertNonPresence("Bertålotta Beispiel", div='inactive-authorizations')
+        self.assertNonPresence("Bertå Beispiel", div='inactive-authorizations')
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:
@@ -1182,7 +1180,7 @@ class TestCdEFrontend(FrontendTest):
             self.realm_admin_view_profile('berta', "cde")
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertTitle("Einzugsermächtigung Bertå Beispiel")
         self.assertPresence("Dagobert Anatidae", div='active-permit')
         self.assertPresence("Das Mitglied ist der Kontoinhaber.",
                             div='inactive-permits')
@@ -1321,7 +1319,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertPresence("Bertå Beispiel", div='open-dd-authorization')
         self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
                             "Schwebe.", div='open-dd', exact=True)
@@ -1338,7 +1336,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(g)
         self.assertPresence("1 Lastschriften initialisiert.", div="notifications")
         self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
-        self.assertNonPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertNonPresence("Bertå Beispiel", div='open-dd-authorization')
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("farin")
@@ -1424,7 +1422,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Anlegen'})
 
         # create new lastschrift
-        self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
+        self.assertTitle("Neue Einzugsermächtigung (Charly Clown)")
         self.traverse({'description': "Einzugsermächtigungen"},
                       {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
@@ -1434,7 +1432,7 @@ class TestCdEFrontend(FrontendTest):
         f['donation'] = "25"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
-        self.assertTitle("Einzugsermächtigung Charly C. Clown")
+        self.assertTitle("Einzugsermächtigung Charly Clown")
         self.assertPresence("25,00 €", div='donation', exact=True)
         self.assertPresence("grosze Siebte: Take on me")
         self.assertPresence("Bearbeiten")
@@ -1444,7 +1442,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen")
         self.traverse("Anlegen")
-        self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
+        self.assertTitle("Neue Einzugsermächtigung (Charly Clown)")
         f = self.response.forms['createlastschriftform']
         # take the current donation as default value
         self.assertEqual(f["donation"].value, "25.00")
@@ -1861,7 +1859,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({"description": "Index"},
                       {"description": "Änderungen prüfen"})
         self.assertPresence("Daniel Dino")
-        self.assertPresence("Janis")
+        self.assertPresence("Jens")
 
         # take special care that no fields were silently updated during realm transition
         self.admin_view_profile("janis")
@@ -1982,13 +1980,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ähnlicher Account", div="problems0")
         # charly is currently member, so renew trial is not allowed for him
         f['resolution0'] = LineResolutions.update.value
-        self.assertPresence("Charly C. Clown", div="doppelgangers0")
+        self.assertPresence("Charly Clown", div="doppelgangers0")
         self.assertPresence("<charly@example.cde>", div="doppelgangers0")
         f['doppelganger_id0'] = 3
 
         self.assertPresence("Ähnlicher Account", div="problems1")
         f['resolution1'] = LineResolutions.renew_trial.value
-        self.assertPresence("Daniel D. Dino", div="doppelgangers1")
+        self.assertPresence("Daniel Dino", div="doppelgangers1")
         self.assertPresence("<daniel@example.cde>", div="doppelgangers1")
         f['doppelganger_id1'] = 4
 
@@ -2041,7 +2039,7 @@ class TestCdEFrontend(FrontendTest):
             ),
             (
                 "amount: Muss größer als Null sein.",
-                "given_names: Vornamen passen nicht zusammen.",
+                "given_names: Rufnamen passen nicht zusammen.",
             ),
             (
                 "persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",
@@ -2069,9 +2067,9 @@ class TestCdEFrontend(FrontendTest):
         ).replace(
             'Party50', 'Mitgliedsbeitrag',
         ).replace(
-            'Charly', 'Charly C.',
+            'Charles', 'Charly',
         ).replace(
-            'Daniel', 'Daniel D.',
+            'Daniel D.', 'Daniel',
         )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
@@ -2162,8 +2160,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
         f['transfers'] = """
-"15.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
-"16.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
+"15.03.2019";"10";"DB-1-9";"Administrator";"Anton";"Mitgliedsbeitrag"
+"16.03.2019";"10";"DB-1-9";"Administrator";"Anton";"Mitgliedsbeitrag"
 """.strip()
         self.submit(f, check_notification=False)
         self.assertPresence("Mehrere Überweisungen für diesen Account"
@@ -2205,7 +2203,7 @@ class TestCdEFrontend(FrontendTest):
             "money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
-        self.submit(f, verbose=True)
+        self.submit(f)
 
     @as_users("farin")
     def test_money_transfer_low_balance(self) -> None:
@@ -2215,10 +2213,10 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms["transfersform"]
-        f["transfers"] = "01.01.1900;1.00;DB-4-3;Dino;Daniel D.;Mitgliedsbeitrag"
+        f["transfers"] = "01.01.1900;1.00;DB-4-3;Dino;Daniel;Mitgliedsbeitrag"
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
-        self.submit(f)
+        self.submit(f, verbose=True)
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
@@ -2624,7 +2622,7 @@ class TestCdEFrontend(FrontendTest):
             # admin
             self.traverse({'description': 'Charly Clown'})
             _traverse_back()
-            self.traverse({'description': 'Emilia E. Eventis'})
+            self.traverse({'description': 'Emilia Eventis'})
             _traverse_back()
         else:
             # normal members
@@ -2668,7 +2666,7 @@ class TestCdEFrontend(FrontendTest):
             self.traverse({'description': 'Ferdinand'})
         else:
             self.assertPresence("Charly Clown", div="orgas")
-            self.assertPresence("Emilia E. Eventis", div="orgas")
+            self.assertPresence("Emilia Eventis", div="orgas")
             self.assertPresence("Ferdinand Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")

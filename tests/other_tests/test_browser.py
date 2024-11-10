@@ -126,7 +126,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/")
         page.locator(".selectize-input").click()
         page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
-        page.get_by_text("Emilia E. EventisDB-5-1 • emilia@example.cde").click()
+        page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(

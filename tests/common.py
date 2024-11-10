@@ -658,7 +658,7 @@ USER_DICT: dict[str, UserObject] = {
         'given_names': "Emilia",
         'legal_given_names': "Emilia E.",
         'family_name': "Eventis",
-        'default_name_format': "Emilia E. Eventis",
+        'default_name_format': "Emilia Eventis",
     },
     "ferdinand": {
         'id': 6,

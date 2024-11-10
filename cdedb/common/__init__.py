@@ -581,9 +581,8 @@ def make_persona_forename(persona: CdEDBObject,
         raise RuntimeError(n_("Invalid use of keyword parameters."))
     nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
-    legal_given_names: str = persona['legal_given_names']
     if use_legal_name:
-        return legal_given_names
+        return persona['legal_given_names']
     if include_nickname:
         if not nickname:
             return given_names

@@ -226,6 +226,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("ferdinand")
     def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('kalif', 'assembly')
+        self.assertTitle("Kalif Karabatschi")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['given_names'] = "Zelda"
@@ -233,7 +234,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn('birthday', f.fields)
         self.submit(f)
         self.assertPresence("Zelda", div="personal-information")
-        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
+        self.assertTitle("Zelda Karabatschi")
 
     @as_users("ferdinand")
     def test_toggleactivity(self) -> None:
@@ -659,7 +660,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Teilnehmer'})
         self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
-        attendees = ["Anton", "Akira", "Bertålotta", "Kalif", "Inga", "Werner"]
+        attendees = ["Anton", "Akira", "Bertå", "Kalif", "Inga", "Werner"]
         for attendee in attendees:
             self.assertPresence(attendee, div='attendees-list')
         self.assertPresence(
@@ -1776,7 +1777,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("", div='vote-5', check_div=False)
 
         # test the list of all voters
-        self.assertPresence("Anton Armin A. Administrator", div='voters-list')
+        self.assertPresence("Anton Administrator", div='voters-list')
         self.assertPresence("Rowena Ravenclaw", div='voters-list')
         self.assertNonPresence("Vera", div='voters-list')
 
