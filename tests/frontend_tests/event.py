@@ -16,6 +16,7 @@ from typing import Optional
 import lxml.etree
 import segno.helpers
 import webtest
+import werkzeug.exceptions
 from subman import SubscriptionError
 
 import cdedb.database.constants as const
@@ -7295,3 +7296,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         )
         self.assertPresence("Inga", div="result-container")
         self.assertPresence(iban, div="result-container")
+
+    @as_users("petra")
+    def test_event_helper(self) -> None:
+        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
+        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.assertNotIn('addeventhelperform', self.response.forms)
+        self.assertNotIn('removeeventhelperform42', self.response.forms)
+        self.assertPresence("Petra Philantrop")
+        self.assertPresence("Alle Veranstaltungen")
+        self.assertPresence("CdE-Party 2050")
+        self.assertPresence("6 Anmeldungen, 1 Orga")
+        self.assertNoLink("Anmelungen")
+        self.traverse("Große TestAkademie")
+        self.assertNonPresence("Anmeldungen", div='sidebar-navigation')
+        with self.assertRaises(werkzeug.exceptions.Forbidden):
+            self.get('event/event/2/registration/query')
+        with self.assertRaises(werkzeug.exceptions.Forbidden):
+            self.get('/event/event/1/registration/3/show')
+        self.traverse("Anmeldungsvorschau", "Teilnehmer-Infos", "Statistik")
+        # TODO Further heck non-availability of stuff
+        # TODO Check add/remove event helper

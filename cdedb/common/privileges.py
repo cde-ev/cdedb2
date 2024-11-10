@@ -1,6 +1,6 @@
 from enum import Flag, auto
 
-from cdedb.common import RequestState
+from cdedb.common import RequestState, User
 
 
 class EventPrivileges(Flag):
@@ -34,6 +34,11 @@ class EventPrivileges(Flag):
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
                         event_id: int) -> bool:
+    return is_privileged_event_user(rs.user, required_privilege, event_id)
+
+
+def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
+                             event_id: int) -> bool:
     EP = EventPrivileges
     orga_privileges = ~EP.conclude
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read |
@@ -42,23 +47,23 @@ def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
     finance_admin_privileges = EP.basic_read | EP.registrations_read_internal
 
     return (
-        "event_admin" in rs.user.roles
-        or event_id in rs.user.orga and required_privilege in orga_privileges
+        "event_admin" in user.roles
+        or event_id in user.orga and required_privilege in orga_privileges
         # Due to use in ml realm, users without event realm might come across this
-        or ("event_helper" in rs.user.realm_roles.get('event', {})
+        or ("event_helper" in user.realm_roles.get('event', {})
             and required_privilege in event_helper_privileges)
         # finance_admins are allowed here to book event fees.
-        or ("finance_admin" in rs.user.roles
+        or ("finance_admin" in user.roles
             and required_privilege in finance_admin_privileges)
-        or "auditor" in rs.user.roles and required_privilege in auditor_privileges
+        or "auditor" in user.roles and required_privilege in auditor_privileges
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
-        or ("ml_admin" in rs.user.roles
+        or ("ml_admin" in user.roles
             and required_privilege == EP.registrations_read_internal
         )
-        or ("droid_quick_partial_export" in rs.user.roles
+        or ("droid_quick_partial_export" in user.roles
             and required_privilege in EP.basic_read | EP.registrations_read)
-        # or ("droid_orga" in rs.user.roles
+        # or ("droid_orga" in user.roles
         #     and required_privilege in OrgaTokenGrants.implied_privileges())
         # )
     )

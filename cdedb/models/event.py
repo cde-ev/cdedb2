@@ -48,6 +48,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
+from cdedb.common.privileges import is_privileged_event_user, EventPrivileges
 from cdedb.common.query import (
     QueryScope,
     QuerySpec,
@@ -236,8 +237,8 @@ class Event(EventDataclass):
 
          :param privileged: If access in a privileged capacity is to be considered."""
 
-        return is_registered or self.is_visible or (privileged and (
-            "event_admin" in user.roles or user.persona_id in self.orgas))
+        return is_registered or self.is_visible or (privileged and
+            is_privileged_event_user(user, EventPrivileges.basic_read, self.id))
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:

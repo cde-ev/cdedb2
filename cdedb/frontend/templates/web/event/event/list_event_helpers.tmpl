@@ -45,7 +45,7 @@
         </form>
     {% endif %}
 
-    <div class="row" id="subscriber-list">
+    <div class="row" id="eventhelper-list">
         {% for list in event_helpers | slice(2 if event_helpers|length > 5 else 1) %}
             <div class="col-sm-6">
                 <ul class="nosp slim">
@@ -55,7 +55,7 @@
                             {% if 'event_mgmt' in user.admin_views %}
                                 <form action="{{ cdedblink('event/remove_event_helper') }}"
                                       method="POST"
-                                      id="removesubscriberform{{ persona_id }}"
+                                      id="removeeventhelperform{{ persona_id }}"
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('event/remove_event_helper') }}
                                     {{ util.input_hidden(name="persona_id", value=persona_id) }}
