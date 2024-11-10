@@ -1755,12 +1755,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         else:
             for prev_t, current_t in itertools.pairwise(chronologic):
                 # ensure late enough checkin
-                if current_t.id == tid1 and not prev_t.ttime <= current_t.ttime:
+                if current_t.id == tid1 and not prev_t.ttime <= ttime1:
                     rs.append_validation_error((f'ttime1_{tid1}', ValueError(
                         n_("Checkin must be after previous checkout."),
                     )))
                 # ensure early enough checkout
-                elif prev_t.id == tid2 and not prev_t.ttime <= current_t.ttime:
+                elif prev_t.id == tid2 and not ttime2 <= current_t.ttime:
                     rs.append_validation_error((f'ttime2_{tid2}', ValueError(
                         n_("Checkout must be before next checkin."),
                     )))

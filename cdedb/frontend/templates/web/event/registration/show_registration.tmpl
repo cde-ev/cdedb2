@@ -216,10 +216,10 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>{% trans %}Timespan{% endtrans %}</th>
+                <th class="col-sm-9">{% trans %}Timespan{% endtrans %}</th>
                 <th>{# save change button #}</th>
-                <th>{# action button #}</th>
-                <th>{% trans %}Duration{% endtrans %}</th>
+                <th>{# deletion button #}</th>
+                <th class="col-sm-3">{% trans %}Duration{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -240,7 +240,6 @@
                                                defaultvalue=tpair[0].ttime) }}
                             <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
                             {% if tpair|length == 1 %}
-                                <span class="input-group-addon">{% trans %}now{% endtrans %}</span>
                                 {{ util.input_text(name='', defaultvalue=gettext("now"), readonly=True) }}
                                 {% set inputname2 = None %}
                             {% else %}
@@ -253,7 +252,8 @@
                         {{ util.output_errors(inputname2) }}
                     </td>
                     <td class="nojs-only transition-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                        {{ util.input_submit(icon='pen', label="", aclass="btn btn-primary btn-sm") }}
+                        {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
+                                             aclass="btn btn-primary btn-sm") }}
                     </td>
                 </form>
                 <td class="softhide transition-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
@@ -265,8 +265,8 @@
                     {%- endif -%}
                 </td>
                 <td class="softhide transition-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                    {{ util.input_submit(icon="pen", label="", aclass="btn btn-warning btn-sm showform-button",
-                                         value=loop.index) }}
+                    {{ util.input_submit(icon="pen", label="", title=gettext("Edit times"),
+                                         aclass="btn btn-warning btn-sm showform-button", value=loop.index) }}
                 </td>
                 <td style="padding-left: 0;">
                     <form action="{{ cdedblink("event/delete_checkin_transitions") }}" method="POST"
@@ -277,7 +277,8 @@
                         {% if tpair|length > 1 %}
                             {{ util.input_hidden(name="tid2", value=tpair[1].id) }}
                         {% endif %}
-                        {{ util.input_submit(icon="trash", label="", aclass="btn btn-danger btn-sm") }}
+                        {{ util.input_submit(icon="trash", label="", title=gettext("Delete these timestamps"),
+                                             aclass="btn btn-danger btn-sm") }}
                     </form>
                 </td>
             {% if tpair|length == 1 %}
@@ -321,6 +322,10 @@
         $(".softhide .showform-button").each(function() {
             const rownr = $(this).val();
             $(this).on("click", function() {
+                // can only summit one form at once, to avoid confusion hide other forms
+                $(".nojs-only").hide();
+                $(".softhide").show();
+
                 $(".softhide.transition-display-" + rownr).hide();
                 $(".nojs-only.transition-form-" + rownr).show();
                 // change icon of submit button
