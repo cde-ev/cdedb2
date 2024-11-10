@@ -30,9 +30,9 @@ with s:
 
     # drop display_name column, make legal_given_names not null
     q = """
-        ALTER TABLE core.personas DROP COLUMN display_name VARCHAR;
+        ALTER TABLE core.personas DROP COLUMN display_name;
         ALTER TABLE core.personas ALTER COLUMN legal_given_names SET NOT NULL;
-        ALTER TABLE core.changelog DROP COLUMN display_name VARCHAR;
+        ALTER TABLE core.changelog DROP COLUMN display_name;
     """
     core.query_exec(s.rs(), q, ())
 
