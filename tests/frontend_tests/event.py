@@ -449,7 +449,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens",
-            "Anmeldungsvorschau",
+            "Anmeldungsvorschau", "Verstöße gegen Beschränkungen",
         }
         finance_admin = {"Überweisungen eintragen"}
 
