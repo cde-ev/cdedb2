@@ -52,7 +52,7 @@ class ConstraintViolation:
     # Inheritance does not work very nicely with typing, due to different signatures.
     @classmethod
     @abstractmethod
-    def check(cls, event: models.Event, *, kwargs: Any) -> Self | None:
+    def check(cls, event: models.Event, **kwargs: Any) -> Self | None:
         """
         Takes the event and some entites and determines whether there is a violation.
 
@@ -398,7 +398,7 @@ class NoCourseAssignedCV(ConstraintViolation):
     track: models.CourseTrack
 
     @classmethod
-    def check(
+    def check(  # type: ignore[override]
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
@@ -440,11 +440,11 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
     persona: CdEDBObject
     track: models.CourseTrack
 
-    assigned_course: CdEDBObject | None = None
+    assigned_course: CdEDBObject
     instructed_course: CdEDBObject | None = None
 
     @classmethod
-    def check(
+    def check(  # type: ignore[override]
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,

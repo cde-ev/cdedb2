@@ -532,8 +532,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                     )
                 )
             )
-        _choice_counts, course_attendees = self.get_course_stats(rs, event)
-        attendee_violation_classes = [
+        _choice_counts, course_attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        attendee_violation_classes: list[type[ConstraintViolation]] = [
             CancelledWithAttendeesCV,
             IncorrectNumAttendeesCV,
             LonelyAttendeesCV,
