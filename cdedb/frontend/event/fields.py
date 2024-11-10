@@ -26,7 +26,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -69,6 +69,8 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
+        if rs.ambience['event'].reimbursement_iban_field:
+            referenced.add(rs.ambience['event'].reimbursement_iban_field.id)
         for part in rs.ambience['event'].parts.values():
             if part.waitlist_field:
                 referenced.add(part.waitlist_field.id)
@@ -292,7 +294,7 @@ class EventFieldMixin(EventBaseFrontend):
 
         data_params: vtypes.TypeMapping = {
             f"input{anid}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)

@@ -99,7 +99,8 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
-VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
+    VALID_QUERY_OPERATORS["str"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -599,6 +600,7 @@ class QueryResultEntryFormat(enum.Enum):
     bool = 22
     phone = 27
     enum = 30
+    iban = 40
 
 
 @dataclasses.dataclass
@@ -814,6 +816,8 @@ class Query:
             return QueryResultEntryFormat.bool
         if self.spec[field].type == "phone":
             return QueryResultEntryFormat.phone
+        if self.spec[field].type == "iban":
+            return QueryResultEntryFormat.iban
         if self.scope == QueryScope.registration:
             if field == "persona.id":
                 return QueryResultEntryFormat.persona
@@ -1142,7 +1146,7 @@ def make_registration_query_spec(event: "models.Event",
     # Add entries for track groups.
     for track_group in xsorted(event.track_groups.values()):
         if track_group.constraint_type != const.CourseTrackGroupType.course_choice_sync:
-            continue  # type: ignore[unreachable]
+            continue
 
         spec.update(get_course_choice_spec(
             cast("models.SyncTrackGroup", track_group)))

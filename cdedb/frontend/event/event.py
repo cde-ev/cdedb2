@@ -203,9 +203,16 @@ class EventEventMixin(EventBaseFrontend):
             if field.association == const.FieldAssociations.registration
             and field.kind == const.FieldDatatypes.str
         ]
+        reimbursement_fields = [
+            (field.id, field.field_name) for field in sorted_fields
+            if field.association == const.FieldAssociations.registration
+            and field.kind == const.FieldDatatypes.iban
+        ]
         return self.render(rs, "event/change_event", {
             'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
-            'lodge_fields': lodge_fields})
+            'lodge_fields': lodge_fields,
+            'reimbursement_fields': reimbursement_fields,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -611,7 +618,12 @@ class EventEventMixin(EventBaseFrontend):
                 "persona.username",
                 "reg.payment", "reg.remaining_owed", "reg.amount_owed",
                 "reg.amount_paid",
-            ] + ([f"fee{fee.id}.amount"] if fee else []),
+            ] + (
+                [f"fee{fee.id}.amount"] if fee else []
+            ) + (
+                [f"reg_fields.xfield_{event.reimbursement_iban_field.field_name}"]
+                if event.reimbursement_iban_field else []
+            ),
             constraints=constraints,
             order=[
                 ("persona.family_name", True),
