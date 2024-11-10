@@ -4288,7 +4288,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['assign_track_ids'] = [3]
         f['assign_action'] = 2
         self.submit(f, check_notification=False)
-        self.assertNotification("Emilia (Emmy) Eventis hat keine 3. Kurswahl", 'warning')
+        self.assertNotification("Emilia Eventis hat keine 3. Kurswahl", 'warning')
         self.assertPresence("0 von 2 Anmeldungen gespeichert",
                             div="notifications")
 
@@ -4607,7 +4607,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Planetenretten für Anfänger", self.response.json['courses']['1']['title'])
         # registrations
         self.response = save.click(href='/event/event/1/download/csv_registrations')
-        self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
+        self.assertIn('reg.id;persona.id;persona.nickname;persona.given_names;',
+                      self.response.text)
         # courselist
         self.response = save.click(href='/event/event/1/download/csv_courses')
         self.assertIn('course.id;course.course_id;course.nr;', self.response.text)
@@ -6106,7 +6107,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                                div="mec-violations-list")
 
         # Change Emilia's registration.
-        self.traverse("Emilia")
+        self.traverse({"href": "/event/event/4/registration/10/show"})
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
         self.assertPresence("Emilia (Emmy) Eventis verstößt gegen die"

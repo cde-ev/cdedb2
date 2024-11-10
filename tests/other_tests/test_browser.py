@@ -203,7 +203,7 @@ class TestBrowser(BrowserTest):
         page.get_by_placeholder("– Filter hinzufügen –").click()
         page.locator(".selectize-input").first.click()
 
-        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("o")
         page.locator(".selectize-input").first.click()
@@ -213,7 +213,7 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("span:has-text(\"Nachname\")").get_by_role(
+        page.locator("span:has-text(\"Familienname\")").get_by_role(
             "button", name="").click()
         page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
                      " > .selectize-input").click()
@@ -250,16 +250,16 @@ class TestBrowser(BrowserTest):
 
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
                      ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
         page.locator(".selectize-input").first.click()
-        page.locator("#tab_qf_js").get_by_text("Nachname").first.click()
-        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
+        page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
+        page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").click()
-        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
+        page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").fill("e")
-        page.locator("li:has-text(\"Vorname(n) passt zupasst nicht\")").get_by_role(
+        page.locator("li:has-text(\"Rufname passt zupasst nicht\")").get_by_role(
             "button", name="").click()
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
