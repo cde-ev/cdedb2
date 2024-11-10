@@ -1741,28 +1741,28 @@ class EventRegistrationMixin(EventBaseFrontend):
         # check positive timespan in past
         if ttime1 > now():
             rs.append_validation_error(
-                ('ttime1', ValueError(n_("Must be in the past."))))
+                (f'ttime1_{tid1}', ValueError(n_("Must be in the past."))))
         if ttime2 and ttime2 > now():
             rs.append_validation_error(
-                ('ttime2', ValueError(n_("Must be in the past."))))
+                (f'ttime2_{tid2}', ValueError(n_("Must be in the past."))))
         if ttime2 and not ttime1 < ttime2:
             rs.append_validation_error(
-                ('ttime2', ValueError(n_("Must be after checkin."))))
+                (f'ttime2_{tid2}', ValueError(n_("Checkout must be after checkin."))))
         if tid1 not in {t.id for t in chronologic}:
-            rs.append_validation_error(('tid1', ValueError(n_("Invalid timestamp."))))
+            raise ValueError(n_("Inconsistent data."))
         elif tid2 is not None and tid2 not in {t.id for t in chronologic}:
-            rs.append_validation_error(('tid2', ValueError(n_("Invalid timestamp."))))
+            raise ValueError(n_("Inconsistent data."))
         else:
             for prev_t, current_t in itertools.pairwise(chronologic):
                 # ensure late enough checkin
                 if current_t.id == tid1 and not prev_t.ttime <= current_t.ttime:
                     rs.append_validation_error((f'ttime1_{tid1}', ValueError(
-                        n_("Must be after previous checkout."),
+                        n_("Checkin must be after previous checkout."),
                     )))
                 # ensure early enough checkout
                 elif prev_t.id == tid2 and not prev_t.ttime <= current_t.ttime:
                     rs.append_validation_error((f'ttime2_{tid2}', ValueError(
-                        n_("Must be before next checkin."),
+                        n_("Checkout must be before next checkin."),
                     )))
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)

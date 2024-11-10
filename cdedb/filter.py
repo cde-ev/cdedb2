@@ -163,7 +163,6 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
 def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -> str:
     """Pretty representation of duration."""
     res = ""
-    n_ = gettext  # needed to extract translations
     precise = False
     if delta.days:
         res += str(delta.days) + " " + gettext("days") + ", "
