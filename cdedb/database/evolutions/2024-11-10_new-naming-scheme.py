@@ -2,8 +2,7 @@
 from cdedb.backend.core import CoreBackend
 from cdedb.script import Script
 
-persona_id = -1
-s = Script(persona_id=persona_id, dbuser='cdb')
+s = Script(dbuser='cdb')
 
 core: CoreBackend = s.make_backend("core", proxy=False)
 
@@ -23,10 +22,18 @@ with s:
     q = """
             UPDATE core.changelog SET legal_given_names = given_names;
             UPDATE core.changelog SET nickname = display_name WHERE display_name != given_names;
-            UPDATE core.personas SET legal_given_names = given_names;
-            UPDATE core.personas SET nickname = display_name WHERE display_name != given_names;
     """
     core.query_exec(s.rs(), q, ())
+
+    q = """
+            UPDATE core.personas SET legal_given_names = given_names;
+    """
+    num_legal_names = core.query_exec(s.rs(), q, ())
+
+    q = """
+            UPDATE core.personas SET nickname = display_name WHERE display_name != given_names;
+    """
+    num_nicknames = core.query_exec(s.rs(), q, ())
 
     # drop display_name column, make legal_given_names not null
     q = """
@@ -52,5 +59,7 @@ with s:
         persona["nickname"] = None
         core.set_persona(s.rs(), persona, change_note=change_note, force_review=force_review, automated_change=True)
 
+    print(f"Initialized {num_legal_names} legal given names.")
+    print(f"Initialized {num_nicknames} nicknames.")
     print(f"Migrated {len(data)} personas with enhanced logic.")
     print(f"Processed {len(data) - review_forced} personas automatically, forced manual review for {review_forced} personas.")
