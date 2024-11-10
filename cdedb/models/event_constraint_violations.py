@@ -331,9 +331,11 @@ class IncorrectNumAttendeesCV(ConstraintViolation):
 
     def get_translation(self) -> tuple[str, CdEDBObject]:
         if self.course['min_size'] and self.num < self.course['min_size']:
-            msg = n_("%(link)s has too few attendees (%(num)s < %(min_size)s) in %(track)s.")
+            msg = n_("%(link)s has too few attendees (%(num)s < %(min_size)s)"
+                     " in %(track)s.")
         else:
-            msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s) in %(track)s.")
+            msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s)"
+                     " in %(track)s.")
         params = {
             "link": f"{self.course['nr']}. {self.course['shortname']}",
             "num": self.num,
@@ -364,7 +366,7 @@ class LonelyAttendeesCV(ConstraintViolation):
     ) -> Self | None:
         """Return a violation if the course has attendees but no instructors."""
         if track.id in course['active_segments']:
-            if bool(attendees.involved_learners) != bool(attendees.involved_instructors):
+            if bool(attendees.involved_learners) != bool(attendees.involved_instructors):  # pylint: disable=line-too-long
                 return cls(
                     event=event,
                     severity=1,
