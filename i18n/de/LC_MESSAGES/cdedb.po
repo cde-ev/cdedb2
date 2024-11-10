@@ -15310,6 +15310,9 @@ msgstr ""
 msgid "(Present in %(parts)s)."
 msgstr "(Anwesend in %(parts)s)."
 
+msgid "Given names is not a part of legal given names."
+msgstr "Der Rufname ist nicht Teil des Bürgerlichen Vornamens."
+
 #: cdedb/frontend/templates/web/event/generic.tmpl:393
 #: cdedb/frontend/templates/web/event/generic.tmpl:395
 #, python-format

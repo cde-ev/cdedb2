@@ -1557,7 +1557,8 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
 @_add_typed_validator
 def _persona(
     val: Any, argname: str = "persona", *,
-    creation: bool = False, transition: bool = False, **kwargs: Any,
+    creation: bool = False, transition: bool = False, ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> Persona:
     """Check a persona data set.
 
@@ -1572,7 +1573,7 @@ def _persona(
     :param transition: If ``True`` test the data set on fitness for changing
       the realms of a persona.
     """
-    val = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, ignore_warnings=ignore_warnings, **kwargs)
 
     if creation and transition:
         raise RuntimeError(
@@ -1580,7 +1581,8 @@ def _persona(
 
     if creation:
         temp = _examine_dictionary_fields(
-            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
+            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
+            ignore_warnings=ignore_warnings, **kwargs)
         temp.update({'is_archived': False, 'is_purged': False})
         temp.update({k: False for k in ADMIN_KEYS})
         roles = extract_roles(temp)
@@ -1611,8 +1613,8 @@ def _persona(
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                     ignore_warnings=ignore_warnings, **kwargs)
 
     errs = ValidationSummary()
     if "is_member" in val and "trial_member" in val:
@@ -1623,12 +1625,18 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
+    if ("given_names" in val and "legal_given_names" in val
+            and val["given_names"].lower() not in val["legal_given_names"].lower()
+            and not ignore_warnings):
+        errs.append(ValidationWarning("given_names", n_(
+            "Given names is not a part of legal given names.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
-                    aux=val.get('country' + suffix, ""), **kwargs)
+                    aux=val.get('country' + suffix, ""), ignore_warnings=ignore_warnings,
+                    **kwargs)
                 val['postal_code' + suffix] = postal_code
             except ValidationSummary as e:
                 errs.extend(e)
