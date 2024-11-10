@@ -1323,7 +1323,10 @@ class FrontendTest(BackendTest):
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             return self.response.text
         tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
@@ -1400,7 +1403,10 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             self.assertNotIn(s.strip(), self.response.text)
         else:
             tmp = self.response.lxml.xpath(f"//*[@id='{div}']")

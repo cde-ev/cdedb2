@@ -1700,13 +1700,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # check the download result file
             self.traverse({'description': 'Ergebnisdatei herunterladen'})
-            self.assertPresence(f'"assembly": "{assembly["title"]}",')
+            self.assertEqual(self.response.json["assembly"], assembly["title"])
             # self.assertPresence(f'"ballot": "{ballot["title"]}",')
-            self.assertPresence('"result": ')
-            self.assertPresence('"candidates": ')
-            self.assertPresence('"use_bar": ')
-            self.assertPresence('"voters": ')
-            self.assertPresence('"votes": ')
+            self.assertIn("result", self.response.json)
+            self.assertIn("candidates", self.response.json)
+            self.assertIn("use_bar", self.response.json)
+            self.assertIn("voters", self.response.json)
+            self.assertIn("votes", self.response.json)
 
             # check if the verification scripts are present
             # TODO expose the static files in our test suite
