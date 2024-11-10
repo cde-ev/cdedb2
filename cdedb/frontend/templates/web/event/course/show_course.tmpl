@@ -72,7 +72,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if constraint_violations['all'] %}
+    {% if constraint_violations['max_severity'] > 0 %}
         {% call generic_event.constraint_violations_panel(constraint_violations['max_severity']) %}
             {{ generic_event.list_violations("constraint-violations", constraint_violations['all']) }}
         {% endcall %}

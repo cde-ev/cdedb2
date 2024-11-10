@@ -6082,23 +6082,23 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 1 Teilnahmeausschließlichkeits-Verstöße.",
+        self.assertPresence('Es gibt 1 "Teilnahmeausschließlichkeit"-Verstöße.',
                             div="constraint-violations")
-        self.assertPresence("Es gibt 5 Kursausschließlichkeits-Verstöße.",
+        self.assertPresence('Es gibt 5 "Kursausschließlichkeit"-Verstöße.',
                             div="constraint-violations")
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
         self.assertPresence("Teilnahmeausschließlichkeit")
         self.assertPresence("Emilia E. Eventis ist an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
-                            div="MEPConstraintViolation-list")
+                            div="MutuallyExclusiveParticipationCV-list")
         self.assertPresence("Kursausschließlichkeit")
         self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
                             " Kursschienen statt (KK1, OK1).",
-                            div="MECConstraintViolation-list")
+                            div="MutuallyExclusiveCoursesCV-list")
         self.assertNonPresence("4. Akrobatik findet in sich gegenseitig"
                                " ausschließenden Kursschienen statt (WK2m, WK2n).",
-                               div="MECConstraintViolation-list")
+                               div="MutuallyExclusiveCoursesCV-list")
 
         # Change Emilia's registration.
         self.traverse("Emilia E. Eventis")

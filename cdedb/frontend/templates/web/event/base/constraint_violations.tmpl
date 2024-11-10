@@ -14,7 +14,7 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% if not all %}
+    {% if max_severity <= 0 %}
         {% trans %}
             There are currently no constraints being violated.
         {% endtrans %}
