@@ -1053,7 +1053,9 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(self.conf["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+        with open(
+                self.conf["LOG_DIR"] / "cdedb-timing.log", 'a', encoding="utf-8",
+        ) as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
@@ -1280,7 +1282,7 @@ class FrontendTest(BackendTest):
         mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 raw = f.read()
                 parser = email.parser.Parser(policy=email.policy.default)
                 msg = cast(email.message.EmailMessage, parser.parsestr(raw))
@@ -1324,7 +1326,10 @@ class FrontendTest(BackendTest):
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             return self.response.text
         tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
@@ -1401,7 +1406,10 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             self.assertNotIn(s.strip(), self.response.text)
         else:
             tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
@@ -1854,8 +1862,7 @@ class FrontendTest(BackendTest):
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
 
-        if end > total:
-            end = total
+        end = min(end, total)
 
         # adapt slicing to our count of log entries
         logs = all_logs[start-1:end]

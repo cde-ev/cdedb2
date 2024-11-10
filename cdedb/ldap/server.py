@@ -286,7 +286,6 @@ class LdapHandler:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
         else:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
-        return None
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 

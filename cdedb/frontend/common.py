@@ -73,7 +73,6 @@ import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
-import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
@@ -130,6 +129,7 @@ from cdedb.common.roles import (
     roles_to_db_role,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import validate
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -681,35 +681,34 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        payload: Union[Iterable[bytes], bytes]
+        payload: PathLike | str | IO[bytes]
         if path:
-            f = pathlib.Path(path).open("rb")
-            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
+            payload = path
         elif afile:
             # Setting the buffer to 0 might be technically wrong in some theoretical
             # case, but this is much more easily usable.
             afile.seek(0)
-            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
+            payload = afile
         elif data:
             if isinstance(data, str):
-                payload = data.encode(encoding)
+                payload = io.BytesIO(data.encode(encoding))
             elif isinstance(data, bytes):
-                payload = data
+                payload = io.BytesIO(data)
             else:
                 raise ValueError(n_("Invalid input type."))
         else:
             raise RuntimeError(n_("Impossible."))
 
-        extra_args = {}
-        if mimetype is not None:
-            extra_args['mimetype'] = mimetype
-        headers = []
-        disposition = "inline" if inline else "attachment"
-        if filename is not None:
-            disposition += f'; filename="{filename}"'
-        headers.append(('Content-Disposition', disposition))
-        headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
+        response = cast(Response, werkzeug.utils.send_file(
+            payload,
+            environ=rs.request.environ,
+            mimetype=mimetype,
+            as_attachment=not inline,
+            download_name=filename,
+            response_class=Response,
+        ))
+        response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        return response
 
     @staticmethod
     def send_json(rs: RequestState, data: Any, sort_keys: bool = False) -> Response:
@@ -1045,13 +1044,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if attachment.get('file'):
             # noinspection PyUnresolvedReferences
             data = attachment['file'].read()
+        elif maintype == "text":
+            with open(attachment['path'], encoding="utf-8") as ft:
+                data = ft.read()
         else:
-            if maintype == "text":
-                with open(attachment['path']) as ft:
-                    data = ft.read()
-            else:
-                with open(attachment['path'], 'rb') as fb:
-                    data = fb.read()
+            with open(attachment['path'], 'rb') as fb:
+                data = fb.read()
         # Only support common types
         factories = {
             'application': email.mime.application.MIMEApplication,
@@ -2291,11 +2289,10 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(n_(
                         "You only have restricted moderator access and may not"
                         " change subscriptions."))
-            else:
-                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(n_(
-                        "This page can only be accessed by appropriate "
-                        "admins."))
+            elif not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                raise werkzeug.exceptions.Forbidden(n_(
+                    "This page can only be accessed by appropriate "
+                    "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)

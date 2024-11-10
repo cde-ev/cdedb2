@@ -82,7 +82,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
     sql = SqlQueryBackend(logger)
 
     # extract the tables to be created from the database tables
-    with open("/cdedb2/cdedb/database/cdedb-tables.sql") as f:
+    with open("/cdedb2/cdedb/database/cdedb-tables.sql", encoding="utf-8") as f:
         tables = [
             table.group('name')
             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]

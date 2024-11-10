@@ -9,11 +9,11 @@ import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, TypeVar, Union
 
-import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.validation import validate
 from cdedb.common.validation.types import (
     IBAN,
     ID,

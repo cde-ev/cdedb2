@@ -6,7 +6,11 @@ from typing import Any, cast
 
 import psycopg2.extensions
 
-from cdedb.backend.common import DatabaseLock, Silencer, _affirm_atomized_context
+from cdedb.backend.common import (
+    DatabaseLock,
+    Silencer,
+    _affirm_atomized_context,  # noqa: PLC2701
+)
 from cdedb.common import RequestState
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (

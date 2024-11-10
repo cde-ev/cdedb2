@@ -829,11 +829,11 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
-            if field in (
+            if field in {
                     "reg.amount_paid",
                     "reg.amount_owed",
                     "reg.remaining_owed",
-            ):
+            }:
                 return QueryResultEntryFormat.event_fee
             if re.match(r"fee\d+\.amount", field):
                 return QueryResultEntryFormat.event_fee

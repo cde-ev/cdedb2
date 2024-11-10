@@ -29,7 +29,9 @@ class TestOffline(FrontendTest):
         existing_config = get_configpath()
 
         # write the original config in a temporary config file
-        config = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
+        config = tempfile.NamedTemporaryFile(
+            "w", suffix=".py", delete=False, encoding="utf-8",
+        )
         config.write(existing_config.read_text())
         config.flush()
 

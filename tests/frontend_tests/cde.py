@@ -1559,7 +1559,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        with open(self.testfile_dir / "batch_admission.csv") as datafile:
+        with open(
+                self.testfile_dir / "batch_admission.csv", encoding="utf-8",
+        ) as datafile:
             tmp = datafile.read()
             placeholder_birthday = "03.10.9999"
             wandering_birthday = f"03.10.{now().year - 5}"
@@ -1608,7 +1610,7 @@ class TestCdEFrontend(FrontendTest):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
         for i in range(0, 15):
-            if i in (1, 7, 11):
+            if i in {1, 7, 11}:
                 exp = str(LineResolutions.create.value)
             else:
                 exp = ''
@@ -2008,7 +2010,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        with open(self.testfile_dir / "money_transfers.csv") as datafile:
+        with open(
+                self.testfile_dir / "money_transfers.csv", encoding="utf-8",
+        ) as datafile:
             f['transfers'] = datafile.read()
         self.submit(f, check_notification=False)
 
