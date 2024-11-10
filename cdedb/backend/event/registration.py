@@ -1842,7 +1842,7 @@ class EventRegistrationBackend(EventBaseBackend):
             data: CdEDBObject = {
                 'registration_id': registration_id,
                 'transition_type': ttype,
-                'ttime': ttime or now(),
+                'ttime': ttime or now().replace(microsecond=0),
             }
             ret = self.sql_insert(rs, models.CheckinTransition.database_table, data)
             self.event_log(rs, const.EventLogCodes.checkin_transition_added,
@@ -1878,51 +1878,39 @@ class EventRegistrationBackend(EventBaseBackend):
             ret = 1
             reg = self.get_registration(rs, registration_id)
 
-            iterator: Iterator[models.CheckinTransition] =\
-                iter(xsorted(reg['checkin_transitions']))
-            prev_ct: Optional[models.CheckinTransition] = None
-            while transition := next(iterator, None):
-                if transition.id == tid1:
-                    if transition.transition_type != CheckinTransitionType.checked_in:
-                        raise RuntimeError(n_("Inconsistent state."))
-                    elif prev_ct and prev_ct.ttime > ttime1:
-                        raise ValueError(n_("Must be after previous checkout."))
-                    if (ttime1 - transition.ttime).seconds == 0:
-                        msg = (self._make_ct_log_message(rs, transition)
-                               + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
-                        transition.ttime = ttime1
-                        ret *= self.sql_update(
-                            rs, models.CheckinTransition.database_table,
-                            transition.to_database())
-                        self.event_log(
-                            rs, const.EventLogCodes.checkin_transition_changed,
-                            reg['event_id'], reg['persona_id'], msg)
-                    if tid2 is None:
-                        break
-                    assert ttime2 is not None
+            transitions = {t.id: t for t in xsorted(reg['checkin_transitions'])}
+            if tid1 not in transitions or tid2 and tid2 not in transitions:
+                raise ValueError(n_("Wrong transition."))
+            t1 = transitions[tid1]
+            if t1.transition_type != CheckinTransitionType.checked_in:
+                raise RuntimeError(n_("Inconsistent state."))
+            if t1.ttime != ttime1:
+                msg = (self._make_ct_log_message(rs, t1)
+                       + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
+                t1.ttime = ttime1
+                ret *= self.sql_update(
+                    rs, models.CheckinTransition.database_table, t1.to_database())
+                self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+                               reg['event_id'], reg['persona_id'], msg)
 
-                    # the checkout must be directly after the checkin
-                    transition = next(iterator, None)
-                    if transition is None or transition.id != tid2:
-                        raise KeyError(n_("Invalid checkout."))
-                    if transition.transition_type != CheckinTransitionType.checked_out:
-                        raise RuntimeError(n_("Inconsistent state."))
-                    if ((next_ct := next(iterator, None))
-                            and transition.ttime > next_ct.ttime):
-                        raise ValueError(n_("Must be before next checkin."))
-                    if (ttime2 - transition.ttime).seconds == 0:
-                        msg = (self._make_ct_log_message(rs, transition)
-                               + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
-                        transition.ttime = ttime2
-                        ret *= self.sql_update(
-                            rs, models.CheckinTransition.database_table,
-                            transition.to_database())
-                        self.event_log(
-                            rs, const.EventLogCodes.checkin_transition_changed,
-                            reg['event_id'], reg['persona_id'], msg)
-                    break
-                prev_ct = transition
-            return ret
+            if tid2 is not None:
+                t2 = transitions[tid2]
+                if t2.transition_type != CheckinTransitionType.checked_out:
+                    raise RuntimeError(n_("Inconsistent state."))
+                if t2.ttime != ttime2:
+                    msg = (self._make_ct_log_message(rs, t2)
+                           + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
+                    t2.ttime = ttime2
+                    ret *= self.sql_update(
+                        rs, models.CheckinTransition.database_table, t2.to_database())
+                    self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+                                   reg['event_id'], reg['persona_id'], msg)
+
+            # verify that we did not mix up times
+            if ([t.id for t in xsorted(transitions.values())]
+                != list(transitions.keys())):
+                raise ValueError(n_("Mixed up times."))
+        return ret
 
     @access("event")
     def delete_checkin_transitions(self, rs: RequestState, registration_id: int,
