@@ -2518,10 +2518,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
+        pending['full_name'] = make_persona_name(pending, include_nickname=True)
         current = history[max(
             key for key in history
             if (history[key]['code']
                 == const.PersonaChangeStati.committed))]
+        current['full_name'] = make_persona_name(current, include_nickname=True)
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
