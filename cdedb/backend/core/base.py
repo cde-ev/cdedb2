@@ -1747,12 +1747,12 @@ class CoreBaseBackend(AbstractBackend):
                         OR events.is_archived = False
                     )
             """
-            regs = self.query_all(
+            data = self.query_all(
                 rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']))
-            for reg in regs:
-                if reg['max_event_end'] and reg['max_event_end'] >= now().date():
+            for datum in data:
+                if not datum['is_archived']:
                     raise ArchiveError(n_("Involved in unfinished event."))
-                if reg['remaining_owed']:
+                if datum['remaining_owed']:
                     raise ArchiveError(n_("Unbalanced event balance."))
 
             query = """
