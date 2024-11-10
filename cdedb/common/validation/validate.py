@@ -1635,8 +1635,8 @@ def _persona(
             try:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
-                    aux=val.get('country' + suffix, ""), ignore_warnings=ignore_warnings,
-                    **kwargs)
+                    aux=val.get('country' + suffix, ""),
+                    ignore_warnings=ignore_warnings, **kwargs)
                 val['postal_code' + suffix] = postal_code
             except ValidationSummary as e:
                 errs.extend(e)

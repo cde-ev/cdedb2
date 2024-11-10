@@ -114,23 +114,21 @@ class TestMlFrontend(FrontendTest):
     def test_changeuser(self) -> None:
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         self.submit(f)
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+        self.assertPresence("Janis (Zelda)", div='personal-information')
 
     @as_users("nina", "ferdinand")
     def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('janis', 'ml')
         self.traverse({'href': '/core/persona/10/adminchange'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)
-        self.assertPresence("Zelda")
-        self.assertTitle("Zelda Jalapeño")
+        self.assertPresence("Janis (Zelda) Jalapeño")
+        self.assertTitle("Janis Jalapeño")
 
     @as_users("nina", "ferdinand")
     def test_toggleactivity(self) -> None:

@@ -216,12 +216,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         self.submit(f)
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id(
-                'displayname').text_content().strip())
+        self.assertPresence("Kalif (Zelda)", div='personal-information')
 
     @as_users("ferdinand")
     def test_adminchangeuser(self) -> None:
@@ -229,12 +226,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Kalif Karabatschi")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)
-        self.assertPresence("Zelda", div="personal-information")
-        self.assertTitle("Zelda Karabatschi")
+        self.assertPresence("Kalif (Zelda) Karabatschi", div="personal-information")
+        self.assertTitle("Kalif Karabatschi")
 
     @as_users("ferdinand")
     def test_toggleactivity(self) -> None:

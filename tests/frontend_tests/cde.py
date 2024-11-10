@@ -264,12 +264,12 @@ class TestCdEFrontend(FrontendTest):
         self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['birthday'] = "3.4.1933"
         f['free_form'] = "Jabberwocky for the win."
         self.submit(f)
-        self.assertPresence("Zelda", div='personal-information')
-        self.assertTitle("Zelda Beispiel")
+        self.assertPresence("(Zelda) Beispiel", div='personal-information')
+        self.assertTitle("Bertå Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
         self.traverse("Bearbeiten")
@@ -292,12 +292,12 @@ class TestCdEFrontend(FrontendTest):
         self.realm_admin_view_profile('olaf', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['given_names'] = "Link"
+        f['nickname'] = "Link"
         f['birthday'] = "21.11.1998"
         f['free_form'] = "Spiele gerne Okarina."
         self.submit(f)
-        self.assertPresence("Link", div='personal-information')
-        self.assertTitle("Link Olafson")
+        self.assertPresence("Olaf (Link)", div='personal-information')
+        self.assertTitle("Olaf Olafson")
         self.assertPresence("21.11.1998", div='personal-information')
         self.assertPresence("Spiele gerne Okarina.", div='additional')
 
@@ -1223,6 +1223,10 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms["changedataform"]
         f["given_names"] = "Anton Armin ÄÖÜ"
+        self.submit(f, check_notification=False)
+        f = self.response.forms['changedataform']
+        f["given_names"] = "Anton Armin ÄÖÜ"
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})

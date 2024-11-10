@@ -194,13 +194,13 @@ class TestEventFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationWarning("mobile", "Telefonnummer scheint ungültig zu")
         f = self.response.forms['changedataform']
-        f['given_names'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.assertNotIn('free_form', f.fields)
         f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
-        self.assertPresence("Zelda (Emmy)", div='personal-information')
-        self.assertTitle("Zelda Eventis")
+        self.assertPresence("Emilia (Zelda) Eventis", div='personal-information')
+        self.assertTitle("Emilia Eventis")
         self.assertPresence("03.04.1933", div='personal-information')
 
     @as_users("annika", "ferdinand")
