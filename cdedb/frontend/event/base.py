@@ -454,6 +454,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             registrations = self.eventproxy.get_registrations(rs, (registration_id,))
         personas = self.coreproxy.get_event_users(
             rs, [reg['persona_id'] for reg in registrations.values()],
+            event_id=event.id,
         )
         registrations = dict(keydictsort_filter(
             registrations,
