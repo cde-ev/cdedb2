@@ -162,26 +162,15 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
 
 def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -> str:
     """Pretty representation of duration."""
-    res = ""
-    precise = False
     if delta.days:
-        res += str(delta.days) + " " + gettext("days") + ", "
-        precise = True
-    if hours := delta.seconds // (60*60):
-        res += f"{hours} " + gettext("hours")
-        if precise:
-            return res
-        res += ", "
-        precise = True
-    if minutes := (delta.seconds % (60*60)) // 60:
-        res += f"{minutes} " + gettext("minutes")
-        if precise:
-            return res
-        res += ", "
-    if seconds := delta.seconds % 60:
-        res += f"{seconds} " + gettext("seconds")
-    res = res.removesuffix(", ")
-    return res
+        return (f"{delta.days} " + gettext("days")
+                + f", {delta.seconds // (60*60)} " + gettext("hours"))
+    elif hours := delta.seconds // (60*60):
+        return (f"{hours} " + gettext("hours")
+                + f", {delta.seconds % (60*60) // 60} " + gettext("minutes"))
+    else:
+        return (f"{delta.seconds // 60} " + gettext("minutes")
+                + f", {delta.seconds % 60} " + gettext("seconds"))
 
 
 @overload

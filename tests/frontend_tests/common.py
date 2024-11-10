@@ -13,6 +13,7 @@ from cdedb.filter import (
     datetime_filter,
     enum_entries_filter,
     tex_escape_filter,
+    timedelta_filter,
 )
 from cdedb.frontend.common import cdedbid_filter, decode_parameter, encode_parameter
 from cdedb.models.ml import ML_TYPE_MAP
@@ -99,6 +100,16 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual("2010-05-22 04:55 ()", datetime_filter(dt_naive))
         self.assertEqual("2010-05-22 06:55 (CEST)", datetime_filter(dt_aware))
         self.assertEqual("2010-05-22 10:55 (CEST)", datetime_filter(dt_other))
+
+        td_filter = lambda delta: timedelta_filter(delta, self.gettext)
+        td = datetime.timedelta
+        self.assertEqual("21 Tage, 0 Stunden", td_filter(td(days=21)))
+        self.assertEqual("21 Tage, 0 Stunden", td_filter(td(days=21, minutes=42)))
+        self.assertEqual("21 Tage, 2 Stunden", td_filter(td(days=21, hours=2)))
+        self.assertEqual("20 Stunden, 0 Minuten", td_filter(td(hours=20)))
+        self.assertEqual("20 Stunden, 0 Minuten", td_filter(td(hours=20, seconds=42)))
+        self.assertEqual("20 Stunden, 42 Minuten", td_filter(td(hours=20, minutes=42)))
+        self.assertEqual("10 Minuten, 0 Sekunden", td_filter(td(minutes=10, microseconds=42)))
 
     def test_cdedbid_filter(self) -> None:
         self.assertEqual("DB-1-9", cdedbid_filter(1))
