@@ -57,7 +57,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     """Check whether `user` has `required_privilege` relative to a given `event_id`.
 
     This also encodes which permission each (generalized) role is supposed to have
-    access to. This only needs the `user`, which allows it to be easily  referred to
+    access to. This only needs the `user`, which allows it to be easily referred to
     from templates.
     """
     EP = EventPrivileges

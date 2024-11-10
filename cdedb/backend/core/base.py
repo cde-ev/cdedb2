@@ -1989,9 +1989,15 @@ class CoreBaseBackend(AbstractBackend):
             data = self.query_all(rs, query, [event_id])
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
-            if not (same_event and (rs.user.persona_id in all_users_inscope or
-                    is_privileged_event(rs, EventPrivileges.registrations_read_internal,
-                                        event_id=event_id))):
+            if not (
+                same_event and (
+                    rs.user.persona_id in all_users_inscope
+                    or is_privileged_event(
+                        rs, EventPrivileges.registrations_read_internal,
+                        event_id=event_id,
+                    )
+                )
+            ):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
