@@ -229,10 +229,18 @@ class SessionBackend:
                 if secret_hash is None or token.rtime:
                     self.logger.warning(
                         f"Access using inactive {droid_class.name} token {token}.")
-                    raise APITokenError(
-                        n_("This %(droid_name)s token has been revoked."),
-                        {'droid_name': droid_class.name},
-                    )
+                    if token.rtime:
+                        raise APITokenError(
+                            n_("This %(droid_name)s token has been revoked."),
+                            {'droid_name': droid_class.name},
+                        )
+                    else:
+                        raise APITokenError(
+                            n_("Could not verify %(droid_name)s token."
+                               " This could be the result of a misconfigured"
+                               " offline instance."),
+                            {'droid_name': droid_class.name},
+                        )
                 if not verify_password(secret, secret_hash):
                     self.logger.warning(
                         f"Invalid secret for {droid_class.name} token {token}.")

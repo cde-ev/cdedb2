@@ -401,6 +401,7 @@ class EventLowLevelBackend(AbstractBackend):
                 lambda x: affirm(vtypes.NonNegativeFloat, x)),
             # normalized string: normalize on write
             const.FieldDatatypes.phone: parse_phone,
+            const.FieldDatatypes.iban: lambda x: affirm(vtypes.IBAN, x),
         }
 
         self.affirm_atomized_context(rs)

@@ -75,7 +75,7 @@ reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
 	kill $$(pidof -x gunicorn) || true
-	/run-gunicorn.sh
+	sudo /run-gunicorn.sh
 else
 	sudo systemctl restart apache2.service cdedb-app.service
 endif
@@ -150,7 +150,12 @@ ruff:
 	@echo $(BANNERLINE)
 	sudo mkdir .ruff_cache -p
 	sudo chown cdedb -R .ruff_cache
+ifeq ($(CI),true)
+	# Use the grouped output format to make it easier to read in CI
+	$(RUFF) --output-format=grouped cdedb tests
+else
 	$(RUFF) cdedb tests
+endif
 	@echo ""
 
 .PHONY: template-line-length

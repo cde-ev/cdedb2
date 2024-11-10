@@ -5,7 +5,7 @@ name = "cdedb2"
 target-version = "py39"
 line-length = 88
 preview = true
-output-format = "grouped"
+output-format = "concise"
 src = ["cdedb", "tests"]
 
 [tool.ruff.lint]

@@ -30,7 +30,12 @@ from cdedb.common import (
     now,
     setup_logger,
 )
-from cdedb.common.exceptions import CryptographyError, PrivilegeError, QuotaException
+from cdedb.common.exceptions import (
+    APITokenError,
+    CryptographyError,
+    PrivilegeError,
+    QuotaException,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
@@ -369,7 +374,7 @@ class Application(BaseApp):
                 raise
 
             # debug output if applicable
-            if self.conf["CDEDB_DEV"]:  # pragma: no cover
+            if self.conf["CDEDB_DEV"] and not isinstance(e, APITokenError):  # pragma: no cover
                 return self.cgitb_html()
 
             # generic errors

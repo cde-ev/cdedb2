@@ -1499,23 +1499,15 @@ def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventFi
     spec: dict[str, const.FieldDatatypes]
     spec = {f.field_name: f.kind for f in fields.values()}
     casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
-        const.FieldDatatypes.int: lambda x: x,
-        const.FieldDatatypes.str: lambda x: x,
-        const.FieldDatatypes.float: lambda x: x,
         const.FieldDatatypes.date: parse_date,
         const.FieldDatatypes.datetime: parse_datetime,
-        const.FieldDatatypes.bool: lambda x: x,
-        const.FieldDatatypes.non_negative_int: lambda x: x,
-        const.FieldDatatypes.non_negative_float: lambda x: x,
-        # normalized string: id on read
-        const.FieldDatatypes.phone: lambda x: x,
     }
 
     def _do_cast(key: str, val: Any) -> Any:
         if val is None:
             return None
-        if key in spec:
-            return casters[spec[key]](val)
+        if key in spec and (caster := casters.get(spec[key])):
+            return caster(val)
         return val
 
     return {key: _do_cast(key, val) for key, val in data.items()}
