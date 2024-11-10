@@ -57,7 +57,7 @@
                 <div class="row">
                     <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
-                            {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
+                            {{ util.persona_name(personas[registration['persona_id']], include_nickname=True) }}
                         </span>
                         {% if registration['age'].is_minor() %}
                             {{ gettext(registration['age']|string) }}

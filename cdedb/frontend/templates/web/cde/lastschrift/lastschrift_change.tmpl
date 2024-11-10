@@ -8,7 +8,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-                        util.persona_name(persona, only_given_names=True),
+                        util.persona_name(persona),
                         icon="euro-sign") }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_change_form", {'persona_id': values['persona_id']}), gettext("Edit"),
 	active=True) }}
@@ -16,7 +16,7 @@
 
 {% block heading %}
     {{ util.context_heading(gettext("Edit Direct Debit Authorization"),
-                            util.persona_name(persona, only_given_names=True), 'user', gettext("User")) }}
+                            util.persona_name(persona), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
@@ -29,7 +29,11 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('cde/lastschrift_change') }}
         {{ util.form_input_static(label=gettext("Member"),
-                                  value=util.persona_name(persona, only_given_names=True, with_titles=True)) }}
+                                  value=util.persona_name(persona, with_titles=True)) }}
+        {% if persona['legal_given_names'] != persona['given_names'] %}
+            {{ util.form_input_static(label=gettext("Legal Name"),
+                                  value=util.persona_name(persona, use_legal_name=True, with_titles=True)) }}
+        {% endif %}
         {{ util.form_input_static(label=gettext("Donation"), value=persona["donation"]|money(lang=lang),
                                   info=gettext("Taken from the profile of the user."), aclass="form-control-nosp") }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}

@@ -629,7 +629,7 @@ class EventQueryMixin(EventBaseFrontend):
             if not valid:
                 data = []
             else:
-                key = "username,family_name,given_names,display_name"
+                key = "username,family_name,given_names,nickname,legal_given_names"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.quick_registration.get_spec()
@@ -637,7 +637,7 @@ class EventQueryMixin(EventBaseFrontend):
                 query = Query(
                     QueryScope.quick_registration, spec,
                     ("registrations.id", "username", "family_name",
-                     "given_names", "display_name"),
+                     "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
                 data = list(self.eventproxy.submit_general_query(
                     rs, query, event_id=aux))
@@ -662,7 +662,6 @@ class EventQueryMixin(EventBaseFrontend):
             result = {
                 'id': entry['id'],
                 'name': name(entry),
-                'display_name': entry['display_name'],
             }
             # Email/username is only delivered if we have admins
             # rights, a search term with an @ (and more) matches the

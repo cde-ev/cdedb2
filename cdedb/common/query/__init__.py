@@ -382,15 +382,17 @@ PRIMARY_KEYS = {
 }
 
 # See QueryScope.get_spec().
+# TODO include legal_given_names and nickname
 _QUERY_SPECS = {
     # The most basic view on a persona.
     QueryScope.persona:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
+            "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
@@ -401,10 +403,11 @@ _QUERY_SPECS = {
     QueryScope.core_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
+            "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
@@ -439,10 +442,11 @@ _QUERY_SPECS = {
     QueryScope.cde_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
+            "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
@@ -498,10 +502,11 @@ _QUERY_SPECS = {
     QueryScope.event_user:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
+            "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
@@ -532,7 +537,7 @@ _QUERY_SPECS = {
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names,display_name": QuerySpecEntry("str", n_("Given Names")),
+            "given_names,nickname": QuerySpecEntry("str", n_("Given Names")),
             "family_name,birth_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),
@@ -549,10 +554,11 @@ _QUERY_SPECS = {
     QueryScope.quick_registration:
         {
             "registrations.id": QuerySpecEntry("id", n_("ID")),
+            "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         },
@@ -941,13 +947,14 @@ def make_registration_query_spec(event: "models.Event",
     spec: QuerySpec = {
         "reg.id": QuerySpecEntry("id", n_("ID")),
         "persona.id": QuerySpecEntry("id", n_("CdEDB-ID")),
+        "persona.nickname": QuerySpecEntry("str", n_("Nickname")),
         "persona.given_names": QuerySpecEntry("str", n_("Given Names")),
+        "persona.legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
         "persona.family_name": QuerySpecEntry("str", n_("Family Name")),
         "persona.username": QuerySpecEntry("str", n_("E-Mail")),
         "persona.is_member": QuerySpecEntry("bool", n_("CdE-Member")),
         "reg.is_member": QuerySpecEntry("bool", n_("Member at registration")),
         "reg.is_orga": QuerySpecEntry("bool", n_("Is Orga")),
-        "persona.display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
         "persona.title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.

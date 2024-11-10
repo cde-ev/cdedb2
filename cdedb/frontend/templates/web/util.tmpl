@@ -143,10 +143,9 @@
 {# Create a link to a persona's profile page, labeled with some variant of their name
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
-   only_given_names:        see 'persona_name' macro
-   only_display_name:       see 'persona_name' macro
-   given_and_display_names: see 'persona_name' macro
+                            'id', 'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
+   use_legal_name:          see 'persona_name' macro
+   include_nickname:        see 'persona_name' macro
    with_family_name:        see 'persona_name' macro
    with_titles:             see 'persona_name' macro
    quote_me:                see show_user_link()
@@ -156,58 +155,48 @@
    readonly:                see 'href' macro
    title:                   see 'href' macro
 #}
-{% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                        with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
-                        aclass='', readonly=False, title=none) %}
+{% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
+                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-            persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
+            persona_name(persona, use_legal_name, include_nickname, with_family_name),
             aclass=aclass, readonly=readonly, title=title) -}}
 {% endmacro %}
 
 {# Display the name of a given persona
 
-   Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
-   this macro includes some logic to display a person's name correctly, depending on the context and the person's
-   display name. For a full specification, which name variant should be used in which context, see the documentation
+   This macro includes some logic to display a person's name correctly, depending on the context.
+   For a full specification, which name variant should be used in which context, see the documentation
    page about "User Experience Conventions".
 
    For usage in Python code, the `cdedb.common.make_persona_name()` function implements the same logic.
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
-   only_given_names:        If True, the display_name is ignored. Should only be used in a legal/formal context.
-   only_display_name:       If True, the given_names are ignored. Should be used when the person is addressed directly.
-   given_and_display_names: If True, the display of all given_names and the display name (if not equal) is enforced.
-                            This is the "long" version of the name.
+                            'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
+   use_legal_name:          If True, use legal_given_names. Can not be combined with 'include_nickname'.
+   include_nickname:        If True, the display of all given_names and the nickname (if not equal) is enforced.
+                            Should only be used for orga-facing pages.
    with_family_name:        If True (default), the family name is included in the macro output
    with_titles:             If True, the person's title(s) and name supplement are included in the macro output
 #}
-{% macro persona_name(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                      with_family_name=True, with_titles=False) %}
-    {%- set display_name = persona['display_name'] %}
+{% macro persona_name(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False) %}
+    {%- set nickname = persona['nickname'] or "" %}
     {%- set given_names = persona['given_names'] %}
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
-    {%- if only_given_names -%}
-        {{ given_names }}
-    {%- elif only_display_name -%}
-        {{ display_name }}
-    {%- elif given_and_display_names %}
-        {%- if display_name in given_names %}
-            {%- if not display_name or display_name == given_names -%}
+    {%- if use_legal_name -%}
+        {{ persona['legal_given_names'] }}
+    {%- elif include_nickname %}
+        {%- if nickname in given_names %}
+            {%- if not nickname or nickname == given_names -%}
                 {{ given_names }}
             {%- else -%}
-                {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
+                {{ '<em>{}</em>'.format(nickname|e).join((given_names|e).split(nickname|e))|s }}
             {%- endif %}
         {%- else -%}
-            {{ given_names }} ({{ display_name }})
-        {%- endif -%}
-    {% else %}
-        {%- if display_name in given_names -%}
-            {{ display_name }}
-        {%- else -%}
-            {{ given_names }}
-        {%- endif -%}
-    {% endif %}
+            {{ given_names }} ({{ nickname }})
+        {%- endif %}
+    {%- else -%}
+        {{ given_names }}
+    {%- endif %}
     {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
     {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
@@ -883,14 +872,11 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
-    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
-    {% set forename = display_name if display_name and display_name in given_names else given_names %}
     {{ href(
         mailto(
             address=email or persona.get("username", persona.get("persona.username", "")),
             name="{} {}".format(
-                forename,
+                persona.get("given_names", persona.get("persona.given_names", "")),
                 persona.get("family_name", persona.get("persona.family_name", ""))
             )
         ),
@@ -978,9 +964,9 @@ mailto:
 
 {% macro print_doppelganger(persona, link=False) %}
     {% if link %}
-        {{ persona_anchor(persona, given_and_display_names=True) }}
+        {{ persona_anchor(persona, include_nickname=True) }}
     {% else %}
-        {{ persona_name(persona, given_and_display_names=True) }}
+        {{ persona_name(persona, include_nickname=True) }}
     {% endif %}
     {%- if persona['birth_name'] %}
         ({{ persona['birth_name'] }})

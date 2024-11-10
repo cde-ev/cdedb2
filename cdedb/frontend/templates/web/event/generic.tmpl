@@ -361,7 +361,7 @@
 {% macro list_mep_violations(violations, personas, link_registration=False) %}
     <ul id="mep-violations-list">
         {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id], include_nickname=True) %}
             {% if link_registration %}
                 {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
             {% else %}
@@ -407,7 +407,7 @@
 {% macro list_ccs_violations(violations, personas, link_registration=False) %}
     <ul id="ccs-violations-list">
         {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id], include_nickname=True) %}
             {% if link_registration %}
                 {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
             {% else %}

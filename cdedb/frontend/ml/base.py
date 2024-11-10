@@ -716,7 +716,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, personas_state.keys())
         addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
-        columns = ['db_id', 'given_names', 'display_name', 'family_name',
+        columns = ['db_id', 'given_names', 'family_name',
                    'subscription_state', 'email', 'subscription_address']
         output = []
 
@@ -724,7 +724,6 @@ class MlBaseFrontend(AbstractUserFrontend):
             pair = {
                 'db_id': cdedbid(persona),
                 'given_names': personas[persona]['given_names'],
-                'display_name': personas[persona]['display_name'],
                 'family_name': personas[persona]['family_name'],
                 'subscription_state': personas_state[persona].name,
                 'email': personas[persona]['username'],
