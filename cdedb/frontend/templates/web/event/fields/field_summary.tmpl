@@ -135,7 +135,8 @@
 
 {% block content %}
     <div class="p button-par">
-        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
+        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"),
+                     readonly=not is_privileged_for('questionnaire_import'),
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
         {{ util.href(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
     </div>
@@ -199,7 +200,7 @@
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
                 {{ util.make_icon('plus') }} {% trans %}Add Field{% endtrans %}
             </button>
-            {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
+            {{ util.input_submit(label=gettext("Save"), readonly=not is_privileged_for('field_summary')) }}
         </p>
     </form>
     <script nonce="{{ csp_nonce }}">

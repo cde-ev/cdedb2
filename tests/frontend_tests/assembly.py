@@ -370,7 +370,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         else:
             self.fail("Please adjust users for this tests.")
 
-        self.check_sidebar(ins, out)
+        self.check_sidebar(ins, out, traverse=False)
 
     @as_users("werner")
     def test_change_assembly(self) -> None:

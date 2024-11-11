@@ -3636,15 +3636,15 @@ class TestEventBackend(BackendTest):
 
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {8})
-        self.assertIn("Some of these orgas do not exist or are archived.",
+        self.assertIn("Some of these personas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {1000})
-        self.assertIn("Some of these orgas do not exist or are archived.",
+        self.assertIn("Some of these personas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {11})
-        self.assertIn("Some of these orgas are not event users.",
+        self.assertIn("Some of these personas are not event users.",
                       cm.exception.args)
 
     @event_keeper

@@ -647,6 +647,7 @@ class MlBackend(AbstractBackend):
         """
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
+        # TODO Migrate this to EventPrivileges?
         if not (data.is_relevant_admin(rs.user)
                 or (isinstance(data, EventAssociatedMetaMailinglist)
                     and data.event_id in rs.user.orga)

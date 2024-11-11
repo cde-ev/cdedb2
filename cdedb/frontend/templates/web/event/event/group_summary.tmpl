@@ -25,10 +25,12 @@
 {% block content %}
     <p>
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
-                               icon='plus', aclass='btn btn-success btn-sm') }}
+                               icon='plus', aclass='btn btn-success btn-sm',
+                               readonly=not is_privileged_for('add_part_group')) }}
         {% if ambience['event']['tracks'] %}
             {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
-                                   icon='plus', aclass='btn btn-success btn-sm') }}
+                                   icon='plus', aclass='btn btn-success btn-sm',
+                                   readonly=not is_privileged_for('add_track_group')) }}
         {% endif %}
     </p>
     <h2>

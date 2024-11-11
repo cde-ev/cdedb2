@@ -20,6 +20,7 @@ from cdedb.common import (  # noqa: F401
     LodgementsSortkeys,
     TransactionType,
 )
+from cdedb.common.privileges import EventPrivileges  # noqa: F401
 from cdedb.common.query import QueryOperators, QueryScope  # noqa: F401
 from cdedb.database.constants import *  # noqa: F403
 from cdedb.uncommon.intenum import CdEIntEnum

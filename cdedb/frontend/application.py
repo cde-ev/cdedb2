@@ -23,6 +23,7 @@ from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
+    Realm,
     RequestState,
     User,
     glue,
@@ -300,6 +301,14 @@ class Application(BaseApp):
             # Retrieve entity related privileges for personas.
             # The session backend takes care of this for droids.
             if user.persona_id:
+                # Roles that are managed via the realms internally
+                Realms = {"core", "cde", "event", "assembly", "ml"}
+                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in Realms}
+                if "event" in rs.user.roles:
+                    if user.persona_id in self.eventproxy.get_event_helpers(rs):
+                        realm_roles['event'].add('event_helper')
+                user.realm_roles = realm_roles
+
                 # Insert orga and moderator status context
                 orga: set[int] = set()
                 if "event" in user.roles:

@@ -121,10 +121,10 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
-    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina")
+    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina", "petra")
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht"}
+        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
         admin = {"Alle Veranstaltungen", "Log"}
 
         # not event admins (also orgas!)
@@ -139,6 +139,10 @@ class TestEventFrontend(FrontendTest):
         elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten"}
             out = set()
+        # event helpers
+        elif self.user_in('petra'):
+            ins = everyone | {"Alle Veranstaltungen"}
+            out = {"Log"}
         # auditors
         elif self.user_in('katarina'):
             ins = everyone | {"Log"}
@@ -433,7 +437,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
-              "farin")
+              "farin", "petra")
     # remove event admin rights from farin
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_sidebar_one_event(self) -> None:
@@ -442,39 +446,55 @@ class TestEventFrontend(FrontendTest):
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
         registered = {"Meine Anmeldung"}
-        registered_or_orga = {"Teilnehmer-Infos"}
-        orga = {
-            "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
-            "Unterkünfte", "Downloads", "Partieller Import",
+        registered_or_privileged = {"Teilnehmer-Infos"}
+        privileged = {
+            "Statistik", "Kurse", "Unterkünfte",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens",
-            "Anmeldungsvorschau",
+            "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
+        }
+        registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
+        orga = {
+            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
+            "Partieller Import", "Log", "Checkin",
         }
         finance_admin = {"Überweisungen eintragen"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
-        # not registered, not event admin (auditor can see only global log).
-        if self.user_in('martin', 'vera', 'werner', 'katarina'):
+        # not registered, not event admin, no event helper, no auditor
+        if self.user_in('martin', 'vera', 'werner'):
             ins = everyone | not_registered
-            out = registered | registered_or_orga | orga | finance_admin
+            out = (registered | registered_or_privileged | privileged | orga
+                   | finance_admin)
         # registered
         elif self.user_in('emilia'):
-            ins = everyone | registered | registered_or_orga
-            out = not_registered | orga | finance_admin
+            ins = everyone | registered | registered_or_privileged
+            out = not_registered | privileged | orga | finance_admin
         # orga
         elif self.user_in('garcia'):
-            ins = everyone | registered | registered_or_orga | orga
+            ins = (everyone | registered | registered_or_privileged | privileged
+                   | orga)
             out = not_registered | finance_admin
+        # event helper
+        elif self.user_in('petra'):
+            ins = everyone | not_registered | registered_or_privileged | privileged
+            out = registered | orga | finance_admin
         # event admin (annika is not registered)
         elif self.user_in('annika'):
-            ins = everyone | not_registered | registered_or_orga | orga
+            ins = (everyone | not_registered | registered_or_privileged | privileged
+                   | orga)
             out = registered | finance_admin
+        # not registered, auditor
+        elif self.user_in('katarina'):
+            ins = (everyone | not_registered | privileged | registered_or_privileged
+                   | {"Log"}) - registrations_stats
+            out = (registered | orga | finance_admin | registrations_stats) - {"Log"}
         # finance admin
         elif self.user_in('farin'):
-            ins = everyone | not_registered | finance_admin
-            out = registered | registered_or_orga | orga
+            ins = (everyone | not_registered | privileged | registered_or_privileged
+                   | finance_admin) - registrations_stats
+            out = registered | orga | registrations_stats
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -612,19 +632,17 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
+                'orga_id', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
+                index=-1)
             # Try to add an archived user.
             f['orga_id'] = USER_DICT['hades']['DB-ID']
             self.submit(f, check_notification=False)
-            self.assertValidationError(
-                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
-                index=-1)
+            msg = "Einige dieser Accounts existieren nicht oder sind archiviert."
+            self.assertValidationError('orga_id', msg, index=-1)
             # Try to add a non-existent user.
             f['orga_id'] = "DB-1000-6"
             self.submit(f, check_notification=False)
-            self.assertValidationError(
-                'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
-                index=-1)
+            self.assertValidationError('orga_id', msg, index=-1)
             f['orga_id'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
             self.assertTitle("Universale Akademie")
@@ -7278,3 +7296,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         self.assertPresence("Inga", div="result-container")
         self.assertPresence(iban, div="result-container")
+
+    @as_users("petra")
+    def test_event_helper(self) -> None:
+        # Sidebar buttons are basic_validated in test_sidebar(_one_event)
+        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
+        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.assertNotIn('addeventhelperform', self.response.forms)
+        self.assertNotIn('removeeventhelperform42', self.response.forms)
+        self.assertPresence("Petra Philanthrop")
+        self.traverse("Alle Veranstaltungen")
+        self.assertPresence("CdE-Party 2050")
+        self.assertPresence("6 Anmeldungen, 1 Orga")
+        self.assertNoLink("Anmeldungen")
+        self.traverse("Große Testakademie 2222")
+        saved_response = self.response
+        self.get('/event/event/2/registration/query', status=403)
+        self.get('/event/event/1/registration/3/show', status=403)
+        self.response = saved_response
+        self.traverse("Statistik")
+        self.assertNoLink('/event/event/1/registration/query')
+        self.traverse({'href': '/event/event/1/course/query',
+                       'description': "2"})
+        saved_response = self.response
+        self.get('/event/event/1/course/1/show', status=403)
+        self.response = saved_response
+        self.traverse({'href': "/event/event/1/course/stats"})
+        self.assertPresence("2 + 0")
+        self.assertPresence("Heldentum")
+        self.assertNoLink('/event/event/1/course/1/show')
+        self.traverse({'href': "/event/event/1/course/query"}, "Unterkünfte")
+        self.assertPresence("Warme Stube")
+        self.assertNoLink('/event/event/1/lodgement/1/show')
+        self.assertNoLink('/event/event/1/lodgement/graph/form')
+        saved_response = self.response
+        self.get('/event/event/1/lodgement/1/show', status=403)
+        self.get('/event/event/1/lodgement/graph/show', status=403)
+        self.response = saved_response
+        self.traverse("Unterkunftssuche")
+        f = self.response.forms['queryform']
+        self.submit(f)
+        self.traverse("Konfiguration")
+        f = self.response.forms['changeeventform']
+        with self.assertRaises(webtest.app.AppError):
+            self.submit(f)
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        with self.assertRaises(webtest.app.AppError):
+            self.submit(f)
