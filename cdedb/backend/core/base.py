@@ -1515,18 +1515,18 @@ class CoreBaseBackend(AbstractBackend):
             # Check event involvement.
             # Don't archive if registered for a recent event.
             query = """
-                SELECT
-                    COUNT(*) as count,
+                SELECT COUNT(*)
                 FROM
-                    event.registrations
-                    JOIN event.event_parts
-                        ON registrations.event_id = event_parts.event_id
-                WHERE persona_id = %s
-                GROUP BY
-                    registration.event_id
-                HAVING MAX(part_end) > %s
+                    event.registrations reg
+                    JOIN event.events ON events.id = reg.event_id
+                WHERE
+                    persona_id = %s AND (
+                        reg.event_id > %s AND (amount_owed != amount_paid)
+                        OR events.is_archived = False
+                    )
             """
-            ret = self.query_one(rs, query, (persona_id, cutoff))
+            ret = self.query_one(
+                rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']))
             if ret and ret['count']:
                 return False
 
@@ -1736,8 +1736,8 @@ class CoreBaseBackend(AbstractBackend):
             #
             query = """
                 SELECT
-                    reg.id, events.is_archived,
-                    (amount_owed - amount_paid) as remaining_owed
+                    COUNT(*) FILTER (WHERE events.is_archived = False) AS count_unarchived,
+                    COUNT(*) FILTER (WHERE reg.event_id > %s AND (amount_owed != amount_paid)) AS count_unbalanced
                 FROM
                     event.registrations reg
                     JOIN event.events ON events.id = reg.event_id
@@ -1747,12 +1747,13 @@ class CoreBaseBackend(AbstractBackend):
                         OR events.is_archived = False
                     )
             """
-            data = self.query_all(
-                rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']))
-            for datum in data:
-                if not datum['is_archived']:
+            cutoff_event_id = self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']
+            data = self.query_one(
+                rs, query, (cutoff_event_id, persona_id, cutoff_event_id))
+            if data:
+                if data['count_unarchived']:
                     raise ArchiveError(n_("Involved in unfinished event."))
-                if datum['remaining_owed']:
+                if data['count_unbalanced']:
                     raise ArchiveError(n_("Unbalanced event balance."))
 
             query = """

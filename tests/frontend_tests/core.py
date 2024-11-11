@@ -1339,7 +1339,8 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT[other_user_name])
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
 
-    @prepsql("DELETE FROM core.email_states")
+    @prepsql("DELETE FROM core.email_states;"
+             " UPDATE event.events SET is_archived = True WHERE id = 3")
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
