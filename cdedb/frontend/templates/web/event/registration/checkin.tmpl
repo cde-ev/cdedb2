@@ -148,7 +148,7 @@
                                 {{ util.input_hidden(name="part_ids", value=part_id) }}
                             {% endfor %}
                             {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                                 readonly=is_locked) }}
+                                                 readonly=not is_privileged_for("checkin")) }}
                         </form>
                     </div>
             </div>

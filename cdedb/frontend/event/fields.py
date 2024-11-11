@@ -204,7 +204,7 @@ class EventFieldMixin(EventBaseFrontend):
         return entities, ordered_ids, labels, field
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind")
     def field_multiset_select(
             self, rs: RequestState, event_id: int, field_id: Optional[vtypes.ID],
@@ -235,7 +235,7 @@ class EventFieldMixin(EventBaseFrontend):
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset_form(
             self, rs: RequestState, event_id: int, field_id: vtypes.ID,
