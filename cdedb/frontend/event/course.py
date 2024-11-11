@@ -73,6 +73,12 @@ _HIDDEN_COURSES_QUERY = Query(
 
 @dataclass(frozen=True)
 class ChoiceCounts:
+    """
+    Wrapper around a mapping of course, track and rank to number of choices.
+
+    For convenience this can be indexed by either only the course id,
+    course id and track id or course id, track id and rank.
+    """
     # dict mapping (course_id, track_id) to list of choice counts.
     _choice_counts: dict[int, dict[int, list[int]]]
 
@@ -107,6 +113,13 @@ class ChoiceCounts:
 
 @dataclass(frozen=True)
 class CourseAttendees:
+    """
+    Wrapper to store the assigned attendees of one course in one track.
+
+    Learners are attendees that are not instructors (of this course).
+    Involved is defined by `const.RegisrationPartStati.is_involved()`.
+    Filtered is based on a collection of stati given to `get_course_stats()`.
+    """
     involved_learners: list[CdEDBObject]
     involved_instructors: list[CdEDBObject]
     filtered_learners: list[CdEDBObject]
@@ -147,6 +160,7 @@ class CourseAttendees:
 
 @dataclass(frozen=True)
 class Attendees:
+    """Wrapper around a mapping of course and track to lists of attendees."""
     _course_attendee_counts: dict[int, dict[int, CourseAttendees]]
 
     @overload
