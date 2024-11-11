@@ -6,7 +6,11 @@ from typing import Any, cast
 
 import psycopg2.extensions
 
-from cdedb.backend.common import DatabaseLock, Silencer, _affirm_atomized_context
+from cdedb.backend.common import (
+    DatabaseLock,
+    Silencer,
+    _affirm_atomized_context,  # noqa: PLC2701
+)
 from cdedb.common import RequestState
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (
@@ -106,14 +110,14 @@ class TestDatabase(unittest.TestCase):
                 try:
                     with rs.conn as nested_conn:
                         with nested_conn.cursor() as nested_cur:
-                            nested_cur.execute("UPDATE core.personas SET display_name"
+                            nested_cur.execute("UPDATE core.personas SET given_names"
                                                " = 'ABBA (random name)'")
                             raise ValueError("test error")
                 except ValueError:
                     pass
         with rs.conn as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT display_name FROM core.personas")
+                cur.execute("SELECT given_names FROM core.personas")
                 result = cur.fetchall()
                 self.assertFalse(any(
-                    x['display_name'] == "ABBA (random name)" for x in result))
+                    x['given_names'] == "ABBA (random name)" for x in result))

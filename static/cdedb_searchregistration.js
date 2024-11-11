@@ -17,7 +17,7 @@
             'placeholder' : placeholder || '',
             'valueField' : 'id',
             'labelField' : 'name',
-            searchField: ['name','email','id'],
+            searchField: ['name','display_name','email','id'],
             create: true,
             createOnBlur: true,
             createFilter: freeform ? null : function(string) {

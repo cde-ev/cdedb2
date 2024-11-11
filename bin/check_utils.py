@@ -2,7 +2,8 @@
 
 import unittest
 from types import TracebackType
-from typing import List, Optional, TextIO, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union
+from unittest.runner import _WritelnDecorator
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
@@ -12,11 +13,9 @@ ExceptionInfo = Union[
 
 class MyTextTestRunner(unittest.TextTestRunner):
     """Subclass the TextTestRunner to provide a short command to re-run failed tests."""
-    stream: TextIO
-
     def run(
-        self, test: Union[unittest.TestSuite, unittest.TestCase]
-    ) -> unittest.TestResult:
+        self, test: Union[unittest.TestSuite, unittest.TestCase],
+    ) -> unittest.TextTestResult:
         result = super().run(test)
         failed = map(
             lambda error: error[0].id().split()[0],  # split to strip subtest paramters
@@ -35,10 +34,9 @@ class MyTextTestResult(unittest.TextTestResult):
     We keep track of the errors, failures and skips occurring in SubTests,
     and print a summary at the end of the TestCase itself.
     """
-    stream: TextIO
     showAll: bool
 
-    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
+    def __init__(self, stream: _WritelnDecorator, descriptions: bool, verbosity: int) -> None:
         super().__init__(stream, descriptions, verbosity)
         self._subTestErrors: List[ExceptionInfo] = []
         self._subTestFailures: List[ExceptionInfo] = []
@@ -87,7 +85,7 @@ class MyTextTestResult(unittest.TextTestResult):
             output.append(s)
         if output:
             if self.showAll:
-                self.stream.writeln(", ".join(output))  # type: ignore[attr-defined]
+                self.stream.writeln(", ".join(output))
             else:
                 self.stream.write("".join(output))
                 self.stream.flush()

@@ -249,7 +249,7 @@ def compile_sample_data_sql(
 
     with connect(config, secrets) as conn:
         with conn.cursor() as cur:
-            with open(outfile, "w") as f:
+            with open(outfile, "w", encoding="utf-8") as f:
                 print(json2sql_join(cur, cmds), file=f)
 
 

@@ -33,7 +33,7 @@
                 <div class="row" id="request-{{ genesis_case_id }}">
                     <div class="col-sm-3">
                         <p>
-                            {{ util.persona_name(entry, only_given_names=True) }}
+                            {{ util.persona_name(entry) }}
                             &lt;{{ util.href(util.mailto(entry['username']), entry['username']) }}&gt;
                         </p>
                     </div>
@@ -75,7 +75,7 @@
                 {%- if entry['case_status'] == enums['GenesisStati'].rejected %} list-group-item-muted{% endif %}">
             <div class="col-sm-3">
                 {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}),
-                             util.persona_name(entry, only_given_names=True), icon="door-open") }}
+                             util.persona_name(entry), icon="door-open") }}
             </div>
             <div class="col-sm-3">
                 <span>

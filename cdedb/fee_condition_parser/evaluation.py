@@ -36,7 +36,7 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
         referenced_names.field_names.add(result[0])
     elif result.get_name() == "part":
         referenced_names.part_names.add(result[0])
-    elif result.get_name() in ('and', 'or', 'xor'):
+    elif result.get_name() in {'and', 'or', 'xor'}:
         referenced_names.update(get_referenced_names(result[0]))
         referenced_names.update(get_referenced_names(result[1]))
     elif result.get_name() == 'not':

@@ -126,7 +126,6 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
-  - ldap
   when:
     status:
       - failure
@@ -143,7 +142,6 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
-  - ldap
   when:
     status:
       - failure
@@ -160,7 +158,6 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
-  - ldap
   when:
     status:
       - failure

@@ -4,8 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
-       util.persona_name makro here. #}
+    {# Since the dataset is no full persona, we can not use the util.persona_name makro here. #}
     {% trans name="%s %s"|format(ambience['genesis_case']['given_names'], ambience['genesis_case']['family_name']) %}
         Account Request of {{ name }}
     {% endtrans %}

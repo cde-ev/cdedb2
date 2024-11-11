@@ -229,9 +229,8 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
         for given_name in persona['given_names'].split()
     ]
-    patterns.append(
-        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
-    )
+    if persona['nickname']:
+        patterns.append(rf"{escape(persona['nickname'])}")
     persona_id = persona['id']
     assert isinstance(persona_id, int)
     patterns.append(re.escape(cdedbid_filter(persona_id)))
@@ -278,8 +277,8 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
     `not_specified` and `other` to be equivalent to any Gender.
     """
     return (first == second
-            or first in (Genders.not_specified, Genders.other)
-            or second in (Genders.not_specified, Genders.other))
+            or first in {Genders.not_specified, Genders.other}
+            or second in {Genders.not_specified, Genders.other})
 
 
 def create_lodgement_wishes_graph(
@@ -512,7 +511,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     if raw_wishes := registration['fields'].get(lodge_field_name):
         wishes = f"\n\n{raw_wishes}"
     return "{name}\n{email}{parts}{wishes}".format(
-        name=make_persona_name(persona, given_and_display_names=True),
+        name=make_persona_name(persona, include_nickname=True),
         email=persona['username'],
         parts=parts,
         wishes=wishes,

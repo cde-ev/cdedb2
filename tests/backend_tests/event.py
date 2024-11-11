@@ -53,10 +53,10 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_basics(self) -> None:
         data = self.core.get_event_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'name_supplement', 'display_name', 'telephone'}}
+                  {'id', 'name_supplement', 'nickname', 'telephone'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
@@ -2448,7 +2448,7 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika", "garcia")
     def test_export_event(self) -> None:
-        with open(self.testfile_dir / "event_export.json") as f:
+        with open(self.testfile_dir / "event_export.json", encoding="utf-8") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
@@ -2944,7 +2944,10 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika")
     def test_partial_export_event(self) -> None:
-        with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
+        with open(
+                self.testfile_dir / "TestAka_partial_export_event.json",
+                encoding="utf-8",
+        ) as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2964,7 +2967,9 @@ class TestEventBackend(BackendTest):
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -3201,7 +3206,9 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             orig_data = json.load(datafile)
 
         base_data = {
@@ -3257,7 +3264,9 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             data = json.load(datafile)
 
         # first a test run

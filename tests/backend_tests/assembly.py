@@ -74,10 +74,12 @@ class TestAssemblyBackend(BackendTest):
     @as_users("kalif")
     def test_basics(self) -> None:
         data = self.core.get_assembly_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Z."
+        data['given_names'] = "Zelda"
+        data['legal_given_names'] = "Zelda Z."
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'display_name', 'given_names', 'family_name'}}
+                  {'id', 'given_names', 'legal_given_names', 'nickname', 'family_name'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_assembly_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
@@ -117,7 +119,7 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that all users are found.
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan", "Rowena"],
+            ["Kalif", "Rowena"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
@@ -129,7 +131,7 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that they are no longer found.
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan"],
+            ["Kalif"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
@@ -139,7 +141,7 @@ class TestAssemblyBackend(BackendTest):
         # Check that the more inclusive search still finds them.
         query.scope = QueryScope.all_assembly_users
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan", "Rowena"],
+            ["Kalif", "Rowena"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
@@ -1004,7 +1006,7 @@ class TestAssemblyBackend(BackendTest):
         comment = "Ein Kommentar."
 
         # Comment not possible for future and running ballots
-        for ballot_id in {2, 14, 15}:
+        for ballot_id in (2, 14, 15):
             with self.assertRaises(ValueError) as cm:
                 self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
             self.assertIn("Comments are only allowed for concluded ballots.",
@@ -1772,7 +1774,7 @@ class TestAssemblyBackend(BackendTest):
 
                     self.assembly.get_ballot_result(self.key, ballot_id)
 
-                if assemblies[assembly_id]['is_active']:
+                if assembly['is_active']:
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
                 else:
                     with self.assertRaises(ValueError):
@@ -1843,7 +1845,7 @@ class TestAssemblyBackend(BackendTest):
                     #     self.assembly.set_assembly(self.key, {'id': assembly_id})
                     self.fail(
                         f"Sample data changed to include inactive assembly for"
-                        f" presider '{self.user['display_name']}'.")
+                        f" presider '{self.user['given_names']}'.")
 
             for assembly_id in non_presided_assemblies:
                 with self.assertRaises(PrivilegeError):
@@ -1988,7 +1990,7 @@ class TestAssemblyBackend(BackendTest):
                         # self.assembly.get_vote(self.key, ballot_id)
                         self.fail(
                             f"Sample data changed to include attended assembly for"
-                            f" member '{self.user['display_name']}'.")
+                            f" member '{self.user['given_names']}'.")
                     else:
                         with self.assertRaises(PrivilegeError):
                             self.assembly.has_voted(self.key, ballot_id)

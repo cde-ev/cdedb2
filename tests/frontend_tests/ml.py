@@ -114,22 +114,20 @@ class TestMlFrontend(FrontendTest):
     def test_changeuser(self) -> None:
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['nickname'] = "Zelda"
         self.submit(f)
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+        self.assertPresence("Janis (Zelda)", div='personal-information')
 
     @as_users("nina", "ferdinand")
     def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('janis', 'ml')
         self.traverse({'href': '/core/persona/10/adminchange'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)
-        self.assertPresence("Zelda")
+        self.assertPresence("Janis (Zelda) Jalapeño")
         self.assertTitle("Janis Jalapeño")
 
     @as_users("nina", "ferdinand")
@@ -570,12 +568,12 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertPresence("Inga Iota", div="modsubscriber-list")
 
-        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertNonPresence("Emilia Eventis", div="modunsubscriber-list")
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = "DB-5-1"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia Eventis", div="modunsubscriber-list")
 
         self.assertNonPresence("zelda@example.cde", div="whitelist")
         f = self.response.forms['addwhitelistform']
@@ -601,7 +599,7 @@ class TestMlFrontend(FrontendTest):
                     row['email'] + ";" + row['subscription_address'])
             all_rows.append(line)
 
-        self.assertIn('DB-5-1;Emilia E.;Eventis;unsubscription_override;'
+        self.assertIn('DB-5-1;Emilia;Eventis;unsubscription_override;'
                       'emilia@example.cde;', all_rows)
         self.assertIn('DB-9-4;Inga;Iota;subscription_override;'
                       'inga@example.cde;', all_rows)
@@ -618,12 +616,12 @@ class TestMlFrontend(FrontendTest):
         # Inga is now in SubscriptionState 'subscribed'
         # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
-        self.assertPresence("Emilia E. Eventis")
+        self.assertPresence("Emilia Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("Emilia", div="modunsubscriber-list")
-        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
+        self.assertPresence("Emilia Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']

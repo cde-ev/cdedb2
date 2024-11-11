@@ -29,7 +29,9 @@ class TestOffline(FrontendTest):
         existing_config = get_configpath()
 
         # write the original config in a temporary config file
-        config = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
+        config = tempfile.NamedTemporaryFile(
+            "w", suffix=".py", delete=False, encoding="utf-8",
+        )
         config.write(existing_config.read_text())
         config.flush()
 
@@ -85,11 +87,11 @@ class TestOffline(FrontendTest):
                           {'href': 'core/persona/1/adminchange'})
             self.assertTitle('Anton Administrator bearbeiten')
             f = self.response.forms['changedataform']
-            f['display_name'] = "Zelda"
+            f['nickname'] = "Zelda"
             f['birthday'] = "3.4.1933"
             self.submit(f)
             self.assertPresence("Zelda")
-            self.assertTitle("Anton Armin A. Administrator")
+            self.assertTitle("Anton Administrator")
             self.assertPresence("03.04.1933")
 
             # Test quick partial export

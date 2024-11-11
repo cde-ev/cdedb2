@@ -117,7 +117,7 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Optional[set[Role]] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None,
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
@@ -129,7 +129,6 @@ class User:
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
-        self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
@@ -148,7 +147,6 @@ class User:
     def persona_name(self) -> str:
         return make_persona_name({
             'given_names': self.given_names,
-            'display_name': self.display_name,
             'family_name': self.family_name,
         })
 
@@ -572,36 +570,30 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
 
 
 def make_persona_forename(persona: CdEDBObject,
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False) -> str:
+                          use_legal_name: bool = False,
+                          include_nickname: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
-    if only_display_name + only_given_names + given_and_display_names > 1:
+    if use_legal_name and include_nickname:
         raise RuntimeError(n_("Invalid use of keyword parameters."))
-    display_name: str = persona.get('display_name', "")
+    nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
-    if only_given_names:
-        return given_names
-    elif only_display_name:
-        return display_name
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
+    if use_legal_name:
+        return persona['legal_given_names']
+    if include_nickname:
+        if not nickname:
             return given_names
         else:
-            return f"{given_names} ({display_name})"
-    elif display_name and display_name in given_names:
-        return display_name
+            return f"{given_names} ({nickname})"
     return given_names
 
 
 def make_persona_name(persona: CdEDBObject,
-                      only_given_names: bool = False,
-                      only_display_name: bool = False,
-                      given_and_display_names: bool = False,
+                      use_legal_name: bool = False,
+                      include_nickname: bool = False,
                       with_family_name: bool = True,
                       with_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
@@ -611,8 +603,7 @@ def make_persona_name(persona: CdEDBObject,
     the documentation page about "User Experience Conventions".
     """
     forename = make_persona_forename(
-        persona, only_given_names=only_given_names, only_display_name=only_display_name,
-        given_and_display_names=given_and_display_names)
+        persona, use_legal_name=use_legal_name, include_nickname=include_nickname)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
@@ -636,7 +627,7 @@ def compute_checkdigit(value: int) -> str:
     tmp = value
     while tmp > 0:
         digits.append(tmp % 10)
-        tmp = tmp // 10
+        tmp //= 10
     dsum = sum((i + 2) * d for i, d in enumerate(digits))
     return "0123456789X"[-dsum % 11]
 
@@ -704,7 +695,7 @@ def int_to_words(num: int, lang: str) -> str:
         tmp = num
         while tmp > 0:
             number_words.append(_small_int_to_words(tmp % 1000, lang))
-            tmp = tmp // 1000
+            tmp //= 1000
         ret = ""
         for number_word, multiplier in reversed(tuple(zip(number_words,
                                                           multipliers))):
@@ -727,7 +718,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
     def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
-        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
+        import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -833,12 +824,12 @@ class LodgementsSortkeys(enum.Enum):
     total_camping_mat = 21
 
     def is_used_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_camping_mat)
+        return self in {LodgementsSortkeys.used_regular,
+                        LodgementsSortkeys.used_camping_mat}
 
     def is_total_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_camping_mat)
+        return self in {LodgementsSortkeys.total_regular,
+                        LodgementsSortkeys.total_camping_mat}
 
 
 @enum.unique

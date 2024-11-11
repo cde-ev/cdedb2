@@ -48,7 +48,7 @@
             <ul id="result">
                 {% for dataset in result %}
                     <li>
-                        {{ util.persona_anchor(dataset, given_and_display_names=True, quote_me=True) }}
+                        {{ util.persona_anchor(dataset, include_nickname=True, quote_me=True) }}
                     </li>
                 {% endfor %}
                 {% if count > cutoff %}
@@ -77,7 +77,7 @@
                 <div class="row">
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_given_names,display_name", label=gettext("Given Names"),
+                        {{ util.form_input_text(name="qval_given_names,nickname", label=gettext("Given Names"),
                                 aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_family_name,birth_name", label=gettext("Family Name"),
                                 aclass="input-sm") }}

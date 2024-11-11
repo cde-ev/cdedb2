@@ -19,6 +19,7 @@ from tests.common import (
 
 class TestPrivacyFrontend(FrontendTest):
 
+    # TODO add test for legal_given_names
     FIELD_TO_DIV = {
         "Name": 'personal-information',
         "Geburtsname": 'personal-information',
@@ -688,7 +689,7 @@ class TestPrivacyFrontend(FrontendTest):
         akira = "Akira Abukara"
         berta = "Bertå Beispiel"
         charly = "Charly Clown"
-        emilia = "Emilia E. Eventis"
+        emilia = "Emilia Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
@@ -725,7 +726,7 @@ class TestPrivacyFrontend(FrontendTest):
     @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
-        emilia = "Emilia E. Eventis"
+        emilia = "Emilia Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):

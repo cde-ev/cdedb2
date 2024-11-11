@@ -75,7 +75,7 @@
                             {% set persona = personas[registrations[reg_id]['persona_id']] %}
                             <li>
                                 {{ util.href(cdedblink('event/show_registration', {'registration_id': reg_id}),
-                                             util.persona_name(persona)) }}
+                                             util.persona_name(persona, include_nickname=True)) }}
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     ({% for track in tracks|sort -%}
                                         {% if not loop.first %}, {% endif -%}

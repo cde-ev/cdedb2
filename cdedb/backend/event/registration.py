@@ -718,13 +718,13 @@ class EventRegistrationBackend(EventBaseBackend):
         if position is not None:
             cfp = CourseFilterPositions
             sub_conditions = []
-            if position.enum in (cfp.instructor, cfp.anywhere):
+            if position.enum in {cfp.instructor, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append("rtracks.course_instructor = %s")
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (cfp.any_choice, cfp.anywhere):
+            if position.enum in {cfp.any_choice, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append(
                         "(choices.course_id = %s AND "
@@ -743,7 +743,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     sub_conditions.append(
                         "(choices.course_id IS NULL AND choices.rank = %s)")
                     params.append(position.int)
-            if position.enum in (cfp.assigned, cfp.anywhere):
+            if position.enum in {cfp.assigned, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
                     params.append(course_id)
@@ -1254,7 +1254,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {

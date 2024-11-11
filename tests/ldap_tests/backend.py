@@ -8,15 +8,37 @@ computed value, that the tested function should return,
 e.g. `self.assertEqual("123", str(123))`.
 """
 import asyncio
-from typing import Any
+from typing import Any, cast
 
+from ldaptor.ldapfilter import parseFilter
+from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import ber2int, int2ber
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
+from twisted.python.util import InsensitiveDict
 
+from cdedb.database.query import DatabaseValue_s
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
+from cdedb.ldap.types import AttributeDescriptionList, FilterLike
 from tests.common import AsyncBasicTest, BasicTest
+
+
+def create_filter_object(filter_string: str) -> FilterLike:
+    filterdecoder = pureldap.LDAPBERDecoderContext_Filter(
+        fallback=pureldap.LDAPBERDecoderContext(
+            fallback=pureber.BERDecoderContext(),
+        ),
+        inherit=pureldap.LDAPBERDecoderContext(
+            fallback=pureber.BERDecoderContext(),
+        ),
+    )
+    parsed_filter = parseFilter(filter_string)
+    roundtripped_filter, _ = pureber.berDecodeObject(
+        filterdecoder, parsed_filter.toWire(),
+    )
+
+    return roundtripped_filter
 
 
 class LDAPBackendTest(BasicTest):
@@ -247,11 +269,47 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         user_dns = await self.ldap.list_users()
         for user in user_dns:
             self.assertIsInstance(user, DN)
-        _users = await self.ldap.get_users(user_dns)
+        # empty list means all attributes
+        attributes = cast(AttributeDescriptionList, [])
+        _users = await self.ldap.get_users(user_dns, attributes)
         users_data = await self.ldap.get_users_data(persona_ids)
         self.assertIn(1, users_data)
         user_groups = await self.ldap.get_users_groups(persona_ids)
         self.assertIn(1, user_groups)
+
+    async def test_users_with_filter(self) -> None:
+        async def list_and_filter(filter_string: str) -> list[DN]:
+            return await self.ldap.list_users(create_filter_object(filter_string))
+
+        self.assertEqual(
+            await list_and_filter("(givenName=K*l*i*)"),
+            # Kalif ibn al-Ḥasan
+            [DN("uid=11,ou=users,dc=cde-ev,dc=de")],
+        )
+        self.assertNotIn(
+            DN("uid=1,ou=users,dc=cde-ev,dc=de"),
+            await list_and_filter("(!(sn=Admin*))"),
+        )
+        self.assertEqual(
+            await list_and_filter("(&(givenName=A*)(!(uid=1)))"),
+            [
+                # Annika and Akira but not Anton
+                DN("uid=27,ou=users,dc=cde-ev,dc=de"),
+                DN("uid=100,ou=users,dc=cde-ev,dc=de"),
+            ],
+        )
+        self.assertEqual(
+            # De Morgan's law: !(A && B) == !A || !B
+            # Just to check that AND, OR and NOT are correctly parsed
+            await list_and_filter("(&(givenName=A*)(!(uid=1)))"),
+            await list_and_filter("(!(|(!(givenName=A*))(uid=1)))"),
+        )
+        self.assertEqual(
+            # We have no attribute mapping for 'foo' and no lowering for '<='
+            # so they should both be lowered to 'true' and thus be ignored.
+            await list_and_filter("(|(foo=bar)(uid<=10))"),
+            await self.ldap.list_users(),
+        )
 
     async def test_get_status_groups(self) -> None:
         status_group_dns = await self.ldap.list_status_groups()
@@ -304,3 +362,57 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertIn("42@lists.cde-ev.de", subscribers)
         mls = await self.ldap.get_mailinglists(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", mls)
+
+    async def test_ldap_filter_lowering(self) -> None:
+        async def parse_and_lower(
+            filter_string: str,
+            attr_replacements: dict[str, str],
+        ) -> tuple[str, list[DatabaseValue_s]]:
+            query, params = self.ldap.lower_ldap_filter_to_sql(
+                create_filter_object(filter_string),
+                InsensitiveDict(attr_replacements),
+            )
+            # TODO move this test into LDAPBackendTest when upgrading to psycopg 3.2
+            # query.as_string requires a context, i.e. a database connection,
+            # to be passed in which we get from the connection pool.
+            # Once upgrading to psycopg 3.2
+            # we can use query.as_string() without a context
+            # and move this test into LDAPBackendTest
+            # as we no longer need the database connection.
+            async with self.ldap.pool.connection() as conn:
+                return (query.as_string(conn), params)
+
+        # Check correct lowering of polish notation
+        self.assertEqual(
+            await parse_and_lower("(!(s=*))", {"s": "s"}),
+            ('NOT ("s" IS NOT NULL)', []),
+        )
+        self.assertEqual(
+            await parse_and_lower("(s=a*b)", {"s": "s"}),
+            ('''"s" LIKE CONCAT(%s::text, '%%', %s::text)''', ["a", "b"]),
+        )
+        self.assertEqual(
+            await parse_and_lower("(s=*c*)", {"s": "s"}),
+            ('''"s" LIKE CONCAT('%%', %s::text, '%%')''', ["c"]),
+        )
+        self.assertEqual(
+            await parse_and_lower("(&(s=1)(|(t=2)(t=3)))", {"s": "x", "t": "y"}),
+            (
+                '("x" = %s) AND (("y" = %s) OR ("y" = %s))',
+                ["1", "2", "3"],
+            ),
+        )
+
+        # Test pessimistic lowering of unknown attributes and operators.
+        # We must always assume that they are 'true'.
+        # These are still checked higher up in the stack.
+        self.assertEqual(
+            await parse_and_lower("(&(s=a)(foo<=bar))", {"foo": "foo"}),
+            ("(true) AND (true)", []),
+        )
+
+        # Test case insensitivity of attribute mapping
+        self.assertEqual(
+            await parse_and_lower("(gIvEnNaMeS=*)", {"givenNAMES": "gn"}),
+            ('"gn" IS NOT NULL', []),
+        )

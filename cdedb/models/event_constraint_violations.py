@@ -143,7 +143,7 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
                 self.registration['parts'][part.id]['status'].is_present()
             )
         params = {
-            "link": make_persona_name(self.persona),
+            "link": make_persona_name(self.persona, include_nickname=True),
             "part_list": ", ".join(
                 part.shortname for part in xsorted(self.part_group.parts.values())
                 if part_filter(part)
@@ -196,7 +196,7 @@ class CourseChoiceSyncCV(ConstraintViolation):
             " tracks (%(track_list)s).",
         )
         params = {
-            "link": make_persona_name(self.persona),
+            "link": make_persona_name(self.persona, include_nickname=True),
             "track_list": ", ".join(
                 track.shortname for track in xsorted(self.track_group.tracks.values())
             ),
@@ -427,7 +427,7 @@ class NoCourseAssignedCV(ConstraintViolation):
     def get_translation(self) -> tuple[str, CdEDBObject]:
         msg = n_("%(link)s is not assigned to a course in %(track)s.")
         params = {
-            "link": make_persona_name(self.persona),
+            "link": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
         }
         return msg, params
@@ -501,7 +501,7 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
                      " (%(assigned_course)s) in %(track)s.")
 
         params = {
-            "link": make_persona_name(self.persona),
+            "link": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
             "assigned_course":
                 f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
