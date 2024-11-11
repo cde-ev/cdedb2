@@ -434,7 +434,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.courses_read)
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool,
@@ -484,7 +484,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.render(rs, "query/course_query", params)
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_read)
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
                         download: Optional[str], is_search: bool,
