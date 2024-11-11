@@ -7326,11 +7326,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Heldentum")
         self.assertNoLink('/event/event/1/course/1/show')
         self.traverse({'href': "/event/event/1/course/query"}, "Unterkünfte")
-        self.assertPresence("Warme Stube")
-        self.assertNoLink('/event/event/1/lodgement/1/show')
         self.assertNoLink('/event/event/1/lodgement/graph/form')
         saved_response = self.response
-        self.get('/event/event/1/lodgement/1/show', status=403)
+        self.traverse("Warme Stube")
+        self.assertPresence("2 + 0", div='inhabitants-3')
+        self.assertPresence("Gemischte Unterkunft mit konfligierenden Teilnehmern.",
+                            div='inhabitants-3')
+        self.assertNonPresence("Akira")
         self.get('/event/event/1/lodgement/graph/show', status=403)
         self.response = saved_response
         self.traverse("Unterkunftssuche")

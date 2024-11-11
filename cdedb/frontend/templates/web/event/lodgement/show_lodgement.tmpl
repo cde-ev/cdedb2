@@ -85,7 +85,7 @@
                     </div>
 
                     <div class="panel-body">
-                        {% for p in problems if p.part_id == part.id %}
+                        {%- for p in problems if p.part_id == part.id -%}
                             <p class="{% if p.severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
                                 {{ gettext(p.description) }}
                                 {% if affected_regs %}
@@ -97,8 +97,9 @@
                                     )
                                 {% endif %}
                             </p>
-                        {% endfor %}
+                        {%- endfor -%}
 
+                        {%- if inhabitants -%}
                         <ul class="slim">
                             {% for registration_id in inhabitants[part.id] %}
                                 {% set registration_part_status = registrations[registration_id]['parts'][part.id]['status'] %}
@@ -117,13 +118,15 @@
                                 </li>
                             {% endfor %}
                         </ul>
+                        {%- endif -%}
                     </div>
-                    {% if inhabitants[part.id] %}
+                    {% if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}
                         <div class="panel-footer">
                             {{ util.href(cdedblink('event/registration_query',
                                                    make_inhabitants_query(part.id).serialize_to_url()) + "#query-results",
                                          label=gettext("View Registrations"), icon=util.make_icon('list'),
-                                         anid="inhabitants-link-{}".format(part.id)) }}
+                                         anid="inhabitants-link-{}".format(part.id),
+                                         readonly=not is_privileged_for("registration_query")) }}
                         </div>
                     {% endif %}
                 </div>
