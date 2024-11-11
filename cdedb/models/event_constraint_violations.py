@@ -115,15 +115,18 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
-            mep_group: models.PartGroup,
+            part_group: models.PartGroup,
     ) -> Self | None:
         """
         If the given registration is present at competing parts, return a violation.
 
         Depending on the exact status, the violation can have a different severity.
         """
+        ct = part_group.constraint_type
+        if ct != const.EventPartGroupType.mutually_exclusive_participants:
+            return None
         participant_parts = {
-            part_id for part_id in mep_group.parts
+            part_id for part_id in part_group.parts
             if registration['parts'][part_id]['status']
                == const.RegistrationPartStati.participant
         }
@@ -133,11 +136,11 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
                 severity=ERROR,
                 registration=registration,
                 persona=persona,
-                part_group=mep_group,
+                part_group=part_group,
             )
 
         is_present_parts = {
-            part_id for part_id in mep_group.parts
+            part_id for part_id in part_group.parts
             if registration['parts'][part_id]['status'].is_present()
         }
         if len(is_present_parts) > 1:
@@ -146,7 +149,7 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
                 severity=WARNING,
                 registration=registration,
                 persona=persona,
-                part_group=mep_group,
+                part_group=part_group,
             )
 
         return None
@@ -191,7 +194,7 @@ class CourseChoiceSyncCV(ConstraintViolation):
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
-            ccs_group: models.TrackGroup,
+            track_group: models.TrackGroup,
     ) -> Self | None:
         """
         If the registration has unyncen course choices, return a violation.
@@ -199,19 +202,22 @@ class CourseChoiceSyncCV(ConstraintViolation):
         The backend should always ensure, that this cannot occur, so such a
         violation has a critical severity if it does occur.
         """
+        ct = track_group.constraint_type
+        if ct != const.CourseTrackGroupType.course_choice_sync:
+            return None
         if any(
                 registration['tracks'][t1]['choices']
                 != registration['tracks'][t2]['choices']
                 or registration['tracks'][t1]['course_instructor']
                 != registration['tracks'][t2]['course_instructor']
-                for t1, t2 in itertools.combinations(ccs_group.tracks, 2)
+                for t1, t2 in itertools.combinations(track_group.tracks, 2)
         ):
             return cls(
                 event=event,
                 severity=CRITICAL,
                 registration=registration,
                 persona=persona,
-                track_group=ccs_group,
+                track_group=track_group,
             )
         return None
 
@@ -241,15 +247,18 @@ class MutuallyExclusiveCoursesCV(ConstraintViolation):
     def check(  # type: ignore[override]
             cls, event: models.Event, *,
             course: CdEDBObject,
-            mec_group: models.TrackGroup,
+            track_group: models.TrackGroup,
     ) -> Self | None:
         """If the given course takes place in competing tracks, return a violation."""
-        if len(set(course['active_segments']) & set(mec_group.tracks)) > 1:
+        ct = track_group.constraint_type
+        if ct != const.CourseTrackGroupType.mutually_exclusive_courses:
+            return None
+        if len(set(course['active_segments']) & set(track_group.tracks)) > 1:
             return cls(
                 event=event,
                 severity=ERROR,  # TODO: WARNING if no attendees.
                 course=course,
-                track_group=mec_group,
+                track_group=track_group,
             )
         return None
 

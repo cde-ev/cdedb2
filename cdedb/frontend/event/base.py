@@ -461,14 +461,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         violations: list[ConstraintViolation] = []
 
-        pgs_by_type = collections.defaultdict(list)
-        for pg in xsorted(rs.ambience['event'].part_groups.values()):
-            pgs_by_type[pg.constraint_type].append(pg)
-
-        tgs_by_type = collections.defaultdict(list)
-        for tg in xsorted(rs.ambience['event'].track_groups.values()):
-            tgs_by_type[tg.constraint_type].append(tg)
-
         sorted_tracks = xsorted(event.tracks.values())
 
         # Retrieve registrations.
@@ -498,105 +490,125 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
+        _choice_counts, course_attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+
+        _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
+        reg_violation_spec: _vs_type = {
+            'track': {
+                (
+                    NoCourseAssignedCV,
+                ): [
+                    'registration', 'persona', 'track',
+                ],
+                (
+                    IncorrectCourseAssignedCV,
+                ): [
+                    'registration', 'persona', 'track', 'assigned_course',
+                    'instructed_course',
+                ],
+            },
+            'part_group': {
+                (
+                    MutuallyExclusiveParticipationCV,
+                ): [
+                    'registration', 'persona', 'part_group',
+                ],
+            },
+            'track_group': {
+                (
+                    CourseChoiceSyncCV,
+                ): [
+                    'registration', 'persona', 'track_group',
+                ],
+            },
+        }
+        course_violation_spec: _vs_type = {
+            'track': {
+                (
+                    CancelledWithAttendeesCV,
+                    IncorrectNumAttendeesCV,
+                    LonelyAttendeesCV,
+                ): [
+                    'course', 'track', 'attendees',
+                ],
+            },
+            'track_group': {
+                (
+                    MutuallyExclusiveCoursesCV,
+                ): [
+                    'course', 'track_group',
+                ],
+            },
+        }
+
+        def _check_violation(
+                violation_spec: dict[tuple[type[ConstraintViolation], ...], list[str]],
+                params: CdEDBObject,
+        ) -> None:
+            for violation_class_list, keys in violation_spec.items():
+                for violation_class in violation_class_list:
+                    kwargs = {k: params[k] for k in keys}
+                    if v := violation_class.check(event, **kwargs):
+                        violations.append(v)
+
         for reg_id, reg in registrations.items():
             for part in event.parts.values():
                 reg['parts'][part.id]['age'] = determine_age_class(
                     personas[reg['persona_id']]['birthday'], part.part_begin)
 
-            violations.extend(
-                mep_violation for mep_group in pgs_by_type[
-                    const.EventPartGroupType.mutually_exclusive_participants
-                ]
-                if (
-                    mep_violation := MutuallyExclusiveParticipationCV.check(
-                        event,
-                        registration=reg,
-                        persona=personas[reg['persona_id']],
-                        mep_group=mep_group,
-                    )
-                )
-            )
+            parameters: CdEDBObject = {
+                'registration': reg,
+                'persona': personas[reg['persona_id']],
+            }
 
-            violations.extend(
-                ccs_violation for ccs_group in tgs_by_type[
-                    const.CourseTrackGroupType.course_choice_sync
-                ]
-                if (
-                    ccs_violation := CourseChoiceSyncCV.check(
-                        event,
-                        registration=reg,
-                        persona=personas[reg['persona_id']],
-                        ccs_group=ccs_group,
-                    )
-                )
-            )
+            reg_track_violation_spec = reg_violation_spec['track']
+            for track in sorted_tracks:
+                parameters.update({
+                    'track': track,
+                    'assigned_course': all_courses.get(
+                        reg['tracks'][track.id]['course_id']),
+                    'instructed_course': all_courses.get(
+                        reg['tracks'][track.id]['course_instructor']),
+                })
+                _check_violation(reg_track_violation_spec, parameters)
 
-            violations.extend(
-                nca_violation for track in sorted_tracks
-                if (
-                    nca_violation := NoCourseAssignedCV.check(
-                        event,
-                        registration=reg,
-                        persona=personas[reg['persona_id']],
-                        track=track,
-                    )
-                )
-            )
+            reg_part_group_violation_spec = reg_violation_spec['part_group']
+            for part_group in xsorted(event.part_groups.values()):
+                parameters.update({
+                    'part_group': part_group,
+                })
+                _check_violation(reg_part_group_violation_spec, parameters)
 
-            violations.extend(
-                ica_violation for track in sorted_tracks
-                if (
-                    ica_violation := IncorrectCourseAssignedCV.check(
-                        event,
-                        registration=reg,
-                        persona=personas[reg['persona_id']],
-                        track=track,
-                        assigned_course=all_courses.get(
-                            reg['tracks'][track.id]['course_id'],
-                        ),
-                        instructed_course=all_courses.get(
-                            reg['tracks'][track.id]['course_instructor'],
-                        ),
-                    )
-                )
-            )
-        _choice_counts, course_attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
-        attendee_violation_classes: list[type[ConstraintViolation]] = [
-            CancelledWithAttendeesCV,
-            IncorrectNumAttendeesCV,
-            LonelyAttendeesCV,
-        ]
+            reg_track_group_violation_spec = reg_violation_spec['track_group']
+            for track_group in xsorted(event.track_groups.values()):
+                parameters.update({
+                    'track_group': track_group,
+                })
+                _check_violation(reg_track_group_violation_spec, parameters)
 
         for course in xsorted(courses.values()):
-            violations.extend(
-                mec_violation for mec_group in tgs_by_type[
-                    const.CourseTrackGroupType.mutually_exclusive_courses
-                ]
-                if (
-                    mec_violation := MutuallyExclusiveCoursesCV.check(
-                        event,
-                        course=course,
-                        mec_group=mec_group,
-                    )
-                )
-            )
+            parameters = {
+                'course': course,
+            }
 
-            for violation_class in attendee_violation_classes:
-                violations.extend(
-                    violation for track in sorted_tracks
-                    if (
-                        violation := violation_class.check(
-                            event,
-                            course=course,
-                            attendees=course_attendees[course['id'], track.id],
-                            track=track,
-                        )
-                    )
-                )
+            course_track_violation_spec = course_violation_spec['track']
+            for track in sorted_tracks:
+                parameters.update({
+                    'track': track,
+                    'attendees': course_attendees[course['id'], track.id],
+                })
+                _check_violation(course_track_violation_spec, parameters)
+
+            course_track_group_violation_spec = course_violation_spec['track_group']
+            for track_group in xsorted(event.track_groups.values()):
+                parameters.update({
+                    'track_group': track_group,
+                })
+                _check_violation(course_track_group_violation_spec, parameters)
 
         violations_by_class = collections.defaultdict(list)
-        for violation in violations:
-            violations_by_class[violation.__class__.__name__].append(violation)
+        for v in violations:
+            violations_by_class[v.__class__.__name__].append(v)
 
         max_severity_by_class = {
             violation_class_name: max(violation.severity for violation in violations)
