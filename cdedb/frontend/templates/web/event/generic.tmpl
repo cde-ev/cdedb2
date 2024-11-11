@@ -352,7 +352,7 @@
     {% endif %}
     {% call util.bootstrap_panel(
             title=title, icon=icon, anid=anid,
-            aclass="panel-default" if severity <= 0 else ("panel-danger" if severity > 1 else "panel-warning")) %}
+            aclass="panel-default" if severity <= 1 else ("panel-danger" if severity > 2 else "panel-warning")) %}
         {{ caller_content }}
     {% endcall %}
 {% endmacro %}
@@ -361,9 +361,10 @@
     <ul id="{{ class_name }}-list">
         {% for violation in violations if violation.severity >= min_severity %}
             <li class="{{ "text-muted" if violation.severity <= 0 else
-                          ("text-warning" if violation.severity <= 1 else
-                           ("text-danger" if violation.severity <= 2 else
-                            "text-danger fw-bold")) }}">
+                          ("" if violation.severity == 1 else
+                           ("text-warning" if violation.severity == 2 else
+                            ("text-danger" if violation.severity == 3 else
+                             "text-danger fw-bold"))) }}">
                 {% set msg, params = violation.get_translation() %}
                 {% if link %}
                     {% set link_target, link_params = violation.get_link_params() %}

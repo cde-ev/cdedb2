@@ -1,5 +1,23 @@
 """
 Classes for constraint violations in the event realm.
+
+A violation marks a valid but undesired state that should be addressed
+with some level of urgency depending on the given `severity`.
+
+Severities and their meaning are roughtly as follows:
+
+CRITICAL: A state which should never exist and only does so because of:
+    - a bug
+    - a corrupted database entry
+    - human error outside of the orgateam
+ERROR: A state which is always incorrect and should be fixed within a few days.
+WARNING: A state which should be fixed, but which may be correct for some period
+    of time or in some special circumstances.
+INFO: A state which should be addressed at some point and not forgotten but which
+    can only be addressed long term or by someone outside of the orgateam.
+    Might later turn into more severe state, depending on other factors.
+DEBUG: A placeholder for violations which are implemented but are not relevant in
+    practice and therefore hidden in the UI.
 """
 
 import dataclasses
@@ -15,6 +33,13 @@ from cdedb.common.sorting import xsorted
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import CourseAttendees
+
+
+CRITICAL = 4
+ERROR = 3
+WARNING = 2
+INFO = 1
+DEBUG = 0
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -105,7 +130,7 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
         if len(participant_parts) > 1:
             return cls(
                 event=event,
-                severity=2,
+                severity=ERROR,
                 registration=registration,
                 persona=persona,
                 part_group=mep_group,
@@ -118,7 +143,7 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
         if len(is_present_parts) > 1:
             return cls(
                 event=event,
-                severity=1,
+                severity=WARNING,
                 registration=registration,
                 persona=persona,
                 part_group=mep_group,
@@ -127,7 +152,7 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
         return None
 
     def get_translation(self) -> tuple[str, CdEDBObject]:
-        if self.severity >= 2:
+        if self.severity >= ERROR:
             msg = n_(
                 "%(link)s is participant in mutually exclusive parts (%(part_list)s).",
             )
@@ -172,7 +197,7 @@ class CourseChoiceSyncCV(ConstraintViolation):
         If the registration has unyncen course choices, return a violation.
 
         The backend should always ensure, that this cannot occur, so such a
-        violation has a very high severity if it does occur.
+        violation has a critical severity if it does occur.
         """
         if any(
                 registration['tracks'][t1]['choices']
@@ -183,7 +208,7 @@ class CourseChoiceSyncCV(ConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=4,
+                severity=CRITICAL,
                 registration=registration,
                 persona=persona,
                 track_group=ccs_group,
@@ -222,7 +247,7 @@ class MutuallyExclusiveCoursesCV(ConstraintViolation):
         if len(set(course['active_segments']) & set(mec_group.tracks)) > 1:
             return cls(
                 event=event,
-                severity=1,
+                severity=ERROR,  # TODO: WARNING if no attendees.
                 course=course,
                 track_group=mec_group,
             )
@@ -260,12 +285,16 @@ class CancelledWithAttendeesCV(ConstraintViolation):
             attendees: "CourseAttendees",
             track: models.CourseTrack,
     ) -> Self | None:
-        """Return a validation if the course is cancelled but has attendees."""
+        """Return a violation if the course is cancelled but has attendees.
+
+        If the course was never offered but has attendees, someone misused the
+        course segments toggle. In that case this is an error, otherwise a warning.
+        """
         if track.id not in course['segments']:
             if attendees.involved:
                 return cls(
                     event=event,
-                    severity=3,
+                    severity=ERROR,
                     course=course,
                     track=track,
                     num=attendees.num_involved,
@@ -274,7 +303,7 @@ class CancelledWithAttendeesCV(ConstraintViolation):
             if attendees.involved:
                 return cls(
                     event=event,
-                    severity=2,
+                    severity=WARNING,
                     course=course,
                     track=track,
                     num=attendees.num_involved,
@@ -282,7 +311,7 @@ class CancelledWithAttendeesCV(ConstraintViolation):
         return None
 
     def get_translation(self) -> tuple[str, CdEDBObject]:
-        if self.severity >= 3:
+        if self.severity >= ERROR:
             msg = n_("%(link)s is not offered in %(track)s but has %(num)s attendees.")
         else:
             msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
@@ -311,7 +340,11 @@ class IncorrectNumAttendeesCV(ConstraintViolation):
             attendees: "CourseAttendees",
             track: models.CourseTrack,
     ) -> Self | None:
-        """Return a violation if the course has too few or too many attendees."""
+        """
+        Return a violation if the course has too few or too many attendees.
+
+        Make the violation DEBUG if no attendees are assigned yet to avoid clutter.
+        """
         if track.id in course['active_segments']:
             if (
                     course['min_size'] is not None
@@ -322,7 +355,7 @@ class IncorrectNumAttendeesCV(ConstraintViolation):
             ):
                 return cls(
                     event=event,
-                    severity=1 if attendees.num_involved_learners else 0,
+                    severity=WARNING if attendees.num_involved_learners else DEBUG,
                     course=course,
                     track=track,
                     num=attendees.num_involved_learners,
@@ -369,7 +402,7 @@ class LonelyAttendeesCV(ConstraintViolation):
             if bool(attendees.involved_learners) != bool(attendees.involved_instructors):  # pylint: disable=line-too-long
                 return cls(
                     event=event,
-                    severity=1,
+                    severity=INFO,
                     course=course,
                     track=track,
                     num_learners=attendees.num_involved_learners,
@@ -406,6 +439,10 @@ class NoCourseAssignedCV(ConstraintViolation):
             persona: CdEDBObject,
             track: models.CourseTrack,
     ) -> Self | None:
+        """Return a violation if the registration has no assigned course.
+
+        Severity of DEBUG for registrations which are unlikely to need a course.
+        """
         reg_track = registration['tracks'][track.id]
         reg_part = registration['parts'][track.part_id]
         if not reg_part['status'].is_present():
@@ -413,11 +450,11 @@ class NoCourseAssignedCV(ConstraintViolation):
         if reg_track['course_id'] is None:
             return cls(
                 event=event,
-                severity=0 if (
+                severity=DEBUG if (
                         persona['id'] in event.orgas
                         or reg_part['age'] == AgeClasses.u10
                         or reg_part['status'] != const.RegistrationPartStati.participant
-                ) else 1,
+                ) else WARNING,
                 registration=registration,
                 persona=persona,
                 track=track,
@@ -456,6 +493,9 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
     ) -> Self | None:
         """
         Return a violation if the registration is assigned to an unchosen course.
+
+        Make the violation a warning if an instructor is not assigned to their
+        instructed course event though it takes place.
         """
         reg_track = registration['tracks'][track.id]
         reg_part = registration['parts'][track.part_id]
@@ -468,7 +508,7 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=1,
+                severity=WARNING,
                 registration=registration,
                 persona=persona,
                 track=track,
@@ -484,7 +524,7 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=1,
+                severity=INFO,
                 registration=registration,
                 persona=persona,
                 track=track,
