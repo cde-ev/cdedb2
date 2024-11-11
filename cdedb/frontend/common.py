@@ -118,6 +118,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -2220,8 +2221,7 @@ def REQUESTfile(*args: str) -> Callable[[F], F]:
     return wrap
 
 
-def event_guard(argname: str = "event_id",
-                check_offline: bool = False) -> Callable[[F], F]:
+def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific event. The
     event is specified by id which has either to be a keyword
     parameter or the first positional parameter after the request state.
@@ -2238,19 +2238,18 @@ def event_guard(argname: str = "event_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if argname in kwargs:  # pylint: disable=consider-using-get
-                arg = kwargs[argname]
-            else:
-                arg = args[0]
-            if arg not in rs.user.orga and not obj.is_admin(rs):
+            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
-            if check_offline:
-                is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
+            if required_privilege & EventPrivileges.all_write:
+                is_locked = obj.eventproxy.is_offline_locked(
+                    rs, event_id=rs.ambience['event'].id)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         n_("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
+
+        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
 
         return cast(F, new_fun)
 

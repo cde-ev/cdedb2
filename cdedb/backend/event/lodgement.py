@@ -34,6 +34,10 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -69,7 +73,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "event.lodgement_groups", ("id", "title"),
                                (event_id,), entity_key="event_id")
@@ -106,7 +110,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgement groups from exactly one event allowed!"))
             event_id = unwrap(events)
-            if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
@@ -133,8 +138,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         with Atomizer(rs):
             current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
             event_id, title = current['event_id'], current['title']
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_write,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -229,7 +234,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         if group_id:
             group_data = self.sql_select_one(
@@ -264,8 +269,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event_fields = models.EventField.many_from_database(
                 self._get_event_fields(rs, event_id).values())
@@ -293,7 +298,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             group_data = {
                 e['id']: e for e in self.query_all(
@@ -326,8 +332,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if current is None:
                 raise ValueError(n_("Lodgement does not exist."))
             event_id, title = current['event_id'], current['title']
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_write,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -371,8 +377,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             association=const.FieldAssociations.lodgement,
         )
         data['fields'] = PsycoJson(fdata)
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write,
+                             event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
@@ -418,8 +424,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         lodgement_id = affirm(vtypes.ID, lodgement_id)
         lodgement = self.get_lodgement(rs, lodgement_id)
         event_id = lodgement["event_id"]
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
@@ -465,7 +470,10 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id):
+        is_privileged_ = is_privileged(
+            rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
+            event_id=event_id)
+        if not is_privileged_:
             raise PrivilegeError
         params: list[DatabaseValue_s] = [event_id]
         if lodgement_ids is None:

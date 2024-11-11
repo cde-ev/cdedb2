@@ -23,11 +23,11 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"),
-                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), icon='plus',
+                             readonly=not is_privileged_for('create_lodgement'), aclass='btn btn-sm btn-success') }}
             {% if ambience['event']['fields'] %}
                 {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].lodgement.value}), gettext("Set Field"),
-                              readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                             readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
             {% endif %}
             {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].lodgement}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
             </div>
@@ -46,6 +46,7 @@
         <div class="p pull-right query-result-dynamic-actions" style="display: none;">
             {{ generic.query_result_dynamic_action(
                     label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
+                    readonly=not is_privileged_for('field_multiset_select'),
                     params={"kind": enums['FieldAssociations'].course}, magic_placeholders=["ids"]) }}
         </div>
 

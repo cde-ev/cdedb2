@@ -1016,6 +1016,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
+            # TODO How to migrate this to EventPrivileges?
             if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(

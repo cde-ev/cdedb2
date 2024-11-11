@@ -67,6 +67,7 @@ from cdedb.common.fields import (
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import (
     ALL_LOG_FILTERS,
@@ -1737,6 +1738,7 @@ class CoreBaseBackend(AbstractBackend):
             if max_end and max_end['m'] and max_end['m'] >= now().date():
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
+            self.sql_delete(rs, "event.helpers", (persona_id,), "persona_id")
             #
             # 7. Assembly realm is handled via assembly archival.
             #
@@ -1964,28 +1966,17 @@ class CoreBaseBackend(AbstractBackend):
                         event_id: Optional[int] = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
 
-        This is allowed for admins and for yourself in any case. Orgas can also
-        query users registered for one of their events; other event users can
-        query participants of events they participate themselves.
+        This is allowed for admins and for yourself in any case. Orgas and participants
+        can also query users registered for one of their events.
 
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        event_id = affirm_optional(vtypes.ID, event_id)
+        event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
-        # The event user view on a cde user contains lots of personal
-        # data. So we require the requesting user to be orga (to get access to
-        # all event users who are related to their event) or 'participant'
-        # of the requested event (to get access to all event users who are also
-        # 'participant' at the same event).
-        is_orga = False
-        if event_id:
-            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin",
-                            "droid_quick_partial_export"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """
@@ -1997,18 +1988,19 @@ class CoreBaseBackend(AbstractBackend):
                         event.registration_parts AS rparts
                     ON rparts.registration_id = regs.id
                 WHERE
-                    {conditions}"""
-            conditions = ["regs.event_id = %s"]
-            params: list[Any] = [event_id]
-            if not is_orga:
-                conditions.append("rparts.status = %s")
-                params.append(const.RegistrationPartStati.participant)
-            query = query.format(conditions=' AND '.join(conditions))
-            data = self.query_all(rs, query, params)
+                    regs.event_id = %s"""
+            data = self.query_all(rs, query, [event_id])
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
-            if not (same_event and (is_orga or
-                                    rs.user.persona_id in all_users_inscope)):
+            if not (
+                same_event and (
+                    rs.user.persona_id in all_users_inscope
+                    or is_privileged_event(
+                        rs, EventPrivileges.registrations_read_internal,
+                        event_id=event_id,
+                    )
+                )
+            ):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))

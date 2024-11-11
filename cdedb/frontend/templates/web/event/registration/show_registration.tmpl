@@ -20,7 +20,8 @@
 {% endblock %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
+        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"),
+                     readonly=not is_privileged_for("change_registration"),
                      aclass="btn btn-warning btn-sm", icon="pen") }}
         {{ util.href(cdedblink("event/show_registration_fee"), gettext("Fee Details"),
                      aclass="btn btn-info btn-sm", icon="coins") }}
@@ -330,7 +331,8 @@ Verwendungszweck:   {{ reference }}
                                              aclass="btn btn-sm btn-danger", icon='trash-alt',
                                              title=(gettext("Registration has paid non-zero amount.")
                                                 if ambience['registration']['amount_paid'] else "")) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
+                                               readonly=not is_privileged_for("delete_registration")) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(

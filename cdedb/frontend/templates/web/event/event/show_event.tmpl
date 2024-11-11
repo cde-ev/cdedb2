@@ -240,7 +240,7 @@
                                 id="removeminorformform">
                                 {{ util.anti_csrf_token("event/change_minor_form") }}
                                 {{ util.input_hidden(name="delete", value=True) }}
-                                {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=is_locked,
+                                {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=not is_privileged_for("change_minor_form"),
                                                      icon="trash-alt", aclass='btn btn-danger') }}
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
@@ -262,7 +262,7 @@
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
                             <div class="input-group-btn">
-                                {{ util.input_submit(label=gettext("Upload"), readonly=is_locked, icon='arrow-circle-up') }}
+                                {{ util.input_submit(label=gettext("Upload"), readonly=not is_privileged_for("change_minor_form"), icon='arrow-circle-up') }}
                             </div>
                         </div>
                         {{ util.output_errors('minor_form') }}
@@ -353,7 +353,7 @@
                 {% endcall %}
             </div>
 
-            {% if constraint_violations['max_severity'] > 0 %}
+            {% if constraint_violations and constraint_violations['max_severity'] > 0 %}
             <div class="col-md-6" id="constraint-violations">
                 {% call generic.constraint_violations_panel(constraint_violations['max_severity'], link_title=True) %}
                     <ul>
