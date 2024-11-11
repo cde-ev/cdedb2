@@ -19755,7 +19755,7 @@ msgstr ""
 #: cdedb/models/event_constraint_violations.py:382
 #, python-format
 msgid "%(link)s has %(num)s attendees but no instructors in %(track)s."
-msgstr "%(link)s hat %(num)s Teilnehmende keine Kursleitenden in %(track)s."
+msgstr "%(link)s hat %(num)s Teilnehmende aber keine Kursleitenden in %(track)s."
 
 #: cdedb/models/event_constraint_violations.py:384
 #, python-format

@@ -4311,7 +4311,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                             div="notifications")
 
     @as_users("garcia")
-    def test_assignment_checks(self) -> None:
+    def test_course_assignment_violations(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
                       "Verstöße gegen Beschränkungen")
         self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
@@ -4342,6 +4342,33 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis ist in Sitzung nicht in"
                             " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
                             div='IncorrectCourseAssignedCV-list')
+
+        # Change "Backup" to "never offered" in "Kaffeekränzchen".
+        self.traverse("Kurse", "Backup", "Bearbeiten")
+        f = self.response.forms['configurecourseform']
+        f['segments'] = f['active_segments'] = [1, 3]
+        self.submit(f)
+        self.assertPresence("Backup wird in Kaffee nicht angeboten aber hat",
+                            div="constraint-violations-list")
+
+        # Reduce max size of "Heldentum".
+        self.traverse("Kurse", "Heldentum", "Bearbeiten")
+        f = self.response.forms['configurecourseform']
+        f['max_size'] = 1
+        self.submit(f)
+        self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.")
+
+        # Remove all non instructors from "Heldentum" in "Sitzung".
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        f['track3.course_id'] = 1
+        self.submit(f)
+        self.traverse("Kurse", "Heldentum", "Kursteilnehmer verwalten")
+        f = self.response.forms['manageattendeesform']
+        f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
+        self.submit(f)
+        self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
+                            " in Sitzung.")
 
     @as_users("garcia")
     def test_course_display_with_different_participation_stati(self) -> None:
@@ -6116,28 +6143,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
-            f['part8.status'].value, str(const.RegistrationPartStati.participant))
-        self.assertEqual(
             f['part6.status'].value, str(const.RegistrationPartStati.waitlist))
         self.assertEqual(
             f['part7.status'].value, str(const.RegistrationPartStati.guest))
         self.assertEqual(
-            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+            f['part8.status'].value, str(const.RegistrationPartStati.participant))
         self.assertEqual(
             f['part9.status'].value, str(const.RegistrationPartStati.guest))
         self.assertEqual(
             f['part10.status'].value, str(const.RegistrationPartStati.rejected))
-        f['part7.status'] = const.RegistrationPartStati.rejected
-        f['part11.status'] = const.RegistrationPartStati.participant
+        self.assertEqual(
+            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+        f['part9.status'] = f['part11.status'] = const.RegistrationPartStati.participant
         self.submit(f)
 
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
         self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
-                            " ausschließenden Veranstaltungsteilen anwesend (K2, O2).",
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="constraint-violations-list")
+        self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen teil (K2, O2).",
                             div="constraint-violations-list")
 
-        f['part9.status'] = const.RegistrationPartStati.cancelled
+        f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)

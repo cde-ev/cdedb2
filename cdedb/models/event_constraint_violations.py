@@ -183,7 +183,7 @@ class CourseChoiceSyncCV(ConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=3,
+                severity=4,
                 registration=registration,
                 persona=persona,
                 track_group=ccs_group,
