@@ -1549,8 +1549,18 @@ class CoreBaseBackend(AbstractBackend):
             query = """
                 SELECT assembly_id
                 FROM
-                    assembly.attendees
-                    JOIN assembly.assemblies ON attendees.assembly_id = assemblies.id
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                return False
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
                 WHERE persona_id = %s AND assemblies.is_active = True
             """
             if self.query_all(rs, query, (persona_id,)):
@@ -1766,9 +1776,30 @@ class CoreBaseBackend(AbstractBackend):
 
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
-            # 7. Assembly realm is handled via assembly archival.
+            # 7. Assembly realm cleanup is handled via assembly archival.
             #
-            #
+
+            # Check assembly involvement
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Attendee of unfinished assembly."))
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Presider of unfinished assembly."))
+
             # 8. Handle ml realm
             #
             self.sql_delete(rs, "ml.subscription_states", (persona_id,),
