@@ -2230,8 +2230,11 @@ class TestCdEFrontend(FrontendTest):
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
-    @prepsql("DELETE FROM ml.subscription_states"
-             " WHERE persona_id = 4 AND mailinglist_id = 62")
+    @prepsql("""
+        DELETE FROM ml.subscription_states
+        WHERE persona_id = 4 AND mailinglist_id = 62;
+        UPDATE event.events SET is_archived = True WHERE id = 3;
+    """)
     @as_users("farin")
     def test_semester(self) -> None:
         link = {'description': 'Semesterverwaltung'}
