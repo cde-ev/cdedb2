@@ -5807,6 +5807,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms["archivepersonaform"]
         f["note"] = "For testing."
         f["ack_delete"].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unausgeglichener Veranstaltungs-Kontostand",
+                            div="notifications")
+        execsql("UPDATE event.registrations SET amount_paid = 15.00"
+                " WHERE persona_id = 3 AND event_id = 2;")
+        f = self.response.forms["archivepersonaform"]
+        f["ack_delete"].checked = True
         self.submit(f)
         self.assertPresence("CdE-Party 2050")
 

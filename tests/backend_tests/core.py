@@ -1226,6 +1226,7 @@ class TestCoreBackend(BackendTest):
         # Test archival of user that is no moderator.
         self.core.archive_persona(self.key, 8, "Testing")
 
+    @prepsql("UPDATE event.events SET is_archived = True WHERE id = 3")
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
