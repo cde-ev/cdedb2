@@ -209,6 +209,8 @@ steps:
   - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=92
   - python3 -m coverage report --include 'tests/common.py' --show-missing
   - python3 -m coverage report --include 'tests/*/*.py' --show-missing --fail-under=100
+  # temporary:
+  - python3 -m coverage report --include 'cdedb/models/event_constraint_violations.py' --show-missing
 - name: xss
   image: cdedb
   pull: never

@@ -21,14 +21,16 @@ DEBUG: A placeholder for violations which are implemented but are not relevant i
 """
 import abc
 import dataclasses
+import datetime
 import itertools
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Self
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import AgeClasses, CdEDBObject, make_persona_name, n_
+from cdedb.common import AgeClasses, CdEDBObject, make_persona_name, n_, now
 from cdedb.common.sorting import xsorted
+from cdedb.filter import money_filter
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import CourseAttendees
@@ -361,6 +363,182 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
                 if self.instructed_course else None,
         }
         return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class InconsistentPaymentCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['amount_paid'] < 0:
+            return cls(
+                event=event,
+                severity=CRITICAL,
+                registration=registration,
+                persona=persona,
+            )
+        if registration['amount_paid'] > 0 and registration['payment'] is None:
+            return cls(
+                event=event,
+                severity=ERROR,
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.registration['amount_paid'] < 0:
+            msg = n_("%(link)s paid a negative amount.")
+        else:
+            msg = n_("%(link)s paid without a payment date.")
+
+        msg += " " + n_("This likely means someone entered invalid payment data.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NotPaidCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['amount_paid'] == 0 and registration['amount_owed'] > 0:
+            if any(reg_part['status'] == const.RegistrationPartStati.participant
+                   for reg_part in registration['parts'].values()):
+                return cls(
+                    event=event,
+                    severity=INFO if persona['id'] in event.orgas else ERROR,
+                    registration=registration,
+                    persona=persona,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.persona['id'] in self.event.orgas:
+            msg = n_("%(link)s is orga but has not paid their fee (%(amount_owed)s).")
+        else:
+            msg = n_("%(link)s has not paid their fee (%(amount_owed)s).")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "amount_owed": money_filter(self.registration['amount_owed']),
+        }
+
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NegativeAmountOwedCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['amount_owed'] < 0:
+            return cls(
+                event=event,
+                severity=ERROR,
+                registration=registration,
+                persona=persona,
+            )
+        if registration['amount_owed'] == 0:
+            if any(reg_part['status'].is_involved()
+                   for reg_part in registration['parts'].values()):
+                return cls(
+                    event=event,
+                    severity=DEBUG if persona['id'] in event.orgas else INFO,
+                    registration=registration,
+                    persona=persona,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.registration['amount_owed'] < 0:
+            msg = n_("%(link)s owes a negative amount (%(amount_owed)s).")
+        else:
+            msg = n_("%(link)s is involved but owes no fee.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "amount_owed": money_filter(self.registration['amount_owed']),
+        }
+
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NegativeRemainingOwedCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['remaining_owed'] < 0:
+            return cls(
+                event=event,
+                severity=WARNING if event.is_archived else INFO,
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        msg = n_("%(link)s needs to be reimbursed (%(remaining_owed)s).")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "remaining_owed": money_filter(-self.registration['remaining_owed']),
+        }
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class RemainingOwedCV(RegistrationConstraintViolation):
+    min_involved_part_begin: datetime.date
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['remaining_owed'] > 0:
+            if any(reg_part['status'].is_involved()
+                   for reg_part in registration['parts'].values()):
+                min_involved_part_begin = min(
+                    event.parts[part_id].part_begin
+                    for part_id, reg_part in registration['parts'].items()
+                    if reg_part['status'].is_involved()
+                )
+                return cls(
+                    event=event,
+                    severity=ERROR if min_involved_part_begin < now().date() else INFO,
+                    registration=registration,
+                    persona=persona,
+                    min_involved_part_begin=min_involved_part_begin,
+                )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        msg = n_(
+            "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s).")
+
+        parms = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "remaining_owed": money_filter(self.registration['remaining_owed']),
+        }
+
+        return msg, parms
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
