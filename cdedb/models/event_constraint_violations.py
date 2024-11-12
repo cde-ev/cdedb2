@@ -244,6 +244,126 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class NoCourseAssignedCV(RegistrationConstraintViolation):
+    track: models.CourseTrack
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            track: models.CourseTrack,
+    ) -> Self | None:
+        """Return a violation if the registration has no assigned course.
+
+        Severity of DEBUG for registrations which are unlikely to need a course.
+        """
+        reg_track = registration['tracks'][track.id]
+        reg_part = registration['parts'][track.part_id]
+        if not reg_part['status'].is_present():
+            return None
+        if reg_track['course_id'] is None:
+            return cls(
+                event=event,
+                severity=DEBUG if (
+                        persona['id'] in event.orgas
+                        or reg_part['age'] == AgeClasses.u10
+                        or reg_part['status'] != const.RegistrationPartStati.participant
+                ) else WARNING,
+                registration=registration,
+                persona=persona,
+                track=track,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        msg = n_("%(link)s is not assigned to a course in %(track)s.")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "track": self.track.shortname,
+        }
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
+    track: models.CourseTrack
+
+    assigned_course: CdEDBObject
+    instructed_course: CdEDBObject | None = None
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            track: models.CourseTrack,
+            assigned_course: CdEDBObject | None,
+            instructed_course: CdEDBObject | None,
+    ) -> Self | None:
+        """
+        Return a violation if the registration is assigned to an unchosen course.
+
+        Make the violation a warning if an instructor is not assigned to their
+        instructed course event though it takes place.
+        """
+        reg_track = registration['tracks'][track.id]
+        reg_part = registration['parts'][track.part_id]
+        if not reg_part['status'].is_present() or assigned_course is None:
+            return None
+        if (
+                instructed_course
+                and track.id in instructed_course['active_segments']
+                and instructed_course['id'] != assigned_course['id']
+        ):
+            return cls(
+                event=event,
+                severity=WARNING,
+                registration=registration,
+                persona=persona,
+                track=track,
+                assigned_course=assigned_course,
+                instructed_course=instructed_course,
+            )
+        if (
+                assigned_course['id'] not in reg_track['choices']
+                and (
+                    instructed_course is None
+                    or assigned_course['id'] != instructed_course['id']
+                )
+        ):
+            return cls(
+                event=event,
+                severity=INFO,
+                registration=registration,
+                persona=persona,
+                track=track,
+                assigned_course=assigned_course,
+            )
+        return None
+
+    def get_translation(self) -> tuple[str, CdEDBObject]:
+        if self.instructed_course:
+            msg = n_("%(link)s does not instruct their course (%(instructed_course)s)"
+                     " in %(track)s.")
+        else:
+            msg = n_("%(link)s did not choose their assigned course"
+                     " (%(assigned_course)s) in %(track)s.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "track": self.track.shortname,
+            "assigned_course":
+                f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
+            "instructed_course":
+                f"{self.instructed_course['nr']}."
+                f" {self.instructed_course['shortname']}"
+                if self.instructed_course else None,
+        }
+        return msg, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
     track_group: models.TrackGroup
 
@@ -420,125 +540,5 @@ class LonelyAttendeesCV(CourseConstraintViolation):
             "link": f"{self.course['nr']}. {self.course['shortname']}",
             "track": self.track.shortname,
             "num": self.num_learners or self.num_instructors,
-        }
-        return msg, params
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class NoCourseAssignedCV(RegistrationConstraintViolation):
-    track: models.CourseTrack
-
-    @classmethod
-    def check(  # type: ignore[override]
-            cls, event: models.Event, *,
-            registration: CdEDBObject,
-            persona: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
-        """Return a violation if the registration has no assigned course.
-
-        Severity of DEBUG for registrations which are unlikely to need a course.
-        """
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
-        if not reg_part['status'].is_present():
-            return None
-        if reg_track['course_id'] is None:
-            return cls(
-                event=event,
-                severity=DEBUG if (
-                        persona['id'] in event.orgas
-                        or reg_part['age'] == AgeClasses.u10
-                        or reg_part['status'] != const.RegistrationPartStati.participant
-                ) else WARNING,
-                registration=registration,
-                persona=persona,
-                track=track,
-            )
-        return None
-
-    def get_translation(self) -> tuple[str, CdEDBObject]:
-        msg = n_("%(link)s is not assigned to a course in %(track)s.")
-        params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
-            "track": self.track.shortname,
-        }
-        return msg, params
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
-    track: models.CourseTrack
-
-    assigned_course: CdEDBObject
-    instructed_course: CdEDBObject | None = None
-
-    @classmethod
-    def check(  # type: ignore[override]
-            cls, event: models.Event, *,
-            registration: CdEDBObject,
-            persona: CdEDBObject,
-            track: models.CourseTrack,
-            assigned_course: CdEDBObject | None,
-            instructed_course: CdEDBObject | None,
-    ) -> Self | None:
-        """
-        Return a violation if the registration is assigned to an unchosen course.
-
-        Make the violation a warning if an instructor is not assigned to their
-        instructed course event though it takes place.
-        """
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
-        if not reg_part['status'].is_present() or assigned_course is None:
-            return None
-        if (
-                instructed_course
-                and track.id in instructed_course['active_segments']
-                and instructed_course['id'] != assigned_course['id']
-        ):
-            return cls(
-                event=event,
-                severity=WARNING,
-                registration=registration,
-                persona=persona,
-                track=track,
-                assigned_course=assigned_course,
-                instructed_course=instructed_course,
-            )
-        if (
-                assigned_course['id'] not in reg_track['choices']
-                and (
-                    instructed_course is None
-                    or assigned_course['id'] != instructed_course['id']
-                )
-        ):
-            return cls(
-                event=event,
-                severity=INFO,
-                registration=registration,
-                persona=persona,
-                track=track,
-                assigned_course=assigned_course,
-            )
-        return None
-
-    def get_translation(self) -> tuple[str, CdEDBObject]:
-        if self.instructed_course:
-            msg = n_("%(link)s does not instruct their course (%(instructed_course)s)"
-                     " in %(track)s.")
-        else:
-            msg = n_("%(link)s did not choose their assigned course"
-                     " (%(assigned_course)s) in %(track)s.")
-
-        params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
-            "track": self.track.shortname,
-            "assigned_course":
-                f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
-            "instructed_course":
-                f"{self.instructed_course['nr']}."
-                f" {self.instructed_course['shortname']}"
-                if self.instructed_course else None,
         }
         return msg, params
