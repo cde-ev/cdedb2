@@ -31,7 +31,6 @@ import psycopg2.extensions
 import psycopg2.extras
 from passlib.hash import sha512_crypt
 
-import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
@@ -48,6 +47,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -233,7 +233,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
+        from cdedb.backend.core import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
             CoreBackend,
         )
         self.core: CoreBackend
@@ -293,7 +293,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 agg[
                     f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"
-                if query.spec[field].type in ("int", "float"):
+                if query.spec[field].type in {"int", "float"}:
                     agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
                     agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     agg[f'MIN("{field_as}")'] = f"min.{field_as}"
@@ -301,7 +301,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     agg[f'STDDEV_SAMP("{field_as}")'] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
                     agg[f'SUM("{field_as}"::int)'] = f"sum.{field_as}"
-                elif query.spec[field].type in ("date", "datetime"):
+                elif query.spec[field].type in {"date", "datetime"}:
                     agg[f'MIN("{field_as}")'] = f"min.{field_as}"
                     agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     # TODO add avg for dates
@@ -349,8 +349,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # each value in any column, without caring that the columns are
             # the same. All other operators want to find one column
             # fulfilling their constraint.
-            if operator in (_ops.containsall, _ops.containsnone,
-                            _ops.containssome):
+            if operator in {_ops.containsall, _ops.containsnone,
+                            _ops.containssome}:
                 values = tuple(diacritic_patterns(x) for x in value)
                 subphrase = "{0} ~* %s"
                 phrase = "( ( {} ) )".format(" ) OR ( ".join(
@@ -373,14 +373,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
-            elif operator in (_ops.equal, _ops.unequal, _ops.equalornull,
-                              _ops.unequalornull):
-                if operator in (_ops.equal, _ops.equalornull):
+            elif operator in {_ops.equal, _ops.unequal, _ops.equalornull,
+                              _ops.unequalornull}:
+                if operator in {_ops.equal, _ops.equalornull}:
                     phrase = "( {0} = %s"
                 else:
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
-                if operator in (_ops.equalornull, _ops.unequalornull):
+                if operator in {_ops.equalornull, _ops.unequalornull}:
                     if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
@@ -388,19 +388,19 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 else:
                     phrase += " )"
                 phrase = phrase.format(sql_param_str)
-            elif operator in (_ops.oneof, _ops.otherthan):
+            elif operator in {_ops.oneof, _ops.otherthan}:
                 if operator == _ops.oneof:
                     phrase = f"{sql_param_str} = ANY(%s)"
                 else:
                     phrase = f"NOT({sql_param_str} = ANY(%s))"
                 params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
-            elif operator in (_ops.match, _ops.unmatch):
+            elif operator in {_ops.match, _ops.unmatch}:
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
                 else:
                     phrase = "{} !~* %s"
                 params.extend((diacritic_patterns(value),) * len(columns))
-            elif operator in (_ops.regex, _ops.notregex):
+            elif operator in {_ops.regex, _ops.notregex}:
                 if operator == _ops.regex:
                     phrase = "{} ~ %s"
                 else:
@@ -415,7 +415,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
                 params.extend((value,) * len(columns))
-            elif operator in (_ops.between, _ops.outside):
+            elif operator in {_ops.between, _ops.outside}:
                 if operator == _ops.between:
                     phrase = "(%s <= {0} AND {0} <= %s)"
                 else:
@@ -682,6 +682,7 @@ PYTHON_TO_SQL_MAP = {
     FieldDatatypes.non_negative_int: "integer",
     FieldDatatypes.str: "varchar",
     FieldDatatypes.phone: "varchar",
+    FieldDatatypes.iban: "varchar",
     FieldDatatypes.float: "double precision",
     FieldDatatypes.non_negative_float: "double precision",
     FieldDatatypes.date: "date",

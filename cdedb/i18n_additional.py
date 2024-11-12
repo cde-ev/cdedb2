@@ -86,6 +86,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.event_changed"),
     n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.event_archived"),
+    n_("EventLogCodes.helper_added"),
+    n_("EventLogCodes.helper_removed"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),
@@ -182,6 +184,7 @@ I18N_STRINGS = (
     n_("FieldDatatypes.non_negative_int"),
     n_("FieldDatatypes.non_negative_float"),
     n_("FieldDatatypes.phone"),
+    n_("FieldDatatypes.iban"),
 
     n_("Genders.female"),
     n_("Genders.male"),
@@ -262,6 +265,7 @@ I18N_STRINGS = (
     n_("EventPartGroupType.mailinglist_link"),
 
     n_("CourseTrackGroupType.course_choice_sync"),
+    n_("CourseTrackGroupType.mutually_exclusive_courses"),
 
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),

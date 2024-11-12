@@ -15,12 +15,13 @@
 {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), active=True, icon="user") }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(util.persona_name(persona), ambience['event']['title'],
+    {{ util.context_heading(util.persona_name(persona, include_nickname=True), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
+        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"),
+                     readonly=not is_privileged_for("change_registration"),
                      aclass="btn btn-warning btn-sm", icon="pen") }}
         {{ util.href(cdedblink("event/show_registration_fee"), gettext("Fee Details"),
                      aclass="btn btn-info btn-sm", icon="coins") }}
@@ -33,8 +34,14 @@
     <dl class="dl-horizontal">
         <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
         <dd>
-            {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
+            {{ util.persona_name(persona, include_nickname=True) }}
         </dd>
+        {% if persona['legal_given_names'] != persona['given_names'] %}
+            <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
+            <dd>
+                {{ util.persona_name(persona, use_legal_name=True, with_titles=True) }}
+            </dd>
+        {% endif %}
         <dt title="{% trans %}CdEDB-ID{% endtrans %}">{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
@@ -325,7 +332,8 @@ Verwendungszweck:   {{ reference }}
                                              aclass="btn btn-sm btn-danger", icon='trash-alt',
                                              title=(gettext("Registration has paid non-zero amount.")
                                                 if ambience['registration']['amount_paid'] else "")) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
+                                               readonly=not is_privileged_for("delete_registration")) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(

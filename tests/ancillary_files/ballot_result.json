@@ -10,10 +10,10 @@
     },
     "use_bar": true,
     "voters": [
-        "Anton Armin A. Administrator",
-        "Bert\u00e5lotta Beispiel",
+        "Anton Administrator",
+        "Bert\u00e5 Beispiel",
         "Inga Iota",
-        "Kalif ibn al-\u1e24asan Karabatschi"
+        "Kalif Karabatschi"
     ],
     "votes": [
         {"vote": "_bar_>4>3>2>1", "salt": "krcqm\"xdv", "hash": "65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d"},

@@ -97,10 +97,10 @@ class TestLDAP(BasicTest):
         users: dict[str, str] = {**self.DUAs, **self.USERS}
         passwords: dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
         except_users = except_users or set()
-        for user in users:
-            with self.subTest(user):
+        for dua, user in users.items():
+            with self.subTest(dua):
                 with ldap3.Connection(
-                    self.server, user=users[user], password=passwords[user],
+                    self.server, user=user, password=passwords[dua],
                     raise_exceptions=True,
                 ) as conn:
                     conn.search(
@@ -109,7 +109,7 @@ class TestLDAP(BasicTest):
                         attributes=attributes,
                     )
                     # if the current user should access the entries, we check if he does
-                    if user in except_users:
+                    if dua in except_users:
                         self.assertNotEqual(0, len(conn.entries), conn.entries)
                     else:
                         self.assertEqual(0, len(conn.entries), conn.entries)
@@ -193,7 +193,7 @@ class TestLDAP(BasicTest):
         # users may access their own data
         attributes = ["objectClass", "cn"]
         expectation: dict[str, list[str]] = {
-            'cn': ['Anton Armin A. Administrator'],
+            'cn': ['Anton Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
         search_filter = (
@@ -306,9 +306,9 @@ class TestLDAP(BasicTest):
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
 
-            'cn': ['Anton Armin A. Administrator'],
+            'cn': ['Anton Administrator'],
             'displayName': ['Anton Administrator'],
-            'givenName': ['Anton Armin A.'],
+            'givenName': ['Anton'],
             'sn': ['Administrator'],
 
             # there is no password returned, since passwords may not be retrived but

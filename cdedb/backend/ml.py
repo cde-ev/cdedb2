@@ -647,6 +647,7 @@ class MlBackend(AbstractBackend):
         """
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
+        # TODO Migrate this to EventPrivileges?
         if not (data.is_relevant_admin(rs.user)
                 or (isinstance(data, EventAssociatedMetaMailinglist)
                     and data.event_id in rs.user.orga)
@@ -760,7 +761,7 @@ class MlBackend(AbstractBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1380,7 +1381,7 @@ class MlBackend(AbstractBackend):
             # periodic cleanup enabled.
             mailinglist_ids = {
                 ml_id for ml_id, ml in ml_data.items()
-                if ml_data[ml_id].periodic_cleanup(rs) and ml.is_active}
+                if ml.periodic_cleanup(rs) and ml.is_active}
 
             # Gather old subscription data.
             old_subscribers = self.get_many_subscription_states(

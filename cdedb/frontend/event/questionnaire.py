@@ -25,6 +25,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation.validate import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
@@ -40,7 +41,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 
 class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_read)
     def configure_registration_form(self, rs: RequestState, event_id: int,
                                     ) -> Response:
         """Render form."""
@@ -51,7 +52,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                             'registration_fields': reg_fields})
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_read)
     def configure_additional_questionnaire_form(self, rs: RequestState,
                                                 event_id: int) -> Response:
         """Render form."""
@@ -81,7 +82,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return questionnaire, registration_fields
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def configure_registration(self, rs: RequestState, event_id: int,
                                ) -> Response:
         """Manipulate the questionnaire form.
@@ -97,7 +98,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return self.redirect(rs, "event/configure_registration_form")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def configure_additional_questionnaire(self, rs: RequestState,
                                            event_id: int) -> Response:
         """Manipulate the additional questionnaire form.
@@ -172,8 +173,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 if any(row['field_id'] == field.id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
-            if event_id not in rs.user.orga and not self.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
+            if not self.is_privileged(rs, EventPrivileges.basic_read):
+                raise werkzeug.exceptions.Forbidden(n_("Must be orga to use preview."))
             if not rs.ambience['event'].use_additional_questionnaire:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         return self.render(rs, "questionnaire/additional_questionnaire", {
@@ -305,7 +306,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return questionnaire
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("kind")
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
@@ -333,7 +334,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("order", "kind")
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
                               kind: const.QuestionnaireUsages,

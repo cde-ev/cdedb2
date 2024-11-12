@@ -48,6 +48,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
+from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
     QuerySpec,
@@ -133,6 +134,7 @@ class Event(EventDataclass):
     notify_on_registration: const.NotifyOnRegistration
 
     lodge_field_id: Optional[vtypes.ID]
+    reimbursement_iban_field_id: Optional[vtypes.ID]
 
     parts: CdEDataclassMap["EventPart"]
     tracks: CdEDataclassMap["CourseTrack"]
@@ -235,14 +237,20 @@ class Event(EventDataclass):
 
          :param privileged: If access in a privileged capacity is to be considered."""
 
-        return is_registered or self.is_visible or (privileged and (
-            "event_admin" in user.roles or user.persona_id in self.orgas))
+        return is_registered or self.is_visible or (privileged and
+            is_privileged_event_user(user, EventPrivileges.basic_read, self.id))
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
         return self.fields[self.lodge_field_id]
+
+    @functools.cached_property
+    def reimbursement_iban_field(self) -> Optional["EventField"]:
+        if self.reimbursement_iban_field_id is None:
+            return None
+        return self.fields[self.reimbursement_iban_field_id]
 
     @functools.cached_property
     def personalized_fees(self) -> CdEDataclassMap["EventFee"]:
@@ -630,8 +638,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        # TODO maybe sort by constraint_type first?
-        return (self.title, )
+        return (self.constraint_type, self.title)
 
 
 @dataclasses.dataclass
@@ -676,7 +683,7 @@ class TrackGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return self.sortkey, self.constraint_type, self.title
+        return self.constraint_type, self.sortkey, self.title
 
 
 class SyncTrackGroup(TrackGroup, CourseChoiceObject):
@@ -710,7 +717,9 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, CourseChoiceObject):
             return CourseChoiceObject.__lt__(self, other)
-        return super().__lt__(other)
+        if isinstance(other, self.__class__):
+            return super().__lt__(other)
+        return not other < self
 
 
 #

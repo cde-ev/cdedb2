@@ -35,7 +35,7 @@ class SchemaDescription:
         for line in lines:
             if line.startswith("#"):
                 continue
-            if line.strip() == "":
+            if not line.strip():
                 if block:
                     blocks.append(block)
                     block = []

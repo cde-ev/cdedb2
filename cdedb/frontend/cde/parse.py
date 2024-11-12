@@ -608,14 +608,13 @@ class CdEParseMixin(CdEBaseFrontend):
                                 {'num': len(reimbursements)})
 
                 return self.redirect(rs, "cde/index")
+            elif result.index < 0:
+                rs.notify("warning", n_("DB serialization error."))
             else:
-                if result.index < 0:
-                    rs.notify("warning", n_("DB serialization error."))
-                else:
-                    rs.notify(
-                        "error",
-                        n_("Unexpected error on line %(num)s."),
-                        {'num': result.index + 1},
-                    )
+                rs.notify(
+                    "error",
+                    n_("Unexpected error on line %(num)s."),
+                    {'num': result.index + 1},
+                )
             return self.money_transfers_form(
                 rs, data=data, csvfields=fields, saldos=saldos)

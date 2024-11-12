@@ -446,20 +446,20 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona['title'], persona['name_supplement']]
         data = ['BEGIN:VCARD', 'VERSION:3.0',
                 f'N:{";".join(escape(e or "") for e in name)}',
-                f'FN:{escape(make_persona_name(persona, only_given_names=True))}',
+                f'FN:{escape(make_persona_name(persona))}',
                 f'EMAIL:{escape(persona["username"])}']
         if persona["mobile"]:
             data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
         if persona["telephone"]:
             data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
-        if persona['display_name']:
-            data.append(f'NICKNAME:{escape(persona["display_name"])}')
+        if persona['nickname']:
+            data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
             address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
                        persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
-                if sub == "":
+                if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
                 else:
                     prefix = 'ADR;TYPE=intl,home,postal:;'
@@ -673,7 +673,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     "is_ml_realm", "is_assembly_realm", "is_archived",
                     "notes"])
             if "orga" not in access_levels:
-                masks.extend(["is_member", "gender", "pronouns_nametag"])
+                masks.extend(["is_member", "gender", "pronouns_nametag",
+                              "legal_given_names"])
                 # Primary address may be hidden from member search,
                 # but not from orga view.
                 if not data.get('show_address', True):
@@ -867,11 +868,10 @@ class CoreBaseFrontend(AbstractFrontend):
                         eventual_status[f][anchor] = stati.nacked
                     if (this_status == stati.pending
                             and (eventual_status[f][anchor]
-                                 not in (stati.committed, stati.nacked))):
+                                 not in {stati.committed, stati.nacked})):
                         eventual_status[f][anchor] = stati.pending
         persona_ids = {e['submitted_by'] for e in history.values()}
-        persona_ids = persona_ids | {e['reviewed_by'] for e in history.values()
-                                     if e['reviewed_by']}
+        persona_ids |= {e['reviewed_by'] for e in history.values() if e['reviewed_by']}
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "show_history", {
             'entries': history, 'constants': constants, 'current': current,
@@ -907,14 +907,14 @@ class CoreBaseFrontend(AbstractFrontend):
 
         scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        key = "username,family_name,given_names,display_name"
+        key = "username,family_name,given_names,legal_given_names,nickname"
         spec = scope.get_spec()
         spec[key] = QuerySpecEntry("str", "")
         query = Query(
             scope=scope,
             spec=spec,
             fields_of_interest=("personas.id", "family_name", "given_names",
-                                "display_name", "username"),
+                                "nickname", "username"),
             constraints=[(key, QueryOperators.match, t) for t in terms],
             order=(("personas.id", True),),
         )
@@ -1016,6 +1016,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
+            # TODO How to migrate this to EventPrivileges?
             if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
@@ -1083,15 +1084,21 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: list[tuple[str, QueryOperators, Any]]
-                key = "username,family_name,given_names,display_name"
+                key = "username,family_name,given_names,nickname"
+                # legal_given_names must not be shown to moderators
+                if kind != "ml_subscriber":
+                    key += ",legal_given_names"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = scope.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
+                fields_of_interest = ["personas.id", "username", "family_name",
+                                      "given_names", "nickname"]
+                # legal_given_names must not be shown to moderators
+                if kind != "ml_subscriber":
+                    fields_of_interest.append("legal_given_names")
                 query = Query(
-                    scope, spec,
-                    ("personas.id", "username", "family_name", "given_names",
-                     "display_name"), search, (("personas.id", True),))
+                    scope, spec, fields_of_interest, search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
         # Filter result to get only users allowed to be a subscriber of a list,
@@ -1389,11 +1396,12 @@ class CoreBaseFrontend(AbstractFrontend):
         persona_ids = set(itertools.chain.from_iterable(admins.values()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        for admin in admins:
-            admins[admin] = xsorted(
-                admins[admin],
-                key=lambda anid: EntitySorter.persona(personas[anid]),
+        admins = {
+            admin_role: xsorted(
+                admin_users, key=lambda anid: EntitySorter.persona(personas[anid]),
             )
+            for admin_role, admin_users in admins.items()
+        }
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
@@ -2511,10 +2519,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
+        pending['full_name'] = make_persona_name(pending, include_nickname=True)
         current = history[max(
             key for key in history
             if (history[key]['code']
                 == const.PersonaChangeStati.committed))]
+        current['full_name'] = make_persona_name(current, include_nickname=True)
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})

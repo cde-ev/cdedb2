@@ -35,13 +35,16 @@
 
 {% block content %}
     <div class="p button-par">
-        {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
+        {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"),
+                     readonly=not is_privileged_for('create_lodgement'),
                      aclass='btn btn-sm btn-success', icon='plus') }}
         {{ util.href(cdedblink("event/lodgement_query"), gettext("Lodgement Query"),
                      aclass='btn btn-sm btn-info', icon='search') }}
-        {{ util.href(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), readonly=is_locked,
+        {{ util.href(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"),
+                     readonly=not is_privileged_for('lodgement_group_summary'),
                      aclass='btn btn-sm btn-info', icon='th-large') }}
         {{ util.href(cdedblink("event/lodgement_wishes_graph_form"), gettext("Lodgement Wishes Graph"),
+                     readonly=not is_privileged_for('lodgement_wishes_graph'),
                      aclass='btn btn-sm btn-info', icon='project-diagram') }}
     </div>
 
@@ -102,10 +105,12 @@
                         {% if ambience['event']['parts']|length < 6 %}
                             <td class="b-left">
                                 {{ util.href(cdedblink("event/create_lodgement_form", {'group_id': group_id}),
-                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-success', icon='plus',
+                                             label=none, readonly=not is_privileged_for('create_lodgement'),
+                                             aclass='btn btn-xs btn-success', icon='plus',
                                              title=gettext("Add Lodgement"), anid="create_lodgement_in_group_" + group_id|string) }}
                                 {{ util.href(cdedblink("event/move_lodgements_form", {'group_id': group_id}), label=none,
-                                             icon='dumpster-fire', readonly=is_locked, aclass='btn btn-xs btn-warning',
+                                             readonly=not is_privileged_for('move_lodgements'),
+                                             aclass='btn btn-xs btn-warning', icon='dumpster-fire',
                                              anid="move_or_delete_lodgements_in_group_" + group_id|string,
                                              title=gettext("Move or delete lodgements from this group")) }}
                             </td>
@@ -116,7 +121,7 @@
                     <tr>
                         <td class="indent"></td>
                         <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
-                                         lodgement['title']) }}</td>
+                                         lodgement['title'], readonly=not is_privileged_for('show_lodgement'),) }}</td>
                         {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
                         {% for part in ambience['event']['parts'].values()|sort %}
                             {% set problem = problems[(lodgement_id, part.id, False)] %}
@@ -139,10 +144,11 @@
                         {% if ambience['event']['parts']|length < 6 %}
                             <td class="nowrap b-left">
                                 {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
-                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
-                                             title=gettext("Edit")) }}
+                                             label=none, readonly=not is_privileged_for('change_lodgement'),
+                                             aclass='btn btn-xs btn-warning', icon='pen', title=gettext("Edit")) }}
                                 {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
-                                             label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                             label=none, readonly=not is_privileged_for('manage_inhabitants'),
+                                             aclass='btn btn-xs btn-warning', icon='user',
                                              title=gettext("Manage Inhabitants")) }}
                             </td>
                         {% endif %}

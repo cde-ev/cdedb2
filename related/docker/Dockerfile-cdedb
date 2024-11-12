@@ -106,7 +106,7 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     schulze_condorcet==2.0.1 \
     subman==0.1.1 \
     segno==1.5.2 \
-    mypy==1.10.1 \
+    mypy==1.13.0 \
     pylint==3.2.5 \
     types-python-dateutil \
     types-bleach \
@@ -120,10 +120,17 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     types-zxcvbn \
     'playwright>=1.37.0'
 
+# Retrieve browser engines, but only do so for root (which runs the tests in
+# the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
+# want to save some disk space.
+RUN /usr/local/bin/playwright install
+# RUN sudo -u cdedb /usr/local/bin/playwright install
+
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
 COPY ./related/docker/run-all.sh /run-all.sh
 COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
+
 # get the configuration files from the autobuild
 COPY ./related/auto-build/files/stage3 /tmp/autobuild/
 
@@ -166,12 +173,6 @@ RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     \
     && touch /CONTAINER
 
-# Retrieve browser engines, but only do so for root (which runs the tests in
-# the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
-# want to save some disk space.
-RUN /usr/local/bin/playwright install
-# RUN sudo -u cdedb /usr/local/bin/playwright install
-
 # make config persistent
 VOLUME /etc/cdedb
 # the ssl certificate is created dynamically and has should persist
@@ -189,5 +190,5 @@ ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
 
 USER cdedb
-RUN pip install --break-system-packages ruff==0.5.1
+RUN pip install --break-system-packages ruff==0.7.3
 USER root

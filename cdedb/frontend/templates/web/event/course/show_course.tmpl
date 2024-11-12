@@ -29,9 +29,10 @@
 
 {% block content %}
     <div class="p button-par">
-        {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
+        {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"),
+                     readonly=not is_privileged_for("change_course"),
                      aclass="btn btn-sm btn-warning", icon="pen") }}
-        {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
+        {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=not is_privileged_for("manage_attendees"),
                      aclass="btn btn-sm btn-warning", icon="users") }}
         {{ util.href(util.mailto(address="", to=";".join(instructor_emails)), gettext("Email to course instructors"),
                             icon="envelope", aclass="btn btn-sm btn-default", readonly=not instructor_emails,
@@ -128,8 +129,8 @@
                                     {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                     {{ util.href(cdedblink('event/show_registration',
                                                         {'registration_id': registration_id}),
-                                                util.persona_name(personas[registrations[registration_id]
-                                                        ['persona_id']])) }}
+                                                util.persona_name(personas[registrations[registration_id]['persona_id']],
+                                                                  include_nickname=True)) }}
                                     {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})
@@ -199,7 +200,7 @@
                     <form action="{{ cdedblink('event/delete_course') }}" method="POST" id="deletecourseform"
                             style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_course') }}
-                        {{ util.input_submit(label=gettext("Delete"), readonly=is_locked or blockers,
+                        {{ util.input_submit(label=gettext("Delete"), readonly=not is_privileged_for("delete_course") or blockers,
                                              aclass="btn btn-danger", icon="trash-alt", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                     </form>

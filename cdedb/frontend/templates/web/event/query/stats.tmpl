@@ -53,7 +53,8 @@
                                 {% set query = stat.get_query(ambience['event'], part.id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid=stat.get_link_id(part_id=part.id)) }}
+                                    datum|length, anid=stat.get_link_id(part_id=part.id),
+                                    readonly=not is_privileged_for(query.scope.get_target())) }}
                             </td>
                         {% endfor %}
                         {% for part_group in sorted_part_groups if part_group['parts']|length > 1 and part_group['constraint_type'].is_stats() %}
@@ -62,7 +63,8 @@
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group.id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid=stat.get_link_id(part_group_id=part_group.id)) }}
+                                    datum|length, anid=stat.get_link_id(part_group_id=part_group.id),
+                                    readonly=not is_privileged_for(query.scope.get_target())) }}
                             </td>
                         {% endfor %}
                     </tr>
@@ -109,7 +111,8 @@
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid=grouper.get_link_id(x, track_id=track_id)) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, track_id=track_id),
+                                            readonly=not is_privileged_for(query.scope.get_target())) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -121,7 +124,8 @@
                                         {% set query = grouper.get_query_part(ambience['event'], part_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid=grouper.get_link_id(x, part_id=part_id)) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, part_id=part_id),
+                                            readonly=not is_privileged_for(query.scope.get_target())) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -133,7 +137,8 @@
                                         {% set query = grouper.get_query_part_group(ambience['event'], part_group_id, x) %}
                                         {{ util.href(
                                             cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                            reg_ids|length, anid=grouper.get_link_id(x, part_group_id=part_group_id)) }}
+                                            reg_ids|length, anid=grouper.get_link_id(x, part_group_id=part_group_id),
+                                            readonly=not is_privileged_for(query.scope.get_target())) }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -148,7 +153,8 @@
                                     {% set query = stat.get_query(ambience['event'], track.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(track_id=track.id)) }}
+                                        datum|length, anid=stat.get_link_id(track_id=track.id),
+                                        readonly=not is_privileged_for(query.scope.get_target())) }}
                                 </td>
                             {% endfor %}
                             {% for part in sorted_parts if part['tracks']|length > 1 %}
@@ -157,7 +163,8 @@
                                     {% set query = stat.get_query_part(ambience['event'], part.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(part_id=part.id)) }}
+                                        datum|length, anid=stat.get_link_id(part_id=part.id),
+                                        readonly=not is_privileged_for(query.scope.get_target())) }}
                                 </td>
                             {% endfor %}
                             {% for part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group.id]|length > 1 and part_group['constraint_type'].is_stats() %}
@@ -166,7 +173,8 @@
                                     {% set query = stat.get_query_part_group(ambience['event'], part_group.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(part_group_id=part_group.id)) }}
+                                        datum|length, anid=stat.get_link_id(part_group_id=part_group.id),
+                                        readonly=not is_privileged_for(query.scope.get_target())) }}
                                 </td>
                             {% endfor %}
                         </tr>

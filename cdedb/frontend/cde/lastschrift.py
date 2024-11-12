@@ -266,7 +266,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         easter = dateutil.easter.easter(payment_date.year)
         good_friday = easter - datetime.timedelta(days=2)
         easter_monday = easter + datetime.timedelta(days=1)
-        if payment_date in (good_friday, easter_monday):
+        if payment_date in {good_friday, easter_monday}:
             payment_date = easter + datetime.timedelta(days=2)
 
         # First: check we are not on the weekend.
@@ -276,7 +276,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             payment_date += datetime.timedelta(days=1)
 
         # Second: check we are not on some special day.
-        if payment_date.day == 1 and payment_date.month in (1, 5):
+        if payment_date.day == 1 and payment_date.month in {1, 5}:
             payment_date += datetime.timedelta(days=1)
         elif payment_date.month == 12 and payment_date.day == 25:
             payment_date += datetime.timedelta(days=2)
@@ -390,7 +390,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
                 transaction['account_owner'] = "{} {}".format(
-                    persona['given_names'], persona['family_name'])
+                    persona['legal_given_names'], persona['family_name'])
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])

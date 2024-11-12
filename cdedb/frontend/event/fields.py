@@ -24,9 +24,10 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -43,7 +44,7 @@ EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
 class EventFieldMixin(EventBaseFrontend):
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_read)
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         formatter = lambda k, v: (v if k != 'entries' or not v else
@@ -69,6 +70,8 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
+        if rs.ambience['event'].reimbursement_iban_field:
+            referenced.add(rs.ambience['event'].reimbursement_iban_field.id)
         for part in rs.ambience['event'].parts.values():
             if part.waitlist_field:
                 referenced.add(part.waitlist_field.id)
@@ -81,7 +84,7 @@ class EventFieldMixin(EventBaseFrontend):
             'referenced': referenced, 'locked': locked})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
                       ) -> Response:
@@ -201,7 +204,7 @@ class EventFieldMixin(EventBaseFrontend):
         return entities, ordered_ids, labels, field
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind")
     def field_multiset_select(
             self, rs: RequestState, event_id: int, field_id: Optional[vtypes.ID],
@@ -232,7 +235,7 @@ class EventFieldMixin(EventBaseFrontend):
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset_form(
             self, rs: RequestState, event_id: int, field_id: vtypes.ID,
@@ -264,7 +267,7 @@ class EventFieldMixin(EventBaseFrontend):
             'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset(
             self, rs: RequestState, event_id: int, field_id: vtypes.ID,
@@ -292,7 +295,7 @@ class EventFieldMixin(EventBaseFrontend):
 
         data_params: vtypes.TypeMapping = {
             f"input{anid}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)

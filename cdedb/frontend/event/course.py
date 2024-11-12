@@ -27,10 +27,13 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.common.validation.validate import COURSE_COMMON_FIELDS
+from cdedb.common.validation.validate import (
+    COURSE_COMMON_FIELDS,
+    FIELD_DATATYPE_VALIDATORS,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -74,7 +77,7 @@ class EventCourseMixin(EventBaseFrontend):
                     active_only: bool = False) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event'].is_course_list_visible
-                and not (event_id in rs.user.orga or self.is_admin(rs))):
+                and not self.is_privileged(rs, EventPrivileges.courses_read)):
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
@@ -85,6 +88,7 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event'].tracks.keys()
 
+        # TODO Handle the admin view in a smart way
         show_course_state = (rs.ambience['event'].is_course_state_visible
                              or event_id in rs.user.orga
                              or 'event_orga' in rs.user.admin_views)
@@ -115,12 +119,14 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    # TODO Be more lenient here
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_read)
     def show_course(self, rs: RequestState, event_id: int, course_id: int,
                     ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
-        if event_id in rs.user.orga or self.is_admin(rs):
+        # TODO Differentiate by EventPrivileges.registrations_read and _stats
+        if True:  # pylint: disable=using-constant-test
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             all_registrations = self.eventproxy.get_registrations(
                 rs, registration_ids)
@@ -209,7 +215,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.render(rs, "course/show_course", params)
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
@@ -230,7 +236,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
@@ -243,7 +249,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['active_segments'] = active_segments
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.course
         }
@@ -259,7 +265,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     def create_course_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         # by default select all tracks
@@ -277,7 +283,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
@@ -287,7 +293,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['segments'] = segments
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.course
         }
@@ -305,7 +311,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdata("ack_delete")
     def delete_course(self, rs: RequestState, event_id: int, course_id: int,
                       ack_delete: bool) -> Response:
@@ -332,7 +338,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def course_assignment_checks(self, rs: RequestState, event_id: int,
                                  ) -> Response:
         """Provide some consistency checks for course assignment."""
@@ -463,14 +469,14 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active")
     def course_choices_form(
             self, rs: RequestState, event_id: int, course_id: Optional[vtypes.ID],
             track_id: Optional[vtypes.ID],
             position: Optional[InfiniteEnum[CourseFilterPositions]],
             ids: Optional[vtypes.IntCSVList], include_active: Optional[bool],
-            ) -> Response:
+    ) -> Response:
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -498,8 +504,7 @@ class EventCourseMixin(EventBaseFrontend):
             else:
                 include_states = (const.RegistrationPartStati.participant,)
             registration_ids = self.eventproxy.registrations_by_course(
-                rs, event_id, course_id, track_id, position, ids,
-                include_states)
+                rs, event_id, course_id, track_id, position, ids, include_states)
             registrations = self.eventproxy.get_registrations(
                 rs, registration_ids.keys())
             personas = self.coreproxy.get_personas(
@@ -508,21 +513,21 @@ class EventCourseMixin(EventBaseFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id].part_id]
-        for course_id, course in courses.items():  # pylint: disable=redefined-argument-from-local
+        for course_id_, course in courses.items():  # pylint: disable=redefined-argument-from-local
             for track in tracks.values():  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()
-                    and reg['tracks'][track.id]['course_id'] == course_id
-                    and reg['tracks'][track.id]['course_instructor'] != course_id
+                    and reg['tracks'][track.id]['course_id'] == course_id_
+                    and reg['tracks'][track.id]['course_instructor'] != course_id_
                 )
                 assigned_instructors = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()
-                    and reg['tracks'][track.id]['course_id'] == course_id
-                    and reg['tracks'][track.id]['course_instructor'] == course_id
+                    and reg['tracks'][track.id]['course_id'] == course_id_
+                    and reg['tracks'][track.id]['course_instructor'] == course_id_
                 )
-                course_infos[(course_id, track.id)] = {
+                course_infos[(course_id_, track.id)] = {
                     'assigned': assigned,
                     'assigned_instructors': assigned_instructors,
                     'is_happening': track.id in course['segments'],
@@ -570,7 +575,7 @@ class EventCourseMixin(EventBaseFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active",
                  "registration_ids", "assign_track_ids", "assign_action",
                  "assign_course_id")
@@ -702,7 +707,7 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("include_active")
     def course_stats(self, rs: RequestState, event_id: int, include_active: bool,
                      ) -> Response:
@@ -736,13 +741,13 @@ class EventCourseMixin(EventBaseFrontend):
         involved_attendees_lists = collections.defaultdict(list)
         for reg in registrations.values():
             for track_id, track in tracks.items():
-                if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
+                if reg['parts'][track.part_id]['status'] in include_states:
                     for i, choice in enumerate(reg['tracks'][track_id]['choices']):
                         if i >= track.num_choices:
                             break
                         choice_counts[(choice, track_id)][i] += 1
                 course_id = reg['tracks'][track_id]['course_id']
-                if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
+                if (reg['parts'][track.part_id]['status'].is_involved()
                         and course_id is not None):
                     involved_attendees_lists[(course_id, track_id)].append(reg)
 
@@ -780,7 +785,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_attendees_form(self, rs: RequestState, event_id: int,
                               course_id: int) -> Response:
         """Render form."""
@@ -859,7 +864,7 @@ class EventCourseMixin(EventBaseFrontend):
             'selectize_data': selectize_data, 'course_names': course_names})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_attendees(self, rs: RequestState, event_id: int, course_id: int,
                          ) -> Response:
         """Alter who is assigned to this course."""

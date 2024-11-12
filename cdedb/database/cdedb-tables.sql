@@ -103,9 +103,10 @@ CREATE TABLE core.personas (
         CONSTRAINT personas_archived_purged
             CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
-        display_name            varchar NOT NULL,
+        nickname                varchar DEFAULT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
+        legal_given_names       varchar NOT NULL,
         -- "Nachname"
         family_name             varchar NOT NULL,
 
@@ -206,10 +207,10 @@ CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
-GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
+GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
-GRANT UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, show_address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, show_address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
 GRANT UPDATE (birth_name, address_supplement2, address2, show_address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
 -- includes notes in addition to cdb_member
 GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
@@ -402,8 +403,9 @@ CREATE TABLE core.changelog (
         is_searchable           boolean,
         is_archived             boolean,
         is_purged               boolean,
-        display_name            varchar,
+        nickname                varchar,
         given_names             varchar,
+        legal_given_names       varchar,
         family_name             varchar,
         title                   varchar,
         name_supplement         varchar,
@@ -776,6 +778,7 @@ CREATE TABLE event.events (
         -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
+        reimbursement_iban_field_id  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         lodge_field_id               integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
@@ -922,6 +925,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (reimbursement_iban_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field_id) REFERENCES event.field_definitions(id);
@@ -975,6 +979,14 @@ CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
 GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
+
+CREATE TABLE event.helpers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+);
+GRANT INSERT, UPDATE, DELETE ON event.helpers TO cdb_admin;
+GRANT SELECT, UPDATE ON event.helpers_id_seq TO cdb_admin;
+GRANT SELECT ON event.helpers TO cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.orga_apitokens (
         id                      serial PRIMARY KEY,

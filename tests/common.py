@@ -615,8 +615,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-1-9",
         'username': "anton@example.cde",
         'password': "secret",
-        'display_name': "Anton",
-        'given_names': "Anton Armin A.",
+        'given_names': "Anton",
+        'legal_given_names': "Anton Armin A.",
         'family_name': "Administrator",
         'default_name_format': "Anton Administrator",
     },
@@ -625,8 +625,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-2-7",
         'username': "berta@example.cde",
         'password': "secret",
-        'display_name': "Bertå",
-        'given_names': "Bertålotta",
+        'given_names': "Bertå",
+        'legal_given_names': "Bertålotta",
         'family_name': "Beispiel",
         'default_name_format': "Bertå Beispiel",
     },
@@ -635,8 +635,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-3-5",
         'username': "charly@example.cde",
         'password': "secret",
-        'display_name': "Charly",
-        'given_names': "Charly C.",
+        'given_names': "Charly",
+        'legal_given_names': "Charly C.",
         'family_name': "Clown",
         'default_name_format': "Charly Clown",
     },
@@ -645,8 +645,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-4-3",
         'username': "daniel@example.cde",
         'password': "secret",
-        'display_name': "Daniel",
-        'given_names': "Daniel D.",
+        'given_names': "Daniel",
+        'legal_given_names': "Daniel D.",
         'family_name': "Dino",
         'default_name_format': "Daniel Dino",
     },
@@ -655,18 +655,18 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emmy",
-        'given_names': "Emilia E.",
+        'given_names': "Emilia",
+        'legal_given_names': "Emilia E.",
         'family_name': "Eventis",
-        'default_name_format': "Emilia E. Eventis",
+        'default_name_format': "Emilia Eventis",
     },
     "ferdinand": {
         'id': 6,
         'DB-ID': "DB-6-X",
         'username': "ferdinand@example.cde",
         'password': "secret",
-        'display_name': "Ferdinand",
-        'given_names': "Ferdinand F.",
+        'given_names': "Ferdinand",
+        'legal_given_names': "Ferdinand F.",
         'family_name': "Findus",
         'default_name_format': "Ferdinand Findus",
     },
@@ -675,8 +675,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-7-8",
         'username': "garcia@example.cde",
         'password': "secret",
-        'display_name': "Garcia",
-        'given_names': "Garcia G.",
+        'given_names': "Garcia",
+        'legal_given_names': "Garcia G.",
         'family_name': "Generalis",
         'default_name_format': "Garcia Generalis",
     },
@@ -685,8 +685,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-8-6",
         'username': None,
         'password': "secret",
-        'display_name': None,
         'given_names': "Hades",
+        'legal_given_names': "Hades",
         'family_name': "Hell",
         'default_name_format': "Hades Hell",
     },
@@ -695,8 +695,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-9-4",
         'username': "inga@example.cde",
         'password': "secret",
-        'display_name': "Inga",
         'given_names': "Inga",
+        'legal_given_names': "Inga",
         'family_name': "Iota",
         'default_name_format': "Inga Iota",
     },
@@ -705,8 +705,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-10-8",
         'username': "janis@example.cde",
         'password': "secret",
-        'display_name': "Janis",
         'given_names': "Janis",
+        'legal_given_names': "Janis",
         'family_name': "Jalapeño",
         'default_name_format': "Janis Jalapeño",
     },
@@ -715,8 +715,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-11-6",
         'username': "kalif@example.cde",
         'password': "secret",
-        'display_name': "Kalif",
-        'given_names': "Kalif ibn al-Ḥasan",
+        'given_names': "Kalif",
+        'legal_given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
         'default_name_format': "Kalif Karabatschi",
     },
@@ -725,8 +725,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-12-4",
         'username': None,
         'password': "secret",
-        'display_name': "Lisa",
         'given_names': "Lisa",
+        'legal_given_names': "Lisa",
         'family_name': "Lost",
         'default_name_format': "Lisa Lost",
     },
@@ -735,8 +735,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-13-2",
         'username': "martin@example.cde",
         'password': "secret",
-        'display_name': "Martin",
         'given_names': "Martin",
+        'legal_given_names': "Martin",
         'family_name': "Meister",
         'default_name_format': "Martin Meister",
     },
@@ -745,8 +745,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-14-0",
         'username': 'nina@example.cde',
         'password': "secret",
-        'display_name': "Nina",
         'given_names': "Nina",
+        'legal_given_names': "Nina",
         'family_name': "Neubauer",
         'default_name_format': "Nina Neubauer",
     },
@@ -755,8 +755,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-15-9",
         'username': "olaf@example.cde",
         'password': "secret",
-        'display_name': "Olaf",
         'given_names': "Olaf",
+        'legal_given_names': "Olaf",
         'family_name': "Olafson",
         'default_name_format': "Olaf Olafson",
     },
@@ -765,8 +765,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-16-7",
         'username': "paulchen@example.cde",
         'password': "secret",
-        'display_name': "Paul",
-        'given_names': "Paulchen",
+        'given_names': "Paul",
+        'legal_given_names': "Paulchen",
         'family_name': "Panther",
         'default_name_format': "Paul Panther",
     },
@@ -775,8 +775,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-17-5",
         'username': "quintus@example.cde",
         'password': "secret",
-        'display_name': "Quintus",
         'given_names': "Quintus",
+        'legal_given_names': "Quintus",
         'family_name': "da Quirm",
         'default_name_format': "Quintus da Quirm",
     },
@@ -785,8 +785,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-18-3",
         'username': "rowena@example.cde",
         'password': "secret",
-        'display_name': "Rowena",
         'given_names': "Rowena",
+        'legal_given_names': "Rowena",
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
     },
@@ -795,8 +795,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-22-1",
         'username': "vera@example.cde",
         'password': "secret",
-        'display_name': "Vera",
         'given_names': "Vera",
+        'legal_given_names': "Vera",
         'family_name': "Verwaltung",
         'default_name_format': "Vera Verwaltung",
     },
@@ -805,8 +805,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-23-X",
         'username': "werner@example.cde",
         'password': "secret",
-        'display_name': "Werner",
         'given_names': "Werner",
+        'legal_given_names': "Werner",
         'family_name': "Wahlleitung",
         'default_name_format': "Werner Wahlleitung",
     },
@@ -815,8 +815,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-27-2",
         'username': "annika@example.cde",
         'password': "secret",
-        'display_name': "Annika",
         'given_names': "Annika",
+        'legal_given_names': "Annika",
         'family_name': "Akademieteam",
         'default_name_format': "Annika Akademieteam",
     },
@@ -825,8 +825,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-32-9",
         'username': "farin@example.cde",
         'password': "secret",
-        'display_name': "Farin",
         'given_names': "Farin",
+        'legal_given_names': "Farin",
         'family_name': "Finanzvorstand",
         'default_name_format': "Farin Finanzvorstand",
     },
@@ -836,7 +836,7 @@ USER_DICT: dict[str, UserObject] = {
         'username': "katarina@example.cde",
         'password': "secret",
         'diplay_name': "Katarina",
-        'given_names': "Katarina",
+        'legal_given_names': "Katarina",
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
     },
@@ -847,6 +847,7 @@ USER_DICT: dict[str, UserObject] = {
         'password': "secret",
         'diplay_name': "Ludwig",
         'given_names': "Ludwig",
+        'legal_given_names': "Ludwig",
         'family_name': "Lokus",
         'default_name_format': "Ludwig Lokus",
     },
@@ -855,8 +856,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-42-6",
         'username': "petra@example.cde",
         'password': "secret",
-        'display_name': "Petra",
         'given_names': "Petra",
+        'legal_given_names': "Petra",
         'family_name': "Philanthrop",
         'default_name_format': "Petra Philanthrop",
     },
@@ -865,8 +866,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-48-5",
         'username': "viktor@example.cde",
         'password': "secret",
-        'display_name': "Viktor",
         'given_names': "Viktor",
+        'legal_given_names': "Viktor",
         'family_name': "Versammlungsadmin",
         'default_name_format': "Viktor Versammlungsadmin",
     },
@@ -875,8 +876,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-100-7",
         'username': "akira@example.cde",
         'password': "secret",
-        'display_name': "Akira",
         'given_names': "Akira",
+        'legal_given_names': "Akira",
         'family_name': "Abukara",
         'default_name_format': "Akira Abukara",
     },
@@ -885,8 +886,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': None,
         'username': None,
         'password': None,
-        'display_name': None,
         'given_names': None,
+        'legal_given_names': None,
         'family_name': None,
     },
 }
@@ -1052,7 +1053,9 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(self.conf["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+        with open(
+                self.conf["LOG_DIR"] / "cdedb-timing.log", 'a', encoding="utf-8",
+        ) as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
@@ -1279,7 +1282,7 @@ class FrontendTest(BackendTest):
         mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 raw = f.read()
                 parser = email.parser.Parser(policy=email.policy.default)
                 msg = cast(email.message.EmailMessage, parser.parsestr(raw))
@@ -1323,7 +1326,10 @@ class FrontendTest(BackendTest):
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             return self.response.text
         tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
@@ -1400,7 +1406,10 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             self.assertNotIn(s.strip(), self.response.text)
         else:
             tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
@@ -1853,8 +1862,7 @@ class FrontendTest(BackendTest):
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
 
-        if end > total:
-            end = total
+        end = min(end, total)
 
         # adapt slicing to our count of log entries
         logs = all_logs[start-1:end]
@@ -1863,7 +1871,8 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: set[str], out: set[str]) -> None:
+    def check_sidebar(self, ins: set[str], out: set[str], *, traverse: bool = True,
+                      ) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins or
@@ -1871,6 +1880,7 @@ class FrontendTest(BackendTest):
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
+        :param traverse: whether to also traverse all links displayed
         :return: None
         """
         sidebar = self.response.html.find(id="sidebar-navigation")
@@ -1878,6 +1888,10 @@ class FrontendTest(BackendTest):
                    for nav_point in sidebar.find_all("a")}
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
+            if traverse:
+                saved_response = self.response
+                self.traverse(nav_point)
+                self.response = saved_response
             present -= {nav_point}
         for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')
@@ -1908,8 +1922,8 @@ class FrontendTest(BackendTest):
         merge_dicts(data, {
             "username": 'zelda@example.cde',
             "given_names": "Zelda",
+            "legal_given_names": 'Zelda',
             "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
             "notes": "some fancy talk",
         })
         f = self.response.forms['newuserform']

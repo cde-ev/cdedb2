@@ -28,7 +28,6 @@ from cdedb.common import (
     cast_fields,
     nearly_now,
     now,
-    unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -54,10 +53,10 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_basics(self) -> None:
         data = self.core.get_event_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'name_supplement', 'display_name', 'telephone'}}
+                  {'id', 'name_supplement', 'nickname', 'telephone'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
@@ -211,6 +210,7 @@ class TestEventBackend(BackendTest):
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False
         data['is_visible'] = False
+        data['reimbursement_iban_field_id'] = None
         data['lodge_field_id'] = None
         data['orga_address'] = None
         # TODO dynamically adapt ids from the database result
@@ -562,10 +562,10 @@ class TestEventBackend(BackendTest):
                     'min_choices': 2,
                     'sortkey': 1,
                     'course_room_field_id': None,
-                    'track_group_ids': {1},
+                    'track_group_ids': {1, 4},
                 },
             },
-            'part_group_ids': {1, 3, 6, 8},
+            'part_group_ids': {1, 3, 6},
         }
         self.assertEqual(
             expectation_part,
@@ -653,10 +653,8 @@ class TestEventBackend(BackendTest):
         track_id = 6
         event = self.event.get_event(self.key, event_id)
         self.assertTrue(event.tracks[track_id].track_groups)
-        self.assertTrue(unwrap(
-            event.tracks[track_id].track_groups).constraint_type.is_sync())
-        self.assertGreater(
-            len(unwrap(event.tracks[track_id].track_groups).tracks), 1)
+        self.assertTrue(event.track_groups[1].constraint_type.is_sync())
+        self.assertGreater(len(event.track_groups[1].tracks), 1)
         reg_data = {
             'id': registration_id,
             'tracks': {
@@ -2450,7 +2448,7 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika", "garcia")
     def test_export_event(self) -> None:
-        with open(self.testfile_dir / "event_export.json") as f:
+        with open(self.testfile_dir / "event_export.json", encoding="utf-8") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
@@ -2946,7 +2944,10 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika")
     def test_partial_export_event(self) -> None:
-        with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
+        with open(
+                self.testfile_dir / "TestAka_partial_export_event.json",
+                encoding="utf-8",
+        ) as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2966,7 +2967,9 @@ class TestEventBackend(BackendTest):
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -3203,7 +3206,9 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             orig_data = json.load(datafile)
 
         base_data = {
@@ -3259,7 +3264,9 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
-        with open(self.testfile_dir / "partial_event_import.json") as datafile:
+        with open(
+                self.testfile_dir / "partial_event_import.json", encoding="utf-8",
+        ) as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -3629,15 +3636,15 @@ class TestEventBackend(BackendTest):
 
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {8})
-        self.assertIn("Some of these orgas do not exist or are archived.",
+        self.assertIn("Some of these personas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {1000})
-        self.assertIn("Some of these orgas do not exist or are archived.",
+        self.assertIn("Some of these personas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {11})
-        self.assertIn("Some of these orgas are not event users.",
+        self.assertIn("Some of these personas are not event users.",
                       cm.exception.args)
 
     @event_keeper
@@ -4407,16 +4414,6 @@ class TestEventBackend(BackendTest):
                 'part_ids': [9, 10, 11],
                 'shortname': 'TN 2H',
                 'title': 'Teilnehmer 2. Hälfte'},
-            8: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
-                'notes': None,
-                'part_ids': [7, 8],
-                'shortname': 'Kurs 1H',
-                'title': 'Kurse 1. Hälfte'},
-            9: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
-                'notes': None,
-                'part_ids': [9, 10, 11],
-                'shortname': 'Kurs 2H',
-                'title': 'Kurse 2. Hälfte'},
             10: {'constraint_type': const.EventPartGroupType.mailinglist_link,
                 'notes': None,
                 'part_ids': [7, 10],

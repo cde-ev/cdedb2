@@ -64,7 +64,7 @@
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("Academy"), _("Course"), _("Family Name"), _("Given Names"), _("Known as (Forename)"), _("Title_[[of a persona]]"), _("Name Affix"),
+                format(_("Academy"), _("Course"), _("Family Name"), _("Legal Given Names"), _("Given Names"), _("Title_[[of a persona]]"), _("Name Affix"),
                        _("Birth Name"), _("Gender"), _("Address Supplement"), _("Street and House Number"), _("Zipcode"), _("City"),
                        _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))|s }}
         </pre>
@@ -85,9 +85,8 @@
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
-                    {# We don't use util.person_name() here, b/c dataset['raw'] is no full persona object, esp. it
-                       misses a 'display_name' entry #}
-                    {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
+                    {# We don't use util.persona_name() here, b/c dataset['raw'] is no full persona object #}
+                    {{ dataset['raw']['legal_given_names'] }} {{ dataset['raw']['family_name'] }}
                     {% if dataset['raw']['username'] %}
                         &lt;{{ dataset['raw']['username'] }}&gt;
                     {% endif %}

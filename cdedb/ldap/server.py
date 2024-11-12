@@ -213,8 +213,7 @@ class LdapHandler:
         """
         if request.version != 3:
             raise ldaperrors.LDAPProtocolError(
-                "Version %u not supported" % request.version,
-            )
+                f"Version {request.version} not supported")
 
         self.check_controls(controls)
 
@@ -286,7 +285,6 @@ class LdapHandler:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
         else:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
-        return None
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
@@ -354,7 +352,7 @@ class LdapHandler:
         base = await self.root.lookup(base_dn)
         search_results = await base.search(
             filterObject=request.filter,
-            # attributes=request.attributes,
+            attributes=request.attributes,
             scope=request.scope,
             derefAliases=request.derefAliases,
             # sizeLimit=request.sizeLimit,

@@ -147,13 +147,15 @@
         {% if field['kind'] == datatypes.bool %}
             {{ util.deko_checkbox(checked=entry) }}
         {% elif field['kind'] == datatypes.date %}
-            {{ entry|date(lang=lang, passthrough=True) }}
+            {{ entry|date(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] == datatypes.datetime %}
-            {{ entry|datetime(lang=lang, passthrough=True) }}
+            {{ entry|datetime(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] in (datatypes.float, datatypes.non_negative_float) %}
-            {{ entry|decimal(lang=lang) }}
+            {{ entry|decimal(lang=lang) or otherwise }}
         {% elif field['kind'] == datatypes.phone %}
-            {{ util.tel_link(entry|phone) }}
+            {{ util.tel_link(entry|phone) if entry else otherwise }}
+        {% elif field['kind'] == datatypes.iban %}
+            {{ entry|iban }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
@@ -359,7 +361,7 @@
 {% macro list_mep_violations(violations, personas, link_registration=False) %}
     <ul id="mep-violations-list">
         {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id], include_nickname=True) %}
             {% if link_registration %}
                 {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
             {% else %}
@@ -390,7 +392,7 @@
             {% endif %}
 
             <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
+                {% trans course_link=course_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
                     {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
                 {% endtrans -%}
                 {# These are presorted. #}
@@ -405,7 +407,7 @@
 {% macro list_ccs_violations(violations, personas, link_registration=False) %}
     <ul id="ccs-violations-list">
         {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
+            {% set persona_name = util.persona_name(personas[violation.persona_id], include_nickname=True) %}
             {% if link_registration %}
                 {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
             {% else %}
@@ -441,7 +443,7 @@
     {% with query = query or get_query(registration_ids, fee_id) %}
         {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
-                     title=gettext("View Registrations"), anid=anid) }}
+                     title=gettext("View Registrations"), anid=anid, readonly=not is_privileged_for(query.scope.get_target())) }}
     {% endwith %}
 {% endmacro %}
 

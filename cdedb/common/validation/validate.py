@@ -150,7 +150,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
-T_Co = TypeVar('T_Co', covariant=True)
+T_co = TypeVar('T_co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -173,10 +173,10 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return self.args[index]
 
     def extend(self, errors: Iterable[Exception]) -> None:
-        self.args = self.args + tuple(errors)
+        self.args += tuple(errors)
 
     def append(self, error: Exception) -> None:
-        self.args = self.args + (error,)
+        self.args += (error,)
 
     def __enter__(self) -> None:
         pass
@@ -1020,7 +1020,7 @@ def _realm(
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
-    if val not in ("session", "core", "cde", "event", "ml", "assembly"):
+    if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
         raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
     return Realm(val)
 
@@ -1199,9 +1199,9 @@ def make_list_validator(type_: type[T]) -> ListValidator[T]:
     return list_validator
 
 
-class PairValidator(Protocol[T_Co]):
+class PairValidator(Protocol[T_co]):
     def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any,
-                 ) -> tuple[T_Co, T_Co]:
+                 ) -> tuple[T_co, T_co]:
         ...
 
 
@@ -1386,8 +1386,9 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
 PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
-    'display_name': str,
+    'nickname': NoneType,
     'given_names': str,
+    'legal_given_names': str,
     'family_name': str,
     'title': NoneType,
     'name_supplement': NoneType,
@@ -1510,8 +1511,9 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'is_archived': bool,
     'is_purged': bool,
     'is_active': bool,
-    'display_name': str,
+    'nickname': Optional[str],
     'given_names': str,
+    'legal_given_names': str,
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],
@@ -1555,7 +1557,8 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
 @_add_typed_validator
 def _persona(
     val: Any, argname: str = "persona", *,
-    creation: bool = False, transition: bool = False, **kwargs: Any,
+    creation: bool = False, transition: bool = False, ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> Persona:
     """Check a persona data set.
 
@@ -1570,7 +1573,7 @@ def _persona(
     :param transition: If ``True`` test the data set on fitness for changing
       the realms of a persona.
     """
-    val = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, ignore_warnings=ignore_warnings, **kwargs)
 
     if creation and transition:
         raise RuntimeError(
@@ -1578,7 +1581,8 @@ def _persona(
 
     if creation:
         temp = _examine_dictionary_fields(
-            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
+            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
+            ignore_warnings=ignore_warnings, **kwargs)
         temp.update({'is_archived': False, 'is_purged': False})
         temp.update({k: False for k in ADMIN_KEYS})
         roles = extract_roles(temp)
@@ -1609,8 +1613,8 @@ def _persona(
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                     ignore_warnings=ignore_warnings, **kwargs)
 
     errs = ValidationSummary()
     if "is_member" in val and "trial_member" in val:
@@ -1621,12 +1625,18 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
+    if ("given_names" in val and "legal_given_names" in val
+            and val["given_names"].lower() not in val["legal_given_names"].lower()
+            and not ignore_warnings):
+        errs.append(ValidationWarning("given_names", n_(
+            "Given names is not a part of legal given names.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
-                    aux=val.get('country' + suffix, ""), **kwargs)
+                    aux=val.get('country' + suffix, ""),
+                    ignore_warnings=ignore_warnings, **kwargs)
                 val['postal_code' + suffix] = postal_code
             except ValidationSummary as e:
                 errs.extend(e)
@@ -1738,7 +1748,7 @@ def _phone(
             msg = n_("Invalid country code")
         elif npe.error_type == npe.NOT_A_NUMBER:
             msg = n_("This is not a phone number.")
-        elif npe.error_type in (npe.TOO_SHORT_AFTER_IDD, npe.TOO_SHORT_NSN):
+        elif npe.error_type in {npe.TOO_SHORT_AFTER_IDD, npe.TOO_SHORT_NSN}:
             msg = n_("Phone number too short")
         elif npe.error_type == npe.TOO_LONG:
             msg = n_("Phone number too long")
@@ -1958,7 +1968,7 @@ def _csvfile(
     """
     val = _input_file(val, argname, **kwargs)
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("text/csv", "text/plain", "application/csv"):
+    if mime not in {"text/csv", "text/plain", "application/csv"}:
         raise ValidationSummary(ValueError(
             argname, n_("Only text/csv allowed.")))
     val = _str(val.decode(encoding).strip(), argname, **kwargs)
@@ -1991,7 +2001,7 @@ def _profilepic(
         errs.append(ValueError(argname, n_("Too big.")))
 
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("image/jpeg", "image/jpg", "image/png"):
+    if mime not in {"image/jpeg", "image/jpg", "image/png"}:
         errs.append(ValueError(
             argname, n_("Only jpg and png allowed.")))
     if errs:
@@ -2258,7 +2268,7 @@ def _sepa_transactions(
                        ) > SEPA_TRANSACTIONS_LIMITS[attribute]:
                     errs.append(ValueError(attribute, n_("Too long.")))
 
-        if entry['type'] not in ("OOFF", "FRST", "RCUR"):
+        if entry['type'] not in {"OOFF", "FRST", "RCUR"}:
             errs.append(ValueError('type', n_("Invalid constant.")))
         if errs:
             continue  # TODO is this not equivalent to break in this situation?
@@ -2442,6 +2452,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
+    'reimbursement_iban_field_id': Optional[ID],
     'website_url': Optional[Url],
     'notify_on_registration': const.NotifyOnRegistration,
 }
@@ -2860,11 +2871,10 @@ def _event_fee(
             if 'condition' in val and val['condition'] is None:
                 errs.append(ValueError(
                     'condition', n_("Cannot unset condition for conditional fee.")))
-    else:
-        if (val['amount'] is None) != (val['condition'] is None):
-            for k in ('amount', 'condition'):
-                errs.append(ValueError(
-                    k, n_("Cannot have amount without condition or vice versa.")))
+    elif (val['amount'] is None) != (val['condition'] is None):
+        for k in ('amount', 'condition'):
+            errs.append(ValueError(
+                k, n_("Cannot have amount without condition or vice versa.")))
     if errs:
         raise errs
 
@@ -3172,19 +3182,8 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes = {
-        const.FieldDatatypes.str: Optional[str],
-        const.FieldDatatypes.bool: Optional[bool],
-        const.FieldDatatypes.int: Optional[int],
-        const.FieldDatatypes.float: Optional[float],
-        const.FieldDatatypes.date: Optional[datetime.date],
-        const.FieldDatatypes.datetime: Optional[datetime.datetime],
-        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
-        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
-        const.FieldDatatypes.phone: Optional[str],
-    }
     optional_fields: TypeMapping = {
-        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
+        str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
@@ -3291,16 +3290,27 @@ def _lodgement(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-# TODO is kind optional?
-# TODO make argname non-optional
+FIELD_DATATYPE_VALIDATORS = {
+    const.FieldDatatypes.str: str,
+    const.FieldDatatypes.bool: bool,
+    const.FieldDatatypes.int: int,
+    const.FieldDatatypes.float: float,
+    const.FieldDatatypes.date: datetime.date,
+    const.FieldDatatypes.datetime: datetime.datetime,
+    const.FieldDatatypes.non_negative_int: NonNegativeInt,
+    const.FieldDatatypes.non_negative_float: NonNegativeFloat,
+    const.FieldDatatypes.phone: Phone,
+    const.FieldDatatypes.iban: IBAN,
+}
+
+
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: Optional[str] = None, *, kind: FieldDatatypes, **kwargs: Any,
+    val: Any, argname: str, *, kind: FieldDatatypes, **kwargs: Any,
 ) -> ByFieldDatatype:
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[
-        Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore[index]
+    val: Any = _ALL_TYPED[Optional[FIELD_DATATYPE_VALIDATORS[kind]]  # type: ignore[index]
     ](val, argname, **kwargs)
 
     if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
@@ -3370,16 +3380,15 @@ def _questionnaire_row(
             msg = n_("Cannot specify both field id and field name.")
             errs.append(ValueError(argname_prefix + 'field_id', msg))
             errs.append(ValueError(argname_prefix + 'field_name', msg))
+        elif value['field_name'] not in fields_by_name:
+            errs.append(KeyError(
+                argname_prefix + 'field_name',
+                n_("No field with name '%(name)s' exists."),
+                {"name": value['field_name']}))
         else:
-            if value['field_name'] not in fields_by_name:
-                errs.append(KeyError(
-                    argname_prefix + 'field_name',
-                    n_("No field with name '%(name)s' exists."),
-                    {"name": value['field_name']}))
-            else:
-                value['field_id'] = fields_by_name[value['field_name']].get('id')
-                if value['field_id']:
-                    del value['field_name']
+            value['field_id'] = fields_by_name[value['field_name']].get('id')
+            if value['field_id']:
+                del value['field_name']
     if 'field_id' not in value:
         value['field_id'] = None
 
@@ -3663,7 +3672,7 @@ def _serialized_event(
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
     for table, entity_dict in new_val.items():
-        if table not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
+        if table not in {'id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'}:
             for entity in entity_dict.values():
                 if entity.get('event_id') and entity['event_id'] != event_id:
                     errs.append(ValueError(table, n_("Mismatched event.")))
@@ -4183,7 +4192,7 @@ def _serialized_event_configuration(
                         "lodge_field_id", n_("Unknown lodge field.")))
             else:
                 field = current.fields[lodge_field]
-                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge_field']
                 if field.association not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
@@ -4194,6 +4203,31 @@ def _serialized_event_configuration(
                         raise ValidationSummary(ValueError(
                             "lodge_field_id",
                             n_("Lodge field must have type 'string'.")))
+        if reimbursement_field := val.get('reimbursement_iban_field_id'):
+            if reimbursement_field not in current.fields:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "reimbursement_iban_field_id",
+                        n_("Unknown reimbursement IBAN field."),
+                    ))
+            else:
+                field = current.fields[reimbursement_field]
+                legal_kinds, legal_associations = \
+                    EVENT_FIELD_SPEC['reimbursement_field']
+                if field.association not in legal_associations:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_(
+                                "Reimbursement IBAN field must be a registration"
+                                " field.",
+                            ),
+                        ))
+                if field.kind not in legal_kinds:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_("Reimbursement IBAN field must have type 'IBAN'.")))
 
     if errs:
         raise errs
@@ -4229,10 +4263,9 @@ def _mailinglist(
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
-    else:
-        if val["domain"].value not in subtype.available_domains:
-            errs.append(ValueError("domain", n_(
-                "Invalid domain for this mailinglist type.")))
+    elif val["domain"].value not in subtype.available_domains:
+        errs.append(ValueError("domain", n_(
+            "Invalid domain for this mailinglist type.")))
 
     if not val.get('event_id'):
         if val.get('event_part_group_id'):
@@ -4756,7 +4789,7 @@ def _query_input(
 
         # Get value
         value = val.get(f"qval_{field}")
-        if value is None or value == "":
+        if not value:
             # No value supplied means no constraint
             # TODO: make empty string a valid constraint
             continue
@@ -4771,16 +4804,16 @@ def _query_input(
                 # TODO do not allow None
                 try:
                     vv: Any = _ALL_TYPED[
-                        Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                        Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                     ](
                         v, field, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
 
-                if operator in (QueryOperators.containsall,
+                if operator in {QueryOperators.containsall,
                                 QueryOperators.containssome,
-                                QueryOperators.containsnone):
+                                QueryOperators.containsnone}:
                     try:
                         vv = _non_regex(vv, field, **kwargs)
                     except ValidationSummary as e:
@@ -4793,12 +4826,12 @@ def _query_input(
             if not value:
                 continue
 
-            if (operator in (QueryOperators.between, QueryOperators.outside)
+            if (operator in {QueryOperators.between, QueryOperators.outside}
                     and len(value) != 2):
                 errs.append(ValueError(field, n_("Two endpoints required.")))
                 continue
 
-        elif operator in (QueryOperators.match, QueryOperators.unmatch):
+        elif operator in {QueryOperators.match, QueryOperators.unmatch}:
             # TODO remove all _or_None in this validator!
             try:
                 value = _ALL_TYPED[Optional[NonRegex]](  # type: ignore[index]
@@ -4806,7 +4839,7 @@ def _query_input(
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
-        elif operator in (QueryOperators.regex, QueryOperators.notregex):
+        elif operator in {QueryOperators.regex, QueryOperators.notregex}:
             try:
                 value = _ALL_TYPED[Optional[Regex]](  # type: ignore[index]
                     value, field, **kwargs)
@@ -4816,7 +4849,7 @@ def _query_input(
         else:
             try:
                 value = _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                 ](
                     value, field, **kwargs)
             except ValidationSummary as e:
@@ -4932,14 +4965,14 @@ def _query(
 
         elif operator in MULTI_VALUE_OPERATORS:
             validator: Callable[..., Any] = _ALL_TYPED[
-                Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore[index]
+                Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
                 with errs:
                     validator(v, f"constraints/{field}", **kwargs)
         else:
             try:
                 _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[val.spec[field].type]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]  # type: ignore[index]
                 ](
                     value,
                     f"constraints/{field}",

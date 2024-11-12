@@ -34,8 +34,8 @@
 
 {% block content %}
     <div class="p button-par">
-        {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='plus',
-                     aclass='btn btn-success btn-sm') }}
+        {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), icon='plus',
+                     readonly=not is_privileged_for('create_course'), aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/course_query'), gettext('Course Query'), icon='search', aclass='btn btn-info btn-sm') }}
     </div>
 
@@ -113,7 +113,8 @@
                         {{ course['nr'] }}
                     </td>
                     <td {% if not course['is_visible'] %}class="course-primary" title="{{ gettext("not visible") }}"{% endif %}>
-                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname']) }}
+                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname'],
+                                     readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
                         {% if track.id in course['segments'] %}
@@ -135,7 +136,8 @@
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
                                              "%s%s+%s%s"|format(assign_counts[(course_id, track.id)].num_learners_filtered, nbsp, nbsp,
-                                                                assign_counts[(course_id, track.id)].num_instructors_filtered)) }}
+                                                                assign_counts[(course_id, track.id)].num_instructors_filtered),
+                                             readonly=not is_privileged_for('course_choices')) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
                                 <td class="text-right">
@@ -144,7 +146,8 @@
                                                                                     'position': i,
                                                                                     'include_active': include_active,
                                                                                     'submitform': True}),
-                                             choice_counts[(course_id, track.id)][i]) }}
+                                             choice_counts[(course_id, track.id)][i],
+                                             readonly=not is_privileged_for('course_choices')) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left"></td>
@@ -156,10 +159,12 @@
                     {% if ambience['event']['tracks']|length < 4 %}
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
-                                         label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
+                                         label=none, readonly=not is_privileged_for('change_course'),
+                                         aclass='btn btn-xs btn-warning', icon='pen',
                                          title=gettext("Edit")) }}
                             {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course_id}),
-                                         label=none, readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                         label=none, readonly=not is_privileged_for('manage_attendees'),
+                                         aclass='btn btn-xs btn-warning', icon='user',
                                          title=gettext("Manage Attendees")) }}
                         </td>
                     {% endif %}

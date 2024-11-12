@@ -25,18 +25,17 @@ META_INFO_FIELDS = (
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
-    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
-    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
-    "is_purged",
+    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin", "is_finance_admin",
+    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
+    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_cdelokal_admin",
+    "is_auditor", "is_member", "is_searchable", "is_archived", "is_purged",
 )
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "display_name", "family_name", "given_names",
-    "title", "name_supplement")
+    "id", "username", "family_name", "given_names",
+    "nickname", "legal_given_names", "title", "name_supplement")
 
 #: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
@@ -112,7 +111,8 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field_id",
-    "field_definition_notes", "website_url", "notify_on_registration",
+    "reimbursement_iban_field_id", "field_definition_notes", "website_url",
+    "notify_on_registration",
 )
 
 #: Fields of an event part organized via CdEDB
@@ -223,11 +223,16 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: dict[
     str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]] = {
-    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
-        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
-    'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
+    'lodge_field':
+        ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'reimbursement_field':
+        ({const.FieldDatatypes.iban}, {const.FieldAssociations.registration}),
+    'camping_mat':
+        ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'course_room':
+        ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'waitlist':
+        ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
 }
 
 LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
