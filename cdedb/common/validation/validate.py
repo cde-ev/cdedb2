@@ -297,7 +297,7 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
         )
         e = errs[0]
         e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
-        raise e from errs  # pylint: disable=raising-bad-type
+        raise e from errs
 
 
 def validate_assert_optional(type_: type[T], value: Any, ignore_warnings: bool,
@@ -2360,7 +2360,7 @@ def _safe_str(
     errs = ValidationSummary()
 
     forbidden_chars = "".join(xsorted({
-        c for c in val  # pylint: disable=not-an-iterable
+        c for c in val
         if not (c.isalnum() or c.isspace() or c in allowed_chars)
     }))
     if forbidden_chars:
@@ -3192,13 +3192,13 @@ def _event_associated_fields(
 
     errs = ValidationSummary()
     lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
-    for field in val:  # pylint: disable=consider-using-dict-items
-        field_id = lookup[field]
+    for field_name, value in val.items():
+        field_id = lookup[field_name]
         entries = fields[field_id].entries
-        if entries is not None and val[field] is not None:
-            if not any(str(raw[field]) == x for x, _ in entries.items()):
+        if entries is not None and value is not None:
+            if not any(str(raw[field_name]) == x for x, _ in entries.items()):
                 errs.append(ValueError(
-                    field, n_("Entry not in definition list.")))
+                    field_name, n_("Entry not in definition list.")))
     if errs:
         raise errs
 
@@ -4053,7 +4053,7 @@ def _serialized_event_questionnaire_upload(
     val = _input_file(val, argname, **kwargs)
     val = _json(val, argname, **kwargs)
     return SerializedEventQuestionnaireUpload(
-        _serialized_event_questionnaire(val, argname, **kwargs))  # pylint: disable=missing-kwoa # noqa
+        _serialized_event_questionnaire(val, argname, **kwargs))  # pylint: disable=missing-kwoa
 
 
 @_add_typed_validator

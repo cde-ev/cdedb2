@@ -480,7 +480,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover  # noqa: E501
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -1100,7 +1100,7 @@ class FrontendTest(BackendTest):
         if evade_anti_csrf:
             urlmap = CDEDB_PATHS
             urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
-            endpoint, _ = urls.match(url, method="POST")  # pylint: disable=unpacking-non-sequence
+            endpoint, _ = urls.match(url, method="POST")
             params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
                 endpoint, csrf_token_name, csrf_token_payload,
                 persona_id=self.user['id'])
@@ -1135,7 +1135,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")  # pragma: no cover  # noqa: E501
+                "Cannot specify button value without specifying button name.")  # pragma: no cover
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1177,7 +1177,7 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+    def login(self, user: UserIdentifier, *,
               ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
@@ -1196,7 +1196,7 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore[return-value]
 
-    def logout(self, verbose: bool = False, *, allow_anonymous: bool = False) -> None:  # pylint: disable=arguments-differ
+    def logout(self, verbose: bool = False, *, allow_anonymous: bool = False) -> None:
         """Log out.
 
         :param verbose: If True display additional debug information.
@@ -1300,7 +1300,7 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover  # noqa: E501
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
 
     def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
@@ -1996,7 +1996,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover  # noqa: E501
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -2083,7 +2083,7 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover  # noqa: E501
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
         self.current_app = i
 
 
