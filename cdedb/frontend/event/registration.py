@@ -1123,14 +1123,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
-            rs, event_id, registration_id=registration_id, course_id=-1)
+            rs, rs.ambience['event'], registration_id=registration_id, course_id=-1)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'lodgements': lodgements,
             'waitlist_position': waitlist_position,
-            'mep_violations': constraint_violations['mep_violations'],
-            'ccs_violations': constraint_violations['ccs_violations'],
-            'violation_severity': constraint_violations['max_severity'],
+            'constraint_violations': constraint_violations,
             **payment_data,
             **course_choice_parameters,
         })
