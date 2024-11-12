@@ -66,7 +66,7 @@ if TYPE_CHECKING:
     # TODO replace once we raise requirements to Python 3.11
     # where this is exposed as wsgiref.WSGIApplication.
     # This is a pseudo-module supported by major type checkers.
-    from _typeshed.wsgi import WSGIApplication  # pylint: disable=import-error
+    from _typeshed.wsgi import WSGIApplication
 
 
 class Application(BaseApp):
@@ -243,7 +243,7 @@ class Application(BaseApp):
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
-            endpoint, args = urls.match()  # pylint: disable=unpacking-non-sequence
+            endpoint, args = urls.match()
 
             lang = self.get_locale(request)
             rs = RequestState(

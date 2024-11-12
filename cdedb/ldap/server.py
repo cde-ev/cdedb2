@@ -370,7 +370,7 @@ class LdapHandler:
             - which entries may access other entries
             - which attributes may be accessed by which entries
             """
-            attributes = {key: value for key, value in entry.items()}  # pylint: disable=unnecessary-comprehension
+            attributes = dict(entry)
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]

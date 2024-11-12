@@ -214,6 +214,9 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
     padding: 6px 10px;
     margin: 0;
 }
+.fw-bold {
+    font-weight: bold;
+}
 
 .panel-condensed>.panel-heading {
     padding: 8px 10px;

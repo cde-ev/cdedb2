@@ -665,7 +665,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
+            if assertion == GenesisCase:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -692,7 +692,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
+            if assertion == GenesisCase:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:

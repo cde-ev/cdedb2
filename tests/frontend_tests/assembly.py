@@ -139,7 +139,7 @@ class AssemblyTestHelpers(FrontendTest):
             f[k] = v
         self.submit(f)
         if atitle:
-            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover  # noqa: E501
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:

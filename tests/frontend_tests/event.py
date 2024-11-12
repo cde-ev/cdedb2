@@ -456,7 +456,7 @@ class TestEventFrontend(FrontendTest):
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
             "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
-            "Partieller Import", "Log", "Checkin",
+            "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
         }
         finance_admin = {"Überweisungen eintragen"}
 
@@ -4329,14 +4329,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                             div="notifications")
 
     @as_users("garcia")
-    def test_assignment_checks(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurseinteilung",
-                      "Prüfung")
-        self.assertTitle("Kurseinteilungsprüfung (Große Testakademie 2222)")
-        self.assertPresence("Ausfallende Kurse mit Teilnehmern")
-        self.assertPresence("Kabarett", div='problem_cancelled_with_p')
-        self.assertPresence("Teilnehmer ohne Kurs")
-        self.assertPresence("Anton", div='problem_no_course')
+    def test_course_assignment_violations(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Verstöße gegen Beschränkungen")
+        self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
+        self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
+        self.assertPresence("Fehlende Kurseinteilungen")
+        self.assertPresence("Anton", div='NoCourseAssignedCV-list')
 
         # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
         # problem, but raises 'unchosen' problem
@@ -4353,13 +4352,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['assign_action'] = 0
         self.submit(f)
 
-        self.traverse("Prüfung")
-        self.assertPresence("Teilnehmer in einem ungewählten Kurs")
-        self.assertPresence("Garcia", div='problem_unchosen')
-        self.assertPresence("Kursleiter im falschen Kurs")
-        self.assertPresence("Emilia", div='problem_instructor_wrong_course')
-        self.assertPresence("α", div='problem_instructor_wrong_course')
-        self.assertPresence("δ", div='problem_instructor_wrong_course')
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Fehlerhafte Kurseinteilungen")
+        self.assertPresence("Garcia Generalis ist in Kaffee in einen nicht"
+                            " gewählten Kurs (ε. Backup) eingeteilt.",
+                            div='IncorrectCourseAssignedCV-list')
+        self.assertPresence("Emilia (Emmy) Eventis ist in Sitzung nicht in"
+                            " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
+                            div='IncorrectCourseAssignedCV-list')
+
+        # Change "Backup" to "never offered" in "Kaffeekränzchen".
+        self.traverse("Kurse", "Backup", "Bearbeiten")
+        f = self.response.forms['configurecourseform']
+        f['segments'] = f['active_segments'] = [1, 3]
+        self.submit(f)
+        self.assertPresence("Backup wird in Kaffee nicht angeboten aber hat",
+                            div="constraint-violations-list")
+
+        # Reduce max size of "Heldentum".
+        self.traverse("Kurse", "Heldentum", "Bearbeiten")
+        f = self.response.forms['configurecourseform']
+        f['max_size'] = 1
+        self.submit(f)
+        self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.")
+
+        # Remove all non instructors from "Heldentum" in "Sitzung".
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        f['track3.course_id'] = 1
+        self.submit(f)
+        self.traverse("Kurse", "Heldentum", "Kursteilnehmer verwalten")
+        f = self.response.forms['manageattendeesform']
+        f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
+        self.submit(f)
+        self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
+                            " in Sitzung.")
 
     @as_users("garcia")
     def test_course_display_with_different_participation_stati(self) -> None:
@@ -5780,6 +5807,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms["archivepersonaform"]
         f["note"] = "For testing."
         f["ack_delete"].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Unausgeglichener Veranstaltungs-Kontostand",
+                            div="notifications")
+        execsql("UPDATE event.registrations SET amount_paid = 15.00"
+                " WHERE persona_id = 3 AND event_id = 2;")
+        f = self.response.forms["archivepersonaform"]
+        f["ack_delete"].checked = True
         self.submit(f)
         self.assertPresence("CdE-Party 2050")
 
@@ -6101,74 +6135,67 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("Test", f['fields.lodge'].value)
 
     @as_users("emilia")
-    def test_part_group_constraints(self) -> None:
+    def test_constraint_violations(self) -> None:
         # pylint: disable=protected-access
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 1 Verstöße gegen"
-                            " Teilnahmeausschließlichkeitsbeschränkungen.",
+        self.assertPresence('Es gibt 1 "Teilnahmeausschließlichkeit"-Verstöße.',
                             div="constraint-violations")
-        self.assertPresence("Es gibt 5 Verstöße gegen"
-                            " Kursausschließlichkeitsbeschränkungen.",
+        self.assertPresence('Es gibt 5 "Kursausschließlichkeit"-Verstöße.',
                             div="constraint-violations")
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
-        self.assertPresence("Teilnahmeausschließlichkeitsbeschränkungen")
-        self.assertPresence("Emilia (Emmy) Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
-                            " (Anwesend in K1, W1).", div="mep-violations-list")
-        self.assertNonPresence("TN 2H", div="mep-violations-list")
-        self.assertPresence("Kursausschließlichkeitsbeschränkungen")
-        self.assertPresence("4. Akrobatik verstößt gegen die"
-                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in KK1, OK1).",
-                            div="mec-violations-list")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die"
-                               " Kursausschließlichkeitsbeschränkung Kurs 2H."
-                               " (Findet statt in WK2m, WK2n).",
-                               div="mec-violations-list")
+        self.assertPresence("Teilnahmeausschließlichkeit")
+        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="MutuallyExclusiveParticipationCV-list")
+        self.assertPresence("Kursausschließlichkeit")
+        self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
+                            " Kursschienen statt (KK1, OK1).",
+                            div="MutuallyExclusiveCoursesCV-list")
+        self.assertNonPresence("4. Akrobatik findet in sich gegenseitig"
+                               " ausschließenden Kursschienen statt (WK2m, WK2n).",
+                               div="MutuallyExclusiveCoursesCV-list")
 
         # Change Emilia's registration.
         self.traverse({"href": "/event/event/4/registration/10/show"})
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia (Emmy) Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
-                            " (Anwesend in K1, W1).", div="mep-violations-list")
-        self.assertNonPresence("TN 2H", div="mep-violations-list")
+        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="constraint-violations-list")
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
-        self.assertEqual(
-            f['part8.status'].value, str(const.RegistrationPartStati.participant))
         self.assertEqual(
             f['part6.status'].value, str(const.RegistrationPartStati.waitlist))
         self.assertEqual(
             f['part7.status'].value, str(const.RegistrationPartStati.guest))
         self.assertEqual(
-            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+            f['part8.status'].value, str(const.RegistrationPartStati.participant))
         self.assertEqual(
             f['part9.status'].value, str(const.RegistrationPartStati.guest))
         self.assertEqual(
             f['part10.status'].value, str(const.RegistrationPartStati.rejected))
-        f['part7.status'] = const.RegistrationPartStati.rejected
-        f['part11.status'] = const.RegistrationPartStati.participant
+        self.assertEqual(
+            f['part11.status'].value, str(const.RegistrationPartStati.waitlist))
+        f['part9.status'] = f['part11.status'] = const.RegistrationPartStati.participant
         self.submit(f)
 
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertNonPresence("TN 1H", div="mep-violations-list")
-        self.assertPresence("Emilia (Emmy) Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 2H."
-                            " (Anwesend in K2, O2).", div="mep-violations-list")
+        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="constraint-violations-list")
+        self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen teil (K2, O2).",
+                            div="constraint-violations-list")
 
-        f['part9.status'] = const.RegistrationPartStati.cancelled
+        f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)
-        self.assertNonPresence(
-            "Emilia (Emmy) Eventis verstößt gegen die"
-            " Teilnahmeausschließlichkeitsbeschränkung")
+        self.assertNonPresence("sich gegenseitig ausschließenden")
 
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertNonPresence("Teilnahmebeschränkungen")
@@ -6177,14 +6204,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("4. Akrobatik")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("4. Akrobatik verstößt gegen die"
-                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in KK1, OK1).",
-                            div="mec-violations-list")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die"
-                               " Kursausschließlichtkeitsbeschränkung Kurs 2H."
-                               " (Findet statt in WK2m, WK2n).",
-                               div="mec-violations-list")
+        self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
+                            " Kursschienen statt (KK1, OK1).",
+                            div="constraint-violations-list")
         self.assertNonPresence("Kurs fällt aus")
 
         self.traverse("Bearbeiten")

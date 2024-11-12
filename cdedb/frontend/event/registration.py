@@ -686,7 +686,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
             )
             choices_list = [
-                c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
+                c_id for i in range(track.num_choices) if (c_id := choice(i))]
             instructed_course = reg_tracks[track_id].get("course_instructor")
             for rank, course_id in enumerate(choices_list):
                 # Check for choosing instructed course.
@@ -1123,14 +1123,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
-            rs, event_id, registration_id=registration_id, course_id=-1)
+            rs, rs.ambience['event'], registration_id=registration_id, course_id=-1)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'lodgements': lodgements,
             'waitlist_position': waitlist_position,
-            'mep_violations': constraint_violations['mep_violations'],
-            'ccs_violations': constraint_violations['ccs_violations'],
-            'violation_severity': constraint_violations['max_severity'],
+            'constraint_violations': constraint_violations,
             **payment_data,
             **course_choice_parameters,
         })

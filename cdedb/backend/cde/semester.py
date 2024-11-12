@@ -550,7 +550,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 except ArchiveError:
                     self.logger.exception(f"Unexpected error during archival of"
                                           f" persona {persona_id}.")
-                    persona = {'persona_id': persona_id}
+                    raise
                 else:
                     if code:
                         period_update['archival_count'] = \

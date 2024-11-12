@@ -344,7 +344,7 @@ class TestCdEBackend(BackendTest):
                             self.key, lastschrift_id=2,
                             payment_date=datetime.date.today())
                     execsql(f"DELETE FROM cde.lastschrift_transactions"
-                            f" WHERE id = {new_id}")  # noqa: F821
+                            f" WHERE id = {new_id}")
                 new_id = self.cde.issue_lastschrift_transaction(
                     self.key, lastschrift_id=2, payment_date=datetime.date.today())
                 self.assertLess(0, new_id)

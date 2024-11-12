@@ -7,7 +7,7 @@ import datetime
 import decimal
 import enum
 import functools
-import gettext  # pylint: disable=unused-import
+import gettext
 import hashlib
 import hmac
 import itertools
@@ -185,7 +185,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -706,8 +706,6 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
-    # pylint: disable=arguments-differ
-
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
                                  decimal.Decimal]) -> str: ...
@@ -1219,7 +1217,7 @@ def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
     for char in s:
         if char in UMLAUT_MAP:
             ret += UMLAUT_MAP[char]
-        elif char in (  # pylint: disable=superfluous-parens
+        elif char in (
             string.ascii_letters + string.digits + " /-?:().,+"
         ):
             ret += char

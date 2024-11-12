@@ -20,3 +20,6 @@ CDEDB_TEST = True
 if pathlib.Path('/CONTAINER').is_file():
     DB_HOST = "cdb"
     DB_PORT = 5432
+
+
+EVENT_ARCHIVAL_BALANCE_CUTOFF = 0
