@@ -19,10 +19,9 @@ INFO: A state which should be addressed at some point and not forgotten but whic
 DEBUG: A placeholder for violations which are implemented but are not relevant in
     practice and therefore hidden in the UI.
 """
-
+import abc
 import dataclasses
 import itertools
-from abc import abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Self
 
@@ -43,7 +42,7 @@ DEBUG = 0
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class ConstraintViolation:
+class ConstraintViolation(abc.ABC):
     event: models.Event
     severity: int
 
@@ -76,7 +75,6 @@ class ConstraintViolation:
     # Constructor interface.
     # Inheritance does not work very nicely with typing, due to different signatures.
     @classmethod
-    @abstractmethod
     def check(cls, event: models.Event, **kwargs: Any) -> Self | None:
         """
         Takes the event and some entites and determines whether there is a violation.
@@ -105,9 +103,24 @@ class ConstraintViolation:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class MutuallyExclusiveParticipationCV(ConstraintViolation):
+class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
     registration: CdEDBObject
     persona: CdEDBObject
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_registration", {'registration_id': self.registration['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CourseConstraintViolation(ConstraintViolation, abc.ABC):
+    course: CdEDBObject
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
     part_group: models.PartGroup
 
     @classmethod
@@ -179,14 +192,9 @@ class MutuallyExclusiveParticipationCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_registration", {'registration_id': self.registration['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class CourseChoiceSyncCV(ConstraintViolation):
-    registration: CdEDBObject
-    persona: CdEDBObject
+class CourseChoiceSyncCV(RegistrationConstraintViolation):
     track_group: models.TrackGroup
 
     @classmethod
@@ -234,13 +242,9 @@ class CourseChoiceSyncCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_registration", {'registration_id': self.registration['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class MutuallyExclusiveCoursesCV(ConstraintViolation):
-    course: CdEDBObject
+class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
     track_group: models.TrackGroup
 
     @classmethod
@@ -276,13 +280,9 @@ class MutuallyExclusiveCoursesCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_course", {'course_id': self.course['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class CancelledWithAttendeesCV(ConstraintViolation):
-    course: CdEDBObject
+class CancelledWithAttendeesCV(CourseConstraintViolation):
     track: models.CourseTrack
 
     num: int
@@ -331,13 +331,9 @@ class CancelledWithAttendeesCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_course", {'course_id': self.course['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class IncorrectNumAttendeesCV(ConstraintViolation):
-    course: CdEDBObject
+class IncorrectNumAttendeesCV(CourseConstraintViolation):
     track: models.CourseTrack
 
     num: int
@@ -387,13 +383,9 @@ class IncorrectNumAttendeesCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_course", {'course_id': self.course['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class LonelyAttendeesCV(ConstraintViolation):
-    course: CdEDBObject
+class LonelyAttendeesCV(CourseConstraintViolation):
     track: models.CourseTrack
 
     num_learners: int
@@ -431,14 +423,9 @@ class LonelyAttendeesCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_course", {'course_id': self.course['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class NoCourseAssignedCV(ConstraintViolation):
-    registration: CdEDBObject
-    persona: CdEDBObject
+class NoCourseAssignedCV(RegistrationConstraintViolation):
     track: models.CourseTrack
 
     @classmethod
@@ -478,14 +465,9 @@ class NoCourseAssignedCV(ConstraintViolation):
         }
         return msg, params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_registration", {'registration_id': self.registration['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class IncorrectCourseAssignedCV(ConstraintViolation):
-    registration: CdEDBObject
-    persona: CdEDBObject
+class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
     track: models.CourseTrack
 
     assigned_course: CdEDBObject
@@ -560,6 +542,3 @@ class IncorrectCourseAssignedCV(ConstraintViolation):
                 if self.instructed_course else None,
         }
         return msg, params
-
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_registration", {'registration_id': self.registration['id']}
