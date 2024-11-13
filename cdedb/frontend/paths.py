@@ -656,12 +656,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/show", methods=_GET,
                              endpoint="show_registration"),
                         sub("/checkin", (
-                            rule("/add", methods=_POST,
-                                 endpoint="add_checkin_transition"),
+                            rule("/checkin", methods=_POST,
+                                 endpoint="add_checkin"),
+                            rule("/checkout", methods=_POST,
+                                 endpoint="add_checkout"),
                             rule("/change", methods=_POST,
-                                 endpoint="change_checkin_transitions"),
+                                 endpoint="change_checkin_period"),
                             rule("/delete", methods=_POST,
-                                 endpoint="delete_checkin_transitions"),
+                                 endpoint="delete_checkin_period"),
                         )),
                         sub('/fee', (
                             rule("/summary", methods=_GET,

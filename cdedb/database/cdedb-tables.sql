@@ -1105,15 +1105,15 @@ CREATE INDEX course_choices_track_id_rank_idx ON event.course_choices(track_id, 
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 
-CREATE TABLE event.checkin_transitions (
+CREATE TABLE event.checkin_periods (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
-        transition_type         integer NOT NULL,
-        ttime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now()
+        checkin_time            timestamp WITH TIME ZONE NOT NULL,
+        checkout_time           timestamp WITH TIME ZONE
 );
-CREATE INDEX checkin_transitions_registration_id_idx ON event.checkin_transitions(registration_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.checkin_transitions TO cdb_persona;
-GRANT SELECT, UPDATE ON event.checkin_transitions_id_seq TO cdb_persona;
+CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
+GRANT SELECT, INSERT, DELETE, UPDATE (checkin_time, checkout_time) ON event.checkin_periods TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_periods_id_seq TO cdb_persona;
 
 CREATE TABLE event.personalized_fees (
         id                      bigserial PRIMARY KEY,

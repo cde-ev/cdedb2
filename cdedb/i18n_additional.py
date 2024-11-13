@@ -142,11 +142,13 @@ I18N_STRINGS = (
     n_("EventLogCodes.custom_filter_changed"),
     n_("EventLogCodes.custom_filter_deleted"),
     n_("EventLogCodes.registration_status_changed"),
-    n_("EventLogCodes.checkin_transition_added"),
-    n_("EventLogCodes.checkin_transition_changed"),
-    n_("EventLogCodes.checkin_transition_deleted"),
     n_("EventLogCodes.personalized_fee_amount_set"),
     n_("EventLogCodes.personalized_fee_amount_deleted"),
+    n_("EventLogCodes.checkin_added"),
+    n_("EventLogCodes.checkout_added"),
+    n_("EventLogCodes.checkin_changed"),
+    n_("EventLogCodes.checkout_changed"),
+    n_("EventLogCodes.checkin_period_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -171,9 +173,6 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.honorary_membership_granted"),
     n_("FinanceLogCodes.honorary_membership_revoked"),
     n_("FinanceLogCodes.other"),
-
-    n_("CheckinTransitionType.checked_in"),
-    n_("CheckinTransitionType.checked_out"),
 
     n_("FieldAssociations.registration"),
     n_("FieldAssociations.course"),

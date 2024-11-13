@@ -1653,7 +1653,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         there = lambda registration, part_id: const.RegistrationPartStati(
             registration['parts'][part_id]['status']).is_present()
         registrations = {k: v for k, v in registrations.items()
-                         if (len(v['checkin_transitions']) % 2 == 0
+                         if (len(v['checkin_periods']) % 2 == 0
                              and any(there(v, id) for id in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -1683,107 +1683,107 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("registration_id", "ttype", "from_checkin_page", "part_ids")
-    def add_checkin_transition(
+    @REQUESTdata("from_checkin_page", "part_ids")
+    def add_checkin(
         self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-        ttype: const.CheckinTransitionType, from_checkin_page: Optional[bool] = False,
+        from_checkin_page: Optional[bool] = False,
         part_ids: Optional[Collection[int]] = None,
     ) -> Response:
         """Checkin a participant."""
         if rs.has_validation_errors():
             if from_checkin_page:
-                return self.checkin_form(rs, event_id)
+                return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        if registration['event_id'] != event_id:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
 
-        tparity = len(registration['checkin_transitions']) % 2
-        if not (tparity == 0 and ttype == const.CheckinTransitionType.checked_in or
-                tparity == 1 and ttype == const.CheckinTransitionType.checked_out):
-            if ttype == const.CheckinTransitionType.checked_in:
-                msg = n_("Already checked in.")
-            elif ttype == const.CheckinTransitionType.checked_out:
-                msg = n_("Already checked out.")
-            else:
-                raise RuntimeError(n_("Not implemented"))  # pragma: no cover
-            rs.notify("error", msg)
+        if rs.ambience['registration']['checkin_periods'][-1].checkout_time:
+            rs.notify("error", n_("Already checked in."))
             if from_checkin_page:
                 return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.add_checkin_transition(
-            rs, registration_id, ttype)
+        code = self.eventproxy.add_checkin(rs, registration_id)
         rs.notify_return_code(code, error=n_("Action failed."))
         if from_checkin_page:
             return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids})
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
 
-    @access('event', modi={"POST"})
+    @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("tid1", "tid2")
-    def change_checkin_transitions(self, rs: RequestState, event_id: int,
-                                   registration_id: vtypes.ID, tid1: vtypes.ID,
-                                   tid2: Optional[vtypes.ID] = None) -> Response:
-        """Change the time a participant was present."""
-        ttime1 = unwrap(request_extractor(rs, {f'ttime1_{tid1}': datetime.datetime}))
-        ttime2 = None
-        if tid2 is not None:
-            ttime2 = unwrap(request_extractor(
-                rs, {f'ttime2_{tid2}': datetime.datetime}))
+    def add_checkout(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+    ) -> Response:
+        """Checkin a participant."""
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        chronologic = xsorted(registration['checkin_transitions'])
-        # check positive timespan in past
-        if ttime1 > now():
-            rs.append_validation_error(
-                (f'ttime1_{tid1}', ValueError(n_("Must be in the past."))))
-        if ttime2 and ttime2 > now():
-            rs.append_validation_error(
-                (f'ttime2_{tid2}', ValueError(n_("Must be in the past."))))
-        if ttime2 and not ttime1 < ttime2:
-            rs.append_validation_error(
-                (f'ttime2_{tid2}', ValueError(n_("Checkout must be after checkin."))))
-        if tid1 not in {t.id for t in chronologic}:
-            raise ValueError(n_("Inconsistent data."))
-        elif tid2 is not None and tid2 not in {t.id for t in chronologic}:
-            raise ValueError(n_("Inconsistent data."))
-        else:
-            for prev_t, current_t in itertools.pairwise(chronologic):
-                # ensure late enough checkin
-                if current_t.id == tid1 and not prev_t.ttime <= ttime1:
-                    rs.append_validation_error((f'ttime1_{tid1}', ValueError(
-                        n_("Checkin must be after previous checkout."),
-                    )))
-                # ensure early enough checkout
-                elif prev_t.id == tid2 and not ttime2 <= current_t.ttime:
-                    rs.append_validation_error((f'ttime2_{tid2}', ValueError(
-                        n_("Checkout must be before next checkin."),
-                    )))
-        if rs.has_validation_errors():
+        if rs.ambience['registration']['checkin_periods'][-1].checkout_time:
+            rs.notify("error", n_("Already checked out."))
             return self.show_registration(rs, event_id, registration_id)
 
-        ret = self.eventproxy.change_checkin_transitions(rs, registration_id,
-                                                         tid1, ttime1, tid2, ttime2)
-        rs.notify_return_code(ret)
+        code = self.eventproxy.add_checkout(rs, registration_id)
+        rs.notify_return_code(code, error=n_("Action failed."))
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
 
     @access('event', modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("tid1", "tid2")
-    def delete_checkin_transitions(self, rs: RequestState, event_id: int,
-                                   registration_id: vtypes.ID, tid1: vtypes.ID,
-                                   tid2: Optional[vtypes.ID] = None) -> Response:
+    def change_checkin_period(self, rs: RequestState, event_id: int,
+                              registration_id: vtypes.ID, period_id: vtypes.ID,
+                              ) -> Response:
+        """Change the time a participant was present."""
+        # TODO Why do the ttimes inputs need to contain the ids?
+        ttime1 = unwrap(request_extractor(rs, {f'ttime1_{period_id}': datetime.datetime}))
+        ttime2 = unwrap(request_extractor(rs, {f'ttime2_{period_id}': datetime.datetime}))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        reg = rs.ambience['registration']
+        # check positive timespan in past
+        if ttime1 > now():
+            rs.append_validation_error(
+                (f'ttime1_{period_id}', ValueError(n_("Must be in the past."))))
+        if ttime2 and ttime2 > now():
+            rs.append_validation_error(
+                (f'ttime2_{period_id}', ValueError(n_("Must be in the past."))))
+        if ttime2 and not ttime1 < ttime2:
+            rs.append_validation_error(
+                (f'ttime2_{period_id}', ValueError(n_("Checkout must be after checkin."))))
+        if period_id not in {period.id for period in reg['checkin_periods']}:
+            raise ValueError(n_("Inconsistent data."))
+        else:
+            for prev_t, current_t in itertools.pairwise(reg['checkin_periods']):
+                # ensure late enough checkin
+                if current_t.id == period_id and not prev_t.ttime <= ttime1:
+                    rs.append_validation_error((f'ttime1_{period_id}', ValueError(
+                        n_("Checkin must be after previous checkout."),
+                    )))
+                # ensure early enough checkout
+                elif prev_t.id == period_id and not ttime2 <= current_t.ttime:
+                    rs.append_validation_error((f'ttime2_{period_id}', ValueError(
+                        n_("Checkout must be before next checkin."),
+                    )))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        ret = self.eventproxy.change_checkin_period(
+            rs, registration_id, period_id, ttime1, ttime2)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("period_id")
+    def delete_checkin_period(self, rs: RequestState, event_id: int,
+                              registration_id: vtypes.ID,
+                              period_id: vtypes.ID) -> Response:
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
         # no validation errors can be caused by the user. Errors are a bug in code,
-        # let them be raised by the backend.
-        ret = self.eventproxy.delete_checkin_transitions(
-            rs, registration_id, tid1, tid2)
+        # or due to racing. Let them be raised by the backend.
+        ret = self.eventproxy.delete_checkin_period(rs, registration_id, period_id)
         rs.notify_return_code(ret, error=n_("Action failed."))
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})

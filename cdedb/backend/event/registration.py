@@ -57,7 +57,6 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.database.constants import CheckinTransitionType
 from cdedb.filter import datetime_filter, money_filter
 
 T = TypeVar("T")
@@ -891,9 +890,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
-            checkin_transitions = models.CheckinTransition.many_from_database(
+            checkin_periods = models.CheckinPeriod.many_from_database(
                 self.query_all(
-                    rs, *models.CheckinTransition.get_select_query(registration_ids),
+                    rs, *models.CheckinPeriod.get_select_query(registration_ids),
                 ),
             )
             personalized_fees = models.PersonalizedFee.many_from_database(
@@ -905,7 +904,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 self._get_event_fields(rs, event_id).values())
             for reg in ret.values():
                 reg['tracks'] = {}
-                reg['checkin_transitions'] = []
+                reg['checkin_periods'] = []
                 reg['personalized_fees'] = {}
                 reg['fields'] = cast_fields(reg['fields'], event_fields)
             for reg_track in tdata:
@@ -915,9 +914,10 @@ class EventRegistrationBackend(EventBaseBackend):
             for choice in choices:
                 reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
                 reg_track['choices'][choice['course_id']] = choice['rank']
-            for transition in checkin_transitions.values():
-                reg = ret[transition.registration_id]
-                reg['checkin_transitions'].append(transition)
+            for period in checkin_periods.values():
+                reg = ret[period.registration_id]
+                reg['checkin_periods'].append(period)
+            reg['checkin_periods'] = xsorted(reg['checkin_periods'])
             for personalized_fee in personalized_fees.values():
                 reg = ret[personalized_fee.registration_id]
                 reg['personalized_fees'][personalized_fee.fee_id] = \
@@ -1810,153 +1810,134 @@ class EventRegistrationBackend(EventBaseBackend):
             return False, index
         return True, len(data)
 
-    @staticmethod
-    def _make_ct_log_message(rs: RequestState,
-                             transition: models.CheckinTransition | CdEDBObject) -> str:
-        if isinstance(transition, models.CheckinTransition):
-            return (f"{rs.log_gettext(str(transition.transition_type))}:"
-                    f" {datetime_filter(transition.ttime, lang=rs.log_lang)}")
-        return (f"{rs.log_gettext(str(transition['transition_type']))}:"
-                f" {datetime_filter(transition['ttime'], lang=rs.log_lang)}")
-
     @access("event")
-    def add_checkin_transition(self, rs: RequestState, registration_id: int,
-                               ttype: const.CheckinTransitionType,
-                               ttime: datetime.datetime | None = None,
-                               ) -> DefaultReturnCode:
+    def add_checkin(self, rs: RequestState, registration_id: int,
+                    checkin_time: Optional[datetime.datetime] = None,
+                    ) -> DefaultReturnCode:
         """Checkin a participant."""
         registration_id = affirm(vtypes.ID, registration_id)
-        ttype = affirm(const.CheckinTransitionType, ttype)
-        ttime = affirm_optional(datetime.datetime, ttime)
+        checkin_time = affirm_optional(datetime.datetime, checkin_time)
 
         if not self.is_orga(rs, registration_id=registration_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
-            tparity = len(reg['checkin_transitions']) % 2
-            if not (tparity == 0 and ttype == const.CheckinTransitionType.checked_in or
-                    tparity == 1 and ttype == const.CheckinTransitionType.checked_out):
+            # currently checked in.
+            if not reg['checkin_periods'][-1].checkout_time:
                 return 0
 
             data: CdEDBObject = {
                 'registration_id': registration_id,
-                'transition_type': ttype,
-                'ttime': ttime or now().replace(microsecond=0),
+                'ttime': checkin_time or now().replace(microsecond=0),
             }
-            ret = self.sql_insert(rs, models.CheckinTransition.database_table, data)
-            self.event_log(rs, const.EventLogCodes.checkin_transition_added,
+            ret = self.sql_insert(rs, models.CheckinPeriod.database_table, data)
+            self.event_log(rs, const.EventLogCodes.checkin_added,
                            reg['event_id'], reg['persona_id'],
-                           self._make_ct_log_message(rs, data))
+                           change_note=datetime_filter(checkin_time, lang=rs.log_lang))
         return ret
 
     @access("event")
-    def change_checkin_transitions(
-        self, rs: RequestState, registration_id: int, tid1: int,
-        ttime1: datetime.datetime, tid2: Optional[int] = None,
-        ttime2: Optional[datetime.datetime] = None,
+    def add_checkout(self, rs: RequestState, registration_id: int,
+                     checkout_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode:
+        """Checkin a participant."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+
+        if not self.is_orga(rs, registration_id=registration_id):
+            raise PrivilegeError(n_("Not privileged."))
+
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            # currently checked out.
+            if reg['checkin_periods'][-1].checkout_time:
+                return 0
+
+            data: CdEDBObject = {
+                'id': reg['checkin_periods'][-1].id,
+                'checkout_time': checkout_time or now().replace(microsecond=0),
+            }
+            ret = self.sql_update(rs, models.CheckinPeriod.database_table, data)
+            self.event_log(rs, const.EventLogCodes.checkout_added,
+                           reg['event_id'], reg['persona_id'],
+                           change_note=datetime_filter(checkout_time, lang=rs.log_lang))
+        return ret
+
+    @access("event")
+    def change_checkin_period(
+        self, rs: RequestState, registration_id: int, period_id: int,
+        checkin_time: datetime.datetime,
+        checkout_time: Optional[datetime.datetime],
     ) -> DefaultReturnCode:
         """Change the time a participant was present."""
         registration_id = affirm(vtypes.ID, registration_id)
-        tid1 = affirm(vtypes.ID, tid1)
-        ttime1 = affirm(datetime.datetime, ttime1)
-        tid2 = affirm_optional(vtypes.ID, tid2)
-        ttime2 = affirm_optional(datetime.datetime, ttime2)
+        period_id = affirm(vtypes.ID, period_id)
+        checkin_time = affirm(datetime.datetime, checkin_time)
+        checkout_time = affirm_optional(datetime.datetime, checkout_time)
 
         if not self.is_orga(rs, registration_id=registration_id):
             raise PrivilegeError(n_("Not privileged."))
 
         reftime = now()
-        if (tid2 and ttime2 is None) or (ttime2 and tid2 is None):
-            raise ValueError(n_("Must give both or none."))
-        elif ttime1 > reftime or ttime2 and ttime2 > reftime:
+        if checkin_time > reftime or checkout_time and checkout_time > reftime:
             raise ValueError(n_("Must be in the past."))
-        elif ttime2 and ttime1 > ttime2:
+        elif checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
 
-        with Atomizer(rs):
-            ret = 1
+        ret = 1
+        with (Atomizer(rs)):
             reg = self.get_registration(rs, registration_id)
 
-            transitions = {t.id: t for t in xsorted(reg['checkin_transitions'])}
-            if tid1 not in transitions or tid2 and tid2 not in transitions:
-                raise ValueError(n_("Wrong transition."))
-            t1 = transitions[tid1]
-            if t1.transition_type != CheckinTransitionType.checked_in:
-                raise RuntimeError(n_("Inconsistent state."))
-            if t1.ttime != ttime1:
-                msg = (self._make_ct_log_message(rs, t1)
-                       + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
-                t1.ttime = ttime1
-                ret *= self.sql_update(
-                    rs, models.CheckinTransition.database_table, t1.to_database())
-                self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+            periods = {t.id: t for t in xsorted(reg['checkin_periods'])}
+            if period_id not in periods:
+                raise ValueError(n_("Inconsistent period."))
+            period = periods[period_id]
+            old_period = period.copy()
+            if period.checkin_time != checkin_time:
+                old_time = datetime_filter(period.checkin_time, lang=rs.log_lang)
+                new_time = datetime_filter(checkin_time, lang=rs.log_lang)
+                msg = f"{old_time} -> {new_time}"
+                period.checkin_time = checkin_time
+                self.event_log(rs, const.EventLogCodes.checkin_changed,
                                reg['event_id'], reg['persona_id'], msg)
 
-            if tid2 is not None:
-                t2 = transitions[tid2]
-                if t2.transition_type != CheckinTransitionType.checked_out:
-                    raise RuntimeError(n_("Inconsistent state."))
-                if t2.ttime != ttime2:
-                    msg = (self._make_ct_log_message(rs, t2)
-                           + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
-                    t2.ttime = ttime2
-                    ret *= self.sql_update(
-                        rs, models.CheckinTransition.database_table, t2.to_database())
-                    self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+            if checkout_time is not None:
+                if period.checkout_time != checkout_time:
+                    old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+                    new_time = datetime_filter(checkout_time, lang=rs.log_lang)
+                    msg = f"{old_time} -> {new_time}"
+                    period.checkout_time = checkout_time
+                    self.event_log(rs, const.EventLogCodes.checkout_changed,
                                    reg['event_id'], reg['persona_id'], msg)
 
             # verify that we did not mix up times
-            if ([t.id for t in xsorted(transitions.values())]
-                != list(transitions.keys())):
+            if ([t.id for t in xsorted(periods.values())] != list(periods.keys())):
                 raise ValueError(n_("Mixed up times."))
+            if period != old_period:
+                ret *= self.sql_update(
+                    rs, models.CheckinPeriod.database_table, period.to_database())
         return ret
 
     @access("event")
-    def delete_checkin_transitions(self, rs: RequestState, registration_id: int,
-                                   tid1: int, tid2: Optional[int] = None,
-                                   ) -> DefaultReturnCode:
+    def delete_checkin_period(self, rs: RequestState, registration_id: int,
+                              period_id: int) -> DefaultReturnCode:
         """Delete a (pair of) checkpoint(s) where a participant entered/left."""
         registration_id = affirm(vtypes.ID, registration_id)
-        tid1 = affirm(vtypes.ID, tid1)
-        tid2 = affirm_optional(vtypes.ID, tid2)
+        period_id = affirm(vtypes.ID, period_id)
 
         if not self.is_orga(rs, registration_id=registration_id):
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
-            transitions: list[models.CheckinTransition] =\
-                xsorted(reg['checkin_transitions'])
-            id_to_trans = {ct.id: ct for ct in transitions}
-            if tid2 is None:
-                last_ct = transitions[-1]
-                if tid1 != last_ct.id:
-                    raise ValueError(n_("Can only delete latest checkin."))
-                ret = self.sql_delete(
-                    rs, models.CheckinTransition.database_table, (tid1,))
-                self.event_log(
-                    rs, const.EventLogCodes.checkin_transition_deleted,
-                    reg['event_id'], reg['persona_id'],
-                    change_note=self._make_ct_log_message(rs, last_ct))
-            else:
-                ct1 = id_to_trans[tid1]
-                idx1 = transitions.index(ct1)
-                ct2 = transitions[idx1 + 1]
-                if not ct2.id == tid2:
-                    raise ValueError(n_("Can only delete consecutive transitions."))
-                if (ct1.transition_type != CheckinTransitionType.checked_in
-                    or (ct2.transition_type != CheckinTransitionType.checked_out)):
-                    raise ValueError(
-                        n_("Can only delete checkin and following checkout."))
-                ret = self.sql_delete(
-                    rs, models.CheckinTransition.database_table, (tid1, tid2))
-                self.event_log(
-                    rs, const.EventLogCodes.checkin_transition_deleted,
-                    reg['event_id'], reg['persona_id'],
-                    change_note=self._make_ct_log_message(rs, ct1))
-                self.event_log(
-                    rs, const.EventLogCodes.checkin_transition_deleted,
-                    reg['event_id'], reg['persona_id'],
-                    change_note=self._make_ct_log_message(rs, ct2))
-            return ret
+            id_to_trans = {ct.id: ct for ct in reg['checkin_periods']}
+            period = id_to_trans[period_id]
+            ret = self.sql_delete(
+                rs, models.CheckinPeriod.database_table, [period_id])
+            msg = (f"{datetime_filter(period.checkin_time, lang=rs.log_lang)}; "
+                   f"{datetime_filter(period.checkout_time, lang=rs.log_lang)}")
+            self.event_log(
+                rs, const.EventLogCodes.checkin_period_deleted,
+                reg['event_id'], reg['persona_id'], change_note=msg)
+        return ret

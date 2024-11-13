@@ -17408,14 +17408,6 @@ msgstr "Course Fields"
 msgid "FieldAssociations.lodgement"
 msgstr "Lodgement Fields"
 
-#: cdedb/i18n_additional.py:175
-msgid "CheckinTransitionType.checked_in"
-msgstr "Checkin"
-
-#: cdedb/i18n_additional.py:176
-msgid "CheckinTransitionType.checked_out"
-msgstr "Checkout"
-
 #: cdedb/i18n_additional.py:176 cdedb/i18n_additional.py:182
 msgid "FieldDatatypes.str"
 msgstr "Text"

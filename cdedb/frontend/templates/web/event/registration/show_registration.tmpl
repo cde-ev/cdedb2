@@ -223,7 +223,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for tpair in ambience['registration']['checkin_transitions']|batch(2) %}
+        {% for tpair in ambience['registration']['checkin_periods'] %}
             <tr>
                 <td>{{ loop.index }}</td>
                 <form action="{{ cdedblink('event/change_checkin_transitions',
@@ -269,9 +269,9 @@
                                          aclass="btn btn-warning btn-sm showform-button", value=loop.index) }}
                 </td>
                 <td style="padding-left: 0;">
-                    <form action="{{ cdedblink("event/delete_checkin_transitions") }}" method="POST"
+                    <form action="{{ cdedblink("event/delete_checkin_period") }}" method="POST"
                           id="deletetransitionsform{{ loop.index }}">
-                        {{ util.anti_csrf_token('event/delete_checkin_transitions') }}
+                        {{ util.anti_csrf_token('event/delete_checkin_period') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_hidden(name="tid1", value=tpair[0].id) }}
                         {% if tpair|length > 1 %}
@@ -300,7 +300,7 @@
                                              icon="arrow-right-to-bracket", readonly=is_locked) }}
                     </form>
                 {% else %}
-                    <form action="{{ cdedblink('event/add_checkin_transition') }}" method="POST"
+                    <form action="{{ cdedblink('event/add_checkout') }}" method="POST"
                         id="checkoutform">
                         {{ util.anti_csrf_token('event/add_checkin_transition') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}

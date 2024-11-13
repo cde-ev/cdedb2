@@ -18252,14 +18252,6 @@ msgstr ""
 msgid "FieldAssociations.lodgement"
 msgstr ""
 
-#: cdedb/i18n_additional.py:175
-msgid "CheckinTransitionType.checked_in"
-msgstr ""
-
-#: cdedb/i18n_additional.py:176
-msgid "CheckinTransitionType.checked_out"
-msgstr ""
-
 #: cdedb/i18n_additional.py:176 cdedb/i18n_additional.py:182
 msgid "FieldDatatypes.str"
 msgstr ""

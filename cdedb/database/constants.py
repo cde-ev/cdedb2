@@ -105,13 +105,6 @@ class RegistrationPartStati(CdEIntEnum):
 
 
 @enum.unique
-class CheckinTransitionType(CdEIntEnum):
-    """"All types of checkin transitions"""
-    checked_in = 1  #:
-    checked_out = 11  #:
-
-
-@enum.unique
 class FieldAssociations(CdEIntEnum):
     """Coordinates fields to the entities they are attached to."""
     registration = 1  #:
@@ -609,11 +602,13 @@ class EventLogCodes(CdEIntEnum):
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
     registration_status_changed = 300  #:
-    checkin_transition_added = 350  #:
-    checkin_transition_changed = 351  #:
-    checkin_transition_deleted = 352  #:
     personalized_fee_amount_set = 400  #:
     personalized_fee_amount_deleted = 401  #:
+    checkin_added = 500  #:
+    checkout_added = 505  #:
+    checkin_changed = 510  #:
+    checkout_changed = 515  #:
+    checkin_period_deleted = 530  #:
 
 
 @enum.unique

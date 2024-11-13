@@ -398,11 +398,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.u10:
             return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
-            return _is_participant(part) and len(reg['checkin_transitions']) % 2 == 1
+            return (_is_participant(part) and reg['checkin_periods']
+                    and reg['checkin_periods'][-1].checkout_time is None)
         elif self == self.has_been_checked_in:
-            return _is_participant(part) and reg['checkin_transitions']
+            return _is_participant(part) and reg['checkin_periods']
         elif self == self.never_checked_in:
-            return _is_participant(part) and not reg['checkin_transitions']
+            return _is_participant(part) and not reg['checkin_periods']
         elif self == self.orgas:
             return _is_participant(part) and reg['persona_id'] in event.orgas
         elif self == self.waitlist:
@@ -512,7 +513,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.checked_in:
             return (
-                ['last_checkin.ttime'],
+                ['checkin_periods.max_checkin_time'],
                 [
                     _participant_constraint(part),
                     ('checkin.current', QueryOperators.equal, True),
@@ -521,11 +522,16 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.has_been_checked_in:
             return (
-                ['first_checkin.ttime', 'first_checkout.ttime',
-                 'last_checkin.ttime', 'last_checkout.ttime'],
+                [
+                    'checkin_periods.min_checkin_time',
+                    'checkin_periods.min_checkout_time',
+                    'checkin_periods.max_checkin_time',
+                    'checkin_periods.max_checkout_time',
+                    'checkin.current',
+                ],
                 [
                     _participant_constraint(part),
-                    ('first_checkin.ttime', QueryOperators.nonempty, None),
+                    ('checkin_periods.min_checkin_time', QueryOperators.nonempty, None),
                 ],
                 [],
             )
@@ -534,7 +540,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [],
                 [
                     _participant_constraint(part),
-                    ('first_checkin.ttime', QueryOperators.empty, None),
+                    ('checkin_periods.min_checkin_time', QueryOperators.empty, None),
                 ],
                 [],
             )

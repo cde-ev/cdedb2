@@ -1,13 +1,14 @@
 BEGIN;
-    CREATE TABLE event.checkin_transitions (
-            id                  serial PRIMARY KEY,
-            registration_id     integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
-            transition_type     integer NOT NULL DEFAULT 1,
-            ttime               timestamp WITH TIME ZONE NOT NULL DEFAULT now()
+    CREATE TABLE event.checkin_periods (
+        id                      serial PRIMARY KEY,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+        checkin_time            timestamp WITH TIME ZONE NOT NULL,
+        checkout_time           timestamp WITH TIME ZONE DEFAULT NULL
     );
-    INSERT INTO event.checkin_transitions (registration_id, ttime)
+    CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
+    GRANT SELECT, INSERT, DELETE, UPDATE (checkin_time, checkout_time) ON event.checkin_periods TO cdb_persona;
+    INSERT INTO event.checkin_periods (registration_id, checkin_time)
         SELECT id, checkin
         FROM event.registrations;
-    ALTER TABLE event.checkin_transitions ALTER COLUMN transition_type DROP DEFAULT;
     ALTER TABLE event.registrations DROP COLUMN checkin;
 COMMIT;

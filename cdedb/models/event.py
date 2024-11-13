@@ -969,13 +969,15 @@ class PersonalizedFee(EventDataclass):
 
 
 @dataclasses.dataclass
-class CheckinTransition(EventDataclass):
-    database_table = "event.checkin_transitions"
+class CheckinPeriod(EventDataclass):
+    database_table = "event.checkin_periods"
     entity_key = "registration_id"
 
     registration_id: vtypes.ID
-    transition_type: const.CheckinTransitionType
-    ttime: datetime.datetime
+    checkin_time: datetime.datetime
+    checkout_time: Optional[datetime.datetime]
 
     def get_sortkey(self) -> Sortkey:
-        return (self.ttime, self.registration_id, self.transition_type)
+        if self.checkout_time is not None:
+            return (self.checkin_time, True, self.checkout_time, self.registration_id)
+        return (self.checkin_time, False, self.registration_id)
