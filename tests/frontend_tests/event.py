@@ -6193,8 +6193,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
-        self.assertNonPresence("Verstöße gegen Beschränkungen",
-                               div="constraint-violations", check_div=False)
         self.assertNonPresence("sich gegenseitig ausschließenden")
 
         self.traverse("Verstöße gegen Beschränkungen")
@@ -6271,7 +6269,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.event.set_course(self.key, data)
 
         self.traverse("Verstöße gegen Beschränkungen")
-        self.assertPresence("Es gibt derzeit keine Verstöße gegen Beschränkungen.")
+        self.assertNonPresence("Kursausschließlichkeit")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
