@@ -23,7 +23,6 @@ import abc
 import dataclasses
 import datetime
 import itertools
-from functools import cached_property
 from typing import TYPE_CHECKING, Any, Self
 
 import cdedb.database.constants as const
@@ -58,21 +57,6 @@ class ConstraintViolation(abc.ABC):
     track: models.CourseTrack | None = None
     part_group: models.PartGroup | None = None
     track_group: models.TrackGroup | None = None
-
-    # Helper properties.
-    @cached_property
-    def registration_part(self) -> CdEDBObject | None:
-        return (
-            self.registration['parts'][self.part]
-            if self.registration and self.part else None
-        )
-
-    @cached_property
-    def registration_track(self) -> CdEDBObject | None:
-        return (
-            self.registration['tracks'][self.track]
-            if self.registration and self.track else None
-        )
 
     # Constructor interface.
     # Inheritance does not work very nicely with typing, due to different signatures.
@@ -221,7 +205,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
                 or registration['tracks'][t1]['course_instructor']
                 != registration['tracks'][t2]['course_instructor']
                 for t1, t2 in itertools.combinations(track_group.tracks, 2)
-        ):
+        ):  # pragma: no cover
             return cls(
                 event=event,
                 severity=CRITICAL,
@@ -231,7 +215,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[str, CdEDBObject]:  # pragma: no cover
         msg = n_(
             "%(link)s has unsynchrozied course choices in synchronized"
             " tracks (%(track_list)s).",
