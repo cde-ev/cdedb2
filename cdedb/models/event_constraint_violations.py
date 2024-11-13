@@ -391,14 +391,15 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
 
     def get_translation(self) -> tuple[str, CdEDBObject]:
         if self.registration['amount_paid'] < 0:
-            msg = n_("%(link)s paid a negative amount.")
+            msg = n_("%(link)s has paid a negative amount (%(amount_paid)s).")
         else:
-            msg = n_("%(link)s paid without a payment date.")
+            msg = n_("%(link)s has paid without a payment date.")
 
         msg += " " + n_("This likely means someone entered invalid payment data.")
 
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
+            "amount_paid": money_filter(self.registration['amount_paid']),
         }
         return msg, params
 
@@ -512,7 +513,7 @@ class RemainingOwedCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
-        if registration['remaining_owed'] > 0:
+        if registration['remaining_owed'] > 0 and registration['amount_paid'] > 0:
             if any(reg_part['status'].is_involved()
                    for reg_part in registration['parts'].values()):
                 min_involved_part_begin = min(

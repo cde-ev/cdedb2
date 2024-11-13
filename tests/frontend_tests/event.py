@@ -6271,6 +6271,53 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertNonPresence("Kursausschließlichkeit")
 
+    @as_users("anton")
+    def test_financial_violations(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence('Es gibt 1 "NegativeRemainingOwedCV"-Verstöße.',
+                            div="constraint-violations")
+        self.assertPresence('Es gibt 3 "NotPaidCV"-Verstöße.',
+                            div="constraint-violations")
+        self.assertPresence('Es gibt 1 "RemainingOwedCV"-Verstöße.',
+                            div="constraint-violations")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Akira Abukara has not paid their fee (584,48 €).")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis has not paid their fee (466,49 €).")
+        self.assertPresence(
+            "Garcia Generalis is orga but has not paid their fee (504,48 €).")
+
+        self.assertPresence(
+            "Inga Iota needs to be reimbursed (116,49 €).")
+
+        self.assertPresence(
+            "Anton Administrator has not fully paid their fee (remaining: 353,99 €).")
+
+        # Manipulate amount paid without setting payment date:
+        execsql("""
+            UPDATE event.registrations SET amount_paid = -5, amount_owed = -5
+            WHERE id = 1
+        """)
+        execsql("UPDATE event.registrations SET amount_paid = 5 WHERE id = 2")
+        execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 3")
+        execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 5")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence(
+            "Anton Administrator has paid a negative amount (-5,00 €).")
+        self.assertPresence(
+            "Anton Administrator owes a negative amount (-5,00 €).")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis has paid without a payment date.")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis has not fully paid their fee (remaining: 461,49 €).")
+        # Garcia is orga.
+        self.assertNonPresence("Garcia Generalis is involved but owes no fee.")
+        self.assertPresence("Akira Abukara is involved but owes no fee.")
+
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party", "Veranstaltungsteile",
