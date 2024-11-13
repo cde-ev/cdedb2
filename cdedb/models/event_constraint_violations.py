@@ -507,7 +507,9 @@ class RemainingOwedCV(RegistrationConstraintViolation):
                 )
                 return cls(
                     event=event,
-                    severity=ERROR if min_involved_part_begin < now().date() else INFO,
+                    severity=(
+                        ERROR if min_involved_part_begin < now().date() else WARNING
+                    ),
                     registration=registration,
                     persona=persona,
                     min_involved_part_begin=min_involved_part_begin,
