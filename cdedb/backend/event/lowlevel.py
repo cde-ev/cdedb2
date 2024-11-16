@@ -48,7 +48,6 @@ from cdedb.common.fields import (
     EVENT_FIELD_SPEC,
     EVENT_PART_FIELDS,
     FIELD_DEFINITION_FIELDS,
-    PART_GROUP_FIELDS,
     REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -856,7 +855,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         if not blockers:
             track_group = self.sql_select_one(
-                rs, "event.track_groups", PART_GROUP_FIELDS, track_group_id)
+                rs, models.TrackGroup.database_table,
+                models.TrackGroup.database_fields(), track_group_id)
             if track_group is None:  # pragma: no cover
                 return 0
             type_ = const.CourseTrackGroupType(track_group['constraint_type'])
