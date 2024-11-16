@@ -107,7 +107,7 @@ class TestCoreBackend(BackendTest):
                 key = self.core.login(ANONYMOUS, user['username'], "wrong key", IP)
                 self.assertIsNone(key)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_logout(self) -> None:
         self.assertTrue(self.key)
         self.assertEqual(1, self.core.logout(self.key))
@@ -154,7 +154,7 @@ class TestCoreBackend(BackendTest):
                 self.assertIn(
                     "A birthday must be in the past. (birthday)", cm.exception.args)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
@@ -162,7 +162,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_name, self.core.retrieve_persona(
             self.key, self.user['id'])['nickname'])
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_password(self) -> None:
         user = self.user
         ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
@@ -203,7 +203,7 @@ class TestCoreBackend(BackendTest):
             self.core.change_foto(other_key, other_user["id"], new_hash)
         self.assertIsNone(self.login(other_user))
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_username(self) -> None:
         user = self.user
         newaddress = "newaddress@example.cde"

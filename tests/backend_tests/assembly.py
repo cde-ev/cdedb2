@@ -147,7 +147,7 @@ class TestAssemblyBackend(BackendTest):
             ],
         )
 
-    @as_users("anton", "berta", "charly", "kalif")
+    @as_users("anton", "berta", "charly", "kalif", maintain_data=True)
     def test_does_attend(self) -> None:
         self.assertEqual(self.user['id'] != 3, self.assembly.does_attend(
             self.key, assembly_id=1))
@@ -1600,7 +1600,8 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(candidates[7]['shortname'], old_candidates[8]['shortname'])
         self.assertEqual(candidates[8]['shortname'], old_candidates[7]['shortname'])
 
-    @as_users("werner", "berta")
+    @as_users("werner", "berta", maintain_data=True)
+    @storage
     def test_group_ballots_by_config(self) -> None:
         assembly_id = 1
         grouped = self.assembly.group_ballots_by_config(self.key, assembly_id)

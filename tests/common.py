@@ -942,8 +942,8 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
-                                                 Callable[..., None]]:
+def as_users(*users: UserIdentifier, maintain_data: bool = False,
+             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
@@ -952,7 +952,10 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
-                        self.setUp()
+                        if maintain_data:
+                            self.logout()
+                        else:
+                            self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
