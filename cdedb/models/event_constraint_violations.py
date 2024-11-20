@@ -22,6 +22,7 @@ DEBUG: A placeholder for violations which are implemented but are not relevant i
 import abc
 import dataclasses
 import datetime
+import enum
 import itertools
 from typing import TYPE_CHECKING, Any, Self
 
@@ -35,17 +36,42 @@ if TYPE_CHECKING:
     from cdedb.frontend.event.course import CourseAttendees
 
 
-CRITICAL = 4
-ERROR = 3
-WARNING = 2
-INFO = 1
-DEBUG = 0
+class ViolationSeverity(enum.Enum):
+    CRITICAL = 4
+    ERROR = 3
+    WARNING = 2
+    INFO = 1
+    DEBUG = 0
+
+    def html_class(self) -> str:
+        return {
+            ViolationSeverity.CRITICAL: 'text-danger fw-bold',
+            ViolationSeverity.ERROR: 'text-danger',
+            ViolationSeverity.WARNING: 'text-warning',
+            ViolationSeverity.INFO: '',
+            ViolationSeverity.DEBUG: 'text-muted',
+        }[self]
+
+    def panel_class(self) -> str:
+        return {
+            ViolationSeverity.CRITICAL: 'panel-danger fw-bold',
+            ViolationSeverity.ERROR: 'panel-danger',
+            ViolationSeverity.WARNING: 'panel-warning',
+            ViolationSeverity.INFO: 'panel-default',
+            ViolationSeverity.DEBUG: 'panel-default',
+        }[self]
+
+    def __lt__(self, other: 'ViolationSeverity') -> bool:
+        return self.value < other.value
+
+    def __ge__(self, other: 'ViolationSeverity') -> bool:
+        return self.value >= other.value
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ConstraintViolation(abc.ABC):
     event: models.Event
-    severity: int
+    severity: ViolationSeverity
 
     # Primary entities.
     registration: CdEDBObject | None = None
@@ -132,7 +158,7 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
         if len(participant_parts) > 1:
             return cls(
                 event=event,
-                severity=ERROR,
+                severity=ViolationSeverity.ERROR,
                 registration=registration,
                 persona=persona,
                 part_group=part_group,
@@ -145,7 +171,7 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
         if len(is_present_parts) > 1:
             return cls(
                 event=event,
-                severity=WARNING,
+                severity=ViolationSeverity.WARNING,
                 registration=registration,
                 persona=persona,
                 part_group=part_group,
@@ -154,7 +180,7 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        if self.severity >= ERROR:
+        if self.severity >= ViolationSeverity.ERROR:
             msg = n_(
                 "%(link)s is participant in mutually exclusive parts (%(part_list)s).",
             )
@@ -208,7 +234,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
         ):  # pragma: no cover
             return cls(
                 event=event,
-                severity=CRITICAL,
+                severity=ViolationSeverity.CRITICAL,
                 registration=registration,
                 persona=persona,
                 track_group=track_group,
@@ -251,11 +277,11 @@ class NoCourseAssignedCV(RegistrationConstraintViolation):
         if reg_track['course_id'] is None:
             return cls(
                 event=event,
-                severity=DEBUG if (
+                severity=ViolationSeverity.DEBUG if (
                         persona['id'] in event.orgas
                         or reg_part['age'] == AgeClasses.u10
                         or reg_part['status'] != const.RegistrationPartStati.participant
-                ) else WARNING,
+                ) else ViolationSeverity.WARNING,
                 registration=registration,
                 persona=persona,
                 track=track,
@@ -304,7 +330,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=WARNING,
+                severity=ViolationSeverity.WARNING,
                 registration=registration,
                 persona=persona,
                 track=track,
@@ -320,7 +346,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=INFO,
+                severity=ViolationSeverity.INFO,
                 registration=registration,
                 persona=persona,
                 track=track,
@@ -360,14 +386,14 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
         if registration['amount_paid'] < 0:
             return cls(
                 event=event,
-                severity=CRITICAL,
+                severity=ViolationSeverity.CRITICAL,
                 registration=registration,
                 persona=persona,
             )
         if registration['amount_paid'] > 0 and registration['payment'] is None:
             return cls(
                 event=event,
-                severity=ERROR,
+                severity=ViolationSeverity.ERROR,
                 registration=registration,
                 persona=persona,
             )
@@ -401,7 +427,10 @@ class NotPaidCV(RegistrationConstraintViolation):
                    for reg_part in registration['parts'].values()):
                 return cls(
                     event=event,
-                    severity=INFO if persona['id'] in event.orgas else ERROR,
+                    severity=(
+                        ViolationSeverity.INFO if persona['id'] in event.orgas
+                        else ViolationSeverity.ERROR
+                    ),
                     registration=registration,
                     persona=persona,
                 )
@@ -432,7 +461,7 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
         if registration['amount_owed'] < 0:
             return cls(
                 event=event,
-                severity=ERROR,
+                severity=ViolationSeverity.ERROR,
                 registration=registration,
                 persona=persona,
             )
@@ -441,7 +470,10 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
                    for reg_part in registration['parts'].values()):
                 return cls(
                     event=event,
-                    severity=DEBUG if persona['id'] in event.orgas else INFO,
+                    severity=(
+                        ViolationSeverity.DEBUG if persona['id'] in event.orgas
+                        else ViolationSeverity.INFO
+                    ),
                     registration=registration,
                     persona=persona,
                 )
@@ -472,7 +504,10 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
         if registration['remaining_owed'] < 0:
             return cls(
                 event=event,
-                severity=WARNING if event.is_archived else INFO,
+                severity=(
+                    ViolationSeverity.WARNING if event.is_archived
+                    else ViolationSeverity.INFO
+                ),
                 registration=registration,
                 persona=persona,
             )
@@ -508,7 +543,9 @@ class RemainingOwedCV(RegistrationConstraintViolation):
                 return cls(
                     event=event,
                     severity=(
-                        ERROR if min_involved_part_begin < now().date() else WARNING
+                        ViolationSeverity.ERROR
+                        if min_involved_part_begin < now().date()
+                        else ViolationSeverity.WARNING
                     ),
                     registration=registration,
                     persona=persona,
@@ -545,7 +582,7 @@ class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
         if len(set(course['active_segments']) & set(track_group.tracks)) > 1:
             return cls(
                 event=event,
-                severity=ERROR,  # TODO: WARNING if no attendees.
+                severity=ViolationSeverity.ERROR,  # TODO: WARNING if no attendees.
                 course=course,
                 track_group=track_group,
             )
@@ -588,7 +625,7 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             if attendees.involved:
                 return cls(
                     event=event,
-                    severity=ERROR,
+                    severity=ViolationSeverity.ERROR,
                     course=course,
                     track=track,
                     num=attendees.num_involved,
@@ -597,7 +634,7 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             if attendees.involved:
                 return cls(
                     event=event,
-                    severity=WARNING,
+                    severity=ViolationSeverity.WARNING,
                     course=course,
                     track=track,
                     num=attendees.num_involved,
@@ -605,7 +642,7 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
         return None
 
     def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        if self.severity >= ERROR:
+        if self.severity >= ViolationSeverity.ERROR:
             msg = n_("%(link)s is not offered in %(track)s but has %(num)s attendees.")
         else:
             msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
@@ -645,7 +682,10 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
             ):
                 return cls(
                     event=event,
-                    severity=WARNING if attendees.num_involved_learners else DEBUG,
+                    severity=(
+                        ViolationSeverity.WARNING if attendees.num_involved_learners
+                        else ViolationSeverity.DEBUG
+                    ),
                     course=course,
                     track=track,
                     num=attendees.num_involved_learners,
@@ -688,7 +728,7 @@ class LonelyAttendeesCV(CourseConstraintViolation):
             if bool(attendees.involved_learners) != bool(attendees.involved_instructors):  # pylint: disable=line-too-long
                 return cls(
                     event=event,
-                    severity=INFO,
+                    severity=ViolationSeverity.INFO,
                     course=course,
                     track=track,
                     num_learners=attendees.num_involved_learners,

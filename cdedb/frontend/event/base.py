@@ -636,7 +636,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         violations_by_class = dict(xsorted(
             violations_by_class.items(),
-            key=lambda item: (-max_severity_by_class[item[0]], item[0]),
+            key=lambda item: (-max_severity_by_class[item[0]].value, item[0]),
         ))
         return {
             'all': violations,

@@ -351,20 +351,15 @@
         {% set icon = none %}
     {% endif %}
     {% call util.bootstrap_panel(
-            title=title, icon=icon, anid=anid,
-            aclass="panel-default" if severity <= 1 else ("panel-danger" if severity > 2 else "panel-warning")) %}
+            title=title, icon=icon, anid=anid, aclass=severity.panel_class()) %}
         {{ caller_content }}
     {% endcall %}
 {% endmacro %}
 
-{% macro list_violations(class_name, violations, link=False, min_severity=1) %}
+{% macro list_violations(class_name, violations, link=False, min_severity=enums['ViolationSeverity'].INFO) %}
     <ul id="{{ class_name }}-list">
         {% for violation in violations if violation.severity >= min_severity %}
-            <li class="{{ "text-muted" if violation.severity <= 0 else
-                          ("" if violation.severity == 1 else
-                           ("text-warning" if violation.severity == 2 else
-                            ("text-danger" if violation.severity == 3 else
-                             "text-danger fw-bold"))) }}">
+            <li class="{{ violation.severity.html_class() }}">
                 {% set msgs, params = violation.get_translation() %}
                 {% if link %}
                     {% set link_target, link_params = violation.get_link_params() %}
