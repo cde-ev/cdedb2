@@ -1870,8 +1870,7 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: set[str], out: set[str], *, traverse: bool = True,
-                      ) -> None:
+    def check_sidebar(self, ins: set[str], out: set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins or
@@ -1887,10 +1886,9 @@ class FrontendTest(BackendTest):
                    for nav_point in sidebar.find_all("a")}
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
-            if traverse:
-                saved_response = self.response
-                self.traverse(nav_point)
-                self.response = saved_response
+            saved_response = self.response
+            self.traverse(nav_point)
+            self.response = saved_response
             present -= {nav_point}
         for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')

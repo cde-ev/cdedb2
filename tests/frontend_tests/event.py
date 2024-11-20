@@ -7337,15 +7337,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Statistik")
         self.assertNoLink('/event/event/1/registration/query')
         self.traverse({'href': '/event/event/1/course/query',
-                       'description': "2"})
-        saved_response = self.response
-        self.get('/event/event/1/course/1/show', status=403)
-        self.response = saved_response
-        self.traverse({'href': "/event/event/1/course/stats"})
+                       'description': "2"},
+                      {'href': "/event/event/1/course/stats"})
         self.assertPresence("2 + 0")
         self.assertPresence("Heldentum")
-        self.assertNoLink('/event/event/1/course/1/show')
-        self.traverse({'href': "/event/event/1/course/query"}, "Unterkünfte")
+        self.traverse("Heldentum")
+        self.assertPresence("2 + 1")
+        self.assertNonPresence("Akira")
+        self.assertNotIn('emilia', self.response.html)
+        self.traverse({'href': "/event/event/1/course/stats"},
+                      {'href': "/event/event/1/course/query"},
+                      "Unterkünfte")
         self.assertPresence("Warme Stube")
         self.assertNoLink('/event/event/1/lodgement/1/show')
         self.assertNoLink('/event/event/1/lodgement/graph/form')
