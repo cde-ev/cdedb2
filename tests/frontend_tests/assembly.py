@@ -139,7 +139,7 @@ class AssemblyTestHelpers(FrontendTest):
             f[k] = v
         self.submit(f)
         if atitle:
-            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover  # noqa: E501
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
@@ -338,6 +338,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('addattendeeform', self.response.forms)
         self.assertPresence("TeX-Liste")
 
+    @storage
     @as_users("annika", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_assembly(self) -> None:
         user = self.user
@@ -370,7 +371,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         else:
             self.fail("Please adjust users for this tests.")
 
-        self.check_sidebar(ins, out, traverse=False)
+        self.check_sidebar(ins, out)
 
     @as_users("werner")
     def test_change_assembly(self) -> None:

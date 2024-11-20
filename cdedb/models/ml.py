@@ -269,10 +269,7 @@ class Mailinglist(CdEDataclass):
         """
         return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
-    if TYPE_CHECKING:
-        # pylint: disable=unsubscriptable-object
-        role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]]
-    role_map: ClassVar = OrderedDict()  # type: ignore[no-redef]
+    role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]] = OrderedDict()
 
     @classmethod
     def moderator_admin_views(cls) -> set[str]:

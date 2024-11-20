@@ -64,7 +64,6 @@ from cdedb.common.fields import (
     EVENT_PART_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS,
     PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
@@ -72,7 +71,6 @@ from cdedb.common.fields import (
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
     STORED_EVENT_QUERY_FIELDS,
-    TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
@@ -845,7 +843,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # updated
             if updated_part_groups:
                 current_part_group_data = {e['id']: e for e in self.sql_select(
-                    rs, "event.part_groups", PART_GROUP_FIELDS, updated_part_groups)}
+                    rs, models.PartGroup.database_table,
+                    models.PartGroup.database_fields(), updated_part_groups)}
                 for x in mixed_existence_sorter(updated_part_groups):
                     updated = part_groups[x]
                     assert updated is not None
@@ -941,7 +940,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # updated
             if updated_track_groups:
                 current_track_group_data = {e['id']: e for e in self.sql_select(
-                    rs, "event.track_groups", TRACK_GROUP_FIELDS, updated_track_groups)}
+                    rs, models.TrackGroup.database_table,
+                    models.TrackGroup.database_fields(), updated_track_groups)}
                 for x in mixed_existence_sorter(updated_track_groups):
                     current = current_track_group_data[x]
                     updated = track_groups[x]

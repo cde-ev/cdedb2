@@ -2565,7 +2565,10 @@ class CoreBaseFrontend(AbstractFrontend):
             msg = e.args[0]
             args = e.args[1] if len(e.args) > 1 else {}
             rs.notify("error", msg, args)
-            code = 0
+            rs.values['ack_delete'] = False
+            return self.show_user(
+                rs, persona_id, confirm_id=persona_id, internal=True,
+                quote_me=False, event_id=None, ml_id=None)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 

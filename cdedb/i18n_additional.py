@@ -370,6 +370,15 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
 
+    n_("MutuallyExclusiveParticipationCV"),
+    n_("CourseChoiceSyncCV"),
+    n_("MutuallyExclusiveCoursesCV"),
+    n_("CancelledWithAttendeesCV"),
+    n_("IncorrectNumAttendeesCV"),
+    n_("LonelyAttendeesCV"),
+    n_("NoCourseAssignedCV"),
+    n_("IncorrectCourseAssignedCV"),
+
     #
     # Query datatypes
     #

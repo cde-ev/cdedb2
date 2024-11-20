@@ -1515,50 +1515,70 @@ class CoreBaseBackend(AbstractBackend):
                 return False
 
             # Check event involvement.
-            # TODO use 'is_archived' instead of 'event_end'?
-            query = """SELECT MAX(part_end) AS event_end
-            FROM (
-                (
-                    SELECT event_id
-                    FROM event.registrations
-                    WHERE persona_id = %s
-                    UNION
-                    SELECT event_id
-                    FROM event.orgas
-                    WHERE persona_id = %s
-                ) as ids
-                JOIN event.event_parts ON ids.event_id = event_parts.event_id
-            )
+            # Don't archive if registered for a recent event.
+            query = """
+                SELECT COUNT(*)
+                FROM
+                    event.registrations reg
+                    JOIN event.events ON events.id = reg.event_id
+                WHERE
+                    persona_id = %s AND (
+                        reg.event_id > %s AND (amount_owed != amount_paid)
+                        OR events.is_archived = False
+                    )
             """
-            event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
-            if event_end and event_end > cutoff:
+            ret = self.query_one(
+                rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']))
+            if ret and ret['count']:
+                return False
+
+            # Don't archive if orga for a recent event.
+            query = """
+                SELECT
+                    COUNT(*) as count
+                FROM
+                    event.orgas
+                    JOIN event.event_parts ON orgas.event_id = event_parts.event_id
+                WHERE persona_id = %s
+                GROUP BY orgas.event_id
+                HAVING MAX(part_end) > %s
+            """
+            ret = self.query_one(rs, query, (persona_id, cutoff))
+            if ret and ret['count']:
                 return False
 
             # Check assembly involvement
-            query = """SELECT assembly_id
-            FROM (
-                (
-                    SELECT assembly_id
-                    FROM assembly.attendees
-                    WHERE persona_id = %s
-                    UNION
-                    SELECT assembly_id
-                    FROM assembly.presiders
-                    WHERE persona_id = %s
-                ) AS ids
-                JOIN assembly.assemblies ON ids.assembly_id = assemblies.id
-            )
-            WHERE assemblies.is_active = True"""
-            if self.query_all(rs, query, (persona_id, persona_id)):
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                return False
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
                 return False
 
             # Check mailinglist subscriptions.
             # TODO don't hardcode subscription states here?
-            query = """SELECT mailinglist_id
-            FROM ml.subscription_states AS ss
-            JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
-            WHERE persona_id = %s AND subscription_state = ANY(%s)
-                AND mailinglists.is_active = True"""
+            query = """
+                SELECT mailinglist_id
+                FROM
+                    ml.subscription_states AS ss
+                    JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
+                WHERE
+                    persona_id = %s AND subscription_state = ANY(%s)
+                    AND mailinglists.is_active = True
+            """
             states = {
                 const.SubscriptionState.subscribed,
                 const.SubscriptionState.subscription_override,
@@ -1727,22 +1747,63 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 6. Handle event realm
             #
-            query = glue(
-                "SELECT reg.persona_id, MAX(part_end) AS m",
-                "FROM event.registrations as reg ",
-                "JOIN event.events as event ON reg.event_id = event.id",
-                "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s",
-                "GROUP BY persona_id")
-            max_end = self.query_one(rs, query, (persona_id,))
-            if max_end and max_end['m'] and max_end['m'] >= now().date():
-                raise ArchiveError(n_("Involved in unfinished event."))
+            query = """
+                SELECT
+                    COUNT(*) FILTER (WHERE events.is_archived = False) AS count_unarchived,
+                    COUNT(*) FILTER (WHERE reg.event_id > %s AND (amount_owed != amount_paid)) AS count_unbalanced
+                FROM
+                    event.registrations reg
+                    JOIN event.events ON events.id = reg.event_id
+                WHERE
+                    persona_id = %s AND (
+                        reg.event_id > %s AND (amount_owed != amount_paid)
+                        OR events.is_archived = False
+                    )
+            """
+            cutoff_event_id = self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']
+            data = self.query_one(
+                rs, query, (cutoff_event_id, persona_id, cutoff_event_id))
+            if data:
+                if data['count_unarchived']:
+                    raise ArchiveError(n_("Involved in unfinished event."))
+                if data['count_unbalanced']:
+                    raise ArchiveError(n_("Unbalanced event balance."))
+
+            query = """
+                SELECT event_id
+                FROM event.orgas JOIN event.events ON events.id = orgas.event_id
+                WHERE persona_id = %s AND events.is_archived = False
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Orga of unfinished event."))
+
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             self.sql_delete(rs, "event.helpers", (persona_id,), "persona_id")
             #
-            # 7. Assembly realm is handled via assembly archival.
+            # 7. Assembly realm cleanup is handled via assembly archival.
             #
-            #
+
+            # Check assembly involvement
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Attendee of unfinished assembly."))
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Presider of unfinished assembly."))
+
             # 8. Handle ml realm
             #
             self.sql_delete(rs, "ml.subscription_states", (persona_id,),

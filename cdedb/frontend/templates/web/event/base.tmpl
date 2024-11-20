@@ -108,7 +108,7 @@
                              gettext("Configure Questionnaire"), aclass="list-group-item",
                             active=(sidenav_active == 'event_configure_additional_questionnaire'), icon='plus-square') }}
             {% endif %}
-            {% if has_constraints and is_privileged_for("constraint_violations") %}
+            {% if is_privileged_for("constraint_violations") %}
                 {{ util.href(cdedblink("event/constraint_violations", {"event_id": event['id']}),
                              gettext("Constraint Violations"), aclass="list-group-item",
                              active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}

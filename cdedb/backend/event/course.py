@@ -4,7 +4,6 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
-
 from collections.abc import Collection
 from typing import Optional, Protocol
 
