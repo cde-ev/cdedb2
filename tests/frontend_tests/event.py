@@ -6193,8 +6193,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
-        self.assertNonPresence("Verstöße gegen Beschränkungen",
-                               div="constraint-violations", check_div=False)
         self.assertNonPresence("sich gegenseitig ausschließenden")
 
         self.traverse("Verstöße gegen Beschränkungen")
@@ -6271,7 +6269,63 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.event.set_course(self.key, data)
 
         self.traverse("Verstöße gegen Beschränkungen")
-        self.assertPresence("Es gibt derzeit keine Verstöße gegen Beschränkungen.")
+        self.assertNonPresence("Kursausschließlichkeit")
+
+    @as_users("anton")
+    def test_financial_violations(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertPresence("Verstöße gegen Beschränkungen",
+                            div="constraint-violations")
+        self.assertPresence(
+            'Es gibt 1 "Negativer übriger zu zahlender Betrag"-Verstöße.',
+            div="constraint-violations")
+        self.assertPresence('Es gibt 3 "Nicht bezahlter Beitrag"-Verstöße.',
+                            div="constraint-violations")
+        self.assertPresence('Es gibt 1 "Übriger zu zahlender Betrag"-Verstöße.',
+                            div="constraint-violations")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence(
+            "Akira Abukara hat noch keinen Teilnahmebeitrag bezahlt (584,48 €).")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt"
+            " (466,49 €).")
+        self.assertPresence(
+            "Garcia Generalis ist Orga, aber hat noch keinen Teilnahmebeitrag bezahlt"
+            " (504,48 €).")
+
+        self.assertPresence(
+            "Inga Iota muss eine Erstattung erhalten (116,49 €).")
+
+        self.assertPresence(
+            "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag"
+            " bezahlt (übrig: 353,99 €).")
+
+        # Manipulate amount paid without setting payment date:
+        execsql("""
+            UPDATE event.registrations SET amount_paid = -5, amount_owed = -5
+            WHERE id = 1
+        """)
+        execsql("UPDATE event.registrations SET amount_paid = 5 WHERE id = 2")
+        execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 3")
+        execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 5")
+
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence(
+            "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).")
+        self.assertPresence(
+            "Anton Administrator muss insgesamt einen negativen Betrag bezahlen"
+            " (-5,00 €).")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.")
+        self.assertPresence(
+            "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag"
+            " bezahlt (übrig: 461,49 €).")
+        # Garcia is orga.
+        self.assertNonPresence(
+            "Garcia Generalis ist involviert, muss aber keinen Beitrag bezahlen.")
+        self.assertPresence(
+            "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:

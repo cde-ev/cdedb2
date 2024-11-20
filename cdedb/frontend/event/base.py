@@ -61,12 +61,18 @@ from cdedb.models.event_constraint_violations import (
     CancelledWithAttendeesCV,
     ConstraintViolation,
     CourseChoiceSyncCV,
+    InconsistentPaymentCV,
     IncorrectCourseAssignedCV,
     IncorrectNumAttendeesCV,
     LonelyAttendeesCV,
     MutuallyExclusiveCoursesCV,
     MutuallyExclusiveParticipationCV,
+    NegativeAmountOwedCV,
+    NegativeRemainingOwedCV,
     NoCourseAssignedCV,
+    NotPaidCV,
+    RemainingOwedCV,
+    ViolationSeverity,
 )
 
 
@@ -494,6 +500,17 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
         reg_violation_spec: _vs_type = {
+            'base': {
+                (
+                    InconsistentPaymentCV,
+                    NotPaidCV,
+                    NegativeAmountOwedCV,
+                    NegativeRemainingOwedCV,
+                    RemainingOwedCV,
+                ): [
+                    'registration', 'persona',
+                ],
+            },
             'track': {
                 (
                     NoCourseAssignedCV,
@@ -555,11 +572,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             for part in event.parts.values():
                 reg['parts'][part.id]['age'] = determine_age_class(
                     personas[reg['persona_id']]['birthday'], part.part_begin)
+            reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
 
             parameters: CdEDBObject = {
                 'registration': reg,
                 'persona': personas[reg['persona_id']],
             }
+            _check_violation(reg_violation_spec['base'], parameters)
 
             reg_track_violation_spec = reg_violation_spec['track']
             for track in sorted_tracks:
@@ -614,11 +633,12 @@ class EventBaseFrontend(AbstractUserFrontend):
             violation_class_name: max(violation.severity for violation in violations)
             for violation_class_name, violations in violations_by_class.items()
         }
-        max_severity = max(max_severity_by_class.values(), default=0)
+        max_severity = max(max_severity_by_class.values(),
+                           default=ViolationSeverity.DEBUG)
 
         violations_by_class = dict(xsorted(
             violations_by_class.items(),
-            key=lambda item: (-max_severity_by_class[item[0]], item[0]),
+            key=lambda item: (-max_severity_by_class[item[0]].value, item[0]),
         ))
         return {
             'all': violations,
