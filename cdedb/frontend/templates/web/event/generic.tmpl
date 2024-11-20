@@ -365,12 +365,14 @@
                            ("text-warning" if violation.severity == 2 else
                             ("text-danger" if violation.severity == 3 else
                              "text-danger fw-bold"))) }}">
-                {% set msg, params = violation.get_translation() %}
+                {% set msgs, params = violation.get_translation() %}
                 {% if link %}
                     {% set link_target, link_params = violation.get_link_params() %}
                     {% do params.update({'link': util.href(cdedblink(link_target, link_params), params['link'])}) %}
                 {% endif %}
-                {{ gettext(msg)|format(**params)|s }}
+                {% for msg in msgs %}
+                    {{ gettext(msg)|format(**params)|s }}
+                {% endfor %}
             </li>
         {% endfor %}
     </ul>

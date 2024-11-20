@@ -70,9 +70,9 @@ class ConstraintViolation(abc.ABC):
         raise NotImplementedError
 
     # Display interface.
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         """
-        Must return a string template for translation and a dict of translation params.
+        Must return a list of strings for translation and a dict of translation params.
 
         One of the parameters must be named 'link' and be the link text of the link
         defined by `get_link_params`.
@@ -153,7 +153,7 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
 
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.severity >= ERROR:
             msg = n_(
                 "%(link)s is participant in mutually exclusive parts (%(part_list)s).",
@@ -176,7 +176,7 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
                 if part_filter(part)
             ),
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -215,7 +215,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:  # pragma: no cover
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:  # pragma: no cover
         msg = n_(
             "%(link)s has unsynchrozied course choices in synchronized"
             " tracks (%(track_list)s).",
@@ -226,7 +226,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
                 track.shortname for track in xsorted(self.track_group.tracks.values())
             ),
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -262,13 +262,13 @@ class NoCourseAssignedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         msg = n_("%(link)s is not assigned to a course in %(track)s.")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -328,7 +328,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.instructed_course:
             msg = n_("%(link)s does not instruct their course (%(instructed_course)s)"
                      " in %(track)s.")
@@ -346,7 +346,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
                 f" {self.instructed_course['shortname']}"
                 if self.instructed_course else None,
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -373,19 +373,19 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_paid'] < 0:
-            msg = n_("%(link)s has paid a negative amount (%(amount_paid)s).")
+            msgs = [n_("%(link)s has paid a negative amount (%(amount_paid)s).")]
         else:
-            msg = n_("%(link)s has paid without a payment date.")
+            msgs = [n_("%(link)s has paid without a payment date.")]
 
-        msg += " " + n_("This likely means someone entered invalid payment data.")
+        msgs.append(n_("This likely means someone entered invalid payment data."))
 
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "amount_paid": money_filter(self.registration['amount_paid']),
         }
-        return msg, params
+        return msgs, params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -407,7 +407,7 @@ class NotPaidCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.persona['id'] in self.event.orgas:
             msg = n_("%(link)s is orga but has not paid their fee (%(amount_owed)s).")
         else:
@@ -418,7 +418,7 @@ class NotPaidCV(RegistrationConstraintViolation):
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -447,7 +447,7 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_owed'] < 0:
             msg = n_("%(link)s owes a negative amount (%(amount_owed)s).")
         else:
@@ -458,7 +458,7 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -478,13 +478,13 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         msg = n_("%(link)s needs to be reimbursed (%(remaining_owed)s).")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "remaining_owed": money_filter(-self.registration['remaining_owed']),
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -516,7 +516,7 @@ class RemainingOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         msg = n_(
             "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s).")
 
@@ -525,7 +525,7 @@ class RemainingOwedCV(RegistrationConstraintViolation):
             "remaining_owed": money_filter(self.registration['remaining_owed']),
         }
 
-        return msg, parms
+        return [msg], parms
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -551,7 +551,7 @@ class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         msg = n_(
             "%(link)s is taking place in mutually exclusive tracks (%(track_list)s).",
         )
@@ -563,7 +563,7 @@ class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
                 if track.id in track_ids
             ),
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -604,7 +604,7 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.severity >= ERROR:
             msg = n_("%(link)s is not offered in %(track)s but has %(num)s attendees.")
         else:
@@ -614,7 +614,7 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             "track": self.track.shortname,
             "num": self.num,
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -652,7 +652,7 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.course['min_size'] and self.num < self.course['min_size']:
             msg = n_("%(link)s has too few attendees (%(num)s < %(min_size)s)"
                      " in %(track)s.")
@@ -666,7 +666,7 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
             "min_size": self.course['min_size'],
             "max_size": self.course['max_size'],
         }
-        return msg, params
+        return [msg], params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -696,7 +696,7 @@ class LonelyAttendeesCV(CourseConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[str, CdEDBObject]:
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.num_learners:
             msg = n_("%(link)s has %(num)s attendees but no instructors in %(track)s.")
         else:
@@ -706,4 +706,4 @@ class LonelyAttendeesCV(CourseConstraintViolation):
             "track": self.track.shortname,
             "num": self.num_learners or self.num_instructors,
         }
-        return msg, params
+        return [msg], params
