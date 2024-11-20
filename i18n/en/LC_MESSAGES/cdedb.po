@@ -17563,7 +17563,7 @@ msgid "NegativeAmountOwedCV"
 msgstr "Negative Amount Owed"
 
 #: cdedb/i18n_additional.py:380
-msgid "NegativeRemaininOwedCV"
+msgid "NegativeRemainingOwedCV"
 msgstr "Negative Remaining Owed"
 
 #: cdedb/i18n_additional.py:381
