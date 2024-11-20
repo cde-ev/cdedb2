@@ -233,14 +233,14 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    # TODO Be more lenient here
-    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_read)
+    @event_guard(EventPrivileges.courses_read)
     def show_course(self, rs: RequestState, event_id: int, course_id: int,
                     ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
-        # TODO Differentiate by EventPrivileges.registrations_read and _stats
-        if True:  # pylint: disable=using-constant-test
+        params['num_attendees'] = params['num_learners'] = None
+        params['instructor_emails'] = []
+        if self.is_privileged(rs, EventPrivileges.registrations_stats):
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             all_registrations = self.eventproxy.get_registrations(
                 rs, registration_ids)
@@ -260,7 +260,7 @@ class EventCourseMixin(EventBaseFrontend):
             for (_cid, track_id), attendee_group in attendees.items():
                 part_id = rs.ambience['event'].tracks[track_id].part.id
                 attendee_group.sort(key=lambda anid:
-                not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
+                    not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
             involved_attendees = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
                 key="course_id", personas=personas, instructors=True,
@@ -269,25 +269,17 @@ class EventCourseMixin(EventBaseFrontend):
                 (course_id,), rs.ambience['event'], registrations,
                 key="course_id", personas=personas, instructors=False,
                 only_involved=True, only_present=False)
-            params['personas'] = personas
-            params['registrations'] = registrations
-            params['attendees'] = attendees
+            params['attendees'] = {}
+            if self.is_privileged(rs, EventPrivileges.registrations_read):
+                params['personas'] = personas
+                params['registrations'] = registrations
+                params['attendees'] = attendees
             params['num_attendees'] = {
                 track_id: len(involved_attendees.get((course_id, track_id), ()))
                 for track_id in rs.ambience['event'].tracks}
             params['num_learners'] = {
                 track_id: len(learners.get((course_id, track_id), ()))
                 for track_id in rs.ambience['event'].tracks}
-            params['blockers'] = self.eventproxy.delete_course_blockers(
-                rs, course_id).keys() - {"instructors", "course_choices",
-                                         "course_segments"}
-            instructor_ids = {reg['persona_id']
-                              for reg in all_registrations.values()
-                              if any(t['course_instructor'] == course_id
-                                     for t in reg['tracks'].values())}
-            instructors = self.coreproxy.get_personas(rs, instructor_ids)
-            params['instructor_emails'] = [p['username']
-                                           for p in instructors.values()]
 
             def make_attendees_query(track_id: int) -> Query:
                 part_id = rs.ambience['event'].tracks[track_id].part_id
@@ -309,21 +301,34 @@ class EventCourseMixin(EventBaseFrontend):
                 )
             params['make_attendees_query'] = make_attendees_query
 
-            course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
-            courses = self.eventproxy.get_courses(rs, course_ids)
-            sorted_ids = xsorted(
-                course_ids, key=lambda id_: EntitySorter.course(courses[id_]))
-            i = sorted_ids.index(course_id)
-            for c in courses.values():
-                c['label'] = f"{c['nr']}. {c['shortname']}"
-
-            params['prev_course'] = courses[sorted_ids[i - 1]] if i > 0 else None
-            params['next_course'] =\
-                courses[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+            if self.is_privileged(rs, EventPrivileges.registrations_read):
+                instructor_ids = {reg['persona_id']
+                                  for reg in all_registrations.values()
+                                  if any(t['course_instructor'] == course_id
+                                         for t in reg['tracks'].values())}
+                instructors = self.coreproxy.get_personas(rs, instructor_ids)
+                params['instructor_emails'] = [p['username']
+                                               for p in instructors.values()]
 
             constraint_violations = self.get_constraint_violations(
                 rs, rs.ambience['event'], registration_id=-1, course_id=course_id)
             params['constraint_violations'] = constraint_violations
+
+        params['blockers'] = self.eventproxy.delete_course_blockers(
+            rs, course_id).keys() - {"instructors", "course_choices",
+                                     "course_segments"}
+
+        course_ids = self.eventproxy.list_courses(rs, event_id=event_id).keys()
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        sorted_ids = xsorted(
+            course_ids, key=lambda id_: EntitySorter.course(courses[id_]))
+        i = sorted_ids.index(course_id)
+        for c in courses.values():
+            c['label'] = f"{c['nr']}. {c['shortname']}"
+
+        params['prev_course'] = courses[sorted_ids[i - 1]] if i > 0 else None
+        params['next_course'] =\
+            courses[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
 
         return self.render(rs, "course/show_course", params)
 
@@ -496,8 +501,8 @@ class EventCourseMixin(EventBaseFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id].part_id]
-        for course_id_, course in courses.items():  # pylint: disable=redefined-argument-from-local
-            for track in tracks.values():  # pylint: disable=redefined-argument-from-local
+        for course_id_, course in courses.items():
+            for track in tracks.values():
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()

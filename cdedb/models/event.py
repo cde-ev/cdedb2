@@ -39,6 +39,7 @@ from typing import (
     ClassVar,
     ForwardRef,
     Optional,
+    Self,
     get_args,
     get_origin,
 )
@@ -62,10 +63,8 @@ from cdedb.models.common import CdEDataclass, CdEDataclassMap
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # pylint: disable=ungrouped-imports
-
     from cdedb.common import CdEDBObject
-    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+    from cdedb.database.query import (
         DatabaseValue_s,
     )
 
@@ -953,7 +952,7 @@ class PersonalizedFee(EventDataclass):
                 DO UPDATE SET amount = EXCLUDED.amount
                 RETURNING id
             """
-            params: tuple[DatabaseValue_s, ...] = (  # pylint: disable=used-before-assignment
+            params: tuple[DatabaseValue_s, ...] = (
                 self.registration_id, self.fee_id, self.amount,
             )
             return query, params

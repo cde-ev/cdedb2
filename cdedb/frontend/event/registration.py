@@ -686,7 +686,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
             )
             choices_list = [
-                c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
+                c_id for i in range(track.num_choices) if (c_id := choice(i))]
             instructed_course = reg_tracks[track_id].get("course_instructor")
             for rank, course_id in enumerate(choices_list):
                 # Check for choosing instructed course.

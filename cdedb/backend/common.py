@@ -92,9 +92,8 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
-    # pylint: disable=used-before-assignment
     @functools.wraps(function)
-    def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
+    def singularized(self: "AbstractBackend", rs: RequestState, *args: Any,
                      **kwargs: Any) -> T:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
@@ -130,7 +129,7 @@ def read_conditional_write_composer(
     """
 
     @functools.wraps(writer)
-    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+    def composed(self: "AbstractBackend", rs: RequestState, *args: Any,
                  **kwargs: Any) -> DefaultReturnCode:
         ret = 1
         reader_kwargs = kwargs.copy()
@@ -163,7 +162,7 @@ def access(*roles: Role) -> Callable[[F], F]:
     def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self: AbstractBackend, rs: RequestState, *args: Any,
+        def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(

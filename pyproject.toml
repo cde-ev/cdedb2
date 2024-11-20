@@ -29,6 +29,7 @@ select = [
     "PLW",  # pylint warnings.
     "PLC",  # pylint conventions.
     "PLR",  # pylint refactoring suggestions.
+    "RUF100",
 ]
 ignore = [
     "F405", # * import.

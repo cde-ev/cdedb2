@@ -91,8 +91,10 @@
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
-                        {% set num_track_instructors = num_attendees[track_id] - num_learners[track_id] %}
-                        <div class="pull-right">{{ num_learners[track_id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
+                        {% if num_attendees and num_learners %}
+                            {% set num_track_instructors = num_attendees[track_id] - num_learners[track_id] %}
+                            <div class="pull-right">{{ num_learners[track_id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
+                        {% endif %}
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
@@ -102,27 +104,28 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {% if track_id not in ambience['course']['active_segments'] %}
+                        {%- if track_id not in ambience['course']['active_segments'] -%}
                             <p class="text-danger">
                                 <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
-                        {% elif ambience['course']['min_size'] is not none and
-                                num_learners[track_id] < ambience['course']['min_size'] %}
+                        {%- elif num_learners and ambience['course']['min_size'] is not none and
+                                num_learners[track_id] < ambience['course']['min_size'] -%}
                             <p class="text-warning">
                                 <strong>
                                     {% trans count=(ambience['course']['min_size'] - num_learners[track_id]) %}
                                         Course has {{ count }} attendees too few.
                                     {% endtrans %}</strong>
                             </p>
-                        {% elif ambience['course']['max_size'] is not none and
-                                num_learners[track_id] > ambience['course']['max_size'] %}
+                        {%- elif num_learners and ambience['course']['max_size'] is not none and
+                                num_learners[track_id] > ambience['course']['max_size'] -%}
                             <p class="text-warning">
                                 <strong>
                                     {% trans count=(num_learners[track_id] - ambience['course']['max_size']) %}
                                     	Course has {{ count }} attendees too many.
                                     {% endtrans %}</strong>
                             </p>
-                        {% endif %}
+                        {%- endif -%}
+                        {%- if attendees %}
                         <ul class="slim">
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
                                 {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
@@ -143,6 +146,7 @@
                                 </li>
                             {% endfor %}
                         </ul>
+                        {% endif -%}
                     </div>
                     <div class="panel-footer">
                         <ul class="list-unstyled nosp">
@@ -153,9 +157,10 @@
                                                             'position': enums.CourseFilterPositions.anywhere.value,
                                                             'submitform': True}),
                                              label=gettext("All Course Choices"),
-                                             icon=util.make_icon('crosshairs')) }}
+                                             icon=util.make_icon('crosshairs'),
+                                             readonly=not is_privileged_for('course_choices')) }}
                             </li>
-                        {% if num_learners[track_id] > 0 %}
+                        {% if num_learners and num_learners[track_id] > 0 %}
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                  'track_id': track_id,
@@ -164,13 +169,15 @@
                                                  'include_active': True,
                                                  'submitform': True}),
                                              label=gettext("Attendees"),
-                                             icon=util.make_icon('crosshairs')) }}
+                                             icon=util.make_icon('crosshairs'),
+                                             readonly=not is_privileged_for('course_choices')) }}
                             </li>
                             <li>
                                 {{ util.href(cdedblink('event/registration_query',
                                                        make_attendees_query(track_id).serialize_to_url()) + "#query-results",
                                              label=gettext("View Registrations"), icon=util.make_icon('list'),
-                                             anid="attendees-link-{}".format(track_id)) }}
+                                             anid="attendees-link-{}".format(track_id),
+                                             readonly=not is_privileged_for('registration_query')) }}
                             </li>
                         {% endif %}
                         </ul>

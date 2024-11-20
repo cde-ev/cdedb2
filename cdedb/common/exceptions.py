@@ -28,7 +28,7 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
-    def __init__(self, msg: str = n_("Not privileged."), *args: Any):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, msg: str = n_("Not privileged."), /, *args: Any):
         super().__init__(msg, *args)
 
 
@@ -37,7 +37,7 @@ class APITokenError(PrivilegeError):
     Special type of privilege error only raised by trying to access an API with an
     invalid or unknown key.
     """
-    def __init__(self, msg: str = n_("Invalid API token."), *args: Any):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, msg: str = n_("Invalid API token."), /, *args: Any):
         super().__init__(msg, *args)
 
 
