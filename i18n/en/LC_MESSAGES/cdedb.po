@@ -17544,7 +17544,7 @@ msgstr "Incorrect Course Assignments"
 
 #: cdedb/i18n_additional.py:377
 msgid "InconsistentPaymentCV"
-msgstr "Inconsistent payment"
+msgstr "Inconsistent Payment"
 
 #: cdedb/i18n_additional.py:377 cdedb/i18n_additional.py:384
 msgid "IncorrectNumAttendeesCV"
