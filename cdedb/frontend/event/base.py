@@ -72,6 +72,7 @@ from cdedb.models.event_constraint_violations import (
     NoCourseAssignedCV,
     NotPaidCV,
     RemainingOwedCV,
+    ViolationSeverity,
 )
 
 
@@ -632,7 +633,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             violation_class_name: max(violation.severity for violation in violations)
             for violation_class_name, violations in violations_by_class.items()
         }
-        max_severity = max(max_severity_by_class.values(), default=0)
+        max_severity = max(max_severity_by_class.values(),
+                           default=ViolationSeverity.DEBUG)
 
         violations_by_class = dict(xsorted(
             violations_by_class.items(),
