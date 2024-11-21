@@ -427,6 +427,17 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,) * len(columns))
+            # These are hard coded special cases for some useful, but very specific
+            # conditions. Modelling with special query operators is more flexible.
+            elif operator == _ops.checkedinattime:
+                phrase = ("/* {} */ checkin_at.checkin_time < %s"
+                          "AND checkin_at.checkout_time > %s")
+                params.extend((value,) * 2 * len(columns))
+            elif operator == _ops.checkedinnotattime:
+                phrase = ("/* {} */ NOT(checkin_at.checkin_time < %s"
+                          " AND checkin_at.checkout_time > %s")
+                params.extend((value,) * 2 * len(columns))
+            # TODO checkinatoneoftime, checkinatalloftime, checkinatnoneoftime
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))

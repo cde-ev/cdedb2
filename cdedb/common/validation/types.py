@@ -172,6 +172,7 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "float": float,
     "date": _datetime.date,
     "datetime": _datetime.datetime,
+    "checkin_datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
     "non_negtative_float": NonNegativeFloat,

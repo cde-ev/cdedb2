@@ -68,6 +68,11 @@ class QueryOperators(CdEIntEnum):
     outside = 23
     greaterequal = 24
     greater = 25
+    checkedinat = 101
+    checkedinnotat = 102
+    checkedinoneof = 103
+    checkedinnoneof = 104
+    checkedinallof = 105
 
 
 _ops = QueryOperators
@@ -96,6 +101,8 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
     "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
+    "checkin_datetime": (_ops.checkedinat, _ops.checkedinnotat, _ops.checkedinoneof,
+                         _ops.checkedinnoneof, _ops.checkedinallof)
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
@@ -973,6 +980,8 @@ def make_registration_query_spec(event: "models.Event",
         "reg.notes": QuerySpecEntry("str", n_("Notes")),
         "reg.orga_notes": QuerySpecEntry("str", n_("Orga-Notes")),
         "checkin.current": QuerySpecEntry("bool", n_("Checkin")),
+        "checkin_at.checkin_time,checkin_at.checkout_time": QuerySpecEntry(
+            "checkin_datetime", n_("Checked in at")),
         "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin")),
         "checkin_periods.min_checkout_time": QuerySpecEntry("datetime", n_("First checkout")),
         "checkin_periods.max_checkin_time": QuerySpecEntry("datetime", n_("Last checkin")),
