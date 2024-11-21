@@ -64,7 +64,7 @@ class LodgementInhabitants:
         return iter((self.regular, self.camping_mat))
 
 
-class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventLodgementBackend(EventBaseBackend):
     @access("event")
     def list_lodgement_groups(self, rs: RequestState,
                               event_id: int) -> dict[int, str]:

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 import collections
 import csv
 import datetime
@@ -34,7 +33,7 @@ class TestParseFrontend(FrontendTest):
         return parse.Transaction(transaction_data)
 
     def test_find_cdedbids(self) -> None:
-        # pylint: disable=protected-access
+
         cl = parse.ConfidenceLevel
         t = self.get_transaction_with_reference("DB-2-7 DB-35")
         # All confidence values are reduced by two, because multiple ids were found.
@@ -42,7 +41,7 @@ class TestParseFrontend(FrontendTest):
             2: parse.ConfidenceLevel.Medium,  # good match.
             3: parse.ConfidenceLevel.Low,  # close match.
         }
-        self.assertEqual(expectation, t._find_cdedbids())  # pylint: disable=protected-access
+        self.assertEqual(expectation, t._find_cdedbids())
 
         t = self.get_transaction_with_reference("DB-1000-6")
         self.assertEqual({1000: cl.Full}, t._find_cdedbids())
@@ -80,7 +79,7 @@ class TestParseFrontend(FrontendTest):
                     reference=reference,
                     compile_pattern=parse.Transaction.compile_pattern,
                 ))
-            match = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
+            match = parse.Transaction._match_one_event(fake_transaction, event)
             if expected_confidence is None:
                 self.assertIsNone(match)
             else:
@@ -128,7 +127,7 @@ class TestParseFrontend(FrontendTest):
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount})
-        transaction._match_event(rs=self.key, event_backend=event_backend)  # pylint: disable=protected-access
+        transaction._match_event(rs=self.key, event_backend=event_backend)
 
         # Check that reference match is better.
         self.assertIsNotNone(transaction.event)

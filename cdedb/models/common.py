@@ -228,7 +228,7 @@ class CdEDataclass:
 
     def _asdict_inner(self, obj: Any,  # type: ignore[no-untyped-def]
                       dict_factory: Any):
-        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined] # pylint: disable=protected-access
+        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
             for f in dataclasses.fields(obj):
                 #######################################################

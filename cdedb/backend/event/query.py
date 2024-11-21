@@ -61,7 +61,7 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
     )
 
 
-class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventQueryBackend(EventBaseBackend):
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: Optional[int] = None, aggregate: bool = False,

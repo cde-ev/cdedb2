@@ -111,7 +111,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'pass_types': ATTACHMENT_MIME_CONVERT[db_list.attachment_policy],
         }
         desired_templates = {
-            # pylint: disable=line-too-long
+
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.

@@ -1363,8 +1363,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
         else:
             # Create pagination.
-            loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
-                                          log_filter._length)  # pylint: disable=protected-access
+            loglinks = calculate_loglinks(rs, total, log_filter._offset,
+                                          log_filter._length)
             return self.render(rs, template, {
                 'log': log, 'total': total, 'length': log_filter.length,
                 'personas': personas, 'loglinks': loglinks,
@@ -2274,7 +2274,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if argname in kwargs:  # pylint: disable=consider-using-get
+            if argname in kwargs:
                 arg = kwargs[argname]
             else:
                 arg = args[0]
@@ -2306,7 +2306,7 @@ def assembly_guard(fun: F) -> F:
     @functools.wraps(fun)
     def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                 **kwargs: Any) -> Any:
-        if "assembly_id" in kwargs:  # pylint: disable=consider-using-get
+        if "assembly_id" in kwargs:
             assembly_id = kwargs["assembly_id"]
         else:
             assembly_id = args[0]

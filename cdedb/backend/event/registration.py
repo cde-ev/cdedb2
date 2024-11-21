@@ -266,7 +266,7 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def validate_single_course_choice(self, rs: RequestState, course_id: int,  # pylint: disable=no-self-use
+    def validate_single_course_choice(self, rs: RequestState, course_id: int,
                                       track_id: int, aux: CourseChoiceValidationAux,
                                       ) -> bool:
         """Check whether a course choice is allowed in a given track.

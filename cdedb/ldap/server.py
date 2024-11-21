@@ -230,7 +230,7 @@ class LdapHandler:
         try:
             entry = await self.root.lookup(dn)
         except ldaperrors.LDAPNoSuchObject:
-            raise ldaperrors.LDAPInvalidCredentials  # pylint: disable=raise-missing-from
+            raise ldaperrors.LDAPInvalidCredentials
 
         self.bound_user = entry.bind(request.auth)
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 import io
 import sys
 import tempfile
@@ -98,7 +97,7 @@ class TestScript(unittest.TestCase):
         configured_script = self.get_script(SYSLOG_LEVEL=42)
         self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
         self.assertEqual(real_configpath, get_configpath())
-        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))  # pylint: disable=protected-access
+        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually

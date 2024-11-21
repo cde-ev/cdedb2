@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -922,7 +921,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError) as e:
             self.core.genesis_request(ANONYMOUS, data)
         self.assertEqual("File has been lost.", str(e.exception))
-        # pylint: disable=line-too-long
+
         attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
         attachment = attachment_content.encode('ascii')
         data['attachment_hash'] = self.core.get_genesis_attachment_store(

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import collections.abc
 import copy
@@ -4914,7 +4913,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("anton")
     def test_event_keeper_log_entries(self) -> None:
-        # pylint: disable=protected-access
+
         event_id = 1
 
         def normalize_reference_time(dt: datetime.datetime) -> datetime.datetime:

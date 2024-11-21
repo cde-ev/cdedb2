@@ -246,7 +246,7 @@ class StatisticMixin:
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
-class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
+class StatisticPartMixin(StatisticMixin):
     """
     Helper class for methods to delegate tests and query construction for part stats.
     """
@@ -273,7 +273,7 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
-class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
+class StatisticTrackMixin(StatisticMixin):
     """
     Helper class for methods to delegate tests and query construction for track stats.
     """

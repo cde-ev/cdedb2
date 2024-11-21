@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -788,7 +787,7 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(1, len(errs))
 
     def test_optional_object_mapping_helper(self) -> None:
-        # pylint: disable=protected-access
+
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {-1: None}, EventPartGroup, "event_part", creation_only=False)
@@ -802,7 +801,7 @@ class TestValidation(unittest.TestCase):
                 {1: None, -1: -1, 2: 2}, int, "int", creation_only=True)
 
     def test_serialized_event_configuration(self) -> None:
-        # pylint: disable=protected-access
+
         with self.assertRaises(validate.ValidationSummary):
             validate._serialized_event_configuration({
                 'id': -1,

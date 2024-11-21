@@ -74,7 +74,7 @@ class LDAPBackendTest(BasicTest):
 
         for in_, out in values:
             with self.subTest(in_):
-                self.assertEqual(out, self.ldap_backend_class._to_bytes(in_))  # pylint: disable=protected-access
+                self.assertEqual(out, self.ldap_backend_class._to_bytes(in_))
 
     def test_int2ber(self) -> None:
         values = [123, -123, 232423, 0, -1112423]
@@ -106,7 +106,7 @@ class LDAPBackendTest(BasicTest):
     def test_dn_value(self) -> None:
         dn_attr, dn_value = "cn", "cde-ev"
         dn = DN(f"{dn_attr}={dn_value}")
-        self.assertEqual(dn_value, self.ldap_backend_class._dn_value(dn, dn_attr))  # pylint: disable=protected-access
+        self.assertEqual(dn_value, self.ldap_backend_class._dn_value(dn, dn_attr))
 
     def test_anonymous_accessible_dns(self) -> None:
         expectation = [DN("cn=subschema")]

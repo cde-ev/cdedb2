@@ -380,7 +380,7 @@ class CourseChoiceObject(abc.ABC):
         ...
 
     def __lt__(self, other: Any) -> bool:
-        # pylint: disable=line-too-long
+
         if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
             return self._lt_inner(other)
         return NotImplemented
@@ -415,7 +415,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return {self.id: self}
 
     @tracks.setter
-    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:  # pylint: disable=no-self-use
+    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:
         raise KeyError
 
     @property

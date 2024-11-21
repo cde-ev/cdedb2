@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import secrets
@@ -64,7 +63,6 @@ class TestSessionBackend(BackendTest):
             self.key, USER_DICT['anton']['username'],
             USER_DICT['anton']['password'], '127.0.0.0'))
 
-        # pylint: disable=protected-access
         # Invalid apitoken.
         with self.assertRaisesRegex(APITokenError, "Malformed API token."):
             self.session.lookuptoken("random token", "127.0.0.0")

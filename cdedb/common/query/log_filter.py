@@ -73,7 +73,7 @@ class GenericLogFilter:
         # Fix offset and length to ensure valid SQL.
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
-            if -self.offset < self.length:  # pylint: disable=invalid-unary-operand-type
+            if -self.offset < self.length:
                 self.length += self.offset
             self.offset = 0
 

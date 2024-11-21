@@ -398,7 +398,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("ml", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
-    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:  # pylint: disable=no-self-use
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
         if rs.has_validation_errors():
             return Response("", mimetype='text/plain')
         html_str = markdown_parse_safe(md_str)
@@ -440,7 +440,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This is a rewritten form of `segno.helpers.make_vcard_data` to suite our needs.
         """
-        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]
 
         name = [persona['family_name'], persona['given_names'], "",
                 persona['title'], persona['name_supplement']]

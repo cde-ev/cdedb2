@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=no-self-use
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools

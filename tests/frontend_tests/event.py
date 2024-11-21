@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import csv
@@ -1792,7 +1791,7 @@ etc;anything else""", f['entries_2'].value)
         }
 
         event_frontend: EventFrontend = self.app.app.event
-        qr_data = event_frontend._registration_fee_qr_data(payment_data)  # pylint: disable=protected-access
+        qr_data = event_frontend._registration_fee_qr_data(payment_data)
 
         qr_expectation = b"""\
 BCD
@@ -1806,7 +1805,7 @@ EUR466.49
 
 
 Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
-        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]
 
     @as_users("anton")
     def test_registration_status(self) -> None:
@@ -4475,7 +4474,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_lodgement_wishes_graph(self) -> None:
-        # pylint: disable=protected-access
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/'},
@@ -4488,7 +4487,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # to construct the lxml ElementTree from unicode, which is not supported
         # by lxml (see https://github.com/Pylons/webtest/issues/236). So, let's
         # do it manually.
-        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
+        xml = lxml.etree.XML(self.response.body)
         xml_namespaces = {'svg': "http://www.w3.org/2000/svg",
                           'xlink': "http://www.w3.org/1999/xlink"}
 
@@ -4496,7 +4495,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             '//svg:a[.//svg:text[contains(text(),"Garcia")]]',
             namespaces=xml_namespaces,
         )[0]
-        assert isinstance(node_link, lxml.etree._Element)  # pylint: disable=c-extension-no-member
+        assert isinstance(node_link, lxml.etree._Element)
         self.assertEqual("/event/event/1/registration/3/show",
                          node_link.attrib['{http://www.w3.org/1999/xlink}href'])
         parts_text_text = node_link.xpath('./svg:text/text()',
@@ -4506,7 +4505,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
         assert isinstance(edge_group, list)
         self.assertEqual(1, len(edge_group))
-        assert isinstance(edge_group[0], lxml.etree._Element)  # pylint: disable=c-extension-no-member
+        assert isinstance(edge_group[0], lxml.etree._Element)
         edge_link_title = edge_group[0].xpath(
             './/svg:a/@xlink:title', namespaces=xml_namespaces)
         assert isinstance(edge_link_title, list)
@@ -4525,7 +4524,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['show_lodgements'] = True
         f['part_id'] = 2
         self.submit(f, check_notification=False)
-        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
+        xml = lxml.etree.XML(self.response.body)
 
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)
@@ -4544,7 +4543,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['show_lodgement_groups'] = True
         f['part_id'] = 2
         self.submit(f, check_notification=False)
-        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
+        xml = lxml.etree.XML(self.response.body)
 
         self.assertIn("Emilia", self.response.text)
         # No lodgements, but  lodgement groups
@@ -4559,7 +4558,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['show_lodgement_groups'] = True
         f['part_id'] = 2
         self.submit(f, check_notification=False)
-        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
+        xml = lxml.etree.XML(self.response.body)
 
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)
@@ -6136,7 +6135,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("emilia")
     def test_constraint_violations(self) -> None:
-        # pylint: disable=protected-access
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")

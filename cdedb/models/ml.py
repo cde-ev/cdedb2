@@ -235,7 +235,7 @@ class Mailinglist(CdEDataclass):
         """This fields may be changed by non-restricted moderators."""
         return cls.restricted_moderator_fields | cls.full_moderator_fields
 
-    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:  # pylint: disable=no-self-use
+    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
@@ -345,12 +345,12 @@ class Mailinglist(CdEDataclass):
                 ret[persona_id] = SubscriptionPolicy.none
         return ret
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,  # pylint: disable=no-self-use
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
 
-    def periodic_cleanup(self, rs: RequestState) -> bool:  # pylint: disable=no-self-use
+    def periodic_cleanup(self, rs: RequestState) -> bool:
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
 

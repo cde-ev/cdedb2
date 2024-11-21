@@ -388,7 +388,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn  # pylint: disable=protected-access
+                    rs.conn = rs._conn
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -706,6 +706,7 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
+
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
                                  decimal.Decimal]) -> str: ...

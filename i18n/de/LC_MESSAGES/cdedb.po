@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-11-21 00:28+0100\n"
+"POT-Creation-Date: 2024-11-20 15:28+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -1553,28 +1553,33 @@ msgstr "Nicht im unterstützten Bereich."
 msgid "Not supported."
 msgstr "Operation nicht unterstützt."
 
-#: cdedb/common/__init__.py:788 cdedb/common/__init__.py:790
+#: cdedb/common/__init__.py:788 cdedb/common/__init__.py:789
+#: cdedb/common/__init__.py:790
 #, python-format
 msgid "Cannot unwrap str or bytes. Got %(data)s."
 msgstr "Es ist nicht möglich str oder bytes zu entpacken. Erhielt %(data)s."
 
-#: cdedb/common/__init__.py:792 cdedb/common/__init__.py:794
+#: cdedb/common/__init__.py:792 cdedb/common/__init__.py:793
+#: cdedb/common/__init__.py:794
 #, python-format
 msgid "Can only unwrap collections. Got %(data)s."
 msgstr "Kann nur Collections entpacken. Erhielt %(data)s."
 
-#: cdedb/common/__init__.py:796 cdedb/common/__init__.py:798
+#: cdedb/common/__init__.py:796 cdedb/common/__init__.py:797
+#: cdedb/common/__init__.py:798
 #, python-format
 msgid "Can only unwrap collections with one element. Got %(len)s elements."
 msgstr ""
 "Entpacken nur möglich für einelementige Collections. Eingabe hat %(len)s "
 "Elemente."
 
-#: cdedb/common/__init__.py:1372 cdedb/common/__init__.py:1374
+#: cdedb/common/__init__.py:1372 cdedb/common/__init__.py:1373
+#: cdedb/common/__init__.py:1374
 msgid "Security degradation: anonymous and non-expiring parameter"
 msgstr "Sicherheitsverlust: anonymer, nicht-ablaufender Parameter"
 
-#: cdedb/common/__init__.py:1435 cdedb/common/__init__.py:1437
+#: cdedb/common/__init__.py:1435 cdedb/common/__init__.py:1436
+#: cdedb/common/__init__.py:1437
 msgid "Invalid date string."
 msgstr "Ungültige Datumsangabe."
 

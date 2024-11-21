@@ -135,7 +135,7 @@ from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
-from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
+from cdedb.common.validation.types import *  # noqa: F403
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
@@ -2060,7 +2060,7 @@ def _pair_of_int(
     val: list[int] = _list_of(val, int, argname, **kwargs)
 
     try:
-        a, b = val  # pylint: disable=unbalanced-tuple-unpacking
+        a, b = val
     except ValueError as e:
         raise ValidationSummary(ValueError(
             argname, n_("Must contain exactly two elements."))) from e
@@ -4053,7 +4053,7 @@ def _serialized_event_questionnaire_upload(
     val = _input_file(val, argname, **kwargs)
     val = _json(val, argname, **kwargs)
     return SerializedEventQuestionnaireUpload(
-        _serialized_event_questionnaire(val, argname, **kwargs))  # pylint: disable=missing-kwoa
+        _serialized_event_questionnaire(val, argname, **kwargs))
 
 
 @_add_typed_validator
@@ -4651,7 +4651,7 @@ def _regex(
         re.compile(val)
     except re.error as e:
         # TODO maybe provide more precise feedback?
-        raise ValidationSummary(  # pylint: disable=raise-missing-from
+        raise ValidationSummary(
             ValueError(argname,
                        n_("Invalid  regular expression (position %(pos)s)."),
                        {'pos': e.pos}))
@@ -4705,7 +4705,7 @@ def _custom_query_filter(
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])  # pylint: disable=protected-access
+    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])
 
     if errs:
         raise errs
@@ -5035,7 +5035,7 @@ def _range(
     if errs:
         raise errs
 
-    from_val, to_val = new_val  # pylint: disable=unbalanced-tuple-unpacking
+    from_val, to_val = new_val
     return (from_val, to_val)
 
 

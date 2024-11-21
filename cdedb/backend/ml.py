@@ -144,7 +144,7 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs: RequestState) -> set[const.MailinglistTypes]:  # pylint: disable=no-self-use
+    def get_available_types(self, rs: RequestState) -> set[const.MailinglistTypes]:
         """Get a list of MailinglistTypes the user is allowed to manage."""
         ret = {enum_member for enum_member, atype in ML_TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -288,7 +288,7 @@ class MlBackend(AbstractBackend):
             pass
         elif not ml_ids:
             # Limit global log to managed lists for non-admins/non-auditors.
-            log_filter._mailinglist_ids = list(  # pylint: disable=protected-access
+            log_filter._mailinglist_ids = list(
                 self.list_mailinglists(rs, active_only=False, managed='managed'))
             log_filter = affirm_dataclass(MlLogFilter, log_filter)
         elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):

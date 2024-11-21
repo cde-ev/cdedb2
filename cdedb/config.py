@@ -474,7 +474,7 @@ class LazyConfig(Config):
     """
 
     # noinspection PyMissingConstructor
-    # pylint: disable=super-init-not-called
+
     def __init__(self) -> None:
         name = self.__class__.__name__
         _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")
