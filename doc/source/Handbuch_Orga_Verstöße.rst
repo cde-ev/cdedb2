@@ -5,6 +5,19 @@ Die Datenbank kann für viele Situation, die im Laufe der Organisation einer
 Veranstaltung auftreten können -- aber eigentlich nicht sollen -- Hinweise, Warnungen
 bzw. sogar Fehlermeldungen ausgeben.
 
+Es existieren mehrere Stufen an Verstößen, welche einen Hinweis darauf geben, wie
+schwerwiegend diese sind und wie schnell sich darum gekümmert werden sollte:
+
+- Hinweis: Um einen solchen Verstoß sollte sich irgendwann einmal gekümmert werden,
+  aber das ist erst langfristig möglich oder erfordert die Beteiligung weiterer
+  Personen.
+- Warnung: Ein solcher Verstoß sollte relativ bald behoben werden, in Ausnahmefällen
+  kann der entsprechende Zustand aber vorübergehend oder sogar vollständig korrekt sein.
+- Fehler: Ein Zustand, der immer falsch ist und behoben werden muss, am besten
+  innerhalb von wenigen Tagen.
+- Kritisch: Ein Zustand der nicht existieren können sollte, außer durch einen
+  Softwarfehler, korrumpierte Daten oder einen Fehler außerhalb der Macht des Orgateams.
+
 In diesem Dokument werden die einzelnen Arten von Verstößen näher erläutert.
 
 
@@ -39,7 +52,7 @@ verschiedene Kurswahlen getätigt hat.
 Das sollte in der Praxis nicht auftreten können, da bei jeder Änderung an einer
 Anmeldung die Konsistenz der Wahlen geprüft wird. Sollte das doch passieren ist dies
 ein schwerwiegender Fehler, der quasi jede weitere Bearbeitung von Kurses und
-Anmeldungen verhindern dürfte. Falls das bei deiner Veranstaltung passiert wende dich
+Anmeldungen verhindern dürfte. Falls das bei deiner Veranstaltung passiert, wende dich
 umgehend an das Datenbank-Team <cdedb@lists.cde-ev.de>.
 
 
@@ -48,7 +61,7 @@ umgehend an das Datenbank-Team <cdedb@lists.cde-ev.de>.
 Fehlende Kurseinteilungen
 -------------------------
 
-Dieser Verstoß tritt auf, wenn eine Person mit dem Status "Teilnehmer", die kein Orga
+Dieser Verstoß tritt auf, wenn eine Person mit dem Status ``Teilnehmer``, die kein Orga
 und nicht U10 ist, nicht in einen Kurs eingeteilt ist.
 
 Um den Verstoß zu beheben, sollte die Person in einen Kurs eingeteilt werden oder ihr
@@ -66,7 +79,7 @@ stattfindet.
 
 Um den Verstoß zu beheben, sollte die Person in einen gewählten, bzw. den von ihr
 geleiteten Kurs eingeteilt werden, ihre Kurswahlen angepasst werden oder der von ihr
-geleiteter Kurs abgesagt werden.
+geleitete Kurs abgesagt werden.
 
 
 .. _CancelledWithAttendeesCV:
@@ -117,7 +130,7 @@ schiefgelaufen ist, z.B. wenn sie einen negativen Betrag bezahlt hat oder kein
 Bezahlungsdatum gesetzt ist.
 
 Einen solchen Verstoß kann in aller Regel nur die Buchhaltung erzeugen und ebenso
-beheben. Fallsdas bei deiner Veranstaltung auftritt, wende dich umgehend an die
+beheben. Falls das bei deiner Veranstaltung auftritt, wende dich umgehend an die
 Buchhaltung <buchhaltung@lists.cde-ev.de>.
 
 
@@ -143,7 +156,7 @@ Dieser Verstoß tritt auf, wenn eine Person insgesamt einen negativen Beitrag za
 soll. In der Regel deutet dies darauf hin, dass bei der Konfiguration der
 Teilnahmebeiträge etwas schief gelaufen ist.
 
-Um den Verstoß zu beheben kontrolliere die für die Person aktiven Teilnahmebeiträge.
+Um den Verstoß zu beheben, kontrolliere die für die Person aktiven Teilnahmebeiträge.
 Falls du dir nicht sicher bist, wo das Problem liegt, melde dich gerne beim
 Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
@@ -157,10 +170,11 @@ Dieser Verstoß tritt auf, wenn eine Person einen höheren Beitrag bezahlt hat, 
 es zum jetzigen Stand hätte tun müssen. In der Regel liegt das daran, dass die Person
 sich von einem oder mehreren Veranstaltungsteilen abgemeldet hat, oder keinen Platz
 erhalten hat. Es kommt aber auch vor, dass einzelne Personen versehentlich zu viel Geld
-überweisen.
+überweisen. Auch eingetragene aber noch nicht durchgeführte KL-Erstattungen können der
+Grund sein.
 
 Um den Verstoß zu beheben, sollte eine Rückzahlung an die Person initiiert werden.
-Über das genaue Verfahren hierzu sollte dein Finanzorga-Bescheid wissen.
+Über das genaue Verfahren hierzu sollte dein Finanzorga Bescheid wissen.
 Ansprechpartner für die Ausführung von Erstattungen und sonstige damit verbundene
 Fragen ist das Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
