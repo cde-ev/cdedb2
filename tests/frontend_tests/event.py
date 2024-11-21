@@ -3917,7 +3917,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertPresence("Teilnehmer-Statistik")
         self.assertPresence("1.H.", div="participant-stats")
-        self.assertPresence("Noch nicht da")
+        self.assertPresence("Nie eingecheckt")
 
         self.assertPresence("Kursstatistik")
         self.assertPresence("Morgenkreis", div="course-stats")
