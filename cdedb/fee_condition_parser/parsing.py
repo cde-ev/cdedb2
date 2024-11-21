@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long,missing-module-docstring,expression-not-assigned
+
 from functools import lru_cache
 
 import pyparsing as pp

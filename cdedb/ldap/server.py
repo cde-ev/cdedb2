@@ -213,8 +213,7 @@ class LdapHandler:
         """
         if request.version != 3:
             raise ldaperrors.LDAPProtocolError(
-                "Version %u not supported" % request.version,
-            )
+                f"Version {request.version} not supported")
 
         self.check_controls(controls)
 
@@ -231,7 +230,7 @@ class LdapHandler:
         try:
             entry = await self.root.lookup(dn)
         except ldaperrors.LDAPNoSuchObject:
-            raise ldaperrors.LDAPInvalidCredentials  # pylint: disable=raise-missing-from
+            raise ldaperrors.LDAPInvalidCredentials
 
         self.bound_user = entry.bind(request.auth)
 
@@ -286,7 +285,6 @@ class LdapHandler:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
         else:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
-        return None
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
@@ -372,7 +370,7 @@ class LdapHandler:
             - which entries may access other entries
             - which attributes may be accessed by which entries
             """
-            attributes = {key: value for key, value in entry.items()}  # pylint: disable=unnecessary-comprehension
+            attributes = dict(entry)
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]

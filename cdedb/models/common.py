@@ -12,6 +12,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
@@ -25,7 +26,7 @@ from cdedb.uncommon.intenum import CdEIntEnum
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+    from cdedb.database.query import (
         DatabaseValue_s,
     )
 
@@ -156,6 +157,7 @@ class CdEDataclass:
         mandatory: TypeMapping = {}
         optional: TypeMapping = {}
         for field in dataclasses.fields(cls):
+            field.type = cast(type[Any], field.type)
             if field.metadata.get('validation_exclude'):
                 continue
             if creation:
@@ -226,7 +228,7 @@ class CdEDataclass:
 
     def _asdict_inner(self, obj: Any,  # type: ignore[no-untyped-def]
                       dict_factory: Any):
-        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined] # pylint: disable=protected-access
+        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
             for f in dataclasses.fields(obj):
                 #######################################################

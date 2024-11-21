@@ -54,11 +54,6 @@
 {% block content %}
     {% set course_entries = courses|keydictsort(EntitySorter.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
-    <div class="p">
-        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check-square',
-                     aclass='btn btn-sm btn-info') }}
-    </div>
-
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
               aria-label="{% trans %}Filter{% endtrans %}">
@@ -219,12 +214,12 @@
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
-                                    arialabel=gettext("Select %s")|format(util.persona_name(persona))|s)
+                                    arialabel=gettext("Select %s")|format(util.persona_name(persona, include_nickname=True))|s)
                                     }}
                         </td>
                         <td>
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                         util.persona_name(persona)) }}
+                                         util.persona_name(persona, include_nickname=True)) }}
                         </td>
                         {% for track in ambience['event']['tracks'].values()|sort %}
                             {% set track_is_filtered = (values['track_id'] in ('', track.id)) %}

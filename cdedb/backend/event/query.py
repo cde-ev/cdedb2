@@ -35,6 +35,10 @@ from cdedb.common.fields import (
     STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.query import (
     Query,
     QueryOperators,
@@ -57,7 +61,7 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
     )
 
 
-class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventQueryBackend(EventBaseBackend):
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: Optional[int] = None, aggregate: bool = False,
@@ -73,11 +77,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            if not (self.is_orga(rs, event_id=event_id)
-                    or self.is_admin(rs)
-                    or "ml_admin" in rs.user.roles):
+            if not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -313,8 +314,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
@@ -339,8 +340,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.courses_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -513,8 +514,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         elif query.scope == QueryScope.lodgement:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -705,7 +706,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         event_id = affirm(vtypes.ID, event_id)
         scopes = affirm_set(QueryScope, scopes or set())
         query_ids = affirm_set(vtypes.ID, query_ids or set())
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:
             with Atomizer(rs):
@@ -761,7 +762,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 rs, "event.stored_queries", ("event_id", "query_name"), query_id)
             if q is None:
                 return 0
-            if not (self.is_admin(rs) or self.is_orga(rs, event_id=q['event_id'])):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=q['event_id']):
                 raise PrivilegeError(n_(
                     "Must be orga to delete queries for an event."))
 
@@ -778,7 +780,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         event_id = affirm(vtypes.ID, event_id)
         query = affirm(Query, query)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_(
                 "Must be orga to store queries for an event."))
         if not query.scope.supports_storing():
@@ -807,7 +809,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
              f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
@@ -821,7 +823,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                             ) -> int:
         """Delete invalid stored event queries."""
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
         self.logger.warning(f"Invalid stored queries were automatically deleted:"
@@ -863,7 +865,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             event = self.get_event(rs, event_id)
@@ -897,7 +900,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             ret = self.sql_delete_one(

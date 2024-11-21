@@ -297,7 +297,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         # now, process the grouped ballots from above for the navigation buttons.
         ballot_list: list[int] = sum((
-            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
+            xsorted(bdict, key=lambda key: bdict[key]["title"])
             for bdict in (grouped.upcoming, grouped.running, grouped.concluded)), [])
 
         i = ballot_list.index(ballot_id)

@@ -14,7 +14,7 @@ from typing import Optional
 from cdedb.uncommon.intenum import CdEIntEnum
 
 # these are stored in the database, so provide them here for consistency
-from cdedb.uncommon.submanshim import (  # pylint: disable=unused-import # noqa: F401
+from cdedb.uncommon.submanshim import (  # noqa: F401
     SubscriptionAction,
     SubscriptionState,
 )
@@ -94,14 +94,14 @@ class RegistrationPartStati(CdEIntEnum):
 
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
-        return self in (RegistrationPartStati.participant,
-                        RegistrationPartStati.guest)
+        return self in {RegistrationPartStati.participant,
+                        RegistrationPartStati.guest}
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""
-        return self in (RegistrationPartStati.applied,
+        return self in {RegistrationPartStati.applied,
                         RegistrationPartStati.participant,
-                        RegistrationPartStati.waitlist)
+                        RegistrationPartStati.waitlist}
 
 
 @enum.unique
@@ -546,6 +546,8 @@ class EventLogCodes(CdEIntEnum):
     event_changed = 2  #:
     event_deleted = 3  #:
     event_archived = 4  #:
+    helper_added = 7  #:
+    helper_removed = 8  #:
     orga_added = 10  #:
     orga_removed = 11  #:
     part_created = 15  #:

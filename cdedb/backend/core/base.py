@@ -67,6 +67,7 @@ from cdedb.common.fields import (
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import (
     ALL_LOG_FILTERS,
@@ -199,10 +200,11 @@ class CoreBaseBackend(AbstractBackend):
           fulltext search
         """
         attributes = [
-            "title", "username", "display_name", "given_names", "family_name",
+            "title", "username", "given_names", "nickname", "family_name",
             "birth_name", "name_supplement", "birthday", "telephone", "mobile",
             "postal_code", "location", "postal_code2", "location2", "weblink",
-            "specialisation", "affiliation", "timeline", "interests", "free_form"]
+            "specialisation", "affiliation", "timeline", "interests", "free_form",
+        ]
         if persona["show_address"]:
             attributes += ("address_supplement", "address")
         if persona["show_address2"]:
@@ -507,8 +509,8 @@ class CoreBaseBackend(AbstractBackend):
                 return 1
             # Determine if something requiring a review changed.
             fields_requiring_review = {
-                "birthday", "family_name", "given_names", "birth_name",
-                "gender", "address_supplement", "address", "postal_code",
+                "birthday", "family_name", "given_names", "legal_given_names",
+                "birth_name", "gender", "address_supplement", "address", "postal_code",
                 "location", "country", "donation",
             }
             # Special care is necessary in case of an existing pending
@@ -697,7 +699,7 @@ class CoreBaseBackend(AbstractBackend):
                 for higher_realm in higher_realms:
                     clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
                 clearances.append(clearance)
-        query = ("SELECT persona_id, given_names, display_name, family_name,"
+        query = ("SELECT persona_id, given_names, family_name,"
                  " generation, ctime FROM core.changelog WHERE code = %s")
         if clearances:
             query = query + " AND (" + " OR ".join(clearances) + ")"
@@ -1513,50 +1515,70 @@ class CoreBaseBackend(AbstractBackend):
                 return False
 
             # Check event involvement.
-            # TODO use 'is_archived' instead of 'event_end'?
-            query = """SELECT MAX(part_end) AS event_end
-            FROM (
-                (
-                    SELECT event_id
-                    FROM event.registrations
-                    WHERE persona_id = %s
-                    UNION
-                    SELECT event_id
-                    FROM event.orgas
-                    WHERE persona_id = %s
-                ) as ids
-                JOIN event.event_parts ON ids.event_id = event_parts.event_id
-            )
+            # Don't archive if registered for a recent event.
+            query = """
+                SELECT COUNT(*)
+                FROM
+                    event.registrations reg
+                    JOIN event.events ON events.id = reg.event_id
+                WHERE
+                    persona_id = %s AND (
+                        reg.event_id > %s AND (amount_owed != amount_paid)
+                        OR events.is_archived = False
+                    )
             """
-            event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
-            if event_end and event_end > cutoff:
+            ret = self.query_one(
+                rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']))
+            if ret and ret['count']:
+                return False
+
+            # Don't archive if orga for a recent event.
+            query = """
+                SELECT
+                    COUNT(*) as count
+                FROM
+                    event.orgas
+                    JOIN event.event_parts ON orgas.event_id = event_parts.event_id
+                WHERE persona_id = %s
+                GROUP BY orgas.event_id
+                HAVING MAX(part_end) > %s
+            """
+            ret = self.query_one(rs, query, (persona_id, cutoff))
+            if ret and ret['count']:
                 return False
 
             # Check assembly involvement
-            query = """SELECT assembly_id
-            FROM (
-                (
-                    SELECT assembly_id
-                    FROM assembly.attendees
-                    WHERE persona_id = %s
-                    UNION
-                    SELECT assembly_id
-                    FROM assembly.presiders
-                    WHERE persona_id = %s
-                ) AS ids
-                JOIN assembly.assemblies ON ids.assembly_id = assemblies.id
-            )
-            WHERE assemblies.is_active = True"""
-            if self.query_all(rs, query, (persona_id, persona_id)):
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                return False
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
                 return False
 
             # Check mailinglist subscriptions.
             # TODO don't hardcode subscription states here?
-            query = """SELECT mailinglist_id
-            FROM ml.subscription_states AS ss
-            JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
-            WHERE persona_id = %s AND subscription_state = ANY(%s)
-                AND mailinglists.is_active = True"""
+            query = """
+                SELECT mailinglist_id
+                FROM
+                    ml.subscription_states AS ss
+                    JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
+                WHERE
+                    persona_id = %s AND subscription_state = ANY(%s)
+                    AND mailinglists.is_active = True
+            """
             states = {
                 const.SubscriptionState.subscribed,
                 const.SubscriptionState.subscription_override,
@@ -1674,8 +1696,9 @@ class CoreBaseBackend(AbstractBackend):
                 'is_searchable': False,
                 'is_archived': True,
                 # 'is_purged' not relevant here
-                # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
+                # 'legal_given_names' kept for later recognition
+                # 'nickname' kept for later recognition
                 # 'family_name' kept for later recognition
                 'title': None,
                 'name_supplement': None,
@@ -1724,21 +1747,63 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 6. Handle event realm
             #
-            query = glue(
-                "SELECT reg.persona_id, MAX(part_end) AS m",
-                "FROM event.registrations as reg ",
-                "JOIN event.events as event ON reg.event_id = event.id",
-                "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s",
-                "GROUP BY persona_id")
-            max_end = self.query_one(rs, query, (persona_id,))
-            if max_end and max_end['m'] and max_end['m'] >= now().date():
-                raise ArchiveError(n_("Involved in unfinished event."))
+            query = """
+                SELECT
+                    COUNT(*) FILTER (WHERE events.is_archived = False) AS count_unarchived,
+                    COUNT(*) FILTER (WHERE reg.event_id > %s AND (amount_owed != amount_paid)) AS count_unbalanced
+                FROM
+                    event.registrations reg
+                    JOIN event.events ON events.id = reg.event_id
+                WHERE
+                    persona_id = %s AND (
+                        reg.event_id > %s AND (amount_owed != amount_paid)
+                        OR events.is_archived = False
+                    )
+            """
+            cutoff_event_id = self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']
+            data = self.query_one(
+                rs, query, (cutoff_event_id, persona_id, cutoff_event_id))
+            if data:
+                if data['count_unarchived']:
+                    raise ArchiveError(n_("Involved in unfinished event."))
+                if data['count_unbalanced']:
+                    raise ArchiveError(n_("Unbalanced event balance."))
+
+            query = """
+                SELECT event_id
+                FROM event.orgas JOIN event.events ON events.id = orgas.event_id
+                WHERE persona_id = %s AND events.is_archived = False
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Orga of unfinished event."))
+
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
+            self.sql_delete(rs, "event.helpers", (persona_id,), "persona_id")
             #
-            # 7. Assembly realm is handled via assembly archival.
+            # 7. Assembly realm cleanup is handled via assembly archival.
             #
-            #
+
+            # Check assembly involvement
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Attendee of unfinished assembly."))
+
+            query = """
+                SELECT assembly_id
+                FROM
+                    assembly.assemblies
+                    JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
+                WHERE persona_id = %s AND assemblies.is_active = True
+            """
+            if self.query_all(rs, query, (persona_id,)):
+                raise ArchiveError(n_("Presider of unfinished assembly."))
+
             # 8. Handle ml realm
             #
             self.sql_delete(rs, "ml.subscription_states", (persona_id,),
@@ -1850,8 +1915,9 @@ class CoreBaseBackend(AbstractBackend):
             #
             update = {
                 'id': persona_id,
-                'display_name': "N.",
                 'given_names': "N.",
+                'legal_given_names': "N.",
+                'nickname': "N.",
                 'family_name': "N.",
                 'birthday': datetime.date.min,
                 'birth_name': None,
@@ -1961,28 +2027,17 @@ class CoreBaseBackend(AbstractBackend):
                         event_id: Optional[int] = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
 
-        This is allowed for admins and for yourself in any case. Orgas can also
-        query users registered for one of their events; other event users can
-        query participants of events they participate themselves.
+        This is allowed for admins and for yourself in any case. Orgas and participants
+        can also query users registered for one of their events.
 
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        event_id = affirm_optional(vtypes.ID, event_id)
+        event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
-        # The event user view on a cde user contains lots of personal
-        # data. So we require the requesting user to be orga (to get access to
-        # all event users who are related to their event) or 'participant'
-        # of the requested event (to get access to all event users who are also
-        # 'participant' at the same event).
-        is_orga = False
-        if event_id:
-            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin",
-                            "droid_quick_partial_export"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """
@@ -1994,18 +2049,19 @@ class CoreBaseBackend(AbstractBackend):
                         event.registration_parts AS rparts
                     ON rparts.registration_id = regs.id
                 WHERE
-                    {conditions}"""
-            conditions = ["regs.event_id = %s"]
-            params: list[Any] = [event_id]
-            if not is_orga:
-                conditions.append("rparts.status = %s")
-                params.append(const.RegistrationPartStati.participant)
-            query = query.format(conditions=' AND '.join(conditions))
-            data = self.query_all(rs, query, params)
+                    regs.event_id = %s"""
+            data = self.query_all(rs, query, [event_id])
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
-            if not (same_event and (is_orga or
-                                    rs.user.persona_id in all_users_inscope)):
+            if not (
+                same_event and (
+                    rs.user.persona_id in all_users_inscope
+                    or is_privileged_event(
+                        rs, EventPrivileges.registrations_read_internal,
+                        event_id=event_id,
+                    )
+                )
+            ):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
@@ -2303,15 +2359,14 @@ class CoreBaseBackend(AbstractBackend):
         else:
             rs.conn = self.connpool['cdb_persona']
         # Necessary to keep the mechanics happy.
-        rs._conn = rs.conn  # pylint: disable=protected-access
+        rs._conn = rs.conn
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",
                                    PERSONA_CORE_FIELDS, data["id"])
         if data is None:
             raise RuntimeError(n_("Impossible."))
-        vals = {k: data[k] for k in (
-            'username', 'given_names', 'display_name', 'family_name')}
+        vals = {k: data[k] for k in ('username', 'given_names', 'family_name')}
         vals['persona_id'] = data['id']
         rs.user = User(roles=extract_roles(data), **vals)
 
@@ -2616,8 +2671,8 @@ class CoreBaseBackend(AbstractBackend):
         assert persona_id is not None
 
         columns_of_interest = [
-            *ADMIN_KEYS, "username", "given_names", "family_name", "display_name",
-            "title", "name_supplement", "birthday",
+            *ADMIN_KEYS, "username", "given_names", "family_name", "nickname",
+            "title", "name_supplement", "birthday", "legal_given_names",
         ]
 
         # escalate db privilege role in case of resetting passwords
@@ -2641,10 +2696,12 @@ class CoreBaseBackend(AbstractBackend):
         admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
-                  persona['family_name'].replace('-', ' ').split() +
-                  persona['display_name'].replace('-', ' ').split())
+                  persona['legal_given_names'].replace('-', ' ').split() +
+                  persona['family_name'].replace('-', ' ').split())
         if persona['title']:
             inputs.extend(persona['title'].replace('-', ' ').split())
+        if persona['nickname']:
+            inputs.extend(persona['nickname'].replace('-', ' ').split())
         if persona['name_supplement']:
             inputs.extend(persona['name_supplement'].replace('-', ' ').split())
         if persona['birthday']:
@@ -2728,8 +2785,10 @@ class CoreBaseBackend(AbstractBackend):
             persona['birthday'] = None
         scores: dict[int, int] = collections.defaultdict(lambda: 0)
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
-            (10, "given_names = %s OR display_name = %s",
+            (10, "given_names = %s OR legal_given_names = %s",
              (persona['given_names'], persona['given_names'])),
+            (10, "given_names = %s OR legal_given_names = %s",
+             (persona['legal_given_names'], persona['legal_given_names'])),
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
             (10, "family_name = %s OR birth_name = %s",
@@ -2737,8 +2796,11 @@ class CoreBaseBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
+             (persona['legal_given_names'], persona['legal_given_names'],
+              persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

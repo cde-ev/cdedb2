@@ -366,6 +366,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_user"),
             rule("/log", methods=_GET,
                  endpoint="view_log"),
+            rule("/helpers/list", methods=_GET,
+                     endpoint="list_event_helpers"),
+            rule("/helpers/add", methods=_POST,
+                     endpoint="add_event_helper"),
+            rule("/helpers/remove", methods=_POST,
+                     endpoint="remove_event_helper"),
             sub('/event', (
                 rule("/list", methods=_GET,
                      endpoint="list_events"),

@@ -17,8 +17,8 @@ from typing import (
     overload,
 )
 
-import ldaptor.protocols.pureldap as pureldap
 import psycopg.abc
+from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
@@ -289,12 +289,12 @@ class LDAPsqlBackend:
     ###############
 
     @classproperty
-    def root_dn(self) -> DN:  # pylint: disable=no-self-use
+    def root_dn(self) -> DN:
         """The root entry of the ldap tree."""
         return DN("")
 
     @classproperty
-    def subschema_dn(self) -> DN:  # pylint: disable=no-self-use
+    def subschema_dn(self) -> DN:
         """The DN containing information about the supported schemas.
 
         This is needed by f.e. Apache Directory Studio to determine which
@@ -303,7 +303,7 @@ class LDAPsqlBackend:
         return DN("cn=subschema")
 
     @classproperty
-    def de_dn(self) -> DN:  # pylint: disable=no-self-use
+    def de_dn(self) -> DN:
         return DN("dc=de")
 
     @classproperty
@@ -405,43 +405,6 @@ class LDAPsqlBackend:
     @classmethod
     def is_user_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.users_dn, "uid")
-
-    @staticmethod
-    def make_persona_name(persona: "CdEDBObject",
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False,
-                          with_family_name: bool = True,
-                          with_titles: bool = False) -> str:
-        """Mimic the implementation of common.make_persona_name.
-
-        Since we do not want to have cross-dependencies between the web and ldap code
-        base, we need this small logic duplication.
-        """
-        # TODO move into common and use it here
-        display_name: str = persona.get('display_name', "")
-        given_names: str = persona['given_names']
-        ret = []
-        if with_titles and persona.get('title'):
-            ret.append(persona['title'])
-        if only_given_names:
-            ret.append(given_names)
-        elif only_display_name:
-            ret.append(display_name)
-        elif given_and_display_names:
-            if not display_name or display_name == given_names:
-                ret.append(given_names)
-            else:
-                ret.append(f"{given_names} ({display_name})")
-        elif display_name and display_name in given_names:
-            ret.append(display_name)
-        else:
-            ret.append(given_names)
-        if with_family_name:
-            ret.append(persona['family_name'])
-        if with_titles and persona.get('name_supplement'):
-            ret.append(persona['name_supplement'])
-        return " ".join(ret)
 
     @classmethod
     def list_single_user(cls, persona_id: int) -> DN:
@@ -654,7 +617,7 @@ class LDAPsqlBackend:
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = (
-            "SELECT id, username, display_name, given_names, family_name, password_hash"
+            "SELECT id, username, given_names, family_name, password_hash"
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
         return {
             e["id"]: e async for e in self.query_all(query, (user_ids,))
@@ -700,7 +663,8 @@ class LDAPsqlBackend:
                 b"objectClass": ["inetOrgPerson"],
                 b"cn": [f"{user['given_names']} {user['family_name']}"],
                 b"sn": [user['family_name']],
-                b"displayName": [self.make_persona_name(user)],
+                # TODO do we want to expose the nickname somewhere?
+                b"displayName": [f"{user['given_names']} {user['family_name']}"],
                 b"givenName": [user['given_names']],
                 b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],

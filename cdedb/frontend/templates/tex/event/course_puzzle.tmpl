@@ -31,7 +31,7 @@
     <<% for registration_id, registration in registrations.items() %>>
         <<% for track in tracks.values()|sort %>>
                 <<% if registration['parts'][ambience['event']['tracks'][track.id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
-                    \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
+                    \participant{<<< personas[registration['persona_id']]|persona_name(include_nickname=True)|te >>>}%
                                 {<<< track['title']|te >>>}%
                                 {<<% if registration['tracks'][track.id]['course_instructor'] -%>>
                                     <<% trans %>> Instructor <<% endtrans %>>:

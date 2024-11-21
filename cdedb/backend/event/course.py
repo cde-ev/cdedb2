@@ -4,7 +4,6 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
-
 from collections.abc import Collection
 from typing import Optional, Protocol
 
@@ -32,10 +31,14 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.database.connection import Atomizer
 
 
-class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventCourseBackend(EventBaseBackend):
     @access("anonymous")
     def list_courses(self, rs: RequestState,
                         event_id: int) -> dict[int, str]:
@@ -126,14 +129,15 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         the course.
         """
         data = affirm(vtypes.Course, data)
-        if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
             assert current is not None
+            if not is_privileged(rs, EventPrivileges.courses_write,
+                                 current['event_id']):
+                raise PrivilegeError(n_("Not privileged."))
 
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS and k != "fields"}
@@ -242,8 +246,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 vtypes.EventAssociatedFields, data.get('fields') or {},
                 fields=event.fields, association=const.FieldAssociations.course)
             data['fields'] = PsycoJson(fdata)
-            if (not self.is_orga(rs, event_id=data['event_id'])
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.courses_write, data['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}
@@ -316,8 +319,9 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             or ignore. If None or empty, cascade none.
         """
         course_id = affirm(vtypes.ID, course_id)
-        if (not self.is_orga(rs, course_id=course_id)
-                and not self.is_admin(rs)):
+        event_id: int = unwrap(self.sql_select_one(
+            rs, "event.courses", ("event_id",), course_id))  # type: ignore[assignment]
+        if not is_privileged(rs, EventPrivileges.courses_write, event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=course_id)
 
@@ -325,7 +329,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {

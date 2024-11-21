@@ -270,6 +270,8 @@ _DEFAULTS = {
 
     # amount of time after which an inactive account may be archived.
     "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
+    # ID of the last event where we do not care about remaining_owed.
+    "EVENT_ARCHIVAL_BALANCE_CUTOFF": 64,  # NachhaltigkeitsAkademie 2023
 
     #
     # Session stuff
@@ -472,7 +474,7 @@ class LazyConfig(Config):
     """
 
     # noinspection PyMissingConstructor
-    # pylint: disable=super-init-not-called
+
     def __init__(self) -> None:
         name = self.__class__.__name__
         _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")

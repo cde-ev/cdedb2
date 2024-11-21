@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import secrets
@@ -64,7 +63,6 @@ class TestSessionBackend(BackendTest):
             self.key, USER_DICT['anton']['username'],
             USER_DICT['anton']['password'], '127.0.0.0'))
 
-        # pylint: disable=protected-access
         # Invalid apitoken.
         with self.assertRaisesRegex(APITokenError, "Malformed API token."):
             self.session.lookuptoken("random token", "127.0.0.0")
@@ -346,7 +344,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         # Change password in session 0
         self.switch_app(0)
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'description': user['display_name']},
+        self.traverse({'description': user['given_names']},
                       {'description': 'Passwort ändern'})
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -367,10 +365,10 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         self.switch_app(1)
         self.login(USER_DICT["berta"])
         self.switch_app(0)
-        self.assertLogin(USER_DICT["anton"]["display_name"])
+        self.assertLogin(USER_DICT["anton"]["given_names"])
         self.switch_app(1)
-        self.assertLogin(USER_DICT["berta"]["display_name"])
+        self.assertLogin(USER_DICT["berta"]["given_names"])
         self.logout()
         self.assertIn('loginform', self.response.forms)
         self.switch_app(0)
-        self.assertLogin(USER_DICT["anton"]["display_name"])
+        self.assertLogin(USER_DICT["anton"]["given_names"])

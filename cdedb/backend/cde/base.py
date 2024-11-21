@@ -402,8 +402,8 @@ class CdEBaseBackend(AbstractBackend):
         self.affirm_atomized_context(rs)
 
         batch_fields = (
-            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
-            'birth_name', 'gender', 'address_supplement', 'address',
+            'family_name', 'given_names', 'legal_given_names', 'title',
+            'name_supplement', 'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:
@@ -532,6 +532,7 @@ class CdEBaseBackend(AbstractBackend):
         trial_membership = affirm(bool, trial_membership)
         consent = affirm(bool, consent)
         # noinspection PyBroadException
+        index = 0
         try:
             with Atomizer(rs):
                 stats = BatchAdmissionStats(set(), set(), set())
@@ -556,7 +557,7 @@ class CdEBaseBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index  # pylint: disable=used-before-assignment
+            return False, index
         return True, stats
 
     @access("searchable", "core_admin", "cde_admin")

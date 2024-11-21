@@ -179,7 +179,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         params = (email, const.GenesisStati.to_review)
         data = self.query_one(rs, query, params)
         # Pylint does not understand, that unwrap(data) cannot be None here.
-        return -unwrap(data) if data else None  # pylint: disable=invalid-unary-operand-type
+        return -unwrap(data) if data else None
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int,
@@ -371,7 +371,6 @@ class CoreGenesisBackend(CoreBaseBackend):
                 update = {
                     k: case[k] for k in update_keys if case[k]
                 }
-                update['display_name'] = update['given_names']
                 update['id'] = persona_id
                 # we grant trial membership by default for cde genesis cases
                 if "cde" in roles and not persona["is_member"]:
@@ -408,7 +407,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                     set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
 
             data = {k: v for k, v in case.items() if k in allowed_keys}
-            data['display_name'] = data['given_names']
+            # we only request given_names in genesis cases
+            data['legal_given_names'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])

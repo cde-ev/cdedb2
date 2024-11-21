@@ -15,7 +15,7 @@ help:
 	@echo ""
 	@echo "Code formatting:"
 	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint                -- run linters (ruff, isort and pylint)"
+	@echo "lint                -- run linters (ruff)"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -35,7 +35,6 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-PYLINT ?= $(PYTHONBIN) -m pylint
 RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
 ISORT ?= $(RUFF) --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
@@ -135,14 +134,6 @@ isort:
 	$(ISORT) bin/*.py cdedb tests
 	@echo ""
 
-.PHONY: pylint
-pylint:
-	@echo $(BANNERLINE)
-	@echo "All of pylint"
-	@echo $(BANNERLINE)
-	$(PYLINT) cdedb tests
-	@echo ""
-
 .PHONY: ruff
 ruff:
 	@echo $(BANNERLINE)
@@ -167,7 +158,7 @@ template-line-length:
 	@echo ""
 
 .PHONY: lint
-lint: ruff isort pylint
+lint: ruff isort
 
 
 ################

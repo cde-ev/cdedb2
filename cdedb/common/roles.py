@@ -6,7 +6,7 @@ import collections
 import decimal
 from typing import TYPE_CHECKING, Any
 
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig
 
@@ -14,12 +14,6 @@ _CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
-
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
 
 # Admin views a user may activate/deactivate.
 AdminView = str
@@ -195,6 +189,7 @@ PERSONA_DEFAULTS = {
     'is_searchable': False,
     'is_active': True,
     'title': None,
+    'nickname': None,
     'name_supplement': None,
     'gender': None,
     'pronouns': None,
@@ -306,7 +301,8 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
     "core_user", "core", "user_review",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
+    "event_user", "event_mgmt", "event_list", "event_orga",
+    "ml_mgmt_event", "ml_mod_event",
     "ml_user", "ml_mgmt", "ml_mod",
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
@@ -335,10 +331,12 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
-        result |= {"finance"}
+        result |= {"finance", "event_orga"}
     if "event_admin" in roles:
-        result |= {"event_user", "user_review", "event_mgmt", "event_orga",
-                   "ml_mgmt_event", "ml_mod_event"}
+        result |= {"event_user", "user_review", "event_mgmt", "event_list",
+                   "event_orga", "ml_mgmt_event", "ml_mod_event"}
+    if "event_helper" in roles:
+        result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:
@@ -347,7 +345,7 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
     if "auditor" in roles:
-        result |= {"auditor"}
+        result |= {"auditor", "event_orga"}
     if roles & ({'core_admin'} | set(
             f"{realm}_admin"
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):

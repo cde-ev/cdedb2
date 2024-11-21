@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 import collections
 import csv
 import datetime
@@ -34,7 +33,7 @@ class TestParseFrontend(FrontendTest):
         return parse.Transaction(transaction_data)
 
     def test_find_cdedbids(self) -> None:
-        # pylint: disable=protected-access
+
         cl = parse.ConfidenceLevel
         t = self.get_transaction_with_reference("DB-2-7 DB-35")
         # All confidence values are reduced by two, because multiple ids were found.
@@ -42,7 +41,7 @@ class TestParseFrontend(FrontendTest):
             2: parse.ConfidenceLevel.Medium,  # good match.
             3: parse.ConfidenceLevel.Low,  # close match.
         }
-        self.assertEqual(expectation, t._find_cdedbids())  # pylint: disable=protected-access
+        self.assertEqual(expectation, t._find_cdedbids())
 
         t = self.get_transaction_with_reference("DB-1000-6")
         self.assertEqual({1000: cl.Full}, t._find_cdedbids())
@@ -80,7 +79,7 @@ class TestParseFrontend(FrontendTest):
                     reference=reference,
                     compile_pattern=parse.Transaction.compile_pattern,
                 ))
-            match = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
+            match = parse.Transaction._match_one_event(fake_transaction, event)
             if expected_confidence is None:
                 self.assertIsNone(match)
             else:
@@ -128,7 +127,7 @@ class TestParseFrontend(FrontendTest):
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount})
-        transaction._match_event(rs=self.key, event_backend=event_backend)  # pylint: disable=protected-access
+        transaction._match_event(rs=self.key, event_backend=event_backend)
 
         # Check that reference match is better.
         self.assertIsNotNone(transaction.event)
@@ -182,7 +181,7 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
                             div="transaction6_errors")
         self.assertPresence(
-            "given_names: Anton Armin A. nicht im Verwendungszweck gefunden.",
+            "given_names: Anton nicht im Verwendungszweck gefunden.",
             div="transaction6_warnings")
         self.assertPresence(
             "family_name: Administrator nicht im Verwendungszweck gefunden.",
@@ -209,7 +208,7 @@ class TestParseFrontend(FrontendTest):
 
         # Line 8:
         self.assertPresence(
-            "given_names: Garcia G. nicht im Verwendungszweck gefunden.",
+            "given_names: Garcia nicht im Verwendungszweck gefunden.",
             div="transaction8_warnings")
 
         self.submit(f, button="validate", check_notification=False)
@@ -250,7 +249,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="-584,49",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             transaction_date="29.12.2018",
             category_old="TestAka",
         )
@@ -259,7 +258,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="353,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             transaction_date="28.12.2018",
             category_old="TestAka",
         )
@@ -268,7 +267,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="504,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
-            given_names="Garcia G.",
+            given_names="Garcia",
             transaction_date="27.12.2018",
             category_old="TestAka",
         )
@@ -277,7 +276,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             transaction_date="26.12.2018",
             category_old="Mitgliedsbeitrag",
         )
@@ -286,7 +285,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
-            given_names="Bertålotta",
+            given_names="Bertå",
             transaction_date="25.12.2018",
             category_old="Mitgliedsbeitrag",
         )
@@ -295,7 +294,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
-            given_names="Garcia G.",
+            given_names="Garcia",
             transaction_date="24.12.2018",
             category_old="Mitgliedsbeitrag",
         )
@@ -304,7 +303,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="2,50",
             cdedbid="DB-4-3",
             family_name="Dino",
-            given_names="Daniel D.",
+            given_names="Daniel",
             transaction_date="23.12.2018",
             category_old="Mitgliedsbeitrag",
         )
@@ -313,7 +312,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             transaction_date="21.12.2018",
             category_old="Mitgliedsbeitrag",
         )
@@ -322,7 +321,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="466,49",
             cdedbid="DB-5-1",
             family_name="Eventis",
-            given_names="Emilia E.",
+            given_names="Emilia",
             transaction_date="20.12.2018",
             category_old="TestAka",
         )
@@ -339,7 +338,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             category_old="Mitgliedsbeitrag",
             account_nr="8068900",
         )
@@ -349,7 +348,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
-            given_names="Bertålotta",
+            given_names="Bertå",
             category_old="Mitgliedsbeitrag",
             account_nr="8068900",
         )
@@ -359,7 +358,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
-            given_names="Garcia G.",
+            given_names="Garcia",
             category_old="Mitgliedsbeitrag",
             account_nr="8068900",
         )
@@ -369,7 +368,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="2,50",
             cdedbid="DB-4-3",
             family_name="Dino",
-            given_names="Daniel D.",
+            given_names="Daniel",
             category_old="Mitgliedsbeitrag",
             account_nr="8068900",
             reference="Mitgliedsbeitrag",
@@ -381,7 +380,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="50,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             category_old="Sonstiges",
             account_nr="8068900",
             reference="Anton Administrator DB-1-9 Spende",
@@ -392,7 +391,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             category_old="Mitgliedsbeitrag",
             account_nr="8068900",
         )
@@ -402,7 +401,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="466,49",
             cdedbid="DB-5-1",
             family_name="Eventis",
-            given_names="Emilia E.",
+            given_names="Emilia",
             category_old="TestAka",
             account_nr="8068900",
         )
@@ -451,11 +450,11 @@ class TestParseFrontend(FrontendTest):
             amount_german="-584,49",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             category_old="TestAka",
             account_nr="8068901",
             account_holder="Anton Administrator",
-            In_reference="KL-Erstattung TestAka, Anton Armin A. Administrator (DB-1-9)",
+            In_reference="KL-Erstattung TestAka, Anton Administrator (DB-1-9)",
         )
         self.check_dict(
             result[3],
@@ -463,7 +462,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="353,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
-            given_names="Anton Armin A.",
+            given_names="Anton",
             category_old="TestAka",
             account_nr="8068901",
         )
@@ -473,7 +472,7 @@ class TestParseFrontend(FrontendTest):
             amount_german="504,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
-            given_names="Garcia G.",
+            given_names="Garcia",
             category_old="TestAka",
             account_nr="8068901",
         )

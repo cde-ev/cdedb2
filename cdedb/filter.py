@@ -96,7 +96,7 @@ def date_filter(val: Union[datetime.date, str, None],
       following values: short, medium, long and full.
     :param passthrough: If True return strings unmodified.
     """
-    if val is None or val == '' or not isinstance(val, datetime.date):
+    if not val or not isinstance(val, datetime.date):
         if passthrough and isinstance(val, str) and val and val != datetime.date.min:
             return val
         return None
@@ -139,7 +139,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     :param lang: If not None, then localize to the passed language.
     :param passthrough: If True return strings unmodified.
     """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
+    if not val or not isinstance(val, datetime.datetime):
         if passthrough and isinstance(val, str) and val:
             return val
         return None
@@ -682,7 +682,7 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
       input_select macros), built from the selected fields of the dicts
     """
     # TODO this leads to cyclic imports otherwise
-    from cdedb.models.common import (  # pylint: disable=import-outside-toplevel
+    from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         CdEDataclass,
     )
     values = [v.to_database() if isinstance(v, CdEDataclass) else v for _, v in items]

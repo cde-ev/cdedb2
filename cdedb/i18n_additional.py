@@ -86,6 +86,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.event_changed"),
     n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.event_archived"),
+    n_("EventLogCodes.helper_added"),
+    n_("EventLogCodes.helper_removed"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),
@@ -378,6 +380,20 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.hourly"),
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
+
+    n_("MutuallyExclusiveParticipationCV"),
+    n_("CourseChoiceSyncCV"),
+    n_("NoCourseAssignedCV"),
+    n_("IncorrectCourseAssignedCV"),
+    n_("InconsistentPaymentCV"),
+    n_("NotPaidCV"),
+    n_("NegativeAmountOwedCV"),
+    n_("NegativeRemainingOwedCV"),
+    n_("RemainingOwedCV"),
+    n_("MutuallyExclusiveCoursesCV"),
+    n_("CancelledWithAttendeesCV"),
+    n_("IncorrectNumAttendeesCV"),
+    n_("LonelyAttendeesCV"),
 
     #
     # Query datatypes

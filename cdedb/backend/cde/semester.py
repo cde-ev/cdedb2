@@ -550,7 +550,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 except ArchiveError:
                     self.logger.exception(f"Unexpected error during archival of"
                                           f" persona {persona_id}.")
-                    persona = {'persona_id': persona_id}
+                    raise
                 else:
                     if code:
                         period_update['archival_count'] = \
@@ -592,24 +592,23 @@ class CdESemesterBackend(CdELastschriftBackend):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
+            elif persona['trial_member']:
+                self.core.change_membership_easy_mode(
+                    rs, persona_id, trial_member=False)
+                period_update['balance_trialmembers'] = \
+                    period['balance_trialmembers'] + 1
             else:
-                if persona['trial_member']:
-                    self.core.change_membership_easy_mode(
-                        rs, persona_id, trial_member=False)
-                    period_update['balance_trialmembers'] = \
-                        period['balance_trialmembers'] + 1
+                if not persona['honorary_member']:
+                    persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
+                    period_update['balance_total'] = \
+                        period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
+                    note = (f"Mitgliedsbeitrag abgebucht"
+                            f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
                 else:
-                    if not persona['honorary_member']:
-                        persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
-                        period_update['balance_total'] = (
-                                period['balance_total'] + self.conf["MEMBERSHIP_FEE"])
-                        note = (f"Mitgliedsbeitrag abgebucht"
-                                f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
-                    else:
-                        note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
-                    self.core.change_persona_balance(
-                        rs, persona_id, persona['balance'],
-                        const.FinanceLogCodes.deduct_membership_fee, change_note=note)
+                    note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
+                self.core.change_persona_balance(
+                    rs, persona_id, persona['balance'],
+                    const.FinanceLogCodes.deduct_membership_fee, change_note=note)
             self.set_period(rs, period_update)
             return True, persona
 

@@ -6,7 +6,7 @@ for managings lodgements, lodgement groups and lodgements' inhabitants."""
 import dataclasses
 import itertools
 from collections.abc import Collection
-from typing import Optional
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -25,6 +25,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.common.validation.validate import (
@@ -125,7 +126,8 @@ class EventLodgementMixin(EventBaseFrontend):
         return ret
 
     @access("event")
-    @event_guard()
+    # TODO Be more lenient here
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("sort_part_id", "sortkey", "reverse")
     def lodgements(self, rs: RequestState, event_id: int,
                    sort_part_id: Optional[vtypes.ID] = None,
@@ -252,7 +254,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary_form(self, rs: RequestState, event_id: int,
                                      ) -> Response:
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -271,7 +273,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Manipulate groups of lodgements."""
@@ -296,16 +298,20 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/lodgement_group_summary")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def show_lodgement(self, rs: RequestState, event_id: int,
                        lodgement_id: int) -> Response:
         """Display details of one lodgement."""
+        params: dict[str, Any] = {}
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        params['groups'] = self.eventproxy.get_lodgement_groups(rs, group_ids)
+
         raw_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,))
         raw_involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,), only_involved=True)
+        # We want to display the violations even for registration_stats, therefore we
+        # require this data. These are also shown on the lodgements overview.
         inhabitants = {
             part_id: list(raw_inhabitants[lodgement_id][part_id].all)
             for part_id in rs.ambience['event'].parts
@@ -313,14 +319,19 @@ class EventLodgementMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(
             rs, tuple(itertools.chain.from_iterable(inhabitants.values())))
         personas = self.coreproxy.get_event_users(
-            rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
+            rs, [r['persona_id'] for r in registrations.values()],
+            event_id=event_id)
+        if self.is_privileged(rs, EventPrivileges.registrations_read):
+            params['inhabitants'] = inhabitants
+            params['registrations'] = registrations
+            params['personas'] = personas
 
         # Sort not-involved attendees to the bottom of the list
         for part_id, inhabitant_group in inhabitants.items():
             inhabitant_group.sort(key=lambda anid:
-            not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
+            not registrations[anid]['parts'][part_id]['status'].is_involved())
 
-        inhabitant_numbers = {
+        params['inhabitant_numbers'] = {
             part_id: (len(raw_involved_inhabitants[lodgement_id]
                           .get(part_id, LodgementInhabitants()).regular),
                       len(raw_involved_inhabitants[lodgement_id]
@@ -328,10 +339,10 @@ class EventLodgementMixin(EventBaseFrontend):
             for part_id in rs.ambience['event'].parts
         }
 
-        camping_mat_field_names = self._get_camping_mat_field_names(
+        params['camping_mat_field_names'] = self._get_camping_mat_field_names(
             rs.ambience['event'])
 
-        problems = self.check_lodgement_problems(
+        params['problems'] = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
             registrations, personas, raw_involved_inhabitants)
 
@@ -355,6 +366,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     ('persona.given_names', True),
                 ],
             )
+        params['make_inhabitants_query'] = make_inhabitants_query
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id).keys()
         lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -366,20 +378,14 @@ class EventLodgementMixin(EventBaseFrontend):
             key=lambda id_: EntitySorter.lodgement_by_group(lodgements[id_]))
         i = sorted_ids.index(lodgement_id)
 
-        prev_lodge = lodgements[sorted_ids[i - 1]] if i > 0 else None
-        next_lodge = lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+        params['prev_lodgement'] = lodgements[sorted_ids[i - 1]] if i > 0 else None
+        params['next_lodgement'] = (
+            lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None)
 
-        return self.render(rs, "lodgement/show_lodgement", {
-            'groups': groups, 'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'inhabitant_numbers': inhabitant_numbers,
-            'problems': problems,
-            'make_inhabitants_query': make_inhabitants_query,
-            'camping_mat_field_names': camping_mat_field_names,
-            'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
-        })
+        return self.render(rs, "lodgement/show_lodgement", params)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int,
                                     ) -> Response:
         event = rs.ambience['event']
@@ -398,7 +404,7 @@ class EventLodgementMixin(EventBaseFrontend):
                            {'problems': problems, 'lodgement_groups': lodgement_groups})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata('all_participants', 'part_id', 'show_lodgements',
                  'show_lodgement_groups', 'show_full_assigned_edges')
     def lodgement_wishes_graph(
@@ -453,7 +459,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.send_file(rs, "image/svg+xml", data=data)
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("group_id")
     def create_lodgement_form(self, rs: RequestState, event_id: int,
                               group_id: Optional[int] = None) -> Response:
@@ -467,7 +473,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("new_group_title")
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def create_lodgement(self, rs: RequestState, event_id: int, data: CdEDBObject,
@@ -512,7 +518,7 @@ class EventLodgementMixin(EventBaseFrontend):
                              {'lodgement_id': new_id})
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def change_lodgement_form(self, rs: RequestState, event_id: int,
                               lodgement_id: int) -> Response:
         """Render form."""
@@ -524,7 +530,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
@@ -552,7 +558,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("ack_delete")
     def delete_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, ack_delete: bool) -> Response:
@@ -574,7 +580,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/lodgements")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants_form(self, rs: RequestState, event_id: int,
                                 lodgement_id: int) -> Response:
         """Render form."""
@@ -589,7 +595,7 @@ class EventLodgementMixin(EventBaseFrontend):
         for part_id in rs.ambience['event'].parts:
             # Sort not-involved attendees to the bottom of the list
             inhabitants[(lodgement_id, part_id)].sort(key=lambda anid:
-                not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
+                not registrations[anid]['parts'][part_id]['status'].is_involved())
             merge_dicts(rs.values, {
                 f'is_camping_mat_{part_id}_{registration_id}':
                     registrations[registration_id]['parts'][part_id][
@@ -654,7 +660,7 @@ class EventLodgementMixin(EventBaseFrontend):
             'other_lodgements': other_lodgements})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants(self, rs: RequestState, event_id: int,
                            lodgement_id: int) -> Response:
         """Alter who is assigned to a lodgement.
@@ -726,7 +732,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def swap_inhabitants(self, rs: RequestState, event_id: int,
                          lodgement_id: int) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
@@ -773,7 +779,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int,
                              ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
@@ -784,7 +790,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
     def move_lodgements(self, rs: RequestState, event_id: int, group_id: int,
                         lodgement_ids: Collection[int], target_group_id: Optional[int],

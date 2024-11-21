@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import json
@@ -139,7 +138,7 @@ class AssemblyTestHelpers(FrontendTest):
             f[k] = v
         self.submit(f)
         if atitle:
-            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover  # noqa: E501
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
@@ -207,33 +206,31 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @as_users("kalif")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertPresence("Versammlungen", div="has-realm")
         self.assertTitle(self.user['default_name_format'])
 
     @as_users("kalif")
     def test_changeuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['nickname'] = "Zelda"
         self.submit(f)
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id(
-                'displayname').text_content().strip())
+        self.assertPresence("Kalif (Zelda)", div='personal-information')
 
     @as_users("ferdinand")
     def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('kalif', 'assembly')
+        self.assertTitle("Kalif Karabatschi")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['nickname'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)
-        self.assertPresence("Zelda", div="personal-information")
-        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
+        self.assertPresence("Kalif (Zelda) Karabatschi", div="personal-information")
+        self.assertTitle("Kalif Karabatschi")
 
     @as_users("ferdinand")
     def test_toggleactivity(self) -> None:
@@ -340,6 +337,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('addattendeeform', self.response.forms)
         self.assertPresence("TeX-Liste")
 
+    @storage
     @as_users("annika", "martin", "vera", "werner", "katarina")
     def test_sidebar_one_assembly(self) -> None:
         user = self.user
@@ -659,7 +657,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Teilnehmer'})
         self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
-        attendees = ["Anton", "Akira", "Bertålotta", "Kalif", "Inga", "Werner"]
+        attendees = ["Anton", "Akira", "Bertå", "Kalif", "Inga", "Werner"]
         for attendee in attendees:
             self.assertPresence(attendee, div='attendees-list')
         self.assertPresence(
@@ -1700,13 +1698,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # check the download result file
             self.traverse({'description': 'Ergebnisdatei herunterladen'})
-            self.assertPresence(f'"assembly": "{assembly["title"]}",')
+            self.assertEqual(self.response.json["assembly"], assembly["title"])
             # self.assertPresence(f'"ballot": "{ballot["title"]}",')
-            self.assertPresence('"result": ')
-            self.assertPresence('"candidates": ')
-            self.assertPresence('"use_bar": ')
-            self.assertPresence('"voters": ')
-            self.assertPresence('"votes": ')
+            self.assertIn("result", self.response.json)
+            self.assertIn("candidates", self.response.json)
+            self.assertIn("use_bar", self.response.json)
+            self.assertIn("voters", self.response.json)
+            self.assertIn("votes", self.response.json)
 
             # check if the verification scripts are present
             # TODO expose the static files in our test suite
@@ -1776,7 +1774,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("", div='vote-5', check_div=False)
 
         # test the list of all voters
-        self.assertPresence("Anton Armin A. Administrator", div='voters-list')
+        self.assertPresence("Anton Administrator", div='voters-list')
         self.assertPresence("Rowena Ravenclaw", div='voters-list')
         self.assertNonPresence("Vera", div='voters-list')
 

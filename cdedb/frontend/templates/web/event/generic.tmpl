@@ -351,73 +351,23 @@
         {% set icon = none %}
     {% endif %}
     {% call util.bootstrap_panel(
-            title=title, icon=icon, anid=anid,
-            aclass="panel-default" if severity <= 0 else ("panel-danger" if severity > 1 else "panel-warning")) %}
+            title=title, icon=icon, anid=anid, aclass=severity.panel_class()) %}
         {{ caller_content }}
     {% endcall %}
 {% endmacro %}
 
-
-{% macro list_mep_violations(violations, personas, link_registration=False) %}
-    <ul id="mep-violations-list">
-        {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
-            {% if link_registration %}
-                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
-            {% else %}
-                {% set reg_link = persona_name %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
-                    {{ reg_link }} is in violation of the {{ constraint_shortname }} mutually exclusive participation constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans parts = violation.parts_str %}
-                    (Present in {{ parts }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-    </ul>
-{% endmacro %}
-
-{% macro list_mec_violations(violations, courses, link_course=False) %}
-    <ul id="mec-violations-list">
-        {% for violation in violations %}
-            {% set course_identifier = courses[violation.course_id]['nr'] + ". " + courses[violation.course_id]['shortname'] %}
-            {% if link_course %}
-                {% set course_link = util.href(cdedblink("event/show_course", {'course_id': violation.course_id}), course_identifier) %}
-            {% else %}
-                {% set course_link = course_identifier %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
-                    {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans tracks = violation.tracks_str %}
-                    (Taking place in {{ tracks }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-    </ul>
-{% endmacro %}
-
-{% macro list_ccs_violations(violations, personas, link_registration=False) %}
-    <ul id="ccs-violations-list">
-        {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
-            {% if link_registration %}
-                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
-            {% else %}
-                {% set reg_link = persona_name %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
-                    {{ reg_link }} is in violation of the {{ constraint_shortname }} course choice sync.
-                {% endtrans -%}
+{% macro list_violations(class_name, violations, link=False, min_severity=enums['ViolationSeverity'].INFO) %}
+    <ul id="{{ class_name }}-list">
+        {% for violation in violations if violation.severity >= min_severity %}
+            <li class="{{ violation.severity.html_class() }}">
+                {% set msgs, params = violation.get_translation() %}
+                {% if link %}
+                    {% set link_target, link_params = violation.get_link_params() %}
+                    {% do params.update({'link': util.href(cdedblink(link_target, link_params), params['link'])}) %}
+                {% endif %}
+                {% for msg in msgs %}
+                    {{ gettext(msg)|format(**params)|s }}
+                {% endfor %}
             </li>
         {% endfor %}
     </ul>
@@ -443,7 +393,7 @@
     {% with query = query or get_query(registration_ids, fee_id) %}
         {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
-                     title=gettext("View Registrations"), anid=anid) }}
+                     title=gettext("View Registrations"), anid=anid, readonly=not is_privileged_for(query.scope.get_target())) }}
     {% endwith %}
 {% endmacro %}
 

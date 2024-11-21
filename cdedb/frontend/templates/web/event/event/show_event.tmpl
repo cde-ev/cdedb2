@@ -240,7 +240,7 @@
                                 id="removeminorformform">
                                 {{ util.anti_csrf_token("event/change_minor_form") }}
                                 {{ util.input_hidden(name="delete", value=True) }}
-                                {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=is_locked,
+                                {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=not is_privileged_for("change_minor_form"),
                                                      icon="trash-alt", aclass='btn btn-danger') }}
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
@@ -262,7 +262,7 @@
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
                             <div class="input-group-btn">
-                                {{ util.input_submit(label=gettext("Upload"), readonly=is_locked, icon='arrow-circle-up') }}
+                                {{ util.input_submit(label=gettext("Upload"), readonly=not is_privileged_for("change_minor_form"), icon='arrow-circle-up') }}
                             </div>
                         </div>
                         {{ util.output_errors('minor_form') }}
@@ -353,38 +353,21 @@
                 {% endcall %}
             </div>
 
-            {% if has_constraints %}
+            {% set min_severity = enums['ViolationSeverity'].INFO %}
+            {% if constraint_violations and constraint_violations['max_severity'] >= min_severity %}
             <div class="col-md-6" id="constraint-violations">
-                {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
-                    {% if not mep_violations and not mec_violations and not ccs_violations %}
-                        {% trans %}
-                            There are currently no constraints being violated.
-                        {% endtrans %}
-                    {% else %}
-                        <ul>
-                            {% if mep_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mep-violations">
-                                    {% trans count=mep_violations|length %}
-                                        There are {{ count }} violations of mutually exclusive participation constraints.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endif %}
-                            {% if mec_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mec-violations">
-                                    {% trans count=mec_violations|length %}
-                                        There are {{ count }} violations of mutually exclusive course constraints.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endif %}
-                            {% if ccs_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#ccs-violations">
-                                    {% trans count=ccs_violations|length %}
-                                        There are {{ count }} violations of course choice sync constraints.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endif %}
-                        </ul>
-                    {% endif %}
+                {% call generic.constraint_violations_panel(constraint_violations['max_severity'], link_title=True) %}
+                    <ul>
+                        {% for class_name, violations in constraint_violations['by_class'].items()|sort
+                                if constraint_violations['max_severity_by_class'][class_name] >= min_severity %}
+                            <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                {% trans count=violations|selectattr("severity", "ge", min_severity)|list|length,
+                                         class_name=gettext(class_name) %}
+                                    There are {{ count }} "{{ class_name }}" violations.
+                                {% endtrans %}
+                            </a></li>
+                        {% endfor %}
+                    </ul>
                 {% endcall %}
             </div>
             {% endif %}

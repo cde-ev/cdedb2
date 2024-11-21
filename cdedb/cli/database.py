@@ -1,5 +1,6 @@
 """Set up the database, including users, tables and population with sample data."""
 import json
+import os
 import pathlib
 import subprocess
 
@@ -56,7 +57,7 @@ def create_database_users(conf: Config) -> None:
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     users_path = repo_path / "cdedb" / "database" / "cdedb-users.sql"
-    psql("-f", users_path.__fspath__())
+    psql("-f", os.fspath(users_path))
 
 
 @sanity_check
@@ -85,7 +86,7 @@ def populate_database(conf: TestConfig, secrets: SecretsConfig,
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
     infile = repo_path / SAMPLE_DATA_JSON
-    with open(infile) as f:
+    with open(infile, encoding="utf-8") as f:
         data = json.load(f)
     xss_payload = conf.get("XSS_PAYLOAD", "") if xss else ""
     cmds = json2sql(data, xss_payload=xss_payload) + [insert_postal_code_locations()]

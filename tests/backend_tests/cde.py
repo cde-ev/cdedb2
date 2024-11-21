@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import decimal
@@ -31,9 +30,9 @@ class TestCdEBackend(BackendTest):
     @as_users("berta", "vera")
     def test_basics(self) -> None:
         data = self.core.get_cde_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'display_name', 'telephone'}}
+                  {'id', 'nickname', 'telephone'}}
         generation = self.core.changelog_get_generation(self.key, self.user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
@@ -127,7 +126,7 @@ class TestCdEBackend(BackendTest):
             spec=QueryScope.cde_member.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
-                ("given_names,display_name", QueryOperators.regex, '[ae]'),
+                ("given_names,nickname", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
             order=(("family_name,birth_name", True),))
         result = self.cde.submit_general_query(self.key, query)
@@ -344,7 +343,7 @@ class TestCdEBackend(BackendTest):
                             self.key, lastschrift_id=2,
                             payment_date=datetime.date.today())
                     execsql(f"DELETE FROM cde.lastschrift_transactions"
-                            f" WHERE id = {new_id}")  # noqa: F821
+                            f" WHERE id = {new_id}")
                 new_id = self.cde.issue_lastschrift_transaction(
                     self.key, lastschrift_id=2, payment_date=datetime.date.today())
                 self.assertLess(0, new_id)

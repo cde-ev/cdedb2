@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -46,9 +45,10 @@ PERSONA_TEMPLATE = {
     'is_member': False,
     'is_searchable': False,
     'is_active': True,
-    'display_name': "Zelda",
+    'nickname': None,
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
+    'legal_given_names': "Zelda",
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -156,9 +156,9 @@ class TestCoreBackend(BackendTest):
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
-                                         'display_name': new_name})
+                                         'nickname': new_name})
         self.assertEqual(new_name, self.core.retrieve_persona(
-            self.key, self.user['id'])['display_name'])
+            self.key, self.user['id'])['nickname'])
 
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
@@ -794,7 +794,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -803,6 +802,8 @@ class TestCoreBackend(BackendTest):
             'is_searchable': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': data["given_names"],
             'pronouns': None,
             'pronouns_nametag': False,
             'pronouns_profile': False,
@@ -878,7 +879,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -887,6 +887,8 @@ class TestCoreBackend(BackendTest):
             'is_searchable': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': data["given_names"],
         })
         self.assertEqual(expectation, value)
 
@@ -919,7 +921,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError) as e:
             self.core.genesis_request(ANONYMOUS, data)
         self.assertEqual("File has been lost.", str(e.exception))
-        # pylint: disable=line-too-long
+
         attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
         attachment = attachment_content.encode('ascii')
         data['attachment_hash'] = self.core.get_genesis_attachment_store(
@@ -965,7 +967,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': True,
             'is_cde_realm': True,
@@ -977,6 +978,8 @@ class TestCoreBackend(BackendTest):
             'pronouns_profile': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': data["given_names"],
             'balance': decimal.Decimal("0.00"),
             'donation': decimal.Decimal("0.00"),
             'trial_member': True,
@@ -1058,9 +1061,10 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_user_getters(self) -> None:
         expectation = {
-            'display_name': 'Bertå',
             'family_name': 'Beispiel',
-            'given_names': 'Bertålotta',
+            'given_names': 'Bertå',
+            'legal_given_names': 'Bertålotta',
+            'nickname': 'Bindi',
             'name_supplement': 'MdB',
             'title': 'Dr.',
             'id': 2,
@@ -1221,6 +1225,7 @@ class TestCoreBackend(BackendTest):
         # Test archival of user that is no moderator.
         self.core.archive_persona(self.key, 8, "Testing")
 
+    @prepsql("UPDATE event.events SET is_archived = True WHERE id = 3")
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
@@ -1244,7 +1249,7 @@ class TestCoreBackend(BackendTest):
     @prepsql("DELETE FROM ml.moderators WHERE persona_id = 10")
     def test_purge(self) -> None:
         purged_personas = {}
-        for p_id, name in ((8, "Hades"), (3, "Charly C."), (10, "Janis")):
+        for p_id, name in ((8, "Hades"), (3, "Charly"), (10, "Janis")):
             if p_id != 8:
                 self.core.archive_persona(self.key, p_id, "Archived for testing.")
             data = self.core.get_total_persona(self.key, p_id)
@@ -1253,7 +1258,8 @@ class TestCoreBackend(BackendTest):
             self.assertLess(0, ret)
             purged_personas[p_id] = self.core.get_total_persona(self.key, p_id)
             del purged_personas[p_id]['id']
-            self.assertEqual("N.", purged_personas[p_id]['given_names'])
+            for f in ['given_names', 'legal_given_names', 'family_name', 'nickname']:
+                self.assertEqual("N.", purged_personas[p_id][f])
         self.assertEqual(purged_personas[3], purged_personas[10])
 
     def test_privilege_change(self) -> None:

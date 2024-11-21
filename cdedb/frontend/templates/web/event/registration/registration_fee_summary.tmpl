@@ -10,7 +10,7 @@
 {% block heading %}
     {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
     {{ util.context_heading(gettext("Fee Details"),
-                            util.persona_name(persona), 'user', gettext("Registration"),
+                            util.persona_name(persona, include_nickname=True), 'user', gettext("Registration"),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}

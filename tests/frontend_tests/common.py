@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import random
@@ -159,6 +158,8 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.QueryScope,
             cdedb.enums.ConfidenceLevel,
             cdedb.enums.GenesisDecision,
+            cdedb.enums.EventPrivileges,
+            cdedb.enums.ViolationSeverity,
         }
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet

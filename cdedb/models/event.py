@@ -39,6 +39,7 @@ from typing import (
     ClassVar,
     ForwardRef,
     Optional,
+    Self,
     get_args,
     get_origin,
 )
@@ -48,6 +49,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
+from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
     QuerySpec,
@@ -61,10 +63,8 @@ from cdedb.models.common import CdEDataclass, CdEDataclassMap
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # pylint: disable=ungrouped-imports
-
     from cdedb.common import CdEDBObject
-    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+    from cdedb.database.query import (
         DatabaseValue_s,
     )
 
@@ -236,8 +236,8 @@ class Event(EventDataclass):
 
          :param privileged: If access in a privileged capacity is to be considered."""
 
-        return is_registered or self.is_visible or (privileged and (
-            "event_admin" in user.roles or user.persona_id in self.orgas))
+        return is_registered or self.is_visible or (privileged and
+            is_privileged_event_user(user, EventPrivileges.basic_read, self.id))
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
@@ -380,7 +380,7 @@ class CourseChoiceObject(abc.ABC):
         ...
 
     def __lt__(self, other: Any) -> bool:
-        # pylint: disable=line-too-long
+
         if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
             return self._lt_inner(other)
         return NotImplemented
@@ -415,7 +415,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return {self.id: self}
 
     @tracks.setter
-    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:  # pylint: disable=no-self-use
+    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:
         raise KeyError
 
     @property
@@ -952,7 +952,7 @@ class PersonalizedFee(EventDataclass):
                 DO UPDATE SET amount = EXCLUDED.amount
                 RETURNING id
             """
-            params: tuple[DatabaseValue_s, ...] = (  # pylint: disable=used-before-assignment
+            params: tuple[DatabaseValue_s, ...] = (
                 self.registration_id, self.fee_id, self.amount,
             )
             return query, params

@@ -25,18 +25,17 @@ META_INFO_FIELDS = (
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
-    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
-    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
-    "is_purged",
+    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin", "is_finance_admin",
+    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
+    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_cdelokal_admin",
+    "is_auditor", "is_member", "is_searchable", "is_archived", "is_purged",
 )
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "display_name", "family_name", "given_names",
-    "title", "name_supplement")
+    "id", "username", "family_name", "given_names",
+    "nickname", "legal_given_names", "title", "name_supplement")
 
 #: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
@@ -119,12 +118,6 @@ EVENT_FIELDS = (
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "waitlist_field_id", "camping_mat_field_id")
-
-PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
-
-TRACK_GROUP_FIELDS = (
-    "id", "event_id", "title", "shortname", "notes", "constraint_type", "sortkey",
-)
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",

@@ -9,12 +9,13 @@
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
+        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
@@ -607,8 +608,8 @@
 {% endmacro %}
 
 {% macro query_result_dynamic_action(
-        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
-    <button type="button" class="btn btn-sm {{ aclass }}">
+        label, icon, target, readonly=False, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" {% if readonly %}disabled="disabled"{% endif %} class="btn btn-sm {{ aclass }}">
         {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
         <script nonce="{{ csp_nonce }}">
             $('.query-result-dynamic-actions').show();

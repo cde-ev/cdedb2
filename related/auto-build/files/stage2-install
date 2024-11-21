@@ -100,10 +100,8 @@ python3 -m pip install --no-cache-dir --break-system-packages \
 # devtools
 # dPROD not present
 python3 -m pip install --no-cache-dir --break-system-packages \
-    mypy==1.10.1 \
-    flake8==3.8.4 \
-    pylint==3.2.5 \
-    ruff==0.5.1 \
+    mypy==1.13.0 \
+    ruff==0.7.3 \
     types-python-dateutil \
     types-bleach \
     types-Markdown \

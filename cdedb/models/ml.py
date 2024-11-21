@@ -12,6 +12,7 @@ from typing_extensions import Self
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import Sortkey, xsorted
@@ -234,7 +235,7 @@ class Mailinglist(CdEDataclass):
         """This fields may be changed by non-restricted moderators."""
         return cls.restricted_moderator_fields | cls.full_moderator_fields
 
-    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:  # pylint: disable=no-self-use
+    def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
@@ -268,10 +269,7 @@ class Mailinglist(CdEDataclass):
         """
         return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
-    if TYPE_CHECKING:
-        # pylint: disable=unsubscriptable-object
-        role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]]
-    role_map: ClassVar = OrderedDict()  # type: ignore[no-redef]
+    role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]] = OrderedDict()
 
     @classmethod
     def moderator_admin_views(cls) -> set[str]:
@@ -347,12 +345,12 @@ class Mailinglist(CdEDataclass):
                 ret[persona_id] = SubscriptionPolicy.none
         return ret
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,  # pylint: disable=no-self-use
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
 
-    def periodic_cleanup(self, rs: RequestState) -> bool:  # pylint: disable=no-self-use
+    def periodic_cleanup(self, rs: RequestState) -> bool:
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
 
@@ -541,8 +539,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         basic_restriction = super().is_restricted_moderator(rs, bc)
         if self.event_id is None:
             return basic_restriction
-        additional_restriction = (self.event_id not in rs.user.orga
-                                  and "event_admin" not in rs.user.roles)
+        additional_restriction = not is_privileged_event(
+            rs, EventPrivileges.registrations_read_internal, event_id=self.event_id)
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
