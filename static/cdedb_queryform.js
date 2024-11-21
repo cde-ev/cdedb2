@@ -363,6 +363,7 @@
             case 103: //checkedinoneof
             case 104: //checkedinnoneof
             case 105: //checkedinallof
+            case 106: //checkedinnotallof
                 var placeholders = {
                     'date' : 'YYYY-MM-DD,YYYY-MM-DD,…',
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',

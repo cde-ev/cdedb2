@@ -73,6 +73,7 @@ class QueryOperators(CdEIntEnum):
     checkedinoneof = 103
     checkedinnoneof = 104
     checkedinallof = 105
+    checkedinnotallof = 106
 
 
 _ops = QueryOperators
@@ -102,7 +103,8 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
     "checkin_datetime": (_ops.checkedinat, _ops.checkedinnotat, _ops.checkedinoneof,
-                         _ops.checkedinnoneof, _ops.checkedinallof)
+                         _ops.checkedinnoneof, _ops.checkedinallof,
+                         _ops.checkedinnotallof),
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
@@ -119,7 +121,8 @@ SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal,
 #: operands) and thus need to be treated differently.
 MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
                          _ops.containsnone, _ops.containssome, _ops.between,
-                         _ops.outside}
+                         _ops.outside, _ops.checkedinoneof, _ops.checkedinnoneof,
+                         _ops.checkedinallof, _ops.checkedinnotallof}
 
 #: Some operators expect no operands need some special-casing.
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}

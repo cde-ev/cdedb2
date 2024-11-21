@@ -316,6 +316,12 @@ I18N_STRINGS = (
     n_("QueryOperators.outside"),
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
+    n_("QueryOperators.checkedinat"),
+    n_("QueryOperators.checkedinnotat"),
+    n_("QueryOperators.checkedinoneof"),
+    n_("QueryOperators.checkedinnoneof"),
+    n_("QueryOperators.checkedinallof"),
+    n_("QueryOperators.checkedinnotallof"),
 
     n_("QueryScope.registration"),
     n_("QueryScope.event_course"),
