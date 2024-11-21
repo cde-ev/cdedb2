@@ -6,7 +6,7 @@ for managings lodgements, lodgement groups and lodgements' inhabitants."""
 import dataclasses
 import itertools
 from collections.abc import Collection
-from typing import Optional
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -298,18 +298,20 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/lodgement_group_summary")
 
     @access("event")
-    # TODO Be more lenient here
-    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_read)
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def show_lodgement(self, rs: RequestState, event_id: int,
                        lodgement_id: int) -> Response:
         """Display details of one lodgement."""
+        params: dict[str, Any] = {}
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        params['groups'] = self.eventproxy.get_lodgement_groups(rs, group_ids)
+
         raw_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,))
         raw_involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,), only_involved=True)
-        # TODO Differentiate by registrations_read and registrations_stats
+        # We want to display the violations even for registration_stats, therefore we
+        # require this data. These are also shown on the lodgements overview.
         inhabitants = {
             part_id: list(raw_inhabitants[lodgement_id][part_id].all)
             for part_id in rs.ambience['event'].parts
@@ -317,14 +319,19 @@ class EventLodgementMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(
             rs, tuple(itertools.chain.from_iterable(inhabitants.values())))
         personas = self.coreproxy.get_event_users(
-            rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
+            rs, [r['persona_id'] for r in registrations.values()],
+            event_id=event_id)
+        if self.is_privileged(rs, EventPrivileges.registrations_read):
+            params['inhabitants'] = inhabitants
+            params['registrations'] = registrations
+            params['personas'] = personas
 
         # Sort not-involved attendees to the bottom of the list
         for part_id, inhabitant_group in inhabitants.items():
             inhabitant_group.sort(key=lambda anid:
             not registrations[anid]['parts'][part_id]['status'].is_involved())
 
-        inhabitant_numbers = {
+        params['inhabitant_numbers'] = {
             part_id: (len(raw_involved_inhabitants[lodgement_id]
                           .get(part_id, LodgementInhabitants()).regular),
                       len(raw_involved_inhabitants[lodgement_id]
@@ -332,10 +339,10 @@ class EventLodgementMixin(EventBaseFrontend):
             for part_id in rs.ambience['event'].parts
         }
 
-        camping_mat_field_names = self._get_camping_mat_field_names(
+        params['camping_mat_field_names'] = self._get_camping_mat_field_names(
             rs.ambience['event'])
 
-        problems = self.check_lodgement_problems(
+        params['problems'] = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
             registrations, personas, raw_involved_inhabitants)
 
@@ -359,6 +366,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     ('persona.given_names', True),
                 ],
             )
+        params['make_inhabitants_query'] = make_inhabitants_query
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id).keys()
         lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -370,17 +378,11 @@ class EventLodgementMixin(EventBaseFrontend):
             key=lambda id_: EntitySorter.lodgement_by_group(lodgements[id_]))
         i = sorted_ids.index(lodgement_id)
 
-        prev_lodge = lodgements[sorted_ids[i - 1]] if i > 0 else None
-        next_lodge = lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
+        params['prev_lodgement'] = lodgements[sorted_ids[i - 1]] if i > 0 else None
+        params['next_lodgement'] = (
+            lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None)
 
-        return self.render(rs, "lodgement/show_lodgement", {
-            'groups': groups, 'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'inhabitant_numbers': inhabitant_numbers,
-            'problems': problems,
-            'make_inhabitants_query': make_inhabitants_query,
-            'camping_mat_field_names': camping_mat_field_names,
-            'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
-        })
+        return self.render(rs, "lodgement/show_lodgement", params)
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)

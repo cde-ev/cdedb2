@@ -1532,7 +1532,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 2)
+EVENT_SCHEMA_VERSION = (18, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
