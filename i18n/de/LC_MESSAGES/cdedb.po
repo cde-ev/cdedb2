@@ -2577,7 +2577,7 @@ msgstr "Kurs ID"
 
 #: cdedb/common/query/__init__.py:1197
 msgid "course instructors"
-msgstr "Kursleiter"
+msgstr "Kursleitende"
 
 #: cdedb/common/query/__init__.py:1198
 msgid "course min size"
@@ -2620,15 +2620,15 @@ msgstr "Freie Plätze"
 
 #: cdedb/common/query/__init__.py:1219 cdedb/common/query/__init__.py:1221
 msgid "instructor count"
-msgstr "Anzahl Kursleiter"
+msgstr "Anzahl Kursleitende"
 
 #: cdedb/common/query/__init__.py:1221 cdedb/common/query/__init__.py:1223
 msgid "assigned instructor count"
-msgstr "Anzahl eingeteilter Kursleiter"
+msgstr "Anzahl eingeteilte Kursleitende"
 
 #: cdedb/common/query/__init__.py:1223 cdedb/common/query/__init__.py:1225
 msgid "potential instructor count (incl. open)"
-msgstr "Anzahl potentieller Kursleiter (inkl. offen)"
+msgstr "Anzahl potentielle Kursleitende (inkl. offen)"
 
 #: cdedb/common/query/__init__.py:1230 cdedb/common/query/__init__.py:1232
 msgid "{rank}. choices"
@@ -5128,14 +5128,25 @@ msgid "Course"
 msgstr "Kurs"
 
 #: cdedb/frontend/event/partial_import.py:342
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:37
+#: cdedb/frontend/templates/web/event/generic.tmpl:47
+msgid "Instructed Course"
+msgstr "geleiteter Kurs"
+
+#: cdedb/frontend/event/partial_import.py:342
 #: cdedb/frontend/event/query_stats.py:712
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:37
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:163
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:59
+#: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:85
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:157
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:162
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:114
+#: cdedb/frontend/templates/web/core/show_user.tmpl:619
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:45
 #: cdedb/frontend/templates/web/event/generic.tmpl:47
 msgid "Instructor"
-msgstr "Kursleiter"
+msgstr "KL"
 
 #: cdedb/frontend/event/partial_import.py:345
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
@@ -5331,9 +5342,25 @@ msgstr "Stattfindende Kurse"
 msgid "(Potential) Instructor"
 msgstr "Kursleiter (theoretisch)"
 
+#: cdedb/frontend/event/query_stats.py:711
+msgid "(Potential) Instructors"
+msgstr "Kursleitende (theoretisch)"
+
+#: cdedb/frontend/event/query_stats.py:712
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:61
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:45
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:73
+msgid "Instructors"
+msgstr "Kursleitende"
+
 #: cdedb/frontend/event/query_stats.py:713
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:83
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:84
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:100
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:102
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:151
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:171
 msgid "Attendees"
 msgstr "Kursteilnehmende"
@@ -5592,13 +5619,6 @@ msgstr "Nicht abonniert."
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
-#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
-#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:61
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:73
-msgid "Instructors"
-msgstr "Kursleiter"
-
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:48
 #: cdedb/frontend/templates/tex/event/lodgement_lists.tmpl:23
 msgid "nobody"
@@ -5798,6 +5818,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:219
 #: cdedb/frontend/templates/web/core/show_user.tmpl:731
 #: cdedb/frontend/templates/web/core/show_user.tmpl:799
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:213
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:171
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:63
@@ -5880,6 +5901,7 @@ msgstr "Datei hinzufügen"
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:130
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:211
 #: cdedb/frontend/templates/web/core/show_user.tmpl:655
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:184
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:204
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:381
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:140
@@ -5892,6 +5914,7 @@ msgstr "Aktionen"
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:354
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:232
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:64
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:191
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:211
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:128
 #: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:84
@@ -6584,6 +6607,8 @@ msgstr "Abstimmung bearbeiten"
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:32
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:69
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:49
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:173
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:177
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:197
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
@@ -9234,7 +9259,7 @@ msgstr "Mitgliedersuche"
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:78
 #, python-format
 msgid "To search by course instructor, use the %(membersearch)s instead."
-msgstr "Um nach Kursleitern zu suchen, nutze bitte die %(membersearch)s."
+msgstr "Um nach Kursleitenden zu suchen, nutze bitte die %(membersearch)s."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:38
 msgid "Add Participant to this Course"
@@ -12165,7 +12190,7 @@ msgid ""
 "Instructors will only be visible to logged in users."
 msgstr ""
 "Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich sichtbar "
-"sein. Die Kursleiter sind sichtbar für Veranstaltungsnutzer."
+"sein. Die Kursleitenden sind sichtbar für Veranstaltungsnutzer."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:54
 msgid ""
@@ -12175,7 +12200,7 @@ msgid ""
 msgstr ""
 "Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich sichtbar "
 "sein, sobald die Kursliste in der Konfiguration sichtbar geschaltet wird. "
-"Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
+"Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:62
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:49
@@ -12365,6 +12390,7 @@ msgstr "eingeteilt in"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:201
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:46
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:120
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:140
 msgid "Instr."
 msgstr "KL"
@@ -12426,7 +12452,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:42
 msgid ""
 "The instructors for each course are only visible to logged in event users."
-msgstr "Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
+msgstr ""
+"Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:47
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:25
@@ -12532,8 +12559,8 @@ msgid ""
 "Numbers of course choices include course instructors of other courses. "
 "Limits do not include course instructors."
 msgstr ""
-"Die Kurswahl-Anzahlen beinhalten Kursleiter anderer Kurse. Die Grenzen "
-"beinhalten nicht die Kursleiter."
+"Die Kurswahl-Anzahlen beinhalten Kursleitende anderer Kurse. Die Grenzen "
+"beinhalten nicht die Kursleitenden."
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:86
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:87
@@ -12563,6 +12590,7 @@ msgstr "Max"
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:112
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:115
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:54
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:173
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/models/event_constraint_violations.py:646
 msgid "not visible"
@@ -12647,7 +12675,7 @@ msgstr "Kurs %(nr)s: %(course)s"
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:37
 msgid "Email to course instructors"
-msgstr "Email an alle Kursleiter"
+msgstr "Email an alle Kursleitenden"
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:39
 msgid "Send Mail to all course instructors."
@@ -12675,10 +12703,12 @@ msgstr "Kurs hat %(count)s Kursteilnehmende zu wenig."
 msgid "Course has %(count)s attendees too many."
 msgstr "Kurs hat %(count)s Kursteilnehmende zu viel."
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:139
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:159
 msgid "All Course Choices"
 msgstr "Alle Kurswahlen"
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:158
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:178
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:105
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:117
@@ -12687,18 +12717,22 @@ msgstr "Alle Kurswahlen"
 msgid "View Registrations"
 msgstr "In Anmeldungsliste anzeigen"
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:177
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:197
 msgid "Show on Courselist"
 msgstr "Auf Kursliste anzeigen"
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:192
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:212
 msgid "Course still has attendees."
 msgstr "Dem Kurs sind noch Personen zugeteilt."
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:199
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:219
 msgid "Delete the Course."
 msgstr "Kurs löschen."
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:206
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:226
 msgid "The course will be permanently deleted."
 msgstr "Der Kurs wird irreversibel gelöscht."
@@ -14391,7 +14425,7 @@ msgstr "Optionale Wahl"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:47
 msgid "– I am not an Instructor –"
-msgstr "– Ich bin kein Kursleiter –"
+msgstr "– Ich leite keinen Kurs –"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:48
 msgid "If you are instructing a course, please specify which one."
@@ -14449,7 +14483,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:118
 msgid "Notes for Orgas and Instructors"
-msgstr "Anmerkungen für Orgas und Kursleiter"
+msgstr "Anmerkungen für Orgas und Kursleitende"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:120
 msgid "Notes for Orgas"
@@ -15599,13 +15633,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:179
 #, python-format
 msgid "%s: Instructor of"
-msgstr "%s: Kursleiter von"
+msgstr "%s: Geleiteter Kurs"
 
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:180
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:240
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:250
 msgid "Instructor of"
-msgstr "Kursleiter von"
+msgstr "Geleiteter Kurs"
 
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:225
 msgid ""

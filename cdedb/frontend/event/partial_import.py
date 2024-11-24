@@ -339,7 +339,7 @@ class EventImportMixin(EventBaseFrontend):
                     prefix + rs.gettext("Course"))
             reg_choices[f"tracks.{track_id}.course_id"] = course_entries
             reg_titles[f"tracks.{track_id}.course_instructor"] = (
-                    prefix + rs.gettext("Instructor"))
+                    prefix + rs.gettext("Instructed Course"))
             reg_choices[f"tracks.{track_id}.course_instructor"] = course_entries
             reg_titles[f"tracks.{track_id}.choices"] = (
                     prefix + rs.gettext("Course Choices"))

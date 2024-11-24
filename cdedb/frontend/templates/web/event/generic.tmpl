@@ -44,7 +44,7 @@
         {% endfor %}
 
         {{ util.form_input_select(name=instructor_name, entries=all_course_entries,
-                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
+                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructed Course"),
                                   info=gettext("If you are instructing a course, please specify which one.")) }}
     </div>
 {% endmacro %}

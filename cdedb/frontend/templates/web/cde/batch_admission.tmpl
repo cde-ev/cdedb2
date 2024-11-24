@@ -160,7 +160,7 @@
                             {% if dataset['pevent_id'] %}
                                 {{ util.input_checkbox("is_orga{}".format(dataset['lineno']), label=gettext("Orga")) }}
                                 {% if dataset['pcourse_id'] %}
-                                    &emsp;{{ util.input_checkbox("is_instructor{}".format(dataset['lineno']), label=gettext("Course instructor")) }}
+                                    &emsp;{{ util.input_checkbox("is_instructor{}".format(dataset['lineno']), label=gettext("Instructor")) }}
                                 {% endif %}
                                 &emsp;
                             {% endif %}

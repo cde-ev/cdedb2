@@ -616,7 +616,7 @@
                                                                                     "pcourse_id": pcourse_id}),
                                                  pcourse['title'], readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
-                                        {% trans %}(Instructor){% endtrans %}
+                                        ({% trans %}Instructor{% endtrans %})
                                     {%- endif -%}
                                     {% if not loop.last %}<br />{% endif %}
                                 {% endfor %}

@@ -708,8 +708,8 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         obj.id_field = "reg.id"
         return obj
 
-    all_instructors = n_("(Potential) Instructor")
-    instructors = n_("Instructor")
+    all_instructors = n_("(Potential) Instructors")
+    instructors = n_("Instructors")
     attendees = n_("Attendees")
     no_course = n_("No Course")
 

@@ -5014,10 +5014,21 @@ msgid "Course"
 msgstr ""
 
 #: cdedb/frontend/event/partial_import.py:342
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:37
+#: cdedb/frontend/templates/web/event/generic.tmpl:47
+msgid "Instructed Course"
+msgstr ""
+
+#: cdedb/frontend/event/partial_import.py:342
 #: cdedb/frontend/event/query_stats.py:712
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:37
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:163
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:59
+#: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:85
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:157
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:162
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:114
+#: cdedb/frontend/templates/web/core/show_user.tmpl:619
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:45
 #: cdedb/frontend/templates/web/event/generic.tmpl:47
 msgid "Instructor"
@@ -5218,9 +5229,25 @@ msgstr ""
 msgid "(Potential) Instructor"
 msgstr ""
 
+#: cdedb/frontend/event/query_stats.py:711
+msgid "(Potential) Instructors"
+msgstr ""
+
+#: cdedb/frontend/event/query_stats.py:712
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:61
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:45
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:73
+msgid "Instructors"
+msgstr ""
+
 #: cdedb/frontend/event/query_stats.py:713
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:83
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:84
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:100
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:102
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:151
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:171
 msgid "Attendees"
 msgstr ""
@@ -5478,13 +5505,6 @@ msgstr ""
 msgid "Disallowed to change address."
 msgstr ""
 
-#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
-#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:61
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:73
-msgid "Instructors"
-msgstr ""
-
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:48
 #: cdedb/frontend/templates/tex/event/lodgement_lists.tmpl:23
 msgid "nobody"
@@ -5681,6 +5701,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:219
 #: cdedb/frontend/templates/web/core/show_user.tmpl:731
 #: cdedb/frontend/templates/web/core/show_user.tmpl:799
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:213
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:171
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:63
@@ -5761,6 +5782,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:130
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:211
 #: cdedb/frontend/templates/web/core/show_user.tmpl:655
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:184
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:204
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:381
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:140
@@ -5773,6 +5795,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:354
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:232
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:64
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:191
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:211
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:128
 #: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:84
@@ -6391,6 +6414,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:32
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:69
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:49
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:173
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:177
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:197
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
@@ -11832,6 +11857,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:201
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:46
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:120
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:140
 msgid "Instr."
 msgstr ""
@@ -12018,6 +12044,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:112
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:115
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:54
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:173
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/models/event_constraint_violations.py:646
 msgid "not visible"
@@ -12130,10 +12157,12 @@ msgstr ""
 msgid "Course has %(count)s attendees too many."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:139
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:159
 msgid "All Course Choices"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:158
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:178
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:105
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:117
@@ -12142,19 +12171,23 @@ msgstr ""
 msgid "View Registrations"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:177
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:197
 #, fuzzy
 msgid "Show on Courselist"
 msgstr "quaesitio curriculorum"
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:192
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:212
 msgid "Course still has attendees."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:199
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:219
 msgid "Delete the Course."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:206
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:226
 msgid "The course will be permanently deleted."
 msgstr ""
