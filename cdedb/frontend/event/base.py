@@ -58,6 +58,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.event_constraint_violations import (
+    AbsentCheckedinCV,
     CancelledWithAttendeesCV,
     ConstraintViolation,
     CourseChoiceSyncCV,
@@ -71,6 +72,7 @@ from cdedb.models.event_constraint_violations import (
     NegativeRemainingOwedCV,
     NoCourseAssignedCV,
     NotPaidCV,
+    PresentNeverCheckedinCV,
     RemainingOwedCV,
     ViolationSeverity,
 )
@@ -467,6 +469,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         violations: list[ConstraintViolation] = []
 
+        sorted_parts = xsorted(event.parts.values())
         sorted_tracks = xsorted(event.tracks.values())
 
         # Retrieve registrations.
@@ -507,8 +510,16 @@ class EventBaseFrontend(AbstractUserFrontend):
                     NegativeAmountOwedCV,
                     NegativeRemainingOwedCV,
                     RemainingOwedCV,
+                    AbsentCheckedinCV,
                 ): [
                     'registration', 'persona',
+                ],
+            },
+            'part': {
+                (
+                    PresentNeverCheckedinCV,
+                ): [
+                    'registration', 'persona', 'track',
                 ],
             },
             'track': {
@@ -579,6 +590,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                 'persona': personas[reg['persona_id']],
             }
             _check_violation(reg_violation_spec['base'], parameters)
+
+            reg_part_violation_spec = reg_violation_spec['part']
+            for part in sorted_parts:
+                parameters.update({
+                    'part': part,
+                    # TODO Lodgement stuff
+                })
+                _check_violation(reg_part_violation_spec, parameters)
 
             reg_track_violation_spec = reg_violation_spec['track']
             for track in sorted_tracks:

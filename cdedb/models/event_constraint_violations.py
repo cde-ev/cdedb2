@@ -566,6 +566,104 @@ class RemainingOwedCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class AbsentCheckedinCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+        cls, event: models.Event, *,
+        registration: CdEDBObject,
+        persona: CdEDBObject,
+    ) -> Self | None:
+        """If persona is checked in who is not present in the relevant part return
+        an INFO. If they are not present at all, return an ERROR."""
+        is_present_parts = {
+            part_id: part for part_id, part in event.parts.items()
+            if registration['parts'][part_id]['status'].is_present()
+        }
+
+        if not is_present_parts:
+            if registration['checkin_periods']:
+                return cls(
+                    event=event,
+                    severity=ViolationSeverity.ERROR,
+                    registration=registration,
+                    persona=persona,
+                )
+        for period in registration['checkin_periods']:
+            valid_checkin_time = valid_checkout_time = False
+            for part in is_present_parts.values():
+                if part.part_begin < period.checkin_time < part.part_end:
+                    valid_checkin_time = True
+                    break
+            for part in is_present_parts.values():
+                if part.part_begin < period.checkout_time < part.part_end:
+                    valid_checkout_time = True
+                    break
+            if not (valid_checkin_time and valid_checkout_time):
+                return cls(
+                    event=event,
+                    severity=ViolationSeverity.INFO,
+                    registration=registration,
+                    persona=persona,
+                )
+        return None
+
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+        if self.severity == ViolationSeverity.INFO:
+            msg = n_("%(link)s's checkin information is unusual.")
+        else:
+            msg = n_("%(link)s's is checked in, but was never present.")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class PresentNeverCheckedinCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+        cls, event: models.Event, *,
+        registration: CdEDBObject,
+        persona: CdEDBObject,
+        part: models.EventPart,
+    ) -> Self | None:
+        """If registration is participant and not checked in after the first day of the
+        part, return a WARNING. If at the end of the respective part, they still never
+        checked in, return an ERROR."""
+        ref_time = now()
+        if not (registration['parts'][part.id]['status'].is_present()
+                and ref_time.date() > part.part_begin):
+            return None
+        valid_checkin_time = False
+        for period in registration['checkin_periods']:
+            if (period.checkin_time.date() <= part.part_end
+                    and not period.checkout_time.date() < part.part_begin):
+                valid_checkin_time = True
+                break
+        if not valid_checkin_time:
+            return cls(
+                event=event,
+                severity=(
+                    ViolationSeverity.ERROR
+                    if ref_time > part.part_end else
+                    ViolationSeverity.WARNING),
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+        if self.severity == ViolationSeverity.ERROR:
+            msg = n_("%(link)s was present, but never checked in.")
+        else:
+            msg = n_("%(link)s is present, but not checked in yet.")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
     track_group: models.TrackGroup
 
