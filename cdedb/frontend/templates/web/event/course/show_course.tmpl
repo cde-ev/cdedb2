@@ -74,26 +74,24 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% if constraint_violations['max_severity'] >= min_severity %}
+    {% set general_violations = constraint_violations['all']|selectattr('track', 'none')|selectattr('track_group', 'none')|list %}
+    {% if general_violations and general_violations|map('severity')|list|max >= min_severity %}
         {% call generic_event.constraint_violations_panel(constraint_violations['max_severity']) %}
-            {{ generic_event.list_violations("constraint-violations", constraint_violations['all']) }}
+            {{ generic_event.list_violations("constraint-violations", general_violations) }}
         {% endcall %}
     {% endif %}
 
     <h2>{% trans %}Attendees{% endtrans %}</h2>
     {% set relevant_tracks = [] %}
-    {% for track in ambience['event']['tracks'].values()|sort if track.id in ambience['course']['segments'] %}
-        {% do relevant_tracks.append((track.id, track)) %}
-    {% endfor %}
-    {% for batch in relevant_tracks|batch(3) %}
+    {% for batch in ambience['event']['tracks'].values()|sort|selectattr('id', 'in', ambience['course']['segments'])|batch(3) %}
         <div class="row">
-        {% for track_id, track in batch %}
+        {% for track in batch %}
             <div class="col-md-4">
-                <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
+                <div class="panel panel-info panel-condensed" id="track{{ track.id }}-attendees">
                     <div class="panel-heading">
                         {% if num_attendees and num_learners %}
-                            {% set num_track_instructors = num_attendees[track_id] - num_learners[track_id] %}
-                            <div class="pull-right">{{ num_learners[track_id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
+                            {% set num_track_instructors = num_attendees[track.id] - num_learners[track.id] %}
+                            <div class="pull-right">{{ num_learners[track.id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
                         {% endif %}
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
@@ -104,30 +102,12 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {%- if track_id not in ambience['course']['active_segments'] -%}
-                            <p class="text-danger">
-                                <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
-                            </p>
-                        {%- elif num_learners and ambience['course']['min_size'] is not none and
-                                num_learners[track_id] < ambience['course']['min_size'] -%}
-                            <p class="text-warning">
-                                <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_learners[track_id]) %}
-                                        Course has {{ count }} attendees too few.
-                                    {% endtrans %}</strong>
-                            </p>
-                        {%- elif num_learners and ambience['course']['max_size'] is not none and
-                                num_learners[track_id] > ambience['course']['max_size'] -%}
-                            <p class="text-warning">
-                                <strong>
-                                    {% trans count=(num_learners[track_id] - ambience['course']['max_size']) %}
-                                    	Course has {{ count }} attendees too many.
-                                    {% endtrans %}</strong>
-                            </p>
-                        {%- endif -%}
+                        {% set track_violations = constraint_violations['all']|selectattr('track.id', 'eq', track.id) %}
+                        {{ generic_event.list_violations("constraint-violations", track_violations, list=False) }}
+
                         {%- if attendees %}
                         <ul class="slim">
-                            {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                            {% for registration_id in attendees[(ambience['course']['id'], track.id)] %}
                                 {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
                                 <li>
                                     {% if not registration_part_status.is_involved() %}<s>{% endif -%}
@@ -135,7 +115,7 @@
                                                         {'registration_id': registration_id}),
                                                 util.persona_name(personas[registrations[registration_id]['persona_id']],
                                                                   include_nickname=True)) }}
-                                    {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
+                                    {%- if registrations[registration_id]['tracks'][track.id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})
                                     {%- endif %}
@@ -152,7 +132,7 @@
                         <ul class="list-unstyled nosp">
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
-                                                            'track_id': track_id,
+                                                            'track_id': track.id,
                                                             'course_id': ambience['course']['id'],
                                                             'position': enums.CourseFilterPositions.anywhere.value,
                                                             'submitform': True}),
@@ -160,10 +140,10 @@
                                              icon=util.make_icon('crosshairs'),
                                              readonly=not is_privileged_for('course_choices')) }}
                             </li>
-                        {% if num_learners and num_learners[track_id] > 0 %}
+                        {% if num_learners and num_learners[track.id] > 0 %}
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
-                                                 'track_id': track_id,
+                                                 'track_id': track.id,
                                                  'course_id': ambience['course']['id'],
                                                  'position': enums.CourseFilterPositions.assigned.value,
                                                  'include_active': True,
@@ -174,9 +154,9 @@
                             </li>
                             <li>
                                 {{ util.href(cdedblink('event/registration_query',
-                                                       make_attendees_query(track_id).serialize_to_url()) + "#query-results",
+                                                       make_attendees_query(track.id).serialize_to_url()) + "#query-results",
                                              label=gettext("View Registrations"), icon=util.make_icon('list'),
-                                             anid="attendees-link-{}".format(track_id),
+                                             anid="attendees-link-{}".format(track.id),
                                              readonly=not is_privileged_for('registration_query')) }}
                             </li>
                         {% endif %}
