@@ -1,6 +1,6 @@
 BEGIN;
     CREATE TABLE event.checkin_periods (
-        id                      serial PRIMARY KEY,
+        id                      bigserial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
         checkin_time            timestamp WITH TIME ZONE NOT NULL,
         checkout_time           timestamp WITH TIME ZONE DEFAULT NULL

@@ -31,7 +31,7 @@ from cdedb.backend.common import (
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
     internal,
-    singularize,
+    singularize, Silencer,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
@@ -1942,4 +1942,58 @@ class EventRegistrationBackend(EventBaseBackend):
             self.event_log(
                 rs, const.EventLogCodes.checkin_period_deleted,
                 reg['event_id'], reg['persona_id'], change_note=msg)
+        return ret
+
+    @internal
+    @access("event")
+    def replace_checkin_periods(self, rs: RequestState, registration_id: int,
+                                new_periods: list[dict[str, datetime.datetime | None]],
+                                ) -> DefaultReturnCode:
+        """Specify a new list of checkin periods for a persona.
+
+        For simplicity, this actually deletes and recreated all periods, while skipping
+        logging for all
+
+
+        :param new_periods: A list of new periods, without any id or registration id
+                        specified. This matches the partial export format."""
+        # First check validity of new periods
+        new_periods = xsorted(new_periods, key=lambda x: x['checkin_date'])
+        for period in new_periods[:-1]:
+            if not period['checkout_date']:
+                raise ValueError(n_("Checkout date must be provided."))
+
+        # The ID of the old periods which will be kept
+        kept_old_periods: set[int] = set()
+        # The list index of the new periods which are already present
+        kept_new_periods: set[int] = set()
+        ret = 1
+        with Atomizer(rs):
+            old_periods = self.get_registration(rs, registration_id)['checkin_periods']
+            for old_period in old_periods:
+                reduced_old_period = {
+                    'checkin_date': old_period['checkin_date'],
+                    'checkout_date': old_period['checkout_date'],
+                }
+                if reduced_old_period in new_periods:
+                    kept_old_periods.add(old_period['id'])
+                    kept_new_periods.add(new_periods.index(reduced_old_period))
+                # TODO When introducting locations beware of changes there and log
+                # them manually!
+
+            # Delete periods, skipping logging for unchanged ones
+            for old_period in old_periods:
+                with Silencer(rs, disabled=old_period['id'] not in kept_old_periods):
+                    ret *= self.delete_checkin_period(rs, registration_id,
+                                                      old_period['id'])
+
+            # Recreate periods, skipping logging for unchanged ones
+            for i, new_period in enumerate(new_periods):
+                if new_period not in kept_new_periods:
+                    with Silencer(rs, disabled=i not in kept_new_periods):
+                        ret *= self.add_checkin(rs, registration_id,
+                                                new_period['checkin_time'])
+                        if period['checkout_time']:
+                            ret *= self.add_checkout(rs, registration_id,
+                                                     new_period['checkout_time'])
         return ret

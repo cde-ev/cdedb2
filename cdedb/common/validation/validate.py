@@ -3530,6 +3530,7 @@ def _serialized_event(
         'event.lodgement_groups': Mapping,
         'event.lodgements': Mapping,
         'event.registrations': Mapping,
+        models_event.CheckinPeriod.database_table: Mapping,
         'event.registration_parts': Mapping,
         'event.registration_tracks': Mapping,
         'event.course_choices': Mapping,
@@ -3620,6 +3621,10 @@ def _serialized_event(
         'event.personalized_fees': _augment_dict_validator(
             _empty_dict, {'id': ID, 'fee_id': ID, 'registration_id': ID,
                           'amount': decimal.Decimal}),
+        'event.checkin_periods': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'registration_id': ID,
+                          'checkin_time': datetime.datetime,
+                          'checkout_time': datetime.datetime}),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),
@@ -3906,6 +3911,7 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_notes': Optional[str],
     'fields': Mapping,
     'personalized_fees': Mapping,
+    'checkin_periods': Mapping,
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3973,6 +3979,16 @@ def _partial_registration(
             else:
                 newfees[fee_id] = amount
         val['personalized_fees'] = newfees
+    if 'checkin_periods' in val:
+        new_checkin_periods: list[dict[str, datetime.datetime | None]] = []
+        for period in new_checkin_periods:
+            try:
+                period = _partial_registration_checkin_period(period, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                new_checkin_periods.append(period)
+        val['checkin_periods'] = new_checkin_periods
 
     if errs:
         raise errs
@@ -4041,6 +4057,27 @@ def _partial_registration_track(
         raise errs
 
     return PartialRegistrationTrack(val)
+
+
+@_add_typed_validator
+def _partial_registration_checkin_period(
+    val: Any, argname: str = "partial_registration_checkin_period", **kwargs: Any,
+) -> PartialRegistrationCheckinPeriod:
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+    """
+
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory_fields: TypeMapping = {
+        'checkin_time': datetime.datetime,
+        'checkout_time': Optional[datetime.datetime],  # type: ignore[dict-item]
+    }
+
+    return PartialRegistrationCheckinPeriod(_examine_dictionary_fields(
+        val, mandatory_fields, {}, **kwargs))
 
 
 @_add_typed_validator

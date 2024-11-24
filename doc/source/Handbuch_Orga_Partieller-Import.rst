@@ -170,6 +170,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (19, 0): Ersatz des Checkin-Zeitpunkts durch eine Liste von Checkins und Checkouts
+* Version (18, 0): …
 * Version (17, 2): Personalisierte Teilnahmebeiträge sind nun im Export enthalten.
   Mit dem partiellen Import können personalisierten Beiträge für einzelne Anmeldungen
   gesetzt werden.

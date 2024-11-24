@@ -474,7 +474,6 @@ class TestEventBackend(BackendTest):
             self.key, new_lodge_id))
 
         new_reg = {
-            'checkin': None,
             'event_id': new_id,
             'list_consent': True,
             'mixed_lodging': False,
@@ -1027,7 +1026,7 @@ class TestEventBackend(BackendTest):
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("466.49"),
-            'checkin': None,
+            'checkin_periods': [],
             'ctime': nearly_now(),
             'event_id': 1,
             'fields': {
@@ -1113,7 +1112,6 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "paul")
     def test_registering(self) -> None:
         new_reg: CdEDBObject = {
-            'checkin': None,
             'event_id': 1,
             'list_consent': True,
             'mixed_lodging': False,
@@ -1180,6 +1178,7 @@ class TestEventBackend(BackendTest):
             new_reg['tracks'][3]['track_id'] = 3
             new_reg['tracks'][3]['registration_id'] = new_id
             new_reg['tracks'][3]['choices'] = []
+            new_reg['checkin_periods'] = []
             new_reg['ctime'] = nearly_now()
             new_reg['mtime'] = None
             self.assertEqual(new_reg, self.event.get_registration(self.key, new_id))
@@ -1196,7 +1195,7 @@ class TestEventBackend(BackendTest):
             1: {
                 'amount_owed': decimal.Decimal("553.99"),
                 'amount_paid': decimal.Decimal("200.00"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1269,7 +1268,7 @@ class TestEventBackend(BackendTest):
             2: {
                 'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1341,7 +1340,7 @@ class TestEventBackend(BackendTest):
             4: {
                 'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("548.48"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1535,6 +1534,7 @@ class TestEventBackend(BackendTest):
         new_reg['tracks'][3]['track_id'] = 3
         new_reg['tracks'][3]['registration_id'] = new_id
         new_reg['tracks'][3]['choices'] = []
+        new_reg['checkin_periods'] = []
         new_reg['ctime'] = nearly_now()
         new_reg['mtime'] = None
         self.assertEqual(new_reg,
@@ -2429,6 +2429,11 @@ class TestEventBackend(BackendTest):
         for k, v in ret.items():
             if isinstance(v, dict):
                 ret[k] = self.cleanup_event_export(v)
+            elif isinstance(v, list):
+                for i, e in enumerate(v):
+                    if isinstance(e, dict):
+                        v[i] = self.cleanup_event_export(e)
+                ret[k] = v
             elif isinstance(v, str):
                 if k in {"balance", "amount_paid", "amount_owed", "amount"}:
                     ret[k] = decimal.Decimal(v)
@@ -2436,7 +2441,7 @@ class TestEventBackend(BackendTest):
                     ret[k] = datetime.date.fromisoformat(v)
                 elif k in {"ctime", "mtime", "timestamp", "registration_start",
                            "registration_soft_limit", "registration_hard_limit",
-                           "etime", "rtime", "atime"}:
+                           "etime", "rtime", "atime", "checkin_time", "checkout_time"}:
                     ret[k] = datetime.datetime.fromisoformat(v)
 
         return ret
@@ -2506,7 +2511,7 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'fields': {'lodge': 'Langschläfer',
                        'behaviour': 'good'},
-            "list_consent": True,
+            'list_consent': True,
             'id': 1000,
             'is_member': True,
             'mixed_lodging': True,
@@ -2734,7 +2739,6 @@ class TestEventBackend(BackendTest):
             'group_id': 1,
             'camping_mat_capacity': 0}
         stored_data['event.registrations'][1001] = {
-            'checkin': None,
             'event_id': 1,
             'fields': {'lodge': 'Langschläfer',
                        'behaviour': 'good'},
@@ -3078,6 +3082,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
+        expectation['registrations'][1002]['checkin_periods'] = []
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
@@ -3195,7 +3200,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=9)
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=11)
 
     @storage
     @event_keeper
@@ -3892,7 +3897,6 @@ class TestEventBackend(BackendTest):
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments']})
         new_reg = {
-            'checkin': None,
             'event_id': 1,
             'list_consent': True,
             'mixed_lodging': False,
@@ -3935,7 +3939,6 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,

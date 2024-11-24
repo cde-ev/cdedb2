@@ -169,7 +169,7 @@ def work(
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [18, 0]:
+    if data.get("EVENT_SCHEMA_VERSION") != [19, 0]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -266,6 +266,7 @@ def work(
         'event.courses', 'event.course_tracks', 'event.course_segments',
         'event.orgas', 'event.field_definitions', 'event.event_fees',
         'event.lodgement_groups', 'event.lodgements', 'event.registrations',
+        models.CheckinPeriod.database_table,
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',

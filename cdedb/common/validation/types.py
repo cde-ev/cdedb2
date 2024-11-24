@@ -149,6 +149,8 @@ PartialLodgement = _NewType("PartialLodgement", _CdEDBObject)
 PartialRegistration = _NewType("PartialRegistration", _CdEDBObject)
 PartialRegistrationPart = _NewType("PartialRegistrationPart", _CdEDBObject)
 PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
+PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
+                                            _CdEDBObject)
 
 Mailinglist = _NewType("Mailinglist", _CdEDBObject)
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)

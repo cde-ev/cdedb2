@@ -233,11 +233,11 @@
         {% for tpair in ambience['registration']['checkin_periods'] %}
             <tr>
                 <td>{{ loop.index }}</td>
-                <form action="{{ cdedblink('event/change_checkin_transitions',
+                <form action="{{ cdedblink('event/change_checkin_period',
                                            {'registration_id': ambience['registration']['id']}) }}"
                       method="POST"
                       id="changetransitionsform{{ loop.index }}">
-                    {{ util.anti_csrf_token('event/change_checkin_transitions') }}
+                    {{ util.anti_csrf_token('event/change_checkin_period') }}
                         {% set inputname1 = 'ttime1_' + tpair[0].id|string %}
                         {% set inputname2 = 'ttime2_' + tpair[-1].id|string %}
                     <td class="nojs-only transition-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
