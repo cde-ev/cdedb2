@@ -25,13 +25,14 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
 from cdedb.backend.common import (
+    Silencer,
     access,
     affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
     internal,
-    singularize, Silencer,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
@@ -1817,6 +1818,9 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_id = affirm(vtypes.ID, registration_id)
         checkin_time = affirm_optional(datetime.datetime, checkin_time)
 
+        if checkin_time and checkin_time > now():
+            raise ValueError(n_("Must be in the past."))
+
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             if not is_privileged(rs, EventPrivileges.registrations_write,
@@ -1829,7 +1833,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
             data: CdEDBObject = {
                 'registration_id': registration_id,
-                'ttime': checkin_time or now().replace(microsecond=0),
+                'checkin_time': checkin_time or now().replace(microsecond=0),
             }
             ret = self.sql_insert(rs, models.CheckinPeriod.database_table, data)
             self.event_log(rs, const.EventLogCodes.checkin_added,
@@ -1844,6 +1848,9 @@ class EventRegistrationBackend(EventBaseBackend):
         """Checkin a participant."""
         registration_id = affirm(vtypes.ID, registration_id)
         checkout_time = affirm_optional(datetime.datetime, checkout_time)
+
+        if checkout_time and checkout_time > now():
+            raise ValueError(n_("Must be in the past."))
 
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
@@ -1868,8 +1875,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def change_checkin_period(
         self, rs: RequestState, registration_id: int, period_id: int,
-        checkin_time: datetime.datetime,
-        checkout_time: Optional[datetime.datetime],
+        checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
     ) -> DefaultReturnCode:
         """Change the time a participant was present."""
         registration_id = affirm(vtypes.ID, registration_id)
@@ -1883,18 +1889,24 @@ class EventRegistrationBackend(EventBaseBackend):
         elif checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
 
-        ret = 1
-        with (Atomizer(rs)):
+        with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             if not is_privileged(rs, EventPrivileges.registrations_write,
                                  reg['event_id']):
                 raise PrivilegeError
 
-            periods = {t.id: t for t in xsorted(reg['checkin_periods'])}
+            periods = {t.id: t for t in reg['checkin_periods']}
             if period_id not in periods:
                 raise ValueError(n_("Inconsistent period."))
             period = periods[period_id]
-            old_period = period.copy()
+
+            # Check the change does not mix up transition order.
+            pos = reg['checkin_periods'].index(period)
+            if reg['checkin_periods'][pos - 1]['checkout_time'] >= checkin_time:
+                raise ValueError(n_("Checkin time to early."))
+            if reg['checkout_periods'][pos + 1]['checkin_time'] <= checkout_time:
+                raise ValueError(n_("Checkout time to early."))
+
             if period.checkin_time != checkin_time:
                 old_time = datetime_filter(period.checkin_time, lang=rs.log_lang)
                 new_time = datetime_filter(checkin_time, lang=rs.log_lang)
@@ -1911,14 +1923,11 @@ class EventRegistrationBackend(EventBaseBackend):
                     period.checkout_time = checkout_time
                     self.event_log(rs, const.EventLogCodes.checkout_changed,
                                    reg['event_id'], reg['persona_id'], msg)
+            elif period.checkout_time:
+                raise ValueError(n_("Can not delete checkout of concluded period."))
 
-            # verify that we did not mix up times
-            if ([t.id for t in xsorted(periods.values())] != list(periods.keys())):
-                raise ValueError(n_("Mixed up times."))
-            if period != old_period:
-                ret *= self.sql_update(
-                    rs, models.CheckinPeriod.database_table, period.to_database())
-        return ret
+            return self.sql_update(
+                rs, models.CheckinPeriod.database_table, period.to_database())
 
     @access("event")
     def delete_checkin_period(self, rs: RequestState, registration_id: int,
