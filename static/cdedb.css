@@ -1080,30 +1080,23 @@ td.b-right, th.b-right {
     color: rgba(255, 255, 255, .8);
     background-color: rgba(45, 129, 156, 0.5);
 }
-tr td.course-primary {
+.course-primary {
     background-color: #e6e6e6;
 }
-tr td.course-manyp, .course-manyp {
-    background-color: #f2b3b3;
-}
-tr td.course-manyp.course-primary {
+.course-too-many .lodge-too-many {
     background-color: #e08282;
 }
-tr td.course-fewp, .course-fewp {
-    background-color: #f2e8b3;
-
-}
-tr td.course-fewp.course-primary {
+.course-too-few .lodge-too-few{
     background-color: #dfd181;
 }
-tr td.course-cancelled, .course-cancelled {
-    background-color: #e0b2f2;
-}
-tr td.course-cancelled.course-primary {
+.course-cancelled {
     background-color: #cb86e6;
 }
-tr td.course-cancelled-ok, .course-cancelled-ok {
+.course-cancelled-ok {
     background-color: #b8ceef;
+}
+.course-lonely {
+    background-color: #55a055bf;
 }
 tr th.filtered_column {
     background-color: #31708f;

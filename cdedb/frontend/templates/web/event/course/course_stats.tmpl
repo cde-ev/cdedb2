@@ -20,6 +20,7 @@
 {% endblock %}
 
 {% block static_notifications %}
+    {% set hidden_courses = courses.values()|selectattr('is_visible', 'false')|list %}
     {% if hidden_courses %}
         {% call util.notification('info', id='hidden-courses') %}
             {% trans num=hidden_courses|length %}
@@ -109,34 +110,40 @@
         <tbody>
             {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
                 <tr>
-                    <td {% if not course['is_visible'] %}class="course-primary" title="{{ gettext("not visible") }}"{% endif %}>
+                    {# The following is equivalent to format = sum(violation.course_stats_format for violation in violations_by_course[course_id] if violation.track is None and violation.track_group is None) #}
+                    {% set format = violations_by_course[course_id]|selectattr('track', 'none')|selectattr('track_group', 'none')|map(attribute='course_stats_format')|sum -%}
+                    {% set aclass, atitle = format.html_class if format else "", format.get_title(gettext) if format else "" %}
+
+                    <td class="{{ aclass }}" title="{{ atitle }}">
                         {{ course['nr'] }}
                     </td>
-                    <td {% if not course['is_visible'] %}class="course-primary" title="{{ gettext("not visible") }}"{% endif %}>
+                    <td class="{{ aclass }}" title="{{ atitle }}">
                         {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname'],
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
+                        {# The following is equivalent to format = sum(violation.course_stats_format for violation in violations_by_course[course_id] if violation.track == track and violation.track_group is None) #}
+                        {% set format = violations_by_course[course_id]|selectattr('track.id', 'eq', track.id)|selectattr('track_group', 'none')|map(attribute='course_stats_format')|sum -%}
+                        {% set aclass, atitle = format.html_class if format else "", format.get_title(gettext) if format else "" %}
+
                         {% if track.id in course['segments'] %}
-                            {% set attendees = assign_counts[(course_id, track.id)].num_involved_learners %}
-                            {% set instructors = assign_counts[(course_id, track.id)].num_involved_instructors %}
-                            {% set aclass = 'course-cancelled' if track.id not in course['active_segments'] and attendees + instructors > 0 else
-                                            ('course-cancelled-ok' if track.id not in course['active_segments'] else
-                                             ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
-                                              ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
-                            <td class="b-left course-primary {{ aclass }}">
-                                {% if track.id not in course['active_segments'] %}
-                                    {{ util.make_icon('ban', title=gettext("Course cancelled")) }}
+                            {% set attendees = violation_data['attendees'][(course_id, track.id)].num_learners %}
+                            {% set instructors = violation_data['attendees'][(course_id, track.id)].num_instructors %}
+                            <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}">
+                                {% if format %}
+                                    {% for icon, icon_title in format.icons %}
+                                        {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                    {% endfor %}
                                 {% endif %}
                             </td>
-                            <td class="text-right course-primary {{ aclass }}">
+                            <td class="text-right course-primary {{ aclass }}" title="{{ atitle }}">
                                 {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,
                                                                                 'course_id': course_id,
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s%s+%s%s"|format(assign_counts[(course_id, track.id)].num_learners_filtered, nbsp, nbsp,
-                                                                assign_counts[(course_id, track.id)].num_instructors_filtered),
+                                             "%s%s+%s%s"|format(violation_data['attendees'][(course_id, track.id)].num_learners, nbsp, nbsp,
+                                                                violation_data['attendees'][(course_id, track.id)].num_instructors),
                                              readonly=not is_privileged_for('course_choices')) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
@@ -189,8 +196,9 @@
     <hr />
     <p>
         <strong>{% trans %}Color Guide{% endtrans %}:</strong><br />
-        <span class="color-legend course-fewp"></span>&nbsp;{% trans %}Not enough Attendees{% endtrans %}&emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Too many Attendees{% endtrans %}&emsp;
+        <span class="color-legend course-too-few"></span>&nbsp;{% trans %}Not enough Attendees{% endtrans %}&emsp;
+        <span class="color-legend course-too-many"></span>&nbsp;{% trans %}Too many Attendees{% endtrans %}&emsp;
+        <span class="color-legend course-lonely"></span>&nbsp;{% trans %}Lonely Attendees/Instructors{% endtrans %}&emsp;
         <span class="color-legend course-cancelled-ok"></span>&nbsp;{% trans %}Course cancelled{% endtrans %}&emsp;
         <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Course cancelled, has Attendees{% endtrans %}
     </p>

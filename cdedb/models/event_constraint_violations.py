@@ -69,6 +69,34 @@ class ViolationSeverity(enum.Enum):
         return self.value >= other.value
 
 
+@dataclasses.dataclass(frozen=True)
+class CourseStatsFormat:
+    html_classes: list[str]
+    titles: list[str] = dataclasses.field(default_factory=list)
+    icons: list[tuple[str, str]] = dataclasses.field(default_factory=list)
+
+    def __add__(self, other: 'CourseStatsFormat | int') -> 'CourseStatsFormat':
+        if isinstance(other, int):
+            return self
+        return CourseStatsFormat(
+            self.html_classes + other.html_classes,
+            self.titles + other.titles,
+            self.icons + other.icons,
+        )
+
+    def __radd__(self, other):
+        if isinstance(other, int):
+            return self
+        return NotImplemented
+
+    @cached_property
+    def html_class(self) -> str:
+        return " ".join(self.html_classes)
+
+    def get_title(self, g: Callable[[str], str]) -> str:
+        return "\n".join(map(g, self.titles))
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ConstraintViolation(abc.ABC):
     event: models.Event
@@ -130,6 +158,10 @@ class CourseConstraintViolation(ConstraintViolation, abc.ABC):
 
     def get_link_params(self) -> tuple[str, CdEDBObject]:
         return "event/show_course", {'course_id': self.course['id']}
+
+    @cached_property
+    def course_stats_format(self) -> CourseStatsFormat | None:
+        return None
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -671,23 +703,27 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
         course segments toggle. In that case this is an error, otherwise a warning.
         """
         if track.id not in course['segments']:
-            if attendees.involved:
-                return cls(
-                    event=event,
-                    severity=ViolationSeverity.ERROR,
-                    course=course,
-                    track=track,
-                    num=attendees.num_involved,
-                )
+            return cls(
+                event=event,
+                severity=(
+                    ViolationSeverity.ERROR
+                    if attendees.all else ViolationSeverity.DEBUG
+                ),
+                course=course,
+                track=track,
+                num=attendees.num,
+            )
         elif track.id not in course['active_segments']:
-            if attendees.involved:
-                return cls(
-                    event=event,
-                    severity=ViolationSeverity.WARNING,
-                    course=course,
-                    track=track,
-                    num=attendees.num_involved,
-                )
+            return cls(
+                event=event,
+                severity=(
+                    ViolationSeverity.ERROR
+                    if attendees.all else ViolationSeverity.DEBUG
+                ),
+                course=course,
+                track=track,
+                num=attendees.num,
+            )
         return None
 
     def get_translation(self) -> tuple[list[str], CdEDBObject]:
@@ -701,6 +737,18 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             "num": self.num,
         }
         return [msg], params
+
+    @cached_property
+    def course_stats_format(self) -> CourseStatsFormat | None:
+        title = (
+            n_("Course cancelled, has Attendees")
+            if self.num else n_("Course cancelled")
+        )
+        return CourseStatsFormat(
+            ["course-cancelled" if self.num else "course-cancelled-ok"],
+            [title],
+            [("ban", title)],
+        )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -724,20 +772,20 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
         if track.id in course['active_segments']:
             if (
                     course['min_size'] is not None
-                    and attendees.num_involved_learners < course['min_size']
+                    and attendees.num_learners < course['min_size']
                     or
                     course['max_size'] is not None
-                    and attendees.num_involved_learners > course['max_size']
+                    and attendees.num_learners > course['max_size']
             ):
                 return cls(
                     event=event,
                     severity=(
-                        ViolationSeverity.WARNING if attendees.num_involved_learners
+                        ViolationSeverity.WARNING if attendees.num_learners
                         else ViolationSeverity.DEBUG
                     ),
                     course=course,
                     track=track,
-                    num=attendees.num_involved_learners,
+                    num=attendees.num_learners,
                 )
         return None
 
@@ -757,6 +805,19 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
         }
         return [msg], params
 
+    @cached_property
+    def course_stats_format(self) -> CourseStatsFormat | None:
+        if self.course['min_size'] and self.num < self.course['min_size']:
+            return CourseStatsFormat(
+                ["course-too-few"],
+                [n_("Not enough Attendees")],
+            )
+        else:
+            return CourseStatsFormat(
+                ["course-too-many"],
+                [n_("Too many Attendees")],
+            )
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class LonelyAttendeesCV(CourseConstraintViolation):
@@ -774,14 +835,14 @@ class LonelyAttendeesCV(CourseConstraintViolation):
     ) -> Self | None:
         """Return a violation if the course has attendees but no instructors."""
         if track.id in course['active_segments']:
-            if bool(attendees.involved_learners) != bool(attendees.involved_instructors):  # pylint: disable=line-too-long
+            if bool(attendees.learners) != bool(attendees.instructors):  # pylint: disable=line-too-long
                 return cls(
                     event=event,
                     severity=ViolationSeverity.INFO,
                     course=course,
                     track=track,
-                    num_learners=attendees.num_involved_learners,
-                    num_instructors=attendees.num_involved_instructors,
+                    num_learners=attendees.num_learners,
+                    num_instructors=attendees.num_instructors,
                 )
         return None
 
@@ -796,3 +857,10 @@ class LonelyAttendeesCV(CourseConstraintViolation):
             "num": self.num_learners or self.num_instructors,
         }
         return [msg], params
+
+    @cached_property
+    def course_stats_format(self) -> CourseStatsFormat | None:
+        return CourseStatsFormat(
+            ["course-lonely"],
+            [n_("Lonely attendees") if self.num_learners else n_("Lonely instructors")],
+        )
