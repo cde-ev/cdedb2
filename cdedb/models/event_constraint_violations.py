@@ -591,11 +591,11 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
             for part in is_present_parts.values():
-                if part.part_begin < period.checkin_time < part.part_end:
+                if part.part_begin < period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
                     break
             for part in is_present_parts.values():
-                if part.part_begin < period.checkout_time < part.part_end:
+                if part.part_begin < period.checkout_time.date() < part.part_end:
                     valid_checkout_time = True
                     break
             if not (valid_checkin_time and valid_checkout_time):

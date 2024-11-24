@@ -519,7 +519,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 (
                     PresentNeverCheckedinCV,
                 ): [
-                    'registration', 'persona', 'track',
+                    'registration', 'persona', 'part',
                 ],
             },
             'track': {
