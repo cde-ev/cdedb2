@@ -1828,7 +1828,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise PrivilegeError
 
             # currently checked in.
-            if not reg['checkin_periods'][-1].checkout_time:
+            if reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time:
                 return 0
 
             data: CdEDBObject = {
@@ -1895,7 +1895,7 @@ class EventRegistrationBackend(EventBaseBackend):
             # Check the change does not mix up transition order.
             if len(reg['checkin_periods']) < previous_period_pos:
                 raise ValueError(n_("Inconsistent period."))
-            
+
             # Beware this position is off by one to the list index.
             if previous_period_pos:
                 previous_period = reg['checkin_periods'][previous_period_pos - 1]
@@ -1936,7 +1936,7 @@ class EventRegistrationBackend(EventBaseBackend):
         elif checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
 
-        with Atomizer(rs):
+        with (Atomizer(rs)):
             reg = self.get_registration(rs, registration_id)
             if not is_privileged(rs, EventPrivileges.registrations_write,
                                  reg['event_id']):
@@ -1949,9 +1949,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
             # Check the change does not mix up transition order.
             pos = reg['checkin_periods'].index(period)
-            if reg['checkin_periods'][pos - 1]['checkout_time'] >= checkin_time:
+            if pos != 0 and reg['checkin_periods'][pos - 1].checkout_time >= checkin_time:
                 raise ValueError(n_("Checkin time to early."))
-            if reg['checkout_periods'][pos + 1]['checkin_time'] <= checkout_time:
+            if (len(reg['checkin_periods']) > pos + 1
+                and reg['checkin_periods'][pos + 1].checkin_time <= checkout_time):
                 raise ValueError(n_("Checkout time to early."))
 
             if period.checkin_time != checkin_time:

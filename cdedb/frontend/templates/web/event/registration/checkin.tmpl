@@ -150,7 +150,7 @@
                             {% endfor %}
                             {{ util.input_hidden(name="from_checkin_page", value="True") }}
                             {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                                 readonly=not is_privileged_for("checkin")) }}
+                                                 readonly=not is_privileged_for("add_checkin")) }}
                         </form>
                     </div>
             </div>

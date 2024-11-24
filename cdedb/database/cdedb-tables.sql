@@ -1122,7 +1122,7 @@ CREATE TABLE event.checkin_periods (
         checkout_time           timestamp WITH TIME ZONE
 );
 CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
-GRANT SELECT, INSERT, DELETE, UPDATE (checkin_time, checkout_time) ON event.checkin_periods TO cdb_persona;
+GRANT SELECT, INSERT, DELETE, UPDATE ON event.checkin_periods TO cdb_persona;
 GRANT SELECT, UPDATE ON event.checkin_periods_id_seq TO cdb_persona;
 
 CREATE TABLE event.personalized_fees (

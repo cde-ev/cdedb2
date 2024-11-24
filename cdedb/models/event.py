@@ -981,3 +981,8 @@ class CheckinPeriod(EventDataclass):
         if self.checkout_time is not None:
             return (self.checkin_time, True, self.checkout_time, self.registration_id)
         return (self.checkin_time, False, self.registration_id)
+
+    def get_duration(self) -> datetime.timedelta:
+        if self.checkout_time is not None:
+            return self.checkout_time - self.checkin_time
+        return now() - self.checkin_time

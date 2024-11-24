@@ -1,7 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import itertools
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields

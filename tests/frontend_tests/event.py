@@ -4985,42 +4985,42 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertNonPresence("—", div="checkin-time")
 
     @as_users("garcia")
-    def test_checkin_transitions(self) -> None:
+    def test_checkin_periods(self) -> None:
         self.get('/event/event/1/registration/6/show')
         self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
         self.assertPresence("22.02.2022, 18:00:00 – 23.02.2022, 10:00:00")
 
-        f = self.response.forms['changetransitionsform1']
-        f['ttime2_2'] = "2222-02-01T10:00:00+02:00"
+        f = self.response.forms['changeperiodform1']
+        f['checkout_time_1'] = "2222-02-01T10:00:00+02:00"
         self.submit(f, check_notification=False)
-        self.assertValidationError('ttime2_2', "Muss in der Vergangenheit liegen.")
+        self.assertValidationError('checkout_time_1', "Muss in der Vergangenheit liegen.")
 
         self.assertNotIn('checkoutform', self.response.forms)
         self.submit(self.response.forms['checkinform'])  # check Berta in
         self.assertNotIn('checkinform', self.response.forms)
         self.submit(self.response.forms['checkoutform'])  # check Berta out again
 
-        f = self.response.forms['changetransitionsform1']
-        f['ttime2_2'] = now()
-        original_checkin = f['ttime1_1'].value
-        f['ttime1_1'] = now()
+        f = self.response.forms['changeperiodform1']
+        f['checkout_time_1'] = now()
+        original_checkin = f['checkin_time_1'].value
+        f['checkin_time_1'] = now()
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'ttime2_2', "Checkout muss vor folgendem Checkin sein.")
-        self.assertValidationError('ttime1_1', "Checkout muss nach Checkin liegen.")
+            'checkout_time_1', "Checkout muss vor folgendem Checkin sein.")
+        self.assertValidationError('checkin_time_1', "Checkout muss nach Checkin liegen.")
 
-        f = self.response.forms['changetransitionsform2']
-        f['ttime1_1001'] = "2000-01-01T00:00:00+02:00"
+        f = self.response.forms['changeperiodform2']
+        f['checkin_time_1001'] = "2000-01-01T00:00:00+02:00"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'ttime1_1001', "Checkin muss nach vorhergehendem Checkout sein.")
+            'checkin_time_1001', "Checkin muss nach vorhergehendem Checkout sein.")
 
-        f = self.response.forms['changetransitionsform1']
-        f['ttime1_1'] = original_checkin
-        f['ttime2_2'] = "2022-02-28T10:00:00+01:00"
+        f = self.response.forms['changeperiodform1']
+        f['checkin_time_1'] = original_checkin
+        f['checkout_time_1'] = "2022-02-28T10:00:00+01:00"
         self.submit(f, verbose=True)
         self.assertPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
-        self.submit(self.response.forms['deletetransitionsform1'])
+        self.submit(self.response.forms['deleteperiodform1'])
         self.assertNonPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
 
     @as_users("garcia")

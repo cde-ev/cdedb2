@@ -2,6 +2,7 @@
 {% set sidenav_active='event_registration' %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
+{% set jshint='weak' %}{# TODO: set to strong when adding backdated checkin periods #}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
@@ -219,7 +220,7 @@
     {% endfor %}
 
     {{ util.h(gettext("Presence"), level=3, underline=True) }}
-    <table id="checkin-transitions" class="table table-slim">
+    <table id="checkin-periods" class="table table-slim">
         <thead>
             <tr>
                 <th>#</th>
@@ -230,88 +231,80 @@
             </tr>
         </thead>
         <tbody>
-        {% for tpair in ambience['registration']['checkin_periods'] %}
+        {% for period in ambience['registration']['checkin_periods'] %}
             <tr>
                 <td>{{ loop.index }}</td>
                 <form action="{{ cdedblink('event/change_checkin_period',
                                            {'registration_id': ambience['registration']['id']}) }}"
                       method="POST"
-                      id="changetransitionsform{{ loop.index }}">
+                      id="changeperiodform{{ loop.index }}">
                     {{ util.anti_csrf_token('event/change_checkin_period') }}
-                        {% set inputname1 = 'ttime1_' + tpair[0].id|string %}
-                        {% set inputname2 = 'ttime2_' + tpair[-1].id|string %}
-                    <td class="nojs-only transition-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {# add the ID so that on validation errors values can be filled correctly #}
+                    {% set inputname1 = 'checkin_time_' + period.id|string %}
+                    {% set inputname2 = 'checkout_time_' + period.id|string %}
+                    <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                         <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                            {{ util.input_hidden(name='tid1', value=tpair[0].id) }}
+                            {{ util.input_hidden(name='period_id', value=period.id) }}
                             {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
-                                               defaultvalue=tpair[0].ttime) }}
+                                               defaultvalue=period.checkin_time) }}
                             <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
-                            {% if tpair|length == 1 %}
+                            {% if period.checkout_time %}
+                                {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
+                                                   defaultvalue=period.checkout_time) }}
+                            {% else %}
                                 {{ util.input_text(name='', defaultvalue=gettext("now"), readonly=True) }}
                                 {% set inputname2 = None %}
-                            {% else %}
-                                {{ util.input_hidden(name='tid2', value=tpair[1].id) }}
-                                {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
-                                                   defaultvalue=tpair[1].ttime) }}
                             {% endif %}
                         </div>
                         {{ util.output_errors(inputname1) }}
                         {{ util.output_errors(inputname2) }}
                     </td>
-                    <td class="nojs-only transition-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                         {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
                                              aclass="btn btn-primary btn-sm") }}
                     </td>
                 </form>
-                <td class="softhide transition-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                    {{ tpair[0].ttime|datetime(lang=lang) }}&#8239;–&#8239;
-                    {%- if tpair|length == 1 -%}
-                        <i>{% trans %}now{% endtrans %}</i>
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ period.checkin_time|datetime(lang=lang) }}&#8239;–&#8239;
+                    {%- if period.checkout_time -%}
+                        {{- period.checkout_time|datetime(lang=lang) -}}
                     {%- else -%}
-                        {{- tpair[1].ttime|datetime(lang=lang) -}}
+                        <i>{% trans %}now{% endtrans %}</i>
                     {%- endif -%}
                 </td>
-                <td class="softhide transition-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ util.input_submit(icon="pen", label="", title=gettext("Edit times"),
                                          aclass="btn btn-warning btn-sm showform-button", value=loop.index) }}
                 </td>
                 <td style="padding-left: 0;">
                     <form action="{{ cdedblink("event/delete_checkin_period") }}" method="POST"
-                          id="deletetransitionsform{{ loop.index }}">
+                          id="deleteperiodform{{ loop.index }}">
                         {{ util.anti_csrf_token('event/delete_checkin_period') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
-                        {{ util.input_hidden(name="tid1", value=tpair[0].id) }}
-                        {% if tpair|length > 1 %}
-                            {{ util.input_hidden(name="tid2", value=tpair[1].id) }}
-                        {% endif %}
+                        {{ util.input_hidden(name="period_id", value=period.id) }}
                         {{ util.input_submit(icon="trash", label="", title=gettext("Delete these timestamps"),
                                              aclass="btn btn-danger btn-sm") }}
                     </form>
                 </td>
-            {% if tpair|length == 1 %}
-                <td></td>
-            {% else %}
-                <td>{{ (tpair[1].ttime - tpair[0].ttime)|timedelta(gettext) }}</td>
-            {% endif %}
+                <td>{{ period.get_duration()|timedelta(gettext) }}</td>
             </tr>
         {% endfor %}
             <tr>
                 <td></td>
                 <td>
-                {% if ambience['registration']['checkin_transitions']|length % 2 == 0 %}
-                    <form action="{{ cdedblink('event/add_checkin_transition') }}" method="POST" id="checkinform">
-                        {{ util.anti_csrf_token('event/add_checkin_transition') }}
+                {% if not ambience['registration']['checkin_periods']
+                      or ambience['registration']['checkin_periods'][-1].checkout_time %}
+                    <form action="{{ cdedblink('event/add_checkin') }}" method="POST" id="checkinform">
+                        {{ util.anti_csrf_token('event/add_checkin') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
-                        {{ util.input_hidden(name="ttype", value=enums.CheckinTransitionType.checked_in) }}
                         {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
                                              icon="arrow-right-to-bracket", readonly=is_locked) }}
                     </form>
                 {% else %}
                     <form action="{{ cdedblink('event/add_checkout') }}" method="POST"
                         id="checkoutform">
-                        {{ util.anti_csrf_token('event/add_checkin_transition') }}
+                        {{ util.anti_csrf_token('event/add_checkout') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
-                        {{ util.input_hidden(name="ttype", value=enums.CheckinTransitionType.checked_out) }}
                         {{ util.input_submit(label=gettext("Checkout"), aclass="btn btn-primary btn-sm",
                                              icon="arrow-right-from-bracket", readonly=is_locked) }}
                     </form>
@@ -333,10 +326,10 @@
                 $(".nojs-only").hide();
                 $(".softhide").show();
 
-                $(".softhide.transition-display-" + rownr).hide();
-                $(".nojs-only.transition-form-" + rownr).show();
+                $(".softhide.period-display-" + rownr).hide();
+                $(".nojs-only.period-form-" + rownr).show();
                 // change icon of submit button
-                $(".nojs-only.transition-form-" + rownr + " .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+                $(".nojs-only.period-form-" + rownr + " .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
             })
         })
     </script>
