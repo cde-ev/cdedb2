@@ -1874,19 +1874,18 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def add_backdated_checkin_period(
-        self, rs: RequestState, registration_id: int, after_period_id: int,
+        self, rs: RequestState, registration_id: int, previous_period_pos: int,
         checkin_time: datetime.datetime, checkout_time: datetime.datetime,
     ) -> DefaultReturnCode:
         """Add an additional backdated period, where a participant was present."""
         registration_id = affirm(vtypes.ID, registration_id)
-        previous_period_pos = affirm(vtypes.PositiveInt, after_period_id)
+        previous_period_pos = affirm(vtypes.NonNegativeInt, previous_period_pos)
         checkin_time = affirm(datetime.datetime, checkin_time)
         checkout_time = affirm(datetime.datetime, checkout_time)
 
         if checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
 
-        ret = 1
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             if not is_privileged(rs, EventPrivileges.registrations_write,
@@ -1896,11 +1895,13 @@ class EventRegistrationBackend(EventBaseBackend):
             # Check the change does not mix up transition order.
             if len(reg['checkin_periods']) < previous_period_pos:
                 raise ValueError(n_("Inconsistent period."))
-
-            previous_period = reg['checkin_periods'][previous_period_pos]
-            if not previous_period.checkout_time < checkin_time:
-                raise ValueError(n_("Checkin must be after previous checkout."))
-            next_period = reg['checkin_periods'][previous_period + 1]
+            
+            # Beware this position is off by one to the list index.
+            if previous_period_pos:
+                previous_period = reg['checkin_periods'][previous_period_pos - 1]
+                if not previous_period.checkout_time < checkin_time:
+                    raise ValueError(n_("Checkin must be after previous checkout."))
+            next_period = reg['checkin_periods'][previous_period_pos]
             if not checkout_time < next_period.checkin_time:
                 raise ValueError(n_("Checkout must be before next checkin."))
 
