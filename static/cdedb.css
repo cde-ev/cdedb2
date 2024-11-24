@@ -1083,10 +1083,10 @@ td.b-right, th.b-right {
 .course-primary {
     background-color: #e6e6e6;
 }
-.course-too-many .lodge-too-many {
+.course-too-many, .lodge-too-many {
     background-color: #e08282;
 }
-.course-too-few .lodge-too-few{
+.course-too-few, .lodge-too-few{
     background-color: #dfd181;
 }
 .course-cancelled {
