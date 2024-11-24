@@ -1873,6 +1873,52 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     @access("event")
+    def add_backdated_checkin_period(
+        self, rs: RequestState, registration_id: int, after_period_id: int,
+        checkin_time: datetime.datetime, checkout_time: datetime.datetime,
+    ) -> DefaultReturnCode:
+        """Add an additional backdated period, where a participant was present."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        previous_period_pos = affirm(vtypes.PositiveInt, after_period_id)
+        checkin_time = affirm(datetime.datetime, checkin_time)
+        checkout_time = affirm(datetime.datetime, checkout_time)
+
+        if checkout_time and checkin_time >= checkout_time:
+            raise ValueError(n_("Checkout must be after checkin."))
+
+        ret = 1
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 reg['event_id']):
+                raise PrivilegeError
+
+            # Check the change does not mix up transition order.
+            if len(reg['checkin_periods']) < previous_period_pos:
+                raise ValueError(n_("Inconsistent period."))
+
+            previous_period = reg['checkin_periods'][previous_period_pos]
+            if not previous_period.checkout_time < checkin_time:
+                raise ValueError(n_("Checkin must be after previous checkout."))
+            next_period = reg['checkin_periods'][previous_period + 1]
+            if not checkout_time < next_period.checkin_time:
+                raise ValueError(n_("Checkout must be before next checkin."))
+
+            data: CdEDBObject = {
+                'registration_id': registration_id,
+                'checkin_time': checkin_time,
+                'checkout_time': checkout_time,
+            }
+            ret = self.sql_insert(rs, models.CheckinPeriod.database_table, data)
+            self.event_log(rs, const.EventLogCodes.checkin_added,
+                           reg['event_id'], reg['persona_id'],
+                           change_note=datetime_filter(checkin_time, lang=rs.log_lang))
+            self.event_log(rs, const.EventLogCodes.checkout_added,
+                           reg['event_id'], reg['persona_id'],
+                           change_note=datetime_filter(checkout_time, lang=rs.log_lang))
+        return ret
+
+    @access("event")
     def change_checkin_period(
         self, rs: RequestState, registration_id: int, period_id: int,
         checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
