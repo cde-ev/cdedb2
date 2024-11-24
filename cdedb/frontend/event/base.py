@@ -61,6 +61,7 @@ from cdedb.models.event_constraint_violations import (
     CancelledWithAttendeesCV,
     ConstraintViolation,
     CourseChoiceSyncCV,
+    HiddenCourseCV,
     InconsistentPaymentCV,
     IncorrectCourseAssignedCV,
     IncorrectNumAttendeesCV,
@@ -453,9 +454,11 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = event.part_groups[part_group_id].parts.values()
         return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
-    def get_constraint_violations(self, rs: RequestState, event: models.Event, *,
-                                  registration_id: Optional[int],
-                                  course_id: Optional[int]) -> CdEDBObject:
+    def get_constraint_violations(
+            self, rs: RequestState, event: models.Event, *,
+            registration_id: Optional[int],
+            course_id: Optional[int],
+    ) -> CdEDBObject:
         """
         Check for violations of part group constraints.
 
@@ -496,7 +499,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
-        _choice_counts, course_attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        _choice_stats, attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
 
         _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
         reg_violation_spec: _vs_type = {
@@ -540,6 +543,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         }
         course_violation_spec: _vs_type = {
+            'base': {
+                (
+                    HiddenCourseCV,
+                ): [
+                    'course',
+                ],
+            },
             'track': {
                 (
                     CancelledWithAttendeesCV,
@@ -572,6 +582,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             for part in event.parts.values():
                 reg['parts'][part.id]['age'] = determine_age_class(
                     personas[reg['persona_id']]['birthday'], part.part_begin)
+            reg['age'] = determine_age_class(
+                personas[reg['persona_id']]['birthday'], event.begin)
             reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
 
             parameters: CdEDBObject = {
@@ -609,12 +621,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             parameters = {
                 'course': course,
             }
+            _check_violation(course_violation_spec['base'], parameters)
 
             course_track_violation_spec = course_violation_spec['track']
             for track in sorted_tracks:
                 parameters.update({
                     'track': track,
-                    'attendees': course_attendees[course['id'], track.id],
+                    'attendees': attendees[course['id'], track.id],
                 })
                 _check_violation(course_track_violation_spec, parameters)
 
@@ -648,6 +661,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             'registrations': registrations,
             'personas': personas,
             'courses': courses,
+            'choice_stats': _choice_stats,
+            'attendees': attendees,
         }
 
     @access("event")

@@ -24,7 +24,8 @@ import dataclasses
 import datetime
 import enum
 import itertools
-from typing import TYPE_CHECKING, Any, Self
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Callable, Self
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -563,6 +564,54 @@ class RemainingOwedCV(RegistrationConstraintViolation):
         }
 
         return [msg], parms
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class HiddenCourseCV(CourseConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event,
+            course: CdEDBObject,
+    ) -> Self | None:
+        td = datetime.timedelta(days=7)
+        ref_time = now()
+        if course['is_visible']:
+            return None
+        if event.registration_start and event.registration_start - ref_time < td:
+            # Registration starts in less than a week (or has already started).
+            if (
+                    event.registration_soft_limit
+                    and not event.registration_hard_limit
+                    and event.registration_soft_limit < ref_time
+            ):
+                # Registration already over, no late registration.
+                severity = ViolationSeverity.DEBUG
+            elif (
+                    event.registration_hard_limit
+                    and event.registration_hard_limit < ref_time
+            ):
+                # Late registration already over.
+                severity = ViolationSeverity.DEBUG
+            else:
+                severity = ViolationSeverity.WARNING
+        else:
+            severity = ViolationSeverity.DEBUG
+        return cls(
+            event=event,
+            severity=severity,
+            course=course,
+        )
+
+    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+        msg = n_("%(link)s is hidden and registration is open or about to start.")
+        params = {
+            "link": f"{self.course['nr']}. {self.course['shortname']}",
+        }
+        return [msg], params
+
+    @cached_property
+    def course_stats_format(self) -> CourseStatsFormat | None:
+        return CourseStatsFormat(["course-primary"], [n_("not visible")])
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
