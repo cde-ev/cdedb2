@@ -3709,6 +3709,20 @@ class TestEventBackend(BackendTest):
                 'submitted_by': 1,
                 'change_note': "10,50 € am 06.06.2014 gezahlt.",
             },
+            {
+                "code": const.EventLogCodes.checkin_added,
+                "event_id": 1,
+                "persona_id": 2,
+                "submitted_by": 1,
+                "change_note": "Checkin: 22.02.2022, 18:00:00",
+            },
+            {
+                "code": const.EventLogCodes.checkout_added,
+                "event_id": 1,
+                "persona_id": 2,
+                "submitted_by": 1,
+                "change_note": "Checkout: 23.02.2022, 10:00:00",
+            },
         )
 
         self.assertLogEqual(expectation, realm="event")

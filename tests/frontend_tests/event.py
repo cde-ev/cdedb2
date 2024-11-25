@@ -1187,7 +1187,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/choices'},
                       {'href': '/event/event/1/stats'},
                       {'href': '/event/event/1/course/stats'},
-                      {'href': '/event/event/1/checkin'},
+                      {'href': '/event/event/1/registration/checkin'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'})
         f = self.response.forms['queryform']
