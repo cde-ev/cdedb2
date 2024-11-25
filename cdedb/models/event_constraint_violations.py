@@ -588,16 +588,19 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     registration=registration,
                     persona=persona,
                 )
+        ref_time = now().date()
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
             for part in is_present_parts.values():
                 if part.part_begin < period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
-                    break
-            for part in is_present_parts.values():
-                if part.part_begin < period.checkout_time.date() < part.part_end:
-                    valid_checkout_time = True
-                    break
+                    if not period.checkout_time and part.part_end >= ref_time:
+                        valid_checkout_time = True
+            if period.checkout_time:
+                for part in is_present_parts.values():
+                    if part.part_begin < period.checkout_time.date() < part.part_end:
+                        valid_checkout_time = True
+                        break
             if not (valid_checkin_time and valid_checkout_time):
                 return cls(
                     event=event,
@@ -630,9 +633,9 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         """If registration is participant and not checked in after the first day of the
         part, return a WARNING. If at the end of the respective part, they still never
         checked in, return an ERROR."""
-        ref_time = now()
+        ref_time = now().date()
         if not (registration['parts'][part.id]['status'].is_present()
-                and ref_time.date() > part.part_begin):
+                and ref_time > part.part_begin):
             return None
         valid_checkin_time = False
         for period in registration['checkin_periods']:
