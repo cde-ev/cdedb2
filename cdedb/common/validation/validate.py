@@ -3911,7 +3911,7 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_notes': Optional[str],
     'fields': Mapping,
     'personalized_fees': Mapping,
-    'checkin_periods': Mapping,
+    'checkin_periods': list[Mapping],  # type: ignore[type-arg]
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3981,7 +3981,7 @@ def _partial_registration(
         val['personalized_fees'] = newfees
     if 'checkin_periods' in val:
         new_checkin_periods: list[dict[str, datetime.datetime | None]] = []
-        for period in new_checkin_periods:
+        for period in val['checkin_periods']:
             try:
                 period = _partial_registration_checkin_period(period, **kwargs)
             except ValidationSummary as e:
