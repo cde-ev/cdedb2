@@ -1119,7 +1119,10 @@ CREATE TABLE event.checkin_periods (
         id                      bigserial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
         checkin_time            timestamp WITH TIME ZONE NOT NULL,
-        checkout_time           timestamp WITH TIME ZONE
+        checkout_time           timestamp WITH TIME ZONE,
+        UNIQUE (registration_id, checkin_time),
+        UNIQUE (registration_id, checkout_time),
+        CONSTRAINT checkin_period_time_order CHECK (checkin_time < checkout_time)
 );
 CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
 GRANT SELECT, INSERT, DELETE, UPDATE ON event.checkin_periods TO cdb_persona;
