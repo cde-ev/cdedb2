@@ -140,6 +140,7 @@ from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+from cdedb.models.event import ReducedCheckinPeriod
 from cdedb.uncommon.intenum import CdEIntEnum
 
 NoneType = type(None)
@@ -3911,7 +3912,7 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_notes': Optional[str],
     'fields': Mapping,
     'personalized_fees': Mapping,
-    'checkin_periods': list[Mapping],  # type: ignore[type-arg]
+    'checkin_periods': list[ReducedCheckinPeriod],
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3980,7 +3981,7 @@ def _partial_registration(
                 newfees[fee_id] = amount
         val['personalized_fees'] = newfees
     if 'checkin_periods' in val:
-        new_checkin_periods: list[dict[str, datetime.datetime | None]] = []
+        new_checkin_periods: list[ReducedCheckinPeriod] = []
         for period in val['checkin_periods']:
             try:
                 period = _partial_registration_checkin_period(period, **kwargs)
@@ -3988,7 +3989,22 @@ def _partial_registration(
                 errs.extend(e)
             else:
                 new_checkin_periods.append(period)
-        val['checkin_periods'] = new_checkin_periods
+        # Now sort the list and check whether it is consistent.
+        new_checkin_periods = xsorted(new_checkin_periods,
+                                      key=lambda x: x.checkin_time)
+
+        try:
+            is_consistent = all(
+                p.checkin_time < p.checkout_time < next_p.checkin_time  # type: ignore[operator]
+                for p, next_p in zip(new_checkin_periods, new_checkin_periods[1:]))
+        except TypeError as e:
+            # checkout_time == None for non-final checkin period
+            errs.append(e)
+        else:
+            if not is_consistent:
+                errs.append(ValueError(n_("Inconsistent sequence of checkin periods.")))
+            else:
+                val['checkin_periods'] = new_checkin_periods
 
     if errs:
         raise errs
@@ -4062,12 +4078,15 @@ def _partial_registration_track(
 @_add_typed_validator
 def _partial_registration_checkin_period(
     val: Any, argname: str = "partial_registration_checkin_period", **kwargs: Any,
-) -> PartialRegistrationCheckinPeriod:
+) -> ReducedCheckinPeriod:
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
     case is applicable.
     """
+
+    if isinstance(val, ReducedCheckinPeriod):
+        return val
 
     val = _mapping(val, argname, **kwargs)
 
@@ -4076,8 +4095,8 @@ def _partial_registration_checkin_period(
         'checkout_time': Optional[datetime.datetime],  # type: ignore[dict-item]
     }
 
-    return PartialRegistrationCheckinPeriod(_examine_dictionary_fields(
-        val, mandatory_fields, {}, **kwargs))
+    return ReducedCheckinPeriod(**PartialRegistrationCheckinPeriod(
+        _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)))
 
 
 @_add_typed_validator

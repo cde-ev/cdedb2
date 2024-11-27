@@ -58,6 +58,7 @@ from cdedb.common.query import (
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.filter import datetime_filter
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
@@ -969,13 +970,25 @@ class PersonalizedFee(EventDataclass):
 
 
 @dataclasses.dataclass
-class CheckinPeriod(EventDataclass):
+class ReducedCheckinPeriod:
+    checkin_time: datetime.datetime
+    checkout_time: Optional[datetime.datetime]
+
+    def pretty(self) -> str:
+        formatstr = "%Y-%m-%d %H:%M"
+        if self.checkout_time:
+            return (f"{datetime_filter(self.checkin_time, formatstr)} – "
+                    f"{datetime_filter(self.checkout_time, formatstr)}")
+        else:
+            return f"{datetime_filter(self.checkin_time, formatstr)} – "
+
+
+@dataclasses.dataclass
+class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
     database_table = "event.checkin_periods"
     entity_key = "registration_id"
 
     registration_id: vtypes.ID
-    checkin_time: datetime.datetime
-    checkout_time: Optional[datetime.datetime]
 
     def get_sortkey(self) -> Sortkey:
         if self.checkout_time is not None:

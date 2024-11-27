@@ -4,6 +4,7 @@
 import collections
 import collections.abc
 import datetime
+import dataclasses
 import decimal
 import enum
 import functools
@@ -724,6 +725,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return tuple(obj)
         elif isinstance(obj, models.CdEDataclass):
             return obj.as_dict()
+        elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            return dataclasses.asdict(obj)
         return super().default(obj)
 
 
