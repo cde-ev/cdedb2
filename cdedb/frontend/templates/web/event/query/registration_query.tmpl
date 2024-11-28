@@ -81,6 +81,9 @@
                     label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
                     params={"kind": enums['FieldAssociations'].registration}, magic_placeholders=["ids"]) }}
             {{ generic.query_result_dynamic_action(
+                    label=gettext("Checkin/-out"), icon="calendar-check", target="event/checkin_multiset",
+                    magic_placeholders=["registration_ids"]) }}
+            {{ generic.query_result_dynamic_action(
                     label=gettext("Edit"), icon="pen", target="event/change_registrations_form",
                     magic_placeholders=["reg_ids"]) }}
         </div>

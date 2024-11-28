@@ -3,8 +3,8 @@
 """Global utility functions."""
 import collections
 import collections.abc
-import datetime
 import dataclasses
+import datetime
 import decimal
 import enum
 import functools

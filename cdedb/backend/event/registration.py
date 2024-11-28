@@ -1812,65 +1812,86 @@ class EventRegistrationBackend(EventBaseBackend):
         return True, len(data)
 
     @access("event")
-    def add_checkin(self, rs: RequestState, registration_id: int,
+    def add_checkins(self, rs: RequestState, registration_ids: Collection[int],
                     checkin_time: Optional[datetime.datetime] = None,
                     ) -> DefaultReturnCode:
-        """Checkin a participant."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        """Checkin participants.
+
+        :param checkin_time: defaults to current time
+        """
+        registration_ids = affirm_set(vtypes.ID, registration_ids)
         checkin_time = affirm_optional(datetime.datetime, checkin_time)
 
-        if checkin_time and checkin_time > now():
+        ref_time = now()
+        if checkin_time and checkin_time > ref_time:
             raise ValueError(n_("Must be in the past."))
 
+        ret = 1
         with Atomizer(rs):
-            reg = self.get_registration(rs, registration_id)
-            if not is_privileged(rs, EventPrivileges.registrations_write,
-                                 reg['event_id']):
-                raise PrivilegeError
-
-            # currently checked in.
-            if reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time:
+            regs = self.get_registrations(rs, registration_ids)
+            if any(reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+                   for reg in regs.values()):
+                # someone is currently checked in.
                 return 0
 
-            data: CdEDBObject = {
-                'registration_id': registration_id,
-                'checkin_time': checkin_time or now().replace(microsecond=0),
-            }
-            ret = self.sql_insert(rs, models.CheckinPeriod.database_table, data)
-            self.event_log(rs, const.EventLogCodes.checkin_added,
-                           reg['event_id'], reg['persona_id'],
-                           change_note=datetime_filter(checkin_time, lang=rs.log_lang))
+            for reg_id, reg in regs.items():
+                if not is_privileged(rs, EventPrivileges.registrations_write,
+                                     reg['event_id']):
+                    raise PrivilegeError
+
+                data: CdEDBObject = {
+                    'registration_id': reg_id,
+                    'checkin_time': checkin_time or ref_time.replace(microsecond=0),
+                    # TODO: remove replacement once precision set to 0 in postgres
+                }
+                ret *= self.sql_insert(rs, models.CheckinPeriod.database_table, data)
+                self.event_log(rs, const.EventLogCodes.checkin_added,
+                               reg['event_id'], reg['persona_id'],
+                               change_note=datetime_filter(checkin_time, lang=rs.log_lang))
         return ret
 
     @access("event")
-    def add_checkout(self, rs: RequestState, registration_id: int,
+    def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
                      checkout_time: Optional[datetime.datetime] = None,
                      ) -> DefaultReturnCode:
-        """Checkin a participant."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        """Checkin participants
+
+        :param checkout_time: defaults to current time
+        """
+        registration_ids = affirm_set(vtypes.ID, registration_ids)
         checkout_time = affirm_optional(datetime.datetime, checkout_time)
 
-        if checkout_time and checkout_time > now():
+        ref_time = now()
+        if checkout_time and checkout_time > ref_time:
             raise ValueError(n_("Must be in the past."))
 
+        ret = 1
         with Atomizer(rs):
-            reg = self.get_registration(rs, registration_id)
-            if not is_privileged(rs, EventPrivileges.registrations_write,
-                                 reg['event_id']):
-                raise PrivilegeError
-
-            # currently checked out.
-            if reg['checkin_periods'][-1].checkout_time:
+            regs = self.get_registrations(rs, registration_ids)
+            if any(not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
+                   for reg in regs.values()):
+                # someone is not checked in
+                return 0
+            if checkout_time and checkout_time < max(
+              reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            ):
+                # cannot checkout earlier than last checkin
                 return 0
 
-            data: CdEDBObject = {
-                'id': reg['checkin_periods'][-1].id,
-                'checkout_time': checkout_time or now().replace(microsecond=0),
-            }
-            ret = self.sql_update(rs, models.CheckinPeriod.database_table, data)
-            self.event_log(rs, const.EventLogCodes.checkout_added,
-                           reg['event_id'], reg['persona_id'],
-                           change_note=datetime_filter(checkout_time, lang=rs.log_lang))
+            for reg_id, reg in regs.items():
+                if not is_privileged(rs, EventPrivileges.registrations_write,
+                                     reg['event_id']):
+                    raise PrivilegeError
+
+                data: CdEDBObject = {
+                    'id': reg['checkin_periods'][-1].id,
+                    'checkout_time': checkout_time or ref_time.replace(microsecond=0),
+                    # TODO: remove replacement once precision set to zero in postgres
+                }
+                ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
+                self.event_log(rs, const.EventLogCodes.checkout_added,
+                               reg['event_id'], reg['persona_id'],
+                               change_note=datetime_filter(checkout_time, lang=rs.log_lang))
         return ret
 
     @access("event")
@@ -2012,9 +2033,9 @@ class EventRegistrationBackend(EventBaseBackend):
         For simplicity, this actually deletes and recreated all periods, while skipping
         logging for all
 
-
         :param new_periods: A list of new periods, without any id or registration id
-                        specified. This matches the partial export format."""
+                        specified. This matches the partial export format.
+        """
         # First check validity of new periods
         new_periods = xsorted(new_periods, key=lambda x: x.checkin_time)
         for period in new_periods[:-1]:
@@ -2035,7 +2056,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 if reduced_old_period in new_periods:
                     kept_old_periods.add(old_period.id)
                     kept_new_periods.add(new_periods.index(reduced_old_period))
-                # TODO When introducting locations beware of changes there and log
+                # TODO When introducing locations beware of changes there and log
                 # them manually!
 
             # Delete periods, skipping logging for unchanged ones
@@ -2048,9 +2069,9 @@ class EventRegistrationBackend(EventBaseBackend):
             for i, new_period in enumerate(new_periods):
                 if i not in kept_new_periods:
                     with Silencer(rs, disabled=i not in kept_new_periods):
-                        ret *= self.add_checkin(rs, registration_id,
+                        ret *= self.add_checkins(rs, (registration_id,),
                                                 new_period.checkin_time)
                         if new_period.checkout_time:
-                            ret *= self.add_checkout(rs, registration_id,
+                            ret *= self.add_checkouts(rs, (registration_id,),
                                                      new_period.checkout_time)
         return ret

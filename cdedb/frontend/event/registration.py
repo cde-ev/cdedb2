@@ -31,6 +31,7 @@ from cdedb.common import (
     diacritic_patterns,
     get_hash,
     json_serialize,
+    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -1703,7 +1704,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.add_checkin(rs, registration_id)
+        code = self.eventproxy.add_checkins(rs, (registration_id,))
         rs.notify_return_code(code, error=n_("Action failed."))
         if from_checkin_page:
             return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids})
@@ -1723,7 +1724,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Already checked out."))
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.add_checkout(rs, registration_id)
+        code = self.eventproxy.add_checkouts(rs, (registration_id,))
         rs.notify_return_code(code, error=n_("Action failed."))
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
@@ -1790,6 +1791,98 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(ret, error=n_("Action failed."))
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
+
+    @access('event')
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("registration_ids")
+    def checkin_multiset_form(self, rs: RequestState, event_id: int,
+                              registration_ids: Optional[vtypes.IntCSVList] = None,
+                              internal: bool = False) -> Response:
+        if rs.has_validation_errors() and not internal:
+            return self.redirect(rs, 'event/registration_query',
+                                 {'event_id': event_id})
+        if not registration_ids:
+            rids = self.eventproxy.list_registrations(rs, event_id).keys()
+        registrations = self.eventproxy.get_registrations(rs, registration_ids or rids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(reg['persona_id'] for reg in registrations.values()))
+        registrations = {reg['id']: reg for reg in xsorted(
+            registrations.values(),
+            key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+        )}
+        names = {
+            reg_id: make_persona_name(personas[reg['persona_id']])
+            for reg_id, reg in registrations.items()
+        }
+        present = {
+            reg_id: reg['checkin_periods'] for reg_id, reg in registrations.items()
+            if reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+        }
+        absent = {
+            reg_id: reg['checkin_periods'] for reg_id, reg in registrations.items()
+            if reg_id not in present
+        }
+        return self.render(rs, 'registration/checkin_multiset',
+                           {'names': names, 'present': present, 'absent': absent})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("registration_ids", "checkin_time", "checkout_time")
+    def checkin_multiset(self, rs: RequestState, event_id: int,
+                         registration_ids: vtypes.IntCSVList,
+                         checkin_time: Optional[datetime.datetime],
+                         checkout_time: Optional[datetime.datetime]) -> Response:
+        """Checkin/-out multiple people at once.
+
+        Exactly one of checkin or checkout time has to be provided.
+        """
+        if rs.has_validation_errors():
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+        if bool(checkin_time) == bool(checkout_time):
+            rs.notify("error", n_("Can only either checkin or checkout."))
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+
+        regs = self.eventproxy.get_registrations(rs, registration_ids)
+        consistent = True
+        if checkout_time:
+            if checkout_time > now():
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must be in the past."))))
+            elif checkout_time < max(
+                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            ):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
+            if any(
+                not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
+                for reg in regs.values()
+            ):
+                rs.notify('error',
+                          n_("Cannot check out people that have not checked-in."))
+                consistent = False
+        elif checkin_time:
+            if checkin_time > now():
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must be in the past."))))
+            elif any(
+                reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+                for reg in regs.values()
+            ):
+                rs.notify('error',
+                          n_("Cannot check in people that are already checked-in."))
+                consistent = False
+        if rs.has_validation_errors() or not consistent:
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+
+        print(registration_ids, type(registration_ids))
+        if checkin_time:
+            ret = self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+        else:
+            ret = self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+        rs.notify_return_code(ret)
+
+        return self.redirect(rs, 'event/registration_query',
+                             {'event_id': event_id})
 
     def _get_payment_data(self, rs: RequestState, event_id: int,
                           registration_id: Optional[int] = None) -> CdEDBObject:
