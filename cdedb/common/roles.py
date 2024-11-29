@@ -190,6 +190,7 @@ PERSONA_DEFAULTS = {
     'is_active': True,
     'title': None,
     'nickname': None,
+    'legal_given_names': None,
     'name_supplement': None,
     'gender': None,
     'pronouns': None,

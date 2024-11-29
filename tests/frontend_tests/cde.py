@@ -41,7 +41,7 @@ PERSONA_TEMPLATE = {
         "username": 'zelda@example.cde',
         "title": "Dr.",
         "given_names": "Zelda",
-        "legal_given_names": "Zelda",
+        "legal_given_names": "Zelda Z.",
         "family_name": "Zeruda-Hime",
         "name_supplement": 'von und zu',
         "birthday": "1987-06-05",

@@ -2799,7 +2799,7 @@ class CoreBaseBackend(AbstractBackend):
              (persona['given_names'], persona['given_names'], persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
-        if persona['legal_given_names']:
+        if 'legal_given_names' in persona and persona['legal_given_names']:
             queries.extend([
                 (10, f"given_names = %s OR {lgn_substring} = %s",
                  (persona['legal_given_names'], persona['legal_given_names'])),

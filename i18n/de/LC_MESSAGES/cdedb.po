@@ -3044,6 +3044,9 @@ msgstr "Nur eines von „creation“ und „transition“ darf gewählt werden."
 msgid "Given names is not a part of legal given names."
 msgstr "Der Rufname ist nicht Teil des Bürgerlichen Vornamens."
 
+msgid "Legal given names is equal to given names."
+msgstr "Der Bürgerliche Vorname ist der Rufnamen."
+
 #: cdedb/common/validation/validate.py:1679
 msgid "Invalid input for date."
 msgstr "Ungültige Eingabe für ein Datum."
