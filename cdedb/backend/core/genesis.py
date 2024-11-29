@@ -407,8 +407,6 @@ class CoreGenesisBackend(CoreBaseBackend):
                     set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
 
             data = {k: v for k, v in case.items() if k in allowed_keys}
-            # we only request given_names in genesis cases
-            data['legal_given_names'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])

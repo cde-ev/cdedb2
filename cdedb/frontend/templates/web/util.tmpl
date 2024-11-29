@@ -183,7 +183,7 @@
     {%- set given_names = persona['given_names'] %}
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
     {%- if use_legal_name -%}
-        {{ persona['legal_given_names'] }}
+        {{ persona['legal_given_names'] or persona['given_names'] }}
     {%- elif include_nickname %}
         {%- if nickname in given_names %}
             {%- if not nickname or nickname == given_names -%}

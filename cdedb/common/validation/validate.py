@@ -1388,7 +1388,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'notes': Optional[str],
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': str,
+    'legal_given_names': Optional[str],
     'family_name': str,
     'title': NoneType,
     'name_supplement': NoneType,
@@ -1513,7 +1513,7 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'is_active': bool,
     'nickname': Optional[str],
     'given_names': str,
-    'legal_given_names': str,
+    'legal_given_names': Optional[str],
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],
@@ -1626,10 +1626,13 @@ def _persona(
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
     if ("given_names" in val and "legal_given_names" in val
-            and val["given_names"].lower() not in val["legal_given_names"].lower()
-            and not ignore_warnings):
-        errs.append(ValidationWarning("given_names", n_(
-            "Given names is not a part of legal given names.")))
+            and val["legal_given_names"] and not ignore_warnings):
+        if val["given_names"].lower() not in val["legal_given_names"].lower():
+            errs.append(ValidationWarning("given_names", n_(
+                "Given names is not a part of legal given names.")))
+        elif val["given_names"] == val["legal_given_names"]:
+            errs.append(ValidationWarning("given_names", n_(
+                "Legal given names is equal to given names.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:

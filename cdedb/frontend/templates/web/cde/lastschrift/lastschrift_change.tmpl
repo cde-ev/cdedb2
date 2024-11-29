@@ -30,7 +30,7 @@
         {{ util.anti_csrf_token('cde/lastschrift_change') }}
         {{ util.form_input_static(label=gettext("Member"),
                                   value=util.persona_name(persona, with_titles=True)) }}
-        {% if persona['legal_given_names'] != persona['given_names'] %}
+        {% if persona['legal_given_names'] %}
             {{ util.form_input_static(label=gettext("Legal Name"),
                                   value=util.persona_name(persona, use_legal_name=True, with_titles=True)) }}
         {% endif %}

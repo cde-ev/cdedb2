@@ -1591,8 +1591,6 @@ class EventBaseBackend(EventLowLevelBackend):
             persona = {
                 "given_names": rs.user.given_names,
                 "family_name": rs.user.family_name,
-                # mock this mandatory but non-relevant property
-                "legal_given_names": "",
             }
             author_name = make_persona_name(persona)
             author_email = rs.user.username

@@ -106,7 +106,7 @@ CREATE TABLE core.personas (
         nickname                varchar DEFAULT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
-        legal_given_names       varchar NOT NULL,
+        legal_given_names       varchar DEFAULT NULL,
         -- "Nachname"
         family_name             varchar NOT NULL,
 
