@@ -432,27 +432,27 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 phrase = "/* {} */ "
                 subphrase = ("checkin_at.checkin_time < %s"
                              " AND checkin_at.checkout_time > %s")
-                if operator == _ops.checkedinat:
+                if operator == _ops.checkedin_at:
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))
-                elif operator == _ops.checkedinnotat:
+                elif operator == _ops.checkedin_notat:
                     phrase += "NOT(" + subphrase + ")"
                     params.extend((value,) * 2 * len(columns))
                 else:
-                    if operator == _ops.checkedinoneof:
+                    if operator == _ops.checkedin_oneof:
                         phrase += " OR ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedinnoneof:
+                    elif operator == _ops.checkedin_noneof:
                         phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
-                    elif operator == _ops.checkedinallof:
+                    elif operator == _ops.checkedin_allof:
                         phrase += " AND ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedinnotallof:
+                    elif operator == _ops.checkedin_notallof:
                         phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
                     else:
                         raise RuntimeError(n_("Impossible."))
                     extension: list[str] = []
                     for x in value:
-                        extension.extend((x,) * len(columns))
-                    params.extend(extension * 2)
+                        extension.extend((x,) * 2)
+                    params.extend(extension * len(columns))
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))

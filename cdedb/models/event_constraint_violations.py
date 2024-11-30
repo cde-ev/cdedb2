@@ -573,8 +573,13 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         registration: CdEDBObject,
         persona: CdEDBObject,
     ) -> Self | None:
-        """If persona is checked in who is not present in the relevant part return
-        an INFO. If they are not present at all, return an ERROR."""
+        """Return a violation if a persona should not be checked in, but is.
+
+        If they are checked in even though they are is not present in the relevant part,
+        return an INFO. If they are not present at all, return an ERROR.
+        If they have not been checked out even though they should have been, return an
+        INFO as well.
+        """
         is_present_parts = {
             part_id: part for part_id, part in event.parts.items()
             if registration['parts'][part_id]['status'].is_present()
@@ -588,14 +593,20 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     registration=registration,
                     persona=persona,
                 )
+
         ref_time = now().date()
+        day = datetime.timedelta(days=1)
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
             for part in is_present_parts.values():
                 if part.part_begin < period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
-                    if not period.checkout_time and part.part_end >= ref_time:
-                        valid_checkout_time = True
+                has_contingent_successor = any(
+                    other.part_begin - day <= part.part_end < other.part_end
+                    for other in is_present_parts.values())
+                if (not period.checkout_time and part.part_end >= ref_time
+                        and not has_contingent_successor):
+                    valid_checkout_time = True
             if period.checkout_time:
                 for part in is_present_parts.values():
                     if part.part_begin < period.checkout_time.date() < part.part_end:
@@ -612,7 +623,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
 
     def get_translation(self) -> tuple[list[str], CdEDBObject]:
         if self.severity == ViolationSeverity.INFO:
-            msg = n_("%(link)s's checkin information is unusual.")
+            msg = n_("%(link)s's is checked in, but should not be at these times.")
         else:
             msg = n_("%(link)s's is checked in, but was never present.")
         params = {
@@ -630,9 +641,12 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         persona: CdEDBObject,
         part: models.EventPart,
     ) -> Self | None:
-        """If registration is participant and not checked in after the first day of the
+        """Return a violation if a persona should be checked in, but is not.
+
+        If a registration is participant and not checked in after the first day of the
         part, return a WARNING. If at the end of the respective part, they still never
-        checked in, return an ERROR."""
+        checked in, return an ERROR.
+        """
         ref_time = now().date()
         if not (registration['parts'][part.id]['status'].is_present()
                 and ref_time > part.part_begin):
@@ -640,7 +654,8 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         valid_checkin_time = False
         for period in registration['checkin_periods']:
             if (period.checkin_time.date() <= part.part_end
-                    and not period.checkout_time.date() < part.part_begin):
+                    and (not period.checkout_time
+                         or period.checkout_time.date() < part.part_begin)):
                 valid_checkin_time = True
                 break
         if not valid_checkin_time:
@@ -659,7 +674,7 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         if self.severity == ViolationSeverity.ERROR:
             msg = n_("%(link)s was present, but never checked in.")
         else:
-            msg = n_("%(link)s is present, but not checked in yet.")
+            msg = n_("%(link)s will be present, but has not checked in yet.")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
         }

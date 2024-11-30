@@ -170,8 +170,7 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         SELECT registration_id, checkin_time, checkout_time
                         FROM event.checkin_periods
-                    ) as checkin_at
-                    ON reg.id = checkin.registration_id
+                    ) AS checkin_at ON reg.id = checkin.registration_id
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}

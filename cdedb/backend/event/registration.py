@@ -916,12 +916,12 @@ class EventRegistrationBackend(EventBaseBackend):
             for period in checkin_periods.values():
                 reg = ret[period.registration_id]
                 reg['checkin_periods'].append(period)
-            reg['checkin_periods'] = xsorted(reg['checkin_periods'])
             for personalized_fee in personalized_fees.values():
                 reg = ret[personalized_fee.registration_id]
                 reg['personalized_fees'][personalized_fee.fee_id] = \
                     personalized_fee.amount
             for reg in ret.values():
+                reg['checkin_periods'] = xsorted(reg['checkin_periods'])
                 for reg_track in reg['tracks'].values():
                     tmp = reg_track['choices']
                     reg_track['choices'] = xsorted(tmp.keys(), key=tmp.get)
@@ -1813,8 +1813,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def add_checkins(self, rs: RequestState, registration_ids: Collection[int],
-                    checkin_time: Optional[datetime.datetime] = None,
-                    ) -> DefaultReturnCode:
+                     checkin_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode:
         """Checkin participants.
 
         :param checkin_time: defaults to current time
@@ -1829,16 +1829,17 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = 1
         with Atomizer(rs):
             regs = self.get_registrations(rs, registration_ids)
+            # All registrations have the same event_id, and hence, the same privileges.
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 next(iter(regs.values()))['event_id']):
+                raise PrivilegeError
+
             if any(reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
                    for reg in regs.values()):
                 # someone is currently checked in.
                 return 0
 
             for reg_id, reg in regs.items():
-                if not is_privileged(rs, EventPrivileges.registrations_write,
-                                     reg['event_id']):
-                    raise PrivilegeError
-
                 data: CdEDBObject = {
                     'registration_id': reg_id,
                     'checkin_time': checkin_time or ref_time.replace(microsecond=0),
@@ -1852,8 +1853,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
-                     checkout_time: Optional[datetime.datetime] = None,
-                     ) -> DefaultReturnCode:
+                      checkout_time: Optional[datetime.datetime] = None,
+                      ) -> DefaultReturnCode:
         """Checkin participants
 
         :param checkout_time: defaults to current time
@@ -1868,6 +1869,11 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = 1
         with Atomizer(rs):
             regs = self.get_registrations(rs, registration_ids)
+            # All registrations have the same event_id, and hence, the same privileges.
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 next(iter(regs.values()))['event_id']):
+                raise PrivilegeError
+
             if any(not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
                    for reg in regs.values()):
                 # someone is not checked in
@@ -1879,10 +1885,6 @@ class EventRegistrationBackend(EventBaseBackend):
                 return 0
 
             for reg_id, reg in regs.items():
-                if not is_privileged(rs, EventPrivileges.registrations_write,
-                                     reg['event_id']):
-                    raise PrivilegeError
-
                 data: CdEDBObject = {
                     'id': reg['checkin_periods'][-1].id,
                     'checkout_time': checkout_time or ref_time.replace(microsecond=0),
@@ -1952,13 +1954,13 @@ class EventRegistrationBackend(EventBaseBackend):
         checkin_time = affirm(datetime.datetime, checkin_time)
         checkout_time = affirm_optional(datetime.datetime, checkout_time)
 
-        reftime = now()
-        if checkin_time > reftime or checkout_time and checkout_time > reftime:
+        ref_time = now()
+        if checkin_time > ref_time or checkout_time and checkout_time > ref_time:
             raise ValueError(n_("Must be in the past."))
         elif checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
 
-        with (Atomizer(rs)):
+        with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             if not is_privileged(rs, EventPrivileges.registrations_write,
                                  reg['event_id']):
@@ -2012,8 +2014,8 @@ class EventRegistrationBackend(EventBaseBackend):
                                  reg['event_id']):
                 raise PrivilegeError
 
-            id_to_trans = {ct.id: ct for ct in reg['checkin_periods']}
-            period = id_to_trans[period_id]
+            id_to_period = {ct.id: ct for ct in reg['checkin_periods']}
+            period = id_to_period[period_id]
             ret = self.sql_delete(
                 rs, models.CheckinPeriod.database_table, [period_id])
             msg = (f"{datetime_filter(period.checkin_time, lang=rs.log_lang)}; "
@@ -2067,11 +2069,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
             # Recreate periods, skipping logging for unchanged ones
             for i, new_period in enumerate(new_periods):
-                if i not in kept_new_periods:
-                    with Silencer(rs, disabled=i not in kept_new_periods):
-                        ret *= self.add_checkins(rs, (registration_id,),
-                                                new_period.checkin_time)
-                        if new_period.checkout_time:
-                            ret *= self.add_checkouts(rs, (registration_id,),
-                                                     new_period.checkout_time)
+                with Silencer(rs, disabled=i not in kept_new_periods):
+                    ret *= self.add_checkins(rs, (registration_id,),
+                                             new_period.checkin_time)
+                    if new_period.checkout_time:
+                        ret *= self.add_checkouts(rs, (registration_id,),
+                                                  new_period.checkout_time)
         return ret

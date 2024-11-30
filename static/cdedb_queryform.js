@@ -263,8 +263,8 @@
             case 21: //lessequal
             case 24: //greaterequal
             case 25: //equal
-            case 101: //checkedinat
-            case 102: //checkedinnotat
+            case 101: //checkedin_at
+            case 102: //checkedin_notat
                 var changeFunction = function() {
                     f.input_filter_value.val($(this).val());
                     f.error = null;
@@ -360,10 +360,10 @@
             case 14: //containsall
             case 15: //containsnone
             case 16: //containssome
-            case 103: //checkedinoneof
-            case 104: //checkedinnoneof
-            case 105: //checkedinallof
-            case 106: //checkedinnotallof
+            case 103: //checkedin_oneof
+            case 104: //checkedin_noneof
+            case 105: //checkedin_allof
+            case 106: //checkedin_notallof
                 var placeholders = {
                     'date' : 'YYYY-MM-DD,YYYY-MM-DD,…',
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',

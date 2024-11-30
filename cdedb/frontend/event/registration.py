@@ -1685,28 +1685,30 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("from_checkin_page", "part_ids")
+    @REQUESTdata("part_ids")
     def add_checkin(
         self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-        from_checkin_page: Optional[bool] = False,
         part_ids: Optional[Collection[int]] = None,
     ) -> Response:
-        """Checkin a participant."""
+        """Checkin a participant.
+
+        :param part_ids: This is set to store the filter value of checkin_form.
+        """
         if rs.has_validation_errors():
-            if from_checkin_page:
+            if part_ids:
                 return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
 
         if (rs.ambience['registration']['checkin_periods']
             and not rs.ambience['registration']['checkin_periods'][-1].checkout_time):
             rs.notify("error", n_("Already checked in."))
-            if from_checkin_page:
+            if part_ids:
                 return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
 
         code = self.eventproxy.add_checkins(rs, (registration_id,))
         rs.notify_return_code(code, error=n_("Action failed."))
-        if from_checkin_page:
+        if part_ids:
             return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids})
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})

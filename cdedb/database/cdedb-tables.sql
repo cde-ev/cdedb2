@@ -1118,10 +1118,11 @@ GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 CREATE TABLE event.checkin_periods (
         id                      bigserial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
-        checkin_time            timestamp WITH TIME ZONE NOT NULL,
-        checkout_time           timestamp WITH TIME ZONE,
+        -- being automatically calculated but possible to change later, higher precision may create issues
+        checkin_time            timestamp(0) WITH TIME ZONE NOT NULL,
+        checkout_time           timestamp(0) WITH TIME ZONE,
         UNIQUE (registration_id, checkin_time),
-        UNIQUE (registration_id, checkout_time),
+        UNIQUE (registration_id, checkout_time), -- (registration_id, NULL) is unique too
         CONSTRAINT checkin_period_time_order CHECK (checkin_time < checkout_time)
 );
 CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);

@@ -815,12 +815,13 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                 change_note = ("Partieller Import: "
                                                + data['summary'])
                             personalized_fees = changed_reg.pop('personalized_fees', {})
-                            checkin_periods = changed_reg.pop('checkin_periods', [])
+                            checkin_periods = changed_reg.pop('checkin_periods', None)
                             self.set_registration(rs, changed_reg, change_note)
                             for fee_id, amount in personalized_fees.items():
                                 self.set_personalized_fee_amount(
                                     rs, registration_id, fee_id, amount)
-                            if current['checkin_periods'] != checkin_periods:
+                            if (checkin_periods is not None
+                                    and current['checkin_periods'] != checkin_periods):
                                 self.replace_checkin_periods(
                                     rs, registration_id, checkin_periods)
             if rdelta:
