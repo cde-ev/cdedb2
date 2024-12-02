@@ -9,8 +9,8 @@ core: CoreBackend = s.make_backend("core", proxy=False)
 with s:
     # add new columns with default null
     q = """
-        ALTER TABLE core.personas ADD COLUMN nickname VARCHAR;
-        ALTER TABLE core.personas ADD COLUMN legal_given_names VARCHAR;
+        ALTER TABLE core.personas ADD COLUMN nickname VARCHAR DEFAULT NULL;
+        ALTER TABLE core.personas ADD COLUMN legal_given_names VARCHAR DEFAULT NULL;
         GRANT UPDATE (nickname, legal_given_names) ON core.personas TO cdb_persona;
         ALTER TABLE core.changelog ADD COLUMN nickname VARCHAR;
         ALTER TABLE core.changelog ADD COLUMN legal_given_names VARCHAR;
