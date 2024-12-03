@@ -2784,9 +2784,8 @@ class CoreBaseBackend(AbstractBackend):
         if persona['birthday'] == datetime.date.min:
             persona['birthday'] = None
         scores: dict[int, int] = collections.defaultdict(lambda: 0)
-        lgn_substring = "legal_given_names IS NOT NULL AND legal_given_names"
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
-            (10, f"given_names = %s OR {lgn_substring} = %s",
+            (10, f"given_names = %s OR legal_given_names = %s",
              (persona['given_names'], persona['given_names'])),
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
@@ -2795,15 +2794,15 @@ class CoreBaseBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, f"(given_names = %s OR {lgn_substring} = %s) AND family_name = %s",
+            (20, f"(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
         if 'legal_given_names' in persona and persona['legal_given_names']:
             queries.extend([
-                (10, f"given_names = %s OR {lgn_substring} = %s",
+                (10, f"given_names = %s OR legal_given_names = %s",
                  (persona['legal_given_names'], persona['legal_given_names'])),
-                (20, f"(given_names = %s OR {lgn_substring} = %s) AND family_name = %s",
+                (20, f"(given_names = %s OR legal_given_names = %s) AND family_name = %s",
                  (persona['legal_given_names'], persona['legal_given_names'],
                   persona['family_name'])),
             ])
