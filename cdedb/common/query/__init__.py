@@ -382,7 +382,6 @@ PRIMARY_KEYS = {
 }
 
 # See QueryScope.get_spec().
-# TODO include legal_given_names and nickname
 _QUERY_SPECS = {
     # The most basic view on a persona.
     QueryScope.persona:

@@ -46,7 +46,7 @@ def persona(context: argparse.Namespace) -> int:
         'notes': '',
         'nickname': '',
         'given_names': make_counter(context, 'Vorname'),
-        'legal_given_names': make_counter(context, 'Bürgerlicher Vorname'),
+        'legal_given_names': '',
         'family_name': make_counter(context, 'Nachname'),
         'title': '',
         'name_supplement': '',

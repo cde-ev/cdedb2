@@ -27,6 +27,7 @@ from cdedb.common import (
     asciificator,
     determine_age_class,
     lastschrift_reference,
+    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -389,8 +390,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
-                transaction['account_owner'] = "{} {}".format(
-                    persona['legal_given_names'], persona['family_name'])
+                transaction['account_owner'] = make_persona_name(
+                    persona, use_legal_name=True)
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])

@@ -48,7 +48,7 @@ PERSONA_TEMPLATE = {
     'nickname': None,
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
-    'legal_given_names': "Zelda",
+    'legal_given_names': None,
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -803,7 +803,7 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
             'nickname': None,
-            'legal_given_names': data["given_names"],
+            'legal_given_names': None,
             'pronouns': None,
             'pronouns_nametag': False,
             'pronouns_profile': False,
@@ -888,7 +888,7 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
             'nickname': None,
-            'legal_given_names': data["given_names"],
+            'legal_given_names': None,
         })
         self.assertEqual(expectation, value)
 
@@ -979,7 +979,7 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
             'nickname': None,
-            'legal_given_names': data["given_names"],
+            'legal_given_names': None,
             'balance': decimal.Decimal("0.00"),
             'donation': decimal.Decimal("0.00"),
             'trial_member': True,

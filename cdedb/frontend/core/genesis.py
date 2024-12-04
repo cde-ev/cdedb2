@@ -300,8 +300,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         persona_data['id'] = 1
         # We don't actually compare genders, so this is to make sure it is not empty.
         persona_data['gender'] = const.Genders.not_specified
-        # we only request given_names in genesis cases
-        persona_data['legal_given_names'] = persona_data['given_names']
         doppelgangers = self.coreproxy.find_doppelgangers(rs, persona_data)
         non_editable_doppelgangers = {
             persona_id: not persona['may_be_edited']
