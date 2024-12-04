@@ -777,10 +777,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         rmap[registration_id] = new_id
                         for fee_id, amount in personalized_fees.items():
                             self.set_personalized_fee_amount(rs, new_id, fee_id, amount)
-                        for period in checkin_periods:
-                            self.add_checkins(rs, (new_id,), period.checkin_time)
-                            if period.checkout_time:
-                                self.add_checkouts(rs, (new_id,), period.checkout_time)
+                        self.replace_checkin_periods(rs, new_id, checkin_periods)
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
