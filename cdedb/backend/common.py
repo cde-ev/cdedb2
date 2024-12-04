@@ -530,16 +530,14 @@ class Silencer:
     a different higher level log message.
     """
 
-    def __init__(self, rs: RequestState, *, disabled: bool = False):
+    def __init__(self, rs: RequestState):
         self.rs = rs
-        self.disabled = disabled
 
     def __enter__(self) -> None:
         if self.rs.is_quiet:
             raise RuntimeError("Already silenced. Reentrant use is unsupported.")
         _affirm_atomized_context(self.rs)
-        if not self.disabled:
-            self.rs.is_quiet = True
+        self.rs.is_quiet = True
 
     def __exit__(self, atype: type[Exception], value: Exception,
                  tb: TracebackType) -> None:
