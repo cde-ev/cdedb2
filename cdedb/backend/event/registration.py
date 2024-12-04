@@ -25,7 +25,6 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    Silencer,
     access,
     affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set,
@@ -63,7 +62,7 @@ from cdedb.common.privileges import (
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter, money_filter
-from cdedb.models.event import ReducedCheckinPeriod
+from cdedb.models.event import CheckinPeriod, ReducedCheckinPeriod
 
 T = TypeVar("T")
 
@@ -2032,47 +2031,74 @@ class EventRegistrationBackend(EventBaseBackend):
                                 ) -> DefaultReturnCode:
         """Specify a new list of checkin periods for a persona.
 
-        For simplicity, this actually deletes and recreated all periods, while skipping
-        logging for all
+        This treats the checkin time as a primary key, making changes to existing
+        periods where the checkin time did not change, inserting added periods and
+        deleting omitted periods.
 
         :param new_periods: A list of new periods, without any id or registration id
                         specified. This matches the partial export format.
         """
         # First check validity of new periods
         new_periods = xsorted(new_periods, key=lambda x: x.checkin_time)
-        for period in new_periods[:-1]:
-            if not period.checkout_time:
-                raise ValueError(n_("Checkout date must be provided."))
+        if any(not period.checkout_time for period in new_periods[:-1]):
+            raise ValueError(n_("Checkout date must be provided."))
+        old_periods: list[CheckinPeriod]
+        old_periods = self.get_registration(rs, registration_id)['checkin_periods']
 
-        # The ID of the old periods which will be kept
-        kept_old_periods: set[int] = set()
-        # The list index of the new periods which are already present
-        kept_new_periods: set[int] = set()
+        # Set up iterators and a helper to safely iterate over both old and new periods.
+        def nxt(it: Iterator[T]) -> T | None:
+            try:
+                return next(it)
+            except StopIteration:
+                return None
+
+        old_it, new_it = iter(old_periods), iter(new_periods)
+        current_old, current_new = nxt(old_it), nxt(new_it)
+
         ret = 1
-        with Atomizer(rs):
-            old_periods = self.get_registration(rs, registration_id)['checkin_periods']
-            for old_period in old_periods:
-                reduced_old_period = ReducedCheckinPeriod(
-                    checkin_time=old_period.checkin_time,
-                    checkout_time=old_period.checkout_time)
-                if reduced_old_period in new_periods:
-                    kept_old_periods.add(old_period.id)
-                    kept_new_periods.add(new_periods.index(reduced_old_period))
-                # TODO When introducing locations beware of changes there and log
-                # them manually!
-
-            # Delete periods, skipping logging for unchanged ones
-            for old_period in old_periods:
-                with Silencer(rs, disabled=old_period.id not in kept_old_periods):
-                    ret *= self.delete_checkin_period(rs, registration_id,
-                                                      old_period.id)
-
-            # Recreate periods, skipping logging for unchanged ones
-            for i, new_period in enumerate(new_periods):
-                with Silencer(rs, disabled=i not in kept_new_periods):
-                    ret *= self.add_checkins(rs, (registration_id,),
-                                             new_period.checkin_time)
-                    if new_period.checkout_time:
-                        ret *= self.add_checkouts(rs, (registration_id,),
-                                                  new_period.checkout_time)
-        return ret
+        to_be_inserted: list[ReducedCheckinPeriod] = []
+        while True:
+            if current_old is None and current_new is None:
+                # If both lists are exhausted return.
+                #  But first perform the postponed insertions.
+                for new_period in to_be_inserted:
+                    self.add_backdated_checkin_period(
+                        rs, registration_id, new_period.checkin_time,
+                        new_period.checkout_time,
+                    )
+                return ret
+            elif current_old is None:
+                # If only new entries are left, simply add them.
+                assert current_new is not None
+                self.add_backdated_checkin_period(
+                    rs, registration_id, current_new.checkin_time,
+                    current_new.checkout_time,
+                )
+                current_new = nxt(new_it)
+            elif current_new is None:
+                # If only old entries are left, simply delete them.
+                assert current_old is not None
+                ret *= self.delete_checkin_period(rs, registration_id, current_old.id)
+                current_old = nxt(old_it)
+            else:
+                # Compare the two current entries.
+                assert current_old is not None
+                assert current_new is not None
+                if current_new.checkin_time < current_old.checkin_time:
+                    # If the new one needs to be before the old one, insert it.
+                    #  (The actual insertion is postponed for technical reasons).
+                    to_be_inserted.append(current_new)
+                    current_new = nxt(new_it)
+                elif current_new.checkin_time > current_old.checkin_time:
+                    # If the new one needs to be after the old one, delete the old one.
+                    ret *= self.delete_checkin_period(rs, registration_id, current_old.id)
+                    current_old = nxt(old_it)
+                else:
+                    # If the new one has the same checkin as the old one, adjust the
+                    #  old one if necessary.
+                    if current_new != current_old:
+                        ret *= self.change_checkin_period(
+                            rs, registration_id, current_old.id,
+                            current_new.checkin_time, current_new.checkout_time,
+                        )
+                    current_old, current_new = nxt(old_it), nxt(new_it)
