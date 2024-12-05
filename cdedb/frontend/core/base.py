@@ -1084,19 +1084,14 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: list[tuple[str, QueryOperators, Any]]
+                # TODO Decide when to include legal_given_names here
                 key = "username,family_name,given_names,nickname"
-                # legal_given_names must not be shown to moderators
-                if kind != "ml_subscriber":
-                    key += ",legal_given_names"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = scope.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
                 fields_of_interest = ["personas.id", "username", "family_name",
                                       "given_names", "nickname"]
-                # legal_given_names must not be shown to moderators
-                if kind != "ml_subscriber":
-                    fields_of_interest.append("legal_given_names")
                 query = Query(
                     scope, spec, fields_of_interest, search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
