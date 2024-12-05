@@ -28,16 +28,16 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"),
             info=gettext("Prefixed academic degree or similar.")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names"),
-            info=gettext("For salutation, mailing, nametags and event notices. First name usually used.")) }}
+            info=gettext("For salutation, mailing, nametags and event notices. First name usually used. (mandatory)")) }}
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
-            info=gettext("For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
+            info=gettext("For direct debits and donation receipts. Only visible to %(orgas_and_admins)s. (optional)")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname"),
-            info=gettext("For nametags and event noticies.")) }}
-        {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
+            info=gettext("For nametags and event notices. (optional)")) }}
+        {{ util.form_input_text(name="family_name", label=gettext("Family Name"), info=gettext("(mandatory)")) }}
         {% if "birth_name" in shown_fields %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
-                info=gettext("Original family name after the current family name has changed, for example through marriage.")) }}
+                info=gettext("Original family name after the current family name has changed, for example through marriage. (optional)")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"),
                 info=gettext("Suffixed academic degree or similar.")) }}
