@@ -1,6 +1,7 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% set jshint='weak' %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_multiset.js') }}
@@ -35,7 +36,7 @@
                 <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkoutform" class="form-horizontal">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
-                        {% trans %}The following people will be checked out:{% endtrans %}
+                        {% trans %}The following people can be checked out, or the time of their latest checkin can be reset or deleted.{% endtrans %}
                     </p>
                     <ul class="slim">
                     {% for reg_id, periods in present.items() %}
@@ -52,8 +53,13 @@
                     {{ util.input_hidden('registration_ids', value=",".join(present|map('string'))) }}
                     {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local',
                                             defaultvalue=request_time) }}
-                    {{ util.form_input_submit(label=gettext("Checkout"), icon="arrow-right-from-bracket",
-                                              cancellink=cdedblink('event/registration_query')) }}
+                    {{ util.form_input_submit(name="action", value="checkout", label=gettext("Checkout"), icon="arrow-right-from-bracket") }}
+                    {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local', outerclass="mosp",
+                                            anid="input-checkin-massreset", info=gettext("leave empty to delete latest checkin")) }}
+                    {{ util.form_input_submit(name="action", value="modify_checkin", label=gettext("Change checkin times"),
+                                              anid="submit-modify_checkin") }}
+                    {{ util.form_input_submit(name="action", value="modify_checkin", label=gettext("Delete checkin times"),
+                                              anid="submit-delete_checkin", outerclass="softhide", aclass="btn btn-danger", icon="trash-alt") }}
                 </form>
             </div>
             {% endif %}
@@ -63,7 +69,7 @@
                 <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkinform" class="form-horizontal">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
-                        {% trans %}The following people will be checked in:{% endtrans %}
+                        {% trans %}The following people can be checked in, or their time of last checkout time can be reset or deleted.{% endtrans %}
                     </p>
                     <ul class="nslim">
                     {% for reg_id, periods in absent.items() %}
@@ -84,8 +90,14 @@
                     {{ util.input_hidden('registration_ids', value=",".join(absent|map('string'))) }}
                     {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local',
                                             defaultvalue=request_time) }}
-                    {{ util.form_input_submit(label=gettext("Checkin"), icon="arrow-right-to-bracket",
-                                              cancellink=cdedblink('event/registration_query')) }}
+                    {{ util.form_input_submit(name="action", value="checkin", label=gettext("Checkin"), icon="arrow-right-to-bracket") }}
+                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local', outerclass="mosp",
+                                            anid="input-checkout-massreset", info=gettext("leave empty to delete latest checkout")) }}
+                    {{ util.form_input_submit(name="action", value="modify_checkout", label=gettext("Change checkout times"),
+                                              anid="submit-modify_checkout") }}
+                    {{ util.form_input_submit(name="action", value="modify_checkout", label=gettext("Delete checkout times"),
+                                              anid="submit-delete_checkout", outerclass="softhide", aclass="btn btn-danger", icon="trash-alt") }}
+
                 </form>
             </div>
             {% endif %}
@@ -98,5 +110,18 @@
     <script nonce="{{ csp_nonce }}">
         $('#checkinform').cdedbProtectChanges();
         $('#checkoutform').cdedbProtectChanges();
+
+        // show buttons with suitable text and icon
+        function massreset_buttonchange(action) {
+            if ($('#input-' + action + '-massreset').val()) {
+                $('#submit-delete_' + action).closest(".form-group").addClass('softhide');
+                $('#submit-modify_' + action).closest(".form-group").removeClass('softhide');
+            } else {
+                $('#submit-modify_' + action).closest(".form-group").addClass('softhide');
+                $('#submit-delete_' + action).closest(".form-group").removeClass('softhide');
+            }
+        }
+        $('#input-checkin-massreset').on('change', () => massreset_buttonchange('checkin')).trigger('change');
+        $('#input-checkout-massreset').on('change', () => massreset_buttonchange('checkout')).trigger('change');
     </script>
 {% endblock %}

@@ -2012,16 +2012,16 @@ class EventRegistrationBackend(EventBaseBackend):
                 self.event_log(rs, const.EventLogCodes.checkin_changed,
                                reg['event_id'], reg['persona_id'], msg)
 
-            if checkout_time is not None:
-                if period.checkout_time != checkout_time:
-                    old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+            if period.checkout_time != checkout_time:
+                old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+                if checkout_time:
                     new_time = datetime_filter(checkout_time, lang=rs.log_lang)
                     msg = f"{old_time} -> {new_time}"
-                    period.checkout_time = checkout_time
-                    self.event_log(rs, const.EventLogCodes.checkout_changed,
-                                   reg['event_id'], reg['persona_id'], msg)
-            elif period.checkout_time:
-                raise ValueError(n_("Can not delete checkout of concluded period."))
+                else:
+                    msg = rs.log_gettext("Removed %(time)s").format(time=old_time)
+                period.checkout_time = checkout_time
+                self.event_log(rs, const.EventLogCodes.checkout_changed,
+                               reg['event_id'], reg['persona_id'], msg)
 
             return self.sql_update(
                 rs, models.CheckinPeriod.database_table, period.to_database())

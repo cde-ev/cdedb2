@@ -1829,60 +1829,109 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access('event', modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("registration_ids", "checkin_time", "checkout_time")
+    @REQUESTdata("registration_ids", "action", "checkin_time", "checkout_time")
     def checkin_multiset(self, rs: RequestState, event_id: int,
-                         registration_ids: vtypes.IntCSVList,
+                         registration_ids: vtypes.IntCSVList, action: str,
                          checkin_time: Optional[datetime.datetime],
                          checkout_time: Optional[datetime.datetime]) -> Response:
         """Checkin/-out multiple people at once.
 
-        Exactly one of checkin or checkout time has to be provided.
+        :param action: One of 'checkout','modify_checkin', 'checkin', 'modify_checkout'.
+            The modify_ options mass-reset the latest respective timestamp and
+            the others add new ones.
         """
+        ref_time = now()
+        if checkin_time and checkin_time > ref_time:
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkout_time > ref_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be in the past."))))
         if rs.has_validation_errors():
             return self.checkin_multiset_form(rs, event_id, internal=True)
-        if bool(checkin_time) == bool(checkout_time):
-            rs.notify("error", n_("Can only either checkin or checkout."))
+        if action not in {'checkin', 'modify_checkout', 'checkout', 'modify_checkin'}:
+            rs.notify("error", n_("Invalid action."))
             return self.checkin_multiset_form(rs, event_id, internal=True)
 
         regs = self.eventproxy.get_registrations(rs, registration_ids)
+        # first, validate
         consistent = True
-        if checkout_time:
-            if checkout_time > now():
+        if action == 'checkout':
+            if not checkout_time:
                 rs.append_validation_error(
-                    ('checkout_time', ValueError(n_("Must be in the past."))))
+                    ('checkout_time', ValueError(n_("Must not be empty."))))
             elif checkout_time < max(
                 reg['checkin_periods'][-1].checkin_time for reg in regs.values()
             ):
                 rs.append_validation_error(
                     ('checkout_time', ValueError(n_("Must be after last checkin."))))
+        if action in {'checkout', 'modify_checkin'}:
             if any(
                 not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
                 for reg in regs.values()
             ):
-                rs.notify('error',
-                          n_("Cannot check out people that have not checked-in."))
+                rs.notify('error', n_("People must be checked in."))
                 consistent = False
-        elif checkin_time:
-            if checkin_time > now():
+        if (action == 'modify_checkin'
+            and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
+            and checkin_time < max(
+                reg['checkin_periods'][-2].checkout_time
+                for reg in regs.values() if len(reg['checkin_periods']) >= 2)
+        ):
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be after last checkout."))))
+        if action == 'checkin':
+            if not checkin_time:
                 rs.append_validation_error(
-                    ('checkin_time', ValueError(n_("Must be in the past."))))
-            elif any(
+                    ('checkin_time', ValueError(n_("Must not be empty."))))
+            elif (any(reg['checkin_periods'] for reg in regs.values())
+                  and checkin_time < max(
+                    reg['checkin_periods'][-1].checkout_time
+                    for reg in regs.values() if reg['checkin_periods'])
+            ):
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must be after last checkout."))))
+        if action in {'checkin', 'modify_checkout'}:
+            if any(
                 reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
                 for reg in regs.values()
             ):
-                rs.notify('error',
-                          n_("Cannot check in people that are already checked-in."))
+                rs.notify('error', n_("People must not be checked in."))
                 consistent = False
+        if (action == 'modify_checkout'
+            and any(reg['checkin_periods'] for reg in regs.values())
+            and checkout_time < max(reg['checkin_periods'][-1].checkin_time
+                                    for reg in regs.values() if reg['checkin_periods'])
+        ):
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be after last checkin."))))
         if rs.has_validation_errors() or not consistent:
             return self.checkin_multiset_form(rs, event_id, internal=True)
 
-        print(registration_ids, type(registration_ids))
-        if checkin_time:
-            ret = self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
-        else:
-            ret = self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
-        rs.notify_return_code(ret)
+        # then, process
+        ret = 1
+        if action == 'checkin':
+            ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+        elif action == 'checkout':
+            ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+        elif action == 'modify_checkin':
+            if not checkin_time:  # delete latest checkins
+                for reg_id, reg in regs.items():
+                    ret *= self.eventproxy.delete_checkin_period(
+                        rs, reg_id, reg['checkin_transitions'][-1].id)
+            else:
+                for reg_id, reg in regs.items():
+                    ret *= self.eventproxy.change_checkin_period(
+                        rs, reg_id, reg['checkin_periods'][-1].id, checkin_time, None)
+        elif action == 'modify_checkout':
+            for reg_id, reg in regs.items():
+                if reg['checkin_transitions']:
+                    last_period = reg['checkin_transitions'][-1]
+                    ret *= self.eventproxy.change_checkin_period(
+                        rs, reg_id, last_period.id, last_period.checkin_time,
+                        checkout_time)
 
+        rs.notify_return_code(ret)
         return self.redirect(rs, 'event/registration_query',
                              {'event_id': event_id})
 
