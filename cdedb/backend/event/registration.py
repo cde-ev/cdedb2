@@ -2058,11 +2058,7 @@ class EventRegistrationBackend(EventBaseBackend):
         old_periods = self.get_registration(rs, registration_id)['checkin_periods']
 
         # Set up iterators and a helper to safely iterate over both old and new periods.
-        def nxt(it: Iterator[T]) -> T | None:
-            try:
-                return next(it)
-            except StopIteration:
-                return None
+        nxt = lambda it: next(it, None)
 
         old_it, new_it = iter(old_periods), iter(new_periods)
         current_old, current_new = nxt(old_it), nxt(new_it)
