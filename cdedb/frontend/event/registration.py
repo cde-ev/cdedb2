@@ -1706,7 +1706,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 return self.checkin_form(rs, event_id, part_ids)
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.add_checkins(rs, (registration_id,))
+        code = self.eventproxy.add_checkin(rs, registration_id)
         rs.notify_return_code(code, error=n_("Action failed."))
         if part_ids:
             return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids})
@@ -1726,7 +1726,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Already checked out."))
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.add_checkouts(rs, (registration_id,))
+        code = self.eventproxy.add_checkout(rs, registration_id)
         rs.notify_return_code(code, error=n_("Action failed."))
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})

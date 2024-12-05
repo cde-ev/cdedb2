@@ -1850,6 +1850,13 @@ class EventRegistrationBackend(EventBaseBackend):
                                change_note=datetime_filter(checkin_time, lang=rs.log_lang))
         return ret
 
+    class _AddCheckinProtocol(Protocol):
+        def __call__(self, rs: RequestState, registration_id: int,
+                     checkin_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode: ...
+    add_checkin: _AddCheckinProtocol = singularize(
+        add_checkins, "registration_ids", "registration_id", passthrough=True)
+
     @access("event")
     def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
                       checkout_time: Optional[datetime.datetime] = None,
@@ -1894,6 +1901,13 @@ class EventRegistrationBackend(EventBaseBackend):
                                reg['event_id'], reg['persona_id'],
                                change_note=datetime_filter(checkout_time, lang=rs.log_lang))
         return ret
+
+    class _AddCheckoutProtocol(Protocol):
+        def __call__(self, rs: RequestState, registration_id: int,
+                     checkout_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode: ...
+    add_checkout: _AddCheckoutProtocol = singularize(
+        add_checkouts, "registration_ids", "registration_id", passthrough=True)
 
     @access("event")
     def add_backdated_checkin_period(
