@@ -674,11 +674,14 @@ class CoreBaseFrontend(AbstractFrontend):
                     "notes"])
             if "orga" not in access_levels:
                 masks.extend(["is_member", "gender", "pronouns_nametag",
-                              "legal_given_names"])
-                # Primary address may be hidden from member search,
+                              "show_legal_given_names"])
+                # Primary address and legal given names may be hidden from member search,
                 # but not from orga view.
                 if not data.get('show_address', True):
                     masks.extend(["address", "address_supplement"])
+                if not data.get('show_legal_given_names', False):
+                    pass
+                    masks.append("legal_given_names")
             if not data.get('show_address2', True):
                 masks.extend(["address2", "address_supplement2"])
             for key in masks:
@@ -1085,7 +1088,8 @@ class CoreBaseFrontend(AbstractFrontend):
             else:
                 search: list[tuple[str, QueryOperators, Any]]
                 # TODO Decide when to include legal_given_names here
-                key = "username,family_name,given_names,nickname"
+                key = ("username,family_name,given_names,nickname,"
+                       "searchable_legal_given_names")
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = scope.get_spec()

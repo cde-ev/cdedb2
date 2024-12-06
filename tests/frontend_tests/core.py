@@ -288,7 +288,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,nickname'] = "Berta"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Berta"
         self.submit(f)
 
         self.assertTitle(USER_DICT['berta']['default_name_format'])
@@ -1653,6 +1653,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
         self.assertPresence("Name N. N. Bürgerlicher Name N. N."
+                            " Bürgerlichen Vornamen für Mitgliedersuche anzeigen Nein"
                             " Geburtsdatum N/A Geschlecht keine Angabe"
                             " Pronomen – Pronomen auf Namensschild Nein",
                             div='personal-information', exact=True)

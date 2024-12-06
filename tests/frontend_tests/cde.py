@@ -502,7 +502,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,nickname'] = "Berta"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Berta"
         self.submit(f)
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
@@ -511,7 +511,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,nickname'] = "Bindi"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Bindi"
         self.submit(f)
         self.assertTitle(USER_DICT['berta']['default_name_format'])
 
@@ -521,7 +521,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
         # part of Anton's legal_given_names
-        f['qval_given_names,nickname'] = "Armin"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Armin"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
@@ -602,9 +602,12 @@ class TestCdEFrontend(FrontendTest):
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
         fields = [
-            "fulltext", "given_names,nickname", "family_name,birth_name",
+            "fulltext",
+            "given_names,searchable_legal_given_names,nickname",
+            "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "location,location2",
+            "username",
+            "location,location2",
         ]
         for field in fields:
             f['qval_' + field].force_value("[a]")
@@ -628,13 +631,13 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'CdE-Mitglied suchen'})
         # len(entry) <= 3 must equal the column entry in the database
         f = self.response.forms['membersearchform']
-        f['qval_given_names,nickname'] = "Ant"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Ant"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(entry) > 3 performs a wildcard search
-        f['qval_given_names,nickname'] = "Anton"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Anton"
         self.submit(f)
         self.assertTitle("Anton Administrator")
 

@@ -36,6 +36,7 @@
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
             info=gettext("For direct debits and donation receipts. Only visible to %(orgas_and_admins)s. (optional)")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
+        {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices. (optional)")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name"), info=gettext("(mandatory)")) }}
         {% if "birth_name" in shown_fields and 'cde' in admin_bits %}

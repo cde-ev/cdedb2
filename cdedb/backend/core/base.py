@@ -209,6 +209,8 @@ class CoreBaseBackend(AbstractBackend):
             attributes += ("address_supplement", "address")
         if persona["show_address2"]:
             attributes += ("address_supplement2", "address2")
+        if persona["show_legal_given_names"]:
+            attributes += ("legal_given_names",)
         values = (str(persona[a]) for a in attributes if persona[a] is not None)
         return " ".join(values)
 
@@ -1698,6 +1700,7 @@ class CoreBaseBackend(AbstractBackend):
                 # 'is_purged' not relevant here
                 # 'given_names' kept for later recognition
                 # 'legal_given_names' kept for later recognition
+                'show_legal_given_names': False,  # privacy: better safe than sorry
                 # 'nickname' kept for later recognition
                 # 'family_name' kept for later recognition
                 'title': None,
@@ -1709,6 +1712,7 @@ class CoreBaseBackend(AbstractBackend):
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
+                # 'show_address' kept to err on side on privacy
                 'address_supplement': None,
                 'address': None,
                 'postal_code': None,
@@ -1716,6 +1720,7 @@ class CoreBaseBackend(AbstractBackend):
                 'country': None,
                 # 'birth_name' kept for later recognition
                 'address_supplement2': None,
+                # 'show_address2' kept to err on side on privacy
                 'address2': None,
                 'postal_code2': None,
                 'location2': None,

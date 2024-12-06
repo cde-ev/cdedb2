@@ -107,6 +107,10 @@ CREATE TABLE core.personas (
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
         legal_given_names       varchar DEFAULT NULL,
+        -- whether to show precise address in member search
+        show_legal_given_names  boolean NOT NULL DEFAULT FALSE,
+        searchable_legal_given_names varchar GENERATED ALWAYS AS (
+            CASE WHEN show_legal_given_names THEN legal_given_names ELSE NULL END) STORED,
         -- "Nachname"
         family_name             varchar NOT NULL,
 
@@ -406,6 +410,7 @@ CREATE TABLE core.changelog (
         nickname                varchar,
         given_names             varchar,
         legal_given_names       varchar,
+        show_legal_given_names  boolean NOT NULL DEFAULT FALSE,
         family_name             varchar,
         title                   varchar,
         name_supplement         varchar,
