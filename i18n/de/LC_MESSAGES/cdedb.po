@@ -5375,7 +5375,7 @@ msgstr "Für diese Fragebogen-Art gibt es bisher keine Einträge."
 
 #: cdedb/frontend/event/questionnaire.py:355
 msgid "Every row must occur exactly once."
-msgstr "Jede Reihe darf nur genau einmal vorkommen."
+msgstr "Jede Zeile darf nur genau einmal vorkommen."
 
 #: cdedb/frontend/event/registration.py:136
 msgid "Multiple transfers for this user."
@@ -6899,7 +6899,7 @@ msgid ""
 "the candidate of the xth row is preferred by y voters over the candidate of "
 "the zth column."
 msgstr ""
-"der Kandidat der xten Reihe wird von y Wählern gegenüber dem Kandidat der "
+"der Kandidat der xten Zeile wird von y Wählern gegenüber dem Kandidat der "
 "zten Spalte präferiert."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:196
