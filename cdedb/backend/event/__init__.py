@@ -806,14 +806,16 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                             tmp_id = part['lodgement_id']
                                             part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
-                            # change_note for log entry for registrations
-                            change_note = "Partieller Import."
-                            if data.get('summary'):
-                                change_note = ("Partieller Import: "
-                                               + data['summary'])
+                            # Only set registration of "usual" fields are concerned
                             personalized_fees = changed_reg.pop('personalized_fees', {})
                             checkin_periods = changed_reg.pop('checkin_periods', None)
-                            self.set_registration(rs, changed_reg, change_note)
+                            if changed_reg.keys() > {'id'}:
+                                # change_note for log entry for registrations
+                                change_note = "Partieller Import."
+                                if data.get('summary'):
+                                    change_note = ("Partieller Import: "
+                                                   + data['summary'])
+                                self.set_registration(rs, changed_reg, change_note)
                             for fee_id, amount in personalized_fees.items():
                                 self.set_personalized_fee_amount(
                                     rs, registration_id, fee_id, amount)

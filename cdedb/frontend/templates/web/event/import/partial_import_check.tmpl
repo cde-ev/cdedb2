@@ -33,7 +33,7 @@
                     <td class="{% if old is not none %}bg-danger{% endif %}">
                         {% if old is sequence and not old is string %}
                             [{% for o in old %}
-                                {{- choices.get(key, {}).get(o|string, o) }}
+                                {{- choices.get(key, {}).get(o, o) }}
                                 {%- if not loop.last %}, {% endif %}
                             {%- endfor %}]
                         {% else %}
@@ -43,7 +43,7 @@
                     <td class="{% if new is not none %}bg-success{% endif %}">
                         {% if new is sequence and not new is string %}
                             [{% for n in new %}
-                                {{- choices.get(key, {}).get(n|string, n) }}
+                                {{- choices.get(key, {}).get(n, n) }}
                                 {%- if not loop.last %}, {% endif %}
                             {%- endfor %}]
                         {% else %}

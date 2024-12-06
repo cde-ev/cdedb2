@@ -50,7 +50,6 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
 
 
 @dataclass
-@dataclass
 class CdEDataclass:
     """
 

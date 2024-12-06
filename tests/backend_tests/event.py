@@ -16,7 +16,7 @@ import psycopg2.errors
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.models.event as models_event
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -27,6 +27,7 @@ from cdedb.common import (
     cast_fields,
     nearly_now,
     now,
+    parse_datetime,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -748,7 +749,7 @@ class TestEventBackend(BackendTest):
                 'track_id': new_track_id,
             }
 
-        new_track_obj = models_event.CourseTrack.from_database(new_track)
+        new_track_obj = models.CourseTrack.from_database(new_track)
         event.tracks[new_track_id] = new_track_obj
         event.parts[part_id].tracks[new_track_id] = new_track_obj
 
@@ -3058,6 +3059,13 @@ class TestEventBackend(BackendTest):
             for key in ('status',):
                 if key in new:
                     new[key] = const.RegistrationPartStati(new[key])
+            for key in ('checkin_periods',):
+                if key in new:
+                    for period in new[key]:
+                        period['checkin_time'] = parse_datetime(period['checkin_time'])
+                        if period['checkout_time']:
+                            period['checkout_time'] = parse_datetime(
+                                period['checkout_time'])
             old.update(new)
 
         recursive_update(expectation, delta)
@@ -3082,7 +3090,6 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
-        expectation['registrations'][1002]['checkin_periods'] = []
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
@@ -3192,7 +3199,27 @@ class TestEventBackend(BackendTest):
                 'persona_id': 100,
             },
             {
+                'change_note': "23.02.2022, 10:00:01",
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 2,
+            },
+            {
+                'change_note': "23.02.2022, 10:00:02",
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 2,
+            },
+            {
                 'code': const.EventLogCodes.registration_created,
+                'persona_id': 3,
+            },
+            {
+                'change_note': "22.02.2022, 18:00:00",
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 3,
+            },
+            {
+                'change_note': "23.02.2022, 10:00:00",
+                'code': const.EventLogCodes.checkout_added,
                 'persona_id': 3,
             },
             {
@@ -3331,7 +3358,28 @@ class TestEventBackend(BackendTest):
                             'course_id': -1,
                             'choices': [4, -1, 5]}}},
                 5: None,
+                6: {
+                    'checkin_periods': [
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 22, 17, 0,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0,
+                                              tzinfo=datetime.timezone.utc)),
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 23, 9, 0, 1,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0, 2,
+                                              tzinfo=datetime.timezone.utc)),
+                    ],
+                },
                 1001: {
+                    'checkin_periods': [
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 22, 17, 0,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0,
+                                              tzinfo=datetime.timezone.utc)),
+                    ],
                     'parts': {
                         2: {'lodgement_id': -1},
                     },

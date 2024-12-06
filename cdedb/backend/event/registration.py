@@ -1939,13 +1939,13 @@ class EventRegistrationBackend(EventBaseBackend):
                     break
             else:
                 # New period will be appended.
-                if old_periods and checkin_time <= old_periods[-1].checkout_time:
+                if old_periods and checkin_time <= old_periods[-1].checkout_time:  # type: ignore[operator]
                     raise ValueError(n_("Checkin must be after previous checkout."))
                 ret *= self.add_checkins(rs, [registration_id], checkin_time)
                 if checkout_time:
                     ret *= self.add_checkouts(rs, [registration_id], checkout_time)
                 return ret
-            if pos > 0 and checkin_time <= old_periods[pos - 1].checkout_time:
+            if pos > 0 and checkin_time <= old_periods[pos - 1].checkout_time:  # type: ignore[operator]
                 raise ValueError(n_("Checkin must be after previous checkout."))
             if not checkout_time:
                 raise ValueError(n_(
