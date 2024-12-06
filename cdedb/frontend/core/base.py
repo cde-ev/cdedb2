@@ -1171,6 +1171,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs, [user.persona_id], active=True):
             ret.remove("donation")
 
+        # hide the member search toggles if no cde realm
+        for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
+            if "cde" not in user.roles:
+                ret.remove(key)
+
         restricted_fields = {"notes", "birthday", "is_searchable"}
         if restricted:
             ret -= restricted_fields

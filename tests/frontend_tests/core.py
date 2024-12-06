@@ -450,6 +450,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual({}, self.response.json)
         self.get('/core/persona/select?kind=ml_user&phrase=@exam&aux=other')
         self.assertEqual({}, self.response.json)
+        # Legal given names match only if searchable
+        self.get('/core/persona/select?kind=admin_persona&phrase=ibn')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=admin_persona&phrase=Armin')
+        self.assertEqual({'personas': []}, self.response.json)
 
     @as_users("quintus")
     def test_selectpersona_two(self) -> None:

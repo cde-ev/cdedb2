@@ -218,6 +218,12 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_changedata(self) -> None:
+        with self.switch_user("inga"):
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "lotta"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Keine Mitglieder gefunden.")
         self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         # Make sure all country codes are translated
@@ -230,10 +236,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
-        # Make sure hiding functionality works as extended
+        # Make sure hiding functionality works as expected
         self.traverse("Bearbeiten")
         f = self.response.forms['changedataform']
         f['show_address'] = False
+        f['show_legal_given_names'] = True
         self.submit(f)
         self.assertPresence("(außer genaue Adresse)", div='searchability')
         self.assertPresence("Im Garten 77", div='hidden-address')
@@ -241,10 +248,20 @@ class TestCdEFrontend(FrontendTest):
         with self.switch_user("inga"):
             self.traverse("Mitglieder")
             f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "lotta"
+            self.submit(f)
+            self.assertTitle("Bertå Beispiel")
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
             f['qval_fulltext'] = "Bert"
             self.submit(f)
             self.assertNonPresence("Garten")
             self.assertPresence("Strange Road 9 3/4", div='address2')
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "Garten"
+            self.submit(f)
+            self.assertPresence("Keine Mitglieder gefunden.")
         with self.switch_user("garcia"):
             self.traverse("Index", "Große Testakademie")
             f = self.response.forms['quickregistrationform']
