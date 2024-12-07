@@ -1628,11 +1628,6 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
-    if ("given_names" in val and "legal_given_names" in val and val["legal_given_names"]
-            and val["given_names"].lower() not in val["legal_given_names"].lower()
-            and not ignore_warnings):
-        errs.append(ValidationWarning("given_names", n_(
-            "Given names is not a part of legal given names.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
