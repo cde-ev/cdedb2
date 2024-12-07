@@ -288,7 +288,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,nickname'] = "Berta"
+        f['qval_given_names,searchable_legal_given_names,nickname'] = "Berta"
         self.submit(f)
 
         self.assertTitle(USER_DICT['berta']['default_name_format'])
@@ -450,6 +450,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual({}, self.response.json)
         self.get('/core/persona/select?kind=ml_user&phrase=@exam&aux=other')
         self.assertEqual({}, self.response.json)
+        # Legal given names match only if searchable
+        self.get('/core/persona/select?kind=admin_persona&phrase=ibn')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=admin_persona&phrase=Armin')
+        self.assertEqual({'personas': []}, self.response.json)
 
     @as_users("quintus")
     def test_selectpersona_two(self) -> None:
@@ -1653,6 +1660,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
         self.assertPresence("Name N. N. Bürgerlicher Name N. N."
+                            " Bürgerlichen Vornamen für Mitgliedersuche anzeigen Nein"
                             " Geburtsdatum N/A Geschlecht keine Angabe"
                             " Pronomen – Pronomen auf Namensschild Nein",
                             div='personal-information', exact=True)

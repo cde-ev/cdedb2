@@ -186,6 +186,14 @@
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
                 <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
+                {% if "show_legal_given_names" in data %}
+                    <dt title="{% trans %}Show legal name in member search{% endtrans %}">
+                        {% trans %}Show legal name in member search{% endtrans %}
+                    </dt>
+                    <dd id="show_legal_given_names">
+                        {{ util.deko_checkbox(checked=data['show_legal_given_names'], titles=[gettext("No"), gettext("Yes")]) }}
+                    </dd>
+                {% endif %}
             {% endif %}
             {% if data['birth_name'] %}
                 <dt title="{% trans %}Birth Name{% endtrans %}">

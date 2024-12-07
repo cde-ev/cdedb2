@@ -191,6 +191,7 @@ PERSONA_DEFAULTS = {
     'title': None,
     'nickname': None,
     'legal_given_names': None,
+    'show_legal_given_names': False,
     'name_supplement': None,
     'gender': None,
     'pronouns': None,

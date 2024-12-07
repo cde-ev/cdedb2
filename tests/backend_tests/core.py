@@ -49,6 +49,7 @@ PERSONA_TEMPLATE = {
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
     'legal_given_names': None,
+    'show_legal_given_names': False,
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -1001,6 +1002,7 @@ class TestCoreBackend(BackendTest):
             'paper_expuls': True,
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -1126,6 +1128,7 @@ class TestCoreBackend(BackendTest):
             'postal_code2': '8XA 45-$',
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+495432987654321',
             'timeline': 'Überall',

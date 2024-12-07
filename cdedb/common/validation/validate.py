@@ -1389,6 +1389,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'nickname': NoneType,
     'given_names': str,
     'legal_given_names': Optional[str],
+    'show_legal_given_names': bool,
     'family_name': str,
     'title': NoneType,
     'name_supplement': NoneType,
@@ -1430,6 +1431,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
 PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
+    'show_legal_given_names': bool,
     'gender': const.Genders,
     'pronouns': Optional[str],
     'pronouns_nametag': bool,
@@ -1514,6 +1516,7 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'nickname': Optional[str],
     'given_names': str,
     'legal_given_names': Optional[str],
+    'show_legal_given_names': bool,
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],

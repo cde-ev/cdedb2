@@ -163,6 +163,10 @@
             {{ print_history('legal_given_names') }}
         {% endcall %}
 
+        {% call history_field(gettext("Legal Given Names searchable")) %}
+            {{ print_history('show_legal_given_names') }}
+        {% endcall %}
+
         {% call history_field(gettext("Birth Name")) %}
             {{ print_history('birth_name') }}
         {% endcall %}
