@@ -479,6 +479,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_assembly_realm': True,
             'is_member': True,
             'given_names': persona['given_names'] or persona['legal_given_names'],
+            'legal_given_names': (persona['legal_given_names'] if persona['given_names']
+                                  else None),
             'nickname': None,
             'trial_member': False,
             'honorary_member': False,

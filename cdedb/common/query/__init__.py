@@ -392,7 +392,6 @@ PRIMARY_KEYS = {
 }
 
 # See QueryScope.get_spec().
-# TODO include legal_given_names and nickname
 _QUERY_SPECS = {
     # The most basic view on a persona.
     QueryScope.persona:
@@ -1229,6 +1228,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
                 "bool", n_("is cancelled"), prefix),
             f"track{track.id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
+            f"track{track.id}.remaining_capacity": QuerySpecEntry(
+                "int", n_("remaining capacity"), prefix),
             f"track{track.id}.attendees_and_guests": QuerySpecEntry(
                 "int", n_("attendee count (incl. guests)"), prefix),
             f"track{track.id}.instructors": QuerySpecEntry(

@@ -2288,7 +2288,6 @@ class TestCoreFrontend(FrontendTest):
             'id': 9,
             'username': "zorro@example.cde",
             'password': new_password,
-            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }
@@ -2332,7 +2331,6 @@ class TestCoreFrontend(FrontendTest):
         new_user = {
             'username': "zelda@example.cde",
             'password': new_password,
-            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }
@@ -2526,7 +2524,6 @@ class TestCoreFrontend(FrontendTest):
         new_user = {
             'username': "zorro@example.cde",
             'password': new_password,
-            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }

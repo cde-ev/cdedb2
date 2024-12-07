@@ -37,7 +37,7 @@
         <dd>
             {{ util.persona_name(persona, include_nickname=True) }}
         </dd>
-        {% if persona['legal_given_names'] != persona['given_names'] %}
+        {% if persona['legal_given_names'] %}
             <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
             <dd>
                 {{ util.persona_name(persona, use_legal_name=True, with_titles=True) }}

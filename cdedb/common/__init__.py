@@ -581,7 +581,7 @@ def make_persona_forename(persona: CdEDBObject,
     nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
     if use_legal_name:
-        return persona['legal_given_names']
+        return persona['legal_given_names'] or given_names
     if include_nickname:
         if not nickname:
             return given_names

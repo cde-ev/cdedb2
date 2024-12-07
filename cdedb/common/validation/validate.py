@@ -1389,7 +1389,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'notes': Optional[str],
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': str,
+    'legal_given_names': Optional[str],
     'family_name': str,
     'title': NoneType,
     'name_supplement': NoneType,
@@ -1514,7 +1514,7 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'is_active': bool,
     'nickname': Optional[str],
     'given_names': str,
-    'legal_given_names': str,
+    'legal_given_names': Optional[str],
     'family_name': str,
     'title': Optional[str],
     'name_supplement': Optional[str],
@@ -1626,7 +1626,7 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
-    if ("given_names" in val and "legal_given_names" in val
+    if ("given_names" in val and "legal_given_names" in val and val["legal_given_names"]
             and val["given_names"].lower() not in val["legal_given_names"].lower()
             and not ignore_warnings):
         errs.append(ValidationWarning("given_names", n_(

@@ -383,7 +383,11 @@ class EventQueryBackend(EventBaseBackend):
             # rank and information on whether the course is offered and taking place.
 
             # A base table with all course ids we need in the following tables.
-            base = f"(SELECT id FROM event.courses WHERE event_id = {event_id}) AS c"
+            base = f"""(
+                SELECT id, max_size
+                FROM event.courses
+                WHERE event_id = {event_id}
+            ) AS c"""
 
             # Step 3.1: Template for combining all course track information.
             def course_track_table(track: models.CourseTrack) -> str:
@@ -469,7 +473,10 @@ class EventQueryBackend(EventBaseBackend):
 
                 stati_str = ','.join(map(str, map(int, stati)))
                 return f"""
-                    SELECT id AS base_id, COUNT(registration_id) AS {param_name}
+                    SELECT
+                        id AS base_id, COUNT(registration_id) AS {param_name}
+                        {", max_size - COUNT(registration_id) AS remaining_capacity"
+                         if param_name == 'attendees' else ""}
                     FROM (
                         {base}
                         LEFT OUTER JOIN (
@@ -482,7 +489,7 @@ class EventQueryBackend(EventBaseBackend):
                             AND track_id = {track.id} {constraint}
                         ) AS reg_track ON c.id = reg_track.{col}
                     )
-                    GROUP BY id
+                    GROUP BY id, max_size
                 """
 
             # Step 3.3: Prepare template for constructing table with course choices.
