@@ -680,7 +680,6 @@ class CoreBaseFrontend(AbstractFrontend):
                 if not data.get('show_address', True):
                     masks.extend(["address", "address_supplement"])
                 if not data.get('show_legal_given_names', False):
-                    pass
                     masks.append("legal_given_names")
             if not data.get('show_address2', True):
                 masks.extend(["address2", "address_supplement2"])
