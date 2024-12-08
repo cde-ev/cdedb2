@@ -110,9 +110,8 @@
         <tbody>
             {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
                 <tr>
-                    {# The following is equivalent to format = sum(violation.course_stats_format for violation in violations_by_course[course_id] if violation.track is None and violation.track_group is None) #}
-                    {% set format = violations_by_course[course_id]|selectattr('track', 'none')|selectattr('track_group', 'none')|map(attribute='course_stats_format')|sum -%}
-                    {% set aclass, atitle = format.html_class if format else "", format.get_title(gettext) if format else "" %}
+                    {% set format = violations.get(course_id=course_id, track=None, track_group=None).format -%}
+                    {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                     <td class="{{ aclass }}" title="{{ atitle }}">
                         {{ course['nr'] }}
@@ -122,8 +121,7 @@
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
-                        {# The following is equivalent to format = sum(violation.course_stats_format for violation in violations_by_course[course_id] if violation.track == track and violation.track_group is None) #}
-                        {% set format = violations_by_course[course_id]|selectattr('track.id', 'eq', track.id)|selectattr('track_group', 'none')|map(attribute='course_stats_format')|sum -%}
+                        {% set format = violations.get(course_id=course_id, track=track, track_group=None).format -%}
                         {% set aclass, atitle = format.html_class if format else "", format.get_title(gettext) if format else "" %}
 
                         {% if track.id in course['segments'] %}

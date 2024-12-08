@@ -74,9 +74,10 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set general_violations = constraint_violations['all']|selectattr('track', 'none')|selectattr('track_group', 'none')|list %}
-    {% if general_violations and general_violations|map('severity')|list|max >= min_severity %}
-        {% call generic_event.constraint_violations_panel(constraint_violations['max_severity']) %}
+    {% set violations = constraint_violations['violations'] %}
+    {% set general_violations = violations.get(track_not=ambience['course']['segments']) %}
+    {% if general_violations.max_severity >= min_severity %}
+        {% call generic_event.constraint_violations_panel(general_violations.max_severity) %}
             {{ generic_event.list_violations("constraint-violations", general_violations) }}
         {% endcall %}
     {% endif %}
@@ -102,8 +103,16 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {% set track_violations = constraint_violations['all']|selectattr('track.id', 'eq', track.id) %}
-                        {{ generic_event.list_violations("constraint-violations", track_violations, list=False) }}
+                        {% set track_violations = violations.get(track=track) %}
+                        <div id="track-violations.{{ track.id }}">
+                            {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
+                                <p class="{{ violation.severity.html_class() }}">
+                                    <strong>
+                                        {{ generic_event.print_violation(violation) }}
+                                    </strong>
+                                </p>
+                            {% endfor %}
+                        </div>
 
                         {%- if attendees %}
                         <ul class="slim">

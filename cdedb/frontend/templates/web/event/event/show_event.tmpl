@@ -354,14 +354,14 @@
             </div>
 
             {% set min_severity = enums['ViolationSeverity'].INFO %}
-            {% if constraint_violations and constraint_violations['max_severity'] >= min_severity %}
+            {% set violations = constraint_violations['violations'] %}
+            {% if violations.max_severity >= min_severity %}
             <div class="col-md-6" id="constraint-violations">
-                {% call generic.constraint_violations_panel(constraint_violations['max_severity'], link_title=True) %}
+                {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
                     <ul>
-                        {% for class_name, violations in constraint_violations['by_class'].items()|sort
-                                if constraint_violations['max_severity_by_class'][class_name] >= min_severity %}
+                        {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
                             <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
-                                {% trans count=violations|selectattr("severity", "ge", min_severity)|list|length,
+                                {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
                                          class_name=gettext(class_name) %}
                                     There are {{ count }} "{{ class_name }}" violations.
                                 {% endtrans %}

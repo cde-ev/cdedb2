@@ -20,17 +20,19 @@ DEBUG: A placeholder for violations which are implemented but are not relevant i
     practice and therefore hidden in the UI.
 """
 import abc
+import collections
 import dataclasses
 import datetime
 import enum
 import itertools
+from collections.abc import Collection, Iterator
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Self
+from typing import TYPE_CHECKING, Any, Callable, Self, cast
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import AgeClasses, CdEDBObject, make_persona_name, n_, now
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import money_filter
 
 if TYPE_CHECKING:
@@ -69,25 +71,18 @@ class ViolationSeverity(enum.Enum):
         return self.value >= other.value
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class CourseStatsFormat:
-    html_classes: list[str]
+    html_classes: list[str] = dataclasses.field(default_factory=list)
     titles: list[str] = dataclasses.field(default_factory=list)
     icons: list[tuple[str, str]] = dataclasses.field(default_factory=list)
 
-    def __add__(self, other: 'CourseStatsFormat | int') -> 'CourseStatsFormat':
-        if isinstance(other, int):
-            return self
-        return CourseStatsFormat(
-            self.html_classes + other.html_classes,
-            self.titles + other.titles,
-            self.icons + other.icons,
+    def __add__(self, other: 'CourseStatsFormat') -> 'CourseStatsFormat':
+        return self.__class__(
+            html_classes=self.html_classes + other.html_classes,
+            titles=self.titles + other.titles,
+            icons=self.icons + other.icons,
         )
-
-    def __radd__(self, other):
-        if isinstance(other, int):
-            return self
-        return NotImplemented
 
     @cached_property
     def html_class(self) -> str:
@@ -95,6 +90,80 @@ class CourseStatsFormat:
 
     def get_title(self, g: Callable[[str], str]) -> str:
         return "\n".join(map(g, self.titles))
+
+
+_MISSING = object()
+
+
+@dataclasses.dataclass(frozen=True)
+class ViolationList:
+    violations: list['ConstraintViolation']
+
+    def __post_init__(self) -> None:
+        self.violations.sort()
+
+    @cached_property
+    def by_class(self) -> dict[str, 'ViolationList']:
+        by_class = collections.defaultdict(list)
+        for v in self.violations:
+            by_class[v.__class__.__name__].append(v)
+
+        if len(by_class) == 0:
+            return {}
+        elif len(by_class) == 1:
+            return {
+                next(iter(by_class)): self,
+            }
+
+        ret = {
+            class_name: ViolationList(violations)
+            for class_name, violations in by_class.items()
+        }
+        return dict(xsorted(ret.items(), key=lambda item: (item[1], item[0])))
+
+    @cached_property
+    def max_severity(self) -> ViolationSeverity:
+        return max(
+            (v.severity for v in self.violations),
+            default=ViolationSeverity.DEBUG,
+        )
+
+    def get(
+            self, *,
+            course_id: int | None = cast(int, _MISSING),
+            track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
+            track_not: Collection[int] = cast(Collection[int], _MISSING),
+            track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
+    ) -> 'ViolationList':
+        return ViolationList([
+            v for v in self.violations
+            if (course_id is _MISSING or (v.course is None and course_id is None or v.course is not None and v.course['id'] == course_id))
+            and (track is _MISSING or v.track == track)
+            and (track_not is _MISSING or v.track is None or v.track.id not in track_not)
+            and (track_group is _MISSING or v.track_group == track_group)
+        ])
+
+    @cached_property
+    def format(self) -> CourseStatsFormat:
+        return sum(
+            (
+                format_
+                for v in self.violations
+                if (format_ := getattr(v, 'course_stats_format', None))
+            ),
+            start=CourseStatsFormat(),
+        )
+
+    def __iter__(self) -> Iterator['ConstraintViolation']:
+        yield from self.violations
+
+    def __lt__(self, other: 'ViolationList') -> bool:
+        if not isinstance(other, ViolationList):
+            return NotImplemented  # type: ignore[unreachable]
+        return self.get_sortkey() < other.get_sortkey()
+
+    def get_sortkey(self) -> Sortkey:
+        return (-self.max_severity.value,)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -125,12 +194,17 @@ class ConstraintViolation(abc.ABC):
         raise NotImplementedError
 
     # Display interface.
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         """
         Must return a list of strings for translation and a dict of translation params.
 
         One of the parameters must be named 'link' and be the link text of the link
         defined by `get_link_params`.
+
+        :param entity_page: If True, return translations for the specific entity page.
+            Otherwise, return translations for the violation overview page.
         """
         raise NotImplementedError
 
@@ -141,6 +215,14 @@ class ConstraintViolation(abc.ABC):
         The link text will be the 'link' parameter from `get_translations`.
         """
         raise NotImplementedError
+
+    def __lt__(self, other: 'ConstraintViolation') -> bool:
+        if not isinstance(other, ConstraintViolation):
+            return NotImplemented  # type: ignore[unreachable]
+        return self.get_sortkey() < other.get_sortkey()
+
+    def get_sortkey(self) -> Sortkey:
+        return (-self.severity.value, self.__class__.__name__)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -212,19 +294,30 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
 
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.severity >= ViolationSeverity.ERROR:
-            msg = n_(
-                "%(link)s is participant in mutually exclusive parts (%(part_list)s).",
-            )
+            if entity_page:
+                msg = n_("Participant in mutually exclusive parts (%(part_list)s).")
+            else:
+                msg = n_(
+                    "%(link)s is participant in mutually exclusive"
+                    " parts (%(part_list)s).",
+                )
             part_filter = lambda part: (
                 self.registration['parts'][part.id]['status']
                     == const.RegistrationPartStati.participant
             )
         else:
-            msg = n_(
-                "%(link)s is present at mutually exclusive parts (%(part_list)s).",
-            )
+            if entity_page:
+                msg = n_(
+                    "Present at mutually exclusive parts (%(part_list)s).",
+                )
+            else:
+                msg = n_(
+                    "%(link)s is present at mutually exclusive parts (%(part_list)s).",
+                )
             part_filter = lambda part: (
                 self.registration['parts'][part.id]['status'].is_present()
             )
@@ -274,11 +367,18 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:  # pragma: no cover
-        msg = n_(
-            "%(link)s has unsynchrozied course choices in synchronized"
-            " tracks (%(track_list)s).",
-        )
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:  # pragma: no cover
+        if entity_page:
+            msg = n_(
+                "Unsynchronized course choices in synchronized tracks (%(track_list)s).",
+            )
+        else:
+            msg = n_(
+                "%(link)s has unsynchrozied course choices in synchronized"
+                " tracks (%(track_list)s).",
+            )
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "track_list": ", ".join(
@@ -321,8 +421,13 @@ class NoCourseAssignedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        msg = n_("%(link)s is not assigned to a course in %(track)s.")
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Not assigned to a course in %(track)s.")
+        else:
+            msg = n_("%(link)s is not assigned to a course in %(track)s.")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
@@ -387,13 +492,30 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.instructed_course:
-            msg = n_("%(link)s does not instruct their course (%(instructed_course)s)"
-                     " in %(track)s.")
+            if entity_page:
+                msg = n_(
+                    "Does not instruct their course (%(instructed_course)s)"
+                    " in %(track)s.",
+                )
+            else:
+                msg = n_(
+                    "%(link)s does not instruct their course (%(instructed_course)s)"
+                    " in %(track)s.",
+                )
+        elif entity_page:
+            msg = n_(
+                "Did not choose their assigned course"
+                " (%(assigned_course)s) in %(track)s.",
+            )
         else:
-            msg = n_("%(link)s did not choose their assigned course"
-                     " (%(assigned_course)s) in %(track)s.")
+            msg = n_(
+                "%(link)s did not choose their assigned course"
+                " (%(assigned_course)s) in %(track)s.",
+            )
 
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
@@ -432,9 +554,16 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_paid'] < 0:
-            msgs = [n_("%(link)s has paid a negative amount (%(amount_paid)s).")]
+            if entity_page:
+                msgs = [n_("Has paid a negative amount (%(amount_paid)s).")]
+            else:
+                msgs = [n_("%(link)s has paid a negative amount (%(amount_paid)s).")]
+        elif entity_page:
+            msgs = [n_("Has paid without a payment date.")]
         else:
             msgs = [n_("%(link)s has paid without a payment date.")]
 
@@ -469,9 +598,18 @@ class NotPaidCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.persona['id'] in self.event.orgas:
-            msg = n_("%(link)s is orga but has not paid their fee (%(amount_owed)s).")
+            if entity_page:
+                msg = n_("is orga but has not paid their fee (%(amount_owed)s).")
+            else:
+                msg = n_(
+                    "%(link)s is orga but has not paid their fee (%(amount_owed)s).",
+                )
+        elif entity_page:
+            msg = n_("Has not paid their fee (%(amount_owed)s).")
         else:
             msg = n_("%(link)s has not paid their fee (%(amount_owed)s).")
 
@@ -512,9 +650,16 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_owed'] < 0:
-            msg = n_("%(link)s owes a negative amount (%(amount_owed)s).")
+            if entity_page:
+                msg = n_("Owes a negative amount (%(amount_owed)s).")
+            else:
+                msg = n_("%(link)s owes a negative amount (%(amount_owed)s).")
+        elif entity_page:
+            msg = n_("Is involved but owes no fee.")
         else:
             msg = n_("%(link)s is involved but owes no fee.")
 
@@ -546,8 +691,13 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        msg = n_("%(link)s needs to be reimbursed (%(remaining_owed)s).")
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Needs to be reimbursed (%(remaining_owed)s).")
+        else:
+            msg = n_("%(link)s needs to be reimbursed (%(remaining_owed)s).")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
             "remaining_owed": money_filter(-self.registration['remaining_owed']),
@@ -586,9 +736,15 @@ class RemainingOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        msg = n_(
-            "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s).")
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Has not fully paid their fee (remaining: %(remaining_owed)s).")
+        else:
+            msg = n_(
+                "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s).",
+            )
 
         parms = {
             "link": make_persona_name(self.persona, include_nickname=True),
@@ -617,7 +773,7 @@ class HiddenCourseCV(CourseConstraintViolation):
                     and event.registration_soft_limit < ref_time
             ):
                 # Registration already over, no late registration.
-                severity = ViolationSeverity.DEBUG
+                severity = ViolationSeverity.INFO
             elif (
                     event.registration_hard_limit
                     and event.registration_hard_limit < ref_time
@@ -634,8 +790,13 @@ class HiddenCourseCV(CourseConstraintViolation):
             course=course,
         )
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        msg = n_("%(link)s is hidden and registration is open or about to start.")
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Is hidden and registration is open or about to start.")
+        else:
+            msg = n_("%(link)s is hidden and registration is open or about to start.")
         params = {
             "link": f"{self.course['nr']}. {self.course['shortname']}",
         }
@@ -643,7 +804,10 @@ class HiddenCourseCV(CourseConstraintViolation):
 
     @cached_property
     def course_stats_format(self) -> CourseStatsFormat | None:
-        return CourseStatsFormat(["course-primary"], [n_("not visible")])
+        return CourseStatsFormat(
+            html_classes=["course-primary"],
+            titles=[n_("not visible")],
+        )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -669,10 +833,15 @@ class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        msg = n_(
-            "%(link)s is taking place in mutually exclusive tracks (%(track_list)s).",
-        )
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Taking place in mutually exclusive tracks (%(track_list)s).")
+        else:
+            msg = n_(
+                "%(link)s is taking place in mutually exclusive tracks (%(track_list)s).",
+            )
         track_ids = set(self.course['active_segments']) & set(self.track_group.tracks)
         params = {
             "link": f"{self.course['nr']}. {self.course['shortname']}",
@@ -726,9 +895,18 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
-        if self.severity >= ViolationSeverity.ERROR:
-            msg = n_("%(link)s is not offered in %(track)s but has %(num)s attendees.")
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if self.track.id not in self.course['segments']:
+            if entity_page:
+                msg = n_("Not offered in %(track)s but has %(num)s attendees.")
+            else:
+                msg = n_(
+                    "%(link)s is not offered in %(track)s but has %(num)s attendees.",
+                )
+        elif entity_page:
+            msg = n_("Cancelled but has %(num)s attendees.")
         else:
             msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
         params = {
@@ -745,9 +923,9 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             if self.num else n_("Course cancelled")
         )
         return CourseStatsFormat(
-            ["course-cancelled" if self.num else "course-cancelled-ok"],
-            [title],
-            [("ban", title)],
+            html_classes=["course-cancelled" if self.num else "course-cancelled-ok"],
+            titles=[title],
+            icons=[("ban", title)],
         )
 
 
@@ -789,10 +967,19 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.course['min_size'] and self.num < self.course['min_size']:
-            msg = n_("%(link)s has too few attendees (%(num)s < %(min_size)s)"
-                     " in %(track)s.")
+            if entity_page:
+                msg = n_("Too few attendees (%(num)s < %(min_size)s).")
+            else:
+                msg = n_(
+                    "%(link)s has too few attendees (%(num)s < %(min_size)s)"
+                    " in %(track)s.",
+                )
+        elif entity_page:
+            msg = n_("Too many attendees (%(num)s > %(max_size)s).")
         else:
             msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s)"
                      " in %(track)s.")
@@ -809,13 +996,13 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
     def course_stats_format(self) -> CourseStatsFormat | None:
         if self.course['min_size'] and self.num < self.course['min_size']:
             return CourseStatsFormat(
-                ["course-too-few"],
-                [n_("Not enough Attendees")],
+                html_classes=["course-too-few"],
+                titles=[n_("Not enough Attendees")],
             )
         else:
             return CourseStatsFormat(
-                ["course-too-many"],
-                [n_("Too many Attendees")],
+                html_classes=["course-too-many"],
+                titles=[n_("Too many Attendees")],
             )
 
 
@@ -846,9 +1033,16 @@ class LonelyAttendeesCV(CourseConstraintViolation):
                 )
         return None
 
-    def get_translation(self) -> tuple[list[str], CdEDBObject]:
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
         if self.num_learners:
-            msg = n_("%(link)s has %(num)s attendees but no instructors in %(track)s.")
+            if entity_page:
+                msg = n_("%(num)s attendees but no instructors.")
+            else:
+                msg = n_("%(link)s has %(num)s attendees but no instructors in %(track)s.")
+        elif entity_page:
+            msg = n_("%(num)s instructors but no attendees.")
         else:
             msg = n_("%(link)s has %(num)s instructors but no attendees in %(track)s.")
         params = {
@@ -861,6 +1055,10 @@ class LonelyAttendeesCV(CourseConstraintViolation):
     @cached_property
     def course_stats_format(self) -> CourseStatsFormat | None:
         return CourseStatsFormat(
-            ["course-lonely"],
-            [n_("Lonely attendees") if self.num_learners else n_("Lonely instructors")],
+            html_classes=["course-lonely"],
+            titles=[
+                n_("Lonely attendees")
+                if self.num_learners
+                else n_("Lonely instructors"),
+            ],
         )

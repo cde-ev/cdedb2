@@ -761,18 +761,13 @@ class EventCourseMixin(EventBaseFrontend):
         violation_data = self.get_constraint_violations(
             rs, rs.ambience['event'], registration_id=-1, course_id=None)
 
-        violations_by_course = collections.defaultdict(list)
-        for violation in violation_data['all']:
-            if violation.course:
-                violations_by_course[violation.course['id']].append(violation)
-
         return self.render(rs, "course/course_stats", {
             'courses': courses, 'include_active': include_active,
             'choice_counts':
                 violation_data['choice_stats'].involved
                 if include_active else violation_data['choice_stats'].participant,
             'violation_data': violation_data,
-            'violations_by_course': violations_by_course,
+            'violations': violation_data['violations'],
             'hidden_courses_query': _HIDDEN_COURSES_QUERY,
         })
 

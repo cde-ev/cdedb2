@@ -6160,8 +6160,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({"href": "/event/event/4/registration/10/show"})
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
-                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+        self.assertPresence("Ist an sich gegenseitig ausschließenden"
+                            " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']

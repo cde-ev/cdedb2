@@ -96,10 +96,12 @@
             {{ ambience['registration']['orga_notes']|md }}
         {% endcall %}
     {% endif %}
+
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% if constraint_violations['max_severity'] >= min_severity %}
-        {% call generic_event.constraint_violations_panel(constraint_violations['max_severity']) %}
-            {{ generic_event.list_violations("constraint-violations", constraint_violations['all']) }}
+    {% set violations = constraint_violations['violations'] %}
+    {% if violations.max_severity >= min_severity %}
+        {% call generic_event.constraint_violations_panel(violations.max_severity) %}
+            {{ generic_event.list_violations("constraint-violations", violations) }}
         {% endcall %}
     {% endif %}
 
