@@ -34,7 +34,7 @@
         {{ util.form_input_text(name="given_names", label=gettext("Given Names"),
             info=gettext("For salutation, mailing, nametags and event notices. First name usually used. (mandatory)")) }}
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
-            info=gettext("For direct debits and donation receipts. Only visible to %(orgas_and_admins)s. (optional)")|format(
+            info=gettext("(If different from given names) For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% if 'show_legal_given_names' in shown_fields %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
