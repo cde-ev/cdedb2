@@ -1242,10 +1242,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms["changedataform"]
         f["given_names"] = "Anton Armin ÄÖÜ"
-        self.submit(f, check_notification=False)
-        f = self.response.forms['changedataform']
-        f["given_names"] = "Anton Armin ÄÖÜ"
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})
