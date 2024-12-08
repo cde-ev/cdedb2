@@ -113,6 +113,12 @@ class ChoiceCounts:
 
 @dataclass(frozen=True)
 class ChoiceStats:
+    """
+    Collection helper class, holding two instances of `ChoiceCounts`.
+
+    `participant` only includes choices by participants, `involved`
+    includes the stati defined by `const.RegisrationPartStati.is_involved()`.
+    """
     participant: ChoiceCounts
     involved: ChoiceCounts
 
@@ -121,10 +127,6 @@ class ChoiceStats:
 class CourseAttendees:
     """
     Wrapper to store the assigned attendees of one course in one track.
-
-    Learners are attendees that are not instructors (of this course).
-    Involved is defined by `const.RegisrationPartStati.is_involved()`.
-    Filtered is based on a collection of stati given to `get_course_stats()`.
     """
     learners: list[CdEDBObject]
     instructors: list[CdEDBObject]
@@ -690,6 +692,7 @@ class EventCourseMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event.id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
+        # Collection of number of choices in two categories: participant and involved.
         choice_counts_data = {
             k: {
                 course_id: {
@@ -700,7 +703,11 @@ class EventCourseMixin(EventBaseFrontend):
             }
             for k in ('participant', 'involved')
         }
+        # Collection of assigned attendees.
         involved_attendees_lists = collections.defaultdict(list)
+
+        # Iterate over all registrations, accumulating their choices and building
+        #  attendee lists.
         for reg in registrations.values():
             for track_id, track in event.tracks.items():
                 status = reg['parts'][track.part_id]['status']
@@ -721,6 +728,8 @@ class EventCourseMixin(EventBaseFrontend):
                 ):
                     involved_attendees_lists[(course_id, track_id)].append(reg)
 
+        # Convert the collected attendee lists into helper class, separating
+        #  instructors and learners.
         assign_counts = Attendees({
             course_id: {
                 track_id: CourseAttendees(
