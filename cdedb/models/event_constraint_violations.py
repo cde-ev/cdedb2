@@ -906,7 +906,10 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
                     "%(link)s is not offered in %(track)s but has %(num)s attendees.",
                 )
         elif entity_page:
-            msg = n_("Cancelled but has %(num)s attendees.")
+            if self.num:
+                msg = n_("Cancelled but has %(num)s attendees.")
+            else:
+                msg = n_("Course cancelled")
         else:
             msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
         params = {
