@@ -382,7 +382,6 @@ PRIMARY_KEYS = {
 }
 
 # See QueryScope.get_spec().
-# TODO include legal_given_names and nickname
 _QUERY_SPECS = {
     # The most basic view on a persona.
     QueryScope.persona:
@@ -406,6 +405,8 @@ _QUERY_SPECS = {
             "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
+            "show_legal_given_names": QuerySpecEntry(
+                "bool", n_("Legal given names searchable")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
@@ -445,6 +446,8 @@ _QUERY_SPECS = {
             "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
+            "show_legal_given_names": QuerySpecEntry(
+                "bool", n_("Legal given names searchable")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
@@ -516,7 +519,6 @@ _QUERY_SPECS = {
             "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
-            "show_address": QuerySpecEntry("bool", n_("Address searchable")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
@@ -537,7 +539,8 @@ _QUERY_SPECS = {
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names,nickname": QuerySpecEntry("str", n_("Given Names")),
+            "given_names,searchable_legal_given_names,nickname": QuerySpecEntry(
+                "str", n_("Given Names")),
             "family_name,birth_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),

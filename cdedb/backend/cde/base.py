@@ -456,6 +456,7 @@ class CdEBaseBackend(AbstractBackend):
                     'id': persona_id,
                     'show_address': True,
                     'show_address2': True,
+                    'show_legal_given_names': False,
                 }
                 # This applies a part of the newly imported data necessary for realm
                 # transition. The remaining data will be updated later.

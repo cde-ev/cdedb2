@@ -41,6 +41,7 @@ ignored_columns = {
 # mark some columns which shall not be filled with information extracted from the
 # database, because they can be filled by sql automatically.
 implicit_columns = {
+    "core.personas": {"searchable_legal_given_names"},
     "core.changelog": {"id"},
     "core.log": {"id"},
     "core.email_states": {"id"},

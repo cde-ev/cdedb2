@@ -174,7 +174,7 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
-    "non_negtative_float": NonNegativeFloat,
+    "non_negative_float": NonNegativeFloat,
     "phone": Phone,
     # This is not strictly accurate, but an acceptable fallback.
     "iban": str,

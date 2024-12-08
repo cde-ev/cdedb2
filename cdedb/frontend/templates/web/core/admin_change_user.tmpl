@@ -30,19 +30,28 @@
         {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
-        {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
-        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
-        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
-        {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
-        {% if "birth_name" in shown_fields and 'cde' in admin_bits %}
-            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"), info=gettext("Prefixed academic degree or similar.")) }}
+        {{ util.form_input_text(name="given_names", label=gettext("Given Names"),
+            info=gettext("For salutation, mailing, nametags and event notices. First name usually used. (mandatory)")) }}
+        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
+            info=gettext("(If different from given names) For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
+                    orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
+        {% if 'show_legal_given_names' in shown_fields %}
+            {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
-        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices. (optional)")) }}
+        {{ util.form_input_text(name="family_name", label=gettext("Family Name"), info=gettext("(mandatory)")) }}
+        {% if "birth_name" in shown_fields and 'cde' in admin_bits %}
+            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
+                info=gettext("Original family name after the current family name has changed, for example through marriage. (optional)")) }}
+        {% endif %}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"),
+            info=gettext("Suffixed academic degree or similar.")) }}
         {% if 'event' in admin_bits %}
             {% if "gender" in shown_fields %}
-                {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                          label=gettext("Gender")) }}
+                {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
+                    info=gettext("For lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
+                    orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
             {% endif %}
             {% if "pronouns" in shown_fields %}
                 {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
@@ -91,7 +100,9 @@
             {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
+            {% if 'show_address' in shown_fields %}
+                {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
+            {% endif %}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
@@ -107,7 +118,9 @@
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
-            {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
+            {% if 'show_address2' in shown_fields %}
+                {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
+            {% endif %}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
             {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,

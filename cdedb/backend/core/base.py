@@ -209,6 +209,8 @@ class CoreBaseBackend(AbstractBackend):
             attributes += ("address_supplement", "address")
         if persona["show_address2"]:
             attributes += ("address_supplement2", "address2")
+        if persona["show_legal_given_names"]:
+            attributes += ("legal_given_names",)
         values = (str(persona[a]) for a in attributes if persona[a] is not None)
         return " ".join(values)
 
@@ -1698,6 +1700,7 @@ class CoreBaseBackend(AbstractBackend):
                 # 'is_purged' not relevant here
                 # 'given_names' kept for later recognition
                 # 'legal_given_names' kept for later recognition
+                'show_legal_given_names': False,  # privacy: better safe than sorry
                 # 'nickname' kept for later recognition
                 # 'family_name' kept for later recognition
                 'title': None,
@@ -1709,6 +1712,7 @@ class CoreBaseBackend(AbstractBackend):
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
+                # 'show_address' kept to err on side on privacy
                 'address_supplement': None,
                 'address': None,
                 'postal_code': None,
@@ -1716,6 +1720,7 @@ class CoreBaseBackend(AbstractBackend):
                 'country': None,
                 # 'birth_name' kept for later recognition
                 'address_supplement2': None,
+                # 'show_address2' kept to err on side on privacy
                 'address2': None,
                 'postal_code2': None,
                 'location2': None,
@@ -2696,7 +2701,7 @@ class CoreBaseBackend(AbstractBackend):
         admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
-                  persona['legal_given_names'].replace('-', ' ').split() +
+                  (persona['legal_given_names'] or '').replace('-', ' ').split() +
                   persona['family_name'].replace('-', ' ').split())
         if persona['title']:
             inputs.extend(persona['title'].replace('-', ' ').split())
@@ -2787,8 +2792,6 @@ class CoreBaseBackend(AbstractBackend):
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
             (10, "given_names = %s OR legal_given_names = %s",
              (persona['given_names'], persona['given_names'])),
-            (10, "given_names = %s OR legal_given_names = %s",
-             (persona['legal_given_names'], persona['legal_given_names'])),
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
             (10, "family_name = %s OR birth_name = %s",
@@ -2798,11 +2801,16 @@ class CoreBaseBackend(AbstractBackend):
             (5, "postal_code = %s", (persona['postal_code'],)),
             (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
-            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
-             (persona['legal_given_names'], persona['legal_given_names'],
-              persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
+        if 'legal_given_names' in persona and persona['legal_given_names']:
+            queries.extend([
+                (10, "given_names = %s OR legal_given_names = %s",
+                 (persona['legal_given_names'], persona['legal_given_names'])),
+                (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
+                 (persona['legal_given_names'], persona['legal_given_names'],
+                  persona['family_name'])),
+            ])
         # Omit queries where some parameters are None
         queries = tuple(e for e in queries if all(x is not None for x in e[2]))
         for score, condition, params in queries:

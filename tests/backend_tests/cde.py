@@ -126,7 +126,8 @@ class TestCdEBackend(BackendTest):
             spec=QueryScope.cde_member.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
-                ("given_names,nickname", QueryOperators.regex, '[ae]'),
+                ("given_names,searchable_legal_given_names,nickname",
+                 QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
             order=(("family_name,birth_name", True),))
         result = self.cde.submit_general_query(self.key, query)

@@ -4856,19 +4856,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['order'] = "-1,6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "order", "Jede Reihe darf nur genau einmal vorkommen.")
+            "order", "Jede Zeile darf nur genau einmal vorkommen.")
         # row included twice
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = "0,1,1,3,4,5"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "order", "Jede Reihe darf nur genau einmal vorkommen.")
+            "order", "Jede Zeile darf nur genau einmal vorkommen.")
         # not all rows included
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = "0,1,2"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "order", "Jede Reihe darf nur genau einmal vorkommen.")
+            "order", "Jede Zeile darf nur genau einmal vorkommen.")
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)

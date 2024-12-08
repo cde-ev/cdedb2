@@ -1,1 +1,3 @@
 sudo -u www-cde python3 cdedb/database/evolutions/2024-11-10_new-naming-scheme.py
+sudo -u cdb psql -U cdb -d cdb -f /cdedb2/cdedb/database/evolutions/2024-12-06_new-naming-scheme2.sql
+sudo -u www-cde python3 bin/update_fulltext.py
