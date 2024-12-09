@@ -221,7 +221,15 @@
                             {{ util.input_submit(label=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
                         </div>
                     </div>
-                    {% endcall %}
+                    {% if ambience['event'].id in user.orga %}
+                        <p class="help-block no-color text-warning" style="margin-bottom:0">
+                            {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
+                            {% trans %}
+                                 You should not add/remove orgas for your own event.
+                            {% endtrans %}
+                        </p>
+                    {% endif %}
+                {% endcall %}
                 </form>
                 {% endcall %}
             </div>
