@@ -797,6 +797,7 @@ class CoreBaseBackend(AbstractBackend):
     def list_all_moderators(self, rs: RequestState,
                             ml_types: Optional[
                                 Collection[const.MailinglistTypes]] = None,
+                            exclude_inactive_lists: bool = False,
                             ) -> set[int]:
         """List all moderators of any mailinglists.
 
@@ -807,6 +808,8 @@ class CoreBaseBackend(AbstractBackend):
         if ml_types:
             query += (" JOIN ml.mailinglists As ml ON mod.mailinglist_id = ml.id"
                       " WHERE ml.ml_type = ANY(%s)")
+        if exclude_inactive_lists:
+            query += " AND ml.is_active = 1"
         data = self.query_all(rs, query, params=(ml_types,))
         return {e["persona_id"] for e in data}
 

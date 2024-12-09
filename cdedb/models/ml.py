@@ -822,7 +822,7 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
         For the `CdELokalModeratorMailinglist` this means mandatory for all users who
         are moderators of any cdelokal mailinglist.
         """
-        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal})
+        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal}, exclude_inactive_lists=True)
 
 
 @dataclass
