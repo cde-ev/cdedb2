@@ -1884,7 +1884,7 @@ class EventRegistrationBackend(EventBaseBackend):
                    for reg in regs.values()):
                 # someone is not checked in
                 return 0
-            if checkout_time and checkout_time < max(
+            if checkout_time and checkout_time <= max(
               reg['checkin_periods'][-1].checkin_time for reg in regs.values()
             ):
                 # cannot checkout earlier than last checkin
@@ -1941,9 +1941,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 # New period will be appended.
                 if old_periods and checkin_time <= old_periods[-1].checkout_time:  # type: ignore[operator]
                     raise ValueError(n_("Checkin must be after previous checkout."))
-                ret *= self.add_checkins(rs, [registration_id], checkin_time)
+                ret *= self.add_checkin(rs, registration_id, checkin_time)
                 if checkout_time:
-                    ret *= self.add_checkouts(rs, [registration_id], checkout_time)
+                    ret *= self.add_checkout(rs, registration_id, checkout_time)
                 return ret
             if pos > 0 and checkin_time <= old_periods[pos - 1].checkout_time:  # type: ignore[operator]
                 raise ValueError(n_("Checkin must be after previous checkout."))

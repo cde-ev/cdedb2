@@ -4307,6 +4307,78 @@ class TestEventBackend(BackendTest):
                 self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
                 self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)
 
+    @as_users("garcia")
+    def test_checkin_checkout(self) -> None:
+        reg_id = 1
+        base_time = now().replace(microsecond=0)
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # single checkins / checkouts first
+            p_id = self.event.add_checkin(self.key, reg_id)
+            self.assertEqual(self.event.add_checkin(self.key, reg_id), 0)
+            frozen_time.tick(delta)
+            self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
+            self.assertGreater(self.event.add_checkout(self.key, reg_id), 0)
+            future_time = base_time + 42 * delta
+            with self.assertRaises(ValueError) as err:
+                self.event.add_checkin(self.key, reg_id, future_time)
+            self.assertEqual(err.exception.args[0], "Must be in the past.")
+            with self.assertRaises(ValueError):
+                self.event.add_checkout(self.key, reg_id, future_time)
+            self.assertEqual(err.exception.args[0], "Must be in the past.")
+            self.assertEqual(self.event.add_checkout(self.key, reg_id), 0)
+            period = {
+                "id": p_id,
+                "registration_id": reg_id,
+                "checkin_time": base_time,
+                "checkout_time": base_time + delta,
+            }
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+
+            # change a period
+            period["checkin_time"] += delta
+            period["checkout_time"] += delta
+            with self.assertRaises(ValueError) as err:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                    checkout_time=period["checkout_time"],
+                ), 0)
+            self.assertEqual("Must be in the past.", err.exception.args[0])
+            frozen_time.tick(2*delta)
+            with self.assertRaises(ValueError) as err:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id, checkin_time=period["checkout_time"],
+                    checkout_time=period["checkin_time"],
+                ), 0)
+            self.assertEqual("Checkout must be after checkin.", err.exception.args[0])
+            with self.assertRaises(ValueError) as err:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id + 42, checkin_time=period["checkin_time"],
+                    checkout_time=period["checkout_time"],
+                ), 0)
+            self.assertEqual("Inconsistent period.", err.exception.args[0])
+
+            self.assertGreater(self.event.change_checkin_period(
+                self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                checkout_time=period["checkout_time"],
+            ), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+            period["checkout_time"] = None
+            self.assertGreater(self.event.change_checkin_period(
+                self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                checkout_time=None,
+            ), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+
+            # delete
+            self.assertGreater(self.event.delete_checkin_period(self.key, reg_id, p_id), 0)
+
     @as_users("emilia")
     def test_part_groups(self) -> None:
         event_id = 4
