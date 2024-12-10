@@ -1441,7 +1441,7 @@ def parse_date(val: str) -> datetime.date:
 
 def parse_datetime(
     val: str, default_date: Optional[datetime.date] = None,
-) -> datetime.date:
+) -> datetime.datetime:
     """Make a string into a datetime.
 
     We only support a limited set of formats to avoid any surprises

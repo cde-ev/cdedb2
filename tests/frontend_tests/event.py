@@ -12,6 +12,7 @@ import unittest
 from collections.abc import Collection, Sequence
 from typing import Optional
 
+import freezegun
 import lxml.etree
 import segno.helpers
 import webtest
@@ -4966,62 +4967,48 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Checkin", div="1-1003")
 
-    @unittest.skip("skip functionality not longer needed TODO: remove completely")
-    @as_users("garcia")
-    def test_checkin_concurrent_modification(self) -> None:
-        # Test the special measures of the 'Edit' button at the Checkin page,
-        # that ensure that the checkin state is not overriden by the
-        # change_registration form
-        self.traverse("Veranstaltungen", "Große Testakademie", "Checkin")
-        f = self.response.forms['checkinform2']
-        self.traverse({'href': '/event/event/1/registration/2/change'})
-        f2 = self.response.forms['changeregistrationform']
-        f2['part2.lodgement_id'] = 3
-        self.submit(f)
-        self.submit(f2)
-        # Check that the change to lodgement was committed ...
-        self.assertPresence("Kellerverlies")
-        # ... but the checkin is still valid
-        self.assertNonPresence("—", div="checkin-time")
-
     @as_users("garcia")
     def test_checkin_periods(self) -> None:
         self.get('/event/event/1/registration/6/show')
         self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
         self.assertPresence("22.02.2022, 18:00:00 – 23.02.2022, 10:00:00")
 
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
         f = self.response.forms['changeperiodform1']
         f['checkout_time_1'] = "2222-02-01T10:00:00+02:00"
         self.submit(f, check_notification=False)
         self.assertValidationError('checkout_time_1', "Muss in der Vergangenheit liegen.")
 
-        self.assertNotIn('checkoutform', self.response.forms)
-        self.submit(self.response.forms['checkinform'])  # check Berta in
-        self.assertNotIn('checkinform', self.response.forms)
-        self.submit(self.response.forms['checkoutform'])  # check Berta out again
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.assertNotIn('checkoutform', self.response.forms)
+            self.submit(self.response.forms['checkinform'])  # check Berta in
+            frozen_time.tick(delta)
+            self.assertNotIn('checkinform', self.response.forms)
+            self.submit(self.response.forms['checkoutform'])  # check Berta out again
 
-        f = self.response.forms['changeperiodform1']
-        f['checkout_time_1'] = now()
-        original_checkin = f['checkin_time_1'].value
-        f['checkin_time_1'] = now()
-        self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'checkout_time_1', "Checkout muss vor folgendem Checkin sein.")
-        self.assertValidationError('checkin_time_1', "Checkout muss nach Checkin liegen.")
+            f = self.response.forms['changeperiodform1']
+            f['checkout_time_1'] = base_time + delta
+            original_checkin = f['checkin_time_1'].value
+            f['checkin_time_1'] = base_time + delta
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkout_time_1', "Checkout muss vor folgendem Checkin sein.")
+            self.assertValidationError('checkin_time_1', "Checkout muss nach Checkin liegen.")
 
-        f = self.response.forms['changeperiodform2']
-        f['checkin_time_1001'] = "2000-01-01T00:00:00+02:00"
-        self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'checkin_time_1001', "Checkin muss nach vorhergehendem Checkout sein.")
+            f = self.response.forms['changeperiodform2']
+            f['checkin_time_1001'] = "2000-01-01T00:00:00+02:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time_1001', "Checkin muss nach vorhergehendem Checkout sein.")
 
-        f = self.response.forms['changeperiodform1']
-        f['checkin_time_1'] = original_checkin
-        f['checkout_time_1'] = "2022-02-28T10:00:00+01:00"
-        self.submit(f, verbose=True)
-        self.assertPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
-        self.submit(self.response.forms['deleteperiodform1'])
-        self.assertNonPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
+            f = self.response.forms['changeperiodform1']
+            f['checkin_time_1'] = original_checkin
+            f['checkout_time_1'] = "2022-02-28T10:00:00+01:00"
+            self.submit(f)
+            self.assertPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
+            self.submit(self.response.forms['deleteperiodform1'])
+            self.assertNonPresence("22.02.2022, 18:00:00 – 28.02.2022, 10:00:00")
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:
