@@ -820,9 +820,11 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
         """Get a list of people that should be on this mailinglist.
 
         For the `CdELokalModeratorMailinglist` this means mandatory for all users who
-        are moderators of any cdelokal mailinglist.
+        are moderators of any active cdelokal mailinglist.
         """
-        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal}, exclude_inactive_lists=True)
+        return bc.core.list_all_moderators(rs,
+                                           ml_types={MailinglistTypes.cdelokal},
+                                           exclude_inactive_lists=True)
 
 
 @dataclass
