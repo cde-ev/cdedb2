@@ -86,6 +86,7 @@ from typing import (
     overload,
 )
 
+import freezegun.api
 import magic
 import phonenumbers
 import PIL.Image
@@ -1719,6 +1720,14 @@ def _datetime(
         raise ValidationSummary(
             TypeError(argname, n_("Must be a datetime.datetime.")))
     return val
+
+
+@_add_typed_validator
+def _frozen_datetime(  # pragma: no cover
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
+) -> freezegun.api.FakeDatetime:
+    """Our tests pass objects of this mock time."""
+    return _datetime(val, argname, **kwargs)
 
 
 @_add_typed_validator
