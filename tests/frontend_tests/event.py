@@ -4333,8 +4333,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Verstöße gegen Beschränkungen")
         self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
         self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
+        self.traverse("Kabarett")
+        self.assertPresence(r"Findet nicht statt aber hat \d+ Teilnehmende.",
+                            regex=True, div="track-violations-2")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence("Fehlende Kurseinteilungen")
         self.assertPresence("Anton", div='NoCourseAssignedCV-list')
+        self.traverse("Anton")
+        self.assertPresence("Ist in Sitzung in keinen Kurs eingeteilt.",
+                            div="constraint-violations-list")
 
         # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
         # problem, but raises 'unchosen' problem
@@ -4359,6 +4366,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis ist in Sitzung nicht in"
                             " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
                             div='IncorrectCourseAssignedCV-list')
+        self.traverse("Emilia")
+        self.assertPresence("Ist in Sitzung nicht in seinen/ihren geleiteten Kurs"
+                            " (α. Heldentum) eingeteilt.")
 
         # Change "Backup" to "never offered" in "Kaffeekränzchen".
         self.traverse("Kurse", "Backup", "Bearbeiten")
@@ -4367,6 +4377,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Wird in Kaffee nicht angeboten aber hat",
                             div="constraint-violations-list")
+        self.traverse("Verstöße gegen Beschränkungen")
 
         # Reduce max size of "Heldentum".
         self.traverse("Kurse", "Heldentum", "Bearbeiten")
@@ -4374,6 +4385,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['max_size'] = 1
         self.submit(f)
         self.assertPresence("Zu viele Teilnehmende (3 > 1).")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.",
+                            div="IncorrectNumAttendeesCV-list")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
@@ -4385,6 +4399,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
         self.submit(f)
         self.assertPresence("1 Kursleitende aber keine Teilnehmenden.")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
+                            " in Sitzung.", div="LonelyAttendeesCV-list")
 
     @as_users("garcia")
     def test_course_display_with_different_participation_stati(self) -> None:
@@ -6141,7 +6158,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                             div="constraint-violations")
         self.assertPresence('Es gibt 5 "Kursausschließlichkeit"-Verstöße.',
                             div="constraint-violations")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Kurse", "Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
         self.assertPresence("Teilnahmeausschließlichkeit")
         self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
@@ -6187,6 +6204,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Nimmt an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen teil (K2, O2).",
                             div="constraint-violations-list")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen teil (K2, O2).",
+                            div="MutuallyExclusiveParticipationCV-list")
 
         f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
@@ -6293,6 +6314,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertPresence(
             "Inga Iota muss eine Erstattung erhalten (116,49 €).")
+        self.traverse("Inga")
+        self.assertPresence("Muss eine Erstattung erhalten (116,49 €).")
+        self.traverse("Verstöße gegen Beschränkungen")
 
         self.assertPresence(
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag"
@@ -6313,16 +6337,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Anton Administrator muss insgesamt einen negativen Betrag bezahlen"
             " (-5,00 €).")
+        self.traverse("Anton Administrator")
+        self.assertPresence("Hat einen negativen Betrag bezahlt (-5,00 €).")
+        self.assertPresence("Muss insgesamt einen negativen Betrag bezahlen (-5,00 €).")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence(
             "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.")
         self.assertPresence(
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag"
             " bezahlt (übrig: 461,49 €).")
+        self.traverse("Emilia")
+        self.assertPresence("Hat bezahlt, aber kein Bezahlungsdatum.")
+        self.traverse("Verstöße gegen Beschränkungen")
         # Garcia is orga.
         self.assertNonPresence(
             "Garcia Generalis ist involviert, muss aber keinen Beitrag bezahlen.")
         self.assertPresence(
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
+        self.traverse("Akira")
+        self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:

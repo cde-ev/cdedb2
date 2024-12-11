@@ -109,9 +109,9 @@ class ViolationList:
             by_class[v.__class__.__name__].append(v)
 
         if len(by_class) == 0:
-            return {}
+            return {}  # pragma: no cover
         elif len(by_class) == 1:
-            return {
+            return {  # pragma: no cover
                 next(iter(by_class)): self,
             }
 
@@ -243,7 +243,7 @@ class CourseConstraintViolation(ConstraintViolation, abc.ABC):
 
     @cached_property
     def course_stats_format(self) -> CourseStatsFormat | None:
-        return None
+        return None  # pragma: no cover
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
