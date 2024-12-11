@@ -106,11 +106,14 @@
                         {% set track_violations = violations.get(track=track) %}
                         <div id="track-violations-{{ track.id }}">
                             {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
-                                <p class="{{ violation.severity.html_class() }}">
-                                    <strong>
-                                        {{ generic_event.print_violation(violation) }}
-                                    </strong>
-                                </p>
+                                {% set text = generic_event.print_violation(violation).strip() %}
+                                {% if text %}
+                                    <p class="{{ violation.severity.html_class() }}">
+                                        <strong>
+                                            {{ text }}
+                                        </strong>
+                                    </p>
+                                {% endif %}
                             {% endfor %}
                         </div>
 
