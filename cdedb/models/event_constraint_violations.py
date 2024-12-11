@@ -1057,11 +1057,13 @@ class LonelyAttendeesCV(CourseConstraintViolation):
 
     @cached_property
     def course_stats_format(self) -> CourseStatsFormat | None:
+        title = n_("Lonely attendees") if self.num_learners else n_("Lonely instructors")
+        icon = "balance-scale-left" if self.num_learners else "balance-scale-right"
         return CourseStatsFormat(
-            html_classes=["course-lonely"],
             titles=[
-                n_("Lonely attendees")
-                if self.num_learners
-                else n_("Lonely instructors"),
+                title,
+            ],
+            icons=[
+                (icon, title),
             ],
         )

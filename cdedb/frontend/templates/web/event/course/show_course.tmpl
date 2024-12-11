@@ -104,7 +104,7 @@
                     </div>
                     <div class="panel-body">
                         {% set track_violations = violations.get(track=track) %}
-                        <div id="track-violations.{{ track.id }}">
+                        <div id="track-violations-{{ track.id }}">
                             {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
                                 <p class="{{ violation.severity.html_class() }}">
                                     <strong>

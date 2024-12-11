@@ -1095,9 +1095,6 @@ td.b-right, th.b-right {
 .course-cancelled-ok {
     background-color: #b8ceef;
 }
-.course-lonely {
-    background-color: #55a055bf;
-}
 tr th.filtered_column {
     background-color: #31708f;
     color: #fff;
