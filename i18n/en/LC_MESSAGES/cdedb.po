@@ -19739,9 +19739,9 @@ msgid "Not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:906
-#, fuzzy, python-format
+#, python-format
 msgid "Cancelled but has %(num)s attendees."
-msgstr "Cancelled Courses with Attendees"
+msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:972
 #, python-format

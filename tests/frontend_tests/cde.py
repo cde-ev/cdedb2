@@ -1817,7 +1817,7 @@ class TestCdEFrontend(FrontendTest):
         save_response = self.response
 
         self.traverse({'description': 'Swish -- und alles ist gut'})
-        self.assertPresence("Janis Jalapeño (Kursleiter)")
+        self.assertPresence("Janis Jalapeño (KL)")
 
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')

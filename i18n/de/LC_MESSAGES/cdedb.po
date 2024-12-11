@@ -12135,7 +12135,7 @@ msgstr "Adresse für Mitgliedersuche versteckt"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:627
 msgid "(Instructor)"
-msgstr "(Kursleiter)"
+msgstr "(KL)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:634
 #: cdedb/frontend/templates/web/core/show_user.tmpl:642
