@@ -113,7 +113,7 @@
                     {% set format = violations.get(course_id=course_id, track=None, track_group=None).format -%}
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
-                    <td class="{{ aclass }}" title="{{ atitle }}">
+                    <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}">
                         {{ course['nr'] }}
                     </td>
                     <td class="{{ aclass }}" title="{{ atitle }}">
@@ -127,7 +127,7 @@
                         {% if track.id in course['segments'] %}
                             {% set attendees = violation_data['attendees'][(course_id, track.id)].num_learners %}
                             {% set instructors = violation_data['attendees'][(course_id, track.id)].num_instructors %}
-                            <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}">
+                            <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
                                 {% if format %}
                                     {% for icon, icon_title in format.icons %}
                                         {{ util.make_icon(icon, title=gettext(icon_title)) }}
@@ -155,7 +155,7 @@
                                              readonly=not is_privileged_for('course_choices')) }}
                             {% endfor %}
                         {% else %}
-                            <td class="b-left"></td>
+                            <td class="b-left" id="course-{{ course_id }}-track-{{ track.id }}"></td>
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}

@@ -4388,6 +4388,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.",
                             div="IncorrectNumAttendeesCV-list")
+        f['max_size'] = 3
+        self.submit(f)
+        self.traverse("Kurse")
+        self.assertHasClass("course-1-track-3", "course-exactly-full")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
