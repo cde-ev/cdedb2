@@ -968,12 +968,23 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                     track=track,
                     num=attendees.num_learners,
                 )
+            if (
+                    course['max_size'] is not None
+                    and attendees.num_learners == course['max_size']
+            ):
+                return cls(
+                    event=event,
+                    severity=ViolationSeverity.DEBUG,
+                    course=course,
+                    track=track,
+                    num=attendees.num_learners,
+                )
         return None
 
     def get_translation(
             self, *, entity_page: bool = True,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.course['min_size'] and self.num < self.course['min_size']:
+        if self.course['min_size'] is not None and self.num < self.course['min_size']:
             if entity_page:
                 msg = n_("Too few attendees (%(num)s < %(min_size)s).")
             else:
@@ -981,11 +992,14 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                     "%(link)s has too few attendees (%(num)s < %(min_size)s)"
                     " in %(track)s.",
                 )
-        elif entity_page:
-            msg = n_("Too many attendees (%(num)s > %(max_size)s).")
+        elif self.course['max_size'] is not None and self.num > self.course['max_size']:
+            if entity_page:
+                msg = n_("Too many attendees (%(num)s > %(max_size)s).")
+            else:
+                msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s)"
+                         " in %(track)s.")
         else:
-            msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s)"
-                     " in %(track)s.")
+            return [], {}
         params = {
             "link": f"{self.course['nr']}. {self.course['shortname']}",
             "num": self.num,
@@ -997,15 +1011,22 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
 
     @cached_property
     def course_stats_format(self) -> CourseStatsFormat | None:
-        if self.course['min_size'] and self.num < self.course['min_size']:
+        if self.course['min_size'] is not None and self.num < self.course['min_size']:
             return CourseStatsFormat(
                 html_classes=["course-too-few"],
                 titles=[n_("Not enough Attendees")],
             )
-        else:
+        elif self.course['max_size'] is not None and self.num > self.course['max_size']:
             return CourseStatsFormat(
                 html_classes=["course-too-many"],
                 titles=[n_("Too many Attendees")],
+            )
+        else:
+            title = n_("Exactly full")
+            return CourseStatsFormat(
+                html_classes=["course-exactly-full"],
+                titles=[title],
+                icons=[("maximize", title)],
             )
 
 
@@ -1060,10 +1081,6 @@ class LonelyAttendeesCV(CourseConstraintViolation):
         title = n_("Lonely attendees") if self.num_learners else n_("Lonely instructors")
         icon = "balance-scale-left" if self.num_learners else "balance-scale-right"
         return CourseStatsFormat(
-            titles=[
-                title,
-            ],
-            icons=[
-                (icon, title),
-            ],
+            titles=[title],
+            icons=[(icon, title)],
         )

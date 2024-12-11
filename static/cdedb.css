@@ -1089,6 +1089,9 @@ td.b-right, th.b-right {
 .course-too-few, .lodge-too-few{
     background-color: #dfd181;
 }
+.course-exactly-full, .lodge-exactly-full{
+    background-color: #80d080;
+}
 .course-cancelled {
     background-color: #cb86e6;
 }
