@@ -1469,6 +1469,10 @@ class TestCoreBackend(BackendTest):
             e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual(reality, all_moderators)
+        self.assertEqual(
+            all_moderators - {42},
+            self.core.list_all_moderators(self.key, active=True),
+        )
         MT = const.MailinglistTypes
         reality = self.core.list_all_moderators(
             self.key, {MT.member_moderated_opt_in, MT.cdelokal})
