@@ -86,7 +86,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.database.query import DatabaseValue
+from cdedb.database.query import DatabaseValue_s
 from cdedb.models.core import EmailAddressReport
 
 
@@ -810,7 +810,7 @@ class CoreBaseBackend(AbstractBackend):
             FROM ml.moderators AS mod
             JOIN ml.mailinglists AS ml ON mod.mailinglist_id = ml.id
         """
-        params: list[DatabaseValue] = []
+        params: list[DatabaseValue_s] = []
         conditions = []
         if ml_types is not None:
             conditions.append("ml.ml_type = ANY(%s)")
