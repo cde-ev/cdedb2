@@ -279,6 +279,6 @@ class TestBrowser(BrowserTest):
 
         expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
         expect(page.locator('#content')).to_contain_text('Emilia')
-        expect(page.locator('#content')).to_contain_text('0.00')
+        expect(page.locator('#content')).to_contain_text('0,00 €')
         expect(page.locator('#content')).to_contain_text('weiblich')
         expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
