@@ -86,6 +86,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.database.query import DatabaseValue
 from cdedb.models.core import EmailAddressReport
 
 
@@ -794,28 +795,32 @@ class CoreBaseBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_all_moderators(self, rs: RequestState,
-                            ml_types: Optional[
-                                Collection[const.MailinglistTypes]] = None,
-                            exclude_inactive_lists: bool = False,
-                            ) -> set[int]:
+    def list_all_moderators(
+            self, rs: RequestState,
+            ml_types: Optional[Collection[const.MailinglistTypes]] = None,
+            active: Optional[bool] = None,
+    ) -> set[int]:
         """List all moderators of any mailinglists.
 
         Due to architectural limitations of the BackendContainer used for
         mailinglist types, this is found here instead of in the MlBackend.
         """
-        query = "SELECT DISTINCT mod.persona_id from ml.moderators AS mod"
-        params = []
-        if bool(ml_types) or exclude_inactive_lists:
-            query += " JOIN ml.mailinglists AS ml ON mod.mailinglist_id = ml.id"
-            if ml_types:
-                query += " WHERE ml.ml_type = ANY(%s)"
-                params.append(ml_types)
-                if exclude_inactive_lists:
-                    query += " AND ml.is_active = True"
-            else:
-                query += " WHERE ml.is_active = True"
-        data = self.query_all(rs, query, params=params)
+        query = """
+            SELECT DISTINCT mod.persona_id
+            FROM ml.moderators AS mod
+            JOIN ml.mailinglists AS ml ON mod.mailinglist_id = ml.id
+        """
+        params: list[DatabaseValue] = []
+        conditions = []
+        if ml_types is not None:
+            conditions.append("ml.ml_type = ANY(%s)")
+            params.append(ml_types)
+        if active is not None:
+            conditions.append("ml.is_active = %s")
+            params.append(active)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        data = self.query_all(rs, query, params)
         return {e["persona_id"] for e in data}
 
     @access("core_admin")
