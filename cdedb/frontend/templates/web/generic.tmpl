@@ -552,6 +552,8 @@
                                         {{ util.tel_link(row.get(field, None)|phone) }}
                                     {% elif format_spec == ResultFormat.iban %}
                                         {{ row.get(field, None)|iban }}
+                                    {% elif format_spec == ResultFormat.money %}
+                                        {{ row.get(field, None)|money(lang=lang) }}
                                     {% elif format_spec == ResultFormat.event_course and row[field] %}
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
@@ -591,6 +593,8 @@
                                             {{ value|date(lang=lang) }}
                                         {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
                                             {{ value|datetime(lang=lang) }}
+                                        {% elif (format_spec == ResultFormat.money or format_spec == ResultFormat.event_fee) and value != "–" and aggregate_func != "null" %}
+                                            {{ value|money(lang=lang) }}
                                         {% elif aggregate_func in ("avg", "stddev") and value != "–" %}
                                             {{ value|float|decimal(lang=lang) }}
                                         {% else %}

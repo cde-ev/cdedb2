@@ -180,4 +180,5 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "iban": str,
     "enum_int": int,
     "enum_str": str,
+    "money": float,
 }
