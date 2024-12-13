@@ -10696,6 +10696,10 @@
             "persona_id": 2
         },
         {
+            "mailinglist_id": 6,
+            "persona_id": 42
+        },
+        {
             "mailinglist_id": 7,
             "persona_id": 2
         },
