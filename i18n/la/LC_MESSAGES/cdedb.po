@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-13 21:19+0100\n"
+"POT-Creation-Date: 2024-12-13 21:39+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -11890,11 +11890,11 @@ msgstr ""
 msgid "Course cancelled"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:285
-msgid "not assigned or course is cancelled"
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:284
+msgid "Not assigned to a course"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:288
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:287
 msgid "Double-Click the course number to view the course."
 msgstr ""
 
