@@ -292,7 +292,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 agg[
                     f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"
-                if query.spec[field].type in {"int", "float"}:
+                if query.spec[field].type in {"int", "float", "money"}:
                     agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
                     agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     agg[f'MIN("{field_as}")'] = f"min.{field_as}"
