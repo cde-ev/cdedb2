@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 
 class ViolationSeverity(enum.Enum):
+    """Enum to indicate how severe a violation ist. Used for sorting and formatting."""
     CRITICAL = 4
     ERROR = 3
     WARNING = 2
@@ -73,8 +74,13 @@ class ViolationSeverity(enum.Enum):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CourseStatsFormat:
+    """Helper class for storing and aggregating formatting specs."""
+
+    # List of html classes to be added to the relevant html tag.
     html_classes: list[str] = dataclasses.field(default_factory=list)
+    # List of hover titles to be added to that same element.
     titles: list[str] = dataclasses.field(default_factory=list)
+    # List of icons to be displayed near that element, each with it's own hover title.
     icons: list[tuple[str, str]] = dataclasses.field(default_factory=list)
 
     def __add__(self, other: 'CourseStatsFormat') -> 'CourseStatsFormat':
@@ -89,6 +95,7 @@ class CourseStatsFormat:
         return " ".join(self.html_classes)
 
     def get_title(self, g: Callable[[str], str]) -> str:
+        """Translate titles with the passed gettext. Join with newlines."""
         return "\n".join(map(g, self.titles))
 
 
@@ -97,6 +104,10 @@ _MISSING = object()
 
 @dataclasses.dataclass(frozen=True)
 class ViolationList:
+    """Container class for a list of violations.
+
+    Provides sorting, grouping and aggregation.
+    """
     violations: list['ConstraintViolation']
 
     def __post_init__(self) -> None:
@@ -104,17 +115,21 @@ class ViolationList:
 
     @cached_property
     def by_class(self) -> dict[str, 'ViolationList']:
+        """Return lists of violations grouped by class, sorted by max severity."""
         by_class = collections.defaultdict(list)
         for v in self.violations:
             by_class[v.__class__.__name__].append(v)
 
         if len(by_class) == 0:
+            # If there are no violations, return an empty dict.
             return {}  # pragma: no cover
         elif len(by_class) == 1:
+            # If there are only violations of one class, return self.
             return {  # pragma: no cover
                 next(iter(by_class)): self,
             }
 
+        # Otherwise return a new container instance for every class.
         ret = {
             class_name: ViolationList(violations)
             for class_name, violations in by_class.items()
@@ -135,6 +150,16 @@ class ViolationList:
             track_not: Collection[int] = cast(Collection[int], _MISSING),
             track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
     ) -> 'ViolationList':
+        """Filter and return violations matching the given criteria.
+
+        :param course_id: If None return only violations with no course.
+            If an id, return only violations with a course with that id.
+        :params track: If None return only violations with no track.
+            If a track, return only violations with that track.
+        :param track_not: If given return only violations with no track, or with a
+            track whos id is not in the given collection.
+        :param track_group: Like track.
+        """
         return ViolationList([
             v for v in self.violations
             if (course_id is _MISSING or (v.course is None and course_id is None or v.course is not None and v.course['id'] == course_id))
@@ -145,6 +170,12 @@ class ViolationList:
 
     @cached_property
     def format(self) -> CourseStatsFormat:
+        """
+        Aggregate and return course stats formats.
+
+        Sum all non-None formats from violations in this container, if they define
+        the `course_stats_format` property.
+        """
         return sum(
             (
                 format_
@@ -200,19 +231,29 @@ class ConstraintViolation(abc.ABC):
         """
         Must return a list of strings for translation and a dict of translation params.
 
-        One of the parameters must be named 'link' and be the link text of the link
-        defined by `get_link_params`.
-
         :param entity_page: If True, return translations for the specific entity page.
             Otherwise, return translations for the violation overview page.
+
+        Translations for the overview page should contain a parameter named 'link',
+        which should contain the link text for the link defined by `get_link_params`,
+        usually the name/moniker of the primary entity, e.g. a persona name or a
+        course moniker.
+
+        Translations for the entity page typically leave out the link parameter, but
+        may also leave out secondary entities, depending on how and where they are
+        rendered on the entity page.
         """
         raise NotImplementedError
 
     def get_link_params(self) -> tuple[str, CdEDBObject]:
         """
-        Must return a string specifying a link target and a dict of link parameters.
+        Return a link target and necessary parameters for linking to the primary entity.
 
+        Link target will be something like "event/show_course", parameters will contain
+        the entity id, e.g. `{'course_id': self.course_id}`.
         The link text will be the 'link' parameter from `get_translations`.
+
+        Usually implemented in an intermediate baseclass.
         """
         raise NotImplementedError
 
@@ -240,10 +281,6 @@ class CourseConstraintViolation(ConstraintViolation, abc.ABC):
 
     def get_link_params(self) -> tuple[str, CdEDBObject]:
         return "event/show_course", {'course_id': self.course['id']}
-
-    @cached_property
-    def course_stats_format(self) -> CourseStatsFormat | None:
-        return None  # pragma: no cover
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
