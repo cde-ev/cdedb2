@@ -61,7 +61,7 @@ class ViolationSeverity(enum.Enum):
             ViolationSeverity.CRITICAL: 'panel-danger fw-bold',
             ViolationSeverity.ERROR: 'panel-danger',
             ViolationSeverity.WARNING: 'panel-warning',
-            ViolationSeverity.INFO: 'panel-default',
+            ViolationSeverity.INFO: 'panel-info',
             ViolationSeverity.DEBUG: 'panel-default',
         }[self]
 
@@ -1063,7 +1063,7 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
             return CourseStatsFormat(
                 html_classes=["course-exactly-full"],
                 titles=[title],
-                icons=[("maximize", title)],
+                # icons=[("maximize", title)],
             )
 
 
