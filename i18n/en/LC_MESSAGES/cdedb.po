@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-12 18:50+0100\n"
+"POT-Creation-Date: 2024-12-13 21:19+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1466,7 +1466,7 @@ msgstr ""
 msgid "No inputs given."
 msgstr ""
 
-#: cdedb/common/__init__.py:579 cdedb/common/sorting.py:67
+#: cdedb/common/__init__.py:579 cdedb/common/sorting.py:68
 msgid "Invalid use of keyword parameters."
 msgstr ""
 
@@ -6209,7 +6209,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:174
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:23
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:24
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:181
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:182
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:29
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:39
 msgid "Name"
@@ -6312,7 +6312,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:169
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:148
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:149
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:84
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:20
@@ -7528,7 +7528,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:122
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:94
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:191
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:184
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:185
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:89
 msgid "Warning"
 msgstr ""
@@ -8090,35 +8090,35 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:125
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:151
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:152
 msgid "Select All"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:127
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:153
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:154
 msgid "All"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:129
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:155
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:156
 msgid "Select None"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:131
 #: cdedb/frontend/templates/web/core/show_history.tmpl:224
 #: cdedb/frontend/templates/web/core/show_user.tmpl:307
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:157
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:158
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:112
 msgid "None"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:133
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:159
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:160
 msgid "Invert Selection"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:135
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:161
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:162
 msgid "Invert"
 msgstr ""
 
@@ -10316,7 +10316,7 @@ msgid "Change History"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:83
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:172
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:173
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:34
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:72
@@ -11611,18 +11611,18 @@ msgstr ""
 msgid "Course Choices (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:32
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:33
 #, python-format
 msgid "%(count)s of %(max)s Att."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:36
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:37
 #, python-format
 msgid "%(count)s Att."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:57
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:59
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:58
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:60
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:68
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:38
@@ -11635,139 +11635,156 @@ msgstr ""
 msgid "Filter"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:62
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:63
 #, python-format
 msgid "in Track %s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:63
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:64
 msgid "— any —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:65
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:66
 msgid "Filter: Coursetrack"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:71
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:72
 #, python-format
 msgid ""
 "Show only participants who %(select3)s the course %(select2)s %(select1)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:73
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:74
 msgid "— no Course —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:74
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:75
 msgid "Filter: Course"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:76
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:77
 msgid "— no Filter —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:77
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:78
 msgid "Filter: Course Operator"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:83
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:84
 #, python-format
 msgid "Only include these IDs: %(select4)s, but %(checkbox)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:84
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:85
 msgid "Filter: Registration IDs"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:85
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:86
 msgid "Show pending registrations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:90
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:124
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:91
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:125
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:78
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:99
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:42
 msgid "Go!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:91
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:92
 msgid "Show all participants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:98
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:105
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:99
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:106
 msgid "Assignment"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:111
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:112
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:57
 msgid "Coursetracks"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:111
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:112
 msgid "in Tracks"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:116
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:117
 #, python-format
 msgid "%(assign)s %(participants)s %(course)s %(tracks)s %(submit)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:116
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:117
 msgid "Assign"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:117
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:118
 msgid "selected participants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:120
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:121
 msgid "Assignment Method"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:122
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:123
 msgid "Assign to Course"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:147
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:148
 msgid "View in Registrations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:198
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:199
 msgid "assigned to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:201
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:202
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:46
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:132
 msgid "Instr."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:217
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:218
 #, python-format
 msgid "Select %s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:278
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:279
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:196
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:183
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:184
 msgid "Color Guide"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:279
-msgid "Course is too empty"
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:280
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
+#: cdedb/models/event_constraint_violations.py:1054
+msgid "Not enough Attendees"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:280
-msgid "Course is overfull"
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:281
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:198
+#: cdedb/models/event_constraint_violations.py:1059
+msgid "Too many Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:282
-msgid "not assigned or course is cancelled"
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:199
+#: cdedb/models/event_constraint_violations.py:1062
+msgid "Exactly full"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:283
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:200
+#: cdedb/models/event_constraint_violations.py:949
+#: cdedb/models/event_constraint_violations.py:963
+msgid "Course cancelled"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:285
+msgid "not assigned or course is cancelled"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:288
 msgid "Double-Click the course number to view the course."
 msgstr ""
 
@@ -11915,29 +11932,8 @@ msgstr ""
 msgid "Manage Attendees"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
-#: cdedb/models/event_constraint_violations.py:1017
-msgid "Not enough Attendees"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:198
-#: cdedb/models/event_constraint_violations.py:1022
-msgid "Too many Attendees"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:199
-#: cdedb/models/event_constraint_violations.py:1025
-msgid "Exactly full"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:200
-#: cdedb/models/event_constraint_violations.py:912
-#: cdedb/models/event_constraint_violations.py:926
-msgid "Course cancelled"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:201
-#: cdedb/models/event_constraint_violations.py:925
+#: cdedb/models/event_constraint_violations.py:962
 msgid "Course cancelled, has Attendees"
 msgstr ""
 
@@ -11996,7 +11992,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:54
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:185
-#: cdedb/models/event_constraint_violations.py:809
+#: cdedb/models/event_constraint_violations.py:846
 msgid "not visible"
 msgstr ""
 
@@ -13339,7 +13335,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:364
 #, python-format
-msgid "There are %(count)s \"%(class_name)s\" violations."
+msgid "There are %(count)s %(class_name)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:391
@@ -14094,43 +14090,43 @@ msgstr ""
 msgid "Move or delete lodgements from this group"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:152
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:153
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:16
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:28
 msgid "Manage Inhabitants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:185
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:186
 msgid "Overfull"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:186
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:187
 msgid "Illegal Gendermix"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:189
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:190
 msgid "Sorting:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:190
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:191
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:196
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:197
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:202
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:203
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:207
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:208
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
@@ -17473,11 +17469,11 @@ msgstr "Weekly"
 
 #: cdedb/i18n_additional.py:373
 msgid "MutuallyExclusiveParticipationCV"
-msgstr "Mutually Exclusive Participation"
+msgstr "Violations of Mutually Exclusive Participation"
 
 #: cdedb/i18n_additional.py:374
 msgid "CourseChoiceSyncCV"
-msgstr "Course Choice Sync"
+msgstr "Violations of Course Choice Sync"
 
 #: cdedb/i18n_additional.py:375
 msgid "NoCourseAssignedCV"
@@ -17489,23 +17485,23 @@ msgstr "Incorrect Course Assignments"
 
 #: cdedb/i18n_additional.py:377
 msgid "InconsistentPaymentCV"
-msgstr "Inconsistent Payment"
+msgstr "Registrations with Inconsistent Payment"
 
 #: cdedb/i18n_additional.py:378
 msgid "NotPaidCV"
-msgstr "Missing Payment"
+msgstr "Registrations with Missing Payment"
 
 #: cdedb/i18n_additional.py:379
 msgid "NegativeAmountOwedCV"
-msgstr "Negative Amount Owed"
+msgstr "Registrations with Negative Amount Owed"
 
 #: cdedb/i18n_additional.py:380
 msgid "NegativeRemainingOwedCV"
-msgstr "Negative Remaining Owed"
+msgstr "Regisrations with Negative Remaining Owed"
 
 #: cdedb/i18n_additional.py:381
 msgid "RemainingOwedCV"
-msgstr "Remaining Owed"
+msgstr "Registrations with Remaining Owed"
 
 #: cdedb/i18n_additional.py:382
 msgid "HiddenCourseCV"
@@ -17513,7 +17509,7 @@ msgstr "Hidden Courses"
 
 #: cdedb/i18n_additional.py:383
 msgid "MutuallyExclusiveCoursesCV"
-msgstr "Mutially Exclusive Courses"
+msgstr "Violations of Mutially Exclusive Courses"
 
 #: cdedb/i18n_additional.py:384
 msgid "CancelledWithAttendeesCV"
@@ -17521,11 +17517,11 @@ msgstr "Cancelled Courses with Attendees"
 
 #: cdedb/i18n_additional.py:385
 msgid "IncorrectNumAttendeesCV"
-msgstr "Incorrect Bumber of Attendees"
+msgstr "Courses with Incorrect Number of Attendees"
 
 #: cdedb/i18n_additional.py:386
 msgid "LonelyAttendeesCV"
-msgstr "Lonely Attendees"
+msgstr "Courses with Lonely Attendees"
 
 #: cdedb/i18n_additional.py:391
 msgid "str"
@@ -18770,237 +18766,237 @@ msgstr "Zimbabwe"
 msgid "Wrong format for api token."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:302
+#: cdedb/models/event_constraint_violations.py:339
 #, python-format
 msgid "Participant in mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:304
+#: cdedb/models/event_constraint_violations.py:341
 #, python-format
 msgid "%(link)s is participant in mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:314
+#: cdedb/models/event_constraint_violations.py:351
 #, python-format
 msgid "Present at mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:318
+#: cdedb/models/event_constraint_violations.py:355
 #, python-format
 msgid "%(link)s is present at mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:374
+#: cdedb/models/event_constraint_violations.py:411
 #, python-format
 msgid "Unsynchronized course choices in synchronized tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:378
+#: cdedb/models/event_constraint_violations.py:415
 #, python-format
 msgid ""
 "%(link)s has unsynchrozied course choices in synchronized tracks "
 "(%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:428
+#: cdedb/models/event_constraint_violations.py:465
 #, python-format
 msgid "Not assigned to a course in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:430
+#: cdedb/models/event_constraint_violations.py:467
 #, python-format
 msgid "%(link)s is not assigned to a course in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:500
+#: cdedb/models/event_constraint_violations.py:537
 #, python-format
 msgid "Does not instruct their course (%(instructed_course)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:505
+#: cdedb/models/event_constraint_violations.py:542
 #, python-format
 msgid ""
 "%(link)s does not instruct their course (%(instructed_course)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:510
+#: cdedb/models/event_constraint_violations.py:547
 #, python-format
 msgid ""
 "Did not choose their assigned course (%(assigned_course)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:515
+#: cdedb/models/event_constraint_violations.py:552
 #, python-format
 msgid ""
 "%(link)s did not choose their assigned course (%(assigned_course)s) in "
 "%(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:562
+#: cdedb/models/event_constraint_violations.py:599
 #, python-format
 msgid "Has paid a negative amount (%(amount_paid)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:564
+#: cdedb/models/event_constraint_violations.py:601
 #, python-format
 msgid "%(link)s has paid a negative amount (%(amount_paid)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:566
+#: cdedb/models/event_constraint_violations.py:603
 msgid "Has paid without a payment date."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:568
+#: cdedb/models/event_constraint_violations.py:605
 #, python-format
 msgid "%(link)s has paid without a payment date."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:570
+#: cdedb/models/event_constraint_violations.py:607
 msgid "This likely means someone entered invalid payment data."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:606
+#: cdedb/models/event_constraint_violations.py:643
 #, python-format
 msgid "is orga but has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:608
+#: cdedb/models/event_constraint_violations.py:645
 #, python-format
 msgid "%(link)s is orga but has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:612
+#: cdedb/models/event_constraint_violations.py:649
 #, python-format
 msgid "Has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:614
+#: cdedb/models/event_constraint_violations.py:651
 #, python-format
 msgid "%(link)s has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:658
+#: cdedb/models/event_constraint_violations.py:695
 #, python-format
 msgid "Owes a negative amount (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:660
+#: cdedb/models/event_constraint_violations.py:697
 #, python-format
 msgid "%(link)s owes a negative amount (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:662
+#: cdedb/models/event_constraint_violations.py:699
 msgid "Is involved but owes no fee."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:664
+#: cdedb/models/event_constraint_violations.py:701
 #, python-format
 msgid "%(link)s is involved but owes no fee."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:698
+#: cdedb/models/event_constraint_violations.py:735
 #, python-format
 msgid "Needs to be reimbursed (%(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:700
+#: cdedb/models/event_constraint_violations.py:737
 #, python-format
 msgid "%(link)s needs to be reimbursed (%(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:743
+#: cdedb/models/event_constraint_violations.py:780
 #, python-format
 msgid "Has not fully paid their fee (remaining: %(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:745
+#: cdedb/models/event_constraint_violations.py:782
 #, python-format
 msgid "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:797
+#: cdedb/models/event_constraint_violations.py:834
 msgid "Is hidden and registration is open or about to start."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:799
+#: cdedb/models/event_constraint_violations.py:836
 #, python-format
 msgid "%(link)s is hidden and registration is open or about to start."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:840
+#: cdedb/models/event_constraint_violations.py:877
 #, python-format
 msgid "Taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:842
+#: cdedb/models/event_constraint_violations.py:879
 #, python-format
 msgid "%(link)s is taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:903
+#: cdedb/models/event_constraint_violations.py:940
 #, python-format
 msgid "Not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:905
+#: cdedb/models/event_constraint_violations.py:942
 #, python-format
 msgid "%(link)s is not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:910
+#: cdedb/models/event_constraint_violations.py:947
 #, python-format
 msgid "Cancelled but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:914
+#: cdedb/models/event_constraint_violations.py:951
 #, python-format
 msgid "%(link)s is cancelled in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:989
+#: cdedb/models/event_constraint_violations.py:1026
 #, python-format
 msgid "Too few attendees (%(num)s < %(min_size)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:991
+#: cdedb/models/event_constraint_violations.py:1028
 #, python-format
 msgid "%(link)s has too few attendees (%(num)s < %(min_size)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:997
+#: cdedb/models/event_constraint_violations.py:1034
 #, python-format
 msgid "Too many attendees (%(num)s > %(max_size)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:999
+#: cdedb/models/event_constraint_violations.py:1036
 #, python-format
 msgid "%(link)s has too many attendees (%(num)s > %(max_size)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1065
+#: cdedb/models/event_constraint_violations.py:1102
 #, python-format
 msgid "%(num)s attendees but no instructors."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1067
+#: cdedb/models/event_constraint_violations.py:1104
 #, python-format
 msgid "%(link)s has %(num)s attendees but no instructors in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1069
+#: cdedb/models/event_constraint_violations.py:1106
 #, python-format
 msgid "%(num)s instructors but no attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1071
+#: cdedb/models/event_constraint_violations.py:1108
 #, python-format
 msgid "%(link)s has %(num)s instructors but no attendees in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1081
+#: cdedb/models/event_constraint_violations.py:1118
 msgid "Lonely attendees"
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1081
+#: cdedb/models/event_constraint_violations.py:1118
 msgid "Lonely instructors"
 msgstr ""

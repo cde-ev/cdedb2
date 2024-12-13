@@ -358,12 +358,12 @@
             {% if violations and violations.max_severity >= min_severity %}
                 <div class="col-md-6" id="constraint-violations">
                     {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
-                        <ul>
+                        <ul class="slim">
                             {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                <li><a class="{{ violations_.max_severity.html_class() }}" href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
                                     {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
                                              class_name=gettext(class_name) %}
-                                        There are {{ count }} "{{ class_name }}" violations.
+                                        There are {{ count }} {{ class_name }}.
                                     {% endtrans %}
                                 </a></li>
                             {% endfor %}
