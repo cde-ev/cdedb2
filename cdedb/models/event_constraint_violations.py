@@ -31,12 +31,23 @@ from typing import TYPE_CHECKING, Any, Callable, Self, cast
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import AgeClasses, CdEDBObject, make_persona_name, n_, now
+from cdedb.common import (
+    AgeClasses,
+    CdEDBObject,
+    CdEDBObjectMap,
+    make_persona_name,
+    n_,
+    now,
+)
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import money_filter
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import CourseAttendees
+    from cdedb.frontend.event.lodgement import LodgementInhabitants
+
+
+td = datetime.timedelta
 
 
 class ViolationSeverity(enum.Enum):
@@ -92,7 +103,7 @@ class CourseStatsFormat:
 
     @cached_property
     def html_class(self) -> str:
-        return " ".join(self.html_classes)
+        return " ".join(xsorted(self.html_classes, reverse=True))
 
     def get_title(self, g: Callable[[str], str]) -> str:
         """Translate titles with the passed gettext. Join with newlines."""
@@ -146,9 +157,11 @@ class ViolationList:
     def get(
             self, *,
             course_id: int | None = cast(int, _MISSING),
+            lodgement_id: int | None = cast(int, _MISSING),
             track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
             track_not: Collection[int] = cast(Collection[int], _MISSING),
             track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
+            part: models.EventPart | None = cast(models.EventPart, _MISSING),
     ) -> 'ViolationList':
         """Filter and return violations matching the given criteria.
 
@@ -163,13 +176,15 @@ class ViolationList:
         return ViolationList([
             v for v in self.violations
             if (course_id is _MISSING or (v.course is None and course_id is None or v.course is not None and v.course['id'] == course_id))
+            and (lodgement_id is _MISSING or (v.lodgement is None and lodgement_id is None or v.lodgement is not None and v.lodgement['id'] == lodgement_id))
             and (track is _MISSING or v.track == track)
             and (track_not is _MISSING or v.track is None or v.track.id not in track_not)
             and (track_group is _MISSING or v.track_group == track_group)
+            and (part is _MISSING or v.part == part)
         ])
 
     @cached_property
-    def format(self) -> CourseStatsFormat:
+    def course_stats_format(self) -> CourseStatsFormat:
         """
         Aggregate and return course stats formats.
 
@@ -181,6 +196,39 @@ class ViolationList:
                 format_
                 for v in self.violations
                 if (format_ := getattr(v, 'course_stats_format', None))
+            ),
+            start=CourseStatsFormat(),
+        )
+
+    @cached_property
+    def lodgement_stats_format(self) -> CourseStatsFormat:
+        return sum(
+            (
+                format_
+                for v in self.violations
+                if (format_ := getattr(v, 'lodgement_stats_format', None))
+            ),
+            start=CourseStatsFormat(),
+        )
+
+    @cached_property
+    def regular_inhabitant_stats_format(self) -> CourseStatsFormat:
+        return sum(
+            (
+                format_
+                for v in self.violations
+                if (format_ := getattr(v, 'regular_inhabitant_stats_format', None))
+            ),
+            start=CourseStatsFormat(),
+        )
+
+    @cached_property
+    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat:
+        return sum(
+            (
+                format_
+                for v in self.violations
+                if (format_ := getattr(v, 'camping_mat_inhabitant_stats_format', None))
             ),
             start=CourseStatsFormat(),
         )
@@ -206,6 +254,7 @@ class ConstraintViolation(abc.ABC):
     registration: CdEDBObject | None = None
     persona: CdEDBObject | None = None
     course: CdEDBObject | None = None
+    lodgement: CdEDBObject | None = None
 
     # Secondary entities.
     part: models.EventPart | None = None
@@ -281,6 +330,14 @@ class CourseConstraintViolation(ConstraintViolation, abc.ABC):
 
     def get_link_params(self) -> tuple[str, CdEDBObject]:
         return "event/show_course", {'course_id': self.course['id']}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LodgementConstraintViolation(ConstraintViolation, abc.ABC):
+    lodgement: CdEDBObject
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        return "event/show_lodgement", {'lodgement_id': self.lodgement['id']}
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -792,17 +849,214 @@ class RemainingOwedCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class MissingMinorFormCV(RegistrationConstraintViolation):
+    participant_begin: datetime.date
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        min_participating_part = min(
+            (
+                ep for ep in event.parts.values()
+                if registration['parts'][ep.id]['status'].is_present()
+            ),
+            key=lambda ep: ep.part_begin,
+            default=None,
+        )
+        if (
+                min_participating_part
+                and registration['parts'][min_participating_part.id]['age'].is_minor()
+                and not registration['parental_agreement']
+        ):
+            return cls(
+                event=event,
+                severity=(
+                    ViolationSeverity.ERROR
+                    if min_participating_part.part_begin - now().date() < td(days=30)
+                    else ViolationSeverity.WARNING
+                ),
+                registration=registration,
+                persona=persona,
+                participant_begin=min_participating_part.part_begin,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Is present, but parental consent is missing.")
+        else:
+            msg = n_("%(link)s is present, but parental consent is missing.")
+
+        msgs = [msg]
+        if self.participant_begin - now().date() < td(days=30):
+            msgs.append(n_("Will be present in less than a month."))
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return msgs, params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IllegalMixedLodgingCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        min_participating_part = min(
+            (
+                ep for ep in event.parts.values()
+                if registration['parts'][ep.id]['status'].is_present()
+            ),
+            key=lambda ep: ep.part_begin,
+            default=None,
+        )
+        if (
+            min_participating_part
+            and not registration['parts'][min_participating_part.id]['age'].may_mix()
+            and registration['mixed_lodging']
+        ):
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Too young for mixed lodging.")
+        else:
+            msg = n_("%(link)s is too young for mixed lodging.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectCampingMatAssignmentCV(RegistrationConstraintViolation):
+    part: models.EventPart
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            part: models.EventPart,
+    ) -> Self | None:
+        if not part.camping_mat_field:
+            return None
+        if (
+                registration['parts'][part.id]['is_camping_mat']
+                and not registration['fields'].get(part.camping_mat_field.field_name)
+        ):
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                registration=registration,
+                persona=persona,
+                part=part,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Assigned to, but may not sleep on a camping mat in %(part)s.")
+        else:
+            msg = n_("%(link)s is assigned to, but may not sleep on a camping mat in"
+                     " %(part)s.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "part": self.part.shortname,
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NoLodgementCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+            part: models.EventPart,
+            lodgements: CdEDBObjectMap,
+    ) -> Self | None:
+        reg_part = registration['parts'][part.id]
+        if not reg_part['status'].is_present() or not lodgements:
+            return None
+        if reg_part['lodgement_id'] is None:
+            if part.part_begin <= now().date():
+                return cls(
+                    event=event,
+                    severity=(
+                        ViolationSeverity.ERROR
+                        if reg_part['status'] == const.RegistrationPartStati.participant
+                        else ViolationSeverity.WARNING
+                    ),
+                    registration=registration,
+                    persona=persona,
+                    part=part,
+                )
+            if part.part_begin - now().date() < td(days=7):
+                return cls(
+                    event=event,
+                    severity=(
+                        ViolationSeverity.WARNING
+                        if reg_part['status'] == const.RegistrationPartStati.participant
+                        else ViolationSeverity.INFO
+                    ),
+                    registration=registration,
+                    persona=persona,
+                    part=part,
+                )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Has no lodgement in %(part)s.")
+        else:
+            msg = n_("%(link)s has no lodgement in %(part)s.")
+
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "part": self.part.shortname,
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class HiddenCourseCV(CourseConstraintViolation):
     @classmethod
     def check(  # type: ignore[override]
             cls, event: models.Event,
             course: CdEDBObject,
     ) -> Self | None:
-        td = datetime.timedelta(days=7)
         ref_time = now()
         if course['is_visible']:
             return None
-        if event.registration_start and event.registration_start - ref_time < td:
+        if event.registration_start and event.registration_start - ref_time < td(days=7):
             # Registration starts in less than a week (or has already started).
             if (
                     event.registration_soft_limit
@@ -1120,4 +1374,188 @@ class LonelyAttendeesCV(CourseConstraintViolation):
         return CourseStatsFormat(
             titles=[title],
             icons=[(icon, title)],
+        )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
+    part: models.EventPart
+
+    num_regular: int
+    num_camping_mat: int
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            lodgement: CdEDBObject,
+            inhabitants: "LodgementInhabitants",
+            part: models.EventPart,
+    ) -> Self | None:
+        if (
+            lodgement['regular_capacity'] is not None
+            and len(inhabitants.regular) > lodgement['regular_capacity']
+        ):
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                lodgement=lodgement,
+                part=part,
+                num_regular=len(inhabitants.regular),
+                num_camping_mat=len(inhabitants.camping_mat),
+            )
+        if (
+            lodgement['camping_mat_capacity'] is not None
+            and len(inhabitants.camping_mat) > lodgement['camping_mat_capacity']
+        ):
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                lodgement=lodgement,
+                part=part,
+                num_regular=len(inhabitants.regular),
+                num_camping_mat=len(inhabitants.camping_mat),
+            )
+        if (
+            lodgement['regular_capacity'] is not None
+            and 0 < len(inhabitants.regular) < lodgement['regular_capacity']
+            or lodgement['camping_mat_capacity'] is not None
+            and 0 < len(inhabitants.camping_mat) < lodgement['camping_mat_capacity']
+        ):
+            return cls(
+                event=event,
+                severity=ViolationSeverity.INFO,
+                lodgement=lodgement,
+                part=part,
+                num_regular=len(inhabitants.regular),
+                num_camping_mat=len(inhabitants.camping_mat),
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if (
+            self.lodgement['regular_capacity'] is not None
+            and self.num_regular > self.lodgement['regular_capacity']
+            or self.lodgement['camping_mat_capacity'] is not None
+            and self.num_camping_mat > self.lodgement['camping_mat_capacity']
+        ):
+            if entity_page:
+                msg = n_("Overfull lodgement.")
+            else:
+                msg = n_("%(link)s is overfull in %(part)s.")
+        elif entity_page:
+            msg = n_("Underfull lodgement.")
+        else:
+            msg = n_("%(link)s is underfull in %(part)s.")
+
+        params = {
+            "link": self.lodgement['title'],
+            "part": self.part.shortname,
+        }
+        return [msg], params
+
+    @cached_property
+    def regular_inhabitant_stats_format(self) -> CourseStatsFormat | None:
+        ret = CourseStatsFormat()
+        if (
+            self.lodgement['regular_capacity'] is not None
+            and self.num_regular > self.lodgement['regular_capacity']
+        ):
+            ret += CourseStatsFormat(
+                html_classes=["lodgement-too-many"],
+                titles=[n_("Overfull lodgement.")],
+            )
+        if (
+            self.lodgement['regular_capacity'] is not None
+            and 0 < self.num_regular < self.lodgement['regular_capacity']
+        ):
+            ret += CourseStatsFormat(
+                html_classes=["lodgement-too-few"],
+                titles=[n_("Underfull lodgement.")],
+            )
+        return ret
+
+    @cached_property
+    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat | None:
+        ret = CourseStatsFormat()
+        if (
+            self.lodgement['camping_mat_capacity'] is not None
+            and self.num_camping_mat > self.lodgement['camping_mat_capacity']
+        ):
+            ret += CourseStatsFormat(
+                html_classes=["lodgement-too-many"],
+                titles=[n_("Too many camping mats.")],
+            )
+        if (
+            self.lodgement['camping_mat_capacity'] is not None
+            and 0 < self.num_camping_mat < self.lodgement['camping_mat_capacity']
+        ):
+            ret += CourseStatsFormat(
+                html_classes=["lodgement-too-few"],
+                titles=[n_("Not enough camping mats.")],
+            )
+        return ret
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IllegalMixedLodgementCV(LodgementConstraintViolation):
+    part: models.EventPart
+
+    not_specifeid: bool
+
+    @classmethod
+    def check(  # type: ignore[override]
+            cls,
+            event: models.Event,
+            lodgement: CdEDBObject,
+            inhabitants: "LodgementInhabitants",
+            personas: CdEDBObjectMap,
+            part: models.EventPart,
+    ) -> Self | None:
+        non_mixing_regs = [
+            reg for reg in inhabitants.all
+            if not reg['mixed_lodging']
+        ]
+        if not non_mixing_regs:
+            return None
+        genders = set(personas[reg['persona_id']]['gender'] for reg in inhabitants.all)
+        if const.Genders.not_specified in genders:
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                lodgement=lodgement,
+                part=part,
+                not_specifeid=True,
+            )
+        if len(genders) > 1:
+            return cls(
+                event=event,
+                severity=ViolationSeverity.WARNING,
+                lodgement=lodgement,
+                part=part,
+                not_specifeid=False,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: bool = True,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Mixed with non-mixing inhabitants.")
+        else:
+            msg = n_("%(link)s is mixed with non-mixing inhabitants in %(part)s.")
+
+        params = {
+            "link": self.lodgement['title'],
+            "part": self.part.shortname,
+        }
+        return [msg], params
+
+    @cached_property
+    def regular_inhabitant_stats_format(self) -> CourseStatsFormat | None:
+        return CourseStatsFormat(
+            html_classes=["lodgement-illegal-mixed"],
+            titles=[n_("Mixed with non-mixing inhabitants.")],
         )

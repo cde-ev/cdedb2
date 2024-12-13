@@ -82,44 +82,6 @@ geleiteten Kurs eingeteilt werden, ihre Kurswahlen angepasst werden oder der von
 geleitete Kurs abgesagt werden.
 
 
-.. _CancelledWithAttendeesCV:
-
-Ausfallende Kurse mit Teilnehmenden
------------------------------------
-
-Dieser Verstoß tritt auf, wenn ein abgesagter Kurs noch über Kursteilnehmende verfügt.
-Das gilt nicht für Personen, die nicht anwesend sind.
-
-Um den Verstoß zu beheben, sollten die Personen in einen anderen Kurs eingeteilt werden,
-ihr Status angepasst werden oder der Kurs als nicht abgesagt markiert werden.
-
-
-.. _IncorrectNumAttendeesCV:
-
-Kurse mit inkorrekter Teilnehmendenzahl
----------------------------------------
-
-Dieser Verstoß tritt auf, wenn in einen Kurs zu wenige (aber mehr als 0) oder zu viele
-Kursteilnehmende eingeteilt sind. Nicht anwesende Kursteilnehmende werden hierbei nicht
-beachtet.
-
-Um den Verstoß zu beheben, teile einige der Teilnehmenden in andere Kurse ein oder
-passe die minimale und maximale Teilnehmendenzahl des Kurses an.
-
-
-.. _LonelyAttendeesCV:
-
-Kurse mit einsamen Kursteilnehmenden
-------------------------------------
-
-Dieser Verstoß tritt auf, wenn in einem Kurs Teilnehmende, aber keine Kursleitenden
-oder anders herum eingeteilt sind. Nicht anwesende Kursteilnehmende oder Kursleitende
-werden hierbei nicht beachtet.
-
-Um den Verstoß zu beheben, teile Teilnehmende bzw. Kursleitende in den Kurs ein oder
-sage den Kurs ab.
-
-
 .. _InconsistentPaymentCV:
 
 Anmeldungen mit Inkonsistentem Zahlungstatus
@@ -194,3 +156,114 @@ Um den Verstoß zu beheben, erinnere die Person daran den übrigen Beitrag zu be
 oder passe ihren Status bzw. ggf. ihren Teilnahmebeitrag an. Ansprechpartner bei allen
 Fragen rund um Teilnahmebeiträge ist das
 Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
+
+
+.. _MissingMinorFormCV:
+
+Fehlende Einverständniserklärung
+--------------------------------
+
+Dieser Verstoß tritt auf, wenn für minderjährige Teilnehmende einen Monat vor Beginn
+der Veranstaltung noch keine elterliche Einverständniserklärung vorliegt.
+
+Um den Verstoß zu beheben, trage die angekommene Einverständniserklärung in der
+Datenbank ein, bzw. erinnere die Minderjährigen daran, dass sie diese einreichen müssen.
+
+
+.. _IllegalMixedLodgingCV:
+
+Unzulässige gemischte Unterbringung
+-----------------------------------
+
+Dieser Verstoß tritt auf, wenn eine minderjährige Person (U16, Ü10) einer gemischten
+Unterbringung zugestimmt hat. Üblicherweise tritt dies nur bei manuellem Eingriff durch
+Orgas auf.
+
+Um den Verstoß zu beheben, bearbeite die Anmeldung und entferne den Haken für
+"Gemischte Unterbringung". Beachte allerdings, dass eine eine gemischt untergebrachte
+minderjährige Person ebenfalls einen Verstoß auslöst.
+
+
+.. _IncorrectCampingMatAssignment:
+
+Unzulässige Isomatteneinteilung
+-------------------------------
+
+Dieser Verstoß tritt auf, wenn ein Isomattenbereitschaftsfeld konfiguriert ist und eine
+anwesende Person auf einer Isomatte eingeteilt ist, die dem nicht zugestimmt hat.
+
+Um den Verstoß zu beheben, entferne die Isomatteneinteilung oder ändere die
+Isomattenbereitschaft der Person.
+
+
+.. _NoLodgementCV:
+
+Fehlende Unterkunftseinteilung
+------------------------------
+
+Dieser Verstoß tritt auf, wenn eine anwesende Person eine Woche vor Beginn der
+Veranstaltung noch keine Unterkunft hat. Tritt nicht auf, wenn für die Veranstaltung
+keine Unterkünfte existieren.
+
+Um den Verstoß zu beheben, teile die Person in eine Unterkunft ein.
+
+.. _CancelledWithAttendeesCV:
+
+Ausfallende Kurse mit Teilnehmenden
+-----------------------------------
+
+Dieser Verstoß tritt auf, wenn ein abgesagter Kurs noch über Kursteilnehmende verfügt.
+Das gilt nicht für Personen, die nicht anwesend sind.
+
+Um den Verstoß zu beheben, sollten die Personen in einen anderen Kurs eingeteilt werden,
+ihr Status angepasst werden oder der Kurs als nicht abgesagt markiert werden.
+
+
+.. _IncorrectNumAttendeesCV:
+
+Kurse mit inkorrekter Teilnehmendenzahl
+---------------------------------------
+
+Dieser Verstoß tritt auf, wenn in einen Kurs zu wenige (aber mehr als 0) oder zu viele
+Kursteilnehmende eingeteilt sind. Nicht anwesende Kursteilnehmende werden hierbei nicht
+beachtet.
+
+Um den Verstoß zu beheben, teile einige der Teilnehmenden in andere Kurse ein oder
+passe die minimale und maximale Teilnehmendenzahl des Kurses an.
+
+
+.. _LonelyAttendeesCV:
+
+Kurse mit einsamen Kursteilnehmenden
+------------------------------------
+
+Dieser Verstoß tritt auf, wenn in einem Kurs Teilnehmende, aber keine Kursleitenden
+oder anders herum eingeteilt sind. Nicht anwesende Kursteilnehmende oder Kursleitende
+werden hierbei nicht beachtet.
+
+Um den Verstoß zu beheben, teile Teilnehmende bzw. Kursleitende in den Kurs ein oder
+sage den Kurs ab.
+
+
+.. _IncorrectNumInhabitantsCV:
+
+Unterkünfte mit inkorrekter Bewohnerzahl
+----------------------------------------
+
+Dieser Verstoß tritt auf, wenn in einer Unterkunft zu viele Bewohner und/oder
+Isomattenschläfer eingeteilt sind.
+
+Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein,
+teile einige auf Isomatten ein und/oder passe die Kapazität der Unterkunft an.
+
+
+.. _IllegalMixedLodgementCV:
+
+Unzulässige gemischte Unterkunft
+--------------------------------
+
+Dieser Verstoß tritt auf, wenn in einer gemischten Unterkunft inkompatible Personen
+eingeteilt sind. Inkompatibel sind insbesondere Personen, die nicht einer gemischten
+Unterbringung zugestimmt haben, bzw. Minderjährige unter 16 Jahren.
+
+Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein.

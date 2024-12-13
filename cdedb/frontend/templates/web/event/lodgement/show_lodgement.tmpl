@@ -44,7 +44,7 @@
                         {% trans %}Lodgement Group{% endtrans %}
                     </dt>
                     <dd>
-                        {{ groups[ambience['lodgement']['group_id']]['title'] }}
+                        {{ groups[ambience['lodgement']['group_id']] }}
                     </dd>
                 {% endif %}
             </dl>
@@ -85,39 +85,42 @@
                     </div>
 
                     <div class="panel-body">
-                        {%- for p in problems if p.part_id == part.id -%}
-                            <p class="{% if p.severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
-                                {{ gettext(p.description) }}
-                                {% if affected_regs %}
-                                    (
-                                        {%- for reg_id in p.affected_regs -%}
-                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']], include_nickname=True) }}
-                                            {%- if not loop.last %}, {% endif %}
-                                        {%- endfor -%}
-                                    )
+                        {% set part_violations = violations.get(part=part) %}
+                        <div id="part-violations-{{ part.id }}">
+                            {% for violation in part_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
+                                {% set text = generic_event.print_violation(violation).strip() %}
+                                {% if text %}
+                                    <p class="{{ violation.severity.html_class() }}">
+                                        {% if violation.severity >= enums['ViolationSeverity'].WARNING %}
+                                            <strong>{{ text }}</strong>
+                                        {% else %}
+                                            <i>{{ text }}</i>
+                                        {% endif %}
+                                    </p>
                                 {% endif %}
-                            </p>
-                        {%- endfor -%}
-
-                        {%- if inhabitants -%}
-                        <ul class="slim">
-                            {% for registration_id in inhabitants[part.id] %}
-                                {% set registration_part_status = registrations[registration_id]['parts'][part.id]['status'] %}
-                                <li>
-                                    {% if not registration_part_status.is_involved() %}<s>{% endif -%}
-                                        {{ util.href(cdedblink('event/show_registration',
-                                                            {'registration_id': registration_id}),
-                                                    util.persona_name(personas[registrations[registration_id]['persona_id']], include_nickname=True)) }}
-                                    {%- if not registration_part_status.is_involved() %}</s>{% endif %}
-                                    {{- generic_event.camping_mat_icon(
-                                        registrations[registration_id]['parts'][part.id]['is_camping_mat'],
-                                        registrations[registration_id]['fields'].get(camping_mat_field_names[part.id])) }}
-                                    {% if registration_part_status != enums['RegistrationPartStati'].participant %}
-                                        <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
-                                    {% endif -%}
-                                </li>
                             {% endfor %}
-                        </ul>
+                        </div>
+
+                        {%- if involved_inhabitants or uninvolved_inhabitants-%}
+                            <ul class="slim">
+                                {% for involved, inhabitants in [(True, involved_inhabitants), (False, uninvolved_inhabitants)] %}
+                                    {% for registration in inhabitants[part.id].all %}
+                                        <li>
+                                            {% if not involved %}<s>{% endif %}
+                                                {{ util.href(cdedblink('event/show_registration',
+                                                                    {'registration_id': registration['id']}),
+                                                            util.persona_name(personas[registration['persona_id']], include_nickname=True)) }}
+                                            {% if not involved %}</s>{% endif %}
+                                            {{- generic_event.camping_mat_icon(
+                                                registration['parts'][part.id]['is_camping_mat'],
+                                                registration['fields'].get(part.camping_mat_field.field_name or "")) }}
+                                            {% if registration['parts'][part.id]['status'] != enums['RegistrationPartStati'].participant %}
+                                                <small>({{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }})</small>
+                                            {% endif -%}
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
                         {%- endif -%}
                     </div>
                     {% if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}

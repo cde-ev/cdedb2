@@ -764,11 +764,10 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/show_event')
 
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
-
         violation_data = self.get_constraint_violations(
-            rs, rs.ambience['event'], registration_id=-1, course_id=None)
+            rs, rs.ambience['event'], course_id=None,
+        )
+        courses = violation_data['courses']
 
         return self.render(rs, "course/course_stats", {
             'courses': courses, 'include_active': include_active,

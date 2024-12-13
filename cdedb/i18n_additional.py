@@ -370,6 +370,7 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
 
+    # Registration violations.
     n_("MutuallyExclusiveParticipationCV"),
     n_("CourseChoiceSyncCV"),
     n_("NoCourseAssignedCV"),
@@ -379,11 +380,19 @@ I18N_STRINGS = (
     n_("NegativeAmountOwedCV"),
     n_("NegativeRemainingOwedCV"),
     n_("RemainingOwedCV"),
+    n_("MissingMinorFormCV"),
+    n_("IllegalMixedLodgingCV"),
+    n_("IncorrectCampingMatAssignmentCV"),
+    n_("NoLodgementCV"),
+    # Course violations.
     n_("HiddenCourseCV"),
     n_("MutuallyExclusiveCoursesCV"),
     n_("CancelledWithAttendeesCV"),
     n_("IncorrectNumAttendeesCV"),
     n_("LonelyAttendeesCV"),
+    # Lodgement violations.
+    n_("IncorrectNumInhabitantsCV"),
+    n_("IllegalMixedLodgementCV"),
 
     #
     # Query datatypes
