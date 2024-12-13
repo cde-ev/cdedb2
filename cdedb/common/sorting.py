@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
+import collections.abc
 from collections.abc import Collection, Generator, Iterable, KeysView
 from typing import Any, Callable, Protocol, TypeVar, Union
 
@@ -37,9 +37,10 @@ def collate(sortkey: Any) -> Any:
     positive numbers, as minus and hyphens can not be distinguished."""
     if isinstance(sortkey, str):
         return COLLATOR.getSortKey(sortkey)
-    if isinstance(sortkey, (tuple, list, dict, set)):
+    if isinstance(sortkey, (tuple, list, dict, set, frozenset, collections.abc.Iterator)):
         # Make sure strings in nested Iterables are sorted
         # correctly as well.
+        # Don't be too eager and do this for all iterables.
         return tuple(map(collate, sortkey))
     return sortkey
 
