@@ -34,7 +34,7 @@
                     \participant{<<< personas[registration['persona_id']]|persona_name(include_nickname=True)|te >>>}%
                                 {<<< track['title']|te >>>}%
                                 {<<% if registration['tracks'][track.id]['course_instructor'] -%>>
-                                    <<% trans %>> Instructor <<% endtrans %>>:
+                                    <<% trans %>> Instructed Course <<% endtrans %>>:
                                     <<< courses[registration['tracks'][track.id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%

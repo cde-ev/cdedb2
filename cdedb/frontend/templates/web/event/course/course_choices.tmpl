@@ -23,8 +23,9 @@
         {% with course = courses[course_id] %}
             {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
             {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] else
-                           ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
-                            ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
+                           ('course-too-many' if course['max_size'] and attendees > course['max_size'] else
+                            ('course-too-few' if course['min_size'] and attendees < course['min_size'] else
+                             ('course-exactly-full' if course['max_size'] and attendees == course['max_size'] else ''))) %}
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
                        {% if filtered %}filtered_column{% endif %} {{ aclass }}">
                 <span title="{{ course['nr'] }}. {{ course['shortname'] }} {# -#}
@@ -276,10 +277,11 @@
     <hr />
     <p>
         <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
-        <span class="color-legend course-fewp"></span>&nbsp;{% trans %}Course is too empty{% endtrans %} &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Course is overfull{% endtrans %} &emsp;
-        <span class="color-legend course-cancelled"></span>&nbsp;
-                {% trans %}not assigned or course is cancelled{% endtrans %}&emsp;
+        <span class="color-legend course-too-few"></span>&nbsp;{% trans %}Not enough Attendees{% endtrans %}&emsp;
+        <span class="color-legend course-too-many"></span>&nbsp;{% trans %}Too many Attendees{% endtrans %}&emsp;
+        <span class="color-legend course-exactly-full"></span>&nbsp;{% trans %}Exactly full{% endtrans %}&emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Course cancelled{% endtrans %}&emsp;
+        <span class="color-legend course-primary course-cancelled"></span>&nbsp;{% trans %}Not assigned to a course{% endtrans %}&emsp;
     </p>
     <p>
         {{ util.make_icon('info-circle') }} {% trans %}Double-Click the course number to view the course.{% endtrans %}

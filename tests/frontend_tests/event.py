@@ -108,7 +108,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
         self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
-        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer "
+        msg = ("Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer "
                "sichtbar.")
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
@@ -3921,7 +3921,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertPresence("Kursstatistik")
         self.assertPresence("Morgenkreis", div="course-stats")
-        self.assertPresence("Kursleiter (theoretisch)", div="course-stats")
+        self.assertPresence("Kursleitende (theoretisch)", div="course-stats")
 
         self.traverse({'href': '/event/event/1/registration/query', 'index': 2})
         self.assertPresence("Ergebnis [1]")
@@ -4333,8 +4333,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Verstöße gegen Beschränkungen")
         self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
         self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
+        self.traverse("Kabarett")
+        self.assertPresence(r"Findet nicht statt aber hat \d+ Teilnehmende.",
+                            regex=True, div="track-violations-2")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence("Fehlende Kurseinteilungen")
         self.assertPresence("Anton", div='NoCourseAssignedCV-list')
+        self.traverse("Anton")
+        self.assertPresence("Ist in Sitzung in keinen Kurs eingeteilt.",
+                            div="constraint-violations-list")
 
         # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
         # problem, but raises 'unchosen' problem
@@ -4359,33 +4366,46 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis ist in Sitzung nicht in"
                             " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
                             div='IncorrectCourseAssignedCV-list')
+        self.traverse("Emilia")
+        self.assertPresence("Ist in Sitzung nicht in seinen/ihren geleiteten Kurs"
+                            " (α. Heldentum) eingeteilt.")
 
         # Change "Backup" to "never offered" in "Kaffeekränzchen".
         self.traverse("Kurse", "Backup", "Bearbeiten")
         f = self.response.forms['configurecourseform']
         f['segments'] = f['active_segments'] = [1, 3]
         self.submit(f)
-        self.assertPresence("Backup wird in Kaffee nicht angeboten aber hat",
+        self.assertPresence("Wird in Kaffee nicht angeboten aber hat",
                             div="constraint-violations-list")
+        self.traverse("Verstöße gegen Beschränkungen")
 
         # Reduce max size of "Heldentum".
         self.traverse("Kurse", "Heldentum", "Bearbeiten")
         f = self.response.forms['configurecourseform']
         f['max_size'] = 1
         self.submit(f)
-        self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.")
+        self.assertPresence("Zu viele Teilnehmende (3 > 1).")
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.",
+                            div="IncorrectNumAttendeesCV-list")
+        f['max_size'] = 3
+        self.submit(f)
+        self.traverse("Kurse")
+        self.assertHasClass("course-1-track-3", "course-exactly-full")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
         f = self.response.forms['changeregistrationform']
         f['track3.course_id'] = 1
         self.submit(f)
-        self.traverse("Kurse", "Heldentum", "Kursteilnehmer verwalten")
+        self.traverse("Kurse", "Heldentum", "Kursteilnehmende verwalten")
         f = self.response.forms['manageattendeesform']
         f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
         self.submit(f)
+        self.assertPresence("1 Kursleitende aber keine Teilnehmenden.")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
-                            " in Sitzung.")
+                            " in Sitzung.", div="LonelyAttendeesCV-list")
 
     @as_users("garcia")
     def test_course_display_with_different_participation_stati(self) -> None:
@@ -4416,7 +4436,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             .strip(),
             "Inga Iota")
         # The course check considers the course as full enough
-        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.assertNonPresence("Zu wenige Teilnehmende", div="track3-attendees")
 
         # As a GUEST, ...
         self.get('/event/event/1/registration/4/change')
@@ -4429,7 +4449,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       {'href': '/event/event/1/course/1/show'})
         self.assertPresence("2 + 1", div="track3-attendees")
         self.assertPresence("Inga Iota (Gast)", div="track3-attendees")
-        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.assertNonPresence("Zu wenige Teilnehmende", div="track3-attendees")
         self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertPresence("Inga Iota (Gast)", div="track3-attendees")
 
@@ -4444,7 +4464,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       {'href': '/event/event/1/course/1/show'})
         self.assertPresence("2 + 1", div="track3-attendees")
         self.assertPresence("Inga Iota (Warteliste)", div="track3-attendees")
-        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.assertNonPresence("Zu wenige Teilnehmende", div="track3-attendees")
         self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertPresence("Inga Iota (Warteliste)", div="track3-attendees")
 
@@ -4464,7 +4484,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Assert "Inga" is in the last <li> element
         self.assertTextContainedInNthElement("Inga", "li", -1, div="track3-attendees")
         # Now, we're missing a course attendee
-        self.assertPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.assertPresence("Zu wenige Teilnehmende", div="track3-attendees")
         self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertPresence("Inga Iota (Abgemeldet)", div="track3-attendees")
         # Assert "Inga" is in an <s> (strike-through) element
@@ -4745,7 +4765,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # first check empty csv
         self.traverse({'href': '/event/event/2/download/csv_registrations'})
         self.assertPresence('Leere Datei.', div='notifications')
-        self.assertNonPresence("Kursteilnehmerlisten")
+        self.assertNonPresence("Kursteilnehmendenlisten")
         self.get('/event/event/2/download/csv_courses')
         self.assertPresence('Leere Datei.', div='notifications')
         self.assertNonPresence("Unterkunftbewohnerlisten")
@@ -4999,11 +5019,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("0 + 0", div='track1-attendees')
         self.assertPresence("2 + 1", div='track3-attendees')
         # Check the attendees link in the footer.
-        self.assertNonPresence("Kurswahlen Kursteilnehmer", div='track1-attendees')
+        self.assertNonPresence("Kurswahlen Kursteilnehmende", div='track1-attendees')
         self.assertPresence("Inga", div='track3-attendees')
 
-        self.traverse("Kursteilnehmer verwalten")
-        self.assertTitle("Kursteilnehmer für Kurs Planetenretten für Anfänger"
+        self.traverse("Kursteilnehmende verwalten")
+        self.assertTitle("Kursteilnehmende für Kurs Planetenretten für Anfänger"
                          " verwalten (Große Testakademie 2222)")
         f = self.response.forms['manageattendeesform']
         f['new_1'] = "3"
@@ -5012,7 +5032,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.assertPresence("Garcia", div='track1-attendees')
-        self.assertPresence("Kursteilnehmer", div='track1-attendees')
+        self.assertPresence("Kursteilnehmende", div='track1-attendees')
         self.assertPresence("1 + 0", div='track1-attendees')
         self.assertPresence("Akira", div='track3-attendees')
         self.assertPresence("Emilia", div='track3-attendees')
@@ -5021,7 +5041,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check the attendees link in the footer.
         self.assertPresence("Alle Kurswahlen", div='track3-attendees')
-        self.assertPresence("Kursteilnehmer", div='track3-attendees')
+        self.assertPresence("Kursteilnehmende", div='track3-attendees')
         self.assertPresence("In Anmeldungsliste", div='track3-attendees')
         self.traverse({'description': "In Anmeldungsliste anzeigen",
                        'linkid': "attendees-link-3"})
@@ -5241,7 +5261,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Morgenkreis: Kurswahlen",
                             div="box-changed-registration-fields")
         self.assertNonPresence(
-            "Sitzung: Kursleiter", div="box-changed-registration-fields")
+            "Sitzung: Kursleitende", div="box-changed-registration-fields")
         self.assertNonPresence("Inga", div="box-changed-registrations")
         self.assertPresence("Charly", div="box-new-registrations")
         self.assertPresence("Akira", div="box-deleted-registrations")
@@ -6138,11 +6158,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence('Es gibt 1 "Teilnahmeausschließlichkeit"-Verstöße.',
+        self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmeausschließlichkeit",
                             div="constraint-violations")
-        self.assertPresence('Es gibt 5 "Kursausschließlichkeit"-Verstöße.',
+        self.assertPresence("Es gibt 5 Verstöße gegen Kursausschließlichkeit",
                             div="constraint-violations")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Kurse", "Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
         self.assertPresence("Teilnahmeausschließlichkeit")
         self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
@@ -6160,8 +6180,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({"href": "/event/event/4/registration/10/show"})
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
-                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+        self.assertPresence("Ist an sich gegenseitig ausschließenden"
+                            " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
@@ -6182,12 +6202,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
-                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+        self.assertPresence("Ist an sich gegenseitig ausschließenden"
+                            " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
+        self.assertPresence("Nimmt an sich gegenseitig ausschließenden"
+                            " Veranstaltungsteilen teil (K2, O2).",
+                            div="constraint-violations-list")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen teil (K2, O2).",
-                            div="constraint-violations-list")
+                            div="MutuallyExclusiveParticipationCV-list")
 
         f['part7.status'] = f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
@@ -6200,10 +6224,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("4. Akrobatik")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
+        self.assertPresence("Findet in sich gegenseitig ausschließenden"
                             " Kursschienen statt (KK1, OK1).",
                             div="constraint-violations-list")
-        self.assertNonPresence("Kurs fällt aus")
+        self.assertNonPresence("Findet nicht statt")
 
         self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
@@ -6253,7 +6277,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)
-        self.assertPresence("Kurs fällt aus", div="track8-attendees")
+        self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
         course_ids = self.event.list_courses(self.key, 4)
@@ -6275,12 +6299,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
         self.assertPresence(
-            'Es gibt 1 "Negativer übriger zu zahlender Betrag"-Verstöße.',
+            "Es gibt 1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
             div="constraint-violations")
-        self.assertPresence('Es gibt 3 "Nicht bezahlter Beitrag"-Verstöße.',
-                            div="constraint-violations")
-        self.assertPresence('Es gibt 1 "Übriger zu zahlender Betrag"-Verstöße.',
-                            div="constraint-violations")
+        self.assertPresence(
+            "Es gibt 3 Anmeldungen mit nicht bezahltem Beitrag",
+            div="constraint-violations")
+        self.assertPresence(
+            "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
+            div="constraint-violations")
 
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence(
@@ -6294,6 +6320,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.assertPresence(
             "Inga Iota muss eine Erstattung erhalten (116,49 €).")
+        self.traverse("Inga")
+        self.assertPresence("Muss eine Erstattung erhalten (116,49 €).")
+        self.traverse("Verstöße gegen Beschränkungen")
 
         self.assertPresence(
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag"
@@ -6314,16 +6343,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Anton Administrator muss insgesamt einen negativen Betrag bezahlen"
             " (-5,00 €).")
+        self.traverse("Anton Administrator")
+        self.assertPresence("Hat einen negativen Betrag bezahlt (-5,00 €).")
+        self.assertPresence("Muss insgesamt einen negativen Betrag bezahlen (-5,00 €).")
+        self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence(
             "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.")
         self.assertPresence(
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag"
             " bezahlt (übrig: 461,49 €).")
+        self.traverse("Emilia")
+        self.assertPresence("Hat bezahlt, aber kein Bezahlungsdatum.")
+        self.traverse("Verstöße gegen Beschränkungen")
         # Garcia is orga.
         self.assertNonPresence(
             "Garcia Generalis ist involviert, muss aber keinen Beitrag bezahlen.")
         self.assertPresence(
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
+        self.traverse("Akira")
+        self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
@@ -6482,7 +6520,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check that choices are correctly displayed.
         self.assertTitle("Deine Anmeldung (TripelAkademie)")
-        self.assertPresence("Kursleiter von 2. All-Embracement",
+        self.assertPresence("Geleiteter Kurs 2. All-Embracement",
                             div="course-choices-group-1")
         self.assertPresence("1. Wahl 4. Akrobatik für Anfangende",
                             div="course-choices-group-1")
@@ -6491,7 +6529,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("3. Wahl 3. Nostalgie",
                             div="course-choices-group-1")
 
-        self.assertPresence("Kursleiter von 3. Nostalgie",
+        self.assertPresence("Geleiteter Kurs 3. Nostalgie",
                             div="course-choices-15")
         self.assertPresence("1. Wahl 2. All-Embracement",
                             div="course-choices-15")
@@ -6507,7 +6545,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("5. Wahl —",
                             div="course-choices-group-3")
 
-        self.assertPresence("Kursleiter von 4. Akrobatik für Anfangende",
+        self.assertPresence("Geleiteter Kurs 4. Akrobatik für Anfangende",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl 2. All-Embracement",
                             div="course-choices-group-2")
@@ -6562,7 +6600,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Anmeldung von Emilia Eventis (TripelAkademie)")
 
         self.assertPresence("Kurs 2. Hälfte nachmittags", div="course-choices-group-2")
-        self.assertPresence("Kursleiter von —",
+        self.assertPresence("Geleiteter Kurs —",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl —",
                             div="course-choices-group-2")
@@ -6580,7 +6618,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.assertPresence("Kurs 2. Hälfte nachmittags", div="course-choices-group-2")
-        self.assertPresence("Kursleiter von 3. Nostalgie",
+        self.assertPresence("Geleiteter Kurs 3. Nostalgie",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl 4. Akrobatik",
                             div="course-choices-group-2")
@@ -6622,7 +6660,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check that choices are correctly displayed.
         self.assertTitle("Anmeldung von Bertå Beispiel (TripelAkademie)")
-        self.assertPresence("Kursleiter von 2. All-Embracement",
+        self.assertPresence("Geleiteter Kurs 2. All-Embracement",
                             div="course-choices-group-1")
         self.assertPresence("1. Wahl 4. Akrobatik",
                             div="course-choices-group-1")
@@ -6631,12 +6669,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("3. Wahl 3. Nostalgie",
                             div="course-choices-group-1")
 
-        self.assertPresence("Kursleiter von 2. All-Embracement",
+        self.assertPresence("Geleiteter Kurs 2. All-Embracement",
                             div="course-choices-15")
         self.assertPresence("1. Wahl 3. Nostalgie",
                             div="course-choices-15")
 
-        self.assertPresence("Kursleiter von 4. Akrobatik",
+        self.assertPresence("Geleiteter Kurs 4. Akrobatik",
                             div="course-choices-group-3")
         self.assertPresence("1. Wahl 3. Nostalgie",
                             div="course-choices-group-3")
@@ -6649,7 +6687,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("5. Wahl —",
                             div="course-choices-group-3")
 
-        self.assertPresence("Kursleiter von 4. Akrobatik",
+        self.assertPresence("Geleiteter Kurs 4. Akrobatik",
                             div="course-choices-group-2")
         self.assertPresence("1. Wahl 2. All-Embracement",
                             div="course-choices-group-2")
@@ -6693,9 +6731,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         for id_ in (1001, 1002):
             self.get(f'/event/event/4/registration/{id_}/show')
-            self.assertPresence("Kursleiter von 2. All-Embracement",
+            self.assertPresence("Geleiteter Kurs 2. All-Embracement",
                                 div="course-choices-group-2")
-            self.assertPresence("Kursleiter von 3. Nostalgie",
+            self.assertPresence("Geleiteter Kurs 3. Nostalgie",
                                 div="course-choices-group-3")
             self.assertPresence("Kurs KV 3. Nostalgie")
             self.assertPresence("Kurs OK1 1. Niebelungenlied")

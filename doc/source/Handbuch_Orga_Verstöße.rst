@@ -23,8 +23,8 @@ In diesem Dokument werden die einzelnen Arten von Verstößen näher erläutert.
 
 .. _MutuallyExclusiveParticipationCV:
 
-Teilnahmeausschließlichkeit
----------------------------
+Verstöße gegen Teilnahmeausschließlichkeit
+------------------------------------------
 
 Dieser Verstoß tritt nur auf, wenn mindestens eine Veranstaltungsteilgruppe des Typs
 ``Teilnahmeausschließlichkeit`` existiert.
@@ -40,8 +40,8 @@ Veranstaltungsteilen angepasst werden.
 
 .. _CourseChoiceSyncCV:
 
-Kurswahlsynchronisierung
-------------------------
+Verstöße gegen Kurswahlsynchronisierung
+---------------------------------------
 
 Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
 ``Kurswahlsynchronisierung`` existiert.
@@ -109,8 +109,8 @@ passe die minimale und maximale Teilnehmendenzahl des Kurses an.
 
 .. _LonelyAttendeesCV:
 
-Einsame Kursteilnehmende
-------------------------
+Kurse mit einsamen Kursteilnehmenden
+------------------------------------
 
 Dieser Verstoß tritt auf, wenn in einem Kurs Teilnehmende, aber keine Kursleitenden
 oder anders herum eingeteilt sind. Nicht anwesende Kursteilnehmende oder Kursleitende
@@ -122,8 +122,8 @@ sage den Kurs ab.
 
 .. _InconsistentPaymentCV:
 
-Inkonsistenter Zahlungstatus
-----------------------------
+Anmeldungen mit Inkonsistentem Zahlungstatus
+--------------------------------------------
 
 Dieser Verstoß tritt auf, wenn beim Eintragen der Zahlungsdaten einer Person etwas
 schiefgelaufen ist, z.B. wenn sie einen negativen Betrag bezahlt hat oder kein
@@ -136,8 +136,8 @@ Buchhaltung <buchhaltung@lists.cde-ev.de>.
 
 .. _NotPaidCV:
 
-Nicht bezahlter Beitrag
------------------------
+Anmeldungen mit nicht bezahltem Beitrag
+---------------------------------------
 
 Dieser Verstoß tritt auf, wenn eine Person auf mindestens einem Veranstaltungsteil den
 Status ``Teilnehmer`` hat, aber noch keinen Teilnahmebeitrag bezahlt hat
@@ -149,8 +149,8 @@ Um den Verstoß zu beheben, erinnere die Person daran, ihren Beitrag zu überwei
 
 .. _NegativeAmountOwedCV:
 
-Negativer zu zahlender Betrag
------------------------------
+Anmeldungen mit negativem zu zahlenden Beitrag
+----------------------------------------------
 
 Dieser Verstoß tritt auf, wenn eine Person insgesamt einen negativen Beitrag zahlen
 soll. In der Regel deutet dies darauf hin, dass bei der Konfiguration der
@@ -163,8 +163,8 @@ Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
 .. _NegativeRemainingOwedCV:
 
-Negativer übriger zu zahlender Betrag
--------------------------------------
+Anmeldungen mit negativem übrigen zu zahlenden Beitrag
+------------------------------------------------------
 
 Dieser Verstoß tritt auf, wenn eine Person einen höheren Beitrag bezahlt hat, als sie
 es zum jetzigen Stand hätte tun müssen. In der Regel liegt das daran, dass die Person
@@ -181,8 +181,8 @@ Fragen ist das Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
 .. _RemainingOwedCV:
 
-Übriger zu zahlender Betrag
----------------------------
+Anmeldungen mit Übrigem zu zahlenden Beitrag
+--------------------------------------------
 
 Dieser Verstoß tritt auf, wenn eine Personen bereits einen Teil ihres Beitrages, aber
 noch nicht den vollen Beitrag bezahlt hat. Oft liegt das daran, dass die Person sich

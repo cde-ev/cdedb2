@@ -1080,30 +1080,38 @@ td.b-right, th.b-right {
     color: rgba(255, 255, 255, .8);
     background-color: rgba(45, 129, 156, 0.5);
 }
-tr td.course-primary {
+.course-primary {
     background-color: #e6e6e6;
 }
-tr td.course-manyp, .course-manyp {
-    background-color: #f2b3b3;
-}
-tr td.course-manyp.course-primary {
+.course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
     background-color: #e08282;
 }
-tr td.course-fewp, .course-fewp {
-    background-color: #f2e8b3;
-
+.course-too-many, .lodgement-too-many {
+    background-color: #f2b3b3;
 }
-tr td.course-fewp.course-primary {
+.course-primary.course-too-few, .lodgement-primary.lodge-too-few{
     background-color: #dfd181;
 }
-tr td.course-cancelled, .course-cancelled {
-    background-color: #e0b2f2;
+.course-too-few, .lodgement-too-few {
+    background-color: #f2e8b3;
 }
-tr td.course-cancelled.course-primary {
+.course-primary.course-exactly-full, .lodgement-primary.lodge-exactly-full{
+    background-color: #99cf99;
+}
+.course-exactly-full, .lodgement-exact-full{
+    background-color: #b3f2b3;
+}
+.course-primary.course-cancelled, .lodgement-primary.lodgement-illegal{
     background-color: #cb86e6;
 }
-tr td.course-cancelled-ok, .course-cancelled-ok {
+.course-cancelled, .lodgement-illegal {
+    background-color: #e6b3f2;
+}
+.course-primary.course-cancelled-ok {
     background-color: #b8ceef;
+}
+.course-cancelled-ok {
+    background-color: #ceefff;
 }
 tr th.filtered_column {
     background-color: #31708f;

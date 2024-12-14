@@ -44,7 +44,7 @@
         {% endfor %}
 
         {{ util.form_input_select(name=instructor_name, entries=all_course_entries,
-                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
+                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructed Course"),
                                   info=gettext("If you are instructing a course, please specify which one.")) }}
     </div>
 {% endmacro %}
@@ -356,18 +356,22 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro list_violations(class_name, violations, link=False, min_severity=enums['ViolationSeverity'].INFO) %}
+{% macro print_violation(violation, link=False, entity_page=True) %}
+    {% set msgs, params = violation.get_translation(entity_page=entity_page) %}
+    {% if link %}
+        {% set link_target, link_params = violation.get_link_params() %}
+        {% do params.update({'link': util.href(cdedblink(link_target, link_params), params['link'])}) %}
+    {% endif %}
+    {% for msg in msgs %}
+        {{ gettext(msg)|format(**params)|s }}
+    {% endfor %}
+{% endmacro %}
+
+{% macro list_violations(class_name, violations, link=False, min_severity=enums['ViolationSeverity'].INFO, entity_page=True) %}
     <ul id="{{ class_name }}-list">
         {% for violation in violations if violation.severity >= min_severity %}
             <li class="{{ violation.severity.html_class() }}">
-                {% set msgs, params = violation.get_translation() %}
-                {% if link %}
-                    {% set link_target, link_params = violation.get_link_params() %}
-                    {% do params.update({'link': util.href(cdedblink(link_target, link_params), params['link'])}) %}
-                {% endif %}
-                {% for msg in msgs %}
-                    {{ gettext(msg)|format(**params)|s }}
-                {% endfor %}
+                {{ print_violation(violation, link=link, entity_page=entity_page) }}
             </li>
         {% endfor %}
     </ul>

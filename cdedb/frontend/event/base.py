@@ -14,7 +14,6 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
-import collections
 import itertools
 import operator
 from collections import OrderedDict
@@ -61,6 +60,7 @@ from cdedb.models.event_constraint_violations import (
     CancelledWithAttendeesCV,
     ConstraintViolation,
     CourseChoiceSyncCV,
+    HiddenCourseCV,
     InconsistentPaymentCV,
     IncorrectCourseAssignedCV,
     IncorrectNumAttendeesCV,
@@ -72,7 +72,7 @@ from cdedb.models.event_constraint_violations import (
     NoCourseAssignedCV,
     NotPaidCV,
     RemainingOwedCV,
-    ViolationSeverity,
+    ViolationList,
 )
 
 
@@ -453,11 +453,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         parts = event.part_groups[part_group_id].parts.values()
         return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
-    def get_constraint_violations(self, rs: RequestState, event: models.Event, *,
-                                  registration_id: Optional[int],
-                                  course_id: Optional[int]) -> CdEDBObject:
+    def get_constraint_violations(
+            self, rs: RequestState, event: models.Event, *,
+            registration_id: Optional[int],
+            course_id: Optional[int],
+    ) -> CdEDBObject:
         """
-        Check for violations of part group constraints.
+        Check for violations.
 
         :param registration_id: Can be a single id to only consider that registrations.
             Can also be `-1` to check no registrations at all. Alternatively this can
@@ -496,7 +498,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
-        _choice_counts, course_attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        _choice_stats, attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
 
         _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
         reg_violation_spec: _vs_type = {
@@ -540,6 +542,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         }
         course_violation_spec: _vs_type = {
+            'base': {
+                (
+                    HiddenCourseCV,
+                ): [
+                    'course',
+                ],
+            },
             'track': {
                 (
                     CancelledWithAttendeesCV,
@@ -572,6 +581,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             for part in event.parts.values():
                 reg['parts'][part.id]['age'] = determine_age_class(
                     personas[reg['persona_id']]['birthday'], part.part_begin)
+            reg['age'] = determine_age_class(
+                personas[reg['persona_id']]['birthday'], event.begin)
             reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
 
             parameters: CdEDBObject = {
@@ -609,12 +620,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             parameters = {
                 'course': course,
             }
+            _check_violation(course_violation_spec['base'], parameters)
 
             course_track_violation_spec = course_violation_spec['track']
             for track in sorted_tracks:
                 parameters.update({
                     'track': track,
-                    'attendees': course_attendees[course['id'], track.id],
+                    'attendees': attendees[course['id'], track.id],
                 })
                 _check_violation(course_track_violation_spec, parameters)
 
@@ -625,29 +637,13 @@ class EventBaseFrontend(AbstractUserFrontend):
                 })
                 _check_violation(course_track_group_violation_spec, parameters)
 
-        violations_by_class = collections.defaultdict(list)
-        for v in violations:
-            violations_by_class[v.__class__.__name__].append(v)
-
-        max_severity_by_class = {
-            violation_class_name: max(violation.severity for violation in violations)
-            for violation_class_name, violations in violations_by_class.items()
-        }
-        max_severity = max(max_severity_by_class.values(),
-                           default=ViolationSeverity.DEBUG)
-
-        violations_by_class = dict(xsorted(
-            violations_by_class.items(),
-            key=lambda item: (-max_severity_by_class[item[0]].value, item[0]),
-        ))
         return {
-            'all': violations,
-            'by_class': violations_by_class,
-            'max_severity': max_severity,
-            'max_severity_by_class': max_severity_by_class,
+            'violations': ViolationList(violations),
             'registrations': registrations,
             'personas': personas,
             'courses': courses,
+            'choice_stats': _choice_stats,
+            'attendees': attendees,
         }
 
     @access("event")
