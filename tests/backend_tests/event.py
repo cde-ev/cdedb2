@@ -4320,14 +4320,14 @@ class TestEventBackend(BackendTest):
             self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
             self.assertGreater(self.event.add_checkout(self.key, reg_id), 0)
             future_time = base_time + 42 * delta
-            with self.assertRaises(ValueError) as err:
+            with self.assertRaises(ValueError) as cm:
                 self.event.add_checkin(self.key, reg_id, future_time)
-            self.assertEqual(err.exception.args[0], "Must be in the past.")
-            with self.assertRaises(ValueError):
+            self.assertEqual(cm.exception.args[0], "Must be in the past.")
+            with self.assertRaises(ValueError) as cm:
                 self.event.add_checkout(self.key, reg_id, future_time)
-            self.assertEqual(err.exception.args[0], "Must be in the past.")
+            self.assertEqual(cm.exception.args[0], "Must be in the past.")
             self.assertEqual(self.event.add_checkout(self.key, reg_id), 0)
-            period = {
+            period: CdEDBObject = {
                 "id": p_id,
                 "registration_id": reg_id,
                 "checkin_time": base_time,
@@ -4340,25 +4340,25 @@ class TestEventBackend(BackendTest):
             # change a period
             period["checkin_time"] += delta
             period["checkout_time"] += delta
-            with self.assertRaises(ValueError) as err:
+            with self.assertRaises(ValueError) as cm:
                 self.assertGreater(self.event.change_checkin_period(
                     self.key, reg_id, p_id, checkin_time=period["checkin_time"],
                     checkout_time=period["checkout_time"],
                 ), 0)
-            self.assertEqual("Must be in the past.", err.exception.args[0])
+            self.assertEqual("Must be in the past.", cm.exception.args[0])
             frozen_time.tick(2*delta)
-            with self.assertRaises(ValueError) as err:
+            with self.assertRaises(ValueError) as cm:
                 self.assertGreater(self.event.change_checkin_period(
                     self.key, reg_id, p_id, checkin_time=period["checkout_time"],
                     checkout_time=period["checkin_time"],
                 ), 0)
-            self.assertEqual("Checkout must be after checkin.", err.exception.args[0])
-            with self.assertRaises(ValueError) as err:
+            self.assertEqual("Checkout must be after checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
                 self.assertGreater(self.event.change_checkin_period(
                     self.key, reg_id, p_id + 42, checkin_time=period["checkin_time"],
                     checkout_time=period["checkout_time"],
                 ), 0)
-            self.assertEqual("Inconsistent period.", err.exception.args[0])
+            self.assertEqual("Inconsistent period.", cm.exception.args[0])
 
             self.assertGreater(self.event.change_checkin_period(
                 self.key, reg_id, p_id, checkin_time=period["checkin_time"],
@@ -4376,8 +4376,93 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
 
+            # adding an earlier period
+            early_period: CdEDBObject = {
+                "registration_id": reg_id,
+                "checkin_time": base_time - delta,
+                "checkout_time": base_time,
+            }
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=early_period["checkin_time"],
+                    checkout_time=early_period["checkin_time"])
+            self.assertEqual("Checkout must be after checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=early_period["checkin_time"],
+                    checkout_time=future_time)
+            self.assertEqual(
+                "Checkout must be before next checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=future_time,
+                    checkout_time=future_time + delta)
+            self.assertEqual(
+                "Cannot checkin when user is not checked out.", cm.exception.args[0])
+            self.assertGreater(self.event.add_backdated_checkin_period(
+                self.key, **early_period), 0)
+            expected = [
+                models.CheckinPeriod.from_database(early_period | {"id": p_id+1}),
+                models.CheckinPeriod.from_database(period),
+            ]
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(reg['checkin_periods'], expected)
+
+            # replacing
+            new_periods: list[CdEDBObject] = [
+                {
+                    # this is backdated and created at end in backend func
+                    "id": p_id + 4,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time - 2*delta,
+                    "checkout_time": base_time,
+                },
+                {
+                    # checkin time matches, so period will be edited instead of deleted
+                    "id": p_id,
+                    "registration_id": reg_id,
+                    "checkin_time": period["checkin_time"],
+                    "checkout_time": base_time + 2*delta,
+                },
+                {
+                    "id": p_id + 2,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time + 4*delta,
+                    "checkout_time": None,
+                },
+                {
+                    "id": p_id + 3,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time + 8*delta,
+                    "checkout_time": base_time + 10*delta,
+                },
+            ]
+            replace_input: list[models.ReducedCheckinPeriod] = [
+                models.ReducedCheckinPeriod(
+                    checkin_time=p["checkin_time"], checkout_time=p["checkout_time"])
+                for p in new_periods
+            ]
+            frozen_time.tick(10*delta)  # are at base_time + 12*delta now
+            with self.assertRaises(ValueError) as cm:
+                self.event.replace_checkin_periods(self.key, reg_id, replace_input)
+            self.assertEqual("Checkout date must be provided.", cm.exception.args[0])
+            new_periods[2]["checkout_time"] = base_time + 6*delta
+            replace_input[2].checkout_time = base_time + 6*delta
+            self.assertGreater(self.event.replace_checkin_periods(
+                self.key, reg_id, replace_input), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
+
             # delete
-            self.assertGreater(self.event.delete_checkin_period(self.key, reg_id, p_id), 0)
+            self.assertGreater(
+                self.event.delete_checkin_period(self.key, reg_id, p_id), 0)
+            del new_periods[1]
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
 
     @as_users("emilia")
     def test_part_groups(self) -> None:
