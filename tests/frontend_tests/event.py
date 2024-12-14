@@ -6158,9 +6158,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence('Es gibt 1 "Teilnahmeausschließlichkeit"-Verstöße.',
+        self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmeausschließlichkeit",
                             div="constraint-violations")
-        self.assertPresence('Es gibt 5 "Kursausschließlichkeit"-Verstöße.',
+        self.assertPresence("Es gibt 5 Verstöße gegen Kursausschließlichkeit",
                             div="constraint-violations")
         self.traverse("Kurse", "Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
@@ -6299,12 +6299,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
         self.assertPresence(
-            'Es gibt 1 "Negativer übriger zu zahlender Betrag"-Verstöße.',
+            "Es gibt 1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
             div="constraint-violations")
-        self.assertPresence('Es gibt 3 "Nicht bezahlter Beitrag"-Verstöße.',
-                            div="constraint-violations")
-        self.assertPresence('Es gibt 1 "Übriger zu zahlender Betrag"-Verstöße.',
-                            div="constraint-violations")
+        self.assertPresence(
+            "Es gibt 3 Anmeldungen mit nicht bezahltem Beitrag",
+            div="constraint-violations")
+        self.assertPresence(
+            "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
+            div="constraint-violations")
 
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertPresence(
