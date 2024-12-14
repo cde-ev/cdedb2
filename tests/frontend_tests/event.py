@@ -4940,6 +4940,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['checkinform2']
         self.submit(f)
         self.assertTitle("Checkin (Große Testakademie 2222)")
+        # cannot checkin twice
+        self.submit(f, check_notification=False)
+        self.assertNotification("Bereits eingecheckt.", "error")
+        self.assertTitle("Checkin (Große Testakademie 2222)")
         # Berta should still be hidden, because the `part_ids` parameter was preserved.
         self.assertPresence("Anton", div="checkin-list")
         self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
@@ -4982,10 +4986,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         with freezegun.freeze_time(base_time) as frozen_time:
             self.assertNotIn('checkoutform', self.response.forms)
-            self.submit(self.response.forms['checkinform'])  # check Berta in
+            # check Berta in
+            f = self.response.forms['checkinform']
+            self.submit(f)
+            self.submit(f, check_notification=False)
+            self.assertNotification("Bereits eingecheckt.", "error")
+            self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
             frozen_time.tick(delta)
             self.assertNotIn('checkinform', self.response.forms)
-            self.submit(self.response.forms['checkoutform'])  # check Berta out again
+            # check Berta out again
+            f = self.response.forms['checkoutform']
+            self.submit(f)
+            self.submit(f, check_notification=False)
+            self.assertNotification("Bereits ausgecheckt.", "error")
+            self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
 
             f = self.response.forms['changeperiodform1']
             f['checkout_time_1'] = base_time + delta

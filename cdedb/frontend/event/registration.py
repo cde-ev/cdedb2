@@ -1694,14 +1694,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Checkin a participant."""
         if rs.has_validation_errors():
             if from_checkin_page:
-                return self.checkin_form(rs, event_id, part_ids)
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         if (rs.ambience['registration']['checkin_periods']
             and not rs.ambience['registration']['checkin_periods'][-1].checkout_time):
             rs.notify("error", n_("Already checked in."))
             if from_checkin_page:
-                return self.checkin_form(rs, event_id, part_ids)
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         code = self.eventproxy.add_checkin(rs, registration_id)

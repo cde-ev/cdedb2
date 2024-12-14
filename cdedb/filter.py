@@ -27,6 +27,7 @@ from typing import (
 )
 
 import bleach
+import freezegun.api
 import icu
 import jinja2
 import markdown
@@ -155,6 +156,10 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
         zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
+        # I do not get why the isinstance check always is true...
+        # if isinstance(val, freezegun.api.FakeDatetime):
+        if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+            val = datetime.datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
