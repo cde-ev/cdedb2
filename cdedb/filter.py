@@ -156,9 +156,10 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
         zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
-        # I do not get why the isinstance check always is true...
+        # isinstance check is always true since freezegun overiddes __instancecheck__
         # if isinstance(val, freezegun.api.FakeDatetime):
         if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+            # icu cannot deal with FakeDatetime objects, convert them
             val = datetime.datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:

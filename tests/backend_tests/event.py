@@ -4398,7 +4398,7 @@ class TestEventBackend(BackendTest):
                     self.key, reg_id, checkin_time=future_time,
                     checkout_time=future_time + delta)
             self.assertEqual(
-                "Cannot checkin when user is not checked out.", cm.exception.args[0])
+                "Cannot checkin checked-in users.", cm.exception.args[0])
             self.assertGreater(self.event.add_backdated_checkin_period(
                 self.key, **early_period), 0)
             expected = [
