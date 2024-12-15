@@ -334,6 +334,8 @@
                 $(".nojs-only.period-form-" + rownr + " .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
             })
         })
+        // nicer icon also in case of validation error
+        $(".nojs-only.has-error .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
     </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
