@@ -1861,7 +1861,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
                       checkout_time: Optional[datetime.datetime] = None,
                       ) -> DefaultReturnCode:
-        """Checkin participants
+        """Checkout participants
 
         :param checkout_time: defaults to current time
         """
@@ -1975,7 +1975,9 @@ class EventRegistrationBackend(EventBaseBackend):
         self, rs: RequestState, registration_id: int, period_id: int,
         checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
     ) -> DefaultReturnCode:
-        """Change the time a participant was present."""
+        """Change the time a participant was present.
+
+        :param checkout_time: Optional iff the period is the newest one."""
         registration_id = affirm(vtypes.ID, registration_id)
         period_id = affirm(vtypes.ID, period_id)
         checkin_time = affirm(datetime.datetime, checkin_time)
@@ -1995,16 +1997,18 @@ class EventRegistrationBackend(EventBaseBackend):
 
             periods = {t.id: t for t in reg['checkin_periods']}
             if period_id not in periods:
-                raise ValueError(n_("Inconsistent period."))
+                raise ValueError(n_("Period is not from this registration."))
             period = periods[period_id]
 
             # Check the change does not mix up transition order.
             pos = reg['checkin_periods'].index(period)
             if pos != 0 and reg['checkin_periods'][pos - 1].checkout_time >= checkin_time:
                 raise ValueError(n_("Checkin time to early."))
-            if (len(reg['checkin_periods']) > pos + 1
-                and reg['checkin_periods'][pos + 1].checkin_time <= checkout_time):
-                raise ValueError(n_("Checkout time to early."))
+            if len(reg['checkin_periods']) > pos + 1:
+                if not checkout_time:
+                    raise ValueError(n_("Checkout time must not be empty."))
+                if reg['checkin_periods'][pos + 1].checkin_time <= checkout_time:
+                    raise ValueError(n_("Checkout time to early."))
 
             if period.checkin_time != checkin_time:
                 old_time = datetime_filter(period.checkin_time, lang=rs.log_lang)

@@ -9,7 +9,6 @@ import csv
 import datetime
 import decimal
 import io
-import itertools
 import re
 from collections import OrderedDict
 from collections.abc import Collection
@@ -1739,9 +1738,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         reg = rs.ambience['registration']
         if period_id not in {period.id for period in reg['checkin_periods']}:
             raise ValueError(n_("Inconsistent data."))
-        checkin_time = unwrap(request_extractor(
+        checkin_time: datetime.datetime = unwrap(request_extractor(
             rs, {f'checkin_time_{period_id}': datetime.datetime}))
-        checkout_time = unwrap(request_extractor(
+        checkout_time: Optional[datetime.datetime] = unwrap(request_extractor(
             rs, {f'checkout_time_{period_id}': Optional[datetime.datetime]}))  # type:ignore[dict-item]
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
@@ -1757,14 +1756,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         if checkout_time and not checkin_time < checkout_time:
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
-        for prev, current in itertools.pairwise(reg['checkin_periods']):
-            # ensure late enough checkin
-            if current.id == period_id and not prev.checkout_time <= checkin_time:
+        by_id = {p.id: p for p in reg['checkin_periods']}
+        if idx := reg['checkin_periods'].index(by_id[period_id]) > 0:
+            prev = reg['checkin_periods'][idx - 1]
+            if not prev.checkout_time <= checkin_time:
                 rs.append_validation_error((f'checkin_time_{period_id}', ValueError(
                     n_("Checkin must be after previous checkout."),
                 )))
-            # ensure early enough checkout
-            elif prev.id == period_id and not checkout_time <= current.checkin_time:
+        if idx < len(reg['checkin_periods']) - 1:
+            nxt = reg['checkin_periods'][idx + 1]
+            if not checkout_time or checkout_time > nxt.checkin_time:
                 rs.append_validation_error((f'checkout_time_{period_id}', ValueError(
                     n_("Checkout must be before next checkin."),
                 )))

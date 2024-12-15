@@ -4358,7 +4358,7 @@ class TestEventBackend(BackendTest):
                     self.key, reg_id, p_id + 42, checkin_time=period["checkin_time"],
                     checkout_time=period["checkout_time"],
                 ), 0)
-            self.assertEqual("Inconsistent period.", cm.exception.args[0])
+            self.assertEqual("Period is not from this registration.", cm.exception.args[0])
 
             self.assertGreater(self.event.change_checkin_period(
                 self.key, reg_id, p_id, checkin_time=period["checkin_time"],
