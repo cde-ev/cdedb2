@@ -1841,8 +1841,8 @@ class EventRegistrationBackend(EventBaseBackend):
             for reg_id, reg in regs.items():
                 data: CdEDBObject = {
                     'registration_id': reg_id,
+                    # we require this to be in the past, prevent rounding up
                     'checkin_time': checkin_time or ref_time.replace(microsecond=0),
-                    # TODO: remove replacement once precision set to 0 in postgres
                 }
                 ret *= self.sql_insert(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkin_added,
@@ -1893,8 +1893,8 @@ class EventRegistrationBackend(EventBaseBackend):
             for reg_id, reg in regs.items():
                 data: CdEDBObject = {
                     'id': reg['checkin_periods'][-1].id,
+                    # we require this to be in the past, prevent rounding up
                     'checkout_time': checkout_time or ref_time.replace(microsecond=0),
-                    # TODO: remove replacement once precision set to zero in postgres
                 }
                 ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkout_added,

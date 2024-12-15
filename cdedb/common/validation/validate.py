@@ -1724,7 +1724,11 @@ def _datetime(
 def _frozen_datetime(  # pragma: no cover
     val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
-    """Our tests pass objects of this mock time."""
+    """Our tests pass objects of this mock time.
+
+    Since freezegun does magic type stuff, this is required
+    when calling `affirm(datetime.datetime, ...)` on a FakeDatetime.
+    """
     return _datetime(val, argname, **kwargs)
 
 
@@ -4094,6 +4098,8 @@ def _partial_registration_checkin_period(
     """
 
     if isinstance(val, ReducedCheckinPeriod):
+        if val.checkout_time and val.checkin_time >= val.checkout_time:
+            raise ValueError(n_("Checkout must be after checkin."))
         return val
 
     val = _mapping(val, argname, **kwargs)

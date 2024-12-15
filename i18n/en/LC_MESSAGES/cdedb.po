@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-15 16:02+0000\n"
+"POT-Creation-Date: 2024-12-15 18:07+0000\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1269,7 +1269,8 @@ msgstr ""
 
 #: cdedb/backend/event/registration.py:1924
 #: cdedb/backend/event/registration.py:1990
-#: cdedb/common/validation/validate.py:4109
+#: cdedb/common/validation/validate.py:4102
+#: cdedb/common/validation/validate.py:4115
 #: cdedb/frontend/event/registration.py:1758
 msgid "Checkout must be after checkin."
 msgstr ""
@@ -2908,9 +2909,9 @@ msgstr ""
 #: cdedb/common/validation/validate.py:861
 #: cdedb/common/validation/validate.py:1065
 #: cdedb/common/validation/validate.py:1183
-#: cdedb/common/validation/validate.py:2765
-#: cdedb/common/validation/validate.py:4328
-#: cdedb/common/validation/validate.py:5000 cdedb/frontend/cde/base.py:265
+#: cdedb/common/validation/validate.py:2769
+#: cdedb/common/validation/validate.py:4334
+#: cdedb/common/validation/validate.py:5006 cdedb/frontend/cde/base.py:265
 #: cdedb/frontend/cde/base.py:269 cdedb/frontend/core/base.py:1250
 #: cdedb/frontend/core/genesis.py:103 cdedb/frontend/event/event.py:267
 #: cdedb/frontend/event/registration.py:758
@@ -3085,437 +3086,437 @@ msgstr ""
 msgid "Must be a datetime.datetime."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1739
+#: cdedb/common/validation/validate.py:1743
 msgid "More than one digit."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1756
+#: cdedb/common/validation/validate.py:1760
 msgid "Invalid country code"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1758
+#: cdedb/common/validation/validate.py:1762
 msgid "This is not a phone number."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1760
+#: cdedb/common/validation/validate.py:1764
 msgid "Phone number too short"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1762
+#: cdedb/common/validation/validate.py:1766
 msgid "Phone number too long"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1764
+#: cdedb/common/validation/validate.py:1768
 msgid "Phone number can not be parsed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1767
+#: cdedb/common/validation/validate.py:1771
 msgid "Phone number seems to be not valid."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1793
+#: cdedb/common/validation/validate.py:1797
 msgid "Invalid german postal code."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1821
+#: cdedb/common/validation/validate.py:1825
 msgid "Enter actual country name in English."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1875
+#: cdedb/common/validation/validate.py:1879
 msgid "This realm is not supported for genesis."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1882
+#: cdedb/common/validation/validate.py:1886
 msgid "Must specify realm."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1915
+#: cdedb/common/validation/validate.py:1919
 msgid "Birthday was less than a year ago. Please check the birth year."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1957
+#: cdedb/common/validation/validate.py:1961
 msgid "Not a FileStorage."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1960
+#: cdedb/common/validation/validate.py:1964
 msgid "Empty FileStorage."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:1981
+#: cdedb/common/validation/validate.py:1985
 msgid "Only text/csv allowed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2007
+#: cdedb/common/validation/validate.py:2011
 msgid "Too small."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2009
+#: cdedb/common/validation/validate.py:2013
 msgid "Too big."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2014
+#: cdedb/common/validation/validate.py:2018
 msgid "Only jpg and png allowed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2021
+#: cdedb/common/validation/validate.py:2025
 msgid "Not square enough."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2023
+#: cdedb/common/validation/validate.py:2027
 msgid "Resolution too small."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2051
+#: cdedb/common/validation/validate.py:2055
 msgid "Filesize too large."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2054
+#: cdedb/common/validation/validate.py:2058
 msgid "Only pdf allowed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2074
-#: cdedb/common/validation/validate.py:5093
+#: cdedb/common/validation/validate.py:2078
+#: cdedb/common/validation/validate.py:5099
 msgid "Must contain exactly two elements."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2185
+#: cdedb/common/validation/validate.py:2189
 msgid "Too short."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2192
+#: cdedb/common/validation/validate.py:2196
 msgid "Must start with country code."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2196
+#: cdedb/common/validation/validate.py:2200
 msgid "Must have digits for checksum."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2200
+#: cdedb/common/validation/validate.py:2204
 msgid "Invalid character in IBAN."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2202
+#: cdedb/common/validation/validate.py:2206
 msgid "Unknown or unsupported Country Code."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2207
+#: cdedb/common/validation/validate.py:2211
 #, python-format
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2216
+#: cdedb/common/validation/validate.py:2220
 msgid "Invalid checksum."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2277
-#: cdedb/common/validation/validate.py:2336
-#: cdedb/common/validation/validate.py:2347
-#: cdedb/common/validation/validate.py:2353
+#: cdedb/common/validation/validate.py:2281
+#: cdedb/common/validation/validate.py:2340
+#: cdedb/common/validation/validate.py:2351
+#: cdedb/common/validation/validate.py:2357
 msgid "Too long."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2280
+#: cdedb/common/validation/validate.py:2284
 msgid "Invalid constant."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2339
+#: cdedb/common/validation/validate.py:2343
 msgid "Unsupported constant."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2341
+#: cdedb/common/validation/validate.py:2345
 msgid "Exactly two lines required."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2375
+#: cdedb/common/validation/validate.py:2379
 #, python-format
 msgid "Forbidden characters (%(chars)s)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2507
+#: cdedb/common/validation/validate.py:2511
 msgid "Only creation allowed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2636
+#: cdedb/common/validation/validate.py:2640
 msgid "Must be later than begin."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2730
+#: cdedb/common/validation/validate.py:2734
 msgid "Must be less or equal than total Course Choices."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2814
+#: cdedb/common/validation/validate.py:2818
 msgid "Value not well-formed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2821
+#: cdedb/common/validation/validate.py:2825
 msgid "Could not convert to mapping."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2840
+#: cdedb/common/validation/validate.py:2844
 msgid "Duplicate value."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2871
+#: cdedb/common/validation/validate.py:2875
 msgid "Cannot set amount for personalized fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2874
+#: cdedb/common/validation/validate.py:2878
 msgid "Cannot set condition for personalized fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2878
+#: cdedb/common/validation/validate.py:2882
 msgid "Cannot unset amount for conditional fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2881
+#: cdedb/common/validation/validate.py:2885
 msgid "Cannot unset condition for conditional fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2885
+#: cdedb/common/validation/validate.py:2889
 msgid "Cannot have amount without condition or vice versa."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3026
+#: cdedb/common/validation/validate.py:3030
 msgid "Must be a superset of active segments."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3208
+#: cdedb/common/validation/validate.py:3212
 msgid "Entry not in definition list."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3366
+#: cdedb/common/validation/validate.py:3370
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3373
+#: cdedb/common/validation/validate.py:3377
 msgid "No kind specified."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3387
+#: cdedb/common/validation/validate.py:3391
 msgid "Cannot specify both field id and field name."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3393
+#: cdedb/common/validation/validate.py:3397
 #, python-format
 msgid "No field with name '%(name)s' exists."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3406
-#: cdedb/common/validation/validate.py:5015
-#: cdedb/common/validation/validate.py:5073
+#: cdedb/common/validation/validate.py:3410
+#: cdedb/common/validation/validate.py:5021
+#: cdedb/common/validation/validate.py:5079
 #: cdedb/frontend/event/questionnaire.py:266
 msgid "Invalid field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3415
+#: cdedb/common/validation/validate.py:3419
 #: cdedb/frontend/event/questionnaire.py:270
 msgid "Registration questionnaire rows may not be readonly."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3460
+#: cdedb/common/validation/validate.py:3464
 #, python-format
 msgid "Must not duplicate field ('%(field_name)s')."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3484
+#: cdedb/common/validation/validate.py:3488
 msgid "Invalid UTF-8 sequence."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3489
+#: cdedb/common/validation/validate.py:3493
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3521
+#: cdedb/common/validation/validate.py:3525
 msgid "Only full exports are supported."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3564
-#: cdedb/common/validation/validate.py:3745
+#: cdedb/common/validation/validate.py:3568
+#: cdedb/common/validation/validate.py:3749
 msgid "Schema version mismatch."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3680
+#: cdedb/common/validation/validate.py:3684
 msgid "Only a single event is supported."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3684
+#: cdedb/common/validation/validate.py:3688
 msgid "Wrong event specified."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3690
+#: cdedb/common/validation/validate.py:3694
 msgid "Mismatched event."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3722
+#: cdedb/common/validation/validate.py:3726
 msgid "Only partial exports are supported."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4009
+#: cdedb/common/validation/validate.py:4013
 msgid "Checkout time may only be empty for latest checkin period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4013
+#: cdedb/common/validation/validate.py:4017
 msgid "Inconsistent sequence of checkin periods."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4158
+#: cdedb/common/validation/validate.py:4164
 #, python-format
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4233
+#: cdedb/common/validation/validate.py:4239
 msgid "Must be a registered event IBAN."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4246
+#: cdedb/common/validation/validate.py:4252
 msgid "Must be before hard and soft limit."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4258
+#: cdedb/common/validation/validate.py:4264
 msgid "Unknown lodge field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4266
+#: cdedb/common/validation/validate.py:4272
 msgid "Lodge field must be a registration field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4271
+#: cdedb/common/validation/validate.py:4277
 msgid "Lodge field must have type 'string'."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4277
+#: cdedb/common/validation/validate.py:4283
 msgid "Unknown reimbursement IBAN field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4287
+#: cdedb/common/validation/validate.py:4293
 msgid "Reimbursement IBAN field must be a registration field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4296
+#: cdedb/common/validation/validate.py:4302
 msgid "Reimbursement IBAN field must have type 'IBAN'."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4333
+#: cdedb/common/validation/validate.py:4339
 msgid "Invalid domain for this mailinglist type."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4338
+#: cdedb/common/validation/validate.py:4344
 msgid "Cannot have event part group without event."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4510
+#: cdedb/common/validation/validate.py:4516
 msgid "Mustn’t be in the past."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4513
+#: cdedb/common/validation/validate.py:4519
 msgid "Mustn’t be before start of voting period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4517
+#: cdedb/common/validation/validate.py:4523
 msgid "Mustn’t be before end of voting period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4539
+#: cdedb/common/validation/validate.py:4545
 msgid "Must not specify both absolute and relative quorum."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4549
+#: cdedb/common/validation/validate.py:4555
 msgid "Relative quorum must be between 0 and 100."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4552
+#: cdedb/common/validation/validate.py:4558
 msgid "Must be specified if quorum is given."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4555
+#: cdedb/common/validation/validate.py:4561
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4610
+#: cdedb/common/validation/validate.py:4616
 msgid "Mustn’t be the bar shortname."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4680
+#: cdedb/common/validation/validate.py:4686
 msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4698
+#: cdedb/common/validation/validate.py:4704
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4701
+#: cdedb/common/validation/validate.py:4707
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4703
+#: cdedb/common/validation/validate.py:4709
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4722
+#: cdedb/common/validation/validate.py:4728
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4734
+#: cdedb/common/validation/validate.py:4740
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
 "while .^$ are allowed)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4761
+#: cdedb/common/validation/validate.py:4767
 msgid "Combine a minimum of two fields."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4765
+#: cdedb/common/validation/validate.py:4771
 #, python-format
 msgid "Unknown field(s): %(fields)s."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4771
+#: cdedb/common/validation/validate.py:4777
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:103
 msgid "Incompatible field types."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4849
+#: cdedb/common/validation/validate.py:4855
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4897
+#: cdedb/common/validation/validate.py:4903
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4931
+#: cdedb/common/validation/validate.py:4937
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4978
+#: cdedb/common/validation/validate.py:4984
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5007
+#: cdedb/common/validation/validate.py:5013
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5026
+#: cdedb/common/validation/validate.py:5032
 msgid "Invalid operator."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5062
+#: cdedb/common/validation/validate.py:5068
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5142
-#: cdedb/common/validation/validate.py:5208
+#: cdedb/common/validation/validate.py:5148
+#: cdedb/common/validation/validate.py:5214
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5188
+#: cdedb/common/validation/validate.py:5194
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
 
@@ -3546,19 +3547,15 @@ msgid "Dict keys do not match."
 msgstr ""
 
 #: cdedb/filter.py:172
-msgid "days"
+msgid "{days} days, {hours} hours"
 msgstr ""
 
-#: cdedb/filter.py:173 cdedb/filter.py:175
-msgid "hours"
+#: cdedb/filter.py:176
+msgid "{hours} hours, {minutes} minutes"
 msgstr ""
 
-#: cdedb/filter.py:176 cdedb/filter.py:178
-msgid "minutes"
-msgstr ""
-
-#: cdedb/filter.py:179
-msgid "seconds"
+#: cdedb/filter.py:180
+msgid "{minutes} minutes, {seconds} seconds"
 msgstr ""
 
 #: cdedb/frontend/application.py:126 cdedb/frontend/cron.py:51
