@@ -28,7 +28,6 @@
     <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registration') }}
-        {% for val in skip %}{{ util.input_hidden('skip', val) }}{% endfor %}
 
         <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
         {{ util.form_input_static(label=gettext("Full Name"),

@@ -512,8 +512,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def new_process_registration_input(
             self, rs: RequestState, orga_input: bool,
-            parts: Optional[CdEDBObjectMap] = None,
-            skip: Collection[str] = (), check_enabled: bool = False,
+            parts: Optional[CdEDBObjectMap] = None, check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a
         registration dict that can be used for `create_registration` or
@@ -525,16 +524,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         :param parts: Only relevant for non-orga input. If None, the part information
             will be retrieved from the input (meaning this is a new registration
             being created). Otherwise the data from `get_registration()['parts']`.
-        :param skip: A list of field names to be excluded from retrieval and setting.
-            Can be used to avoid simulataneously opened tabs overwriting one another.
-            TODO No longer used after checkin refactoring. Remove this?
         :param check_enabled: If True, only retrieve data for fields where a
             corresponding enable checkbox is selected. Only relevant for the multiedit.
         """
 
         def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
-            params = {key: kind for key, kind in params.items() if key not in skip}
             if not check_enabled:
                 return params
             enable_params = {f"enable_{key}": bool for key in params}
@@ -1359,20 +1354,14 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("skip", "change_note")
+    @REQUESTdata("change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
-                                 registration_id: int, skip: Collection[str],
-                                 change_note: Optional[str], internal: bool = False,
+                                 registration_id: int, change_note: Optional[str],
+                                 internal: bool = False,
                                  ) -> Response:
         """Render form.
 
-        The skip parameter is meant to hide certain fields and skip them when
-        evaluating the submitted from in change_registration(). This can be
-        used in situations, where changing those fields could override
-        concurrent changes (e.g. the Check-in).
-
-
-        The internal flag is used if the call comes from another frontend
+        :param internal: used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
         if rs.has_validation_errors() and not internal:
@@ -1389,16 +1378,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         values['reg.real_persona_id'] = cdedbid_filter(registration['real_persona_id'])
         merge_dicts(rs.values, values)
         return self.render(rs, "registration/change_registration", {
-            'persona': persona, 'lodgements': lodgements,
-            'skip': skip or [], 'change_note': change_note,
+            'persona': persona, 'lodgements': lodgements, 'change_note': change_note,
             **course_choice_params,
         })
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("skip", "change_note")
+    @REQUESTdata("change_note")
     def change_registration(self, rs: RequestState, event_id: int,
-                            registration_id: int, skip: Collection[str],
+                            registration_id: int,
                             change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to a
         registration.
@@ -1407,11 +1395,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         redundant (like managing the lodgement inhabitants), but it would be
         much more cumbersome to always use this interface.
         """
-        registration = self.new_process_registration_input(
-            rs, orga_input=True, skip=skip)
+        registration = self.new_process_registration_input(rs, orga_input=True)
         if rs.has_validation_errors():
             return self.change_registration_form(
-                rs, event_id, registration_id, skip=(), internal=True,
+                rs, event_id, registration_id, internal=True,
                 change_note=change_note)
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration, change_note)
