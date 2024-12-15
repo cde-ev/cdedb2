@@ -1736,6 +1736,9 @@ class EventRegistrationMixin(EventBaseFrontend):
                               registration_id: vtypes.ID, period_id: vtypes.ID,
                               ) -> Response:
         """Change the time a participant was present."""
+        reg = rs.ambience['registration']
+        if period_id not in {period.id for period in reg['checkin_periods']}:
+            raise ValueError(n_("Inconsistent data."))
         checkin_time = unwrap(request_extractor(
             rs, {f'checkin_time_{period_id}': datetime.datetime}))
         checkout_time = unwrap(request_extractor(
@@ -1743,31 +1746,28 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
-        reg = rs.ambience['registration']
         # check positive timespan in past
-        if checkin_time > now():
+        ref_time = now()
+        if checkin_time > ref_time:
             rs.append_validation_error(
                 (f'checkin_time_{period_id}', ValueError(n_("Must be in the past."))))
-        if checkout_time and checkout_time > now():
+        if checkout_time and checkout_time > ref_time:
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Must be in the past."))))
         if checkout_time and not checkin_time < checkout_time:
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
-        if period_id not in {period.id for period in reg['checkin_periods']}:
-            raise ValueError(n_("Inconsistent data."))
-        else:
-            for prev, current in itertools.pairwise(reg['checkin_periods']):
-                # ensure late enough checkin
-                if current.id == period_id and not prev.checkout_time <= checkin_time:
-                    rs.append_validation_error((f'checkin_time_{period_id}', ValueError(
-                        n_("Checkin must be after previous checkout."),
-                    )))
-                # ensure early enough checkout
-                elif prev.id == period_id and not checkout_time <= current.checkin_time:
-                    rs.append_validation_error((f'checkout_time_{period_id}', ValueError(
-                        n_("Checkout must be before next checkin."),
-                    )))
+        for prev, current in itertools.pairwise(reg['checkin_periods']):
+            # ensure late enough checkin
+            if current.id == period_id and not prev.checkout_time <= checkin_time:
+                rs.append_validation_error((f'checkin_time_{period_id}', ValueError(
+                    n_("Checkin must be after previous checkout."),
+                )))
+            # ensure early enough checkout
+            elif prev.id == period_id and not checkout_time <= current.checkin_time:
+                rs.append_validation_error((f'checkout_time_{period_id}', ValueError(
+                    n_("Checkout must be before next checkin."),
+                )))
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
@@ -1883,7 +1883,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.append_validation_error(
                     ('checkin_time', ValueError(n_("Must not be empty."))))
             elif (any(reg['checkin_periods'] for reg in regs.values())
-                  and checkin_time < max(
+                  and checkin_time <= max(
                     reg['checkin_periods'][-1].checkout_time
                     for reg in regs.values() if reg['checkin_periods'])
             ):
@@ -1916,15 +1916,15 @@ class EventRegistrationMixin(EventBaseFrontend):
             if not checkin_time:  # delete latest checkins
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.delete_checkin_period(
-                        rs, reg_id, reg['checkin_transitions'][-1].id)
+                        rs, reg_id, reg['checkin_periods'][-1].id)
             else:
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, reg['checkin_periods'][-1].id, checkin_time, None)
         elif action == 'modify_checkout':
             for reg_id, reg in regs.items():
-                if reg['checkin_transitions']:
-                    last_period = reg['checkin_transitions'][-1]
+                if reg['checkin_periods']:
+                    last_period = reg['checkin_periods'][-1]
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)

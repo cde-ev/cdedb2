@@ -15757,7 +15757,7 @@ msgstr "Der Teilnehmer wird eingecheckt."
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:11
 #, python-format
 msgid "Add Checkin/Checkout times (%(title)s)"
-msgstr "Checkin/Checkoutzeiten hinzufügen (%(title)s)"
+msgstr "Checkin-/Checkoutzeiten hinzufügen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:17
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:25
@@ -15766,7 +15766,7 @@ msgstr "Checkin-/Checkoutzeiten hinzufügen"
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:35
 msgid "Check out"
-msgstr "Checkout"
+msgstr "Auschecken"
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:39
 msgid ""
