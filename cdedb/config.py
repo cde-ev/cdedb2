@@ -217,10 +217,19 @@ _DEFAULTS = {
     "TROUBLESHOOTING_ADDRESS": "admin@cde-ev.de",
 
     # email for cde account requests
-    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
+    "CDE_USER_MANAGEMENT_ADDRESS": "cde-admins@cde-ev.de",
     # email for event account requests
-    "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
+    "EVENT_USER_MANAGEMENT_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests
+    "ML_USER_MANAGEMENT_ADDRESS": "ml-admins@cde-ev.de",
+    # email for assembly user management
+    "ASSEMBLY_USER_MANAGEMENT_ADDRESS": "vorstand@cde-ev.de",
+
+    # email for cde realm management
+    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
+    # email for event management
+    "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
+    # email for mailinglist management
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
     # email for replies to assembly mails
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
