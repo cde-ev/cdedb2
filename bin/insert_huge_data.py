@@ -83,6 +83,7 @@ def persona(context: argparse.Namespace) -> int:
         'donation': decimal.Decimal(0),
         'show_address': True,
         'show_address2': True,
+        'show_legal_given_names': False,
     }
     core = context.script.make_backend('core', proxy=False)
     ret = core.create_persona(rs, data)

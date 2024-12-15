@@ -110,6 +110,7 @@ VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
 VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
     VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["money"] = VALID_QUERY_OPERATORS["float"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -415,6 +416,8 @@ _QUERY_SPECS = {
             "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
+            "show_legal_given_names": QuerySpecEntry(
+                "bool", n_("Legal given names searchable")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
@@ -454,6 +457,8 @@ _QUERY_SPECS = {
             "nickname": QuerySpecEntry("str", n_("Nickname")),
             "given_names": QuerySpecEntry("str", n_("Given Names")),
             "legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
+            "show_legal_given_names": QuerySpecEntry(
+                "bool", n_("Legal given names searchable")),
             "family_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
@@ -483,8 +488,8 @@ _QUERY_SPECS = {
             "paper_expuls": QuerySpecEntry("bool", n_("Printed exPuls")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
-            "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
-            "donation": QuerySpecEntry("float", n_("Annual Donation")),
+            "balance": QuerySpecEntry("money", n_("Membership-Fee Balance")),
+            "donation": QuerySpecEntry("money", n_("Annual Donation")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
@@ -525,7 +530,6 @@ _QUERY_SPECS = {
             "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
-            "show_address": QuerySpecEntry("bool", n_("Address searchable")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
@@ -546,7 +550,8 @@ _QUERY_SPECS = {
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names,nickname": QuerySpecEntry("str", n_("Given Names")),
+            "given_names,searchable_legal_given_names,nickname": QuerySpecEntry(
+                "str", n_("Given Names")),
             "family_name,birth_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),
@@ -616,6 +621,7 @@ class QueryResultEntryFormat(enum.Enum):
     phone = 27
     enum = 30
     iban = 40
+    money = 50
 
 
 @dataclasses.dataclass
@@ -838,13 +844,7 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
-            if field in {
-                    "reg.amount_paid",
-                    "reg.amount_owed",
-                    "reg.remaining_owed",
-            }:
-                return QueryResultEntryFormat.event_fee
-            if re.match(r"fee\d+\.amount", field):
+            if self.spec[field].type == "money":
                 return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
@@ -864,6 +864,9 @@ class Query:
             return QueryResultEntryFormat.persona
         elif field == "username":
             return QueryResultEntryFormat.username
+        # Note that this is different from money fields in the registration query.
+        elif self.spec[field].type == "money":
+            return QueryResultEntryFormat.money
         return QueryResultEntryFormat.other
 
 
@@ -980,9 +983,9 @@ def make_registration_query_spec(event: "models.Event",
         # Choices for the country will be manually set when displaying the result.
         "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
-        "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
-        "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
-        "reg.remaining_owed": QuerySpecEntry("float", n_("Remaining Owed")),
+        "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid")),
+        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
+        "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
@@ -1000,7 +1003,7 @@ def make_registration_query_spec(event: "models.Event",
             QuerySpecEntry("datetime", n_("Last Modification Time")),
         **{
             f"fee{fee.id}.amount": QuerySpecEntry(
-                "float", n_("Personalized Amount"), fee.title)
+                "money", n_("Personalized Amount"), fee.title)
             for fee in event.fees.values() if fee.is_personalized()
         },
     }

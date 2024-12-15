@@ -49,6 +49,7 @@ PERSONA_TEMPLATE = {
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
     'legal_given_names': None,
+    'show_legal_given_names': False,
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -1001,6 +1002,7 @@ class TestCoreBackend(BackendTest):
             'paper_expuls': True,
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -1126,6 +1128,7 @@ class TestCoreBackend(BackendTest):
             'postal_code2': '8XA 45-$',
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+495432987654321',
             'timeline': 'Überall',
@@ -1466,6 +1469,10 @@ class TestCoreBackend(BackendTest):
             e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual(reality, all_moderators)
+        self.assertEqual(
+            all_moderators - {42},
+            self.core.list_all_moderators(self.key, active=True),
+        )
         MT = const.MailinglistTypes
         reality = self.core.list_all_moderators(
             self.key, {MT.member_moderated_opt_in, MT.cdelokal})

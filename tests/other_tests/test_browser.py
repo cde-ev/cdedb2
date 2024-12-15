@@ -2,6 +2,7 @@
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import re
 import unittest
 from typing import Callable
 
@@ -244,7 +245,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/event/event/1/show")
         page.get_by_role("button", name="Orga-Schaltflächen").click()
         page.wait_for_url("http://localhost:5000/event/event/1/show")
-        page.get_by_role("link", name="Anmeldungen").click()
+        page.get_by_role("link", name=re.compile("^Anmeldungen$")).click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
@@ -279,6 +280,6 @@ class TestBrowser(BrowserTest):
 
         expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
         expect(page.locator('#content')).to_contain_text('Emilia')
-        expect(page.locator('#content')).to_contain_text('0.00')
+        expect(page.locator('#content')).to_contain_text('0,00 €')
         expect(page.locator('#content')).to_contain_text('weiblich')
         expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')

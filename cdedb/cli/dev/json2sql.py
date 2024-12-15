@@ -41,7 +41,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # Prepare some constants for special casing.
 
     # This maps full table names to a list of column names in that table that
-    # require special care, because they contain cycliy references.
+    # require special care, because they contain cyclic references.
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: dict[str, tuple[str, ...]] = {
         "event.events": ("lodge_field_id", "reimbursement_iban_field_id"),
