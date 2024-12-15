@@ -250,13 +250,8 @@
                             {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
                                                defaultvalue=period.checkin_time) }}
                             <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
-                            {% if period.checkout_time %}
-                                {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
-                                                   defaultvalue=period.checkout_time) }}
-                            {% else %}
-                                {{ util.input_text(name='', defaultvalue=gettext("now"), readonly=True) }}
-                                {% set inputname2 = None %}
-                            {% endif %}
+                            {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
+                                               defaultvalue=period.checkout_time) }}
                         </div>
                         {{ util.output_errors(inputname1) }}
                         {{ util.output_errors(inputname2) }}

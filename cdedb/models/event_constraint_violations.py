@@ -791,6 +791,7 @@ class RemainingOwedCV(RegistrationConstraintViolation):
         return [msg], parms
 
 
+# TODO: translate and add test that all CV are translated
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class AbsentCheckedinCV(RegistrationConstraintViolation):
     @classmethod
