@@ -175,7 +175,12 @@ class ViolationList:
         """
         return ViolationList([
             v for v in self.violations
-            if (course_id is _MISSING or (v.course is None and course_id is None or v.course is not None and v.course['id'] == course_id))
+            if (course_id is _MISSING
+                    or v.course is None and course_id is None
+                    or v.course is not None and v.course['id'] == course_id
+                    or (assigned_course := getattr(v, 'assigned_course', None)) is not None and assigned_course['id'] == course_id
+                    or (instructed_course := getattr(v, 'instructed_course', None)) is not None and instructed_course['id'] == course_id
+                )
             and (lodgement_id is _MISSING or (v.lodgement is None and lodgement_id is None or v.lodgement is not None and v.lodgement['id'] == lodgement_id))
             and (track is _MISSING or v.track == track)
             and (track_not is _MISSING or v.track is None or v.track.id not in track_not)
@@ -538,7 +543,7 @@ class NoCourseAssignedCV(RegistrationConstraintViolation):
 class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
     track: models.CourseTrack
 
-    assigned_course: CdEDBObject
+    assigned_course: CdEDBObject | None
     instructed_course: CdEDBObject | None = None
 
     @classmethod
@@ -558,12 +563,15 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
         """
         reg_track = registration['tracks'][track.id]
         reg_part = registration['parts'][track.part_id]
-        if not reg_part['status'].is_present() or assigned_course is None:
+        if not reg_part['status'].is_present():
             return None
         if (
                 instructed_course
                 and track.id in instructed_course['active_segments']
-                and instructed_course['id'] != assigned_course['id']
+                and (
+                    assigned_course is None
+                    or instructed_course['id'] != assigned_course['id']
+                )
         ):
             return cls(
                 event=event,
@@ -574,6 +582,8 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
                 assigned_course=assigned_course,
                 instructed_course=instructed_course,
             )
+        if assigned_course is None:
+            return None
         if (
                 assigned_course['id'] not in reg_track['choices']
                 and (
@@ -595,21 +605,27 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.instructed_course:
-            if entity_page:
+            if entity_page == "registration":
                 msg = n_(
                     "Does not instruct their course (%(instructed_course)s)"
                     " in %(track)s.",
                 )
+            elif entity_page == "course":
+                msg = n_(
+                    "%(registration)s (Instructor) is not assigned to this course.",
+                )
             else:
                 msg = n_(
-                    "%(registration)s does not instruct their course (%(instructed_course)s)"
-                    " in %(track)s.",
+                    "%(registration)s does not instruct their course"
+                    " (%(instructed_course)s) in %(track)s.",
                 )
-        elif entity_page:
+        elif entity_page == "registration":
             msg = n_(
                 "Did not choose their assigned course"
                 " (%(assigned_course)s) in %(track)s.",
             )
+        elif entity_page == "course":
+            msg = n_("%(registration)s did not choose this course.")
         else:
             msg = n_(
                 "%(registration)s did not choose their assigned course"
@@ -620,20 +636,21 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
             "registration": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
             "assigned_course":
-                f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
+                f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}"
+                if self.assigned_course else None,
             "instructed_course":
-                f"{self.instructed_course['nr']}."
-                f" {self.instructed_course['shortname']}"
+                f"{self.instructed_course['nr']}. {self.instructed_course['shortname']}"
                 if self.instructed_course else None,
         }
         return [msg], params
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
         ret = super().get_link_params()
-        ret['assigned_course'] = (
-            "event/show_course",
-            {'course_id': self.assigned_course['id']},
-        )
+        if self.assigned_course:
+            ret['assigned_course'] = (
+                "event/show_course",
+                {'course_id': self.assigned_course['id']},
+            )
         if self.instructed_course:
             ret['instructed_course'] = (
                 "event/show_course",
