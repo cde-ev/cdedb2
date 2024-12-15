@@ -4004,9 +4004,10 @@ def _partial_registration(
             is_consistent = all(
                 p.checkin_time < p.checkout_time < next_p.checkin_time  # type: ignore[operator]
                 for p, next_p in zip(new_checkin_periods, new_checkin_periods[1:]))
-        except TypeError as e:
+        except TypeError:
             # checkout_time == None for non-final checkin period
-            errs.append(e)
+            errs.append(ValueError(n_("Checkout time may only be empty"
+                                      " for latest checkin period.")))
         else:
             if not is_consistent:
                 errs.append(ValueError(n_("Inconsistent sequence of checkin periods.")))
@@ -4102,8 +4103,12 @@ def _partial_registration_checkin_period(
         'checkout_time': Optional[datetime.datetime],  # type: ignore[dict-item]
     }
 
-    return ReducedCheckinPeriod(**PartialRegistrationCheckinPeriod(
-        _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)))
+    val = _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)
+
+    if val['checkout_time'] and val['checkin_time'] >= val['checkout_time']:
+        raise ValueError(n_("Checkout must be after checkin."))
+
+    return ReducedCheckinPeriod(**PartialRegistrationCheckinPeriod(val))
 
 
 @_add_typed_validator
