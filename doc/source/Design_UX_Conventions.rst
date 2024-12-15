@@ -5,7 +5,7 @@ User Experience Conventions
 
 
 Given Names, Legal Given Names & Nickname
-------------------------------
+-----------------------------------------
 
 For each person, the CdEDB allows to store three different forename fields: ``given_names``, ``legal_given_names`` and ``nickname``.
 The ``legal_given_names`` contains the person's official forname(s) (which might be a "deadname" which is no longer used by the person),
