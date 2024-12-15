@@ -646,10 +646,14 @@ class TestEventFrontend(FrontendTest):
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertPresence("Beispiel", div='manage-orgas')
+            text = self.fetch_mail_content()
+            self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
+            text = self.fetch_mail_content()
+            self.assertIn("als Orga entfernt.", text)
 
     @event_keeper
     @as_users("garcia")

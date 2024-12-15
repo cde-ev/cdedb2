@@ -14004,7 +14004,11 @@ msgstr "Orga hinzufügen"
 msgid "ID of the new Orga"
 msgstr "ID des neuen Orgas"
 
-#: cdedb/frontend/templates/web/event/event/show_event.tmpl:232
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:227
+msgid "You should not add/remove orgas for your own event."
+msgstr "Du solltest bei deiner eigenen Veranstaltung keine Orgas hinzufügen/entfernen."
+
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:240
 msgid "Minor Form"
 msgstr "Minderjährigenformular"
 
