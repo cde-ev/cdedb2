@@ -1555,7 +1555,7 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
 class IllegalMixedLodgementCV(LodgementConstraintViolation):
     part: models.EventPart
 
-    not_specifeid: bool
+    not_specified: bool
 
     @classmethod
     def check(  # type: ignore[override]
@@ -1579,7 +1579,7 @@ class IllegalMixedLodgementCV(LodgementConstraintViolation):
                 severity=ViolationSeverity.WARNING,
                 lodgement=lodgement,
                 part=part,
-                not_specifeid=True,
+                not_specified=True,
             )
         if len(genders) > 1:
             return cls(
@@ -1587,7 +1587,7 @@ class IllegalMixedLodgementCV(LodgementConstraintViolation):
                 severity=ViolationSeverity.WARNING,
                 lodgement=lodgement,
                 part=part,
-                not_specifeid=False,
+                not_specified=False,
             )
         return None
 
