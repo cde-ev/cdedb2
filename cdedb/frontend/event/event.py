@@ -333,7 +333,7 @@ class EventEventMixin(EventBaseFrontend):
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga hinzugefügt ({rs.ambience['event'].shortname})"
             self.do_mail(rs, "orga_added",
-                         {'To': ("akademien@lists.cde-ev.de",),
+                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
                           'Subject': subject},
                          {'orga': orga, 'event': rs.ambience['event']})
         return self.redirect(rs, "event/show_event")
@@ -355,7 +355,7 @@ class EventEventMixin(EventBaseFrontend):
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
             self.do_mail(rs, "orga_removed",
-                         {'To': ("akademien@lists.cde-ev.de",),
+                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
                           'Subject': subject},
                          {'orga': orga, 'event': rs.ambience['event']})
         return self.redirect(rs, "event/show_event")
@@ -1031,7 +1031,7 @@ class EventEventMixin(EventBaseFrontend):
 
             headers: Headers = {
                 "To": (event.orga_address,),
-                "Reply-To": "akademien@lists.cde-ev.de",
+                "Reply-To": self.conf["EVENT_ADMIN_ADDRESS"],
             }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event.parts.values()):
