@@ -91,11 +91,9 @@
                                 {% set text = generic_event.print_violation(violation).strip() %}
                                 {% if text %}
                                     <p class="{{ violation.severity.html_class() }}">
-                                        {% if violation.severity >= enums['ViolationSeverity'].WARNING %}
-                                            <strong>{{ text }}</strong>
-                                        {% else %}
-                                            <i>{{ text }}</i>
-                                        {% endif %}
+                                        <strong>
+                                            {{ text }}
+                                        </strong>
                                     </p>
                                 {% endif %}
                             {% endfor %}
