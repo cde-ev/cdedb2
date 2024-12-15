@@ -32,6 +32,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
     ANONYMOUS,
@@ -5181,3 +5182,338 @@ class TestEventBackend(BackendTest):
                 reference_time,
                 self.event._event_keeper.latest_logtime(event_id),
             )
+
+    @as_users("garcia")
+    def test_replace_checkin_periods(self) -> None:
+        registration_id = 1
+        log_offset = len(self.get_sample_data("event.log"))
+
+        self.assertEqual(
+            [],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        td = datetime.timedelta
+        ref_time = now().replace(microsecond=0) - td(days=1)
+
+        self.event.add_checkin(self.key, registration_id, ref_time)
+        self.event.add_checkout(self.key, registration_id, ref_time + td(hours=1))
+        self.event.add_checkin(self.key, registration_id, ref_time + td(hours=2))
+
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1001,
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1002,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=None,
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time, lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=1), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=2), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Delete first period, add checkout to second period.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=3),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1002,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=3),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time, lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=1), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=3), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Insert new period in front, change checkout at the end.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=5),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1002,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkout_changed,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=3), lang="de")}'
+                    f' -> {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time, lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=1), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Change checkin of last period.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=4),
+                checkout_time=ref_time + td(hours=5),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1004,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=4),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=2), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=4), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=5), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Add new period in the middle and at the end.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=3),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=4),
+                checkout_time=ref_time + td(hours=5),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=6),
+                checkout_time=ref_time + td(hours=7),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1006,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=3),
+                ),
+                models.CheckinPeriod(
+                    id=1004,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=4),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+                models.CheckinPeriod(
+                    id=1005,
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=6),
+                    checkout_time=ref_time + td(hours=7),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=6), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=7), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=2), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=3), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Delete all but the first checkin.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=None,
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=None,
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=2), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=3), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=4), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=6), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=7), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkout_changed,
+                'persona_id': 1,
+                'change_note':
+                    f'Entfernt {datetime_filter(ref_time + td(hours=1), lang="de")}',
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)

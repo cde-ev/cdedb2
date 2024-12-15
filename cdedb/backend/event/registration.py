@@ -2018,16 +2018,20 @@ class EventRegistrationBackend(EventBaseBackend):
                 self.event_log(rs, const.EventLogCodes.checkin_changed,
                                reg['event_id'], reg['persona_id'], msg)
 
-            if period.checkout_time != checkout_time:
+            if period.checkout_time is None and checkout_time is not None:
+                return self.add_checkout(rs, registration_id, checkout_time)
+            elif checkout_time is None and period.checkout_time is not None:
                 old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
-                if checkout_time:
-                    new_time = datetime_filter(checkout_time, lang=rs.log_lang)
-                    msg = f"{old_time} -> {new_time}"
-                else:
-                    msg = rs.log_gettext("Removed %(time)s").format(time=old_time)
-                period.checkout_time = checkout_time
+                msg = f"Entfernt {old_time}"
                 self.event_log(rs, const.EventLogCodes.checkout_changed,
                                reg['event_id'], reg['persona_id'], msg)
+            elif period.checkout_time != checkout_time:
+                old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+                new_time = datetime_filter(checkout_time, lang=rs.log_lang)
+                msg = f"{old_time} -> {new_time}"
+                self.event_log(rs, const.EventLogCodes.checkout_changed,
+                               reg['event_id'], reg['persona_id'], msg)
+            period.checkout_time = checkout_time
 
             return self.sql_update(
                 rs, models.CheckinPeriod.database_table, period.to_database())
@@ -2085,20 +2089,26 @@ class EventRegistrationBackend(EventBaseBackend):
 
         ret = 1
         to_be_inserted: list[ReducedCheckinPeriod] = []
+        drop_checkout: tuple[int, datetime.datetime] | None = None
         while True:
             if current_old is None and current_new is None:
                 # If both lists are exhausted return.
-                #  But first perform the postponed insertions.
+                #  But first perform the postponed insertions and deletion.
                 for new_period in to_be_inserted:
-                    self.add_backdated_checkin_period(
+                    ret *= self.add_backdated_checkin_period(
                         rs, registration_id, new_period.checkin_time,
                         new_period.checkout_time,
+                    )
+                if drop_checkout:
+                    ret *= self.change_checkin_period(
+                        rs, registration_id, drop_checkout[0],
+                        drop_checkout[1], checkout_time=None,
                     )
                 return ret
             elif current_old is None:
                 # If only new entries are left, simply add them.
                 assert current_new is not None
-                self.add_backdated_checkin_period(
+                ret *= self.add_backdated_checkin_period(
                     rs, registration_id, current_new.checkin_time,
                     current_new.checkout_time,
                 )
@@ -2124,9 +2134,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 else:
                     # If the new one has the same checkin as the old one, adjust the
                     #  old one if necessary.
-                    if current_new != current_old:
+                    if current_old.checkout_time is not None and current_new.checkout_time is None:
+                        # Dropping a checkout might only be possible later.
+                        drop_checkout = (current_old.id, current_old.checkin_time)
+                    else:
                         ret *= self.change_checkin_period(
                             rs, registration_id, current_old.id,
                             current_new.checkin_time, current_new.checkout_time,
                         )
+
                     current_old, current_new = nxt(old_it), nxt(new_it)
