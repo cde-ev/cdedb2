@@ -85,17 +85,17 @@
                     </div>
 
                     <div class="panel-body">
-                        {% set part_violations = violations.get(part=part) %}
+                        {% set part_violations = violations.get(lodgement_id=ambience['lodgement']['id'], part=part) %}
                         <div id="part-violations-{{ part.id }}">
                             {% for violation in part_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
-                                {% set text = generic_event.print_violation(violation).strip() %}
-                                {% if text %}
-                                    <p class="{{ violation.severity.html_class() }}">
-                                        <strong>
-                                            {{ text }}
-                                        </strong>
-                                    </p>
-                                {% endif %}
+                                {% set text = generic_event.print_violation(violation, entity_page="lodgement").strip() %}
+                                <p class="{{ violation.severity.html_class() }}">
+                                    {% if violation.severity >= enums['ViolationSeverity'].WARNING %}
+                                        <strong>{{ text }}</strong>
+                                    {% else %}
+                                        <i>{{ text }}</i>
+                                    {% endif %}
+                                </p>
                             {% endfor %}
                         </div>
 

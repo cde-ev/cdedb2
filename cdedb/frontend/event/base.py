@@ -541,10 +541,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             'part': {
                 (
                     IncorrectCampingMatAssignmentCV,
-                ): [
-                    'registration', 'persona', 'part',
-                ],
-                (
                     NoLodgementCV,
                 ): [
                     'registration', 'persona', 'part', 'lodgements',

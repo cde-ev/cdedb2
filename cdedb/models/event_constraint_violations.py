@@ -275,7 +275,7 @@ class ConstraintViolation(abc.ABC):
 
     # Display interface.
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         """
         Must return a list of strings for translation and a dict of translation params.
@@ -283,28 +283,42 @@ class ConstraintViolation(abc.ABC):
         :param entity_page: If True, return translations for the specific entity page.
             Otherwise, return translations for the violation overview page.
 
-        Translations for the overview page should contain a parameter named 'link',
-        which should contain the link text for the link defined by `get_link_params`,
-        usually the name/moniker of the primary entity, e.g. a persona name or a
-        course moniker.
+        Translations for the overview page should contain parameters for primary
+        entities which should contain the link text for the links defined by
+        `get_link_params`, usually the name/moniker of the primary entity, e.g.
+        a persona name or a course moniker.
 
-        Translations for the entity page typically leave out the link parameter, but
+        Translations for the entity page typically leave out these link parameters, but
         may also leave out secondary entities, depending on how and where they are
         rendered on the entity page.
         """
         raise NotImplementedError
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
         """
-        Return a link target and necessary parameters for linking to the primary entity.
+        Return link targets and necessary parameters for linking to primary entities.
 
         Link target will be something like "event/show_course", parameters will contain
         the entity id, e.g. `{'course_id': self.course_id}`.
-        The link text will be the 'link' parameter from `get_translations`.
-
-        Usually implemented in an intermediate baseclass.
+        The link text will be the corresponding parameter from `get_translations`.
         """
-        raise NotImplementedError
+        ret = {}
+        if self.registration:
+            ret['registration'] = (
+                "event/show_registration",
+                {'registration_id': self.registration['id']},
+            )
+        if self.course:
+            ret['course'] = (
+                "event/show_course",
+                {'course_id': self.course['id']},
+            )
+        if self.lodgement:
+            ret['lodgement'] = (
+                "event/show_lodgement",
+                {'lodgement_id': self.lodgement['id']},
+            )
+        return ret
 
     def __lt__(self, other: 'ConstraintViolation') -> bool:
         if not isinstance(other, ConstraintViolation):
@@ -320,24 +334,15 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
     registration: CdEDBObject
     persona: CdEDBObject
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_registration", {'registration_id': self.registration['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CourseConstraintViolation(ConstraintViolation, abc.ABC):
     course: CdEDBObject
 
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_course", {'course_id': self.course['id']}
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class LodgementConstraintViolation(ConstraintViolation, abc.ABC):
     lodgement: CdEDBObject
-
-    def get_link_params(self) -> tuple[str, CdEDBObject]:
-        return "event/show_lodgement", {'lodgement_id': self.lodgement['id']}
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -389,14 +394,14 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.severity >= ViolationSeverity.ERROR:
             if entity_page:
                 msg = n_("Participant in mutually exclusive parts (%(part_list)s).")
             else:
                 msg = n_(
-                    "%(link)s is participant in mutually exclusive"
+                    "%(registration)s is participant in mutually exclusive"
                     " parts (%(part_list)s).",
                 )
             part_filter = lambda part: (
@@ -410,13 +415,13 @@ class MutuallyExclusiveParticipationCV(RegistrationConstraintViolation):
                 )
             else:
                 msg = n_(
-                    "%(link)s is present at mutually exclusive parts (%(part_list)s).",
+                    "%(registration)s is present at mutually exclusive parts (%(part_list)s).",
                 )
             part_filter = lambda part: (
                 self.registration['parts'][part.id]['status'].is_present()
             )
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "part_list": ", ".join(
                 part.shortname for part in xsorted(self.part_group.parts.values())
                 if part_filter(part)
@@ -462,7 +467,7 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:  # pragma: no cover
         if entity_page:
             msg = n_(
@@ -470,11 +475,11 @@ class CourseChoiceSyncCV(RegistrationConstraintViolation):
             )
         else:
             msg = n_(
-                "%(link)s has unsynchrozied course choices in synchronized"
+                "%(registration)s has unsynchrozied course choices in synchronized"
                 " tracks (%(track_list)s).",
             )
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "track_list": ", ".join(
                 track.shortname for track in xsorted(self.track_group.tracks.values())
             ),
@@ -516,14 +521,14 @@ class NoCourseAssignedCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Not assigned to a course in %(track)s.")
         else:
-            msg = n_("%(link)s is not assigned to a course in %(track)s.")
+            msg = n_("%(registration)s is not assigned to a course in %(track)s.")
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
         }
         return [msg], params
@@ -587,7 +592,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.instructed_course:
             if entity_page:
@@ -597,7 +602,7 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
                 )
             else:
                 msg = n_(
-                    "%(link)s does not instruct their course (%(instructed_course)s)"
+                    "%(registration)s does not instruct their course (%(instructed_course)s)"
                     " in %(track)s.",
                 )
         elif entity_page:
@@ -607,12 +612,12 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
             )
         else:
             msg = n_(
-                "%(link)s did not choose their assigned course"
+                "%(registration)s did not choose their assigned course"
                 " (%(assigned_course)s) in %(track)s.",
             )
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
             "assigned_course":
                 f"{self.assigned_course['nr']}. {self.assigned_course['shortname']}",
@@ -622,6 +627,19 @@ class IncorrectCourseAssignedCV(RegistrationConstraintViolation):
                 if self.instructed_course else None,
         }
         return [msg], params
+
+    def get_link_params(self) -> tuple[str, CdEDBObject]:
+        ret = super().get_link_params()
+        ret['assigned_course'] = (
+            "event/show_course",
+            {'course_id': self.assigned_course['id']},
+        )
+        if self.instructed_course:
+            ret['instructed_course'] = (
+                "event/show_course",
+                {'course_id': self.instructed_course['id']},
+            )
+        return ret
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -649,22 +667,22 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str = "registration",
     ) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_paid'] < 0:
             if entity_page:
                 msgs = [n_("Has paid a negative amount (%(amount_paid)s).")]
             else:
-                msgs = [n_("%(link)s has paid a negative amount (%(amount_paid)s).")]
+                msgs = [n_("%(registration)s has paid a negative amount (%(amount_paid)s).")]
         elif entity_page:
             msgs = [n_("Has paid without a payment date.")]
         else:
-            msgs = [n_("%(link)s has paid without a payment date.")]
+            msgs = [n_("%(registration)s has paid without a payment date.")]
 
         msgs.append(n_("This likely means someone entered invalid payment data."))
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "amount_paid": money_filter(self.registration['amount_paid']),
         }
         return msgs, params
@@ -693,22 +711,22 @@ class NotPaidCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.persona['id'] in self.event.orgas:
             if entity_page:
                 msg = n_("is orga but has not paid their fee (%(amount_owed)s).")
             else:
                 msg = n_(
-                    "%(link)s is orga but has not paid their fee (%(amount_owed)s).",
+                    "%(registration)s is orga but has not paid their fee (%(amount_owed)s).",
                 )
         elif entity_page:
             msg = n_("Has not paid their fee (%(amount_owed)s).")
         else:
-            msg = n_("%(link)s has not paid their fee (%(amount_owed)s).")
+            msg = n_("%(registration)s has not paid their fee (%(amount_owed)s).")
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
@@ -745,20 +763,20 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_owed'] < 0:
             if entity_page:
                 msg = n_("Owes a negative amount (%(amount_owed)s).")
             else:
-                msg = n_("%(link)s owes a negative amount (%(amount_owed)s).")
+                msg = n_("%(registration)s owes a negative amount (%(amount_owed)s).")
         elif entity_page:
             msg = n_("Is involved but owes no fee.")
         else:
-            msg = n_("%(link)s is involved but owes no fee.")
+            msg = n_("%(registration)s is involved but owes no fee.")
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
@@ -786,14 +804,14 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Needs to be reimbursed (%(remaining_owed)s).")
         else:
-            msg = n_("%(link)s needs to be reimbursed (%(remaining_owed)s).")
+            msg = n_("%(registration)s needs to be reimbursed (%(remaining_owed)s).")
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "remaining_owed": money_filter(-self.registration['remaining_owed']),
         }
         return [msg], params
@@ -831,17 +849,17 @@ class RemainingOwedCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Has not fully paid their fee (remaining: %(remaining_owed)s).")
         else:
             msg = n_(
-                "%(link)s has not fully paid their fee (remaining: %(remaining_owed)s).",
+                "%(registration)s has not fully paid their fee (remaining: %(remaining_owed)s).",
             )
 
         parms = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "remaining_owed": money_filter(self.registration['remaining_owed']),
         }
 
@@ -886,19 +904,19 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Is present, but parental consent is missing.")
         else:
-            msg = n_("%(link)s is present, but parental consent is missing.")
+            msg = n_("%(registration)s is present, but parental consent is missing.")
 
         msgs = [msg]
         if self.participant_begin - now().date() < td(days=30):
             msgs.append(n_("Will be present in less than a month."))
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
         }
         return msgs, params
 
@@ -934,15 +952,15 @@ class IllegalMixedLodgingCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Too young for mixed lodging.")
         else:
-            msg = n_("%(link)s is too young for mixed lodging.")
+            msg = n_("%(registration)s is too young for mixed lodging.")
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
         }
         return [msg], params
 
@@ -957,6 +975,7 @@ class IncorrectCampingMatAssignmentCV(RegistrationConstraintViolation):
             event: models.Event,
             registration: CdEDBObject,
             persona: CdEDBObject,
+            lodgements: CdEDBObjectMap,
             part: models.EventPart,
     ) -> Self | None:
         if not part.camping_mat_field:
@@ -970,28 +989,44 @@ class IncorrectCampingMatAssignmentCV(RegistrationConstraintViolation):
                 severity=ViolationSeverity.WARNING,
                 registration=registration,
                 persona=persona,
+                lodgement=lodgements.get(registration['parts'][part.id]['lodgement_id']),
                 part=part,
             )
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if entity_page:
-            msg = n_("Assigned to, but may not sleep on a camping mat in %(part)s.")
+        if entity_page == "registration":
+            msgs = [
+                n_("Assigned to, but may not sleep on a camping mat in %(part)s."),
+            ]
+            if self.lodgement:
+                msgs.append(n_("(Lodgement: %(lodgement)s)"))
+        elif entity_page == "lodgement":
+            msgs = [
+                n_("%(registration)s is assigned to, but may not sleep on a camping mat."),
+            ]
         else:
-            msg = n_("%(link)s is assigned to, but may not sleep on a camping mat in"
-                     " %(part)s.")
+            msgs = [
+                n_("%(registration)s is assigned to, but may not sleep on a camping mat"
+                   " in %(part)s."),
+            ]
+            if self.lodgement:
+                msgs.append(n_("(Lodgement: %(lodgement)s)"))
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "part": self.part.shortname,
+            "lodgement": self.lodgement['title'] if self.lodgement else "",
         }
-        return [msg], params
+        return msgs, params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NoLodgementCV(RegistrationConstraintViolation):
+    part: models.EventPart
+
     @classmethod
     def check(  # type: ignore[override]
             cls,
@@ -1032,15 +1067,15 @@ class NoLodgementCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Has no lodgement in %(part)s.")
         else:
-            msg = n_("%(link)s has no lodgement in %(part)s.")
+            msg = n_("%(registration)s has no lodgement in %(part)s.")
 
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "part": self.part.shortname,
         }
         return [msg], params
@@ -1082,14 +1117,14 @@ class HiddenCourseCV(CourseConstraintViolation):
         )
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Is hidden and registration is open or about to start.")
         else:
-            msg = n_("%(link)s is hidden and registration is open or about to start.")
+            msg = n_("%(course)s is hidden and registration is open or about to start.")
         params = {
-            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "course": f"{self.course['nr']}. {self.course['shortname']}",
         }
         return [msg], params
 
@@ -1125,17 +1160,17 @@ class MutuallyExclusiveCoursesCV(CourseConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Taking place in mutually exclusive tracks (%(track_list)s).")
         else:
             msg = n_(
-                "%(link)s is taking place in mutually exclusive tracks (%(track_list)s).",
+                "%(course)s is taking place in mutually exclusive tracks (%(track_list)s).",
             )
         track_ids = set(self.course['active_segments']) & set(self.track_group.tracks)
         params = {
-            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "course": f"{self.course['nr']}. {self.course['shortname']}",
             "track_list": ", ".join(
                 track.shortname for track in xsorted(self.track_group.tracks.values())
                 if track.id in track_ids
@@ -1187,14 +1222,14 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.track.id not in self.course['segments']:
             if entity_page:
                 msg = n_("Not offered in %(track)s but has %(num)s attendees.")
             else:
                 msg = n_(
-                    "%(link)s is not offered in %(track)s but has %(num)s attendees.",
+                    "%(course)s is not offered in %(track)s but has %(num)s attendees.",
                 )
         elif entity_page:
             if self.num:
@@ -1202,9 +1237,9 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
             else:
                 msg = n_("Course cancelled")
         else:
-            msg = n_("%(link)s is cancelled in %(track)s but has %(num)s attendees.")
+            msg = n_("%(course)s is cancelled in %(track)s but has %(num)s attendees.")
         params = {
-            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "course": f"{self.course['nr']}. {self.course['shortname']}",
             "track": self.track.shortname,
             "num": self.num,
         }
@@ -1273,26 +1308,26 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.course['min_size'] is not None and self.num < self.course['min_size']:
             if entity_page:
                 msg = n_("Too few attendees (%(num)s < %(min_size)s).")
             else:
                 msg = n_(
-                    "%(link)s has too few attendees (%(num)s < %(min_size)s)"
+                    "%(course)s has too few attendees (%(num)s < %(min_size)s)"
                     " in %(track)s.",
                 )
         elif self.course['max_size'] is not None and self.num > self.course['max_size']:
             if entity_page:
                 msg = n_("Too many attendees (%(num)s > %(max_size)s).")
             else:
-                msg = n_("%(link)s has too many attendees (%(num)s > %(max_size)s)"
+                msg = n_("%(course)s has too many attendees (%(num)s > %(max_size)s)"
                          " in %(track)s.")
         else:
             return [], {}
         params = {
-            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "course": f"{self.course['nr']}. {self.course['shortname']}",
             "num": self.num,
             "track": self.track.shortname,
             "min_size": self.course['min_size'],
@@ -1349,19 +1384,19 @@ class LonelyAttendeesCV(CourseConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if self.num_learners:
             if entity_page:
                 msg = n_("%(num)s attendees but no instructors.")
             else:
-                msg = n_("%(link)s has %(num)s attendees but no instructors in %(track)s.")
+                msg = n_("%(course)s has %(num)s attendees but no instructors in %(track)s.")
         elif entity_page:
             msg = n_("%(num)s instructors but no attendees.")
         else:
-            msg = n_("%(link)s has %(num)s instructors but no attendees in %(track)s.")
+            msg = n_("%(course)s has %(num)s instructors but no attendees in %(track)s.")
         params = {
-            "link": f"{self.course['nr']}. {self.course['shortname']}",
+            "course": f"{self.course['nr']}. {self.course['shortname']}",
             "track": self.track.shortname,
             "num": self.num_learners or self.num_instructors,
         }
@@ -1433,7 +1468,7 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if (
             self.lodgement['regular_capacity'] is not None
@@ -1444,14 +1479,14 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             if entity_page:
                 msg = n_("Overfull lodgement.")
             else:
-                msg = n_("%(link)s is overfull in %(part)s.")
+                msg = n_("%(lodgement)s is overfull in %(part)s.")
         elif entity_page:
             msg = n_("Underfull lodgement.")
         else:
-            msg = n_("%(link)s is underfull in %(part)s.")
+            msg = n_("%(lodgement)s is underfull in %(part)s.")
 
         params = {
-            "link": self.lodgement['title'],
+            "lodgement": self.lodgement['title'],
             "part": self.part.shortname,
         }
         return [msg], params
@@ -1540,15 +1575,15 @@ class IllegalMixedLodgementCV(LodgementConstraintViolation):
         return None
 
     def get_translation(
-            self, *, entity_page: bool = True,
+            self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Mixed with non-mixing inhabitants.")
         else:
-            msg = n_("%(link)s is mixed with non-mixing inhabitants in %(part)s.")
+            msg = n_("%(lodgement)s is mixed with non-mixing inhabitants in %(part)s.")
 
         params = {
-            "link": self.lodgement['title'],
+            "lodgement": self.lodgement['title'],
             "part": self.part.shortname,
         }
         return [msg], params

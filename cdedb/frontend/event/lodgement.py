@@ -223,7 +223,7 @@ class EventLodgementMixin(EventBaseFrontend):
         )[lodgement_id]
 
         violation_data = self.get_constraint_violations(
-            rs, rs.ambience['event'], lodgement_id=lodgement_id,
+            rs, rs.ambience['event'], lodgement_id=lodgement_id, registration_id=None,
         )
 
         lodgements = violation_data['all_lodgements']

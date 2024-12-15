@@ -301,7 +301,7 @@ class EventCourseMixin(EventBaseFrontend):
                                                for p in instructors.values()]
 
             constraint_violations = self.get_constraint_violations(
-                rs, rs.ambience['event'], registration_id=-1, course_id=course_id)
+                rs, rs.ambience['event'], registration_id=None, course_id=course_id)
             params['constraint_violations'] = constraint_violations
 
         params['blockers'] = self.eventproxy.delete_course_blockers(

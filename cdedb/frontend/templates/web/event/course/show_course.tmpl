@@ -75,10 +75,10 @@
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
     {% set violations = constraint_violations['violations'] %}
-    {% set general_violations = violations.get(track_not=ambience['course']['segments']) %}
+    {% set general_violations = violations.get(course_id=ambience['course']['id'], track_not=ambience['course']['segments']) %}
     {% if general_violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(general_violations.max_severity) %}
-            {{ generic_event.list_violations("constraint-violations", general_violations) }}
+            {{ generic_event.list_violations("constraint-violations", general_violations, entity_page="course") }}
         {% endcall %}
     {% endif %}
 
@@ -103,10 +103,10 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {% set track_violations = violations.get(track=track) %}
+                        {% set track_violations = violations.get(course_id=ambience['course']['id'], track=track) %}
                         <div id="track-violations-{{ track.id }}">
                             {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
-                                {% set text = generic_event.print_violation(violation).strip() %}
+                                {% set text = generic_event.print_violation(violation, entity_page="course").strip() %}
                                 {% if text %}
                                     <p class="{{ violation.severity.html_class() }}">
                                         {% if violation.severity >= enums['ViolationSeverity'].WARNING %}
