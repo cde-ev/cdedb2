@@ -18451,11 +18451,11 @@ msgstr "Verstöße gegen Kurswahlsynchronisierung"
 
 #: cdedb/i18n_additional.py:376
 msgid "NoCourseAssignedCV"
-msgstr "Fehlende Kurseinteilung"
+msgstr "Fehlende Kurseinteilungen"
 
 #: cdedb/i18n_additional.py:377
 msgid "IncorrectCourseAssignedCV"
-msgstr "Fehlerhafte Kurseinteilung"
+msgstr "Fehlerhafte Kurseinteilungen"
 
 #: cdedb/i18n_additional.py:378
 msgid "InconsistentPaymentCV"

@@ -4367,7 +4367,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                             " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
                             div='IncorrectCourseAssignedCV-list')
         self.traverse("Emilia")
-        self.assertPresence("Ist in Sitzung nicht in seinen/ihren geleiteten Kurs"
+        self.assertPresence("Ist in Sitzung nicht in geleiteten Kurs"
                             " (α. Heldentum) eingeteilt.")
 
         # Change "Backup" to "never offered" in "Kaffeekränzchen".
@@ -5098,8 +5098,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['is_camping_mat_3_4'] = False
         self.submit(f)
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
-        self.assertPresence("Teilnehmer ist auf eine Isomatte eingeteilt, hat dem"
-                            " aber nicht zugestimmt.", div='inhabitants-3')
+        self.assertPresence(
+            "Garcia Generalis ist auf eine Isomatte eingeteilt, hat dem"
+            " aber nicht zugestimmt.", div='inhabitants-3',
+        )
 
         # Check inhabitants link
         self.traverse({'description': "In Anmeldungsliste anzeigen",
