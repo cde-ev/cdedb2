@@ -158,6 +158,7 @@ class ViolationList:
             self, *,
             course_id: int | None = cast(int, _MISSING),
             lodgement_id: int | None = cast(int, _MISSING),
+            registration_id: int | None = cast(int, _MISSING),
             track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
             track_not: Collection[int] = cast(Collection[int], _MISSING),
             track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
@@ -181,7 +182,14 @@ class ViolationList:
                     or (assigned_course := getattr(v, 'assigned_course', None)) is not None and assigned_course['id'] == course_id
                     or (instructed_course := getattr(v, 'instructed_course', None)) is not None and instructed_course['id'] == course_id
                 )
-            and (lodgement_id is _MISSING or (v.lodgement is None and lodgement_id is None or v.lodgement is not None and v.lodgement['id'] == lodgement_id))
+            and (lodgement_id is _MISSING
+                     or v.lodgement is None and lodgement_id is None
+                     or v.lodgement is not None and v.lodgement['id'] == lodgement_id
+                 )
+            and (registration_id is _MISSING
+                    or v.registration is None and registration_id is None
+                    or v.registration is not None and v.registration['id'] == registration_id
+                 )
             and (track is _MISSING or v.track == track)
             and (track_not is _MISSING or v.track is None or v.track.id not in track_not)
             and (track_group is _MISSING or v.track_group == track_group)
