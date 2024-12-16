@@ -74,7 +74,6 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set violations = constraint_violations['violations'] %}
     {% set general_violations = violations.get(course_id=ambience['course']['id'], track_not=ambience['course']['segments']) %}
     {% if general_violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(general_violations.max_severity) %}
@@ -87,13 +86,12 @@
     {% for batch in ambience['event']['tracks'].values()|sort|selectattr('id', 'in', ambience['course']['segments'])|batch(3) %}
         <div class="row">
         {% for track in batch %}
+            {% set involved_attendees = attendee_stats.involved[(ambience['course']['id'], track.id)] %}
+            {% set uninvolved_attendees = attendee_stats.uninvolved[(ambience['course']['id'], track.id)] %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track.id }}-attendees">
                     <div class="panel-heading">
-                        {% if num_attendees and num_learners %}
-                            {% set num_track_instructors = num_attendees[track.id] - num_learners[track.id] %}
-                            <div class="pull-right">{{ num_learners[track.id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
-                        {% endif %}
+                        <div class="pull-right">{{ involved_attendees.num_learners }}&nbsp;+&nbsp;{{ involved_attendees.num_instructors }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
@@ -118,28 +116,32 @@
                                 {% endif %}
                             {% endfor %}
                         </div>
-
-                        {%- if attendees %}
-                        <ul class="slim">
-                            {% for registration_id in attendees[(ambience['course']['id'], track.id)] %}
-                                {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
-                                <li>
-                                    {% if not registration_part_status.is_involved() %}<s>{% endif -%}
-                                    {{ util.href(cdedblink('event/show_registration',
-                                                        {'registration_id': registration_id}),
-                                                util.persona_name(personas[registrations[registration_id]['persona_id']],
-                                                                  include_nickname=True)) }}
-                                    {%- if registrations[registration_id]['tracks'][track.id]['course_instructor']
-                                            == ambience['course']['id'] %}
-                                        ({% trans %}Instr.{% endtrans %})
-                                    {%- endif %}
-                                    {%- if not registration_part_status.is_involved() %}</s>{% endif -%}
-                                    {% if registration_part_status != enums['RegistrationPartStati'].participant %}
-                                        <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
-                                    {% endif -%}
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        {%- if involved_attendees.num or uninvolved_attendees.num %}
+                            {% if personas %}
+                                <ul class="slim">
+                                    {%- for involved, attendees in [(True, involved_attendees), (False, uninvolved_attendees)] %}
+                                        {%- for instructor, registrations in [(False, attendees.learners), (True, attendees.instructors)] %}
+                                            {%- for reg in registrations|sort %}
+                                                <li>
+                                                    {%- if not involved %}<s>{% endif %}
+                                                    {{- util.href(cdedblink('event/show_registration',
+                                                                        {'registration_id': reg['id']}),
+                                                                 util.persona_name(personas[reg['persona_id']], include_nickname=True)) }}
+                                                    {%- if instructor %} ({% trans %}Instr.{% endtrans %}){%- endif %}
+                                                    {%- if not involved %}</s>{% endif %}
+                                                    {%- if reg['parts'][track.part_id]['status'] != enums['RegistrationPartStati'].participant %}
+                                                        <small>({{ gettext(reg['parts'][track.part_id]['status']|enum(enums['RegistrationPartStati'])) }})</small>
+                                                    {%- endif -%}
+                                                </li>
+                                            {% endfor %}
+                                        {%- endfor -%}
+                                    {%- endfor -%}
+                                </ul>
+                            {% else %}
+                                <p class="text-info"><i>{% trans %}Attendees not available.{% endtrans %}</i></p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted"><i>{% trans %}No attendees.{% endtrans %}</i></p>
                         {% endif -%}
                     </div>
                     <div class="panel-footer">
@@ -154,7 +156,7 @@
                                              icon=util.make_icon('crosshairs'),
                                              readonly=not is_privileged_for('course_choices')) }}
                             </li>
-                        {% if num_learners and num_learners[track.id] > 0 %}
+                        {% if involved_attendees.num or uninvolved_attendees.num %}
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                  'track_id': track.id,
@@ -168,7 +170,7 @@
                             </li>
                             <li>
                                 {{ util.href(cdedblink('event/registration_query',
-                                                       make_attendees_query(track.id).serialize_to_url()) + "#query-results",
+                                                       make_attendees_query(track).serialize_to_url()) + "#query-results",
                                              label=gettext("View Registrations"), icon=util.make_icon('list'),
                                              anid="attendees-link-{}".format(track.id),
                                              readonly=not is_privileged_for('registration_query')) }}

@@ -125,8 +125,6 @@
                         {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                         {% if track.id in course['segments'] %}
-                            {% set attendees = violation_data['attendees'][(course_id, track.id)].num_learners %}
-                            {% set instructors = violation_data['attendees'][(course_id, track.id)].num_instructors %}
                             <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
                                 {% for icon, icon_title in format.icons %}
                                     {{ util.make_icon(icon, title=gettext(icon_title)) }}
@@ -138,8 +136,8 @@
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s%s+%s%s"|format(violation_data['attendees'][(course_id, track.id)].num_learners, nbsp, nbsp,
-                                                                violation_data['attendees'][(course_id, track.id)].num_instructors),
+                                             "%s%s+%s%s"|format(violation_data['attendee_stats'].involved[(course_id, track.id)].num_learners, nbsp, nbsp,
+                                                                violation_data['attendee_stats'].involved[(course_id, track.id)].num_instructors),
                                              readonly=not is_privileged_for('course_choices')) }}
                             </td>
                             {% for i in range(track['num_choices']) %}

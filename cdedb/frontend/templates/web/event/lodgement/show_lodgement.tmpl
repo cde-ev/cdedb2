@@ -99,26 +99,33 @@
                             {% endfor %}
                         </div>
 
-                        {%- if involved_inhabitants or uninvolved_inhabitants-%}
-                            <ul class="slim">
-                                {% for involved, inhabitants in [(True, involved_inhabitants), (False, uninvolved_inhabitants)] %}
-                                    {% for registration in inhabitants[part.id].all %}
-                                        <li>
-                                            {% if not involved %}<s>{% endif %}
-                                                {{ util.href(cdedblink('event/show_registration',
-                                                                    {'registration_id': registration['id']}),
-                                                            util.persona_name(personas[registration['persona_id']], include_nickname=True)) }}
-                                            {% if not involved %}</s>{% endif %}
-                                            {{- generic_event.camping_mat_icon(
-                                                registration['parts'][part.id]['is_camping_mat'],
-                                                registration['fields'].get(part.camping_mat_field.field_name or "")) }}
-                                            {% if registration['parts'][part.id]['status'] != enums['RegistrationPartStati'].participant %}
-                                                <small>({{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }})</small>
-                                            {% endif -%}
-                                        </li>
+                        {%- if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}
+                            {%- if involved_inhabitants or uninvolved_inhabitants -%}
+                                <ul class="slim">
+                                    {% for involved, inhabitants in [(True, involved_inhabitants), (False, uninvolved_inhabitants)] %}
+                                        {% for registration in inhabitants[part.id].all %}
+                                            <li>
+                                                {% if not involved %}<s>{% endif %}
+                                                    {{ util.href(cdedblink('event/show_registration',
+                                                                        {'registration_id': registration['id']}),
+                                                                util.persona_name(personas[registration['persona_id']], include_nickname=True)) }}
+                                                {% if not involved %}</s>{% endif %}
+                                                {{- generic_event.camping_mat_icon(
+                                                    registration['parts'][part.id]['is_camping_mat'],
+                                                    registration['fields'].get(part.camping_mat_field.field_name or "")) }}
+                                                {% if registration['parts'][part.id]['status'] != enums['RegistrationPartStati'].participant %}
+                                                    <small>({{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }})</small>
+                                                {% endif -%}
+                                            </li>
+                                        {% endfor %}
                                     {% endfor %}
-                                {% endfor %}
-                            </ul>
+                                </ul>
+
+                            {% else %}
+                                <p class="text-info"><i>{% trans %}Inhabitants not available.{% endtrans %}</i></p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted"><i>{% trans %}No inhabitants.{% endtrans %}</i></p>
                         {%- endif -%}
                     </div>
                     {% if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}
