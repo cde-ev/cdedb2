@@ -5185,7 +5185,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_replace_checkin_periods(self) -> None:
-        registration_id = 1
+        registration_id = cast(vtypes.ID, 1)
         log_offset = len(self.get_sample_data("event.log"))
 
         self.assertEqual(
@@ -5203,13 +5203,13 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1001,
+                    id=1001,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time,
                     checkout_time=ref_time + td(hours=1),
                 ),
                 models.CheckinPeriod(
-                    id=1002,
+                    id=1002,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=2),
                     checkout_time=None,
@@ -5218,7 +5218,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkin_added,
                 'persona_id': 1,
@@ -5251,7 +5251,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1002,
+                    id=1002,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=2),
                     checkout_time=ref_time + td(hours=3),
@@ -5260,7 +5260,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,
@@ -5294,13 +5294,13 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1003,
+                    id=1003,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time,
                     checkout_time=ref_time + td(hours=1),
                 ),
                 models.CheckinPeriod(
-                    id=1002,
+                    id=1002,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=2),
                     checkout_time=ref_time + td(hours=5),
@@ -5309,7 +5309,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkout_changed,
                 'persona_id': 1,
@@ -5348,13 +5348,13 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1003,
+                    id=1003,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time,
                     checkout_time=ref_time + td(hours=1),
                 ),
                 models.CheckinPeriod(
-                    id=1004,
+                    id=1004,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=4),
                     checkout_time=ref_time + td(hours=5),
@@ -5363,7 +5363,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,
@@ -5410,25 +5410,25 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1003,
+                    id=1003,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time,
                     checkout_time=ref_time + td(hours=1),
                 ),
                 models.CheckinPeriod(
-                    id=1006,
+                    id=1006,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=2),
                     checkout_time=ref_time + td(hours=3),
                 ),
                 models.CheckinPeriod(
-                    id=1004,
+                    id=1004,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=4),
                     checkout_time=ref_time + td(hours=5),
                 ),
                 models.CheckinPeriod(
-                    id=1005,
+                    id=1005,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time + td(hours=6),
                     checkout_time=ref_time + td(hours=7),
@@ -5437,7 +5437,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkin_added,
                 'persona_id': 1,
@@ -5475,7 +5475,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             [
                 models.CheckinPeriod(
-                    id=1003,
+                    id=1003,  # type: ignore[arg-type]
                     registration_id=registration_id,
                     checkin_time=ref_time,
                     checkout_time=None,
@@ -5484,7 +5484,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,
