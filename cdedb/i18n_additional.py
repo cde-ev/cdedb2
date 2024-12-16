@@ -390,6 +390,8 @@ I18N_STRINGS = (
     n_("NegativeAmountOwedCV"),
     n_("NegativeRemainingOwedCV"),
     n_("RemainingOwedCV"),
+    n_("AbsentCheckedinCV"),
+    n_("PresentNeverCheckedinCV"),
     n_("HiddenCourseCV"),
     n_("MutuallyExclusiveCoursesCV"),
     n_("CancelledWithAttendeesCV"),
