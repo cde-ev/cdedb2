@@ -84,7 +84,7 @@ class ViolationSeverity(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class CourseStatsFormat:
+class ViolationFormat:
     """Helper class for storing and aggregating formatting specs."""
 
     # List of html classes to be added to the relevant html tag.
@@ -94,7 +94,7 @@ class CourseStatsFormat:
     # List of icons to be displayed near that element, each with it's own hover title.
     icons: list[tuple[str, str]] = dataclasses.field(default_factory=list)
 
-    def __add__(self, other: 'CourseStatsFormat') -> 'CourseStatsFormat':
+    def __add__(self, other: 'ViolationFormat') -> 'ViolationFormat':
         return self.__class__(
             html_classes=self.html_classes + other.html_classes,
             titles=self.titles + other.titles,
@@ -197,7 +197,7 @@ class ViolationList:
         ])
 
     @cached_property
-    def course_stats_format(self) -> CourseStatsFormat:
+    def course_stats_format(self) -> ViolationFormat:
         """
         Aggregate and return course stats formats.
 
@@ -210,40 +210,40 @@ class ViolationList:
                 for v in self.violations
                 if (format_ := getattr(v, 'course_stats_format', None))
             ),
-            start=CourseStatsFormat(),
+            start=ViolationFormat(),
         )
 
     @cached_property
-    def lodgement_stats_format(self) -> CourseStatsFormat:
+    def lodgement_stats_format(self) -> ViolationFormat:
         return sum(
             (
                 format_
                 for v in self.violations
                 if (format_ := getattr(v, 'lodgement_stats_format', None))
             ),
-            start=CourseStatsFormat(),
+            start=ViolationFormat(),
         )
 
     @cached_property
-    def regular_inhabitant_stats_format(self) -> CourseStatsFormat:
+    def regular_inhabitant_stats_format(self) -> ViolationFormat:
         return sum(
             (
                 format_
                 for v in self.violations
                 if (format_ := getattr(v, 'regular_inhabitant_stats_format', None))
             ),
-            start=CourseStatsFormat(),
+            start=ViolationFormat(),
         )
 
     @cached_property
-    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat:
+    def camping_mat_inhabitant_stats_format(self) -> ViolationFormat:
         return sum(
             (
                 format_
                 for v in self.violations
                 if (format_ := getattr(v, 'camping_mat_inhabitant_stats_format', None))
             ),
-            start=CourseStatsFormat(),
+            start=ViolationFormat(),
         )
 
     def __iter__(self) -> Iterator['ConstraintViolation']:
@@ -1048,8 +1048,8 @@ class IncorrectCampingMatAssignmentCV(RegistrationConstraintViolation):
         return msgs, params
 
     @cached_property
-    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat | None:
-        return CourseStatsFormat(
+    def camping_mat_inhabitant_stats_format(self) -> ViolationFormat | None:
+        return ViolationFormat(
             html_classes=["lodgement-illegal-camping-mat"],
             titles=[
                 n_("An inhabitant is assigned to, but may not sleep on a camping mat."),
@@ -1163,8 +1163,8 @@ class HiddenCourseCV(CourseConstraintViolation):
         return [msg], params
 
     @cached_property
-    def course_stats_format(self) -> CourseStatsFormat | None:
-        return CourseStatsFormat(
+    def course_stats_format(self) -> ViolationFormat | None:
+        return ViolationFormat(
             html_classes=["course-primary"],
             titles=[n_("not visible")],
         )
@@ -1280,12 +1280,12 @@ class CancelledWithAttendeesCV(CourseConstraintViolation):
         return [msg], params
 
     @cached_property
-    def course_stats_format(self) -> CourseStatsFormat | None:
+    def course_stats_format(self) -> ViolationFormat | None:
         title = (
             n_("Course cancelled, has Attendees")
             if self.num else n_("Course cancelled")
         )
-        return CourseStatsFormat(
+        return ViolationFormat(
             html_classes=["course-cancelled" if self.num else "course-cancelled-ok"],
             titles=[title],
             icons=[("ban", title)],
@@ -1370,20 +1370,20 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
         return [msg], params
 
     @cached_property
-    def course_stats_format(self) -> CourseStatsFormat | None:
+    def course_stats_format(self) -> ViolationFormat | None:
         if self.course['min_size'] is not None and self.num < self.course['min_size']:
-            return CourseStatsFormat(
+            return ViolationFormat(
                 html_classes=["course-too-few"],
                 titles=[n_("Not enough Attendees")],
             )
         elif self.course['max_size'] is not None and self.num > self.course['max_size']:
-            return CourseStatsFormat(
+            return ViolationFormat(
                 html_classes=["course-too-many"],
                 titles=[n_("Too many Attendees")],
             )
         else:
             title = n_("Exactly full")
-            return CourseStatsFormat(
+            return ViolationFormat(
                 html_classes=["course-exactly-full"],
                 titles=[title],
                 # icons=[("maximize", title)],
@@ -1437,10 +1437,10 @@ class LonelyAttendeesCV(CourseConstraintViolation):
         return [msg], params
 
     @cached_property
-    def course_stats_format(self) -> CourseStatsFormat | None:
+    def course_stats_format(self) -> ViolationFormat | None:
         title = n_("Lonely attendees") if self.num_learners else n_("Lonely instructors")
         icon = "balance-scale-left" if self.num_learners else "balance-scale-right"
-        return CourseStatsFormat(
+        return ViolationFormat(
             titles=[title],
             icons=[(icon, title)],
         )
@@ -1526,13 +1526,13 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
         return [msg], params
 
     @cached_property
-    def regular_inhabitant_stats_format(self) -> CourseStatsFormat | None:
-        ret = CourseStatsFormat()
+    def regular_inhabitant_stats_format(self) -> ViolationFormat | None:
+        ret = ViolationFormat()
         if (
             self.lodgement['regular_capacity'] is not None
             and self.num_regular > self.lodgement['regular_capacity']
         ):
-            ret += CourseStatsFormat(
+            ret += ViolationFormat(
                 html_classes=["lodgement-too-many"],
                 titles=[n_("Overfull lodgement.")],
             )
@@ -1540,20 +1540,20 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             self.lodgement['regular_capacity'] is not None
             and 0 < self.num_regular < self.lodgement['regular_capacity']
         ):
-            ret += CourseStatsFormat(
+            ret += ViolationFormat(
                 html_classes=["lodgement-too-few"],
                 titles=[n_("Underfull lodgement.")],
             )
         return ret
 
     @cached_property
-    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat | None:
-        ret = CourseStatsFormat()
+    def camping_mat_inhabitant_stats_format(self) -> ViolationFormat | None:
+        ret = ViolationFormat()
         if (
             self.lodgement['camping_mat_capacity'] is not None
             and self.num_camping_mat > self.lodgement['camping_mat_capacity']
         ):
-            ret += CourseStatsFormat(
+            ret += ViolationFormat(
                 html_classes=["lodgement-too-many"],
                 titles=[n_("Too many camping mats.")],
             )
@@ -1561,7 +1561,7 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             self.lodgement['camping_mat_capacity'] is not None
             and 0 < self.num_camping_mat < self.lodgement['camping_mat_capacity']
         ):
-            ret += CourseStatsFormat(
+            ret += ViolationFormat(
                 html_classes=["lodgement-too-few"],
                 titles=[n_("Not enough camping mats.")],
             )
@@ -1623,8 +1623,8 @@ class IllegalMixedLodgementCV(LodgementConstraintViolation):
         return [msg], params
 
     @cached_property
-    def regular_inhabitant_stats_format(self) -> CourseStatsFormat | None:
-        return CourseStatsFormat(
+    def regular_inhabitant_stats_format(self) -> ViolationFormat | None:
+        return ViolationFormat(
             html_classes=["lodgement-illegal-mixing"],
             titles=[n_("Mixed with non-mixing inhabitants.")],
         )
