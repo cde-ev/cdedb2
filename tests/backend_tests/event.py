@@ -3763,14 +3763,14 @@ class TestEventBackend(BackendTest):
                 "event_id": 1,
                 "persona_id": 2,
                 "submitted_by": 1,
-                "change_note": "Checkin: 22.02.2022, 18:00:00",
+                "change_note": "22.02.2022, 18:00:00",
             },
             {
                 "code": const.EventLogCodes.checkout_added,
                 "event_id": 1,
                 "persona_id": 2,
                 "submitted_by": 1,
-                "change_note": "Checkout: 23.02.2022, 10:00:00",
+                "change_note": "23.02.2022, 10:00:00",
             },
         )
 
