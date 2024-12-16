@@ -694,7 +694,8 @@
 {%- endmacro %}
 
 {% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none, display_ignore_warnings=True) %}
+         readonly=False, title=none, ariahidden=false, formid=none, formmethod=none, formaction=none,
+         display_ignore_warnings=True) %}
     {% if has_warnings() and display_ignore_warnings %}
         {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly) }}
     {% endif %}
@@ -706,6 +707,7 @@
         title=title,
         value=value,
         disabled="disabled" if readonly,
+        form=formid,
         formmethod=formmethod,
         formaction=formaction,
         **{ "aria-hidden": "true" if ariahidden }

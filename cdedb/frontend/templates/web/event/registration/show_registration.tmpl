@@ -236,15 +236,15 @@
         {% for period in ambience['registration']['checkin_periods'] %}
             <tr>
                 <td>{{ loop.index }}</td>
+                {# add the ID so that on validation errors values can be filled correctly #}
+                {% set inputname1 = 'checkin_time_' + period.id|string %}
+                {% set inputname2 = 'checkout_time_' + period.id|string %}
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                 <form action="{{ cdedblink('event/change_checkin_period',
                                            {'registration_id': ambience['registration']['id']}) }}"
                       method="POST"
                       id="changeperiodform{{ loop.index }}">
                     {{ util.anti_csrf_token('event/change_checkin_period') }}
-                    {# add the ID so that on validation errors values can be filled correctly #}
-                    {% set inputname1 = 'checkin_time_' + period.id|string %}
-                    {% set inputname2 = 'checkout_time_' + period.id|string %}
-                    <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                         <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                             {{ util.input_hidden(name='period_id', value=period.id) }}
                             {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
@@ -255,12 +255,12 @@
                         </div>
                         {{ util.output_errors(inputname1) }}
                         {{ util.output_errors(inputname2) }}
-                    </td>
-                    <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                        {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
-                                             aclass="btn btn-primary btn-sm") }}
-                    </td>
                 </form>
+                </td>
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
+                                         formid="changeperiodform" + loop.index|string, aclass="btn btn-primary btn-sm") }}
+                </td>
                 <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ period.checkin_time|datetime(lang=lang) }}&#8239;–&#8239;
                     {%- if period.checkout_time -%}
