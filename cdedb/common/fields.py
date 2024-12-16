@@ -34,8 +34,16 @@ PERSONA_STATUS_FIELDS = (
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "family_name", "given_names",
-    "nickname", "legal_given_names", "title", "name_supplement")
+    "id",
+    "username",
+    "family_name",
+    "given_names",
+    "nickname",
+    "legal_given_names",
+    "title",
+    "name_supplement",
+    "show_legal_given_names",
+)
 
 #: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
@@ -46,7 +54,6 @@ PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
 
 #: Names of columns associated to a cde (former)member
 PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
-    "show_legal_given_names",
     "show_address", "show_address2", "address_supplement2", "address2", "postal_code2",
     "location2", "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
