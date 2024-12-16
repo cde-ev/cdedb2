@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-15 21:45+0100\n"
+"POT-Creation-Date: 2024-12-16 01:36+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1100,7 +1100,7 @@ msgstr ""
 msgid "Only lodgement groups from exactly one event allowed!"
 msgstr ""
 
-#: cdedb/backend/event/lodgement.py:245 cdedb/frontend/event/lodgement.py:702
+#: cdedb/backend/event/lodgement.py:245 cdedb/frontend/event/lodgement.py:704
 msgid "Invalid lodgement group."
 msgstr ""
 
@@ -3512,7 +3512,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:2611 cdedb/frontend/event/course.py:429
 #: cdedb/frontend/event/event.py:445 cdedb/frontend/event/event.py:985
 #: cdedb/frontend/event/event.py:1300 cdedb/frontend/event/event.py:1357
-#: cdedb/frontend/event/lodgement.py:464
+#: cdedb/frontend/event/lodgement.py:466
 #: cdedb/frontend/event/registration.py:1488 cdedb/frontend/ml/base.py:577
 msgid "Must be checked."
 msgstr ""
@@ -4835,28 +4835,28 @@ msgstr ""
 msgid "change_note only supported for registrations."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:316
+#: cdedb/frontend/event/lodgement.py:318
 msgid ""
 "Lodgement wishes graph is only available if the Field for Rooming "
 "Preferences is set in event configuration."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:321
+#: cdedb/frontend/event/lodgement.py:323
 msgid ""
 "Clusters can only be displayed if the graph is restricted to a specific part."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:329
+#: cdedb/frontend/event/lodgement.py:331
 msgid ""
 "Edges between participants who are both assigned to a lodgement can only be "
 "hidden if the graph is restricted to a specific part."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:704
+#: cdedb/frontend/event/lodgement.py:706
 msgid "Nothing to do."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:707
+#: cdedb/frontend/event/lodgement.py:709
 msgid "Lodgements in this group changed in the meantime."
 msgstr ""
 
@@ -11737,26 +11737,26 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:280
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
-#: cdedb/models/event_constraint_violations.py:1360
+#: cdedb/models/event_constraint_violations.py:1377
 msgid "Not enough Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:281
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:198
-#: cdedb/models/event_constraint_violations.py:1365
+#: cdedb/models/event_constraint_violations.py:1382
 msgid "Too many Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:282
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:199
-#: cdedb/models/event_constraint_violations.py:1368
+#: cdedb/models/event_constraint_violations.py:1385
 msgid "Exactly full"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:283
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:200
-#: cdedb/models/event_constraint_violations.py:1255
-#: cdedb/models/event_constraint_violations.py:1269
+#: cdedb/models/event_constraint_violations.py:1272
+#: cdedb/models/event_constraint_violations.py:1286
 msgid "Course cancelled"
 msgstr ""
 
@@ -11913,7 +11913,7 @@ msgid "Manage Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:201
-#: cdedb/models/event_constraint_violations.py:1268
+#: cdedb/models/event_constraint_violations.py:1285
 msgid "Course cancelled, has Attendees"
 msgstr ""
 
@@ -11972,7 +11972,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:54
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:187
-#: cdedb/models/event_constraint_violations.py:1152
+#: cdedb/models/event_constraint_violations.py:1169
 msgid "not visible"
 msgstr ""
 
@@ -14084,29 +14084,33 @@ msgstr ""
 msgid "Illegal Gendermix"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:197
-msgid "Sorting:"
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:195
+msgid "Illegal Camping Mat Assignment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:198
+msgid "Sorting:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:204
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:205
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:210
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:211
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:215
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:216
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
@@ -18770,347 +18774,351 @@ msgstr "Zimbabwe"
 msgid "Wrong format for api token."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:406
+#: cdedb/models/event_constraint_violations.py:414
 #, python-format
 msgid "Participant in mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:408
+#: cdedb/models/event_constraint_violations.py:416
 #, python-format
 msgid ""
 "%(registration)s is participant in mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:418
+#: cdedb/models/event_constraint_violations.py:426
 #, python-format
 msgid "Present at mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:422
+#: cdedb/models/event_constraint_violations.py:430
 #, python-format
 msgid ""
 "%(registration)s is present at mutually exclusive parts (%(part_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:478
+#: cdedb/models/event_constraint_violations.py:486
 #, python-format
 msgid "Unsynchronized course choices in synchronized tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:482
+#: cdedb/models/event_constraint_violations.py:490
 #, python-format
 msgid ""
 "%(registration)s has unsynchrozied course choices in synchronized tracks "
 "(%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:532
+#: cdedb/models/event_constraint_violations.py:540
 #, python-format
 msgid "Not assigned to a course in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:534
+#: cdedb/models/event_constraint_violations.py:542
 #, python-format
 msgid "%(registration)s is not assigned to a course in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:609
+#: cdedb/models/event_constraint_violations.py:617
 #, python-format
 msgid "Does not instruct their course (%(instructed_course)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:614
+#: cdedb/models/event_constraint_violations.py:622
 #, python-format
 msgid "%(registration)s (Instructor) is not assigned to this course."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:618
+#: cdedb/models/event_constraint_violations.py:626
 #, python-format
 msgid ""
 "%(registration)s does not instruct their course (%(instructed_course)s) in "
 "%(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:623
+#: cdedb/models/event_constraint_violations.py:631
 #, python-format
 msgid ""
 "Did not choose their assigned course (%(assigned_course)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:628
+#: cdedb/models/event_constraint_violations.py:636
 #, python-format
 msgid "%(registration)s did not choose this course."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:630
+#: cdedb/models/event_constraint_violations.py:638
 #, python-format
 msgid ""
 "%(registration)s did not choose their assigned course (%(assigned_course)s) "
 "in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:691
+#: cdedb/models/event_constraint_violations.py:699
 #, python-format
 msgid "Has paid a negative amount (%(amount_paid)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:693
+#: cdedb/models/event_constraint_violations.py:701
 #, python-format
 msgid "%(registration)s has paid a negative amount (%(amount_paid)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:695
+#: cdedb/models/event_constraint_violations.py:703
 msgid "Has paid without a payment date."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:697
+#: cdedb/models/event_constraint_violations.py:705
 #, python-format
 msgid "%(registration)s has paid without a payment date."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:699
+#: cdedb/models/event_constraint_violations.py:707
 msgid "This likely means someone entered invalid payment data."
-msgstr ""
-
-#: cdedb/models/event_constraint_violations.py:735
-#, python-format
-msgid "is orga but has not paid their fee (%(amount_owed)s)."
-msgstr ""
-
-#: cdedb/models/event_constraint_violations.py:737
-#, python-format
-msgid "%(registration)s is orga but has not paid their fee (%(amount_owed)s)."
-msgstr ""
-
-#: cdedb/models/event_constraint_violations.py:741
-#, python-format
-msgid "Has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:743
 #, python-format
+msgid "is orga but has not paid their fee (%(amount_owed)s)."
+msgstr ""
+
+#: cdedb/models/event_constraint_violations.py:745
+#, python-format
+msgid "%(registration)s is orga but has not paid their fee (%(amount_owed)s)."
+msgstr ""
+
+#: cdedb/models/event_constraint_violations.py:749
+#, python-format
+msgid "Has not paid their fee (%(amount_owed)s)."
+msgstr ""
+
+#: cdedb/models/event_constraint_violations.py:751
+#, python-format
 msgid "%(registration)s has not paid their fee (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:787
+#: cdedb/models/event_constraint_violations.py:795
 #, python-format
 msgid "Owes a negative amount (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:789
+#: cdedb/models/event_constraint_violations.py:797
 #, python-format
 msgid "%(registration)s owes a negative amount (%(amount_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:791
+#: cdedb/models/event_constraint_violations.py:799
 msgid "Is involved but owes no fee."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:793
+#: cdedb/models/event_constraint_violations.py:801
 #, python-format
 msgid "%(registration)s is involved but owes no fee."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:827
+#: cdedb/models/event_constraint_violations.py:835
 #, python-format
 msgid "Needs to be reimbursed (%(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:829
+#: cdedb/models/event_constraint_violations.py:837
 #, python-format
 msgid "%(registration)s needs to be reimbursed (%(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:872
+#: cdedb/models/event_constraint_violations.py:880
 #, python-format
 msgid "Has not fully paid their fee (remaining: %(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:874
+#: cdedb/models/event_constraint_violations.py:882
 #, python-format
 msgid ""
 "%(registration)s has not fully paid their fee (remaining: "
 "%(remaining_owed)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:927
+#: cdedb/models/event_constraint_violations.py:935
 msgid "Is present, but parental consent is missing."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:929
+#: cdedb/models/event_constraint_violations.py:937
 #, python-format
 msgid "%(registration)s is present, but parental consent is missing."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:933
+#: cdedb/models/event_constraint_violations.py:941
 msgid "Will be present in less than a month."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:975
+#: cdedb/models/event_constraint_violations.py:983
 msgid "Too young for mixed lodging."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:977
+#: cdedb/models/event_constraint_violations.py:985
 #, python-format
 msgid "%(registration)s is too young for mixed lodging."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1019
+#: cdedb/models/event_constraint_violations.py:1027
 #, python-format
 msgid "Assigned to, but may not sleep on a camping mat in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1022
-#: cdedb/models/event_constraint_violations.py:1033
+#: cdedb/models/event_constraint_violations.py:1030
+#: cdedb/models/event_constraint_violations.py:1041
 #, python-format
 msgid "(Lodgement: %(lodgement)s)"
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1025
+#: cdedb/models/event_constraint_violations.py:1033
 #, python-format
 msgid "%(registration)s is assigned to, but may not sleep on a camping mat."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1029
+#: cdedb/models/event_constraint_violations.py:1037
 #, python-format
 msgid ""
 "%(registration)s is assigned to, but may not sleep on a camping mat in "
 "%(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1090
+#: cdedb/models/event_constraint_violations.py:1055
+msgid "An inhabitant is assigned to, but may not sleep on a camping mat."
+msgstr ""
+
+#: cdedb/models/event_constraint_violations.py:1107
 #, python-format
 msgid "Has no lodgement in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1092
+#: cdedb/models/event_constraint_violations.py:1109
 #, python-format
 msgid "%(registration)s has no lodgement in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1140
+#: cdedb/models/event_constraint_violations.py:1157
 msgid "Is hidden and registration is open or about to start."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1142
+#: cdedb/models/event_constraint_violations.py:1159
 #, python-format
 msgid "%(course)s is hidden and registration is open or about to start."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1183
+#: cdedb/models/event_constraint_violations.py:1200
 #, python-format
 msgid "Taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1185
+#: cdedb/models/event_constraint_violations.py:1202
 #, python-format
 msgid ""
 "%(course)s is taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1246
+#: cdedb/models/event_constraint_violations.py:1263
 #, python-format
 msgid "Not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1248
+#: cdedb/models/event_constraint_violations.py:1265
 #, python-format
 msgid "%(course)s is not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1253
+#: cdedb/models/event_constraint_violations.py:1270
 #, python-format
 msgid "Cancelled but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1257
+#: cdedb/models/event_constraint_violations.py:1274
 #, python-format
 msgid "%(course)s is cancelled in %(track)s but has %(num)s attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1332
+#: cdedb/models/event_constraint_violations.py:1349
 #, python-format
 msgid "Too few attendees (%(num)s < %(min_size)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1334
+#: cdedb/models/event_constraint_violations.py:1351
 #, python-format
 msgid "%(course)s has too few attendees (%(num)s < %(min_size)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1340
+#: cdedb/models/event_constraint_violations.py:1357
 #, python-format
 msgid "Too many attendees (%(num)s > %(max_size)s)."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1342
+#: cdedb/models/event_constraint_violations.py:1359
 #, python-format
 msgid ""
 "%(course)s has too many attendees (%(num)s > %(max_size)s) in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1408
+#: cdedb/models/event_constraint_violations.py:1425
 #, python-format
 msgid "%(num)s attendees but no instructors."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1410
+#: cdedb/models/event_constraint_violations.py:1427
 #, python-format
 msgid "%(course)s has %(num)s attendees but no instructors in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1412
+#: cdedb/models/event_constraint_violations.py:1429
 #, python-format
 msgid "%(num)s instructors but no attendees."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1414
+#: cdedb/models/event_constraint_violations.py:1431
 #, python-format
 msgid "%(course)s has %(num)s instructors but no attendees in %(track)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1424
+#: cdedb/models/event_constraint_violations.py:1441
 msgid "Lonely attendees"
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1424
+#: cdedb/models/event_constraint_violations.py:1441
 msgid "Lonely instructors"
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1497
-#: cdedb/models/event_constraint_violations.py:1520
+#: cdedb/models/event_constraint_violations.py:1514
+#: cdedb/models/event_constraint_violations.py:1537
 msgid "Overfull lodgement."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1499
+#: cdedb/models/event_constraint_violations.py:1516
 #, python-format
 msgid "%(lodgement)s is overfull in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1501
-#: cdedb/models/event_constraint_violations.py:1528
+#: cdedb/models/event_constraint_violations.py:1518
+#: cdedb/models/event_constraint_violations.py:1545
 msgid "Underfull lodgement."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1503
+#: cdedb/models/event_constraint_violations.py:1520
 #, python-format
 msgid "%(lodgement)s is underfull in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1541
+#: cdedb/models/event_constraint_violations.py:1558
 msgid "Too many camping mats."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1549
+#: cdedb/models/event_constraint_violations.py:1566
 msgid "Not enough camping mats."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1598
-#: cdedb/models/event_constraint_violations.py:1612
+#: cdedb/models/event_constraint_violations.py:1615
+#: cdedb/models/event_constraint_violations.py:1629
 msgid "Mixed with non-mixing inhabitants."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1600
+#: cdedb/models/event_constraint_violations.py:1617
 #, python-format
 msgid "%(lodgement)s is mixed with non-mixing inhabitants in %(part)s."
 msgstr ""

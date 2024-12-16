@@ -77,7 +77,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
         # Get (involved) inhabitants per lodgement, part and status.
         violation_data = self.get_constraint_violations(
-            rs, rs.ambience['event'], lodgement_id=None,
+            rs, rs.ambience['event'], lodgement_id=None, registration_id=None,
         )
         lodgements = violation_data['lodgements']
         inhabitants = violation_data['inhabitants']

@@ -1047,6 +1047,15 @@ class IncorrectCampingMatAssignmentCV(RegistrationConstraintViolation):
         }
         return msgs, params
 
+    @cached_property
+    def camping_mat_inhabitant_stats_format(self) -> CourseStatsFormat | None:
+        return CourseStatsFormat(
+            html_classes=["lodgement-illegal-camping-mat"],
+            titles=[
+                n_("An inhabitant is assigned to, but may not sleep on a camping mat."),
+            ],
+        )
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NoLodgementCV(RegistrationConstraintViolation):
@@ -1616,6 +1625,6 @@ class IllegalMixedLodgementCV(LodgementConstraintViolation):
     @cached_property
     def regular_inhabitant_stats_format(self) -> CourseStatsFormat | None:
         return CourseStatsFormat(
-            html_classes=["lodgement-illegal-mixed"],
+            html_classes=["lodgement-illegal-mixing"],
             titles=[n_("Mixed with non-mixing inhabitants.")],
         )
