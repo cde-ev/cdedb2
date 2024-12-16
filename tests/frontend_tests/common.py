@@ -103,13 +103,17 @@ class TestFrontendCommon(FrontendTest):
         td_filter = lambda delta: timedelta_filter(delta, self.gettext)
         td = datetime.timedelta
         self.assertEqual("21\xa0Tage, 0\xa0Stunden", td_filter(td(days=21)))
-        self.assertEqual("21\xa0Tage, 0\xa0Stunden", td_filter(td(days=21, minutes=42)))
-        self.assertEqual("21\xa0Tage, 2\xa0Stunden", td_filter(td(days=21, hours=2)))
+        self.assertEqual("21\xa0Tage, 0\xa0Stunden",
+                         td_filter(td(days=21, minutes=42)))
+        self.assertEqual("21\xa0Tage, 2\xa0Stunden",
+                         td_filter(td(days=21, hours=2)))
         self.assertEqual("20\xa0Stunden, 0\xa0Minuten", td_filter(td(hours=20)))
-        self.assertEqual("20\xa0Stunden, 0\xa0Minuten", td_filter(td(hours=20, seconds=42)))
-        self.assertEqual("20\xa0Stunden, 42\xa0Minuten", td_filter(td(hours=20, minutes=42)))
-        self.assertEqual("10\xa0Minuten, 0\xa0Sekunden", td_filter(td(minutes=10,
-                                                                microseconds=42)))
+        self.assertEqual("20\xa0Stunden, 0\xa0Minuten",
+                         td_filter(td(hours=20, seconds=42)))
+        self.assertEqual("20\xa0Stunden, 42\xa0Minuten",
+                         td_filter(td(hours=20, minutes=42)))
+        self.assertEqual("10\xa0Minuten, 0\xa0Sekunden",
+                         td_filter(td(minutes=10, microseconds=42)))
 
     def test_cdedbid_filter(self) -> None:
         self.assertEqual("DB-1-9", cdedbid_filter(1))

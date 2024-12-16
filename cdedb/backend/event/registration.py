@@ -1814,7 +1814,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkins(self, rs: RequestState, registration_ids: Collection[int],
                      checkin_time: Optional[datetime.datetime] = None,
                      ) -> DefaultReturnCode:
-        """Checkin participants.
+        """Check participants in.
 
         :param checkin_time: defaults to current time
         """
@@ -1861,7 +1861,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
                       checkout_time: Optional[datetime.datetime] = None,
                       ) -> DefaultReturnCode:
-        """Checkout participants
+        """Check participants out
 
         :param checkout_time: defaults to current time
         """

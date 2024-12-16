@@ -1640,9 +1640,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
             registration['parts'][part_id]['status']).is_present()
-        registrations = {k: v for k, v in registrations.items()
-                         if ((not v['checkin_periods'] or v['checkin_periods'][-1].checkout_time)
-                             and any(there(v, id) for id in parts))}
+        registrations = {
+            k: v for k, v in registrations.items()
+            if ((not v['checkin_periods'] or v['checkin_periods'][-1].checkout_time)
+                and any(there(v, id_) for id_ in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -1677,7 +1678,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         from_checkin_page: Optional[bool] = False,
         part_ids: Optional[Collection[int]] = None,
     ) -> Response:
-        """Checkin a participant."""
+        """Check a participant in."""
         if rs.has_validation_errors():
             if from_checkin_page:
                 return self.checkin_form(rs, event_id)
@@ -1702,7 +1703,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     def add_checkout(
         self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
     ) -> Response:
-        """Checkin a participant."""
+        """Check a participant out."""
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
@@ -1786,6 +1787,11 @@ class EventRegistrationMixin(EventBaseFrontend):
     def checkin_multiset_form(self, rs: RequestState, event_id: int,
                               registration_ids: Optional[vtypes.IntCSVList] = None,
                               internal: bool = False) -> Response:
+        """Form to check in or out multiple people at once,
+
+        :param internal: if called from another frontend method,
+         use to avoid further redirects on validation errors.
+        """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/registration_query',
                                  {'event_id': event_id})

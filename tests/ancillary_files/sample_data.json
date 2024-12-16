@@ -7333,7 +7333,7 @@
             "droid_id": null,
             "event_id": 1,
             "persona_id": 2,
-            "change_note": "Checkin: 22.02.2022, 18:00:00"
+            "change_note": "22.02.2022, 18:00:00"
         },
         {
             "ctime": "---now---",
@@ -7342,7 +7342,7 @@
             "droid_id": null,
             "event_id": 1,
             "persona_id": 2,
-            "change_note": "Checkout: 23.02.2022, 10:00:00"
+            "change_note": "23.02.2022, 10:00:00"
         }
     ],
     "assembly.assemblies": [
