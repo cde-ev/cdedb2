@@ -1745,7 +1745,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
         by_id = {p.id: p for p in reg['checkin_periods']}
-        if idx := reg['checkin_periods'].index(by_id[period_id]) > 0:
+        if (idx := reg['checkin_periods'].index(by_id[period_id])) > 0:
             prev = reg['checkin_periods'][idx - 1]
             if not prev.checkout_time <= checkin_time:
                 rs.append_validation_error((f'checkin_time_{period_id}', ValueError(
