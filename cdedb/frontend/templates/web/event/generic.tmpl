@@ -661,10 +661,11 @@
     </table>
 {%- endmacro %}
 
-{% macro edit_free_text_button(key, label=gettext("Edit"), display=True) %}
+{% macro edit_free_text_button(key, label=gettext("Edit"), display=True, small=True, pull_right=True) %}
     {% if is_privileged_for("change_free_text") %}
         {{ util.href(
             cdedblink("event/show_free_texts", {'edit': key}), label=label, icon="pen", anid=key + '-edit',
-            aclass="btn btn-sm btn-warning", attributes='' if display else'style="display: none;"'|s) }}
+            aclass="btn btn-warning" + (" btn-xs" if small else " btn-sm") + (" pull-right" if pull_right else ""),
+            attributes=('style="color: #fff;' + ('' if display else'display: none;') + '"')|s) }}
     {% endif %}
 {% endmacro %}

@@ -28,6 +28,6 @@
 {% block content %}
     {{ ambience['event']['participant_info']|md }}
     {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
-        {{ generic_event.edit_free_text_button("participant_info") }}
+        {{ generic_event.edit_free_text_button("participant_info", small=False, pull_right=False) }}
     {% endif %}
 {% endblock %}

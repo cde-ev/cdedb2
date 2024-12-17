@@ -17,13 +17,12 @@
     {{ util.context_heading(gettext("Free Texts"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% macro render_free_text_panel(key, title, description, icon, markdown=True) %}
-        <div class="panel panel-default panel-condensed" id="panel-{{ key }}">
+        <div class="panel panel-default" id="panel-{{ key }}">
             <div class="panel-heading">
-                <h3 class="panel-title">
+                <div class="panel-title">
                     {{ util.make_icon(icon) }} {{ title }}
-                    {{ nbsp }}
                     {{ generic.edit_free_text_button(key, display=(edit != key)) }}
-                </h3>
+                </div>
             </div>
             <div class="panel-body" id="{{ key }}">
                 {# Form is hidden unless edit matches. #}
