@@ -22,6 +22,7 @@ class EventPrivileges(Flag):
     privilege combinations."""
     basic_read = auto()
     basic_write = auto()
+    free_texts_write = auto()
     courses_read = auto()
     courses_write = auto()
     lodgements_read = auto()

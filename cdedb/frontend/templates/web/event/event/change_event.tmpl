@@ -18,15 +18,25 @@
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('event/show_free_texts'), gettext("Free Texts"),
+                     readonly=not is_privileged_for('show_free_texts'),
+                     aclass="btn btn-sm btn-info", icon='bars') }}
+    </div>
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
+
+        {# Submit the free text fields so they are not deleted. #}
+        {# TODO: Implement this differently. #}
+        {{ util.input_hidden("notes") }}
+        {{ util.input_hidden("description") }}
+        {{ util.input_hidden("registration_text") }}
+        {{ util.input_hidden("mail_text") }}
+        {{ util.input_hidden("field_definition_notes") }}
+        {{ util.input_hidden("participant_info") }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True,
-                                    info=gettext("This description is visible to all event users, if “Visibility "
-                                                  "of the Event” is set.")) }}
         {{ util.form_input_text(name="website_url", label=gettext("Website Link"),
                                     info=gettext("URL of the corresponding page of this event at the CdE website."
                                                  " This is cross linked on the overview and on the course list,"
@@ -96,14 +106,8 @@
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption=nbsp,
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas."),
                                 sort=True) }}
-        {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
-                                    markdown=True) }}
-        {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
-        {{ util.form_input_textarea(name="field_definition_notes", label=gettext("Custom Fields Notes"), markdown=True,
-                                    info=gettext("This will be shown on the '%(field_summary)s' page.")|format(
-                                        field_summary=gettext("Configure Custom Fields")))  }}
         {{ util.form_input_select(name="lodge_field_id", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the automatic detection "
@@ -113,12 +117,6 @@
                                   info=gettext("The custom field in which IBANs for reimbursements are saved."
                                                " Will be automatically selected by certain fee related queries."
                                                " Fieldtype: IBAN")) }}
-
-        <h4 class="heading-underline">{% trans %}Additional information for participants{% endtrans %}</h4>
-        {{ util.form_input_textarea(
-                name="participant_info", label=gettext("Participant info"), rows="8", markdown=True,
-                info=gettext("This is only for event-internal information. Any public information should be placed on"
-                             " the website.")) }}
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=not is_privileged_for('change_event')) }}
     </form>

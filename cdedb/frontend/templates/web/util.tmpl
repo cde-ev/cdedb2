@@ -36,7 +36,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="") -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="", attributes='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -47,7 +47,7 @@
     title=title,
     id=anid,
     **{ "aria-current": "page" if active }
-)|xmlattr }}{# We use the `active` attribute for navigation only #}>
+)|xmlattr }} {{ attributes }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
@@ -692,7 +692,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
+{% macro input_submit(label=gettext("Save"), value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
         readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none, display_ignore_warnings=True) %}
     {% if has_warnings() and display_ignore_warnings %}
         {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly) }}
@@ -714,7 +714,7 @@
     </button>
 {%- endmacro %}
 
-{% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
+{% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
@@ -731,7 +731,7 @@
                     {{- info -}}
                 </p>
             {%- endif %}
-            {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
+            {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}

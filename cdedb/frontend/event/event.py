@@ -236,6 +236,45 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("edit")
+    def show_free_texts(
+            self, rs: RequestState, event_id: int, edit: Optional[str],
+    ) -> Response:
+        rs.ignore_validation_errors()
+        return self.render(rs, "event/show_free_texts", {'edit': edit})
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.free_texts_write)
+    @REQUESTdata("free_text_key", "free_text_value")
+    def change_free_text(
+            self, rs: RequestState, event_id: int,
+            free_text_key: str, free_text_value: Optional[str],
+    ) -> Response:
+        change_notes_by_key = {
+            "description": "Beschreibung geändert.",
+            "notes": "Orga-Notizen geändert.",
+            "registration_text": 'Freitext "Anmelden" geändert.',
+            # "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
+            "mail_text": 'Freitext "Anmeldebestätigung" geändert.',
+            "participant_info": "Teilnehmer-Infos geändert.",
+            "field_definition_notes": "Notizen zu Datenfeldern geändert.",
+        }
+        if rs.has_validation_errors() or free_text_key not in change_notes_by_key:  # pragma: no cover
+            # No way to tell where we came from.
+            rs.notify("error", n_("Invalid free text key."))
+            return self.redirect(rs, "event/show_event")
+        update = {
+            'id': event_id,
+            free_text_key: free_text_value,
+        }
+        code = self.eventproxy.set_event(
+            rs, event_id, update, change_notes_by_key[free_text_key],
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_free_texts")
+
+    @access("event")
     def get_minor_form(self, rs: RequestState, event_id: int) -> Response:
         """Retrieve minor form."""
         is_registered = bool(self.eventproxy.list_registrations(
