@@ -230,9 +230,14 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         for given_name in persona['given_names'].split()
     ]
     if persona['nickname']:
-        patterns.append(rf"{escape(persona['nickname'])}")
+        patterns.append(
+            rf"{escape(persona['nickname'])}\s+{escape(persona['family_name'])}",
+        )
     if persona['legal_given_names'] and persona['show_legal_given_names']:
-        patterns.append(rf"{escape(persona['legal_given_names'])}")
+        patterns.extend(
+            rf"{escape(lgn)}\s+{escape(persona['family_name'])}"
+            for lgn in persona['legal_given_names'].split()
+        )
     persona_id = persona['id']
     assert isinstance(persona_id, int)
     patterns.append(re.escape(cdedbid_filter(persona_id)))
