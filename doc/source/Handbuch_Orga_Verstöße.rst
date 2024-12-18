@@ -207,6 +207,32 @@ keine Unterkünfte existieren.
 
 Um den Verstoß zu beheben, teile die Person in eine Unterkunft ein.
 
+.. _HiddenCoursesCV:
+
+Versteckte Kurse
+----------------
+
+Dieser Verstoß tritt auf, wenn es versteckte Kurse gibt, aber die Anmeldung offen ist
+oder in wenigen Tagen beginnen soll.
+
+Um den Verstoß zu beheben, zeige die versteckten Kurse in der Kursliste an.
+
+
+.. _MutuallyExclusiveCoursesCV:
+
+Verstöße gegen Kursausschließlichkeit
+-------------------------------------
+
+Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
+``Kursausschließlichkeit`` existiert.
+
+Sofern ein Kurs in mehr als einer Schiene einer solchen Gruppe stattfindet,
+wird ein Fehler angezeigt.
+
+Um den Verstoß zu beheben, lasse den Kurs nur in einer solchen Kursschiene stattfinden,
+oder entferne die entsprechende Kursschienengruppe.
+
+
 .. _CancelledWithAttendeesCV:
 
 Ausfallende Kurse mit Teilnehmenden
