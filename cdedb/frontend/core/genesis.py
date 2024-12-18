@@ -197,13 +197,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 rs, stati=stati, realms=["assembly"]))
             notify = {self.conf["MANAGEMENT_ADDRESS"]}
             if cde_count:
-                notify |= {self.conf["CDE_ADMIN_ADDRESS"]}
+                notify |= {self.conf["CDE_USER_MANAGEMENT_ADDRESS"]}
             if event_count:
-                notify |= {self.conf["EVENT_ADMIN_ADDRESS"]}
+                notify |= {self.conf["EVENT_USER_MANAGEMENT_ADDRESS"]}
             if ml_count:
-                notify |= {self.conf["ML_ADMIN_ADDRESS"]}
+                notify |= {self.conf["ML_USER_MANAGEMENT_ADDRESS"]}
             if assembly_count:
-                notify |= {self.conf["ASSEMBLY_ADMIN_ADDRESS"]}
+                notify |= {self.conf["ASSEMBLY_USER_MANAGEMENT_ADDRESS"]}
             self.do_mail(
                 rs, "genesis/genesis_requests_pending",
                 {'To': tuple(notify),

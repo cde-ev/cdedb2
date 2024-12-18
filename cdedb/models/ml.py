@@ -806,9 +806,9 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
         """Get a list of people that should be on this mailinglist.
 
         For the `GeneralModeratorMailinglist` this means mandatory for all users who
-        are moderators of any mailinglist.
+        are moderators of any active mailinglist.
         """
-        return bc.core.list_all_moderators(rs)
+        return bc.core.list_all_moderators(rs, active=True)
 
 
 @dataclass
@@ -820,9 +820,11 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
         """Get a list of people that should be on this mailinglist.
 
         For the `CdELokalModeratorMailinglist` this means mandatory for all users who
-        are moderators of any cdelokal mailinglist.
+        are moderators of any active cdelokal mailinglist.
         """
-        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal})
+        return bc.core.list_all_moderators(
+            rs, ml_types={MailinglistTypes.cdelokal}, active=True,
+        )
 
 
 @dataclass

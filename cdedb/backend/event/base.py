@@ -60,7 +60,6 @@ from cdedb.common.fields import (
     COURSE_SEGMENT_FIELDS,
     COURSE_TRACK_FIELDS,
     EVENT_FEE_FIELDS,
-    EVENT_FIELDS,
     EVENT_PART_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
@@ -700,7 +699,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
-            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            edata = {k: v for k, v in data.items() if k in models.Event.database_fields()}
             # Set top-level event fields.
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
@@ -744,7 +743,8 @@ class EventBaseBackend(EventLowLevelBackend):
         if not data.get('parts'):
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
-            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            edata = {k: v for k, v in data.items()
+                     if k in models.Event.database_fields()}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             if 'orgas' in data:
@@ -1218,7 +1218,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 'kind': "full",  # could also be "partial"
                 'id': event_id,
                 'event.events': list_to_dict(self.sql_select(
-                    rs, "event.events", EVENT_FIELDS, (event_id,))),
+                    rs, "event.events", models.Event.database_fields(), (event_id,))),
                 'timestamp': now(),
             }
             # Table name; column to scan; fields to extract

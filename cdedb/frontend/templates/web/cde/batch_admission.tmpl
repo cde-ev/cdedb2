@@ -85,13 +85,14 @@
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
-                    {# We don't use util.persona_name() here, b/c dataset['raw'] is no full persona object #}
-                    {{ dataset['raw']['legal_given_names'] }} {{ dataset['raw']['family_name'] }}
-                    {% if dataset['raw']['username'] %}
-                        &lt;{{ dataset['raw']['username'] }}&gt;
+                    {% if dataset['persona'] %}
+                        {{ util.persona_name(dataset['persona']) }}
                     {% endif %}
-                    {% if dataset['raw']['birthday'] %}
-                        {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
+                    {% if dataset['persona']['username'] %}
+                        &lt;{{ dataset['persona']['username'] }}&gt;
+                    {% endif %}
+                    {% if dataset['persona']['birthday'] %}
+                        {% trans %}born{% endtrans %} {{ dataset['persona']['birthday']|date(lang=lang) }}
                     {% endif %}
                     {% if dataset['pevent_id'] %}
                         ({{ pevents[dataset['pevent_id']] }}

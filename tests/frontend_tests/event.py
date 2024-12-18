@@ -646,10 +646,14 @@ class TestEventFrontend(FrontendTest):
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertPresence("Beispiel", div='manage-orgas')
+            text = self.fetch_mail_content()
+            self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
+            text = self.fetch_mail_content()
+            self.assertIn("als Orga entfernt.", text)
 
     @event_keeper
     @as_users("garcia")
@@ -2667,7 +2671,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
-    @as_users("berta", "emilia")
+    @as_users("berta")
     def test_lodgement_wish_detection(self) -> None:
         with self.switch_user("garcia"):
             self.event.set_event(self.key, 1, {
@@ -2686,12 +2690,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                             div="lodgement-wishes")
         self.assertPresence("Falls ein Wunsch fehlen sollte", div="lodgement-wishes")
         f['fields.lodge'] = """
-            Anton Administrator, garcia@example.cde, DB-100-7, Daniel Dino
+            Armin Administrator, garcia@example.cde, DB-100-7, Daniel Dino, Emmy
         """
         self.submit(f)
         self.assertPresence("Folgende Unterbringungswünsche", div="lodgement-wishes")
-        self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
+        self.assertNonPresence("Anton Administrator", div="lodgement-wishes-list")
         self.assertNonPresence("Garcia", div="lodgement-wishes-list")
+        self.assertNonPresence("Emilia", div="lodgement-wishes-list")
         self.assertPresence("Akira Abukara", div="lodgement-wishes-list")
         self.assertNonPresence("Daniel", div="lodgement-wishes-list")
         with self.switch_user("garcia"):
@@ -2699,7 +2704,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.event.list_registrations(
                     self.key, event_id=1, persona_id=self.user['id']).keys())
             self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
+        execsql("UPDATE core.personas SET show_legal_given_names = True WHERE id = 1;")
         self.submit(f)
+        self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
         self.assertPresence("Garcia Generalis", div="lodgement-wishes-list")
 
     @as_users("annika", "garcia")

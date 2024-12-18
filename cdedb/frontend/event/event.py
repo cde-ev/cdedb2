@@ -331,6 +331,13 @@ class EventEventMixin(EventBaseFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
         rs.notify_return_code(code, error=n_("Action had no effect."))
+        if code:
+            orga = self.coreproxy.get_persona(rs, orga_id)
+            subject = f"Orga hinzugefügt ({rs.ambience['event'].shortname})"
+            self.do_mail(rs, "orga_added",
+                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
+                          'Subject': subject},
+                         {'orga': orga, 'event': rs.ambience['event']})
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -346,6 +353,13 @@ class EventEventMixin(EventBaseFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
         rs.notify_return_code(code, error=n_("Action had no effect."))
+        if code:
+            orga = self.coreproxy.get_persona(rs, orga_id)
+            subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
+            self.do_mail(rs, "orga_removed",
+                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
+                          'Subject': subject},
+                         {'orga': orga, 'event': rs.ambience['event']})
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -1019,7 +1033,7 @@ class EventEventMixin(EventBaseFrontend):
 
             headers: Headers = {
                 "To": (event.orga_address,),
-                "Reply-To": "akademien@lists.cde-ev.de",
+                "Reply-To": self.conf["EVENT_ADMIN_ADDRESS"],
             }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event.parts.values()):

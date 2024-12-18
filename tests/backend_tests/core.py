@@ -805,6 +805,7 @@ class TestCoreBackend(BackendTest):
             'title': None,
             'nickname': None,
             'legal_given_names': None,
+            'show_legal_given_names': False,
             'pronouns': None,
             'pronouns_nametag': False,
             'pronouns_profile': False,
@@ -890,6 +891,7 @@ class TestCoreBackend(BackendTest):
             'title': None,
             'nickname': None,
             'legal_given_names': None,
+            'show_legal_given_names': False,
         })
         self.assertEqual(expectation, value)
 
@@ -1066,6 +1068,7 @@ class TestCoreBackend(BackendTest):
             'family_name': 'Beispiel',
             'given_names': 'Bertå',
             'legal_given_names': 'Bertålotta',
+            'show_legal_given_names': False,
             'nickname': 'Bindi',
             'name_supplement': 'MdB',
             'title': 'Dr.',
@@ -1469,6 +1472,10 @@ class TestCoreBackend(BackendTest):
             e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual(reality, all_moderators)
+        self.assertEqual(
+            all_moderators - {42},
+            self.core.list_all_moderators(self.key, active=True),
+        )
         MT = const.MailinglistTypes
         reality = self.core.list_all_moderators(
             self.key, {MT.member_moderated_opt_in, MT.cdelokal})
