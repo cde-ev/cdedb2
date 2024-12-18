@@ -85,7 +85,13 @@
         </form>
     {% else %}
         <p>
-            {% trans %}No registrations found.{% endtrans %}
+            {% if kind == enums['FieldAssociations'].registration %}
+                {% trans %}No registrations found.{% endtrans %}
+            {% elif kind == enums['FieldAssociations'].course %}
+                {% trans %}No courses found.{% endtrans %}
+            {% elif kind == enums['FieldAssociations'].lodgement %}
+                {% trans %}No lodgements found.{% endtrans %}
+            {% endif %}
         </p>
     {% endif %}
     <script nonce="{{ csp_nonce }}">
