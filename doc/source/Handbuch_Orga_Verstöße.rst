@@ -1,5 +1,6 @@
+********
 Verstöße
-========
+********
 
 Die Datenbank kann für viele Situation, die im Laufe der Organisation einer
 Veranstaltung auftreten können -- aber eigentlich nicht sollen -- Hinweise, Warnungen
@@ -16,70 +17,12 @@ schwerwiegend diese sind und wie schnell sich darum gekümmert werden sollte:
 - Fehler: Ein Zustand, der immer falsch ist und behoben werden muss, am besten
   innerhalb von wenigen Tagen.
 - Kritisch: Ein Zustand der nicht existieren können sollte, außer durch einen
-  Softwarfehler, korrumpierte Daten oder einen Fehler außerhalb der Macht des Orgateams.
+  Softwarefehler, korrumpierte Daten oder einen Fehler außerhalb der Macht des Orgateams.
 
 In diesem Dokument werden die einzelnen Arten von Verstößen näher erläutert.
 
-
-.. _MutuallyExclusiveParticipationCV:
-
-Verstöße gegen Teilnahmeausschließlichkeit
-------------------------------------------
-
-Dieser Verstoß tritt nur auf, wenn mindestens eine Veranstaltungsteilgruppe des Typs
-``Teilnahmeausschließlichkeit`` existiert.
-
-Sofern eine Person bei mehr als einem Teil einer solchen Gruppe den Status
-``Teilnehmer`` hat, wird ein Fehler angezeigt.
-Sofern eine Person bei mehr als einem Teil einer solchen Gruppe anwesend ist
-(Teilnehmer und/oder Gast), wird eine Warnung angezeigt.
-
-Um den Verstoß zu beheben, sollte der Status der Person auf den entsprechenden
-Veranstaltungsteilen angepasst werden.
-
-
-.. _CourseChoiceSyncCV:
-
-Verstöße gegen Kurswahlsynchronisierung
----------------------------------------
-
-Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
-``Kurswahlsynchronisierung`` existiert.
-
-Dieser Verstoß tritt auf, wenn eine Person in einer solchen synchronisierten Gruppe
-verschiedene Kurswahlen getätigt hat.
-
-Das sollte in der Praxis nicht auftreten können, da bei jeder Änderung an einer
-Anmeldung die Konsistenz der Wahlen geprüft wird. Sollte das doch passieren ist dies
-ein schwerwiegender Fehler, der quasi jede weitere Bearbeitung von Kurses und
-Anmeldungen verhindern dürfte. Falls das bei deiner Veranstaltung passiert, wende dich
-umgehend an das Datenbank-Team <cdedb@lists.cde-ev.de>.
-
-
-.. _NoCourseAssignedCV:
-
-Fehlende Kurseinteilungen
--------------------------
-
-Dieser Verstoß tritt auf, wenn eine Person mit dem Status ``Teilnehmer``, die kein Orga
-und nicht U10 ist, nicht in einen Kurs eingeteilt ist.
-
-Um den Verstoß zu beheben, sollte die Person in einen Kurs eingeteilt werden oder ihr
-Status angepasst werden.
-
-
-.. _IncorrectCourseAssignedCV:
-
-Fehlerhafte Kurseinteilungen
-----------------------------
-
-Dieser Verstoß tritt auf, wenn eine Person in einer Kursschiene in einen nicht
-gewählten Kurs eingeteilt ist, oder nicht in den von ihr geleiteten Kurs, obwohl dieser
-stattfindet.
-
-Um den Verstoß zu beheben, sollte die Person in einen gewählten, bzw. den von ihr
-geleiteten Kurs eingeteilt werden, ihre Kurswahlen angepasst werden oder der von ihr
-geleitete Kurs abgesagt werden.
+Fehler bei Anmeldungen
+======================
 
 
 .. _InconsistentPaymentCV:
@@ -184,6 +127,10 @@ Um den Verstoß zu beheben, bearbeite die Anmeldung und entferne den Haken für
 minderjährige Person ebenfalls einen Verstoß auslöst.
 
 
+Fehler bei Veranstaltungsteilen
+===============================
+
+
 .. _IncorrectCampingMatAssignment:
 
 Unzulässige Isomatteneinteilung
@@ -207,30 +154,59 @@ keine Unterkünfte existieren.
 
 Um den Verstoß zu beheben, teile die Person in eine Unterkunft ein.
 
-.. _HiddenCoursesCV:
 
-Versteckte Kurse
-----------------
+.. _IncorrectNumInhabitantsCV:
 
-Dieser Verstoß tritt auf, wenn es versteckte Kurse gibt, aber die Anmeldung offen ist
-oder in wenigen Tagen beginnen soll.
+Unterkünfte mit inkorrekter Bewohnerzahl
+----------------------------------------
 
-Um den Verstoß zu beheben, zeige die versteckten Kurse in der Kursliste an.
+Dieser Verstoß tritt auf, wenn in einer Unterkunft zu viele Bewohner und/oder
+Isomattenschläfer eingeteilt sind.
+
+Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein,
+teile einige auf Isomatten ein und/oder passe die Kapazität der Unterkunft an.
 
 
-.. _MutuallyExclusiveCoursesCV:
+.. _IllegalMixedLodgementCV:
 
-Verstöße gegen Kursausschließlichkeit
--------------------------------------
+Unzulässige gemischte Unterkunft
+--------------------------------
 
-Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
-``Kursausschließlichkeit`` existiert.
+Dieser Verstoß tritt auf, wenn in einer gemischten Unterkunft inkompatible Personen
+eingeteilt sind. Inkompatibel sind insbesondere Personen, die nicht einer gemischten
+Unterbringung zugestimmt haben, bzw. Minderjährige unter 16 Jahren.
 
-Sofern ein Kurs in mehr als einer Schiene einer solchen Gruppe stattfindet,
-wird ein Fehler angezeigt.
+Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein.
 
-Um den Verstoß zu beheben, lasse den Kurs nur in einer solchen Kursschiene stattfinden,
-oder entferne die entsprechende Kursschienengruppe.
+
+Fehler bei Kursen
+=================
+
+
+.. _NoCourseAssignedCV:
+
+Fehlende Kurseinteilungen
+-------------------------
+
+Dieser Verstoß tritt auf, wenn eine Person mit dem Status ``Teilnehmer``, die kein Orga
+und nicht U10 ist, nicht in einen Kurs eingeteilt ist.
+
+Um den Verstoß zu beheben, sollte die Person in einen Kurs eingeteilt werden oder ihr
+Status angepasst werden.
+
+
+.. _IncorrectCourseAssignedCV:
+
+Fehlerhafte Kurseinteilungen
+----------------------------
+
+Dieser Verstoß tritt auf, wenn eine Person in einer Kursschiene in einen nicht
+gewählten Kurs eingeteilt ist, oder nicht in den von ihr geleiteten Kurs, obwohl dieser
+stattfindet.
+
+Um den Verstoß zu beheben, sollte die Person in einen gewählten, bzw. den von ihr
+geleiteten Kurs eingeteilt werden, ihre Kurswahlen angepasst werden oder der von ihr
+geleitete Kurs abgesagt werden.
 
 
 .. _CancelledWithAttendeesCV:
@@ -271,25 +247,66 @@ Um den Verstoß zu beheben, teile Teilnehmende bzw. Kursleitende in den Kurs ein
 sage den Kurs ab.
 
 
-.. _IncorrectNumInhabitantsCV:
+.. _HiddenCoursesCV:
 
-Unterkünfte mit inkorrekter Bewohnerzahl
-----------------------------------------
+Versteckte Kurse
+----------------
 
-Dieser Verstoß tritt auf, wenn in einer Unterkunft zu viele Bewohner und/oder
-Isomattenschläfer eingeteilt sind.
+Dieser Verstoß tritt auf, wenn es versteckte Kurse gibt, aber die Anmeldung offen ist
+oder in wenigen Tagen beginnen soll.
 
-Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein,
-teile einige auf Isomatten ein und/oder passe die Kapazität der Unterkunft an.
+Um den Verstoß zu beheben, zeige die versteckten Kurse in der Kursliste an.
 
 
-.. _IllegalMixedLodgementCV:
+Fehler bei Veranstaltungsteil- oder Kursschienengruppen
+=======================================================
 
-Unzulässige gemischte Unterkunft
---------------------------------
 
-Dieser Verstoß tritt auf, wenn in einer gemischten Unterkunft inkompatible Personen
-eingeteilt sind. Inkompatibel sind insbesondere Personen, die nicht einer gemischten
-Unterbringung zugestimmt haben, bzw. Minderjährige unter 16 Jahren.
+.. _MutuallyExclusiveParticipationCV:
 
-Um den Verstoß zu beheben, teile einige der Bewohner in eine andere Unterkunft ein.
+Verstöße gegen Teilnahmeausschließlichkeit
+------------------------------------------
+
+Dieser Verstoß tritt nur auf, wenn mindestens eine Veranstaltungsteilgruppe des Typs
+``Teilnahmeausschließlichkeit`` existiert.
+
+Sofern eine Person bei mehr als einem Teil einer solchen Gruppe den Status
+``Teilnehmer`` hat, wird ein Fehler angezeigt.
+Sofern eine Person bei mehr als einem Teil einer solchen Gruppe anwesend ist
+(Teilnehmer und/oder Gast), wird eine Warnung angezeigt.
+
+Um den Verstoß zu beheben, sollte der Status der Person auf den entsprechenden
+Veranstaltungsteilen angepasst werden.
+
+
+.. _CourseChoiceSyncCV:
+
+Verstöße gegen Kurswahlsynchronisierung
+---------------------------------------
+
+Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
+``Kurswahlsynchronisierung`` existiert.
+
+Dieser Verstoß tritt auf, wenn eine Person in einer solchen synchronisierten Gruppe
+verschiedene Kurswahlen getätigt hat.
+
+Das sollte in der Praxis nicht auftreten können, da bei jeder Änderung an einer
+Anmeldung die Konsistenz der Wahlen geprüft wird. Sollte das doch passieren ist dies
+ein schwerwiegender Fehler, der quasi jede weitere Bearbeitung von Kurses und
+Anmeldungen verhindern dürfte. Falls das bei deiner Veranstaltung passiert, wende dich
+umgehend an das Datenbank-Team <cdedb@lists.cde-ev.de>.
+
+
+.. _MutuallyExclusiveCoursesCV:
+
+Verstöße gegen Kursausschließlichkeit
+-------------------------------------
+
+Dieser Verstoß tritt nur auf, wenn mindestens eine Kursschienengruppe des Typs
+``Kursausschließlichkeit`` existiert.
+
+Sofern ein Kurs in mehr als einer Schiene einer solchen Gruppe stattfindet,
+wird ein Fehler angezeigt.
+
+Um den Verstoß zu beheben, lasse den Kurs nur in einer solchen Kursschiene stattfinden,
+oder entferne die entsprechende Kursschienengruppe.
