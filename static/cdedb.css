@@ -1083,12 +1083,6 @@ td.b-right, th.b-right {
 .course-primary {
     background-color: #e6e6e6;
 }
-.course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
-    background-color: #e08282;
-}
-.course-too-many, .lodgement-too-many {
-    background-color: #f2b3b3;
-}
 .course-primary.course-too-few, .lodgement-primary.lodge-too-few {
     background-color: #dfd181;
 }
@@ -1101,17 +1095,23 @@ td.b-right, th.b-right {
 .course-exactly-full, .lodgement-exact-full {
     background-color: #b3f2b3;
 }
-.course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
-    background-color: #cb86e6;
-}
-.course-cancelled, .lodgement-illegal-mixing {
-    background-color: #e6b3f2;
-}
 .course-primary.course-cancelled-ok, .lodgement-primary.lodgement-illegal-camping-mat {
     background-color: #b8ceef;
 }
 .course-cancelled-ok, .lodgement-illegal-camping-mat {
     background-color: #ceefff;
+}
+.course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
+    background-color: #e08282;
+}
+.course-too-many, .lodgement-too-many {
+    background-color: #f2b3b3;
+}
+.course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
+    background-color: #cb86e6;
+}
+.course-cancelled, .lodgement-illegal-mixing {
+    background-color: #e6b3f2;
 }
 tr th.filtered_column {
     background-color: #31708f;
