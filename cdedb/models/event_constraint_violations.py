@@ -1493,7 +1493,7 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
         ):
             return cls(
                 event=event,
-                severity=ViolationSeverity.INFO,
+                severity=ViolationSeverity.DEBUG,
                 lodgement=lodgement,
                 part=part,
                 num_regular=len(inhabitants.regular),

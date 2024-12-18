@@ -133,6 +133,9 @@
 
                             <td class="text-right {% if loop.first %}b-left{% endif %} regular-inhabitants {{ aclass }}"
                                     title="{{ atitle }}" id="lodge_inhabitants_{{ part.id }}_{{ lodgement_id }}">
+                                {% for icon, icon_title in format.icons %}
+                                    {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                {% endfor %}
                                 {{ inhabitants[lodgement_id][part.id].regular|length }}
                             </td>
 
@@ -140,7 +143,10 @@
                             {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
                             <td class="text-right camping-mat-inhabitants {{ aclass }}" title="{{ atitle }}"
                                     id="lodge_camping_mat_inhabitants_{{ part.id }}_{{ lodgement_id }}">
-                                {% if inhabitants[lodgement_id][part.id].camping_mat %}
+                                {% for icon, icon_title in format.icons -%}
+                                    {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                {%- endfor -%}
+                                {% if inhabitants[lodgement_id][part.id].camping_mat -%}
                                     + {{ inhabitants[lodgement_id][part.id].camping_mat|length }}
                                 {% endif %}
                             </td>
@@ -189,10 +195,10 @@
     <hr />
     <p>
         <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
-        <span class="color-legend lodgement-too-few"></span>&nbsp;{% trans %}Warning{% endtrans %} &emsp;
+        <span class="color-legend lodgement-too-few"></span>&nbsp;{% trans %}Underfull (but not empty){% endtrans %} &emsp;
+        <span class="color-legend lodgement-illegal-camping-mat"></span>&nbsp;{% trans %}Illegal Camping Mat Assignment{% endtrans %} &emsp;
         <span class="color-legend lodgement-too-many"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
-        <span class="color-legend lodgement-illegal-mixing"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
-        <span class="color-legend lodgement-illegal-camping-mat"></span>&nbsp;{% trans %}Illegal Camping Mat Assignment{% endtrans %}
+        <span class="color-legend lodgement-illegal-mixing"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %} &emsp;
     </p>
     <div class="p">
         <strong>{% trans %}Sorting:{% endtrans %}</strong> <br />

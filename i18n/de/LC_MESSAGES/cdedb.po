@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-16 01:36+0100\n"
+"POT-Creation-Date: 2024-12-18 02:14+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -6518,10 +6518,10 @@ msgstr "Abstimmung anlegen"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:488
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:26
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:109
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:169
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:167
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:156
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:162
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:84
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:20
@@ -7806,7 +7806,6 @@ msgstr "Fehler"
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:122
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:94
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:191
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:192
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:89
 msgid "Warning"
 msgstr "Warnung"
@@ -12368,31 +12367,31 @@ msgid "Select %s"
 msgstr "%s auswählen"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:279
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:196
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:191
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:194
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:197
 msgid "Color Guide"
 msgstr "Farb-Legende"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:280
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:195
 #: cdedb/models/event_constraint_violations.py:1377
 msgid "Not enough Attendees"
 msgstr "Zu wenige Kursteilnehmende"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:281
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:198
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:196
 #: cdedb/models/event_constraint_violations.py:1382
 msgid "Too many Attendees"
 msgstr "Zu viele Kursteilnehmende"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:282
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:199
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
 #: cdedb/models/event_constraint_violations.py:1385
 msgid "Exactly full"
 msgstr "Exakt voll"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:283
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:200
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:198
 #: cdedb/models/event_constraint_violations.py:1272
 #: cdedb/models/event_constraint_violations.py:1286
 msgid "Course cancelled"
@@ -12557,13 +12556,13 @@ msgstr "Min"
 msgid "Max"
 msgstr "Max"
 
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:173
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:171
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:16
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:35
 msgid "Manage Attendees"
 msgstr "Kursteilnehmende verwalten"
 
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:201
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:199
 #: cdedb/models/event_constraint_violations.py:1285
 msgid "Course cancelled, has Attendees"
 msgstr "Kurs fällt aus, hat noch Kursteilnehmende"
@@ -14935,36 +14934,40 @@ msgstr "Regulär"
 msgid "Move or delete lodgements from this group"
 msgstr "Bewege oder lösche Unterkünfte aus dieser Gruppe"
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:160
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:166
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:16
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:28
 msgid "Manage Inhabitants"
 msgstr "Bewohner verwalten"
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:193
-msgid "Overfull"
-msgstr "Überfüllt"
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:198
+msgid "Underfull (but not empty)"
+msgstr "Unterfüllt (aber nicht leer)"
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:194
-msgid "Illegal Gendermix"
-msgstr "Unzulässige Geschlechtermischung"
-
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:195
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
 msgid "Illegal Camping Mat Assignment"
 msgstr "Unzulässige Isomatteneinteilung"
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:198
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:200
+msgid "Overfull"
+msgstr "Überfüllt"
+
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:201
+msgid "Illegal Gendermix"
+msgstr "Unzulässige Geschlechtermischung"
+
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:204
 msgid "Sorting:"
 msgstr "Sortierung:"
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:205
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
 msgstr ""
 "Die Unterkünfte können innerhalb der Unterkunftsgruppen sortiert werden."
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:205
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:211
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
@@ -14972,7 +14975,7 @@ msgstr ""
 "Die Namen der <strong>Veranstaltungsteile</strong> sortieren nach den "
 "genutzten regulären Plätzen in diesem Veranstaltungsteil."
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:211
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:217
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
@@ -14980,7 +14983,7 @@ msgstr ""
 "Die <strong>+x</strong> sortieren nach den genutzten Isomattenplätzen in dem "
 "zugehörigen Veranstaltungsteil."
 
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:216
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:222
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
@@ -20017,7 +20020,8 @@ msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1055
 msgid "An inhabitant is assigned to, but may not sleep on a camping mat."
-msgstr "Ein Bewohner inst auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
+msgstr ""
+"Ein Bewohner ist auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
 
 #: cdedb/models/event_constraint_violations.py:1107
 #, python-format
