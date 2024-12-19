@@ -1976,7 +1976,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         # by third parties.
         account: Accounts = payment_data['account']
         return {
-            'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
+            'name': account.get_account_holder()[:70],
             'text': payment_data['reference'][:140],
             'amount': payment_data['to_pay'],
             'iban': account.get_iban(),
