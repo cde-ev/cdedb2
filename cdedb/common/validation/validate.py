@@ -86,6 +86,7 @@ from typing import (
     overload,
 )
 
+import freezegun.api
 import magic
 import phonenumbers
 import PIL.Image
@@ -140,6 +141,7 @@ from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+from cdedb.models.event import ReducedCheckinPeriod
 from cdedb.uncommon.intenum import CdEIntEnum
 
 NoneType = type(None)
@@ -1719,6 +1721,18 @@ def _datetime(
 
 
 @_add_typed_validator
+def _frozen_datetime(
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
+) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
+    """Our tests pass objects of this mock time.
+
+    Since freezegun does magic type stuff, this is required
+    when calling `affirm(datetime.datetime, ...)` on a FakeDatetime.
+    """
+    return _datetime(val, argname, **kwargs)
+
+
+@_add_typed_validator
 def _single_digit_int(
     val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> SingleDigitInt:
@@ -3035,7 +3049,6 @@ REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
-    'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
 
@@ -3529,6 +3542,7 @@ def _serialized_event(
         'event.lodgement_groups': Mapping,
         'event.lodgements': Mapping,
         'event.registrations': Mapping,
+        models_event.CheckinPeriod.database_table: Mapping,
         'event.registration_parts': Mapping,
         'event.registration_tracks': Mapping,
         'event.course_choices': Mapping,
@@ -3619,6 +3633,10 @@ def _serialized_event(
         'event.personalized_fees': _augment_dict_validator(
             _empty_dict, {'id': ID, 'fee_id': ID, 'registration_id': ID,
                           'amount': decimal.Decimal}),
+        'event.checkin_periods': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'registration_id': ID,
+                          'checkin_time': datetime.datetime,
+                          'checkout_time': datetime.datetime}),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),
@@ -3903,9 +3921,9 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'checkin': Optional[datetime.datetime],
     'fields': Mapping,
     'personalized_fees': Mapping,
+    'checkin_periods': list[ReducedCheckinPeriod],
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3973,6 +3991,32 @@ def _partial_registration(
             else:
                 newfees[fee_id] = amount
         val['personalized_fees'] = newfees
+    if 'checkin_periods' in val:
+        new_checkin_periods: list[ReducedCheckinPeriod] = []
+        for period in val['checkin_periods']:
+            try:
+                period = _partial_registration_checkin_period(period, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                new_checkin_periods.append(period)
+        # Now sort the list and check whether it is consistent.
+        new_checkin_periods = xsorted(new_checkin_periods,
+                                      key=lambda x: x.checkin_time)
+
+        try:
+            is_consistent = all(
+                p.checkin_time < p.checkout_time < next_p.checkin_time  # type: ignore[operator]
+                for p, next_p in zip(new_checkin_periods, new_checkin_periods[1:]))
+        except TypeError:
+            # checkout_time == None for non-final checkin period
+            errs.append(ValueError(n_("Checkout time may only be empty"
+                                      " for latest checkin period.")))
+        else:
+            if not is_consistent:
+                errs.append(ValueError(n_("Inconsistent sequence of checkin periods.")))
+            else:
+                val['checkin_periods'] = new_checkin_periods
 
     if errs:
         raise errs
@@ -4041,6 +4085,36 @@ def _partial_registration_track(
         raise errs
 
     return PartialRegistrationTrack(val)
+
+
+@_add_typed_validator
+def _partial_registration_checkin_period(
+    val: Any, argname: str = "partial_registration_checkin_period", **kwargs: Any,
+) -> ReducedCheckinPeriod:
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+    """
+
+    if isinstance(val, ReducedCheckinPeriod):
+        if val.checkout_time and val.checkin_time >= val.checkout_time:
+            raise ValueError(n_("Checkout must be after checkin."))
+        return val
+
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory_fields: TypeMapping = {
+        'checkin_time': datetime.datetime,
+        'checkout_time': Optional[datetime.datetime],  # type: ignore[dict-item]
+    }
+
+    val = _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)
+
+    if val['checkout_time'] and val['checkin_time'] >= val['checkout_time']:
+        raise ValueError(n_("Checkout must be after checkin."))
+
+    return ReducedCheckinPeriod(**PartialRegistrationCheckinPeriod(val))
 
 
 @_add_typed_validator

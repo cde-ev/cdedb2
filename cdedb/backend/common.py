@@ -45,13 +45,13 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators
+from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, SqlQueryBackend
+from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.models.common import CdEDataclass
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -325,8 +325,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(query: Query, distinct: bool, view: Optional[str],
-                         aggregate_select: str) -> tuple[str, list[DatabaseValue]]:
-        params: list[DatabaseValue] = []
+                         aggregate_select: str) -> tuple[str, list[DatabaseValue_s]]:
+        params: list[DatabaseValue_s] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
@@ -392,7 +392,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = f"{sql_param_str} = ANY(%s)"
                 else:
                     phrase = f"NOT({sql_param_str} = ANY(%s))"
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
+                params.extend((tuple(caser(x) for x in value),) * len(columns))
             elif operator in {_ops.match, _ops.unmatch}:
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
@@ -426,6 +426,33 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,) * len(columns))
+            # These are hard coded special cases for some useful, but very specific
+            # conditions. Modelling with special query operators is more flexible.
+            elif operator in VALID_QUERY_OPERATORS["checkin_datetime"]:
+                phrase = "/* {} */ "
+                subphrase = ("checkin_at.checkin_time < %s"
+                             " AND checkin_at.checkout_time > %s")
+                if operator == _ops.checkedin_at:
+                    phrase += subphrase
+                    params.extend((value,) * 2 * len(columns))
+                elif operator == _ops.checkedin_notat:
+                    phrase += "NOT(" + subphrase + ")"
+                    params.extend((value,) * 2 * len(columns))
+                else:
+                    if operator == _ops.checkedin_oneof:
+                        phrase += " OR ".join((subphrase,) * len(value))
+                    elif operator == _ops.checkedin_noneof:
+                        phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
+                    elif operator == _ops.checkedin_allof:
+                        phrase += " AND ".join((subphrase,) * len(value))
+                    elif operator == _ops.checkedin_notallof:
+                        phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
+                    else:
+                        raise RuntimeError(n_("Impossible."))
+                    extension: list[str] = []
+                    for x in value:
+                        extension.extend((x,) * 2)
+                    params.extend(extension * len(columns))
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))

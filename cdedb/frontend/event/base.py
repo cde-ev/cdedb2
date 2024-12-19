@@ -57,6 +57,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.event_constraint_violations import (
+    AbsentCheckedinCV,
     CancelledWithAttendeesCV,
     ConstraintViolation,
     CourseChoiceSyncCV,
@@ -77,6 +78,7 @@ from cdedb.models.event_constraint_violations import (
     NoCourseAssignedCV,
     NoLodgementCV,
     NotPaidCV,
+    PresentNeverCheckedinCV,
     RemainingOwedCV,
     ViolationList,
 )
@@ -532,6 +534,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     NegativeAmountOwedCV,
                     NegativeRemainingOwedCV,
                     RemainingOwedCV,
+                    AbsentCheckedinCV,
                     MissingMinorFormCV,
                     IllegalMixedLodgingCV,
                 ): [
@@ -539,6 +542,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                 ],
             },
             'part': {
+                (
+                    PresentNeverCheckedinCV,
+                ): [
+                    'registration', 'persona', 'part',
+                ],
                 (
                     IncorrectCampingMatAssignmentCV,
                     NoLodgementCV,

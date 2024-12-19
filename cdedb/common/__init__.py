@@ -3,6 +3,7 @@
 """Global utility functions."""
 import collections
 import collections.abc
+import dataclasses
 import datetime
 import decimal
 import enum
@@ -724,6 +725,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return tuple(obj)
         elif isinstance(obj, models.CdEDataclass):
             return obj.as_dict()
+        elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            return dataclasses.asdict(obj)
         return super().default(obj)
 
 
@@ -1438,7 +1441,7 @@ def parse_date(val: str) -> datetime.date:
 
 def parse_datetime(
     val: str, default_date: Optional[datetime.date] = None,
-) -> datetime.date:
+) -> datetime.datetime:
     """Make a string into a datetime.
 
     We only support a limited set of formats to avoid any surprises
@@ -1532,7 +1535,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (18, 0)
+EVENT_SCHEMA_VERSION = (19, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

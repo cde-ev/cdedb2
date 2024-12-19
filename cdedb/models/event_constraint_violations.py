@@ -892,6 +892,144 @@ class RemainingOwedCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class AbsentCheckedinCV(RegistrationConstraintViolation):
+    shall_be_present_at_all: bool
+
+    @classmethod
+    def check(  # type: ignore[override]
+        cls, event: models.Event, *,
+        registration: CdEDBObject,
+        persona: CdEDBObject,
+    ) -> Self | None:
+        """Return a violation if a persona should not be checked in, but is.
+
+        If they are checked in even though they are is not present in the relevant part,
+        return an INFO. If they are not present at all, return an ERROR.
+        If they have not been checked out even though they should have been, return an
+        INFO as well.
+        """
+        is_present_parts = {
+            part_id: part for part_id, part in event.parts.items()
+            if registration['parts'][part_id]['status'].is_present()
+        }
+
+        if not is_present_parts:
+            if registration['checkin_periods']:
+                return cls(
+                    event=event,
+                    severity=ViolationSeverity.ERROR,
+                    registration=registration,
+                    persona=persona,
+                    shall_be_present_at_all=False,
+                )
+
+        ref_time = now().date()
+        day = datetime.timedelta(days=1)
+        for period in registration['checkin_periods']:
+            valid_checkin_time = valid_checkout_time = False
+            for part in is_present_parts.values():
+                if part.part_begin < period.checkin_time.date() < part.part_end:
+                    valid_checkin_time = True
+                has_contingent_successor = any(
+                    other.part_begin - day <= part.part_end < other.part_end
+                    for other in is_present_parts.values())
+                if (not period.checkout_time and part.part_end >= ref_time
+                        and not has_contingent_successor):
+                    valid_checkout_time = True
+            if period.checkout_time:
+                for part in is_present_parts.values():
+                    if part.part_begin < period.checkout_time.date() < part.part_end:
+                        valid_checkout_time = True
+                        break
+            if not (valid_checkin_time and valid_checkout_time):
+                return cls(
+                    event=event,
+                    severity=ViolationSeverity.INFO,
+                    registration=registration,
+                    persona=persona,
+                    shall_be_present_at_all=True,
+                )
+        return None
+
+    def get_translation(
+        self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        if self.shall_be_present_at_all:
+            if entity_page:
+                msg = n_("Is checked in, but should not be at these times.")
+            else:
+                msg = n_("%(link)s's is checked in, but should not be at these times.")
+        elif entity_page:
+            msg = n_("Is checked in, but was never present.")
+        else:
+            msg = n_("%(link)s's is checked in, but was never present.")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class PresentNeverCheckedinCV(RegistrationConstraintViolation):
+    part: models.EventPart
+
+    @classmethod
+    def check(  # type: ignore[override]
+        cls, event: models.Event, *,
+        registration: CdEDBObject,
+        persona: CdEDBObject,
+        part: models.EventPart,
+    ) -> Self | None:
+        """Return a violation if a persona should be checked in, but is not.
+
+        If a registration is participant and not checked in after the first day of the
+        part, return a WARNING. If at the end of the respective part, they still never
+        checked in, return an ERROR.
+        """
+        ref_time = now().date()
+        if not (registration['parts'][part.id]['status'].is_present()
+                and ref_time > part.part_begin):
+            return None
+        valid_checkin_time = False
+        for period in registration['checkin_periods']:
+            if (period.checkin_time.date() <= part.part_end
+                    and (not period.checkout_time
+                         or period.checkout_time.date() < part.part_begin)):
+                valid_checkin_time = True
+                break
+        if not valid_checkin_time:
+            return cls(
+                event=event,
+                severity=(
+                    ViolationSeverity.ERROR
+                    if ref_time > part.part_end else
+                    ViolationSeverity.WARNING),
+                registration=registration,
+                persona=persona,
+                part=part,
+            )
+        return None
+
+    def get_translation(
+        self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        if now().date() > self.part.part_end:
+            if entity_page:
+                msg = n_("Was present in %(part)s , but never checked in.")
+            else:
+                msg = n_("%(link)s was present in %(part)s, but never checked in.")
+        elif entity_page:
+            msg = n_("Will be present in %(part)s, but has not checked in yet.")
+        else:
+            msg = n_("%(link)s will be present in %(part)s, but has not checked in yet.")
+        params = {
+            "link": make_persona_name(self.persona, include_nickname=True),
+            "part": self.part.shortname,
+        }
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class MissingMinorFormCV(RegistrationConstraintViolation):
     participant_begin: datetime.date
 

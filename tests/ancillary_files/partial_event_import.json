@@ -128,7 +128,6 @@
 					"is_camping_mat": false
 				}
 			},
-			"checkin": null,
 			"list_consent": false,
 			"notes": "Reingelegt",
 			"parental_agreement": true,
@@ -196,7 +195,25 @@
 			}
 		},
 		"5": null,
+		"6": {
+			"checkin_periods": [
+				{
+					"checkin_time": "2022-02-22T17:00:00+00:00",
+					"checkout_time": "2022-02-23T09:00:00+00:00"
+				},
+				{
+					"checkin_time": "2022-02-23T09:00:01+00:00",
+					"checkout_time": "2022-02-23T09:00:02+00:00"
+				}
+			]
+		},
 		"-1": {
+			"checkin_periods": [
+				{
+					"checkin_time": "2022-02-22T17:00:00+00:00",
+					"checkout_time": "2022-02-23T09:00:00+00:00"
+				}
+			],
 			"fields": {
 				"lodge": "egal"
 			},
@@ -219,7 +236,6 @@
 					"is_camping_mat": false
 				}
 			},
-			"checkin": null,
 			"list_consent": true,
 			"persona_id": 3,
 			"notes": null,
@@ -253,8 +269,8 @@
 			}
 		}
 	},
-        "EVENT_SCHEMA_VERSION": [
-			18,
-			0
-		]
+    "EVENT_SCHEMA_VERSION": [
+        19,
+        0
+    ]
 }

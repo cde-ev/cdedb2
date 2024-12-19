@@ -397,6 +397,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                       ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),
+                      ('event.checkin_periods', None),
                       ('event.registration_parts', None),
                       ('event.registration_tracks', None),
                       ('event.course_choices', None),
@@ -492,8 +493,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 rs, data['id'], "Snapshot vor partiellem Import.")
             if all_current_data is None:
                 all_current_data = self.partial_export_event(rs, data["id"])
-            oregistration_ids = self.list_registrations(rs, data['id'])
-            old_registrations = self.get_registrations(rs, oregistration_ids)
+            old_registration_ids = self.list_registrations(rs, data['id'])
+            old_registrations = self.get_registrations(rs, old_registration_ids)
 
             # check referential integrity
             all_track_ids = {key for course in data.get('courses', {}).values()
@@ -771,10 +772,12 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                 tmp_id = part['lodgement_id']
                                 part['lodgement_id'] = lmap[tmp_id]
                         personalized_fees = new.pop('personalized_fees', {})
+                        checkin_periods = new.pop('checkin_periods', [])
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
                         for fee_id, amount in personalized_fees.items():
                             self.set_personalized_fee_amount(rs, new_id, fee_id, amount)
+                        self.replace_checkin_periods(rs, new_id, checkin_periods)
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
@@ -803,16 +806,23 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                             tmp_id = part['lodgement_id']
                                             part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
-                            # change_note for log entry for registrations
-                            change_note = "Partieller Import."
-                            if data.get('summary'):
-                                change_note = ("Partieller Import: "
-                                               + data['summary'])
+                            # Only set registration of "usual" fields are concerned
                             personalized_fees = changed_reg.pop('personalized_fees', {})
-                            self.set_registration(rs, changed_reg, change_note)
+                            checkin_periods = changed_reg.pop('checkin_periods', None)
+                            if changed_reg.keys() > {'id'}:
+                                # change_note for log entry for registrations
+                                change_note = "Partieller Import."
+                                if data.get('summary'):
+                                    change_note = ("Partieller Import: "
+                                                   + data['summary'])
+                                self.set_registration(rs, changed_reg, change_note)
                             for fee_id, amount in personalized_fees.items():
                                 self.set_personalized_fee_amount(
                                     rs, registration_id, fee_id, amount)
+                            if (checkin_periods is not None
+                                    and current['checkin_periods'] != checkin_periods):
+                                self.replace_checkin_periods(
+                                    rs, registration_id, checkin_periods)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious

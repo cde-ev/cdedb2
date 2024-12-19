@@ -30,6 +30,7 @@ from cdedb.frontend.common import (
     event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.models.event import ReducedCheckinPeriod
 
 
 class EventImportMixin(EventBaseFrontend):
@@ -170,6 +171,10 @@ class EventImportMixin(EventBaseFrontend):
                     tmp = flatten_recursive_delta(
                         val, old.get(key, {}), f"{prefix}{key}.")
                     ret.update(tmp)
+                elif (isinstance(val, list)
+                      and all(isinstance(e, ReducedCheckinPeriod) for e in val)):
+                    ret[f"{prefix}{key}"] = ([e.pretty() for e in val],
+                                             [o.pretty() for o in old[key]])
                 else:
                     ret[f"{prefix}{key}"] = (old.get(key, None), val)
             return ret

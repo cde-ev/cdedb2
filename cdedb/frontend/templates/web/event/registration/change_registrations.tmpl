@@ -108,10 +108,6 @@
             </div>
         {% endcall %}
 
-        {% call form_input_optional('reg.checkin', label=gettext("Checked-In"), anid="input_reg_checkin") %}
-            {{ util.input_text(name="reg.checkin", type="datetime-local", anid="input_reg_checkin") }}
-        {% endcall %}
-
         {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>

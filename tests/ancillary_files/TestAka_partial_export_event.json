@@ -1,6 +1,6 @@
 {
     "EVENT_SCHEMA_VERSION": [
-        18,
+        19,
         0
     ],
     "kind": "partial",
@@ -177,7 +177,7 @@
             "payment": "2014-01-01",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
@@ -266,7 +266,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
@@ -356,7 +356,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": false,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
@@ -445,7 +445,7 @@
             "payment": "2014-04-04",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": false,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
@@ -535,7 +535,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": false,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
@@ -623,7 +623,12 @@
             "payment": "2014-06-06",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [
+                {
+                    "checkin_time": "2022-02-22T17:00:00+00:00",
+                    "checkout_time": "2022-02-23T09:00:00+00:00"
+                }
+            ],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,

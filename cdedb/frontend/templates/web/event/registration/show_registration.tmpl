@@ -2,6 +2,7 @@
 {% set sidenav_active='event_registration' %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
+{% set jshint='weak' %}{# TODO: set to strong when adding backdated checkin periods #}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
@@ -139,11 +140,6 @@
                 {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
             {% endif %}
         </dd>
-
-        <dt title="{% trans %}Checked-In at{% endtrans %}">{% trans %}Checked-In at{% endtrans %}</dt>
-        <dd id="checkin-time">
-            {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
-        </dd>
     </dl>
 
     <dl class="dl-horizontal col-md-6">
@@ -224,6 +220,118 @@
         {% endfor %}
         </div>
     {% endfor %}
+
+    {{ util.h(gettext("Presence"), level=3, underline=True) }}
+    <table id="checkin-periods" class="table table-slim">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th class="col-sm-9">{% trans %}Timespan{% endtrans %}</th>
+                <th>{# save change button #}</th>
+                <th>{# deletion button #}</th>
+                <th class="col-sm-3">{% trans %}Duration{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for period in ambience['registration']['checkin_periods'] %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                {# add the ID so that on validation errors values can be filled correctly #}
+                {% set inputname1 = 'checkin_time_' + period.id|string %}
+                {% set inputname2 = 'checkout_time_' + period.id|string %}
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                <form action="{{ cdedblink('event/change_checkin_period',
+                                           {'registration_id': ambience['registration']['id']}) }}"
+                      method="POST"
+                      id="changeperiodform{{ loop.index }}">
+                    {{ util.anti_csrf_token('event/change_checkin_period') }}
+                        <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                            {{ util.input_hidden(name='period_id', value=period.id) }}
+                            {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
+                                               defaultvalue=period.checkin_time) }}
+                            <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
+                            {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
+                                               defaultvalue=period.checkout_time) }}
+                        </div>
+                        {{ util.output_errors(inputname1) }}
+                        {{ util.output_errors(inputname2) }}
+                </form>
+                </td>
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
+                                         formid="changeperiodform" + loop.index|string, aclass="btn btn-primary btn-sm") }}
+                </td>
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ period.checkin_time|datetime(lang=lang) }}&#8239;–&#8239;
+                    {%- if period.checkout_time -%}
+                        {{- period.checkout_time|datetime(lang=lang) -}}
+                    {%- else -%}
+                        <i>{% trans %}now{% endtrans %}</i>
+                    {%- endif -%}
+                </td>
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ util.input_submit(icon="pen", label="", title=gettext("Edit times"),
+                                         aclass="btn btn-warning btn-sm showform-button", value=loop.index) }}
+                </td>
+                <td style="padding-left: 0;">
+                    <form action="{{ cdedblink("event/delete_checkin_period") }}" method="POST"
+                          id="deleteperiodform{{ loop.index }}">
+                        {{ util.anti_csrf_token('event/delete_checkin_period') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_hidden(name="period_id", value=period.id) }}
+                        {{ util.input_submit(icon="trash", label="", title=gettext("Delete these timestamps"),
+                                             aclass="btn btn-danger btn-sm") }}
+                    </form>
+                </td>
+                <td>{{ period.get_duration()|timedelta(gettext) }}</td>
+            </tr>
+        {% endfor %}
+            <tr>
+                <td></td>
+                <td>
+                {% if not ambience['registration']['checkin_periods']
+                      or ambience['registration']['checkin_periods'][-1].checkout_time %}
+                    <form action="{{ cdedblink('event/add_checkin') }}" method="POST" id="checkinform">
+                        {{ util.anti_csrf_token('event/add_checkin') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
+                                             icon="arrow-right-to-bracket", readonly=is_locked) }}
+                    </form>
+                {% else %}
+                    <form action="{{ cdedblink('event/add_checkout') }}" method="POST"
+                        id="checkoutform">
+                        {{ util.anti_csrf_token('event/add_checkout') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_submit(label=gettext("Checkout"), aclass="btn btn-primary btn-sm",
+                                             icon="arrow-right-from-bracket", readonly=is_locked) }}
+                    </form>
+                {% endif %}
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <script nonce="{{ csp_nonce }}">
+        $(".nojs-only:not(.has-error)").hide();
+        $(".softhide:not(.has-error)").show();
+        $(".softhide .showform-button").each(function() {
+            const rownr = $(this).val();
+            $(this).on("click", function() {
+                // can only submit one form at once, to avoid confusion hide other forms
+                $(".nojs-only").hide();
+                $(".softhide").show();
+
+                $(".softhide.period-display-" + rownr).hide();
+                $(".nojs-only.period-form-" + rownr).show();
+                // change icon of submit button
+                $(".nojs-only.period-form-" + rownr + " .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+            })
+        })
+        // nicer icon also in case of validation error
+        $(".nojs-only.has-error .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+    </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">

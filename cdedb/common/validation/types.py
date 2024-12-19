@@ -149,6 +149,8 @@ PartialLodgement = _NewType("PartialLodgement", _CdEDBObject)
 PartialRegistration = _NewType("PartialRegistration", _CdEDBObject)
 PartialRegistrationPart = _NewType("PartialRegistrationPart", _CdEDBObject)
 PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
+PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
+                                            _CdEDBObject)
 
 Mailinglist = _NewType("Mailinglist", _CdEDBObject)
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)
@@ -172,6 +174,7 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "float": float,
     "date": _datetime.date,
     "datetime": _datetime.datetime,
+    "checkin_datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
     "non_negative_float": NonNegativeFloat,
