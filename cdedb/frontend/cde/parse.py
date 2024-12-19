@@ -500,11 +500,14 @@ class CdEParseMixin(CdEBaseFrontend):
 
         open_issues = any(e['problems'] for e in data)
         saldos: dict[int, decimal.Decimal] = defaultdict(decimal.Decimal)
+        counts: dict[int, int] = defaultdict(int)
         for datum in data:
             if datum['amount'] is None:
                 continue
             saldos[datum['event_id'] or 0] += datum['amount']
+            counts[datum['event_id'] or 0] += 1
             saldos[-1] += datum['amount']
+            counts[-1] += 1
 
         if rs.has_validation_errors() or not data or open_issues:
             rs.values['checksum'] = None
@@ -607,6 +610,14 @@ class CdEParseMixin(CdEBaseFrontend):
                                 rs, "parse/event_reimbursements_booked", headers,
                                 {'num': len(reimbursements)})
 
+                headers = {
+                    'To': (self.conf['FINANCE_ADMIN_ADDRESS'],),
+                    'Subject': "Überweisungen eingetragen",
+                    'Prefix': "",
+                }
+                self.do_mail(
+                    rs, "parse/transfers_booked", headers,
+                    {'saldos': saldos, 'counts': counts, 'events': events})
                 return self.redirect(rs, "cde/index")
             elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))
