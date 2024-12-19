@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-12-19 02:05+0100\n"
+"POT-Creation-Date: 2024-12-19 03:21+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -19260,7 +19260,7 @@ msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:961
 #, python-format
-msgid "%(link)s's is checked in, but should not be at these times."
+msgid "%(registration)s is checked in, but should not be at these times."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:963
@@ -19269,7 +19269,7 @@ msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:965
 #, python-format
-msgid "%(link)s's is checked in, but was never present."
+msgid "%(registration)s is checked in, but was never present."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1018
@@ -19279,7 +19279,7 @@ msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1020
 #, python-format
-msgid "%(link)s was present in %(part)s, but never checked in."
+msgid "%(registration)s was present in %(part)s, but never checked in."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1022
@@ -19289,7 +19289,8 @@ msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1024
 #, python-format
-msgid "%(link)s will be present in %(part)s, but has not checked in yet."
+msgid ""
+"%(registration)s will be present in %(part)s, but has not checked in yet."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1073
@@ -19440,40 +19441,40 @@ msgstr ""
 msgid "Lonely instructors"
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1652
-#: cdedb/models/event_constraint_violations.py:1675
+#: cdedb/models/event_constraint_violations.py:1659
+#: cdedb/models/event_constraint_violations.py:1682
 msgid "Overfull lodgement."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1654
+#: cdedb/models/event_constraint_violations.py:1661
 #, python-format
 msgid "%(lodgement)s is overfull in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1656
-#: cdedb/models/event_constraint_violations.py:1683
+#: cdedb/models/event_constraint_violations.py:1663
+#: cdedb/models/event_constraint_violations.py:1690
 msgid "Underfull lodgement."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1658
+#: cdedb/models/event_constraint_violations.py:1665
 #, python-format
 msgid "%(lodgement)s is underfull in %(part)s."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1696
+#: cdedb/models/event_constraint_violations.py:1703
 msgid "Too many camping mats."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1704
+#: cdedb/models/event_constraint_violations.py:1711
 msgid "Not enough camping mats."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1753
-#: cdedb/models/event_constraint_violations.py:1767
+#: cdedb/models/event_constraint_violations.py:1760
+#: cdedb/models/event_constraint_violations.py:1774
 msgid "Mixed with non-mixing inhabitants."
 msgstr ""
 
-#: cdedb/models/event_constraint_violations.py:1755
+#: cdedb/models/event_constraint_violations.py:1762
 #, python-format
 msgid "%(lodgement)s is mixed with non-mixing inhabitants in %(part)s."
 msgstr ""

@@ -958,13 +958,13 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
             if entity_page:
                 msg = n_("Is checked in, but should not be at these times.")
             else:
-                msg = n_("%(link)s's is checked in, but should not be at these times.")
+                msg = n_("%(registration)s is checked in, but should not be at these times.")
         elif entity_page:
             msg = n_("Is checked in, but was never present.")
         else:
-            msg = n_("%(link)s's is checked in, but was never present.")
+            msg = n_("%(registration)s is checked in, but was never present.")
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
         }
         return [msg], params
 
@@ -1017,13 +1017,13 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
             if entity_page:
                 msg = n_("Was present in %(part)s , but never checked in.")
             else:
-                msg = n_("%(link)s was present in %(part)s, but never checked in.")
+                msg = n_("%(registration)s was present in %(part)s, but never checked in.")
         elif entity_page:
             msg = n_("Will be present in %(part)s, but has not checked in yet.")
         else:
-            msg = n_("%(link)s will be present in %(part)s, but has not checked in yet.")
+            msg = n_("%(registration)s will be present in %(part)s, but has not checked in yet.")
         params = {
-            "link": make_persona_name(self.persona, include_nickname=True),
+            "registration": make_persona_name(self.persona, include_nickname=True),
             "part": self.part.shortname,
         }
         return [msg], params

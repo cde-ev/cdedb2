@@ -115,7 +115,7 @@ trage ggf. einen Checkout ein, der vor dem entsprechenden Veranstaltungsteil lie
 
 .. _PresentNeverCheckedinCV:
 
-Uneingecheckte Teilnahmende
+Uneingecheckte Teilnehmende
 ---------------------------
 
 Dieser Verstoß tritt auf, wenn Personen am zweiten Tag eines Veranstaltungsteils,
