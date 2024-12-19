@@ -7,6 +7,7 @@ functionality for managing lodgements and lodgement groups belonging to an event
 import collections
 import dataclasses
 from collections.abc import Collection, Iterator
+from functools import cached_property
 from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
@@ -17,6 +18,7 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
     read_conditional_write_composer,
     singularize,
 )
@@ -46,11 +48,11 @@ from cdedb.database.query import DatabaseValue_s
 @dataclasses.dataclass(frozen=True)
 class LodgementInhabitants:
     """Small helper class to store and add inhabitants of a lodgement."""
-    regular: tuple[int, ...] = dataclasses.field(default_factory=tuple)
-    camping_mat: tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    regular: list[CdEDBObject] = dataclasses.field(default_factory=list)
+    camping_mat: list[CdEDBObject] = dataclasses.field(default_factory=list)
 
-    @property
-    def all(self) -> tuple[int, ...]:
+    @cached_property
+    def all(self) -> list[CdEDBObject]:
         return self.regular + self.camping_mat
 
     def __add__(self, other: Any) -> "LodgementInhabitants":
@@ -59,7 +61,7 @@ class LodgementInhabitants:
         return self.__class__(self.regular + other.regular,
                               self.camping_mat + other.camping_mat)
 
-    def __iter__(self) -> Iterator[tuple[int, ...]]:
+    def __iter__(self) -> Iterator[list[CdEDBObject]]:
         """Enable tuple unpacking."""
         return iter((self.regular, self.camping_mat))
 
@@ -465,16 +467,19 @@ class EventLodgementBackend(EventBaseBackend):
     @access("event")
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
-            lodgement_ids: Optional[Collection[int]] = None,
-            only_involved: bool = False,
+            lodgement_ids: Collection[int] | None = None,
+            involved: bool | None = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
-        is_privileged_ = is_privileged(
-            rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
-            event_id=event_id)
-        if not is_privileged_:
+        involved = affirm_optional(bool, involved)
+
+        if not is_privileged(
+                rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
+                event_id=event_id,
+        ):
             raise PrivilegeError
+
         params: list[DatabaseValue_s] = [event_id]
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
@@ -482,10 +487,26 @@ class EventLodgementBackend(EventBaseBackend):
             lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
-        if only_involved:
-            condition += " AND rp.status = ANY(%s)"
-            params.append([s.value
-                           for s in const.RegistrationPartStati.involved_states()])
+        if involved is not None:
+            params.append(const.RegistrationPartStati.involved_states())
+            if involved:
+                condition += " AND rp.status = ANY(%s)"
+            else:
+                condition += " AND NOT(rp.status = ANY(%s))"
+
+        # Retrieve all registrations.
+        query = f"""
+            SELECT registration_id
+            FROM event.registration_parts rp
+                JOIN event.event_parts ep ON rp.part_id = ep.id
+            WHERE ep.event_id = %s AND {condition}
+        """
+        registration_ids = {
+            e['registration_id'] for e in self.query_all(rs, query, params)
+        }
+        registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+
+        # Retrieve grouped registration ids.
         query = f"""
             SELECT
                 lodgement_id, part_id, is_camping_mat AS is_cm,
@@ -500,9 +521,13 @@ class EventLodgementBackend(EventBaseBackend):
             lambda: collections.defaultdict(LodgementInhabitants))
         for e in self.query_all(rs, query, params):
             if e['is_cm']:
-                inhabitants = LodgementInhabitants(camping_mat=tuple(e['inhabitants']))
+                inhabitants = LodgementInhabitants(
+                    camping_mat=[registrations[reg_id] for reg_id in e['inhabitants']],
+                )
             else:
-                inhabitants = LodgementInhabitants(regular=tuple(e['inhabitants']))
+                inhabitants = LodgementInhabitants(
+                    regular=[registrations[reg_id] for reg_id in e['inhabitants']],
+                )
             ret[e['lodgement_id']][e['part_id']] += inhabitants
         return ret
 

@@ -61,15 +61,21 @@ from cdedb.models.event_constraint_violations import (
     ConstraintViolation,
     CourseChoiceSyncCV,
     HiddenCourseCV,
+    IllegalMixedLodgementCV,
+    IllegalMixedLodgingCV,
     InconsistentPaymentCV,
+    IncorrectCampingMatAssignmentCV,
     IncorrectCourseAssignedCV,
     IncorrectNumAttendeesCV,
+    IncorrectNumInhabitantsCV,
     LonelyAttendeesCV,
+    MissingMinorFormCV,
     MutuallyExclusiveCoursesCV,
     MutuallyExclusiveParticipationCV,
     NegativeAmountOwedCV,
     NegativeRemainingOwedCV,
     NoCourseAssignedCV,
+    NoLodgementCV,
     NotPaidCV,
     RemainingOwedCV,
     ViolationList,
@@ -455,8 +461,9 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def get_constraint_violations(
             self, rs: RequestState, event: models.Event, *,
-            registration_id: Optional[int],
-            course_id: Optional[int],
+            registration_id: int | None = -1,
+            course_id: int | None = -1,
+            lodgement_id: int | None = -1,
     ) -> CdEDBObject:
         """
         Check for violations.
@@ -470,17 +477,19 @@ class EventBaseFrontend(AbstractUserFrontend):
         violations: list[ConstraintViolation] = []
 
         sorted_tracks = xsorted(event.tracks.values())
+        sorted_parts = xsorted(event.parts.values())
 
         # Retrieve registrations.
-        if registration_id is None:
-            registrations = self.eventproxy.get_registrations(
+        all_registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event.id))
+        if registration_id is None:
+            registrations = all_registrations
         elif registration_id < 0:
             registrations = {}
         else:
             registrations = self.eventproxy.get_registrations(rs, (registration_id,))
         personas = self.coreproxy.get_event_users(
-            rs, [reg['persona_id'] for reg in registrations.values()],
+            rs, [reg['persona_id'] for reg in all_registrations.values()],
             event_id=event.id,
         )
         registrations = dict(keydictsort_filter(
@@ -500,6 +509,20 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         _choice_stats, attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
 
+        # Retrieve lodgements.
+        all_lodgements = self.eventproxy.get_lodgements(
+            rs, self.eventproxy.list_lodgements(rs, event.id))
+        if lodgement_id is None:
+            lodgements = all_lodgements
+        elif lodgement_id < 0:
+            lodgements = {}
+        else:
+            lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
+
+        inhabitants = self.eventproxy.get_grouped_inhabitants(
+            rs, event.id, involved=True,
+        )
+
         _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
         reg_violation_spec: _vs_type = {
             'base': {
@@ -509,8 +532,18 @@ class EventBaseFrontend(AbstractUserFrontend):
                     NegativeAmountOwedCV,
                     NegativeRemainingOwedCV,
                     RemainingOwedCV,
+                    MissingMinorFormCV,
+                    IllegalMixedLodgingCV,
                 ): [
                     'registration', 'persona',
+                ],
+            },
+            'part': {
+                (
+                    IncorrectCampingMatAssignmentCV,
+                    NoLodgementCV,
+                ): [
+                    'registration', 'persona', 'part', 'lodgements',
                 ],
             },
             'track': {
@@ -566,6 +599,21 @@ class EventBaseFrontend(AbstractUserFrontend):
                 ],
             },
         }
+        lodgement_violation_spec: _vs_type = {
+            'base': {},
+            'part': {
+                (
+                    IncorrectNumInhabitantsCV,
+                ): [
+                    'lodgement', 'part', 'inhabitants',
+                ],
+                (
+                    IllegalMixedLodgementCV,
+                ): [
+                    'lodgement', 'part', 'inhabitants', 'personas',
+                ],
+            },
+        }
 
         def _check_violation(
                 violation_spec: dict[tuple[type[ConstraintViolation], ...], list[str]],
@@ -588,10 +636,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             parameters: CdEDBObject = {
                 'registration': reg,
                 'persona': personas[reg['persona_id']],
+                'lodgements': all_lodgements,
             }
             _check_violation(reg_violation_spec['base'], parameters)
 
-            reg_track_violation_spec = reg_violation_spec['track']
+            for part in sorted_parts:
+                parameters.update({
+                    'part': part,
+                })
+                _check_violation(reg_violation_spec['part'], parameters)
+
             for track in sorted_tracks:
                 parameters.update({
                     'track': track,
@@ -600,50 +654,64 @@ class EventBaseFrontend(AbstractUserFrontend):
                     'instructed_course': all_courses.get(
                         reg['tracks'][track.id]['course_instructor']),
                 })
-                _check_violation(reg_track_violation_spec, parameters)
+                _check_violation(reg_violation_spec['track'], parameters)
 
-            reg_part_group_violation_spec = reg_violation_spec['part_group']
             for part_group in xsorted(event.part_groups.values()):
                 parameters.update({
                     'part_group': part_group,
                 })
-                _check_violation(reg_part_group_violation_spec, parameters)
+                _check_violation(reg_violation_spec['part_group'], parameters)
 
-            reg_track_group_violation_spec = reg_violation_spec['track_group']
             for track_group in xsorted(event.track_groups.values()):
                 parameters.update({
                     'track_group': track_group,
                 })
-                _check_violation(reg_track_group_violation_spec, parameters)
+                _check_violation(reg_violation_spec['track_group'], parameters)
 
-        for course in xsorted(courses.values()):
+        for course in xsorted(courses.values(), key=EntitySorter.course):
             parameters = {
                 'course': course,
             }
             _check_violation(course_violation_spec['base'], parameters)
 
-            course_track_violation_spec = course_violation_spec['track']
             for track in sorted_tracks:
                 parameters.update({
                     'track': track,
                     'attendees': attendees[course['id'], track.id],
                 })
-                _check_violation(course_track_violation_spec, parameters)
+                _check_violation(course_violation_spec['track'], parameters)
 
-            course_track_group_violation_spec = course_violation_spec['track_group']
             for track_group in xsorted(event.track_groups.values()):
                 parameters.update({
                     'track_group': track_group,
                 })
-                _check_violation(course_track_group_violation_spec, parameters)
+                _check_violation(course_violation_spec['track_group'], parameters)
+
+        for lodgement in xsorted(lodgements.values(), key=EntitySorter.lodgement):
+            parameters = {
+                'lodgement': lodgement,
+            }
+            _check_violation(lodgement_violation_spec['base'], parameters)
+
+            for part in sorted_parts:
+                parameters.update({
+                    'part': part,
+                    'inhabitants': inhabitants[lodgement['id']][part.id],
+                    'personas': personas,
+                })
+                _check_violation(lodgement_violation_spec['part'], parameters)
 
         return {
             'violations': ViolationList(violations),
+            'all_registrations': all_registrations,
             'registrations': registrations,
             'personas': personas,
             'courses': courses,
             'choice_stats': _choice_stats,
             'attendees': attendees,
+            'all_lodgements': all_lodgements,
+            'lodgements': lodgements,
+            'inhabitants': inhabitants,
         }
 
     @access("event")
@@ -651,7 +719,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     @event_guard(EventPrivileges.all_read)
     def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
         params = self.get_constraint_violations(
-            rs, rs.ambience['event'], registration_id=None, course_id=None)
+            rs, rs.ambience['event'],
+            registration_id=None, course_id=None, lodgement_id=None,
+        )
         return self.render(rs, "base/constraint_violations", params)
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())

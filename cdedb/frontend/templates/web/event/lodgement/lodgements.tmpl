@@ -119,29 +119,42 @@
                 {% endif %}
                 {% for lodgement_id, lodgement in sorted_lodgements.items() %}
                     <tr>
-                        <td class="indent"></td>
-                        <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
-                                         lodgement['title'], readonly=not is_privileged_for('show_lodgement')) }}</td>
-                        {% set colors = ['', 'lodgement-too-few', 'lodgement-too-many', 'lodgement-illegal'] %}
+                        {% set format = violations.get(lodgement_id=lodgement_id, part=None).lodgement_stats_format %}
+                        {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
+
+                        <td class="indent {{ aclass }}" title="{{ atitle }}"></td>
+                        <td class="{{ aclass }}" title="{{ atitle }}">
+                            {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), lodgement['title'],
+                                    readonly=not is_privileged_for('show_lodgement')) }}
+                        </td>
                         {% for part in ambience['event']['parts'].values()|sort %}
-                            {% set problem = problems[(lodgement_id, part.id, False)] %}
-                            <td class="text-right {% if loop.first %} b-left{% endif %}
-                                    {{ colors[problem[0]] }}"
-                                    {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
-                                    id="lodge_inhabitants_{{ part.id }}_{{ lodgement_id }}">
+                            {% set format = violations.get(lodgement_id=lodgement_id, part=part).regular_inhabitant_stats_format %}
+                            {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
+
+                            <td class="text-right {% if loop.first %}b-left{% endif %} regular-inhabitants {{ aclass }}"
+                                    title="{{ atitle }}" id="lodge_inhabitants_{{ part.id }}_{{ lodgement_id }}">
+                                {% for icon, icon_title in format.icons %}
+                                    {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                {% endfor %}
                                 {{ inhabitants[lodgement_id][part.id].regular|length }}
                             </td>
-                            {% set problem = problems[(lodgement_id, part.id, True)] %}
-                            <td class="text-right {{ colors[problem[0]] }}"
-                                    {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
+
+                            {% set format = violations.get(lodgement_id=lodgement_id, part=part).camping_mat_inhabitant_stats_format %}
+                            {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
+                            <td class="text-right camping-mat-inhabitants {{ aclass }}" title="{{ atitle }}"
                                     id="lodge_camping_mat_inhabitants_{{ part.id }}_{{ lodgement_id }}">
-                                {% if inhabitants[lodgement_id][part.id].camping_mat %}
+                                {% for icon, icon_title in format.icons -%}
+                                    {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                {%- endfor -%}
+                                {% if inhabitants[lodgement_id][part.id].camping_mat -%}
                                     + {{ inhabitants[lodgement_id][part.id].camping_mat|length }}
                                 {% endif %}
                             </td>
                         {% endfor %}
+
                         <td class="b-left text-right" id="lodge_regular_capacity_{{ lodgement_id }}">{{ lodgement['regular_capacity'] }}</td>
                         <td class="text-right" id="lodge_camping_mat_capacity{{ lodgement_id }}">+ {{ lodgement['camping_mat_capacity'] }}</td>
+
                         {% if ambience['event']['parts']|length < 6 %}
                             <td class="nowrap b-left">
                                 {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
@@ -182,9 +195,10 @@
     <hr />
     <p>
         <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
-        <span class="color-legend lodgement-too-few"></span>&nbsp;{% trans %}Warning{% endtrans %} &emsp;
+        <span class="color-legend lodgement-too-few"></span>&nbsp;{% trans %}Underfull (but not empty){% endtrans %} &emsp;
+        <span class="color-legend lodgement-illegal-camping-mat"></span>&nbsp;{% trans %}Illegal Camping Mat Assignment{% endtrans %} &emsp;
         <span class="color-legend lodgement-too-many"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
-        <span class="color-legend lodgement-illegal"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
+        <span class="color-legend lodgement-illegal-mixing"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %} &emsp;
     </p>
     <div class="p">
         <strong>{% trans %}Sorting:{% endtrans %}</strong> <br />
