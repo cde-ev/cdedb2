@@ -44,7 +44,6 @@ class MetaInfo(CdEDataclass):
 
     banner_before_login: str | None = None
     banner_after_login: str | None = None
-
     banner_genesis: str | None = None
     cde_misc: str | None = None
 
