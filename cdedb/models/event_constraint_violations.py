@@ -1465,9 +1465,16 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             lodgement['regular_capacity'] is not None
             and len(inhabitants.regular) > lodgement['regular_capacity']
         ):
+            # For participants assigned to regular beds only, raise an error rather
+            # than a warning if the lodgement is overfull.
+            status = const.RegistrationPartStati.participant
+            error = lodgement['regular_capacity'] < len(
+                [reg for reg in inhabitants.regular
+                 if reg['parts'][part.id]['status'] == status.participant])
+
             return cls(
                 event=event,
-                severity=ViolationSeverity.WARNING,
+                severity=ViolationSeverity.ERROR if error else ViolationSeverity.WARNING,
                 lodgement=lodgement,
                 part=part,
                 num_regular=len(inhabitants.regular),
