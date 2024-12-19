@@ -18,7 +18,7 @@ von {{ fee|money }} oder (noch lieber ob des geringeren
 Verwaltungsaufwands) ein Vielfaches davon überweist.
 
 Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
-IBAN:             {{ meta_info.membership_fee_account.value|iban }}
+IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}

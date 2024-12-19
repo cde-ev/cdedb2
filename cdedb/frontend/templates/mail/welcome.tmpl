@@ -86,7 +86,7 @@ Also, wie kannst du jetzt Mitglied werden? Ganz einfach:
 gerne auch ein beliebiges Vielfaches davon, an das folgende Konto:
 
 Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
-IBAN:             {{ meta_info.membership_fee_account.value|iban }}
+IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}

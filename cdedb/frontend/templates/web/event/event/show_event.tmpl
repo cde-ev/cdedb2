@@ -124,7 +124,7 @@
                 <dt title="{% trans %}CdE-Account{% endtrans %}">{% trans %}CdE-Account{% endtrans %}</dt>
                 <dd id="cde-iban">
                     {%- if ambience['event'].iban -%}
-                        {{ ambience['event'].iban.value|iban }} ({{ ambience['event'].iban.get_bank() }})
+                        {{ ambience['event'].iban.get_iban()|iban }} ({{ ambience['event'].iban.get_bank() }})
                     {%- endif -%}
                 </dd>
                 <dt title="{% trans %}Questionnaire active{% endtrans %}">{% trans %}Questionnaire active{% endtrans %}</dt>

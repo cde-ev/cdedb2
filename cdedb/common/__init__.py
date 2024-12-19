@@ -1065,6 +1065,9 @@ class Accounts(CdEEnum):
             Accounts.Unknown: "Unknown",
         }[self]
 
+    def get_iban(self) -> str:
+        return self.value
+
     def get_account_holder(self) -> str:
         return "CdE e.V."
 

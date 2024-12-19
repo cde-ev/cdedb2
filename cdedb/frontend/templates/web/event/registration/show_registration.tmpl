@@ -423,7 +423,7 @@ Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags 
 Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber:       {{ amcience['event'].iban.get_account_holder() }}
-IBAN:               {{ amcience['event'].iban.value|iban }}
+IBAN:               {{ amcience['event'].iban.get_iban()|iban }}
 BIC:                {{ amcience['event'].iban.get_bic() }}
 Kreditinstitut:     {{ amcience['event'].iban.get_bank() }}
 Betrag:             {{ to_pay|money(lang=lang) }}

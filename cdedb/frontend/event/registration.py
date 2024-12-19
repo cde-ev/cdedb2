@@ -1979,7 +1979,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
             'text': payment_data['reference'][:140],
             'amount': payment_data['to_pay'],
-            'iban': iban.value,
+            'iban': iban.get_iban(),
             'bic': iban.get_bic(),
         }
 

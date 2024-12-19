@@ -138,7 +138,7 @@
                         </tr>
                         <tr>
                             <td>{% trans %}IBAN{% endtrans %}</td>
-                            <td>{{ meta_info.membership_fee_account.value|iban }}</td>
+                            <td>{{ meta_info.membership_fee_account.get_iban()|iban }}</td>
                         </tr>
                         <tr>
                             <td>{% trans %}BIC{% endtrans %}</td>

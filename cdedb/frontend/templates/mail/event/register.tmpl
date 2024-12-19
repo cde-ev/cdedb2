@@ -33,7 +33,7 @@ Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber:     {{ iban.get_account_holder() }}
-IBAN:             {{ iban.value|iban }}
+IBAN:             {{ iban.get_iban()|iban }}
 BIC:              {{ iban.get_bic() }}
 Kreditinstitut:   {{ iban.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}
