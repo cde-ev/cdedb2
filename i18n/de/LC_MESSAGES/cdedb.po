@@ -20313,7 +20313,7 @@ msgid "Was present in %(part)s , but never checked in."
 msgstr "War auf %(part)s anwesend, aber ist nie eingecheckt."
 
 #: cdedb/models/event_constraint_violations.py:1020
-#, fuzzy, python-format
+#, python-format
 msgid "%(registration)s was present in %(part)s, but never checked in."
 msgstr "%(registration)s war auf %(part)s anwesend, aber ist nie eingecheckt."
 
@@ -20323,7 +20323,7 @@ msgid "Will be present in %(part)s, but has not checked in yet."
 msgstr "Wird auf %(part)s anwesend sein, ist aber noch nicht eingecheckt."
 
 #: cdedb/models/event_constraint_violations.py:1024
-#, fuzzy, python-format
+#, python-format
 msgid ""
 "%(registration)s will be present in %(part)s, but has not checked in yet."
 msgstr ""
