@@ -1721,7 +1721,7 @@ def _datetime(
 
 
 @_add_typed_validator
-def _frozen_datetime(  # pragma: no cover
+def _frozen_datetime(
     val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
     """Our tests pass objects of this mock time.

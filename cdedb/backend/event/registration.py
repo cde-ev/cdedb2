@@ -1826,6 +1826,9 @@ class EventRegistrationBackend(EventBaseBackend):
             raise ValueError(n_("Must be in the past."))
 
         ret = 1
+        # Return early to avoid StopIteration exception in is_privileged
+        if not registration_ids:
+            return ret
         with Atomizer(rs):
             regs = self.get_registrations(rs, registration_ids)
             # All registrations have the same event_id, and hence, the same privileges.
@@ -1842,12 +1845,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 data: CdEDBObject = {
                     'registration_id': reg_id,
                     # we require this to be in the past, prevent rounding up
-                    'checkin_time': checkin_time or ref_time.replace(microsecond=0),
+                    'checkin_time': (checkin_time or ref_time).replace(microsecond=0),
                 }
                 ret *= self.sql_insert(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkin_added,
                                reg['event_id'], reg['persona_id'],
-                               change_note=datetime_filter(checkin_time, lang=rs.log_lang))
+                               change_note=datetime_filter(checkin_time,
+                                                           lang=rs.log_lang))
         return ret
 
     class _AddCheckinProtocol(Protocol):
@@ -1873,6 +1877,9 @@ class EventRegistrationBackend(EventBaseBackend):
             raise ValueError(n_("Must be in the past."))
 
         ret = 1
+        # Return early to avoid StopIteration exception in is_privileged
+        if not registration_ids:
+            return ret
         with Atomizer(rs):
             regs = self.get_registrations(rs, registration_ids)
             # All registrations have the same event_id, and hence, the same privileges.
@@ -1894,12 +1901,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 data: CdEDBObject = {
                     'id': reg['checkin_periods'][-1].id,
                     # we require this to be in the past, prevent rounding up
-                    'checkout_time': checkout_time or ref_time.replace(microsecond=0),
+                    'checkout_time': (checkout_time or ref_time).replace(microsecond=0),
                 }
                 ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkout_added,
                                reg['event_id'], reg['persona_id'],
-                               change_note=datetime_filter(checkout_time, lang=rs.log_lang))
+                               change_note=datetime_filter(checkout_time,
+                                                           lang=rs.log_lang))
         return ret
 
     class _AddCheckoutProtocol(Protocol):
@@ -2134,7 +2142,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 else:
                     # If the new one has the same checkin as the old one, adjust the
                     #  old one if necessary.
-                    if current_old.checkout_time is not None and current_new.checkout_time is None:
+                    if (current_old.checkout_time is not None
+                            and current_new.checkout_time is None):
                         # Dropping a checkout might only be possible later.
                         drop_checkout = (current_old.id, current_old.checkin_time)
                     else:
