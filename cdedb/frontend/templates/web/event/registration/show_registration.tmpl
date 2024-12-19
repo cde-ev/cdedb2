@@ -422,10 +422,10 @@ Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags 
 Überweise dazu {{ to_pay|money(lang=lang) }} auf folgendes Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger keine Gebühren zahlen muss.
 
-Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:               {{ ambience['event']['iban']|iban }}
-BIC:                {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:       {{ amcience['event'].iban.get_account_holder() }}
+IBAN:               {{ amcience['event'].iban.value|iban }}
+BIC:                {{ amcience['event'].iban.get_bic() }}
+Kreditinstitut:     {{ amcience['event'].iban.get_bank() }}
 Betrag:             {{ to_pay|money(lang=lang) }}
 Verwendungszweck:   {{ reference }}
 </pre>

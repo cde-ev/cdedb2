@@ -344,12 +344,6 @@ _DEFAULTS = {
     # event stuff
     #
 
-    # Bank accounts. First is shown to participants,
-    # second is a web label for orgas
-    "EVENT_BANK_ACCOUNTS": (
-        ("DE26370205000008068900", "DE26370205000008068900 (Sozialbank)"),
-        ("DE23830654080005374499", "DE23830654080005374499 (Skatbank)"),
-    ),
     # Rate limit for orgas adding persons to their event
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,

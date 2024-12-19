@@ -107,6 +107,7 @@ from cdedb.common import (
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     Error,
@@ -2458,7 +2459,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
-    'iban': Optional[IBAN],
+    'iban': Optional[Accounts],
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
@@ -4232,7 +4233,7 @@ def _serialized_event_configuration(
     errs = ValidationSummary()
 
     # Check IBAN to be valid
-    valid_ibans = {v[0] for v in _CONFIG['EVENT_BANK_ACCOUNTS']}
+    valid_ibans = Accounts.get_event_accounts()
     if val.get('iban') and val['iban'] not in valid_ibans:
         with errs:
             raise ValidationSummary(ValueError(
