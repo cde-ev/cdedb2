@@ -2387,16 +2387,12 @@ def _safe_str(
 
 @_add_typed_validator
 def _meta_info(
-    val: Any, keys: list[str], argname: str = "meta_info", **kwargs: Any,
+    val: Any, argname: str = "meta_info", **kwargs: Any,
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields: TypeMapping = {
-        key: Optional[str]  # type: ignore[misc]
-        for key in keys
-    }
-    val = _examine_dictionary_fields(
-        val, {}, optional_fields, **kwargs)
+    mandatory, optional = models_core.MetaInfo.validation_fields(creation=False)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
     return MetaInfo(val)
 

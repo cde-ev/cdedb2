@@ -9,6 +9,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     GenesisDecision,
     RequestState,
@@ -640,13 +641,17 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_meta_info(self) -> None:
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        expectation['membership_fee_account'] = Accounts(
+            expectation['membership_fee_account'])
+        expectation['lastschrift_account'] = Accounts(
+            expectation['lastschrift_account'])
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
         update = {
             'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
 
     @as_users("vera")
     def test_genesis_deletion(self) -> None:

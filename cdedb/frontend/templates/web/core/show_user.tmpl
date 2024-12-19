@@ -641,10 +641,10 @@
                 and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
-Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:               {{ meta_info['CdE_Konto_IBAN']|iban }}
-BIC:                {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:       {{ meta_info.membership_fee_account.get_account_holder() }}
+IBAN:               {{ meta_info.membership_fee_account.value|iban }}
+BIC:                {{ meta_info.membership_fee_account.get_bic() }}
+Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck:   {{ reference }}
 
 Bei Überweisungen aus dem Ausland achte bitte darauf, dass der

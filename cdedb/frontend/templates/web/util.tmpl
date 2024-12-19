@@ -888,9 +888,9 @@ mailto:
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
-    {% if meta_info.get(fieldname) %}
+    {% if meta_info[fieldname] %}
         {% call bootstrap_panel() %}
-            {{ meta_info.get(fieldname)|md }}
+            {{ meta_info[fieldname]|md }}
         {% endcall %}
     {% endif %}
 {% endmacro %}

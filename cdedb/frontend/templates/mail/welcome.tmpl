@@ -85,10 +85,10 @@ Also, wie kannst du jetzt Mitglied werden? Ganz einfach:
 Überweise einfach den halbjährlichen Mitgliedsbeitrag von {{ fee|money }},
 gerne auch ein beliebiges Vielfaches davon, an das folgende Konto:
 
-Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
-BIC:              {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
+IBAN:             {{ meta_info.membership_fee_account.value|iban }}
+BIC:              {{ meta_info.membership_fee_account.get_bic() }}
+Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
@@ -110,7 +110,7 @@ Anregungen jederzeit unter <vorstand@cde-ev.de> erreichen.
 
 Viele Grüße!
 
-{{ meta_info['Vorstand'] }}
+{{ meta_info.Vorstand }}
 
 Vorstand des CdE e. V.
 
