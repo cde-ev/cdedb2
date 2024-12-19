@@ -174,8 +174,10 @@
                 {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
             {% endif %}
-            {{ util.href(cdedblink("event/list_event_helpers"), gettext("Event Helpers"), aclass="list-group-item",
-                         icon="handshake-angle", active=(sidenav_active == 'event_helpers')) }}
+            {% if "event" in user.roles %}
+                {{ util.href(cdedblink("event/list_event_helpers"), gettext("Event Helpers"), aclass="list-group-item",
+                             icon="handshake-angle", active=(sidenav_active == 'event_helpers')) }}
+            {% endif %}
         </div>
         {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
             <div class="list-group tear-down">

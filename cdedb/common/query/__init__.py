@@ -962,6 +962,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.nickname": QuerySpecEntry("str", n_("Nickname")),
         "persona.given_names": QuerySpecEntry("str", n_("Given Names")),
         "persona.legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
+        "persona.show_legal_given_names": QuerySpecEntry(
+            "bool", n_("Legal given names searchable")),
         "persona.family_name": QuerySpecEntry("str", n_("Family Name")),
         "persona.username": QuerySpecEntry("str", n_("E-Mail")),
         "persona.is_member": QuerySpecEntry("bool", n_("CdE-Member")),

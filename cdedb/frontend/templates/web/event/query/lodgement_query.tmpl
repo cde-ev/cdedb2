@@ -47,7 +47,7 @@
             {{ generic.query_result_dynamic_action(
                     label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
                     readonly=not is_privileged_for('field_multiset_select'),
-                    params={"kind": enums['FieldAssociations'].course}, magic_placeholders=["ids"]) }}
+                    params={"kind": enums['FieldAssociations'].lodgement}, magic_placeholders=["ids"]) }}
         </div>
 
         {{ generic.display_query_result(result, aggregates, query) }}

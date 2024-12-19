@@ -26,7 +26,7 @@
             {{ gettext(class_name) }}
             {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
         </h2>
-        {{ generic.list_violations(class_name, violations_, link=True, entity_page=False) }}
+        {{ generic.list_violations(class_name, violations_, entity_page="") }}
     {% endfor %}
 
 {% endblock %}

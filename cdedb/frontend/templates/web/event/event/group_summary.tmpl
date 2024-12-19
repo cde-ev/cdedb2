@@ -107,13 +107,9 @@
         {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
     </h2>
-    <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
-            This feature is still experimental. Use at your own risk, and only if you know what you are doing.
-            You have been warned!
-        {% endtrans %}
-        {% trans %}
-            Track groups may be deleted freely, but you may not be able ro recreate them if registrations already exist.
+            Course choice sync groups may be deleted freely, but you may not be able ro recreate them if registrations already exist.
         {% endtrans %}
     </p>
     <table id="track-group-summary" class="table table-stats">
