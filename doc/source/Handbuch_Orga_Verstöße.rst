@@ -101,6 +101,30 @@ Fragen rund um Teilnahmebeiträge ist das
 Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
 
+.. _AbsentCheckedinCV:
+
+Eingecheckte Abwesende
+----------------------
+
+Dieser Verstoß tritt auf, wenn eine Person während eines Veranstaltungsteils eingechekct
+ist, deren Status weder Teilnehmer noch Gast ist.
+
+Um diesen Verstoß zu beheben, passe entweder den Status der Person entsprechend an oder
+trage ggf. einen Checkout ein, der vor dem entsprechenden Veranstaltungsteil liegt.
+
+
+.. _PresentNeverCheckedinCV:
+
+Uneingecheckte Teilnahmende
+---------------------------
+
+Dieser Verstoß tritt auf, wenn Personen am zweiten Tag eines Veranstaltungsteils,
+an dem sie teilnehmen, noch nicht eingecheckt sind.
+
+Um diesen Verstoß zu beheben, markiere die Person entweder als abgemeldet, wenn sie nicht
+mehr kommt, oder warte, bis sie angekommen ist, und checke sie anschließend ein.
+
+
 .. _MissingMinorFormCV:
 
 Fehlende Einverständniserklärung

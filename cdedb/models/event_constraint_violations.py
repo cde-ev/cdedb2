@@ -971,6 +971,8 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class PresentNeverCheckedinCV(RegistrationConstraintViolation):
+    part: models.EventPart
+
     @classmethod
     def check(  # type: ignore[override]
         cls, event: models.Event, *,
@@ -1004,6 +1006,7 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
                     ViolationSeverity.WARNING),
                 registration=registration,
                 persona=persona,
+                part=part,
             )
         return None
 
@@ -1012,15 +1015,16 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
     ) -> tuple[list[str], CdEDBObject]:
         if now().date() > self.part.part_end:
             if entity_page:
-                msg = n_("Was present, but never checked in.")
+                msg = n_("Was present in %(part)s , but never checked in.")
             else:
-                msg = n_("%(link)s was present, but never checked in.")
+                msg = n_("%(link)s was present in %(part)s, but never checked in.")
         elif entity_page:
-            msg = n_("Will be present, but has not checked in yet.")
+            msg = n_("Will be present in %(part)s, but has not checked in yet.")
         else:
-            msg = n_("%(link)s will be present, but has not checked in yet.")
+            msg = n_("%(link)s will be present in %(part)s, but has not checked in yet.")
         params = {
             "link": make_persona_name(self.persona, include_nickname=True),
+            "part": self.part.shortname,
         }
         return [msg], params
 
