@@ -5154,8 +5154,8 @@ def _enum_validator_maker(
         if isinstance(val, anenum):
             return val
 
-        # first, try to convert if the enum member is given as "class.member"
         if isinstance(val, str):
+            # first, try to convert if the enum member is given as "class.member"
             try:
                 enum_name, enum_val = val.split(".", 1)
                 if enum_name == anenum.__name__:
@@ -5163,7 +5163,13 @@ def _enum_validator_maker(
             except (KeyError, ValueError):
                 pass
 
-        # second, try to convert if the enum member is given as str(int)
+            # second, try to treat the string as the value:
+            try:
+                return anenum(val)
+            except ValueError:
+                pass
+
+        # third, try to convert if the enum member is given as str(int)
         try:
             val = _int(val, argname=argname, **kwargs)
             return anenum(val)

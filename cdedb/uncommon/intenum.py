@@ -27,5 +27,9 @@ class CdEIntEnum(CdEEnumMeta, enum.IntEnum):
     pass
 
 
+class CdEEnum(enum.Enum):
+    pass
+
+
 class CdEIntFlag(CdEEnumMeta, enum.IntFlag):  # type: ignore[misc]
     pass

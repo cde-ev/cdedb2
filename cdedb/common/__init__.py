@@ -49,7 +49,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
-from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
@@ -727,6 +727,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.as_dict()
         elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
+        elif isinstance(obj, CdEEnum):
+            return obj.value
         return super().default(obj)
 
 
