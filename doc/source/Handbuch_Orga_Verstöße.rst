@@ -106,7 +106,7 @@ Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 Eingecheckte Abwesende
 ----------------------
 
-Dieser Verstoß tritt auf, wenn eine Person während eines Veranstaltungsteils eingechekct
+Dieser Verstoß tritt auf, wenn eine Person während eines Veranstaltungsteils eingecheckt
 ist, deren Status weder Teilnehmer noch Gast ist.
 
 Um diesen Verstoß zu beheben, passe entweder den Status der Person entsprechend an oder
