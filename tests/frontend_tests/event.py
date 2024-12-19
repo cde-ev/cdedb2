@@ -23,6 +23,7 @@ import cdedb.models.event as models
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,
+    Accounts,
     CdEDBObject,
     now,
     unwrap,
@@ -385,8 +386,7 @@ class TestEventFrontend(FrontendTest):
 
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
-        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
-        self.assertPresence(iban, div='cde-iban')
+        self.assertPresence(Accounts.Account0.get_iban(), div='cde-iban')
         self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
@@ -5854,7 +5854,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
-        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
+        iban = iban_filter(Accounts.Account0.get_iban())
 
         # now check ...
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
