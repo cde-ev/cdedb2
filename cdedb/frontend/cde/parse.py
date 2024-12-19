@@ -585,7 +585,7 @@ class CdEParseMixin(CdEBaseFrontend):
                                 'Prefix': "",
                             }
                             self.do_mail(
-                                rs, "parse/transfers_booked", headers,
+                                rs, "parse/event_transfers_booked", headers,
                                 {'num': len(booked_transfers)})
                     for event_id, reimbursements in result.event_reimbursements.items():
                         event = events[event_id]
@@ -604,7 +604,7 @@ class CdEParseMixin(CdEBaseFrontend):
                                 'Prefix': "",
                             }
                             self.do_mail(
-                                rs, "parse/reimbursements_booked", headers,
+                                rs, "parse/event_reimbursements_booked", headers,
                                 {'num': len(reimbursements)})
 
                 return self.redirect(rs, "cde/index")
