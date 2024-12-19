@@ -1043,7 +1043,7 @@ class CourseChoiceToolActions(CdEIntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(CdEEnum):
     """Store the existing CdE Accounts."""
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
@@ -1064,6 +1064,26 @@ class Accounts(enum.Enum):
             Accounts.Tagesgeld: "Tagesgeld",
             Accounts.Unknown: "Unknown",
         }[self]
+
+    def get_account_holder(self) -> str:
+        return "CdE e.V."
+
+    def get_bic(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "GENODEF1SLR"
+        return "BFSWDE33XXX"
+
+    def get_bank(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "Skatbank"
+        return "Sozialbank"
+
+    @classmethod
+    def get_event_accounts(cls) -> list["Accounts"]:
+        return [
+            cls.Account0,
+            cls.Skatbank,
+        ]
 
 
 @enum.unique
