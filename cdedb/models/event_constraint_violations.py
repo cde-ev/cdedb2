@@ -893,6 +893,8 @@ class RemainingOwedCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class AbsentCheckedinCV(RegistrationConstraintViolation):
+    shall_be_present_at_all: bool
+
     @classmethod
     def check(  # type: ignore[override]
         cls, event: models.Event, *,
@@ -918,6 +920,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     severity=ViolationSeverity.ERROR,
                     registration=registration,
                     persona=persona,
+                    shall_be_present_at_all=False,
                 )
 
         ref_time = now().date()
@@ -944,13 +947,14 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     severity=ViolationSeverity.INFO,
                     registration=registration,
                     persona=persona,
+                    shall_be_present_at_all=True,
                 )
         return None
 
     def get_translation(
         self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.severity == ViolationSeverity.INFO:
+        if self.shall_be_present_at_all:
             if entity_page:
                 msg = n_("Is checked in, but should not be at these times.")
             else:
@@ -1006,7 +1010,7 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
     def get_translation(
         self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.severity == ViolationSeverity.ERROR:
+        if now().date() > self.part.part_end:
             if entity_page:
                 msg = n_("Was present, but never checked in.")
             else:

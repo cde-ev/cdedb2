@@ -478,7 +478,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         violations: list[ConstraintViolation] = []
 
-        sorted_parts = xsorted(event.parts.values())
         sorted_tracks = xsorted(event.tracks.values())
         sorted_parts = xsorted(event.parts.values())
 
