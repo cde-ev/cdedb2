@@ -36,7 +36,7 @@ Kontoinhaber:     {{ iban.get_account_holder() }}
 IBAN:             {{ iban.get_iban()|iban }}
 BIC:              {{ iban.get_bic() }}
 Kreditinstitut:   {{ iban.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ reference }}
 
 {# TODO: reformulate and move up to the fee composition when #3354 (becoming member with registration) is implemented
 {% if complex_fee.nonmember_surcharge %}
