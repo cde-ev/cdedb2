@@ -103,7 +103,9 @@
                     <div class="panel-body">
                         {% set track_violations = violations.get(course_id=ambience['course']['id'], track=track) %}
                         <div id="track-violations-{{ track.id }}">
-                            {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
+                            {# Skip violations where the assigned course matches but the instructed course does not. #}
+                            {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG and (
+                                    not violation.instructed_course or violation.instructed_course['id'] == ambience['course']['id']) %}
                                 {% set text = generic_event.print_violation(violation, entity_page="course").strip() %}
                                 {% if text %}
                                     <p class="{{ violation.severity.html_class() }}">
