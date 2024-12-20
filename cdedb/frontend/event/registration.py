@@ -12,7 +12,7 @@ import io
 import re
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
+from typing import Optional, cast
 
 import segno.helpers
 import werkzeug.exceptions
@@ -1796,8 +1796,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/registration_query',
                                  {'event_id': event_id})
         if not registration_ids:
-            rids = self.eventproxy.list_registrations(rs, event_id).keys()
-        registrations = self.eventproxy.get_registrations(rs, registration_ids or rids)
+            registration_ids = cast(
+                vtypes.IntCSVList,
+                list(self.eventproxy.list_registrations(rs, event_id)),
+            )
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(reg['persona_id'] for reg in registrations.values()))
         registrations = {reg['id']: reg for reg in xsorted(
