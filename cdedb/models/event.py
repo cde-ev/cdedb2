@@ -125,6 +125,7 @@ class Event(EventDataclass):
     offline_lock: bool
     is_archived: bool
     is_cancelled: bool
+    is_balanced: bool
     is_visible: bool
     is_course_list_visible: bool
     is_course_state_visible: bool

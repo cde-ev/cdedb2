@@ -1391,6 +1391,33 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
 
+    @access("finance_admin", modi={"POST"})
+    @event_guard(EventPrivileges.balance)
+    def balance_event(self, rs: RequestState, event_id: int) -> Response:
+        """Balance an event."""
+        if not rs.ambience['event'].is_archived:
+            rs.notify("error", n_("Event is archived."))
+            return self.redirect(rs, "event/show_event")
+        if rs.ambience['event'].is_balanced:
+            rs.notify("warning", n_("Event already balanced."))
+            return self.redirect(rs, "event/show_event")
+
+        code = self.eventproxy.balance_event(rs, event_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_event")
+
+    @access("finance_admin", modi={"POST"})
+    @event_guard(EventPrivileges.balance)
+    def unbalance_event(self, rs: RequestState, event_id: int) -> Response:
+        """Unbalance an event."""
+        if not rs.ambience['event'].is_balanced:
+            rs.notify("warning", n_("Event isn't balanced."))
+            return self.redirect(rs, "event/show_event")
+
+        code = self.eventproxy.unbalance_event(rs, event_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_event")
+
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("phrase")

@@ -210,6 +210,7 @@ class TestEventBackend(BackendTest):
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False
+        data['is_balanced'] = False
         data['is_visible'] = False
         data['reimbursement_iban_field_id'] = None
         data['lodge_field_id'] = None

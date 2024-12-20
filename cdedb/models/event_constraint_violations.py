@@ -675,6 +675,8 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
+        if event.is_balanced:
+            return None
         if registration['amount_paid'] < 0:
             return cls(
                 event=event,
@@ -721,6 +723,8 @@ class NotPaidCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
+        if event.is_balanced:
+            return None
         if registration['amount_paid'] == 0 and registration['amount_owed'] > 0:
             if any(reg_part['status'] == const.RegistrationPartStati.participant
                    for reg_part in registration['parts'].values()):
@@ -766,6 +770,8 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
+        if event.is_balanced:
+            return None
         if registration['amount_owed'] < 0:
             return cls(
                 event=event,
@@ -816,6 +822,8 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
+        if event.is_balanced:
+            return None
         if registration['remaining_owed'] < 0:
             return cls(
                 event=event,
@@ -852,6 +860,8 @@ class RemainingOwedCV(RegistrationConstraintViolation):
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
+        if event.is_balanced:
+            return None
         if registration['remaining_owed'] > 0 and registration['amount_paid'] > 0:
             if any(reg_part['status'].is_involved()
                    for reg_part in registration['parts'].values()):

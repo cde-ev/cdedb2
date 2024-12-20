@@ -727,6 +727,7 @@
         "is_course_assignment_visible": false,
         "is_cancelled": false,
         "is_archived": false,
+        "is_balanced": false,
         "reimbursement_iban_field": null,
         "lodge_field": "lodge",
         "part_groups": {},

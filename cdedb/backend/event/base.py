@@ -990,11 +990,15 @@ class EventBaseBackend(EventLowLevelBackend):
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
-        if not fees:
-            return ret
 
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
+
+            if event.is_balanced:
+                raise ValueError(n_("Event is balanced."))
+            if not fees:
+                return ret
+
             questionnaire = self.get_questionnaire(rs, event_id)
             fees = affirm(
                 vtypes.EventFeeSetter, fees, event=event.as_dict(),
@@ -1175,6 +1179,39 @@ class EventBaseBackend(EventLowLevelBackend):
                         rs, "event.questionnaire_rows", new_row)
             self.event_log(
                 rs, const.EventLogCodes.questionnaire_changed, event_id)
+        return ret
+
+    @access("event")
+    def balance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
+            raise PrivilegeError
+        self.assert_offline_lock(rs, event_id=event_id)
+        update = {
+            'id': event_id,
+            'is_balanced': True,
+        }
+        with Atomizer(rs):
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Abschluss.")
+            ret = self.sql_update(rs, models.Event.database_table, update)
+            self.event_log(rs, const.EventLogCodes.event_balanced, event_id)
+        return ret
+
+    @access("event")
+    def unbalance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
+            raise PrivilegeError
+        self.assert_offline_lock(rs, event_id=event_id)
+        update = {
+            'id': event_id,
+            'is_balanced': False,
+        }
+        with Atomizer(rs):
+            self.event_keeper_commit(
+                rs, event_id, "Snapshot vor Aufhebung von Abschluss.")
+            ret = self.sql_update(rs, models.Event.database_table, update)
+            self.event_log(rs, const.EventLogCodes.event_unbalanced, event_id)
         return ret
 
     @access("event")

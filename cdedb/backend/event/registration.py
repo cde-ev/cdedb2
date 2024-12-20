@@ -1033,6 +1033,9 @@ class EventRegistrationBackend(EventBaseBackend):
                                           event_id=event_id)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
+            if event.is_balanced:
+                # TODO: prevent this only if amount owed or amount paid is changed?
+                raise ValueError(n_("Event is balanced."))
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -1149,6 +1152,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 and not is_privileged(rs, EventPrivileges.registrations_write,
                                       event_id=data['event_id'])):
             raise PrivilegeError(n_("Not privileged."))
+        if event.is_balanced:
+            # TODO: prevent this only if amount owed is non-zero?
+            raise ValueError(n_("Event is balanced."))
         with Atomizer(rs):
             if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
                 raise ValueError(n_("This user does not exist or is archived."))
@@ -1260,6 +1266,9 @@ class EventRegistrationBackend(EventBaseBackend):
             raise PrivilegeError(n_("Not privileged."))
         event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
+        if event.is_balanced:
+            # TODO: Prevent this at all?
+            raise ValueError(n_("Event is balanced."))
 
         blockers = self.delete_registration_blockers(rs, registration_id)
         if not cascade:
@@ -1668,6 +1677,8 @@ class EventRegistrationBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.registrations_write, event_id):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
+            if event.is_balanced:
+                raise ValueError(n_("Event is balanced."))
             if fee_id not in event.fees:
                 raise KeyError
             if not event.fees[fee_id].is_personalized():
@@ -1710,8 +1721,23 @@ class EventRegistrationBackend(EventBaseBackend):
         event_log_transfer_template = "{amount} am {date} gezahlt."
         event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
 
+        self.affirm_atomized_context(rs)
+
         registration = self.get_registration(rs, registration_id)
         event_id = registration['event_id']
+        event = events[event_id]
+        if event.is_balanced:
+            # Balanced events mustn't block booking of payments, therefor unbalance the
+            #  event if necessary.
+            self.unbalance_event(rs, event_id)
+            events[event_id] = event = self.get_event(rs, event_id)
+
+        if "finance_admin" not in rs.user.roles:
+            if not is_privileged(rs, EventPrivileges.payment_write, event_id):
+                raise PrivilegeError(n_("Must be orga."))
+            if event.iban:
+                raise PrivilegeError(n_(
+                    "Cannot book payments for event with IBAN as orga."))
 
         if amount > 0:
             update = {

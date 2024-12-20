@@ -4752,6 +4752,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": 3
@@ -4782,6 +4783,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -4812,6 +4814,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -4842,6 +4845,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
