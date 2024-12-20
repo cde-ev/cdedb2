@@ -1,0 +1,7 @@
+The following config keys are no longer needed:
+
+- SEPA_SENDER_NAME
+- SEPA_SENDER_IBAN
+- EVENT_BANK_ACCOUNTS
+
+Select appropriate membership fee and lastschrift account in the metadata.

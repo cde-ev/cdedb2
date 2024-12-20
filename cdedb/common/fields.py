@@ -4,7 +4,6 @@
 
 
 import cdedb.database.constants as const
-from cdedb.common.n_ import n_
 
 # A set of roles a user may have.
 Role = str
@@ -12,16 +11,6 @@ Role = str
 # A set of realms a persona belongs to.
 Realm = str
 
-
-META_INFO_FIELDS = (
-    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
-    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
-    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
-    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
-    n_("CdE_Konto_Institut"), n_("Vorstand"),
-    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
-    n_("cde_misc"), n_("lockdown_web"),
-)
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (

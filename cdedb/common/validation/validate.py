@@ -107,6 +107,7 @@ from cdedb.common import (
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     Error,
@@ -2386,16 +2387,12 @@ def _safe_str(
 
 @_add_typed_validator
 def _meta_info(
-    val: Any, keys: list[str], argname: str = "meta_info", **kwargs: Any,
+    val: Any, argname: str = "meta_info", **kwargs: Any,
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields: TypeMapping = {
-        key: Optional[str]  # type: ignore[misc]
-        for key in keys
-    }
-    val = _examine_dictionary_fields(
-        val, {}, optional_fields, **kwargs)
+    mandatory, optional = models_core.MetaInfo.validation_fields(creation=False)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
     return MetaInfo(val)
 
@@ -2458,7 +2455,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
-    'iban': Optional[IBAN],
+    'iban': Optional[Accounts],
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
@@ -4232,7 +4229,7 @@ def _serialized_event_configuration(
     errs = ValidationSummary()
 
     # Check IBAN to be valid
-    valid_ibans = {v[0] for v in _CONFIG['EVENT_BANK_ACCOUNTS']}
+    valid_ibans = Accounts.get_event_accounts()
     if val.get('iban') and val['iban'] not in valid_ibans:
         with errs:
             raise ValidationSummary(ValueError(
@@ -5154,8 +5151,8 @@ def _enum_validator_maker(
         if isinstance(val, anenum):
             return val
 
-        # first, try to convert if the enum member is given as "class.member"
         if isinstance(val, str):
+            # first, try to convert if the enum member is given as "class.member"
             try:
                 enum_name, enum_val = val.split(".", 1)
                 if enum_name == anenum.__name__:
@@ -5163,7 +5160,13 @@ def _enum_validator_maker(
             except (KeyError, ValueError):
                 pass
 
-        # second, try to convert if the enum member is given as str(int)
+            # second, try to treat the string as the value:
+            try:
+                return anenum(val)
+            except ValueError:
+                pass
+
+        # third, try to convert if the enum member is given as str(int)
         try:
             val = _int(val, argname=argname, **kwargs)
             return anenum(val)

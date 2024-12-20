@@ -22,6 +22,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES,
+    Accounts,
     CdEDBObject,
     RequestState,
     merge_dicts,
@@ -48,6 +49,7 @@ from cdedb.common.validation.validate import (
     EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
+from cdedb.filter import iban_filter
 from cdedb.frontend.common import (
     Headers,
     REQUESTdata,
@@ -208,8 +210,12 @@ class EventEventMixin(EventBaseFrontend):
             if field.association == const.FieldAssociations.registration
             and field.kind == const.FieldDatatypes.iban
         ]
+        accounts = [
+            (str(account), f"{iban_filter(account.value)} ({account.get_bank()})")
+            for account in Accounts.get_event_accounts()
+        ]
         return self.render(rs, "event/change_event", {
-            'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
+            'accounts': accounts,
             'lodge_fields': lodge_fields,
             'reimbursement_fields': reimbursement_fields,
         })
@@ -1132,8 +1138,12 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin")
     def create_event_form(self, rs: RequestState) -> Response:
         """Render form."""
+        accounts = [
+            (str(account), f"{iban_filter(account.value)} ({account.get_bank()})")
+            for account in Accounts.get_event_accounts()
+        ]
         return self.render(rs, "event/create_event",
-                           {'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
+                           {'accounts': accounts})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",

@@ -12,6 +12,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
+    Accounts,
     CdEDBObject,
     GenesisDecision,
     PrivilegeError,
@@ -23,6 +24,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.filter import iban_filter
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -1699,15 +1701,29 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_meta_info(self) -> None:
-        self.traverse({'description': 'Metadaten'})
+        self.traverse("Mitglieder")
+        self.assertPresence("Sozialbank", div="payment-info")
+        self.assertPresence(
+            iban_filter(Accounts.Sozialbank.get_iban()), div="payment-info")
+        self.assertNonPresence("Skatbank", div="payment-info")
+        self.traverse("Index", "Metadaten")
         self.assertTitle("Metadaten")
         f = self.response.forms['changeinfoform']
         self.assertEqual("Bertålotta Beispiel", f["Finanzvorstand_Name"].value)
         f["Finanzvorstand_Name"] = "Zelda"
+        f["membership_fee_account"] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError("membership_fee_account", "Ungültige Eingabe")
+        f["membership_fee_account"] = Accounts.Skatbank
         self.submit(f)
         self.assertTitle("Metadaten")
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
+        self.traverse("Mitglieder")
+        self.assertNonPresence("Sozialbank", div="payment-info")
+        self.assertPresence("Skatbank", div="payment-info")
+        self.assertPresence(
+            iban_filter(Accounts.Skatbank.get_iban()), div="payment-info")
 
     def test_lockdown_web(self) -> None:
         self.login('vera')

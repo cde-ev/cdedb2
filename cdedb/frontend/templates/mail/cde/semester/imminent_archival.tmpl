@@ -31,10 +31,10 @@ halbjährlichen Mitgliedsbeitrags von {{ fee|money }} an folgendes Konto
 überweisen. Dabei sparen wir Zeit und Geld, wenn Du den Mitgliedsbeitrag
 für mehrere Jahre im Voraus überweist.
 
-Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
-BIC:              {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
+IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
+BIC:              {{ meta_info.membership_fee_account.get_bic() }}
+Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}
 
 Noch einfacher ist die Teilnahme an der Lastschriftinitiative.

@@ -119,19 +119,19 @@
                 <tbody>
                     <tr>
                         <td>{% trans %}Account holder{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
+                        <td>{{ ambience['event'].iban.get_account_holder() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}IBAN{% endtrans %}</td>
-                        <td>{{ ambience['event']['iban']|iban }}</td>
+                        <td>{{ ambience['event'].iban.get_iban()|iban }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}BIC{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
+                        <td>{{ ambience['event'].iban.get_bic() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Bank{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
+                        <td>{{ ambience['event'].iban.get_bank() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Amount{% endtrans %}</td>

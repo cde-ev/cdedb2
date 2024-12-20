@@ -121,8 +121,12 @@
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
             <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
             {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
-                <dt title="{% trans %}CdE-Account IBAN{% endtrans %}">{% trans %}CdE-Account IBAN{% endtrans %}</dt>
-                <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
+                <dt title="{% trans %}CdE-Account{% endtrans %}">{% trans %}CdE-Account{% endtrans %}</dt>
+                <dd id="cde-iban">
+                    {%- if ambience['event'].iban -%}
+                        {{ ambience['event'].iban.get_iban()|iban }} ({{ ambience['event'].iban.get_bank() }})
+                    {%- endif -%}
+                </dd>
                 <dt title="{% trans %}Questionnaire active{% endtrans %}">{% trans %}Questionnaire active{% endtrans %}</dt>
                 <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_additional_questionnaire'],
                             titles=[gettext("No"),gettext("Yes")]) }}</dd>

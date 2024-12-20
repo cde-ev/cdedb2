@@ -1530,6 +1530,8 @@ class EventBaseBackend(EventLowLevelBackend):
         del ret['event']['orgas']
         ret['event']['fields'] = new_fields
         ret['event']['questionnaire'] = new_questionnaire
+        if ret['event']['iban']:
+            ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
     @access("event")

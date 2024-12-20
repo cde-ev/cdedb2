@@ -48,7 +48,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import User, cast_fields, now
+from cdedb.common import Accounts, User, cast_fields, now
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
@@ -112,7 +112,7 @@ class Event(EventDataclass):
     registration_soft_limit: Optional[datetime.datetime]
     registration_hard_limit: Optional[datetime.datetime]
 
-    iban: Optional[str]
+    iban: Optional[Accounts]
     orga_address: Optional[vtypes.Email]
     website_url: Optional[str]
 
