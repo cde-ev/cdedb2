@@ -386,7 +386,7 @@ class TestEventFrontend(FrontendTest):
 
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
-        self.assertPresence(iban_filter(Accounts.Account0.get_iban()), div='cde-iban')
+        self.assertPresence(iban_filter(Accounts.Sozialbank.get_iban()), div='cde-iban')
         self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
@@ -5855,7 +5855,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
-        iban = iban_filter(Accounts.Account0.get_iban())
+        iban = iban_filter(Accounts.Sozialbank.get_iban())
 
         # now check ...
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")

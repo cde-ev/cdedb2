@@ -39,8 +39,8 @@ class MetaInfo(CdEDataclass):
     Finanzvorstand_Adresse_Zeile4: str | None = None
     Vorstand: str | None = None
 
-    membership_fee_account: Accounts = Accounts.Account0
-    lastschrift_account: Accounts = Accounts.Account0
+    membership_fee_account: Accounts = Accounts.Sozialbank
+    lastschrift_account: Accounts = Accounts.Sozialbank
 
     banner_before_login: str | None = None
     banner_after_login: str | None = None

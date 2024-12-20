@@ -328,7 +328,7 @@ class TestParseFrontend(FrontendTest):
 
         # check transactions files
         # check account 00
-        self.csv_submit(f, button="excel", value=str(Accounts.Account0))
+        self.csv_submit(f, button="excel", value=str(Accounts.Sozialbank))
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      fieldnames=parse.ExportFields.excel,
                                      dialect=CustomCSVDialect))
@@ -417,7 +417,7 @@ class TestParseFrontend(FrontendTest):
         )
 
         # check account 01
-        self.csv_submit(f, button="excel", value=str(Accounts.Account1))
+        self.csv_submit(f, button="excel", value=str(Accounts.Sozialbank_Spenden))
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      fieldnames=parse.ExportFields.excel,
                                      dialect=CustomCSVDialect))

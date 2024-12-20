@@ -1704,7 +1704,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mitglieder")
         self.assertPresence("Sozialbank", div="payment-info")
         self.assertPresence(
-            iban_filter(Accounts.Account0.get_iban()), div="payment-info")
+            iban_filter(Accounts.Sozialbank.get_iban()), div="payment-info")
         self.assertNonPresence("Skatbank", div="payment-info")
         self.traverse("Index", "Metadaten")
         self.assertTitle("Metadaten")

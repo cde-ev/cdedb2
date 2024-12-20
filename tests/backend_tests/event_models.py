@@ -22,7 +22,7 @@ class TestEventModels(BackendTest):
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
             description="Everybody come!",
-            iban=Accounts.Account0,
+            iban=Accounts.Sozialbank,
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
@@ -409,7 +409,7 @@ class TestEventModels(BackendTest):
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
-            iban=Accounts.Account0,
+            iban=Accounts.Sozialbank,
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
