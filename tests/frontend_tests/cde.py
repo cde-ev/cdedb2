@@ -2115,6 +2115,20 @@ class TestCdEFrontend(FrontendTest):
             "1 Erstattungen eingetragen für Große Testakademie 2222",
             div="notifications")
 
+        finance_admin_mail = self.fetch_mail_content(-1)
+        self.assertIn(
+            "4 Überweisungen eingetragen. Insgesamt 486,33\xa0€:",
+            finance_admin_mail,
+        )
+        self.assertIn(
+            "2 Mitgliedsbeiträge. Insgesamt 112,34\xa0€.",
+            finance_admin_mail,
+        )
+        self.assertIn(
+            "2 Überweisungen für Große Testakademie 2222. Insgesamt 373,99\xa0€.",
+            finance_admin_mail,
+        )
+
         finance_log_expectation: list[CdEDBObject] = [
             # new entries:
             {

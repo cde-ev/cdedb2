@@ -1,6 +1,13 @@
-Liebe Orgas,
+Liebe Buchhaltung,
 
-Für Eure Veranstaltung in der CdE-Datenbank wurden {{ num }} neue Überweisungen eingetragen.
+Es wurden {{ counts[-1] }} Überweisungen eingetragen. Insgesamt {{ saldos[-1]|money }}:
+
+{% if counts[0] %}
+{{ counts[0] }} Mitgliedsbeiträge. Insgesamt {{ saldos[0]|money }}.
+{% endif %}
+{% for event_id, saldo in saldos.items() if event_id > 0 %}
+    {{ counts[event_id] }} Überweisungen für {{ events[event_id].title }}. Insgesamt {{ saldo|money }}.
+{% endfor %}
 
 Viele Grüße
 Die CdE-Datenbank
