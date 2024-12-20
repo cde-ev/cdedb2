@@ -27,15 +27,15 @@ Dein Beitrag setzt sich wie folgt zusammen:
 {{ "Gesamt:".ljust(labellength) }} {{ (fee|money).rjust(amountlength) }}
 {% endif %}
 
-{% if iban %}
+{% if account %}
 Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
 
-Kontoinhaber:     {{ iban.get_account_holder() }}
-IBAN:             {{ iban.get_iban()|iban }}
-BIC:              {{ iban.get_bic() }}
-Kreditinstitut:   {{ iban.get_bank() }}
+Kontoinhaber:     {{ account.get_account_holder() }}
+IBAN:             {{ account.get_iban()|iban }}
+BIC:              {{ account.get_bic() }}
+Kreditinstitut:   {{ account.get_bank() }}
 Verwendungszweck: {{ reference }}
 
 {# TODO: reformulate and move up to the fee composition when #3354 (becoming member with registration) is implemented
