@@ -189,5 +189,5 @@ ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
 
 USER cdedb
-RUN pip install --break-system-packages ruff==0.7.3
+RUN pip install --break-system-packages ruff==0.8.4
 USER root
