@@ -933,9 +933,8 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                 has_contingent_successor = any(
                     other.part_begin - day <= part.part_end < other.part_end
                     for other in is_present_parts.values())
-                # TODO: This condition is bullshit:
                 if (not period.checkout_time and part.part_end >= ref_time
-                        and not has_contingent_successor):
+                        or has_contingent_successor):
                     valid_checkout_time = True
             if period.checkout_time:
                 for part in is_present_parts.values():
