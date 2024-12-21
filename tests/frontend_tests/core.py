@@ -242,13 +242,14 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Hades Hell")
             self.assertPresence("Account ist archiviert.", div='notifications')
 
-        self.get('/core/persona/8/events')
-        _check_redirected_profile()
         self.get('/core/persona/8/mailinglists')
         _check_redirected_profile()
         # The history is available
         self.get('/core/persona/8/history')
         self.assertTitle("Änderungshistorie von Hades Hell")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/events')
+        self.assertTitle("Hades Hell – Veranstaltungs-Daten")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()
@@ -1642,6 +1643,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Charly Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
+        saved_response = self.response
+        self.traverse("Veranstaltungs-Daten")
+        self.response = saved_response
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "charly@example.cde"
