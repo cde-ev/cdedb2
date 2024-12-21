@@ -88,16 +88,8 @@ module = [
     "icu",
     # ldap
     "ldaptor.*",
-    "zope.*",
-    # validation
-    "phonenumbers",
     # frontend
-    "cgitb",
-    "dateutil.easter",
-    "magic",
     "mailmanclient.*",
-    "vobject",
-    "qrcode.*",
     "graphviz.*",
     # tests
     "webtest",
