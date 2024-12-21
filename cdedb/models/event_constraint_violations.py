@@ -928,17 +928,18 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
             for part in is_present_parts.values():
-                if part.part_begin < period.checkin_time.date() < part.part_end:
+                if part.part_begin <= period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
                 has_contingent_successor = any(
                     other.part_begin - day <= part.part_end < other.part_end
                     for other in is_present_parts.values())
+                # TODO: This condition is bullshit:
                 if (not period.checkout_time and part.part_end >= ref_time
                         and not has_contingent_successor):
                     valid_checkout_time = True
             if period.checkout_time:
                 for part in is_present_parts.values():
-                    if part.part_begin < period.checkout_time.date() < part.part_end:
+                    if part.part_begin < period.checkout_time.date() <= part.part_end:
                         valid_checkout_time = True
                         break
             if not (valid_checkin_time and valid_checkout_time):
@@ -994,7 +995,7 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         for period in registration['checkin_periods']:
             if (period.checkin_time.date() <= part.part_end
                     and (not period.checkout_time
-                         or period.checkout_time.date() < part.part_begin)):
+                         or period.checkout_time.date() > part.part_begin)):
                 valid_checkin_time = True
                 break
         if not valid_checkin_time:
