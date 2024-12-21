@@ -1642,6 +1642,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Charly Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
+        saved_response = self.response
+        self.traverse("Veranstaltungs-Daten")
+        self.response = saved_response
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "charly@example.cde"

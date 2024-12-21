@@ -742,10 +742,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
                 or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
         registration_ids: dict[int, int] = {}
