@@ -738,24 +738,20 @@ class NotPaidCV(RegistrationConstraintViolation):
     def get_translation(
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.persona['id'] in self.event.orgas:
-            if entity_page:
-                msg = n_("is orga but has not paid their fee (%(amount_owed)s).")
-            else:
-                msg = n_(
-                    "%(registration)s is orga but has not paid their fee (%(amount_owed)s).",
-                )
-        elif entity_page:
-            msg = n_("Has not paid their fee (%(amount_owed)s).")
+        if entity_page:
+            msgs = [n_("Has not paid their fee (%(amount_owed)s).")]
         else:
-            msg = n_("%(registration)s has not paid their fee (%(amount_owed)s).")
+            msgs = [n_("%(registration)s has not paid their fee (%(amount_owed)s).")]
+
+        if self.persona['id'] in self.event.orgas:
+            msgs.append(n_("(They are orga)."))
 
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
-        return [msg], params
+        return msgs, params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
