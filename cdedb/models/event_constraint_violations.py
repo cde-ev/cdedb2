@@ -738,24 +738,20 @@ class NotPaidCV(RegistrationConstraintViolation):
     def get_translation(
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.persona['id'] in self.event.orgas:
-            if entity_page:
-                msg = n_("is orga but has not paid their fee (%(amount_owed)s).")
-            else:
-                msg = n_(
-                    "%(registration)s is orga but has not paid their fee (%(amount_owed)s).",
-                )
-        elif entity_page:
-            msg = n_("Has not paid their fee (%(amount_owed)s).")
+        if entity_page:
+            msgs = [n_("Has not paid their fee (%(amount_owed)s).")]
         else:
-            msg = n_("%(registration)s has not paid their fee (%(amount_owed)s).")
+            msgs = [n_("%(registration)s has not paid their fee (%(amount_owed)s).")]
+
+        if self.persona['id'] in self.event.orgas:
+            msgs.append(n_("(They are orga)."))
 
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "amount_owed": money_filter(self.registration['amount_owed']),
         }
 
-        return [msg], params
+        return msgs, params
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -928,17 +924,17 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
             for part in is_present_parts.values():
-                if part.part_begin <= period.checkin_time.date() < part.part_end:
+                if part.part_begin < period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
                 has_contingent_successor = any(
                     other.part_begin - day <= part.part_end < other.part_end
                     for other in is_present_parts.values())
                 if (not period.checkout_time and part.part_end >= ref_time
-                        or has_contingent_successor):
+                        and not has_contingent_successor):
                     valid_checkout_time = True
             if period.checkout_time:
                 for part in is_present_parts.values():
-                    if part.part_begin < period.checkout_time.date() <= part.part_end:
+                    if part.part_begin < period.checkout_time.date() < part.part_end:
                         valid_checkout_time = True
                         break
             if not (valid_checkin_time and valid_checkout_time):
@@ -994,7 +990,7 @@ class PresentNeverCheckedinCV(RegistrationConstraintViolation):
         for period in registration['checkin_periods']:
             if (period.checkin_time.date() <= part.part_end
                     and (not period.checkout_time
-                         or period.checkout_time.date() > part.part_begin)):
+                         or period.checkout_time.date() < part.part_begin)):
                 valid_checkin_time = True
                 break
         if not valid_checkin_time:
