@@ -6448,8 +6448,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt"
             " (466,49 €).")
         self.assertPresence(
-            "Garcia Generalis ist Orga, aber hat noch keinen Teilnahmebeitrag bezahlt"
-            " (504,48 €).")
+            "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt"
+            " (504,48 €). (Als Orga).")
 
         self.assertPresence(
             "Inga Iota muss eine Erstattung erhalten (116,49 €).")
