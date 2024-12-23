@@ -144,22 +144,6 @@
                 <div id="orga-notes">{{ ambience['event']['notes']|md }}</div>
             {% endcall %}
         {% endif %}
-
-        {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration page free text"),
-                                         button=generic.edit_free_text_button("registration_text"),
-                                         icon="sign-in-alt", aclass="panel-default") %}
-                <div id="registration-text">{{ ambience['event']['registration_text']|md }}</div>
-            {% endcall %}
-        {% endif %}
-
-        {% if ambience['event']['mail_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration mail free text"),
-                                         button=generic.edit_free_text_button("mail_text"),
-                                         icon="envelope", aclass="panel-default") %}
-                <div id="mail-text">{{ ambience['event']['mail_text']|linebreaks }}</div>
-            {% endcall %}
-        {% endif %}
     {% endif %}
 
     <div class="row">
