@@ -87,6 +87,10 @@
                 {{ util.href(cdedblink("event/change_event", {"event_id": event['id']}), gettext("Configuration"),
                              icon='cog', aclass="list-group-item", active=(sidenav_active == 'event_config')) }}
             {% endif %}
+            {% if is_privileged_for("show_free_texts") %}
+                {{ util.href(cdedblink("event/show_free_texts", {"event_id": event['id']}), gettext("Free Texts"),
+                             icon='bars', aclass="list-group-item", active=(sidenav_active == 'event_free_texts')) }}
+            {% endif %}
             {% if is_privileged_for("part_summary") %}
                 {{ util.href(cdedblink("event/part_summary", {"event_id": event['id']}), gettext("Event Parts"),
                              icon='clock', aclass="list-group-item", active=(sidenav_active == 'event_parts')) }}

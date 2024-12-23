@@ -10,7 +10,6 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
-    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_free_texts"), gettext("Free Texts"), active=True) }}
 {% endblock %}
 {% block heading %}

@@ -18,11 +18,6 @@
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    <div class="p button-par">
-        {{ util.href(cdedblink('event/show_free_texts'), gettext("Free Texts"),
-                     readonly=not is_privileged_for('show_free_texts'),
-                     aclass="btn btn-sm btn-info", icon='bars') }}
-    </div>
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
 
