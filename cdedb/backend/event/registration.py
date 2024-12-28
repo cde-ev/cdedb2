@@ -1948,7 +1948,7 @@ class EventRegistrationBackend(EventBaseBackend):
             else:
                 # New period will be appended.
                 if old_periods and not old_periods[-1].checkout_time:
-                    raise ValueError(n_("Cannot checkin checked-in users."))
+                    raise ValueError(n_("Cannot check in checked-in users."))
                 if old_periods and checkin_time <= old_periods[-1].checkout_time:  # type: ignore[operator]
                     raise ValueError(n_("Checkin must be after previous checkout."))
                 ret *= self.add_checkin(rs, registration_id, checkin_time)

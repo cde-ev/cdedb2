@@ -367,9 +367,11 @@
         // make form to insert a backdated period available
         $("#addperiodrow:not(.has-error)").hide();
         $(".add-backdated-button").on('click', function() {
+            // hide all other js-only forms
             $(".nojs-only").hide();
             $(".softhide").show();
             $(".add-backdated-button").show();
+            // place and configure this form
             $(this).hide();
             const idx = $(this).val() - 1;  // after this index, the addperiodrow is to insert
             if (idx === 0)
@@ -377,7 +379,6 @@
             else
                 $(`#row-${idx}`).after($("#addperiodrow").show());
         })
-        // if there was a validation error, show form at respective place
     </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
