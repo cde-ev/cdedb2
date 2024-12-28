@@ -2,7 +2,7 @@
 {% set sidenav_active='event_registration' %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% set jshint='weak' %}{# TODO: set to strong when adding backdated checkin periods #}
+{% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
@@ -229,12 +229,38 @@
                 <th class="col-sm-9">{% trans %}Timespan{% endtrans %}</th>
                 <th>{# save change button #}</th>
                 <th>{# deletion button #}</th>
+                <th>{# add new period button #}</th>
                 <th class="col-sm-3">{% trans %}Duration{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
+            {% set newperiod_errors = util.has_errors('checkin_time') or util.has_errors('checkout_time') %}
+            <tr id="addperiodrow" class="nojs-only drow-new {{ newperiod_errors }}">
+                <td></td>
+                <td class="{{ newperiod_errors }}">
+                    <form action="{{ cdedblink('event/add_backdated_checkin_period') }}" method="POST"
+                          id="addperiodform">
+                        {{ util.anti_csrf_token('event/add_backdated_checkin_period') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        <div class="input-group {{ newperiod_errors }}">
+                            {{ util.input_text(name='checkin_time', type='datetime-local', arialabel=gettext('Checkin time')) }}
+                            <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
+                            {{ util.input_text(name='checkout_time', type='datetime-local', arialabel=gettext('Checkout time')) }}
+                        </div>
+                        {{ util.output_errors('checkin_time') }}
+                        {{ util.output_errors('checkout_time') }}
+                    </form>
+                </td>
+                <td>
+                    {{ util.input_submit(icon='check', label="", title=gettext("Add"), formid="addperiodform",
+                                         aclass="btn btn-primary btn-sm") }}
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
         {% for period in ambience['registration']['checkin_periods'] %}
-            <tr>
+            <tr id="row-{{ loop.index }}">
                 <td>{{ loop.index }}</td>
                 {# add the ID so that on validation errors values can be filled correctly #}
                 {% set inputname1 = 'checkin_time_' + period.id|string %}
@@ -283,6 +309,10 @@
                                              aclass="btn btn-danger btn-sm") }}
                     </form>
                 </td>
+                <td style="padding-left: 0;">
+                    {{ util.input_submit(icon="plus", label="", title=gettext("Insert new period in front of here."),
+                                         aclass="btn btn-success btn-sm add-backdated-button", value=loop.index) }}
+                </td>
                 <td>{{ period.get_duration()|timedelta(gettext) }}</td>
             </tr>
         {% endfor %}
@@ -314,6 +344,7 @@
         </tbody>
     </table>
     <script nonce="{{ csp_nonce }}">
+        // hide forms for changing period
         $(".nojs-only:not(.has-error)").hide();
         $(".softhide:not(.has-error)").show();
         $(".softhide .showform-button").each(function() {
@@ -322,6 +353,7 @@
                 // can only submit one form at once, to avoid confusion hide other forms
                 $(".nojs-only").hide();
                 $(".softhide").show();
+                $(".add-backdated-button").show();
 
                 $(".softhide.period-display-" + rownr).hide();
                 $(".nojs-only.period-form-" + rownr).show();
@@ -331,6 +363,21 @@
         })
         // nicer icon also in case of validation error
         $(".nojs-only.has-error .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+
+        // make form to insert a backdated period available
+        $("#addperiodrow:not(.has-error)").hide();
+        $(".add-backdated-button").on('click', function() {
+            $(".nojs-only").hide();
+            $(".softhide").show();
+            $(".add-backdated-button").show();
+            $(this).hide();
+            const idx = $(this).val() - 1;  // after this index, the addperiodrow is to insert
+            if (idx === 0)
+                $('#row-1').before($("#addperiodrow").show());
+            else
+                $(`#row-${idx}`).after($("#addperiodrow").show());
+        })
+        // if there was a validation error, show form at respective place
     </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>

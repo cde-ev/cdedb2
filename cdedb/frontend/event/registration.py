@@ -1719,6 +1719,49 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access('event', modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("checkin_time", "checkout_time")
+    def add_backdated_checkin_period(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        checkin_time: datetime.datetime, checkout_time: datetime.datetime,
+    ) -> Response:
+        """Insert a timespan where a participant was present."""
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        if checkin_time >= checkout_time:
+            rs.append_validation_error(
+                ('checkout_time}', ValueError(n_("Checkout must be after checkin."))))
+        reg = self.eventproxy.get_registration(rs, registration_id)
+        prev = None
+        for nxt in reg['checkin_periods']:
+            if nxt.checkin_time > checkin_time:
+                # period is to insert between prev and nxt
+                if prev and prev.checkout_time and prev.checkout_time > checkin_time:
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Checkin must be after previous checkout."))))
+                if checkout_time > nxt.checkin_time:
+                    rs.append_validation_error(
+                        ('checkout_time',
+                         ValueError(n_("Checkout must be before next checkin."))))
+                break
+            prev = nxt
+        else:  # period is appended to the end
+            if prev and prev.checkout_time and prev.checkout_time > checkin_time:
+                rs.append_validation_error(
+                    ('checkin_time',
+                     ValueError(n_("Checkin must be after previous checkout."))))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        code = self.eventproxy.add_backdated_checkin_period(
+            rs, registration_id, checkin_time, checkout_time)
+        rs.notify_return_code(code, error=n_("Action failed."))
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("period_id")
     def change_checkin_period(self, rs: RequestState, event_id: int,
                               registration_id: vtypes.ID, period_id: vtypes.ID,
