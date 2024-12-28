@@ -22,10 +22,8 @@
     {% endif %}
 
     {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-        <h2 class="heading-underline" id="{{ class_name }}">
-            {{ gettext(class_name) }}
-            {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
-        </h2>
+        {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+        {{ util.h(class_name, underline=true) }}
         {{ generic.list_violations(class_name, violations_, entity_page="") }}
     {% endfor %}
 
