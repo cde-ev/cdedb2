@@ -5680,6 +5680,19 @@
             "entries": null
         },
         {
+            "id": 9,
+            "event_id": 1,
+            "field_name": "arrival_at",
+            "kind": 6,
+            "association": 1,
+            "title": "Anreise um",
+            "description": null,
+            "sort_group": null,
+            "sortkey": 0,
+            "checkin": false,
+            "entries": null
+        },
+        {
             "id": 101,
             "event_id": 2,
             "field_name": "solidarity",
@@ -6238,7 +6251,8 @@
             "fields": {
                 "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
-                "anzahl_GROSSBUCHSTABEN": 4
+                "anzahl_GROSSBUCHSTABEN": 4,
+                "arrival_at": "2022-02-02T10:00:00+01:00"
             }
         },
         {
@@ -6342,7 +6356,8 @@
             "fields": {
                 "is_child": false,
                 "transportation": "pedes",
-                "anzahl_GROSSBUCHSTABEN": 2
+                "anzahl_GROSSBUCHSTABEN": 2,
+                "arrival_at": "2022-02-22T15:00:00+01:00"
             }
         },
         {

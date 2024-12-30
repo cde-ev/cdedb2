@@ -51,8 +51,7 @@
                     {% endfor %}
                     </ul>
                     {{ util.input_hidden('registration_ids', value=",".join(present|map('string'))) }}
-                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local',
-                                            defaultvalue=request_time) }}
+                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local') }}
                     {{ util.form_input_submit(name="action", value="checkout", label=gettext("Checkout"), icon="arrow-right-from-bracket") }}
                     {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local', outerclass="mosp",
                                             anid="input-checkin-massreset", info=gettext("leave empty to delete latest checkin")) }}
@@ -69,7 +68,19 @@
                 <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkinform" class="form-horizontal">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
-                        {% trans %}The following people can be checked in, or their time of last checkout time can be reset or deleted.{% endtrans %}
+                        {% trans %}
+                            The following people can be checked in, or their time of last checkout time
+                            can be reset or deleted.
+                        {% endtrans %}
+                        {% if field_preview_values %}
+                            {% trans field=datetime_registration_fields[values.get('field_id')|int] %}
+                                Below a preview of the checkin values that will be filled from field “{{ field }}” is displayed.
+                            {% endtrans%}
+                        {% else %}
+                            {% trans %}
+                                The checkin time can be filled from a custom field, or set below for all registrations.
+                            {% endtrans %}
+                        {% endif %}
                     </p>
                     <ul class="nslim">
                     {% for reg_id, periods in absent.items() %}
@@ -78,18 +89,46 @@
                             <small class="text-muted text-nowrap">
                                 {% if periods %}
                                     {% trans checkout=periods[-1].checkout_time|datetime(lang=lang) %}
-                                        last checkout %(checkout)s
+                                        last checkout {{ checkout }}
                                     {% endtrans %}
                                 {% else %}
                                     {% trans %}Never checked-in{% endtrans %}
                                 {% endif %}
                             </small>
+                            {% if field_preview_values %}
+                                {% set new_time=field_preview_values[reg_id] %}
+                                {% if not new_time %}
+                                    <small class="bg-danger text-nowrap">
+                                        {% trans %}
+                                            new checkin: no entry
+                                        {% endtrans %}
+                                    </small>
+                                {% elif periods and new_time <= periods[-1].checkout_time %}
+                                    <small class="bg-danger text-nowrap">
+                                        {% trans new_time=new_time|datetime(lang=lang) %}
+                                            new checkin: {{ new_time }} (before checkout)
+                                        {% endtrans %}
+                                    </small>
+                                {% else %}
+                                    <small class="bg-success text-nowrap">
+                                        {% trans new_time=new_time|datetime(lang=lang) %}
+                                            new checkin: {{ new_time }}
+                                        {% endtrans %}
+                                    </small>
+                                {% endif %}
+                            {% endif %}
                         </li>
                     {% endfor %}
                     </ul>
                     {{ util.input_hidden('registration_ids', value=",".join(absent|map('string'))) }}
-                    {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local',
-                                            defaultvalue=request_time) }}
+                    {{ util.form_input_select('field_id', entries=datetime_registration_fields.items(), nulloption="",
+                                              label=gettext("Set checkin times from custom field")) }}
+                    {{ util.input_hidden('confirm_field_id') }}
+                    {% if values.get('field_id') %}
+                        {{ util.form_input_checkbox('ack_field', label=gettext("Confirm")) }}
+                    {% else %}
+                        {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local') }}
+                    {% endif %}
                     {{ util.form_input_submit(name="action", value="checkin", label=gettext("Checkin"), icon="arrow-right-to-bracket") }}
                     {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local', outerclass="mosp",
                                             anid="input-checkout-massreset", info=gettext("leave empty to delete latest checkout")) }}
