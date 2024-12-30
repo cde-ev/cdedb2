@@ -5016,11 +5016,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertNotIn('checkoutform', self.response.forms)
             # check Berta in
             f = self.response.forms['checkinform']
-            self.submit(f)
+            self.submit(f)  # period id 1001
             self.submit(f, check_notification=False)
             self.assertNotification("Bereits eingecheckt.", "error")
             self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
-            frozen_time.tick(delta)
+            frozen_time.tick(delta / 2)
             self.assertNotIn('checkinform', self.response.forms)
             # check Berta out again
             f = self.response.forms['checkoutform']
@@ -5029,6 +5029,53 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertNotification("Bereits ausgecheckt.", "error")
             self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
 
+            # adding a backdated checkin period
+            f = self.response.forms['addperiodform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Muss ein valides Datum mit Uhrzeit sein.")
+            f['checkin_time'] = "2022-02-22T00:00:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('checkout_time', "Darf nicht leer sein.")
+            f['checkin_time'] = "2022-02-22T00:00:00+01:00"
+            f['checkout_time'] = "2022-02-23T00:00:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkout_time', "Checkout muss vor folgendem Checkin sein.")
+            f['checkin_time'] = "2022-02-23T00:00+01:00"
+            f['checkout_time'] = "2022-02-22T18:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Checkin muss nach vorhergehendem Checkout sein.")
+            self.assertValidationError(
+                'checkout_time', "Checkout muss nach Checkin liegen.")
+            f['checkin_time'] = "2222-02-23T00:00+01:00"
+            f['checkout_time'] = "2222-02-22T18:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Muss in der Vergangenheit liegen.")
+            self.assertValidationError(
+                'checkout_time', "Checkout muss nach Checkin liegen.")
+            f['checkin_time'] = "2022-03-03T18:00+01:00"
+            f['checkout_time'] = "2022-03-04T10:00+01:00"
+            self.submit(f)  # period id 1002
+            self.assertPresence("03.03.2022, 18:00:00 – 04.03.2022, 10:00:00")
+            frozen_time.tick(delta/2)
+            # adding a checkin via this form is possible
+            f['checkin_time'] = base_time + delta/4
+            f['checkout_time'] = None
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Checkin muss nach vorhergehendem Checkout sein.")
+            f['checkin_time'] = base_time + delta
+            f['checkout_time'] = None
+            self.submit(f)  # period id 1003
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Kann eingecheckte Nutzer nicht einchecken.")
+            self.submit(self.response.forms['deleteperiodform1003'])
+
+            # changing a checkin period
             f = self.response.forms['changeperiodform1']
             f['checkout_time_1'] = base_time + delta
             original_checkin = f['checkin_time_1'].value
@@ -5038,7 +5085,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'checkout_time_1', "Checkout muss vor folgendem Checkin sein.")
             self.assertValidationError('checkin_time_1', "Checkout muss nach Checkin liegen.")
 
-            f = self.response.forms['changeperiodform2']
+            f = self.response.forms['changeperiodform1001']
             f['checkin_time_1001'] = "2000-01-01T00:00:00+02:00"
             self.submit(f, check_notification=False)
             self.assertValidationError(
@@ -5069,7 +5116,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("Einchecken")
             self.assertPresence("Anton Administrator Nie eingecheckt")
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
-                                f" {datetime_filter(base_time + delta, lang='de')}")
+                                f" {datetime_filter(base_time + delta/2, lang='de')}")
             f = self.response.forms['checkinform']
             f['checkout_time'] = base_time + 2*delta
             self.submit(f, button='action', value='modify_checkout',

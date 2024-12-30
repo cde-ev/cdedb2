@@ -269,7 +269,7 @@
                 <form action="{{ cdedblink('event/change_checkin_period',
                                            {'registration_id': ambience['registration']['id']}) }}"
                       method="POST"
-                      id="changeperiodform{{ loop.index }}">
+                      id="changeperiodform{{ period.id }}">
                     {{ util.anti_csrf_token('event/change_checkin_period') }}
                         <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                             {{ util.input_hidden(name='period_id', value=period.id) }}
@@ -301,7 +301,7 @@
                 </td>
                 <td style="padding-left: 0;">
                     <form action="{{ cdedblink("event/delete_checkin_period") }}" method="POST"
-                          id="deleteperiodform{{ loop.index }}">
+                          id="deleteperiodform{{ period.id }}">
                         {{ util.anti_csrf_token('event/delete_checkin_period') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_hidden(name="period_id", value=period.id) }}

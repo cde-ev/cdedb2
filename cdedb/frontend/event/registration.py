@@ -1728,6 +1728,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
+        ref_time = now()
+        if checkin_time > ref_time:
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkout_time > ref_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be in the past."))))
         if checkout_time and checkin_time >= checkout_time:
             rs.append_validation_error(
                 ('checkout_time', ValueError(n_("Checkout must be after checkin."))))
