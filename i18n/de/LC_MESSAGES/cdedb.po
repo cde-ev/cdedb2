@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-01-02 11:19+0100\n"
+"POT-Creation-Date: 2025-01-02 11:47+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4833,9 +4833,8 @@ msgid "Shortname already in use for another event."
 msgstr "Kurzname bereits vergeben."
 
 #: cdedb/frontend/event/event.py:272
-#, fuzzy
 msgid "Invalid free text key."
-msgstr "Ungültiger Zustand für Accountanfrage."
+msgstr "Ungültiger Freitext-Schlüssel."
 
 #: cdedb/frontend/event/event.py:317
 msgid "Minor form updated."
@@ -12053,7 +12052,7 @@ msgstr "Orga-Tokens"
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:13
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:16
 msgid "Free Texts"
-msgstr ""
+msgstr "Freitexte"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:95
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:145
@@ -13976,9 +13975,8 @@ msgstr ""
 "Veranstaltungsnutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:34
-#, fuzzy
 msgid "Edit description"
-msgstr "Beschreibung"
+msgstr "Beschreibung bearbeiten"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:50
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:51
@@ -14214,58 +14212,49 @@ msgstr ""
 "und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:56
-#, fuzzy
 msgid "Not set yet."
 msgstr "*Hier gibt es noch nichts.*"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:61
 msgid "Changes to this free text have not been saved."
-msgstr ""
+msgstr "Änderungen an diesem Freitext wurden noch nicht gespeichert."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:90
-#, fuzzy
 msgid "Shown on the event overview to logged in users."
 msgstr ""
-"Detailliertere Informationen über die Veranstaltung sind für eingeloggte "
-"Veranstaltungsnutzer sichtbar."
+"Wird auf der Veranstaltungsübersicht für eingeloggte Veranstaltungsnutzer angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:91
-#, fuzzy
 msgid "Shown to orgas on the event overview."
-msgstr "Unbekannte Kursschiene für diese Veranstaltung."
+msgstr "Wird auf der Veranstaltungsübersicht für Orgas angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:92
-#, fuzzy
 msgid "Shown on the \"register\" page."
-msgstr "Konnte die angeforderte Seite nicht finden."
+msgstr "Wird auf der \"Anmelden\"-Seite angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:93
 msgid "Part of the registration confirmation mail."
-msgstr ""
+msgstr "Teil der Anmeldungs-Bestätigungs-Mail."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:93
-#, fuzzy
 msgid "Registration Mail"
-msgstr "Anmeldung"
+msgstr "Anmeldungs-Email"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:94
-#, fuzzy
 msgid "Participant Info"
 msgstr "Teilnehmer-Infos"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:94
 msgid "Shown on the \"Participant Info\" page only to participants."
-msgstr ""
+msgstr "Wird auf der \"Teilnehmer-Infos\"-Seite für Teilnehmer angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:95
-#, fuzzy
 msgid "Custom Field Notes"
 msgstr "Notizen zu Datenfeldern"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:95
-#, fuzzy
 msgid "Shown to orgas on the \"Configure Custom Fields\" page."
-msgstr "Datenfelder konfigurieren"
+msgstr "Wird auf der \"Datenfelder bearbeiten\"-Seite für Orgas angezeigt."
 
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:20
 #, python-format

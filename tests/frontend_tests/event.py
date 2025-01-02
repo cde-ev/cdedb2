@@ -446,7 +446,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
-            "Free Texts",
+            "Freitexte",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
@@ -627,7 +627,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
         self.assertPresence("Die Kristallkugel hat gute Dienste geleistet, nicht wahr?")
         self.traverse("Bearbeiten")
-        self.assertTitle("Universale Akademie – Free Texts")
+        self.assertTitle("Universale Akademie – Freitexte")
         f = self.response.forms['changefreetextform-participant_info']
         f['free_text_value'] = ""
         self.submit(f)
