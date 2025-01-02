@@ -2426,12 +2426,12 @@ def _past_event(
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': const.PastInstitutions,
-    'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    'description': Optional[str],
     'is_visible': bool,
     'is_course_list_visible': bool,
     'is_course_state_visible': bool,

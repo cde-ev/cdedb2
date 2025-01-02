@@ -189,20 +189,31 @@ class CdEDataclass:
         return mandatory, optional
 
     @classmethod
-    def requestdict_fields(cls) -> list[tuple[str, Literal["str", "[str]"]]]:
+    def requestdict_fields(
+            cls, *, creation: bool | None,
+    ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
         This uses the database_fields by default, but may be overwritten if needed.
+
+        :param creation: If not None, possibly exclude some fields..
         """
         field_names = set(cls.database_fields())
         field_names.remove("id")
-        fields = [
-            field for field in dataclasses.fields(cls)
-            if field.name in field_names
-               and field.init
-               and not field.metadata.get('request_exclude')
-        ]
-        return [(field.name, requestdict_field_spec(field)) for field in fields]
+        fields = []
+        for field in dataclasses.fields(cls):
+            if field.name not in field_names:
+                continue
+            if field.metadata.get('request_exclude'):
+                continue
+            if not field.init:
+                continue
+            if creation is True and field.metadata.get('creation_exclude'):
+                continue
+            if creation is False and field.metadata.get('update_exclude'):
+                continue
+            fields.append((field.name, requestdict_field_spec(field)))
+        return fields
 
     @classmethod
     def database_fields(cls) -> list[str]:
