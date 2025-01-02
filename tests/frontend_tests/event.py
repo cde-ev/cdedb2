@@ -386,10 +386,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Club der Ehemaligen", div='institution')
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
         self.assertPresence(iban, div='cde-iban')
-        self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
-        self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
-                            div='mail-text')
 
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
@@ -616,13 +613,7 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual(f['registration_start'].value, "2000-10-30T01:00:00")
         f['title'] = "Universale Akademie"
         f['registration_start'] = "2001-10-30 00:00:00"
-        f['notes'] = """Some
-
-        more
-
-        text"""
         f['use_additional_questionnaire'].checked = True
-        f['participant_info'] = ""
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
@@ -632,6 +623,13 @@ class TestEventFrontend(FrontendTest):
         # check visibility and hint text on empty participant_info
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
+        self.assertPresence("Die Kristallkugel hat gute Dienste geleistet, nicht wahr?")
+        self.traverse("Bearbeiten")
+        self.assertTitle("Universale Akademie – Free Texts")
+        f = self.response.forms['changefreetextform-participant_info']
+        f['free_text_value'] = ""
+        self.submit(f)
+        self.traverse("Teilnehmer-Infos")
         self.assertPresence(
             "Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
             "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
@@ -1357,11 +1355,9 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
         f['institution'] = const.PastInstitutions.cde
-        f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "1345-6-7"
-        f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         f['fee'] = "123.45"
         f['nonmember_surcharge'] = "8"
@@ -1374,7 +1370,6 @@ etc;anything else""", f['entries_2'].value)
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
-        self.assertPresence("Mit Co und Coco.")
         self.assertPresence("Beispiel")
         self.assertPresence("Garcia")
 
