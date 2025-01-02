@@ -321,14 +321,10 @@ _DEFAULTS = {
     # the predefined donation amount of a lastschrift, if the user didn't specified one
     "TYPICAL_LASTSCHRIFT_DONATION": decimal.Decimal('20.00'),
 
-    # Name of the organization where the SEPA transaction originated
-    "SEPA_SENDER_NAME": "CdE e.V.",
     # Address of the originating organization
     # The actual address consists of multiple lines
     "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
     "SEPA_SENDER_COUNTRY": "DE",
-    # Bank details of the originator
-    "SEPA_SENDER_IBAN": "DE87200500001234567890",
     # "Gläubiger-ID" for direct debit transfers
     "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
     # Date at which SEPA was introduced
@@ -344,11 +340,6 @@ _DEFAULTS = {
     # event stuff
     #
 
-    # Bank accounts. First is shown to participants,
-    # second is a web label for orgas
-    "EVENT_BANK_ACCOUNTS": (
-        ("DE26370205000008068900", "DE26370205000008068900"),
-    ),
     # Rate limit for orgas adding persons to their event
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,

@@ -110,7 +110,7 @@
         <tbody>
             {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
                 <tr>
-                    {% set format = violations.get(course_id=course_id, track=None, track_group=None).format -%}
+                    {% set format = violations.get(course_id=course_id, track=None, track_group=None).course_stats_format -%}
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                     <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}">
@@ -121,18 +121,16 @@
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
-                        {% set format = violations.get(course_id=course_id, track=track, track_group=None).format -%}
-                        {% set aclass, atitle = format.html_class if format else "", format.get_title(gettext) if format else "" %}
+                        {% set format = violations.get(course_id=course_id, track=track, track_group=None).course_stats_format -%}
+                        {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                         {% if track.id in course['segments'] %}
                             {% set attendees = violation_data['attendees'][(course_id, track.id)].num_learners %}
                             {% set instructors = violation_data['attendees'][(course_id, track.id)].num_instructors %}
                             <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
-                                {% if format %}
-                                    {% for icon, icon_title in format.icons %}
-                                        {{ util.make_icon(icon, title=gettext(icon_title)) }}
-                                    {% endfor %}
-                                {% endif %}
+                                {% for icon, icon_title in format.icons %}
+                                    {{ util.make_icon(icon, title=gettext(icon_title)) }}
+                                {% endfor %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}" title="{{ atitle }}">
                                 {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,

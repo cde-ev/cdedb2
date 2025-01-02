@@ -165,7 +165,6 @@
             "amount_owed": "553.99",
             "amount_paid": "200.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 1,
             "list_consent": true,
             "fields": {
@@ -186,7 +185,6 @@
             "amount_owed": "466.49",
             "amount_paid": "0.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 5,
             "list_consent": true,
             "fields": {
@@ -209,7 +207,6 @@
             "amount_owed": "504.48",
             "amount_paid": "0.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 7,
             "list_consent": false,
             "fields": {
@@ -230,7 +227,6 @@
             "amount_owed": "431.99",
             "amount_paid": "548.48",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 9,
             "list_consent": false,
             "fields": {
@@ -252,7 +248,6 @@
         "5": {
             "amount_owed": "584.48",
             "amount_paid": "0.00",
-            "checkin": null,
             "event_id": 1,
             "fields": {
                 "transportation": "pedes",
@@ -272,7 +267,6 @@
         "6": {
             "amount_owed": "10.50",
             "amount_paid": "10.50",
-            "checkin": null,
             "event_id": 1,
             "fields": {
                 "transportation": "pedes",
@@ -427,7 +421,7 @@
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        18,
+        19,
         0
     ],
     "event.registration_parts": {
@@ -696,6 +690,14 @@
             "id": 18,
             "registration_id": 6,
             "track_id": 3
+        }
+    },
+    "event.checkin_periods": {
+        "1": {
+            "id": 1,
+            "registration_id": 6,
+            "checkin_time": "2022-02-22T17:00:00+00:00",
+            "checkout_time": "2022-02-23T09:00:00+00:00"
         }
     },
     "event.courses": {
@@ -1193,6 +1195,7 @@
             "nickname": null,
             "given_names": "Garcia",
             "legal_given_names": "Garcia G.",
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1233,6 +1236,7 @@
             "nickname": null,
             "given_names": "Anton",
             "legal_given_names": "Anton Armin A.",
+            "show_legal_given_names": false,
             "is_ml_admin": true,
             "is_cdelokal_admin": true,
             "is_auditor": true,
@@ -1273,6 +1277,7 @@
             "nickname": null,
             "given_names": "Inga",
             "legal_given_names": null,
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1313,6 +1318,7 @@
             "nickname": "Emmy",
             "given_names": "Emilia",
             "legal_given_names": "Emilia E.",
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1333,6 +1339,7 @@
             "nickname": null,
             "given_names": "Akira",
             "legal_given_names": null,
+            "show_legal_given_names": false,
             "id": 100,
             "is_active": true,
             "is_archived": false,
@@ -1373,6 +1380,7 @@
             "nickname": "Bindi",
             "given_names": "Bertå",
             "legal_given_names": "Bertålotta",
+            "show_legal_given_names": false,
             "id": 2,
             "is_active": true,
             "is_archived": false,
@@ -1481,6 +1489,24 @@
             "submitted_by": 1,
             "change_note": "10,50 € am 06.06.2014 gezahlt.",
             "persona_id": 2
+        },
+        "10": {
+            "change_note": "22.02.2022, 18:00:00",
+            "code": 500,
+            "ctime": "2014-01-01T09:00:00+00:00",
+            "event_id": 1,
+            "id": 10,
+            "persona_id": 2,
+            "submitted_by": 1
+        },
+        "11": {
+            "change_note": "23.02.2022, 10:00:00",
+            "code": 505,
+            "ctime": "2014-01-01T09:00:00+00:00",
+            "event_id": 1,
+            "id": 11,
+            "persona_id": 2,
+            "submitted_by": 1
         }
     },
     "event.events": {

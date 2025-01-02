@@ -350,8 +350,9 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     u16 = n_("U16"), 2
     u14 = n_("U14"), 2
     u10 = n_("U10"), 1
-    checked_in = n_("Checked-In"), 1
-    not_checked_in = n_("Not Checked-In"), 1
+    checked_in = n_("Currently checked-in"), 1
+    has_been_checked_in = n_("Has been checked-in"), 1
+    never_checked_in = n_("Never checked-in"), 1
     orgas = n_("Orgas"), 1
     waitlist = n_("Waitinglist")
     guest = n_("Guests")
@@ -397,9 +398,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.u10:
             return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
-            return _is_participant(part) and reg['checkin']
-        elif self == self.not_checked_in:
-            return _is_participant(part) and not reg['checkin']
+            return (_is_participant(part) and reg['checkin_periods']
+                    and reg['checkin_periods'][-1].checkout_time is None)
+        elif self == self.has_been_checked_in:
+            return _is_participant(part) and reg['checkin_periods']
+        elif self == self.never_checked_in:
+            return _is_participant(part) and not reg['checkin_periods']
         elif self == self.orgas:
             return _is_participant(part) and reg['persona_id'] in event.orgas
         elif self == self.waitlist:
@@ -509,19 +513,34 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.checked_in:
             return (
-                ['reg.checkin'],
+                ['checkin_periods.max_checkin_time'],
                 [
                     _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.nonempty, None),
+                    ('checkin.current', QueryOperators.equal, True),
                 ],
                 [],
             )
-        elif self == self.not_checked_in:
+        elif self == self.has_been_checked_in:
+            return (
+                [
+                    'checkin_periods.min_checkin_time',
+                    'checkin_periods.min_checkout_time',
+                    'checkin_periods.max_checkin_time',
+                    'checkin_periods.max_checkout_time',
+                    'checkin.current',
+                ],
+                [
+                    _participant_constraint(part),
+                    ('checkin_periods.min_checkin_time', QueryOperators.nonempty, None),
+                ],
+                [],
+            )
+        elif self == self.never_checked_in:
             return (
                 [],
                 [
                     _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.empty, None),
+                    ('checkin_periods.min_checkin_time', QueryOperators.empty, None),
                 ],
                 [],
             )

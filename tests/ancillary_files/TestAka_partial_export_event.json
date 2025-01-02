@@ -1,6 +1,6 @@
 {
     "EVENT_SCHEMA_VERSION": [
-        18,
+        19,
         0
     ],
     "kind": "partial",
@@ -177,7 +177,7 @@
             "payment": "2014-01-01",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
@@ -241,6 +241,7 @@
                 "nickname": null,
                 "given_names": "Anton",
                 "legal_given_names": "Anton Armin A.",
+                "show_legal_given_names": false,
                 "family_name": "Administrator",
                 "title": null,
                 "name_supplement": null,
@@ -265,7 +266,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
@@ -330,6 +331,7 @@
                 "nickname": "Emmy",
                 "given_names": "Emilia",
                 "legal_given_names": "Emilia E.",
+                "show_legal_given_names": false,
                 "family_name": "Eventis",
                 "title": null,
                 "name_supplement": null,
@@ -354,7 +356,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": false,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
@@ -418,6 +420,7 @@
                 "nickname": null,
                 "given_names": "Garcia",
                 "legal_given_names": "Garcia G.",
+                "show_legal_given_names": false,
                 "family_name": "Generalis",
                 "title": null,
                 "name_supplement": null,
@@ -442,7 +445,7 @@
             "payment": "2014-04-04",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": false,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
@@ -507,6 +510,7 @@
                 "nickname": null,
                 "given_names": "Inga",
                 "legal_given_names": null,
+                "show_legal_given_names": false,
                 "family_name": "Iota",
                 "title": null,
                 "name_supplement": null,
@@ -531,7 +535,7 @@
             "payment": null,
             "parental_agreement": true,
             "mixed_lodging": false,
-            "checkin": null,
+            "checkin_periods": [],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
@@ -594,6 +598,7 @@
                 "nickname": null,
                 "given_names": "Akira",
                 "legal_given_names": null,
+                "show_legal_given_names": false,
                 "family_name": "Abukara",
                 "title": null,
                 "name_supplement": null,
@@ -618,7 +623,12 @@
             "payment": "2014-06-06",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
+            "checkin_periods": [
+                {
+                    "checkin_time": "2022-02-22T17:00:00+00:00",
+                    "checkout_time": "2022-02-23T09:00:00+00:00"
+                }
+            ],
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
@@ -671,6 +681,7 @@
                 "nickname": "Bindi",
                 "given_names": "Bert\u00e5",
                 "legal_given_names": "Bert\u00e5lotta",
+                "show_legal_given_names": false,
                 "family_name": "Beispiel",
                 "title": "Dr.",
                 "name_supplement": "MdB",

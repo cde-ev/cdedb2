@@ -48,7 +48,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import User, cast_fields, now
+from cdedb.common import Accounts, User, cast_fields, now
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
@@ -58,6 +58,7 @@ from cdedb.common.query import (
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.filter import datetime_filter
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,7 +113,7 @@ class Event(EventDataclass):
     registration_soft_limit: Optional[datetime.datetime]
     registration_hard_limit: Optional[datetime.datetime]
 
-    iban: Optional[str]
+    iban: Optional[Accounts]
     orga_address: Optional[vtypes.Email]
     website_url: Optional[str]
 
@@ -972,3 +973,35 @@ class PersonalizedFee(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (0, )
+
+
+@dataclasses.dataclass
+class ReducedCheckinPeriod:
+    checkin_time: datetime.datetime
+    checkout_time: Optional[datetime.datetime]
+
+    def pretty(self) -> str:
+        formatstr = "%Y-%m-%d %H:%M"
+        if self.checkout_time:
+            return (f"{datetime_filter(self.checkin_time, formatstr)} – "
+                    f"{datetime_filter(self.checkout_time, formatstr)}")
+        else:
+            return f"{datetime_filter(self.checkin_time, formatstr)} – "
+
+
+@dataclasses.dataclass
+class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
+    database_table = "event.checkin_periods"
+    entity_key = "registration_id"
+
+    registration_id: vtypes.ID
+
+    def get_sortkey(self) -> Sortkey:
+        if self.checkout_time is not None:
+            return (self.checkin_time, True, self.checkout_time, self.registration_id)
+        return (self.checkin_time, False, self.registration_id)
+
+    def get_duration(self) -> datetime.timedelta:
+        if self.checkout_time is not None:
+            return self.checkout_time - self.checkin_time
+        return now() - self.checkin_time

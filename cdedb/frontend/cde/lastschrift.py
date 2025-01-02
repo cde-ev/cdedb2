@@ -319,6 +319,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             now().timestamp(),
             ''.join(random.choice(string.ascii_letters + string.digits)
                     for _ in range(10)))
+        meta_info = self.coreproxy.get_meta_info(rs)
         meta = {
             'message_id': message_id,
             'total_sum': sum(e['amount'] for e in transactions),
@@ -326,10 +327,10 @@ class CdELastschriftMixin(CdEBaseFrontend):
                              for key, value in sorted_transactions.items()},
             'count': len(transactions),
             'sender': {
-                'name': self.conf["SEPA_SENDER_NAME"],
+                'name': meta_info.lastschrift_account.get_account_holder(),
                 'address': self.conf["SEPA_SENDER_ADDRESS"],
                 'country': self.conf["SEPA_SENDER_COUNTRY"],
-                'iban': self.conf["SEPA_SENDER_IBAN"],
+                'iban': meta_info.lastschrift_account.get_iban(),
                 'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
             },
             'payment_date': self._calculate_payment_date(),

@@ -150,6 +150,28 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         {timestamp_table(creation=False)}
                     ) AS mtime ON reg.persona_id = mtime.persona_id
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id,
+                            MIN(checkin_time) AS min_checkin_time,
+                            MIN(checkout_time) AS min_checkout_time,
+                            MAX(checkin_time) AS max_checkin_time,
+                            MAX(checkout_time) AS max_checkout_time
+                        FROM event.checkin_periods
+                        GROUP BY registration_id
+                    ) AS checkin_periods ON reg.id = checkin_periods.registration_id
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id,
+                            COUNT(*) > 0 AS current
+                        FROM event.checkin_periods
+                        WHERE checkout_time IS NULL
+                        GROUP BY registration_id
+                    ) AS checkin ON reg.id = checkin.registration_id
+                    LEFT OUTER JOIN (
+                        SELECT registration_id, checkin_time, checkout_time
+                        FROM event.checkin_periods
+                    ) AS checkin_at ON reg.id = checkin_at.registration_id
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}
@@ -273,7 +295,7 @@ class EventQueryBackend(EventBaseBackend):
                     WHERE event_id = {event_id}
                 """
 
-            # Step 6: Prepare template for timestamp information.
+            # Step 6: Prepare template for log timestamp information.
             def timestamp_table(creation: bool) -> str:
                 if creation:
                     param_name = 'creation_time'

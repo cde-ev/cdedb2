@@ -513,7 +513,7 @@
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
-                    <td>
+                    <td class="hidden-print">
                         {%- if query.scope == QueryScope.registration -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
                                          gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}

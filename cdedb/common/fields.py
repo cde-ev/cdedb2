@@ -4,7 +4,6 @@
 
 
 import cdedb.database.constants as const
-from cdedb.common.n_ import n_
 
 # A set of roles a user may have.
 Role = str
@@ -12,16 +11,6 @@ Role = str
 # A set of realms a persona belongs to.
 Realm = str
 
-
-META_INFO_FIELDS = (
-    n_("Finanzvorstand_Name"), n_("Finanzvorstand_Vorname"), n_("Finanzvorstand_Ort"),
-    n_("Finanzvorstand_Adresse_Einzeiler"), n_("Finanzvorstand_Adresse_Zeile2"),
-    n_("Finanzvorstand_Adresse_Zeile3"), n_("Finanzvorstand_Adresse_Zeile4"),
-    n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
-    n_("CdE_Konto_Institut"), n_("Vorstand"),
-    n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
-    n_("cde_misc"), n_("lockdown_web"),
-)
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
@@ -34,8 +23,16 @@ PERSONA_STATUS_FIELDS = (
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "family_name", "given_names",
-    "nickname", "legal_given_names", "title", "name_supplement")
+    "id",
+    "username",
+    "family_name",
+    "given_names",
+    "nickname",
+    "legal_given_names",
+    "title",
+    "name_supplement",
+    "show_legal_given_names",
+)
 
 #: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
@@ -46,7 +43,6 @@ PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
 
 #: Names of columns associated to a cde (former)member
 PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
-    "show_legal_given_names",
     "show_address", "show_address2", "address_supplement2", "address2", "postal_code2",
     "location2", "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
@@ -134,7 +130,7 @@ COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
-    "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
+    "parental_agreement", "mixed_lodging", "list_consent", "fields",
     "real_persona_id", "amount_paid", "amount_owed", "is_member")
 
 #: Fields of a registration which are specific for each part of the event

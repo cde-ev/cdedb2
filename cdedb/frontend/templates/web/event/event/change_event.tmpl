@@ -90,8 +90,7 @@
 
         <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption=nbsp,
-                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas."),
-                                sort=True) }}
+                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
         {{ util.form_input_select(name="lodge_field_id", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,

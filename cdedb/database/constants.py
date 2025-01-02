@@ -606,6 +606,11 @@ class EventLogCodes(CdEIntEnum):
     registration_status_changed = 300  #:
     personalized_fee_amount_set = 400  #:
     personalized_fee_amount_deleted = 401  #:
+    checkin_added = 500  #:
+    checkout_added = 505  #:
+    checkin_changed = 510  #:
+    checkout_changed = 515  #:
+    checkin_period_deleted = 530  #:
 
 
 @enum.unique

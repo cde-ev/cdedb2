@@ -1065,7 +1065,6 @@ CREATE TABLE event.registrations (
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
-        checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- consent to information being included in participant list send to all participants.
         list_consent            boolean NOT NULL,
 
@@ -1120,6 +1119,20 @@ CREATE TABLE event.course_choices (
 CREATE INDEX course_choices_track_id_rank_idx ON event.course_choices(track_id, rank);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
+
+CREATE TABLE event.checkin_periods (
+        id                      bigserial PRIMARY KEY,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+        -- being automatically calculated but possible to change later, higher precision may create issues
+        checkin_time            timestamp(0) WITH TIME ZONE NOT NULL,
+        checkout_time           timestamp(0) WITH TIME ZONE,
+        UNIQUE (registration_id, checkin_time),
+        UNIQUE (registration_id, checkout_time), -- (registration_id, NULL) is unique too
+        CONSTRAINT checkin_period_time_order CHECK (checkin_time < checkout_time)
+);
+CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
+GRANT SELECT, INSERT, DELETE, UPDATE ON event.checkin_periods TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_periods_id_seq TO cdb_persona;
 
 CREATE TABLE event.personalized_fees (
         id                      bigserial PRIMARY KEY,

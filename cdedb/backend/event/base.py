@@ -1242,6 +1242,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
+                models.CheckinPeriod.full_export_spec(),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 (
@@ -1334,6 +1335,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
             )
+            checkin_periods = self.sql_select(
+                rs, models.CheckinPeriod.database_table,
+                models.CheckinPeriod.database_fields(), registrations.keys(),
+                entity_key=models.CheckinPeriod.entity_key)
             tokens = list_to_dict(self.sql_select(
                 rs, OrgaToken.database_table, OrgaToken.database_fields(),
                 (event_id,), entity_key="event_id"))
@@ -1374,11 +1379,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
-        part_lookup: dict[int, dict[int, CdEDBObject]]
+        part_lookup: dict[int, CdEDBObjectMap]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
             part_lookup[e['registration_id']][e['part_id']] = e
-        track_lookup: dict[int, dict[int, CdEDBObject]]
+        track_lookup: dict[int, CdEDBObjectMap]
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
@@ -1388,6 +1393,10 @@ class EventBaseBackend(EventLowLevelBackend):
             if personalized_fee.amount is not None:
                 personalized_fee_lookup[personalized_fee.registration_id][
                     personalized_fee.fee_id] = personalized_fee.amount
+        checkin_period_lookup: dict[int, list[CdEDBObject]]
+        checkin_period_lookup = collections.defaultdict(list)
+        for e in checkin_periods:
+            checkin_period_lookup[e['registration_id']].append(e)
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
@@ -1414,6 +1423,11 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
+            periods = xsorted(checkin_period_lookup[registration_id])
+            for period in periods:
+                del period['registration_id']
+                del period['id']
+            registration['checkin_periods'] = periods
         ret['registrations'] = registrations
 
         ret['event'] = event.as_dict()
@@ -1423,7 +1437,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del orga_token['event_id']
         ret['event']['orga_tokens'] = tokens
 
-        # now we add additional information that is only auxillary and
+        # now we add additional information that is only auxiliary and
         # does not correspond to changeable entries
         #
         # event
@@ -1516,6 +1530,8 @@ class EventBaseBackend(EventLowLevelBackend):
         del ret['event']['orgas']
         ret['event']['fields'] = new_fields
         ret['event']['questionnaire'] = new_questionnaire
+        if ret['event']['iban']:
+            ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
     @access("event")

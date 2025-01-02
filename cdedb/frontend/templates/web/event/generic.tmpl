@@ -356,22 +356,21 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro print_violation(violation, link=False, entity_page=True) %}
+{% macro print_violation(violation, entity_page) %}
     {% set msgs, params = violation.get_translation(entity_page=entity_page) %}
-    {% if link %}
-        {% set link_target, link_params = violation.get_link_params() %}
-        {% do params.update({'link': util.href(cdedblink(link_target, link_params), params['link'])}) %}
-    {% endif %}
+    {% for key, (link_target, link_params) in violation.get_link_params().items() if key in params %}
+        {% do params.update({key: util.href(cdedblink(link_target, link_params), params[key])}) %}
+    {% endfor %}
     {% for msg in msgs %}
         {{ gettext(msg)|format(**params)|s }}
     {% endfor %}
 {% endmacro %}
 
-{% macro list_violations(class_name, violations, link=False, min_severity=enums['ViolationSeverity'].INFO, entity_page=True) %}
+{% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO) %}
     <ul id="{{ class_name }}-list">
         {% for violation in violations if violation.severity >= min_severity %}
             <li class="{{ violation.severity.html_class() }}">
-                {{ print_violation(violation, link=link, entity_page=entity_page) }}
+                {{ print_violation(violation, entity_page=entity_page) }}
             </li>
         {% endfor %}
     </ul>

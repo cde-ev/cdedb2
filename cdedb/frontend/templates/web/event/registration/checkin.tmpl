@@ -15,7 +15,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/checkin_form"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if ambience['event']['parts']|length == 1 %}
@@ -34,7 +34,7 @@
                 <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('event/checkin') }}" method="GET" id="checkinfilterform"
+                <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
@@ -133,22 +133,24 @@
                 {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">
-                        {{ util.href(cdedblink('event/change_registration',
-                                               {'registration_id': registration_id, 'skip': 'reg.checkin'}),
+                        {{ util.href(cdedblink('event/change_registration', {'registration_id': registration_id}),
                                      label=none, icon='pen', title=gettext("Edit"), aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
                                      label=none, icon='user', title=gettext("Details"), aclass="btn btn-sm btn-info") }}
 
-                        <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
+                        <form action="{{ cdedblink('event/add_checkin',
+                                                   {'registration_id': registration_id}) }}"
+                              method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">
-                            {{ util.anti_csrf_token('event/checkin') }}
+                            {{ util.anti_csrf_token('event/add_checkin') }}
                             {{ util.input_hidden(name="registration_id", value=registration_id) }}
                             {% for part_id in part_ids %}
                                 {{ util.input_hidden(name="part_ids", value=part_id) }}
                             {% endfor %}
+                            {{ util.input_hidden(name="from_checkin_page", value="True") }}
                             {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                                 readonly=not is_privileged_for("checkin")) }}
+                                                 readonly=not is_privileged_for("add_checkin")) }}
                         </form>
                     </div>
             </div>

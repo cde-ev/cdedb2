@@ -1,0 +1,127 @@
+{% set sidenav_active='event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='weak' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiset.js') }}
+{% endblock %}
+
+{% block title %}
+    {% trans field=field_name, title=ambience['event']['title'] -%}
+        Add Checkin/Checkout times ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Add Checkin/Checkout times"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+    {{ util.breadcrumb_link(cdedblink("event/checkin_multiset_form"), gettext("Add Checkin/Checkout times"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% if present or absent %}
+        {% set twocolumn = present and absent %}
+        {% set request_time = now() %}
+        <div class="row">
+            {% if present %}
+            <div class="col-sm-{{ '6' if twocolumn else '12' }}">
+                {{ util.h(gettext("Check out"), underline=True) }}
+                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkoutform" class="form-horizontal">
+                    {{ util.anti_csrf_token('event/checkin_multiset') }}
+                    <p>
+                        {% trans %}The following people can be checked out, or the time of their latest checkin can be reset or deleted.{% endtrans %}
+                    </p>
+                    <ul class="slim">
+                    {% for reg_id, periods in present.items() %}
+                        <li>
+                            {{ names[reg_id] }}
+                            <small class="text-muted text-nowrap">
+                                {% trans checkin=periods[-1].checkin_time|datetime(lang=lang) %}
+                                    present since %(checkin)s
+                                {% endtrans %}
+                            </small>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    {{ util.input_hidden('registration_ids', value=",".join(present|map('string'))) }}
+                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local',
+                                            defaultvalue=request_time) }}
+                    {{ util.form_input_submit(name="action", value="checkout", label=gettext("Checkout"), icon="arrow-right-from-bracket") }}
+                    {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local', outerclass="mosp",
+                                            anid="input-checkin-massreset", info=gettext("leave empty to delete latest checkin")) }}
+                    {{ util.form_input_submit(name="action", value="modify_checkin", label=gettext("Change checkin times"),
+                                              anid="submit-modify_checkin") }}
+                    {{ util.form_input_submit(name="action", value="modify_checkin", label=gettext("Delete checkin times"),
+                                              anid="submit-delete_checkin", outerclass="softhide", aclass="btn btn-danger", icon="trash-alt") }}
+                </form>
+            </div>
+            {% endif %}
+            {% if absent %}
+            <div class="col-sm-{{ '6' if twocolumn else '12' }}">
+                {{ util.h(gettext("Check in"), underline=True) }}
+                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkinform" class="form-horizontal">
+                    {{ util.anti_csrf_token('event/checkin_multiset') }}
+                    <p>
+                        {% trans %}The following people can be checked in, or their time of last checkout time can be reset or deleted.{% endtrans %}
+                    </p>
+                    <ul class="nslim">
+                    {% for reg_id, periods in absent.items() %}
+                        <li>
+                            {{ names[reg_id] }}
+                            <small class="text-muted text-nowrap">
+                                {% if periods %}
+                                    {% trans checkout=periods[-1].checkout_time|datetime(lang=lang) %}
+                                        last checkout %(checkout)s
+                                    {% endtrans %}
+                                {% else %}
+                                    {% trans %}Never checked-in{% endtrans %}
+                                {% endif %}
+                            </small>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                    {{ util.input_hidden('registration_ids', value=",".join(absent|map('string'))) }}
+                    {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local',
+                                            defaultvalue=request_time) }}
+                    {{ util.form_input_submit(name="action", value="checkin", label=gettext("Checkin"), icon="arrow-right-to-bracket") }}
+                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local', outerclass="mosp",
+                                            anid="input-checkout-massreset", info=gettext("leave empty to delete latest checkout")) }}
+                    {{ util.form_input_submit(name="action", value="modify_checkout", label=gettext("Change checkout times"),
+                                              anid="submit-modify_checkout") }}
+                    {{ util.form_input_submit(name="action", value="modify_checkout", label=gettext("Delete checkout times"),
+                                              anid="submit-delete_checkout", outerclass="softhide", aclass="btn btn-danger", icon="trash-alt") }}
+
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <p>
+            {% trans %}No registrations selected.{% endtrans %}
+        </p>
+    {% endif %}
+    <script nonce="{{ csp_nonce }}">
+        $('#checkinform').cdedbProtectChanges();
+        $('#checkoutform').cdedbProtectChanges();
+
+        // show buttons with suitable text and icon
+        function massreset_buttonchange(action) {
+            if ($('#input-' + action + '-massreset').val()) {
+                $('#submit-delete_' + action).closest(".form-group").addClass('softhide');
+                $('#submit-modify_' + action).closest(".form-group").removeClass('softhide');
+            } else {
+                $('#submit-modify_' + action).closest(".form-group").addClass('softhide');
+                $('#submit-delete_' + action).closest(".form-group").removeClass('softhide');
+            }
+        }
+        $('#input-checkin-massreset').on('change', () => massreset_buttonchange('checkin')).trigger('change');
+        $('#input-checkout-massreset').on('change', () => massreset_buttonchange('checkout')).trigger('change');
+    </script>
+{% endblock %}

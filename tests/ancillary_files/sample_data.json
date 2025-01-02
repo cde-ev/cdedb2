@@ -1892,19 +1892,18 @@
         {
             "id": 1,
             "info": {
+                "id": 1,
                 "Vorstand": "Anton und Berta",
                 "cde_misc": null,
                 "lockdown_web": false,
-                "CdE_Konto_BIC": "BFSWDE33XXX",
-                "CdE_Konto_IBAN": "DE26370205000008068900",
                 "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
-                "CdE_Konto_Inhaber": "CdE e.V.",
-                "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
                 "Finanzvorstand_Ort": "Utopia",
                 "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*",
                 "Finanzvorstand_Name": "Bertålotta Beispiel",
                 "banner_before_login": "Das Passwort ist secret!",
+                "lastschrift_account": "DE26370205000008068900",
                 "Finanzvorstand_Vorname": "Bertålotta",
+                "membership_fee_account": "DE26370205000008068900",
                 "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
                 "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
                 "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
@@ -6235,7 +6234,6 @@
             "amount_owed": "553.99",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
@@ -6256,7 +6254,6 @@
             "amount_owed": "466.49",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "lodge": "015112345678",
@@ -6279,7 +6276,6 @@
             "amount_owed": "504.48",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": false,
             "fields": {
                 "is_child": false,
@@ -6300,7 +6296,6 @@
             "amount_owed": "431.99",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {
                 "is_child": true,
@@ -6323,7 +6318,6 @@
             "amount_owed": "584.48",
             "parental_agreement": true,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "is_child": false,
@@ -6344,7 +6338,6 @@
             "amount_owed": "10.50",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "is_child": false,
@@ -6365,7 +6358,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6382,7 +6374,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6399,7 +6390,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6416,7 +6406,6 @@
             "amount_owed": "4.20",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         }
@@ -7089,6 +7078,14 @@
             "rank": 2
         }
     ],
+    "event.checkin_periods": [
+        {
+            "id": 1,
+            "registration_id": 6,
+            "checkin_time": "2022-02-22T17:00:00+00:00",
+            "checkout_time": "2022-02-23T09:00:00+00:00"
+        }
+    ],
     "event.personalized_fees": [
         {
             "id": 1,
@@ -7327,6 +7324,24 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": "10,50 € am 06.06.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 500,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "22.02.2022, 18:00:00"
+        },
+        {
+            "ctime": "---now---",
+            "code": 505,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "23.02.2022, 10:00:00"
         }
     ],
     "assembly.assemblies": [

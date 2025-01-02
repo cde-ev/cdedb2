@@ -418,6 +418,7 @@
             placeholder="YYYY-MM-DD HH:MM"
             pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}( |T)[0-9]{2}:[0-9]{2}(:[0-9]{2})?"
             title="{{ gettext("Datetime in the format YYYY-MM-DD HH:MM") }}"
+            step="1"
         {%- elif type == 'iban' %}
             placeholder="DE22100100500123456789"
             pattern="(\s*[A-Za-z]){2}(\s*[0-9]){2}(\s*[0-9A-Za-z]){11,27}\s*"
@@ -697,7 +698,8 @@
 {%- endmacro %}
 
 {% macro input_submit(label=gettext("Save"), value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none, display_ignore_warnings=True) %}
+         readonly=False, title=none, ariahidden=false, formid=none, formmethod=none, formaction=none,
+         display_ignore_warnings=True) %}
     {% if has_warnings() and display_ignore_warnings %}
         {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly) }}
     {% endif %}
@@ -709,6 +711,7 @@
         title=title,
         value=value,
         disabled="disabled" if readonly,
+        form=formid,
         formmethod=formmethod,
         formaction=formaction,
         **{ "aria-hidden": "true" if ariahidden }
@@ -889,9 +892,9 @@ mailto:
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
-    {% if meta_info.get(fieldname) %}
+    {% if meta_info[fieldname] %}
         {% call bootstrap_panel() %}
-            {{ meta_info.get(fieldname)|md }}
+            {{ meta_info[fieldname]|md }}
         {% endcall %}
     {% endif %}
 {% endmacro %}

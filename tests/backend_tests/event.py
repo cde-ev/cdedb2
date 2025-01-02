@@ -16,7 +16,7 @@ import psycopg2.errors
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.models.event as models_event
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -27,10 +27,12 @@ from cdedb.common import (
     cast_fields,
     nearly_now,
     now,
+    parse_datetime,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
     ANONYMOUS,
@@ -474,7 +476,6 @@ class TestEventBackend(BackendTest):
             self.key, new_lodge_id))
 
         new_reg = {
-            'checkin': None,
             'event_id': new_id,
             'list_consent': True,
             'mixed_lodging': False,
@@ -749,7 +750,7 @@ class TestEventBackend(BackendTest):
                 'track_id': new_track_id,
             }
 
-        new_track_obj = models_event.CourseTrack.from_database(new_track)
+        new_track_obj = models.CourseTrack.from_database(new_track)
         event.tracks[new_track_id] = new_track_obj
         event.parts[part_id].tracks[new_track_id] = new_track_obj
 
@@ -1027,7 +1028,7 @@ class TestEventBackend(BackendTest):
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("466.49"),
-            'checkin': None,
+            'checkin_periods': [],
             'ctime': nearly_now(),
             'event_id': 1,
             'fields': {
@@ -1113,7 +1114,6 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "paul")
     def test_registering(self) -> None:
         new_reg: CdEDBObject = {
-            'checkin': None,
             'event_id': 1,
             'list_consent': True,
             'mixed_lodging': False,
@@ -1180,6 +1180,7 @@ class TestEventBackend(BackendTest):
             new_reg['tracks'][3]['track_id'] = 3
             new_reg['tracks'][3]['registration_id'] = new_id
             new_reg['tracks'][3]['choices'] = []
+            new_reg['checkin_periods'] = []
             new_reg['ctime'] = nearly_now()
             new_reg['mtime'] = None
             self.assertEqual(new_reg, self.event.get_registration(self.key, new_id))
@@ -1196,7 +1197,7 @@ class TestEventBackend(BackendTest):
             1: {
                 'amount_owed': decimal.Decimal("553.99"),
                 'amount_paid': decimal.Decimal("200.00"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1269,7 +1270,7 @@ class TestEventBackend(BackendTest):
             2: {
                 'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1341,7 +1342,7 @@ class TestEventBackend(BackendTest):
             4: {
                 'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("548.48"),
-                'checkin': None,
+                'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
@@ -1417,7 +1418,6 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': const.RegistrationPartStati.participant,
@@ -1446,7 +1446,6 @@ class TestEventBackend(BackendTest):
         expectation[4]['tracks'][2]['choices'] = data['tracks'][2]['choices']
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
-        expectation[4]['checkin'] = nearly_now()
         expectation[4]['mtime'] = nearly_now()
         expectation[4]['amount_owed'] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
@@ -1458,7 +1457,6 @@ class TestEventBackend(BackendTest):
         data = self.event.get_registrations(self.key, (1, 2, 4))
         self.assertEqual(expectation, data)
         new_reg: CdEDBObject = {
-            'checkin': None,
             'event_id': event_id,
             'list_consent': True,
             'mixed_lodging': False,
@@ -1538,6 +1536,7 @@ class TestEventBackend(BackendTest):
         new_reg['tracks'][3]['track_id'] = 3
         new_reg['tracks'][3]['registration_id'] = new_id
         new_reg['tracks'][3]['choices'] = []
+        new_reg['checkin_periods'] = []
         new_reg['ctime'] = nearly_now()
         new_reg['mtime'] = None
         self.assertEqual(new_reg,
@@ -2432,6 +2431,11 @@ class TestEventBackend(BackendTest):
         for k, v in ret.items():
             if isinstance(v, dict):
                 ret[k] = self.cleanup_event_export(v)
+            elif isinstance(v, list):
+                for i, e in enumerate(v):
+                    if isinstance(e, dict):
+                        v[i] = self.cleanup_event_export(e)
+                ret[k] = v
             elif isinstance(v, str):
                 if k in {"balance", "amount_paid", "amount_owed", "amount"}:
                     ret[k] = decimal.Decimal(v)
@@ -2439,7 +2443,7 @@ class TestEventBackend(BackendTest):
                     ret[k] = datetime.date.fromisoformat(v)
                 elif k in {"ctime", "mtime", "timestamp", "registration_start",
                            "registration_soft_limit", "registration_hard_limit",
-                           "etime", "rtime", "atime"}:
+                           "etime", "rtime", "atime", "checkin_time", "checkout_time"}:
                     ret[k] = datetime.datetime.fromisoformat(v)
 
         return ret
@@ -2506,11 +2510,10 @@ class TestEventBackend(BackendTest):
             'camping_mat_capacity': 0}
         # registration
         new_data['event.registrations'][1000] = {
-            'checkin': None,
             'event_id': 1,
             'fields': {'lodge': 'Langschläfer',
                        'behaviour': 'good'},
-            "list_consent": True,
+            'list_consent': True,
             'id': 1000,
             'is_member': True,
             'mixed_lodging': True,
@@ -2738,7 +2741,6 @@ class TestEventBackend(BackendTest):
             'group_id': 1,
             'camping_mat_capacity': 0}
         stored_data['event.registrations'][1001] = {
-            'checkin': None,
             'event_id': 1,
             'fields': {'lodge': 'Langschläfer',
                        'behaviour': 'good'},
@@ -3058,6 +3060,13 @@ class TestEventBackend(BackendTest):
             for key in ('status',):
                 if key in new:
                     new[key] = const.RegistrationPartStati(new[key])
+            for key in ('checkin_periods',):
+                if key in new:
+                    for period in new[key]:
+                        period['checkin_time'] = parse_datetime(period['checkin_time'])
+                        if period['checkout_time']:
+                            period['checkout_time'] = parse_datetime(
+                                period['checkout_time'])
             old.update(new)
 
         recursive_update(expectation, delta)
@@ -3191,7 +3200,27 @@ class TestEventBackend(BackendTest):
                 'persona_id': 100,
             },
             {
+                'change_note': "23.02.2022, 10:00:01",
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 2,
+            },
+            {
+                'change_note': "23.02.2022, 10:00:02",
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 2,
+            },
+            {
                 'code': const.EventLogCodes.registration_created,
+                'persona_id': 3,
+            },
+            {
+                'change_note': "22.02.2022, 18:00:00",
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 3,
+            },
+            {
+                'change_note': "23.02.2022, 10:00:00",
+                'code': const.EventLogCodes.checkout_added,
                 'persona_id': 3,
             },
             {
@@ -3199,7 +3228,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=9)
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=11)
 
     @storage
     @event_keeper
@@ -3330,7 +3359,28 @@ class TestEventBackend(BackendTest):
                             'course_id': -1,
                             'choices': [4, -1, 5]}}},
                 5: None,
+                6: {
+                    'checkin_periods': [
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 22, 17, 0,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0,
+                                              tzinfo=datetime.timezone.utc)),
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 23, 9, 0, 1,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0, 2,
+                                              tzinfo=datetime.timezone.utc)),
+                    ],
+                },
                 1001: {
+                    'checkin_periods': [
+                        models.ReducedCheckinPeriod(
+                            datetime.datetime(2022, 2, 22, 17, 0,
+                                              tzinfo=datetime.timezone.utc),
+                            datetime.datetime(2022, 2, 23, 9, 0,
+                                              tzinfo=datetime.timezone.utc)),
+                    ],
                     'parts': {
                         2: {'lodgement_id': -1},
                     },
@@ -3708,6 +3758,20 @@ class TestEventBackend(BackendTest):
                 'submitted_by': 1,
                 'change_note': "10,50 € am 06.06.2014 gezahlt.",
             },
+            {
+                "code": const.EventLogCodes.checkin_added,
+                "event_id": 1,
+                "persona_id": 2,
+                "submitted_by": 1,
+                "change_note": "22.02.2022, 18:00:00",
+            },
+            {
+                "code": const.EventLogCodes.checkout_added,
+                "event_id": 1,
+                "persona_id": 2,
+                "submitted_by": 1,
+                "change_note": "23.02.2022, 10:00:00",
+            },
         )
 
         self.assertLogEqual(expectation, realm="event")
@@ -3896,7 +3960,6 @@ class TestEventBackend(BackendTest):
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments']})
         new_reg = {
-            'checkin': None,
             'event_id': 1,
             'list_consent': True,
             'mixed_lodging': False,
@@ -3939,7 +4002,6 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,
@@ -4245,6 +4307,163 @@ class TestEventBackend(BackendTest):
                 reg = self.event.get_registration(self.key, reg_id)
                 self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
                 self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)
+
+    @as_users("garcia")
+    def test_checkin_checkout(self) -> None:
+        reg_id = 1
+        base_time = now().replace(microsecond=0)
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            # single checkins / checkouts first
+            p_id = self.event.add_checkin(self.key, reg_id)
+            self.assertEqual(self.event.add_checkin(self.key, reg_id), 0)
+            frozen_time.tick(delta)
+            self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
+            self.assertGreater(self.event.add_checkout(self.key, reg_id), 0)
+            future_time = base_time + 42 * delta
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_checkin(self.key, reg_id, future_time)
+            self.assertEqual(cm.exception.args[0], "Must be in the past.")
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_checkout(self.key, reg_id, future_time)
+            self.assertEqual(cm.exception.args[0], "Must be in the past.")
+            self.assertEqual(self.event.add_checkout(self.key, reg_id), 0)
+            period: CdEDBObject = {
+                "id": p_id,
+                "registration_id": reg_id,
+                "checkin_time": base_time,
+                "checkout_time": base_time + delta,
+            }
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+
+            # change a period
+            period["checkin_time"] += delta
+            period["checkout_time"] += delta
+            with self.assertRaises(ValueError) as cm:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                    checkout_time=period["checkout_time"],
+                ), 0)
+            self.assertEqual("Must be in the past.", cm.exception.args[0])
+            frozen_time.tick(2*delta)
+            with self.assertRaises(ValueError) as cm:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id, checkin_time=period["checkout_time"],
+                    checkout_time=period["checkin_time"],
+                ), 0)
+            self.assertEqual("Checkout must be after checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
+                self.assertGreater(self.event.change_checkin_period(
+                    self.key, reg_id, p_id + 42, checkin_time=period["checkin_time"],
+                    checkout_time=period["checkout_time"],
+                ), 0)
+            self.assertEqual("Period is not from this registration.", cm.exception.args[0])
+
+            self.assertGreater(self.event.change_checkin_period(
+                self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                checkout_time=period["checkout_time"],
+            ), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+            period["checkout_time"] = None
+            self.assertGreater(self.event.change_checkin_period(
+                self.key, reg_id, p_id, checkin_time=period["checkin_time"],
+                checkout_time=None,
+            ), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'], [models.CheckinPeriod.from_database(period)])
+
+            # adding an earlier period
+            early_period: CdEDBObject = {
+                "registration_id": reg_id,
+                "checkin_time": base_time - delta,
+                "checkout_time": base_time,
+            }
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=early_period["checkin_time"],
+                    checkout_time=early_period["checkin_time"])
+            self.assertEqual("Checkout must be after checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=early_period["checkin_time"],
+                    checkout_time=future_time)
+            self.assertEqual(
+                "Checkout must be before next checkin.", cm.exception.args[0])
+            with self.assertRaises(ValueError) as cm:
+                self.event.add_backdated_checkin_period(
+                    self.key, reg_id, checkin_time=future_time,
+                    checkout_time=future_time + delta)
+            self.assertEqual(
+                "Cannot checkin checked-in users.", cm.exception.args[0])
+            self.assertGreater(self.event.add_backdated_checkin_period(
+                self.key, **early_period), 0)
+            expected = [
+                models.CheckinPeriod.from_database(early_period | {"id": p_id+1}),
+                models.CheckinPeriod.from_database(period),
+            ]
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(reg['checkin_periods'], expected)
+
+            # replacing
+            new_periods: list[CdEDBObject] = [
+                {
+                    # this is backdated and created at end in backend func
+                    "id": p_id + 4,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time - 2*delta,
+                    "checkout_time": base_time,
+                },
+                {
+                    # checkin time matches, so period will be edited instead of deleted
+                    "id": p_id,
+                    "registration_id": reg_id,
+                    "checkin_time": period["checkin_time"],
+                    "checkout_time": base_time + 2*delta,
+                },
+                {
+                    "id": p_id + 2,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time + 4*delta,
+                    "checkout_time": None,
+                },
+                {
+                    "id": p_id + 3,
+                    "registration_id": reg_id,
+                    "checkin_time": base_time + 8*delta,
+                    "checkout_time": base_time + 10*delta,
+                },
+            ]
+            replace_input: list[models.ReducedCheckinPeriod] = [
+                models.ReducedCheckinPeriod(
+                    checkin_time=p["checkin_time"], checkout_time=p["checkout_time"])
+                for p in new_periods
+            ]
+            frozen_time.tick(10*delta)  # are at base_time + 12*delta now
+            with self.assertRaises(ValueError) as cm:
+                self.event.replace_checkin_periods(self.key, reg_id, replace_input)
+            self.assertEqual("Checkout date must be provided.", cm.exception.args[0])
+            new_periods[2]["checkout_time"] = base_time + 6*delta
+            replace_input[2].checkout_time = base_time + 6*delta
+            self.assertGreater(self.event.replace_checkin_periods(
+                self.key, reg_id, replace_input), 0)
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
+
+            # delete
+            self.assertGreater(
+                self.event.delete_checkin_period(self.key, reg_id, p_id), 0)
+            del new_periods[1]
+            reg = self.event.get_registration(self.key, reg_id)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
 
     @as_users("emilia")
     def test_part_groups(self) -> None:
@@ -4963,3 +5182,338 @@ class TestEventBackend(BackendTest):
                 reference_time,
                 self.event._event_keeper.latest_logtime(event_id),
             )
+
+    @as_users("garcia")
+    def test_replace_checkin_periods(self) -> None:
+        registration_id = cast(vtypes.ID, 1)
+        log_offset = len(self.get_sample_data("event.log"))
+
+        self.assertEqual(
+            [],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        td = datetime.timedelta
+        ref_time = now().replace(microsecond=0) - td(days=1)
+
+        self.event.add_checkin(self.key, registration_id, ref_time)
+        self.event.add_checkout(self.key, registration_id, ref_time + td(hours=1))
+        self.event.add_checkin(self.key, registration_id, ref_time + td(hours=2))
+
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1001,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1002,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=None,
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time, lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=1), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=2), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Delete first period, add checkout to second period.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=3),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1002,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=3),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time, lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=1), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=3), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Insert new period in front, change checkout at the end.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=5),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1002,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkout_changed,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=3), lang="de")}'
+                    f' -> {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time, lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=1), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Change checkin of last period.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=4),
+                checkout_time=ref_time + td(hours=5),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1004,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=4),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=2), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=4), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=5), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Add new period in the middle and at the end.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=ref_time + td(hours=1),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=2),
+                checkout_time=ref_time + td(hours=3),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=4),
+                checkout_time=ref_time + td(hours=5),
+            ),
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time + td(hours=6),
+                checkout_time=ref_time + td(hours=7),
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=ref_time + td(hours=1),
+                ),
+                models.CheckinPeriod(
+                    id=1006,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=2),
+                    checkout_time=ref_time + td(hours=3),
+                ),
+                models.CheckinPeriod(
+                    id=1004,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=4),
+                    checkout_time=ref_time + td(hours=5),
+                ),
+                models.CheckinPeriod(
+                    id=1005,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time + td(hours=6),
+                    checkout_time=ref_time + td(hours=7),
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=6), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=7), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkin_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=2), lang="de"),
+            },
+            {
+                'code': const.EventLogCodes.checkout_added,
+                'persona_id': 1,
+                'change_note': datetime_filter(ref_time + td(hours=3), lang="de"),
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
+
+        # Delete all but the first checkin.
+        new_periods = [
+            models.ReducedCheckinPeriod(
+                checkin_time=ref_time,
+                checkout_time=None,
+            ),
+        ]
+        self.event.replace_checkin_periods(self.key, registration_id, new_periods)
+        self.assertEqual(
+            [
+                models.CheckinPeriod(
+                    id=1003,  # type: ignore[arg-type]
+                    registration_id=registration_id,
+                    checkin_time=ref_time,
+                    checkout_time=None,
+                ),
+            ],
+            self.event.get_registration(self.key, registration_id)['checkin_periods'],
+        )
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=2), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=3), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=4), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=5), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkin_period_deleted,
+                'persona_id': 1,
+                'change_note':
+                    f'{datetime_filter(ref_time + td(hours=6), lang="de")};'
+                    f' {datetime_filter(ref_time + td(hours=7), lang="de")}',
+            },
+            {
+                'code': const.EventLogCodes.checkout_changed,
+                'persona_id': 1,
+                'change_note':
+                    f'Entfernt {datetime_filter(ref_time + td(hours=1), lang="de")}',
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=log_offset,
+        )
+        log_offset += len(log_expectation)
