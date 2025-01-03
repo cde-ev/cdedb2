@@ -270,12 +270,11 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors() or free_text_key not in change_notes_by_key:  # pragma: no cover
             # No way to tell where we came from.
             rs.notify("error", n_("Invalid free text key."))
-            return self.redirect(rs, "event/show_event")
+            return self.redirect(rs, "event/show_free_texts")
         update = {
-            'id': event_id,
             free_text_key: free_text_value,
         }
-        code = self.eventproxy.set_event(
+        code = self.eventproxy.set_event_free_texts(
             rs, event_id, update, change_notes_by_key[free_text_key],
         )
         rs.notify_return_code(code)

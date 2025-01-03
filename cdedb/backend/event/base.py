@@ -770,6 +770,22 @@ class EventBaseBackend(EventLowLevelBackend):
         return new_id
 
     @access("event")
+    def set_event_free_texts(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                             change_note: Optional[str] = None) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        data = affirm(vtypes.SerializedEventFreetexts, data)
+        with Atomizer(rs):
+            if not is_privileged(rs, EventPrivileges.free_texts_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            if not data:
+                return 1
+            data['id'] = event_id
+            ret = self.sql_update(rs, "event.events", data)
+            self.event_log(rs, const.EventLogCodes.event_changed,
+                           event_id, change_note=change_note)
+        return ret
+
+    @access("event")
     def create_lodgement_group(self, rs: RequestState,
                                data: vtypes.LodgementGroup) -> DefaultReturnCode:
         """Make a new lodgement group."""
