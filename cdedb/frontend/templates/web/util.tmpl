@@ -86,18 +86,32 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon=none, anid=none, button=none) %}
+{% macro bootstrap_panel(
+        title="", aclass="panel-default", icon=none, anid=none, button=none,
+        footer_text=none, footer_class="", footer_icon=none
+) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon or button %}
             <div class="panel-heading">
-                <div class="panel-title">
+                {{- button -}}
+                <h3 class="panel-title">
                     {{- make_icon(icon) + nbsp if icon }}
-                    {{- title + nbsp if title }}
-                    {{- button }}
-                </div>
+                    {{- title -}}
+                </h3>
+                <div style="clear:both;"></div>
             </div>
         {%- endif %}
-        <div class="panel-body">{{- caller() }}</div>
+        <div class="panel-body">
+            {{- caller() -}}
+        </div>
+        {% if footer_text or footer_icon -%}
+            <div class="panel-footer {{ footer_class }}">
+                {%- if footer_icon -%}
+                    {{ make_icon(footer_icon) }}{{ nbsp }}
+                {%- endif -%}
+                {{- footer_text -}}
+            </div>
+        {%- endif %}
     </div>
 {%- endmacro %}
 
