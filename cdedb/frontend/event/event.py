@@ -1186,7 +1186,7 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(*models.Event.requestdict_fields(creation=True))
+    @REQUESTdatadict(*models.Event.requestdict_fields(creation=True), "description")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      fee: vtypes.NonNegativeDecimal,

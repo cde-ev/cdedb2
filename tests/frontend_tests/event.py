@@ -1357,6 +1357,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
         f['institution'] = const.PastInstitutions.cde
+        f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "1345-6-7"
@@ -1372,6 +1373,7 @@ etc;anything else""", f['entries_2'].value)
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
+        self.assertPresence("Mit Co und Coco.")
         self.assertPresence("Beispiel")
         self.assertPresence("Garcia")
 
