@@ -103,6 +103,14 @@
                                                " Will be automatically selected by certain fee related queries."
                                                " Fieldtype: IBAN")) }}
 
+        <h4 class="heading-underline">{% trans %}Free Texts{% endtrans %}</h4>
+        <span class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans freetext_link=util.href(cdedblink("event/show_free_texts"), gettext("Free Texts"), icon="bars") %}
+                Configuration of free texts has been moved to the {{ freetext_link }} page.
+            {% endtrans %}
+        </span>
+
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=not is_privileged_for('change_event')) }}
     </form>
     <script nonce="{{ csp_nonce }}">
