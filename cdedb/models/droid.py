@@ -247,9 +247,6 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     Subclasses need to define the class name and the database table the tokens are
     stored in, as well as fields for any additional database columns.
-
-    Fields of dynamic tokens which should not be changeable after creation can be
-    specified as `fixed_fields` in the form of a tuple of string.
     """
     #: Name of the dynamic droid. Also serves as namespace for droid names.
     name: ClassVar[str]
