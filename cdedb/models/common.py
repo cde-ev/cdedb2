@@ -223,10 +223,16 @@ class CdEDataclass:
                 continue
             if not field.init:
                 continue
-            if creation is True and field.metadata.get('creation_exclude'):
-                continue
-            if creation is False and field.metadata.get('update_exclude'):
-                continue
+            if creation is True:
+                if field.metadata.get('creation_exclude'):
+                    continue
+                if field.metadata.get('creation_request_exclude'):
+                    continue
+            if creation is False:
+                if field.metadata.get('update_exclude'):
+                    continue
+                if field.metadata.get('update_request_exclude'):
+                    continue
             fields.append((field.name, requestdict_field_spec(field)))
         return fields
 
