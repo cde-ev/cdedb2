@@ -44,7 +44,7 @@ class EventPrivileges(Flag):
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = basic_write | entities_write
+    all_write = basic_write | free_texts_write | entities_write
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,

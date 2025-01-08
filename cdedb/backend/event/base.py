@@ -695,7 +695,11 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Event, data, current=current)
             data['id'] = event_id
 
-            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.basic_write | EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -775,12 +779,16 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         data = affirm(vtypes.SerializedEventFreetexts, data)
         with Atomizer(rs):
-            if not is_privileged(rs, EventPrivileges.free_texts_write, event_id=event_id):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             if not data:
                 return 1
             data['id'] = event_id
-            ret = self.sql_update(rs, "event.events", data)
+            ret = self.sql_update(rs, models.Event.database_table, data)
             self.event_log(rs, const.EventLogCodes.event_changed,
                            event_id, change_note=change_note)
         return ret
