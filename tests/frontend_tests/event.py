@@ -2455,6 +2455,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("Übersicht")
             self.assertPresence("Administrator")
             self.assertPresence("emilia@example.cde")
+            self.assertPresence("Emilia (Emmy)")
             self.assertPresence("03205 Musterstadt")
             self.assertNonPresence("Inga")
             self.assertPresence("Veranstaltungsteile")
