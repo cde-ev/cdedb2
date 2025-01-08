@@ -2455,6 +2455,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("Übersicht")
             self.assertPresence("Administrator")
             self.assertPresence("emilia@example.cde")
+            self.assertPresence("Emilia (Emmy)")
             self.assertPresence("03205 Musterstadt")
             self.assertNonPresence("Inga")
             self.assertPresence("Veranstaltungsteile")
@@ -2707,8 +2708,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     self.key, event_id=1, persona_id=self.user['id']).keys())
             self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
         execsql("UPDATE core.personas SET show_legal_given_names = True WHERE id = 1;")
+        execsql("UPDATE core.personas SET nickname = 'Akky' WHERE id = 100;")
         self.submit(f)
         self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
+        self.assertPresence("Akira (Akky) Abukara", div="lodgement-wishes-list")
         self.assertPresence("Garcia Generalis", div="lodgement-wishes-list")
 
     @as_users("annika", "garcia")
