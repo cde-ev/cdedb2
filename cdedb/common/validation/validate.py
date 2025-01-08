@@ -1631,6 +1631,18 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
+    if "nickname" in val and "given_names" in val:
+        if val["nickname"] == val["given_names"] and not ignore_warnings:
+            errs.append(ValidationWarning("nickname", n_(
+                "Nickname is equal to given names and should be removed.")))
+    if "legal_given_names" in val and "given_names" in val:
+        if val["legal_given_names"] == val["given_names"] and not ignore_warnings:
+            errs.append(ValidationWarning("legal_given_names", n_(
+                "Legal given names is equal to given names and should be removed.")))
+    if "birth_name" in val and "family_name" in val:
+        if val["birth_name"] == val["family_name"] and not ignore_warnings:
+            errs.append(ValidationWarning("birth_name", n_(
+                "Birth name is equal to family name and should be removed.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:

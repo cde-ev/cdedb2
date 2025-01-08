@@ -784,6 +784,15 @@ msgstr "Probemitgliedschaft erfordert Mitgliedschaft."
 msgid "Honorary membership requires membership."
 msgstr "Ehrenmitgliedschaft erfordert Mitgliedschaft."
 
+msgid "Nickname is equal to given names and should be removed."
+msgstr "Spitzname entspricht dem Rufnamen und sollte daher entfernt werden."
+
+msgid "Legal given names is equal to given names and should be removed."
+msgstr "Bürgerlicher Vorname entspricht dem Rufnamen und sollte daher entfernt werden."
+
+msgid "Birth name is equal to family name and should be removed."
+msgstr "Geburtsname entspricht dem Familiennamen und sollte daher entfernt werden."
+
 #: cdedb/backend/core/base.py:1376
 msgid "Active lastschrift permit found."
 msgstr "Eine aktive Lastschrift existiert."
