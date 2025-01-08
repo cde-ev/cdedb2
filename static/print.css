@@ -1,12 +1,52 @@
-#header{
+/* general rules for all pages */
+div[role=banner]{
     display: none;
 }
-
-#navigation{
+nav{
     display: none;
 }
-
 #footer{
     display: none;
 }
 
+
+/* style buttons, links etc */
+a.btn{
+    display: none !important;
+}
+a[href]:after {
+    content: none !important;
+}
+button[type=button]{
+    display: none;
+}
+
+
+/* specific styles for the query form */
+#default_queries_container{
+    display: none;
+}
+th.hidden-print td.hidden-print{
+    display: none !important;
+}
+div.queryform-add {
+    display: none;
+}
+ul.filterfield-list {
+    margin-bottom: 0;
+}
+div.queryform-fields {
+    display: none;
+}
+div.queryform-searchbar {
+    display: none;
+}
+div.query-result-mailto {
+    display: none;
+}
+div.query-result-dynamic-actions {
+    display: none;
+}
+#queryresult-sorted-column-marker {
+    display: none;
+}
