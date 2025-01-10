@@ -77,7 +77,6 @@ class EventDroidMixin(EventBaseFrontend):
                           data: CdEDBObject) -> Response:
         """Change an existing orga token."""
         data['id'] = orga_token_id
-        # These are only needed for creation and are empty here.
         data = check(rs, vtypes.OrgaToken, data)
         if rs.has_validation_errors() or not data:
             return self.change_orga_token_form(rs, event_id, orga_token_id)
