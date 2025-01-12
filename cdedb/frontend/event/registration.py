@@ -26,6 +26,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
+    ValidationWarning,
     build_msg,
     determine_age_class,
     diacritic_patterns,
@@ -1739,9 +1740,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         if checkin_time > ref_time:
             rs.append_validation_error(
                 (f'checkin_time_{period_id}', ValueError(n_("Must be in the past."))))
-        if checkout_time and checkout_time > ref_time:
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
             rs.append_validation_error(
-                (f'checkout_time_{period_id}', ValueError(n_("Must be in the past."))))
+                (f'checkout_time_{period_id}', ValidationWarning(
+                    n_("Should be less than 6 hours in the future."))))
         if checkout_time and not checkin_time < checkout_time:
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
@@ -1840,9 +1843,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         if checkin_time and checkin_time > ref_time:
             rs.append_validation_error(
                 ('checkin_time', ValueError(n_("Must be in the past."))))
-        if checkout_time and checkout_time > ref_time:
-            rs.append_validation_error(
-                ('checkout_time', ValueError(n_("Must be in the past."))))
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
+            rs.append_validation_error(('checkout_time', ValidationWarning(n_(
+                "Should be less than 6 hours in the future."))))
         if rs.has_validation_errors():
             return self.checkin_multiset_form(rs, event_id, internal=True)
         if action not in {'checkin', 'modify_checkout', 'checkout', 'modify_checkin'}:
