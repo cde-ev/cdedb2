@@ -559,7 +559,8 @@
                             {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
                                          anid="personalized_fee{}_multiset".format(fee.id),
                                          label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
-                                         title=gettext("Set personalized amount for multiple registrations.")) }}
+                                         title=gettext("Set personalized amount for multiple registrations."),
+                                         readonly=not is_privileged_for('personalized_fee_multiset')) }}
                         {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
@@ -577,14 +578,16 @@
                             {{ util.href(
                                 cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
                                 title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
-                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning") }}
+                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning",
+                                readonly=not is_privileged_for('configure_fee_form')) }}
                             <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
                                     title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
                                     icon='trash-alt' if fee.amount else 'dumpster-fire',
-                                    label=None, aclass="btn btn-sm btn-danger") }}
+                                    label=None, aclass="btn btn-sm btn-danger",
+                                    readonly=not is_privileged_for('delete_fee')) }}
                             </form>
                         {% endif %}
                     </td>
