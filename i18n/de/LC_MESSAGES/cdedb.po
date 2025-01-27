@@ -787,7 +787,7 @@ msgstr "Ehrenmitgliedschaft erfordert Mitgliedschaft."
 msgid "Nickname is equal to given names and should be removed."
 msgstr "Spitzname entspricht dem Rufnamen und sollte daher entfernt werden."
 
-msgid "Legal given names is equal to given names and should be removed."
+msgid "Legal given names are equal to given names and should be removed."
 msgstr "Bürgerlicher Vorname entspricht dem Rufnamen und sollte daher entfernt werden."
 
 msgid "Birth name is equal to family name and should be removed."

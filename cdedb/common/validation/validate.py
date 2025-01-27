@@ -1638,7 +1638,7 @@ def _persona(
     if "legal_given_names" in val and "given_names" in val:
         if val["legal_given_names"] == val["given_names"] and not ignore_warnings:
             errs.append(ValidationWarning("legal_given_names", n_(
-                "Legal given names is equal to given names and should be removed.")))
+                "Legal given names are equal to given names and should be removed.")))
     if "birth_name" in val and "family_name" in val:
         if val["birth_name"] == val["family_name"] and not ignore_warnings:
             errs.append(ValidationWarning("birth_name", n_(
