@@ -15,10 +15,10 @@
 {% endblock %}
 {% block content %}
     <p>
-        {% trans %}
+        {% trans event_admins=util.href(cdedblink("core/view_admins") + "#Event-Admins", gettext("event admins")) %}
             Event helpers have comprehensive readonly access to event information which is not privacy-sensitive.
             Specifically, they have only aggregated access to registration data.
-            By contrast, like orgas, event admins have full access to all event data.
+            By contrast, like orgas, {{ event_admins }} have full access to all event data.
         {% endtrans %}
     </p>
     {% if 'event_mgmt' in user.admin_views %}
@@ -46,12 +46,12 @@
     {% endif %}
 
     <div class="row" id="eventhelper-list">
-        {% for list in event_helpers | slice(2 if event_helpers|length > 5 else 1) %}
+        {% for list in event_helpers | keydictsort(EntitySorter.persona) | slice(2 if event_helpers|length > 5 else 1) %}
             <div class="col-sm-6">
                 <ul class="nosp slim">
-                    {% for persona_id in list %}
+                    {% for persona_id, persona in list %}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(event_helpers[persona_id]) }}
+                            {{ util.persona_anchor(persona) }}
                             {% if 'event_mgmt' in user.admin_views %}
                                 <form action="{{ cdedblink('event/remove_event_helper') }}"
                                       method="POST"
@@ -61,7 +61,7 @@
                                     {{ util.input_hidden(name="persona_id", value=persona_id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as event helper")|format(
-                                                name=util.persona_name(event_helpers[persona_id]))|s) }}
+                                                name=util.persona_name(persona))|s) }}
                                 </form>
                             {% endif %}
                         </li>

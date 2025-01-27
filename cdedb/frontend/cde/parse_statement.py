@@ -190,7 +190,7 @@ AMOUNT_MIN_EVENT_FEE = 40
 STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
 
 STATEMENT_FILENAME_PATTERN = re.compile(
-    r"Umsaetze_DE(?:26|96)37020500000806890[01]_(\d{4}.\d{2}.\d{2})(?: \(\d+\))?.csv")
+    r"Umsaetze_[A-Z]{2}\d{10,30}_(\d{4}.\d{2}.\d{2})(?: \(\d+\))?.csv")
 
 
 def date_from_filename(filename: str) -> datetime.date:
