@@ -327,6 +327,8 @@ _DEFAULTS = {
     "SEPA_SENDER_COUNTRY": "DE",
     # "Gläubiger-ID" for direct debit transfers
     "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
+    # Old "Gäubiger-ID" if it changed.
+    "SEPA_ORIGINAL_GLAUEBIGERID": "",
     # Date at which SEPA was introduced
     "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
     # Date after which SEPA was used exclusively
