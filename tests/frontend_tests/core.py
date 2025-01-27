@@ -1764,6 +1764,7 @@ class TestCoreFrontend(FrontendTest):
         f['legal_given_names'] = f['nickname'] = f['given_names'].value
         self.submit(f, check_notification=False)
         self.assertValidationWarning('birth_name', "Geburtsname entspricht dem Familiennamen")
+        self.assertValidationWarning('legal_given_names', "Bürgerlicher Vorname entspricht dem Rufnamen")
         self.assertValidationWarning('nickname', "Spitzname entspricht dem Rufnamen")
 
         # Test regular changelog facility.
