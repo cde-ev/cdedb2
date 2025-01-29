@@ -14651,7 +14651,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:53
 msgid "Not set yet."
-msgstr "*Hier gibt es noch nichts.*"
+msgstr "Hier gibt es noch nichts."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:59
 msgid "Changes to this free text have not been saved."
