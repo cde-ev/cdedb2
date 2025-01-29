@@ -40,7 +40,7 @@ from cdedb.common import (
     now,
 )
 from cdedb.common.sorting import Sortkey, xsorted
-from cdedb.filter import money_filter
+from cdedb.filter import keydictsort_filter, money_filter
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import CourseAttendees
@@ -904,8 +904,10 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         If they have not been checked out even though they should have been, return an
         INFO as well.
         """
+        # sorting this is relevant for checkout validity, thus sort by part end
         is_present_parts = {
-            part_id: part for part_id, part in event.parts.items()
+            part_id: part for part_id, part in keydictsort_filter(
+                event.parts, sortkey=lambda part: part.part_end)
             if registration['parts'][part_id]['status'].is_present()
         }
 
@@ -923,20 +925,26 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         day = datetime.timedelta(days=1)
         for period in registration['checkin_periods']:
             valid_checkin_time = valid_checkout_time = False
+            has_successor = False
             for part in is_present_parts.values():
+                # look if period starts within some part where you should be present
                 if part.part_begin <= period.checkin_time.date() < part.part_end:
                     valid_checkin_time = True
-                has_contingent_successor = any(
-                    other.part_begin - day <= part.part_end < other.part_end
-                    for other in is_present_parts.values())
-                if (not period.checkout_time and part.part_end >= ref_time
-                        or has_contingent_successor):
                     valid_checkout_time = True
-            if period.checkout_time:
-                for part in is_present_parts.values():
-                    if part.part_begin < period.checkout_time.date() <= part.part_end:
-                        valid_checkout_time = True
-                        break
+                    has_successor = True  # dummy, to trigger check below
+                if has_successor:  # You were present in a previous part...
+                    # ... but may you stay until a following part?
+                    has_successor = any(
+                        other.part_begin - day <= part.part_end < other.part_end
+                        for other in is_present_parts.values())
+                # You must check out within this part
+                # or participate in a directly succeeding part.
+                if (period.checkout_time
+                        and period.checkout_time.date() <= part.part_end):
+                    break
+                elif valid_checkin_time and not has_successor:
+                    valid_checkout_time = part.part_end >= ref_time
+                    break
             if not (valid_checkin_time and valid_checkout_time):
                 return cls(
                     event=event,
