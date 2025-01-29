@@ -254,7 +254,7 @@ class CoreBaseFrontend(AbstractFrontend):
         })
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(*models.MetaInfo.requestdict_fields())
+    @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
     def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
         data = check(rs, vtypes.MetaInfo, data)

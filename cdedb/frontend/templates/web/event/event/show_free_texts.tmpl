@@ -1,0 +1,95 @@
+{% set sidenav_active = 'event_free_texts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {{ ambience['event']['title'] }} – {% trans %}Free Texts{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_free_texts"), gettext("Free Texts"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Free Texts"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% macro render_free_text_panel(key, title, description, icon, markdown=True) %}
+    {% call util.bootstrap_panel(
+            title=title, icon=icon, anid="panel-" + key,
+            footer_class="text-info", footer_icon="info-circle", footer_text=description,
+            button=generic.edit_free_text_button(key, display=(edit != key))) %}
+        {# Form is hidden unless edit matches. #}
+        <form action="{{ cdedblink('event/change_free_text') }}" method="POST"
+                id="changefreetextform-{{ key }}" class="form-horizontal freetextform"
+                {% if edit != key %}style="display: none;"{% endif %}>
+            {{ util.input_hidden('free_text_key', key) }}
+            {{ util.anti_csrf_token('event/change_free_text') }}
+            {{ util.input_textarea(
+                    name='free_text_value', rows="5", defaultvalue=ambience['event'][key],
+                    anid=key + '-input',
+                    attributes='style="margin-bottom: 5px;" autofocus'|s) }}
+            {% if markdown %}
+                {{ util.markdown_preview(key + '-input') }}
+            {% endif %}
+            {{ util.input_submit(anid=key + '-submit') }}
+            &emsp;
+            {{ util.href(cdedblink("event/show_free_texts", {'edit': ''}), gettext("Cancel"),
+                         anid=key + '-cancel', icon="times", aclass="btn btn-default cancel") }}
+        </form>
+        <div id="{{ key }}-show" {% if edit == key %}style="display: none"{% endif %}>
+            {% if ambience['event'][key] -%}
+                {% if markdown -%}
+                    {# The markdown filter inserts a <p> that has a margin bottom of 9px. #}
+                    <div style="margin-bottom: -9px">
+                        {{ ambience['event'][key]|md }}
+                    </div>
+                {%- else -%}
+                    <pre>{{ ambience['event'][key] }}</pre>
+                {%- endif %}
+            {%- else -%}
+                <i class="text-muted">{% trans %}Not set yet.{% endtrans %}</i>
+            {%- endif %}
+        </div>
+        <div id="{{ key }}-unsaved-changed" style="display: none;" class="text-warning">
+            <br />
+            {{ util.make_icon('exclamation-triangle') }}{{ nbsp }}
+            {%- trans %}Changes to this free text have not been saved.{% endtrans %}
+        </div>
+        <script nonce="{{ csp_nonce }}">
+            let form_{{ key }} = $('#changefreetextform-{{ key }}');
+            $('#{{ key }}-edit').on('click', (event) => {
+                $('#{{ key }}-edit').hide();
+                $('#{{ key }}-show').hide();
+                form_{{ key }}.show();
+                $('#{{ key }}-input').focus();
+                $('#{{ key }}-unsaved-changed').hide();
+                event.preventDefault();
+            });
+            $('#{{ key }}-cancel').on('click', (event) => {
+                $('#{{ key }}-edit').show();
+                $('#{{ key }}-show').show();
+                form_{{ key }}.hide();
+                if (form_{{ key }}.data('serialize') !== form_{{ key }}.serialize()) {
+                    $('#{{ key }}-unsaved-changed').show();
+                }
+                event.preventDefault();
+            });
+        </script>
+    {% endcall %}
+{% endmacro %}
+
+{% block content %}
+    {{ render_free_text_panel("description", gettext("Description"), gettext("Shown on the event overview to logged in users."), "bars") }}
+    {{ render_free_text_panel("notes", gettext("Orga-Notes"), gettext("Shown to orgas on the event overview."), "tag") }}
+    {{ render_free_text_panel("registration_text", gettext("Register"), gettext('Shown on the "register" page.'), "sign-in-alt") }}
+    {{ render_free_text_panel("mail_text", gettext("Registration Mail"), gettext('Part of the registration confirmation mail.'), "envelope", markdown=False) }}
+    {{ render_free_text_panel("participant_info", gettext("Participant Info"), gettext('Shown on the "Participant Info" page only to participants.'), "info") }}
+    {{ render_free_text_panel("field_definition_notes", gettext("Custom Field Notes"), gettext('Shown to orgas on the "Configure Custom Fields" page.'), "tag") }}
+    <script nonce="{{ csp_nonce }}">
+        // Do this once for all forms, otherwise it only applies to the last one.
+        $('.freetextform').cdedbProtectChanges();
+    </script>
+{% endblock %}

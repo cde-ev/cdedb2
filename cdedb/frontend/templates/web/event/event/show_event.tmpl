@@ -29,6 +29,11 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
+        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+            <div class="p button-par">
+                {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
+            </div>
+        {% endif %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
     {% endif %}
 
@@ -137,23 +142,10 @@
 
     {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
         {% if ambience['event']['notes'] %}
-            {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                         aclass="panel-default panel-condensed") %}
+            {% call util.bootstrap_panel(title=gettext("Orga-Notes"),
+                                         button=generic.edit_free_text_button("notes"),
+                                         icon="tag", aclass="panel-default") %}
                 <div id="orga-notes">{{ ambience['event']['notes']|md }}</div>
-            {% endcall %}
-        {% endif %}
-
-        {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="sign-in-alt",
-                                         aclass="panel-default panel-condensed") %}
-                <div id="registration-text">{{ ambience['event']['registration_text']|md }}</div>
-            {% endcall %}
-        {% endif %}
-
-        {% if ambience['event']['mail_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
-                                         aclass="panel-default panel-condensed") %}
-                <div id="mail-text">{{ ambience['event']['mail_text']|linebreaks }}</div>
             {% endcall %}
         {% endif %}
     {% endif %}
