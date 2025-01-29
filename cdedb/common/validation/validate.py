@@ -2320,6 +2320,7 @@ SEPA_SENDER_FIELDS: TypeMapping = {
     'country': str,
     'iban': IBAN,
     'glaeubigerid': str,
+    'original_glaeubigerid': Optional[str],  # type: ignore[dict-item]
 }
 
 SEPA_META_LIMITS: Mapping[str, int] = {
@@ -2327,6 +2328,7 @@ SEPA_META_LIMITS: Mapping[str, int] = {
     # 'name': 70, easier to check by hand
     # 'address': 70, has to be checked by hand
     'glaeubigerid': 35,
+    'original_glaeubigerid': 35,
 }
 
 
@@ -2349,7 +2351,7 @@ def _sepa_meta(
         if validator is str:
             val[attribute] = asciificator(val[attribute])
         if attribute in SEPA_META_LIMITS:
-            if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
+            if val[attribute] and len(val[attribute]) > SEPA_META_LIMITS[attribute]:
                 errs.append(ValueError(attribute, n_("Too long.")))
 
     if val['sender']['country'] != "DE":
