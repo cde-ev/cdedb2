@@ -142,7 +142,7 @@ class PostingPatterns:
     retoure = re.compile(r"(Retouren|Storno)", flags=re.I)
 
     # Posting for an incoming direct debit.
-    incoming_direct_debit = re.compile(r"^Basislastschrift Ev$", flags=re.I)
+    incoming_direct_debit = re.compile(r"^(Basislastschrift Ev|Lastschrifteinr\. Ev)$", flags=re.I)
 
 
 class ReferencePatterns:
