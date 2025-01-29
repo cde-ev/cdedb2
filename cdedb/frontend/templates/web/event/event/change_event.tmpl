@@ -23,6 +23,9 @@
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"),
+                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="website_url", label=gettext("Website Link"),
                                     info=gettext("URL of the corresponding page of this event at the CdE website."
                                                  " This is cross linked on the overview and on the course list,"
@@ -30,9 +33,6 @@
                                          if ambience['event']['tracks'] else
                                          gettext("URL of the corresponding page of this event at the CdE website."
                                                  " This is cross linked on the overview.")) }}
-        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
                                              "Event” is set.")) }}
