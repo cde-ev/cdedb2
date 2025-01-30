@@ -202,16 +202,8 @@
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
     {%- if use_legal_name -%}
         {{ persona['legal_given_names'] or given_names }}
-    {%- elif include_nickname %}
-        {%- if nickname in given_names %}
-            {%- if not nickname or nickname == given_names -%}
-                {{ given_names }}
-            {%- else -%}
-                {{ '<em>{}</em>'.format(nickname|e).join((given_names|e).split(nickname|e))|s }}
-            {%- endif %}
-        {%- else -%}
-            {{ given_names }} ({{ nickname }})
-        {%- endif %}
+    {%- elif include_nickname and nickname -%}
+        {{ given_names }} ({{ nickname }})
     {%- else -%}
         {{ given_names }}
     {%- endif %}
