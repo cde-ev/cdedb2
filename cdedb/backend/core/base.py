@@ -1933,8 +1933,8 @@ class CoreBaseBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'given_names': "N.",
-                'legal_given_names': "N.",
-                'nickname': "N.",
+                'legal_given_names': None,
+                'nickname': None,
                 'family_name': "N.",
                 'birthday': datetime.date.min,
                 'birth_name': None,
