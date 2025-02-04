@@ -7609,3 +7609,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['fieldsummaryform']
         with self.assertRaises(webtest.app.AppError):
             self.submit(f)
+
+    @as_users("anton")
+    def test_event_dearchive(self) -> None:
+        self.traverse("Veranstaltungen", "CyberTestAkademie")
+        f = self.response.forms['archiveeventform']
+        f['ack_archive'] = True
+        f['create_past_event'] = False
+        self.submit(f)
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="static-notifications")
+        self.traverse("Konfiguration")
+        f = self.response.forms['changeeventform']
+        self.submit(f)
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="static-notifications")

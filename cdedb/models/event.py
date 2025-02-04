@@ -129,8 +129,12 @@ class Event(EventDataclass):
     field_definition_notes: Optional[str] = dataclasses.field(
         metadata={'update_request_exclude': True})
 
-    offline_lock: bool
-    is_archived: bool
+    # Disallow setting via request altogether.
+    offline_lock: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+    is_archived: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+
     is_cancelled: bool
     is_visible: bool
     is_course_list_visible: bool
