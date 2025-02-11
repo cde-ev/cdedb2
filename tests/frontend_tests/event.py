@@ -5010,10 +5010,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         base_time = now().replace(microsecond=0)
         delta = datetime.timedelta(seconds=42)
+        # check adding future checkout times
         f = self.response.forms['changeperiodform1']
-        f['checkout_time_1'] = "2222-02-01T10:00:00+02:00"
+        f['checkout_time_1'] = "2222-02-01T10:00:00+01:00"
         self.submit(f, check_notification=False)
-        self.assertValidationError('checkout_time_1', "Muss in der Vergangenheit liegen.")
+        self.assertValidationWarning(
+            'checkout_time_1', "Sollte weniger als 6 Stunden in der Zukunft sein.")
+        f = self.response.forms['changeperiodform1']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+        self.assertPresence("22.02.2022, 18:00:00 – 01.02.2222, 10:00:00")
+        f = self.response.forms['changeperiodform1']
+        f['checkout_time_1'] = "2022-02-23T10:00:00+01:00"
+        self.submit(f)
+        self.assertPresence("22.02.2022, 18:00:00 – 23.02.2022, 10:00:00")
 
         with freezegun.freeze_time(base_time) as frozen_time:
             self.assertNotIn('checkoutform', self.response.forms)
@@ -5074,13 +5084,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
                                 f" {datetime_filter(base_time + delta, lang='de')}")
             f = self.response.forms['checkinform']
-            f['checkout_time'] = base_time + 2*delta
-            self.submit(f, button='action', value='modify_checkout',
-                        check_notification=False)
-            self.assertValidationError(
-                "checkout_time", "Muss in der Vergangenheit liegen.")
-            frozen_time.tick(delta)
+            f['checkout_time'] = base_time + 2*delta  # future
             self.submit(f, button='action', value='modify_checkout')
+            frozen_time.tick(delta)
             self.get(url + "?registration_ids=1,6")
             self.assertPresence("Anton Administrator Nie eingecheckt")
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
@@ -5134,12 +5140,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertValidationError(
                 "checkout_time", "Muss nach dem letzten Checkin sein.")
-            f['checkout_time'] = base_time + 4*delta
-            self.submit(f, button='action', value='checkout', check_notification=False)
-            self.assertValidationError(
-                "checkout_time", "Muss in der Vergangenheit liegen.")
-            frozen_time.tick(delta)
+            f['checkout_time'] = base_time + 4*delta  # in future
             self.submit(f, button='action', value='checkout')
+            frozen_time.tick(delta)
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertNotification("Personen müssen eingecheckt sein", "error")
 
