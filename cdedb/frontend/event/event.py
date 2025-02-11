@@ -41,7 +41,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_EXPOSED_FIELDS,
     EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS,
     EVENT_PART_CREATION_OPTIONAL_FIELDS,
@@ -222,7 +221,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*models.Event.requestdict_fields(creation=False))
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -242,6 +241,44 @@ class EventEventMixin(EventBaseFrontend):
         code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
+
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("edit")
+    def show_free_texts(
+            self, rs: RequestState, event_id: int, edit: Optional[str],
+    ) -> Response:
+        rs.ignore_validation_errors()
+        return self.render(rs, "event/show_free_texts", {'edit': edit})
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.free_texts_write)
+    @REQUESTdata("free_text_key", "free_text_value")
+    def change_free_text(
+            self, rs: RequestState, event_id: int,
+            free_text_key: str, free_text_value: Optional[str],
+    ) -> Response:
+        change_notes_by_key = {
+            "description": "Beschreibung geändert.",
+            "notes": "Orga-Notizen geändert.",
+            "registration_text": 'Freitext "Anmelden" geändert.',
+            # "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
+            "mail_text": 'Freitext "Anmeldebestätigung" geändert.',
+            "participant_info": "Teilnehmer-Infos geändert.",
+            "field_definition_notes": "Notizen zu Datenfeldern geändert.",
+        }
+        if rs.has_validation_errors() or free_text_key not in change_notes_by_key:  # pragma: no cover
+            # No way to tell where we came from.
+            rs.notify("error", n_("Invalid free text key."))
+            return self.redirect(rs, "event/show_free_texts")
+        update = {
+            free_text_key: free_text_value,
+        }
+        code = self.eventproxy.set_event_free_texts(
+            rs, event_id, update, change_notes_by_key[free_text_key],
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_free_texts")
 
     @access("event")
     def get_minor_form(self, rs: RequestState, event_id: int) -> Response:
@@ -773,7 +810,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata("personalized")
-    @REQUESTdatadict(*models.EventFee.requestdict_fields())
+    @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=None))
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
                       personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
@@ -1149,7 +1186,7 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*models.Event.requestdict_fields(creation=True), "description")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      fee: vtypes.NonNegativeDecimal,

@@ -1665,8 +1665,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N. Bürgerlicher Name N. N."
-                            " Bürgerlichen Vornamen für Mitgliedersuche anzeigen Nein"
+        self.assertPresence("Name N. N."
                             " Geburtsdatum N/A Geschlecht keine Angabe"
                             " Pronomen – Pronomen auf Namensschild Nein",
                             div='personal-information', exact=True)
@@ -1757,6 +1756,17 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_changelog(self) -> None:
+        # Test warnings about name ambiguity.
+        self.traverse("Meine Daten", "Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['family_name'] = f['birth_name'] = "Ganondorf"
+        f['legal_given_names'] = f['nickname'] = f['given_names'].value
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning('birth_name', "Geburtsname entspricht dem Familiennamen")
+        self.assertValidationWarning('legal_given_names', "Bürgerlicher Vorname entspricht dem Rufnamen")
+        self.assertValidationWarning('nickname', "Spitzname entspricht dem Rufnamen")
+
+        # Test regular changelog facility.
         self.traverse("Meine Daten", "Bearbeiten")
         f = self.response.forms['changedataform']
         f['family_name'] = "Ganondorf"

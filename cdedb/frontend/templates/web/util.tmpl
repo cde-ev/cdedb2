@@ -36,7 +36,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="") -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="", attributes='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -47,7 +47,7 @@
     title=title,
     id=anid,
     **{ "aria-current": "page" if active }
-)|xmlattr }}{# We use the `active` attribute for navigation only #}>
+)|xmlattr }} {{ attributes }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
@@ -86,14 +86,32 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon=none, anid=none) %}
+{% macro bootstrap_panel(
+        title="", aclass="panel-default", icon=none, anid=none, button=none,
+        footer_text=none, footer_class="", footer_icon=none
+) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
-        {%- if title or icon %}
+        {%- if title or icon or button %}
             <div class="panel-heading">
-                <h3 class="panel-title">{{ make_icon(icon) + " " if icon }}{{ title }}</h3>
+                {{- button -}}
+                <h3 class="panel-title">
+                    {{- make_icon(icon) + nbsp if icon }}
+                    {{- title -}}
+                </h3>
+                <div style="clear:both;"></div>
             </div>
         {%- endif %}
-        <div class="panel-body">{{- caller() }}</div>
+        <div class="panel-body">
+            {{- caller() -}}
+        </div>
+        {% if footer_text or footer_icon -%}
+            <div class="panel-footer {{ footer_class }}">
+                {%- if footer_icon -%}
+                    {{ make_icon(footer_icon) }}{{ nbsp }}
+                {%- endif -%}
+                {{- footer_text -}}
+            </div>
+        {%- endif %}
     </div>
 {%- endmacro %}
 
@@ -184,16 +202,8 @@
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
     {%- if use_legal_name -%}
         {{ persona['legal_given_names'] or given_names }}
-    {%- elif include_nickname %}
-        {%- if nickname in given_names %}
-            {%- if not nickname or nickname == given_names -%}
-                {{ given_names }}
-            {%- else -%}
-                {{ '<em>{}</em>'.format(nickname|e).join((given_names|e).split(nickname|e))|s }}
-            {%- endif %}
-        {%- else -%}
-            {{ given_names }} ({{ nickname }})
-        {%- endif %}
+    {%- elif include_nickname and nickname -%}
+        {{ given_names }} ({{ nickname }})
     {%- else -%}
         {{ given_names }}
     {%- endif %}
@@ -700,7 +710,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
+{% macro input_submit(label=gettext("Save"), value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
          readonly=False, title=none, ariahidden=false, formid=none, formmethod=none, formaction=none,
          display_ignore_warnings=True) %}
     {% if display_ignore_warnings %}
@@ -724,7 +734,7 @@
     </button>
 {%- endmacro %}
 
-{% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
+{% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
@@ -741,7 +751,7 @@
                     {{- info -}}
                 </p>
             {%- endif %}
-            {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
+            {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}

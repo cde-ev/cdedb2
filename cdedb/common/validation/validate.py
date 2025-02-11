@@ -1631,6 +1631,18 @@ def _persona(
         if val["honorary_member"] and not val["is_member"]:
             errs.append(ValueError("honorary_member", n_(
                 "Honorary membership requires membership.")))
+    if "nickname" in val and "given_names" in val:
+        if val["nickname"] == val["given_names"] and not ignore_warnings:
+            errs.append(ValidationWarning("nickname", n_(
+                "Nickname is equal to given names and should be removed.")))
+    if "legal_given_names" in val and "given_names" in val:
+        if val["legal_given_names"] == val["given_names"] and not ignore_warnings:
+            errs.append(ValidationWarning("legal_given_names", n_(
+                "Legal given names are equal to given names and should be removed.")))
+    if "birth_name" in val and "family_name" in val:
+        if val["birth_name"] == val["family_name"] and not ignore_warnings:
+            errs.append(ValidationWarning("birth_name", n_(
+                "Birth name is equal to family name and should be removed.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
@@ -2308,6 +2320,7 @@ SEPA_SENDER_FIELDS: TypeMapping = {
     'country': str,
     'iban': IBAN,
     'glaeubigerid': str,
+    'original_glaeubigerid': Optional[str],  # type: ignore[dict-item]
 }
 
 SEPA_META_LIMITS: Mapping[str, int] = {
@@ -2315,6 +2328,7 @@ SEPA_META_LIMITS: Mapping[str, int] = {
     # 'name': 70, easier to check by hand
     # 'address': 70, has to be checked by hand
     'glaeubigerid': 35,
+    'original_glaeubigerid': 35,
 }
 
 
@@ -2337,7 +2351,7 @@ def _sepa_meta(
         if validator is str:
             val[attribute] = asciificator(val[attribute])
         if attribute in SEPA_META_LIMITS:
-            if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
+            if val[attribute] and len(val[attribute]) > SEPA_META_LIMITS[attribute]:
                 errs.append(ValueError(attribute, n_("Too long.")))
 
     if val['sender']['country'] != "DE":
@@ -2437,7 +2451,6 @@ def _past_event(
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': const.PastInstitutions,
-    'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,
 }
@@ -2450,27 +2463,35 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_start': Optional[datetime.datetime],
     'registration_soft_limit': Optional[datetime.datetime],
     'registration_hard_limit': Optional[datetime.datetime],
-    'notes': Optional[str],
-    'field_definition_notes': Optional[str],
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
     'iban': Optional[Accounts],
-    'mail_text': Optional[str],
-    'registration_text': Optional[str],
     'orga_address': Optional[Email],
-    'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
     'reimbursement_iban_field_id': Optional[ID],
     'website_url': Optional[Url],
     'notify_on_registration': const.NotifyOnRegistration,
 }
 
-EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
+EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
+    'description': Optional[str],
+    'notes': Optional[str],
+    'field_definition_notes': Optional[str],
+    'mail_text': Optional[str],
+    'registration_text': Optional[str],
+    'participant_info': Optional[str],
+}
 
+EVENT_EXPOSED_FIELDS = {
+    **EVENT_COMMON_FIELDS,
+    **EVENT_EXPOSED_OPTIONAL_FIELDS,
+    **EVENT_FREETEXT_FIELDS,
+}
 
 EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_EXPOSED_OPTIONAL_FIELDS,
+    **EVENT_FREETEXT_FIELDS,
     'offline_lock': bool,
     'is_archived': bool,
     'orgas': Iterable,
@@ -2536,8 +2557,8 @@ def _event(
     else:
         mandatory_fields = {}
         optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
 
@@ -4218,7 +4239,7 @@ def _serialized_event_configuration(
 
     if creation:
         mandatory_fields = dict(**EVENT_COMMON_FIELDS)
-        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS)
+        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS, **EVENT_FREETEXT_FIELDS)
     else:
         mandatory_fields = {}
         optional_fields = dict(**EVENT_EXPOSED_FIELDS)
@@ -4302,6 +4323,18 @@ def _serialized_event_configuration(
         raise errs
 
     return SerializedEventConfiguration(val)
+
+
+@_add_typed_validator
+def _serialized_event_freetexts(
+    val: Any, argname: str = "serialized_event_freetexts", **kwargs: Any,
+) -> SerializedEventFreetexts:
+
+    val = _mapping(val, argname, **kwargs)
+
+    val = _examine_dictionary_fields(val, {}, dict(**EVENT_FREETEXT_FIELDS), **kwargs)
+
+    return SerializedEventFreetexts(val)
 
 
 @_add_typed_validator

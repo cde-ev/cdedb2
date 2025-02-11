@@ -106,7 +106,6 @@ class Event(EventDataclass):
     shortname: str
 
     institution: const.PastInstitutions
-    description: Optional[str]
 
     registration_start: Optional[datetime.datetime]
     registration_soft_limit: Optional[datetime.datetime]
@@ -116,14 +115,26 @@ class Event(EventDataclass):
     orga_address: Optional[vtypes.Email]
     website_url: Optional[str]
 
-    registration_text: Optional[str]
-    mail_text: Optional[str]
-    participant_info: Optional[str]
-    notes: Optional[str]
-    field_definition_notes: Optional[str]
+    # Exclude from request to avoid unsetting when submitting `change_event_form`.
+    description: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    registration_text: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    mail_text: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    participant_info: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    notes: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    field_definition_notes: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
 
-    offline_lock: bool
-    is_archived: bool
+    # Disallow setting via request altogether.
+    offline_lock: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+    is_archived: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+
     is_cancelled: bool
     is_visible: bool
     is_course_list_visible: bool
@@ -550,9 +561,9 @@ class CustomQueryFilter(EventDataclass):
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata={'validation_exclude': True},
     )
-    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exlude': True})
+    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exclude': True})
 
-    scope: QueryScope = dataclasses.field(metadata={'update_exlude': True})
+    scope: QueryScope = dataclasses.field(metadata={'update_exclude': True})
     title: str
     notes: Optional[str]
     fields: set[str] = dataclasses.field(metadata={'database_include': True})

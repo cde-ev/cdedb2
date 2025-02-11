@@ -268,7 +268,7 @@
                                 <h4 class="filter-title">
                                     {{ util.make_icon('eye') }} {% trans %}Displayed Fields{% endtrans %}</h4>
                                 <p class="viewfield-list"></p>
-                                <div class="input-group has-success">
+                                <div class="input-group has-success queryform-fields">
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
@@ -292,7 +292,7 @@
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row queryform-searchbar">
                     <div class="col-sm-6">
                         <h4 class="filter-title">
                             {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
@@ -475,7 +475,7 @@
             <thead>
                 <tr>
                     <th><span class="softhide" id="js-select-num">(<span id="label-select-num">0</span>)</span></th>
-                    <th></th>
+                    <th class="hidden-print"></th>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
@@ -487,7 +487,7 @@
                                 {% endif %}
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     {% if values.get("qord_" + i|string) == field %}
-                                        <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
+                                        <span id="queryresult-sorted-column-marker" class="label label-default" title="{% trans %}sorted column{% endtrans %}">
                                         {% if values.get("qord_" + i|string + "_ascending") == "False" %}
                                             {{ util.make_icon('sort-alpha-down') }}
                                         {% else %}
@@ -581,7 +581,7 @@
                     {% endif %}
                     <tr>
                         <td title="{{ gettext(aggregate_title) }}"><b>{{ aggregate_symbol }}</b></td>
-                        <td></td>
+                        <td class="hidden-print"></td>
                         {% for csvfield in query.fields_of_interest %}
                             {% for field in csvfield.split(',') %}
                                     {% set key = aggregate_func + "." + field %}

@@ -332,6 +332,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'country': self.conf["SEPA_SENDER_COUNTRY"],
                 'iban': meta_info.lastschrift_account.get_iban(),
                 'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
+                'original_glaeubigerid': self.conf["SEPA_ORIGINAL_GLAEUBIGERID"],
             },
             'payment_date': self._calculate_payment_date(),
         }
@@ -459,6 +460,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'mandate_reference': lastschrift_reference(
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
+                'original_glaeubiger_id': self.conf["SEPA_ORIGINAL_GLAEUBIGERID"],
             }
             subject = "Anstehender Lastschrifteinzug Lastschriftinitiative"
             self.do_mail(rs, "lastschrift/sepa_pre-notification",
