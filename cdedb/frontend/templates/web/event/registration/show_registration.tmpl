@@ -279,7 +279,7 @@
                                          display_ignore_warnings=false) }}
                 </td>
                 <td style="padding-left: 0;">
-                    <form action="{{ cdedblink("event/delete_checkin_period") }} + '#checkin-periods'|s" method="POST"
+                    <form action="{{ cdedblink("event/delete_checkin_period") + '#checkin-periods'|s }}" method="POST"
                           id="deleteperiodform{{ loop.index }}">
                         {{ util.anti_csrf_token('event/delete_checkin_period') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
@@ -298,7 +298,7 @@
                 <td>
                 {% if not ambience['registration']['checkin_periods']
                       or ambience['registration']['checkin_periods'][-1].checkout_time %}
-                    <form action="{{ cdedblink('event/add_checkin') }} + '#checkin-periods'|s" method="POST" id="checkinform">
+                    <form action="{{ cdedblink('event/add_checkin') + '#checkin-periods'|s }}" method="POST" id="checkinform">
                         {{ util.anti_csrf_token('event/add_checkin') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
@@ -307,7 +307,7 @@
                                              display_ignore_warnings=false) }}
                     </form>
                 {% else %}
-                    <form action="{{ cdedblink('event/add_checkout') }} + '#checkin-periods'|s" method="POST"
+                    <form action="{{ cdedblink('event/add_checkout') + '#checkin-periods'|s }}" method="POST"
                         id="checkoutform">
                         {{ util.anti_csrf_token('event/add_checkout') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
