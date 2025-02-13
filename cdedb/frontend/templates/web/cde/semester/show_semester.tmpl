@@ -444,7 +444,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for expuls_id, expuls in expuls_history|dictsort %}
+            {% for expuls_id, expuls in expuls_history|dictsort(reverse=True) %}
                 <tr>
                     <td>{{ expuls['id'] }}</td>
                     <td>{{ expuls['addresscheck_count'] }}</td>

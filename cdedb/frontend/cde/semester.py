@@ -31,8 +31,6 @@ class CdESemesterMixin(CdEBaseFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
-        # No meaningful data is available before semester 52
-        period_history = {id: period_history[id] for id in period_history if id > 51}
         allowed_semester_steps = self.cdeproxy.allowed_semester_steps(rs)
         # group all allowed steps into the three steps we display to the user
         in_step_1 = (allowed_semester_steps.advance or allowed_semester_steps.billing
@@ -54,6 +52,10 @@ class CdESemesterMixin(CdEBaseFrontend):
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
         stats = self.cdeproxy.finance_statistics(rs)
+        # No meaningful data is available before semester 52
+        MIN_SEMESTER = 52
+        period_history = {id: period_history[id] for id in period_history if id >= MIN_SEMESTER}
+        expuls_history = {id: expuls_history[id] for id in expuls_history if id >= MIN_SEMESTER}
         return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
