@@ -31,6 +31,8 @@ class CdESemesterMixin(CdEBaseFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
+        # No meaningful data is available before semester 52
+        period_history = {id: period_history[id] for id in period_history if id > 51}
         allowed_semester_steps = self.cdeproxy.allowed_semester_steps(rs)
         # group all allowed steps into the three steps we display to the user
         in_step_1 = (allowed_semester_steps.advance or allowed_semester_steps.billing
