@@ -1269,8 +1269,10 @@ class TestCoreBackend(BackendTest):
             self.assertLess(0, ret)
             purged_personas[p_id] = self.core.get_total_persona(self.key, p_id)
             del purged_personas[p_id]['id']
-            for f in ['given_names', 'legal_given_names', 'family_name', 'nickname']:
+            for f in ['given_names', 'family_name']:
                 self.assertEqual("N.", purged_personas[p_id][f])
+            for f in ['legal_given_names', 'nickname']:
+                self.assertEqual(None, purged_personas[p_id][f])
         self.assertEqual(purged_personas[3], purged_personas[10])
 
     def test_privilege_change(self) -> None:

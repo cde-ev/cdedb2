@@ -1155,7 +1155,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata('amount')
-    @REQUESTdatadict(*models.EventFee.requestdict_fields())
+    @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=True))
     def add_new_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int,
             data: CdEDBObject, amount: decimal.Decimal,

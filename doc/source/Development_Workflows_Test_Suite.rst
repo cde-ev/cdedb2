@@ -56,7 +56,7 @@ olaf@example.cde        DB-15-9   secret     a disabled user (and member and CdE
 paulchen@axample.cde    DB-16-7   secret     core admin and cde user
 quintus@example.cde     DB-17-5   secret     cde admin and not searchable member
 rowena@example.cde      DB-18-3   secret     assembly and event but not cde user
-vera@example.cde        DB-22-1   secret     former member, corresponding to Verwaltungsteam
+vera@example.cde        DB-22-1   secret     former member, corresponding to Mitgliederverwaltung
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
