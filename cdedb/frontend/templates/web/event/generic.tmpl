@@ -155,7 +155,7 @@
         {% elif field['kind'] == datatypes.phone %}
             {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% elif field['kind'] == datatypes.iban %}
-            {{ entry|iban }}
+            {{ entry|iban or otherwise }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
