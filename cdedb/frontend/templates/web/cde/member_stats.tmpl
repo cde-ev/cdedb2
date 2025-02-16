@@ -14,8 +14,8 @@
         <table class="table table-slim table-condensed">
             <thead>
                 <tr>
-                    <th colspan="2"></th>
-                    <th>{% trans %}Count{% endtrans %}</th>
+                    <td colspan="2"></td>
+                    <th class="text-right">{% trans %}Count{% endtrans %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,7 +43,7 @@
                 <tr>
                     <td></td>
                     {% for key, value in year_stats.items() %}
-                    <th>{{ gettext(key) }}</th>
+                    <th class="text-right">{{ gettext(key) }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -79,7 +79,7 @@
         <thead>
             <tr>
                 <td></td>
-                <th>{{ gettext(view) }}</th>
+                <th class="text-right">{{ gettext(view) }}</th>
             </tr>
         </thead>
         <tbody>
