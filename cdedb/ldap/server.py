@@ -16,13 +16,13 @@ from ldaptor.protocols.ldap.ldaperrors import (
     LDAPUnwillingToPerform,
 )
 from ldaptor.protocols.pureldap import (
+    LDAPAbandonRequest,
     LDAPCompareRequest,
     LDAPControls,
     LDAPMessage,
     LDAPProtocolRequest,
     LDAPProtocolResponse,
     LDAPSearchRequest,
-    LDAPAbandonRequest,
 )
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
@@ -489,12 +489,11 @@ class LdapHandler:
 
         return None
 
-
     # see RFC 4511
     # AbandonRequest ::= [APPLICATION 16] MessageID
     async def handle_LDAPAbandonRequest(
         self,
-        request: LDAPSearchRequest,
+        request: LDAPAbandonRequest,
         controls: Optional[pureldap.LDAPControls],
         reply: ReplyCallback,
     ) -> None:
