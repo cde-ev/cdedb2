@@ -16,6 +16,7 @@ from ldaptor.protocols.ldap.ldaperrors import (
     LDAPUnwillingToPerform,
 )
 from ldaptor.protocols.pureldap import (
+    LDAPAbandonRequest,
     LDAPCompareRequest,
     LDAPControls,
     LDAPMessage,
@@ -486,4 +487,17 @@ class LdapHandler:
         reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode),
               controls=controls)
 
+        return None
+
+    # see RFC 4511
+    # AbandonRequest ::= [APPLICATION 16] MessageID
+    async def handle_LDAPAbandonRequest(
+        self,
+        request: LDAPAbandonRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        # according to specification, the operation which should be abandoned may or
+        # may not send a done notification. So, we just let the operation proceed.
+        # this request does not send a response
         return None
