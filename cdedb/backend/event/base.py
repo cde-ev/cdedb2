@@ -1019,7 +1019,8 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self.get_event(rs, event_id)
 
             if event.is_balanced:
-                raise ValueError(n_("Event is balanced."))
+                raise ValueError(n_(
+                    "Event is balanced. May not change fee configuration."))
             if not fees:
                 return ret
 

@@ -1033,9 +1033,9 @@ class EventRegistrationBackend(EventBaseBackend):
                                           event_id=event_id)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            if event.is_balanced:
-                # TODO: prevent this only if amount owed or amount paid is changed?
-                raise ValueError(n_("Event is balanced."))
+            if "amount_paid" in data:
+                raise RuntimeError(n_(
+                    "Cannot alter `amount_paid` via `set_registration`."))
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -1124,7 +1124,18 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
+            current_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )["amount_owed"]
             self._update_registration_amount_owed(rs, data['id'])
+            new_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )["amount_owed"]
+
+            if event.is_balanced and current_amount_owed != new_amount_owed:
+                raise ValueError(n_(
+                    "Event is balanced. Amount owed may no longer change."))
+
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1152,9 +1163,6 @@ class EventRegistrationBackend(EventBaseBackend):
                 and not is_privileged(rs, EventPrivileges.registrations_write,
                                       event_id=data['event_id'])):
             raise PrivilegeError(n_("Not privileged."))
-        if event.is_balanced:
-            # TODO: prevent this only if amount owed is non-zero?
-            raise ValueError(n_("Event is balanced."))
         with Atomizer(rs):
             if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
                 raise ValueError(n_("This user does not exist or is archived."))
@@ -1168,6 +1176,9 @@ class EventRegistrationBackend(EventBaseBackend):
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
+            if event.is_balanced and data['amount_owed']:
+                raise ValueError(n_(
+                    "Event is balanced. May not create registration which owes a fee."))
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
@@ -1678,7 +1689,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
             if event.is_balanced:
-                raise ValueError(n_("Event is balanced."))
+                raise ValueError(n_(
+                    "Event is balanced. May not set personalized fee amount."))
             if fee_id not in event.fees:
                 raise KeyError
             if not event.fees[fee_id].is_personalized():
@@ -1725,19 +1737,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
         registration = self.get_registration(rs, registration_id)
         event_id = registration['event_id']
-        event = events[event_id]
+        event = self.get_event(rs, event_id)
         if event.is_balanced:
             # Balanced events mustn't block booking of payments, therefor unbalance the
             #  event if necessary.
             self.unbalance_event(rs, event_id)
-            events[event_id] = event = self.get_event(rs, event_id)
-
-        if "finance_admin" not in rs.user.roles:
-            if not is_privileged(rs, EventPrivileges.payment_write, event_id):
-                raise PrivilegeError(n_("Must be orga."))
-            if event.iban:
-                raise PrivilegeError(n_(
-                    "Cannot book payments for event with IBAN as orga."))
 
         if amount > 0:
             update = {
