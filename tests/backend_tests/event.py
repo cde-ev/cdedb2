@@ -41,6 +41,7 @@ from tests.common import (
     as_users,
     event_keeper,
     json_keys_to_int,
+    prepsql,
     storage,
 )
 
@@ -5515,3 +5516,43 @@ class TestEventBackend(BackendTest):
             log_expectation, realm="event", event_id=1, offset=log_offset,
         )
         log_offset += len(log_expectation)
+
+    @event_keeper
+    @as_users("garcia")
+    @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1;")
+    def test_event_is_balanced(self) -> None:
+        event_id = 1
+
+        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+            self.event.set_event_fees(self.key, event_id, {})
+
+        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+            self.event.set_registration(self.key, {'id': 1, 'fields': {'is_child': True}})
+
+        self.event.set_registration(self.key, {'id': 1, 'fields': {'brings_balls': False}})
+
+        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+            self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
+
+        new_reg = {
+            'event_id': event_id,
+            'persona_id': 4,
+            'parts': {
+                1: {
+                    'status': const.RegistrationPartStati.applied,
+                },
+                2: {
+                    'status': const.RegistrationPartStati.not_applied,
+                },
+                3: {
+                    'status': const.RegistrationPartStati.not_applied,
+                },
+            },
+            'tracks': {
+            },
+            'notes': None,
+            'mixed_lodging': False,
+            'list_consent': True,
+        }
+        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+            self.event.create_registration(self.key, new_reg)
