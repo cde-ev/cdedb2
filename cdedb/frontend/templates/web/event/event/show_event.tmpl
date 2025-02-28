@@ -513,7 +513,7 @@
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/unbalance_event') }}
                                     {{ util.input_submit(label=gettext("Unbalance Event"), readonly=is_locked,
-                                                         aclass="btn btn-primary", icon="balance-scale") }}
+                                                         aclass="btn btn-danger", icon="balance-scale") }}
                                 </form>
                             {% endif %}
                         </div>
