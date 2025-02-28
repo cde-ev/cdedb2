@@ -1919,9 +1919,17 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         """Checkin/-out multiple people at once.
 
+        At most one of checkin_time, checkout_time and field_id may be provided.
+
         :param action: One of 'checkout','modify_checkin', 'checkin', 'modify_checkout'.
             The modify_ options mass-reset the latest respective timestamp and
             the others add new ones.
+        :param checkin_time: set checkin time to this time.
+        :param checkout_time: set checkout time to this time.
+        :param field_id: if given, preview to set checkin/-out time from this field
+            (depending on action)
+        :param confirm_field_id: field id for that the preview was displayed
+        :param ack_field: confirm to save times from confirm_field_id
         """
         ref_time = now()
         if checkin_time and checkin_time > ref_time:
@@ -1940,15 +1948,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         regs = self.eventproxy.get_registrations(rs, registration_ids)
         # first, validate
         consistent = True
-        if action == 'checkout':
-            if not checkout_time:
-                rs.append_validation_error(
-                    ('checkout_time', ValueError(n_("Must not be empty."))))
-            elif checkout_time < max(
-                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
-            ):
-                rs.append_validation_error(
-                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
         if action in {'checkout', 'modify_checkin'}:
             if any(
                 not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
@@ -1956,6 +1955,33 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 rs.notify('error', n_("People must be checked in."))
                 consistent = False
+        if action == 'checkout':
+            if bool(checkout_time) == bool(field_id):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must give exactly one."))))
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must give exactly one."))))
+            elif checkout_time and checkout_time < max(
+                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            ):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
+            elif field_id:
+                field_name = rs.ambience['event'].fields[field_id].field_name
+                if consistent and any(  # consistent ensures that everyone is checked in
+                    reg['checkin_periods'][-1].checkin_time >= reg['fields'][field_name]
+                    for reg in regs.values()
+                    if reg['checkin_periods'] and field_name in reg['fields']
+                ):
+                    rs.append_validation_error(
+                        ('field_id', ValueError(n_("Must be after last checkin."))))
+                if any(
+                    field_name not in reg['fields']
+                    or not reg['fields'][field_name]
+                    for reg in regs.values()
+                ):
+                    rs.append_validation_error(
+                        ('field_id', ValueError(n_("Field must not be empty."))))
         if (action == 'modify_checkin'
             and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
             and checkin_time < max(
@@ -1986,7 +2012,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ('checkin_time', ValueError(n_("Must be after last checkout."))))
             elif field_id:
                 field_name = rs.ambience['event'].fields[field_id].field_name
-                if consistent and any(  # consistent ensures that everyone is checked in
+                if consistent and any(  # consistent ensures that everyone is checked out
                     reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
                     for reg in regs.values()
                     if reg['checkin_periods'] and field_name in reg['fields']
@@ -2027,7 +2053,13 @@ class EventRegistrationMixin(EventBaseFrontend):
                 raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkin_time"
         elif action == 'checkout':
-            ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            if checkout_time:
+                ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            elif field_id:
+                for reg_id, reg in regs.items():
+                    self.eventproxy.add_checkout(rs, reg_id, reg['fields'][field_name])
+            else:
+                raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkout_time"
         elif action == 'modify_checkin':
             if not checkin_time:  # delete latest checkins

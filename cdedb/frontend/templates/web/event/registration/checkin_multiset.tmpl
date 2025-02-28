@@ -36,7 +36,18 @@
                 <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkoutform" class="form-horizontal">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
-                        {% trans %}The following people can be checked out, or the time of their latest checkin can be reset or deleted.{% endtrans %}
+                        {% trans %}
+                            The following people can be checked out, or the time of their latest checkin can be reset or deleted.
+                        {% endtrans %}
+                        {% if field_preview_values %}
+                            {% trans field=datetime_registration_fields[values.get('field_id')|int] %}
+                                Below a preview of the checkout values that will be filled from field “{{ field }}” is displayed.
+                            {% endtrans%}
+                        {% else %}
+                            {% trans %}
+                                The checkout time can be filled from a custom field, or set below for all registrations.
+                            {% endtrans %}
+                        {% endif %}
                     </p>
                     <ul class="slim">
                     {% for reg_id, periods in present.items() %}
@@ -47,11 +58,40 @@
                                     present since %(checkin)s
                                 {% endtrans %}
                             </small>
+                        {% if field_preview_values %}
+                            {% set new_time=field_preview_values[reg_id] %}
+                            {% if not new_time %}
+                                <small class="bg-danger text-nowrap">
+                                    {% trans %}
+                                        new checkout: no entry
+                                    {% endtrans %}
+                                </small>
+                            {% elif periods and new_time <= periods[-1].checkin_time %}
+                                <small class="bg-danger text-nowrap">
+                                    {% trans new_time=new_time|datetime(lang=lang) %}
+                                        new checkout: {{ new_time }} (before checkin)
+                                    {% endtrans %}
+                                </small>
+                            {% else %}
+                                <small class="bg-success text-nowrap">
+                                    {% trans new_time=new_time|datetime(lang=lang) %}
+                                        new checkout: {{ new_time }}
+                                    {% endtrans %}
+                                </small>
+                            {% endif %}
+                        {% endif %}
                         </li>
                     {% endfor %}
                     </ul>
                     {{ util.input_hidden('registration_ids', value=",".join(present|map('string'))) }}
-                    {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local') }}
+                    {{ util.form_input_select('field_id', entries=datetime_registration_fields.items(), nulloption="",
+                                              label=gettext("Set checkout times from custom field")) }}
+                    {{ util.input_hidden('confirm_field_id') }}
+                    {% if values.get('field_id') %}
+                        {{ util.form_input_checkbox('ack_field', label=gettext("Confirm")) }}
+                    {% else %}
+                        {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local') }}
+                    {% endif %}
                     {{ util.form_input_submit(name="action", value="checkout", label=gettext("Checkout"), icon="arrow-right-from-bracket") }}
                     {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local', outerclass="mosp",
                                             anid="input-checkin-massreset", info=gettext("leave empty to delete latest checkin")) }}
