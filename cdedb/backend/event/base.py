@@ -695,7 +695,11 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Event, data, current=current)
             data['id'] = event_id
 
-            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.basic_write | EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -768,6 +772,26 @@ class EventBaseBackend(EventLowLevelBackend):
                 self.set_event_fees(rs, new_id, fees)
             self.event_keeper_create(rs, new_id)
         return new_id
+
+    @access("event")
+    def set_event_free_texts(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                             change_note: Optional[str] = None) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        data = affirm(vtypes.SerializedEventFreetexts, data)
+        with Atomizer(rs):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
+                raise PrivilegeError(n_("Not privileged."))
+            if not data:
+                return 1
+            data['id'] = event_id
+            ret = self.sql_update(rs, models.Event.database_table, data)
+            self.event_log(rs, const.EventLogCodes.event_changed,
+                           event_id, change_note=change_note)
+        return ret
 
     @access("event")
     def create_lodgement_group(self, rs: RequestState,
@@ -1567,6 +1591,8 @@ class EventBaseBackend(EventLowLevelBackend):
         del ret['event']['orgas']
         ret['event']['fields'] = new_fields
         ret['event']['questionnaire'] = new_questionnaire
+        if ret['event']['iban']:
+            ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
     @access("event")

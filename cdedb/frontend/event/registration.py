@@ -22,6 +22,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
@@ -1154,7 +1155,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata('amount')
-    @REQUESTdatadict(*models.EventFee.requestdict_fields())
+    @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=True))
     def add_new_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int,
             data: CdEDBObject, amount: decimal.Decimal,
@@ -1952,7 +1953,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return {
             'registration': registration, 'persona': persona,
             'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
-            'iban': rs.ambience['event'].iban, 'fee': fee,
+            'account': rs.ambience['event'].iban, 'fee': fee,
             'complex_fee': complex_fee, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
         }
 
@@ -1972,16 +1973,17 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @staticmethod
     def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
-        if not payment_data['iban']:
+        if not payment_data['account']:
             return None
         # Ensure that the "free-"text parts are not too long. The exact size is limited
         # by third parties.
+        account: Accounts = payment_data['account']
         return {
-            'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
+            'name': account.get_account_holder()[:70],
             'text': payment_data['reference'][:140],
             'amount': payment_data['to_pay'],
-            'iban': payment_data['iban'],
-            'bic': payment_data['meta_info']['CdE_Konto_BIC'],
+            'iban': account.get_iban(),
+            'bic': account.get_bic(),
         }
 
     def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:

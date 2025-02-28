@@ -9,6 +9,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     GenesisDecision,
     RequestState,
@@ -640,13 +641,17 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_meta_info(self) -> None:
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        expectation['membership_fee_account'] = Accounts(
+            expectation['membership_fee_account'])
+        expectation['lastschrift_account'] = Accounts(
+            expectation['lastschrift_account'])
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
         update = {
             'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
 
     @as_users("vera")
     def test_genesis_deletion(self) -> None:
@@ -1264,8 +1269,10 @@ class TestCoreBackend(BackendTest):
             self.assertLess(0, ret)
             purged_personas[p_id] = self.core.get_total_persona(self.key, p_id)
             del purged_personas[p_id]['id']
-            for f in ['given_names', 'legal_given_names', 'family_name', 'nickname']:
+            for f in ['given_names', 'family_name']:
                 self.assertEqual("N.", purged_personas[p_id][f])
+            for f in ['legal_given_names', 'nickname']:
+                self.assertEqual(None, purged_personas[p_id][f])
         self.assertEqual(purged_personas[3], purged_personas[10])
 
     def test_privilege_change(self) -> None:

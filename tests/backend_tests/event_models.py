@@ -6,7 +6,7 @@ import decimal
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import NearlyNow, nearly_now
+from cdedb.common import Accounts, NearlyNow, nearly_now
 from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
 
@@ -22,7 +22,7 @@ class TestEventModels(BackendTest):
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
             description="Everybody come!",
-            iban="DE26370205000008068900",
+            iban=Accounts.Sozialbank,
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
@@ -410,7 +410,7 @@ class TestEventModels(BackendTest):
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
-            iban="DE26370205000008068900",
+            iban=Accounts.Sozialbank,
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"

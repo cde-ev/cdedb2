@@ -23,6 +23,7 @@ import cdedb.models.event as models
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,
+    Accounts,
     CdEDBObject,
     now,
     unwrap,
@@ -385,12 +386,9 @@ class TestEventFrontend(FrontendTest):
 
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
-        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
-        self.assertPresence(iban, div='cde-iban')
+        self.assertPresence(iban_filter(Accounts.Sozialbank.get_iban()), div='cde-iban')
         self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
-        self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
-                            div='mail-text')
 
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
@@ -436,13 +434,9 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
-    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
-              "farin", "petra")
     # remove event admin rights from farin
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_sidebar_one_event(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
         registered = {"Meine Anmeldung"}
@@ -452,6 +446,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
+            "Freitexte",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
@@ -460,45 +455,64 @@ class TestEventFrontend(FrontendTest):
         }
         finance_admin = {"Überweisungen eintragen"}
 
-        # TODO this could be more expanded (event without courses, distinguish
-        #  between registered and participant, ...
-        # not registered, not event admin, no event helper, no auditor
-        if self.user_in('martin', 'vera', 'werner'):
-            ins = everyone | not_registered
-            out = (registered | registered_or_privileged | privileged | orga
-                   | finance_admin)
-        # registered
-        elif self.user_in('emilia'):
-            ins = everyone | registered | registered_or_privileged
-            out = not_registered | privileged | orga | finance_admin
-        # orga
-        elif self.user_in('garcia'):
-            ins = (everyone | registered | registered_or_privileged | privileged
-                   | orga)
-            out = not_registered | finance_admin
-        # event helper
-        elif self.user_in('petra'):
-            ins = everyone | not_registered | registered_or_privileged | privileged
-            out = registered | orga | finance_admin
-        # event admin (annika is not registered)
-        elif self.user_in('annika'):
-            ins = (everyone | not_registered | registered_or_privileged | privileged
-                   | orga)
-            out = registered | finance_admin
-        # not registered, auditor
-        elif self.user_in('katarina'):
-            ins = (everyone | not_registered | privileged | registered_or_privileged
-                   | {"Log"}) - registrations_stats
-            out = (registered | orga | finance_admin | registrations_stats) - {"Log"}
-        # finance admin
-        elif self.user_in('farin'):
-            ins = (everyone | not_registered | privileged | registered_or_privileged
-                   | finance_admin) - registrations_stats
-            out = registered | orga | registrations_stats
-        else:
-            self.fail("Please adjust users for this tests.")
+        for user in ("annika", "emilia", "garcia", "martin", "vera", "werner",
+                     "katarina", "farin", "petra"):
+            with self.switch_user(user):
+                self.traverse("Veranstaltungen", "Große Testakademie 2222")
+                # TODO this could be more expanded (event without courses, distinguish
+                #  between registered and participant, ...
+                # not registered, not event admin, no event helper, no auditor
+                if self.user_in('martin', 'vera', 'werner'):
+                    ins = everyone | not_registered
+                    out = (
+                            registered | registered_or_privileged | privileged | orga
+                            | finance_admin
+                    )
+                # registered
+                elif self.user_in('emilia'):
+                    ins = everyone | registered | registered_or_privileged
+                    out = not_registered | privileged | orga | finance_admin
+                # orga
+                elif self.user_in('garcia'):
+                    ins = (
+                            everyone | registered | registered_or_privileged
+                            | privileged | orga
+                    )
+                    out = not_registered | finance_admin
+                # event helper
+                elif self.user_in('petra'):
+                    ins = (
+                            everyone | not_registered | registered_or_privileged
+                            | privileged
+                    )
+                    out = registered | orga | finance_admin
+                # event admin (annika is not registered)
+                elif self.user_in('annika'):
+                    ins = (
+                            everyone | not_registered | registered_or_privileged
+                            | privileged | orga
+                    )
+                    out = registered | finance_admin
+                # not registered, auditor
+                elif self.user_in('katarina'):
+                    ins = (
+                            everyone | not_registered | privileged
+                              | registered_or_privileged | {"Log"}
+                    ) - registrations_stats
+                    out = (
+                            registered | orga | finance_admin | registrations_stats
+                    ) - {"Log"}
+                # finance admin
+                elif self.user_in('farin'):
+                    ins = (
+                            everyone | not_registered | privileged
+                            | registered_or_privileged | finance_admin
+                    ) - registrations_stats
+                    out = registered | orga | registrations_stats
+                else:
+                    self.fail("Please adjust users for this tests.")
 
-        self.check_sidebar(ins, out)
+                self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
     def test_no_soft_limit(self) -> None:
@@ -601,13 +615,7 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual(f['registration_start'].value, "2000-10-30T01:00:00")
         f['title'] = "Universale Akademie"
         f['registration_start'] = "2001-10-30 00:00:00"
-        f['notes'] = """Some
-
-        more
-
-        text"""
         f['use_additional_questionnaire'].checked = True
-        f['participant_info'] = ""
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
@@ -617,6 +625,13 @@ class TestEventFrontend(FrontendTest):
         # check visibility and hint text on empty participant_info
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
+        self.assertPresence("Die Kristallkugel hat gute Dienste geleistet, nicht wahr?")
+        self.traverse("Bearbeiten")
+        self.assertTitle("Universale Akademie – Freitexte")
+        f = self.response.forms['changefreetextform-participant_info']
+        f['free_text_value'] = ""
+        self.submit(f)
+        self.traverse("Teilnehmer-Infos")
         self.assertPresence(
             "Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
             "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
@@ -1346,7 +1361,6 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "1345-6-7"
-        f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-10-8"
         f['fee'] = "123.45"
         f['nonmember_surcharge'] = "8"
@@ -1792,7 +1806,8 @@ etc;anything else""", f['entries_2'].value)
         payment_data = {
             'meta_info': self.core.get_meta_info(self.key),
             'reference': make_event_fee_reference(persona, event),
-            'to_pay': decimal.Decimal("466.49"), 'iban': event.iban,
+            'to_pay': decimal.Decimal("466.49"),
+            'account': event.iban,
         }
 
         event_frontend: EventFrontend = self.app.app.event
@@ -2454,6 +2469,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("Übersicht")
             self.assertPresence("Administrator")
             self.assertPresence("emilia@example.cde")
+            self.assertPresence("Emilia (Emmy)")
             self.assertPresence("03205 Musterstadt")
             self.assertNonPresence("Inga")
             self.assertPresence("Veranstaltungsteile")
@@ -2706,8 +2722,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     self.key, event_id=1, persona_id=self.user['id']).keys())
             self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
         execsql("UPDATE core.personas SET show_legal_given_names = True WHERE id = 1;")
+        execsql("UPDATE core.personas SET nickname = 'Akky' WHERE id = 100;")
         self.submit(f)
         self.assertPresence("Anton Administrator", div="lodgement-wishes-list")
+        self.assertPresence("Akira (Akky) Abukara", div="lodgement-wishes-list")
         self.assertPresence("Garcia Generalis", div="lodgement-wishes-list")
 
     @as_users("annika", "garcia")
@@ -5854,7 +5872,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnahmebeitrags"
-        iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
+        iban = iban_filter(Accounts.Sozialbank.get_iban())
 
         # now check ...
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
@@ -6447,8 +6465,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt"
             " (466,49 €).")
         self.assertPresence(
-            "Garcia Generalis ist Orga, aber hat noch keinen Teilnahmebeitrag bezahlt"
-            " (504,48 €).")
+            "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt"
+            " (504,48 €). (Als Orga).")
 
         self.assertPresence(
             "Inga Iota muss eine Erstattung erhalten (116,49 €).")
@@ -7591,3 +7609,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['fieldsummaryform']
         with self.assertRaises(webtest.app.AppError):
             self.submit(f)
+
+    @as_users("anton")
+    def test_event_dearchive(self) -> None:
+        self.traverse("Veranstaltungen", "CyberTestAkademie")
+        f = self.response.forms['archiveeventform']
+        f['ack_archive'] = True
+        f['create_past_event'] = False
+        self.submit(f)
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="static-notifications")
+        self.traverse("Konfiguration")
+        f = self.response.forms['changeeventform']
+        self.submit(f)
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="static-notifications")

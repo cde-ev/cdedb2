@@ -430,8 +430,11 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # conditions. Modelling with special query operators is more flexible.
             elif operator in VALID_QUERY_OPERATORS["checkin_datetime"]:
                 phrase = "/* {} */ "
-                subphrase = ("checkin_at.checkin_time < %s"
-                             " AND checkin_at.checkout_time > %s")
+                subphrase = """
+                    checkin_at.checkin_time < %s AND (
+                        checkin_at.checkout_time > %s
+                        OR checkin_at.checkout_time IS NULL)
+                """
                 if operator == _ops.checkedin_at:
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))

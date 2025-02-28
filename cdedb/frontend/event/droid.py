@@ -45,7 +45,7 @@ class EventDroidMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*OrgaToken.requestdict_fields())
+    @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=True))
     def create_orga_token(self, rs: RequestState, event_id: int, data: CdEDBObject,
                           ) -> Response:
         """Create a new orga token. The new token will be displayed after a redirect."""
@@ -72,14 +72,11 @@ class EventDroidMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*OrgaToken.requestdict_fields())
+    @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=False))
     def change_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int,
                           data: CdEDBObject) -> Response:
         """Change an existing orga token."""
         data['id'] = orga_token_id
-        # These are only needed for creation and are empty here.
-        del data['event_id']
-        del data['etime']
         data = check(rs, vtypes.OrgaToken, data)
         if rs.has_validation_errors() or not data:
             return self.change_orga_token_form(rs, event_id, orga_token_id)

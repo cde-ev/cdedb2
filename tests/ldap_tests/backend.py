@@ -389,11 +389,11 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         )
         self.assertEqual(
             await parse_and_lower("(s=a*b)", {"s": "s"}),
-            ('''"s" LIKE CONCAT(%s::text, '%%', %s::text)''', ["a", "b"]),
+            ('''"s"::text LIKE CONCAT(%s::text, '%%', %s::text)''', ["a", "b"]),
         )
         self.assertEqual(
             await parse_and_lower("(s=*c*)", {"s": "s"}),
-            ('''"s" LIKE CONCAT('%%', %s::text, '%%')''', ["c"]),
+            ('''"s"::text LIKE CONCAT('%%', %s::text, '%%')''', ["c"]),
         )
         self.assertEqual(
             await parse_and_lower("(&(s=1)(|(t=2)(t=3)))", {"s": "x", "t": "y"}),

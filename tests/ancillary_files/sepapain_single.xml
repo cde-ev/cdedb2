@@ -38,7 +38,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                 </Cdtr>
                                 <CdtrAcct>
                                         <Id>
-                                                <IBAN>DE87200500001234567890</IBAN>
+                                                <IBAN>DE26370205000008068900</IBAN>
                                         </Id>
                                 </CdtrAcct>
                                 <CdtrAgt>

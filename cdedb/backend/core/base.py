@@ -55,7 +55,6 @@ from cdedb.common import (
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
-    META_INFO_FIELDS,
     PERSONA_ALL_FIELDS,
     PERSONA_ASSEMBLY_FIELDS,
     PERSONA_CDE_FIELDS,
@@ -1934,8 +1933,8 @@ class CoreBaseBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'given_names': "N.",
-                'legal_given_names': "N.",
-                'nickname': "N.",
+                'legal_given_names': None,
+                'nickname': None,
                 'family_name': "N.",
                 'birthday': datetime.date.min,
                 'birth_name': None,
@@ -2921,27 +2920,27 @@ class CoreBaseBackend(AbstractBackend):
         return None
 
     @access("anonymous")
-    def get_meta_info(self, rs: RequestState) -> CdEDBObject:
+    def get_meta_info(self, rs: RequestState) -> models.MetaInfo:
         """Retrieve changing info about the DB and the CdE e.V.
 
         This is a relatively painless way to specify lots of constants
         like who is responsible for donation certificates.
         """
-        query = "SELECT info FROM core.meta_info LIMIT 1"
-        data = unwrap(self.query_one(rs, query, tuple())) or {}
-        return {field: data.get(field) for field in META_INFO_FIELDS}
+        query = f"SELECT info FROM {models.MetaInfo.database_table}"
+        data = unwrap(self.query_one(rs, query, ())) or {}
+        data = {k: v for k, v in data.items() if k in models.MetaInfo.database_fields()}
+        ret = models.MetaInfo.from_database(data)
+        return ret
 
     @access("core_admin")
-    def set_meta_info(self, rs: RequestState,
-                      data: CdEDBObject) -> DefaultReturnCode:
+    def set_meta_info(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Change infos about the DB and the CdE e.V.
 
         This is expected to occur regularly.
         """
         with Atomizer(rs):
-            meta_info = self.get_meta_info(rs)
-            # Late validation since we need to know the keys
-            data = affirm(vtypes.MetaInfo, data, keys=meta_info.keys())
+            data = affirm(vtypes.MetaInfo, data)
+            meta_info = self.get_meta_info(rs).as_dict()
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
             return self.query_exec(rs, query, (PsycoJson(meta_info),))
@@ -2949,7 +2948,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def is_locked_down(self, rs: RequestState) -> bool:
         """Helper to determine whether the CdEDB is currently locked."""
-        return bool(self.conf["LOCKDOWN"] or self.get_meta_info(rs).get("lockdown_web"))
+        return bool(self.conf["LOCKDOWN"] or self.get_meta_info(rs).lockdown_web)
 
     @access("core_admin")
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:

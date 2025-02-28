@@ -4,6 +4,7 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,7 +22,7 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject
 from cdedb.common.sorting import Sortkey, collate
 from cdedb.common.validation.types import TypeMapping
-from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -36,8 +37,11 @@ T = TypeVar("T")
 CdEDataclassMap = dict[int, T]
 
 
-def is_optional_type(type_: type[T]) -> bool:
-    return get_origin(type_) is Union and NoneType in get_args(type_)
+def is_optional_type(type_: Any) -> bool:
+    return (
+            get_origin(type_) is Union
+            or get_origin(type_) is UnionType
+    ) and NoneType in get_args(type_)
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
@@ -110,15 +114,26 @@ class CdEDataclass:
     def from_database(cls, data: CdEDBObject) -> "Self":
         for field in dataclasses.fields(cls):
             # Convert enum fields into enum members.
-            if isinstance(field.type, type) and issubclass(field.type, CdEIntEnum):
-                if field.name in data:
-                    data[field.name] = field.type(data[field.name])
+            if isinstance(field.type, type):
+                if issubclass(field.type, (CdEEnum, CdEIntEnum)):
+                    if field.name in data:
+                        data[field.name] = field.type(data[field.name])
+
+            # Convert optional enum fields into enum members.
+            if is_optional_type(field.type):
+                if len(get_args(field.type)) == 2:
+                    inner_type = get_args(field.type)[0]
+                    if isinstance(inner_type, type):
+                        if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
+                            if data.get(field.name) is not None:
+                                data[field.name] = inner_type(data[field.name])
+
             # Convert list[enum] fields into enum members.
             if get_origin(field.type) is list:
                 if len(get_args(field.type)) == 1:
                     inner_type = get_args(field.type)[0]
                     if isinstance(inner_type, type):
-                        if issubclass(inner_type, CdEIntEnum):
+                        if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
                             data[field.name] = list(
                                 inner_type(x) for x in data[field.name])
         return cls(**data)
@@ -189,20 +204,37 @@ class CdEDataclass:
         return mandatory, optional
 
     @classmethod
-    def requestdict_fields(cls) -> list[tuple[str, Literal["str", "[str]"]]]:
+    def requestdict_fields(
+            cls, *, creation: bool | None,
+    ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
         This uses the database_fields by default, but may be overwritten if needed.
+
+        :param creation: If not None, possibly exclude some fields..
         """
         field_names = set(cls.database_fields())
-        field_names.remove("id")
-        fields = [
-            field for field in dataclasses.fields(cls)
-            if field.name in field_names
-               and field.init
-               and not field.metadata.get('request_exclude')
-        ]
-        return [(field.name, requestdict_field_spec(field)) for field in fields]
+        field_names.discard("id")
+        fields = []
+        for field in dataclasses.fields(cls):
+            if field.name not in field_names:
+                continue
+            if field.metadata.get('request_exclude'):
+                continue
+            if not field.init:
+                continue
+            if creation is True:
+                if field.metadata.get('creation_exclude'):
+                    continue
+                if field.metadata.get('creation_request_exclude'):
+                    continue
+            if creation is False:
+                if field.metadata.get('update_exclude'):
+                    continue
+                if field.metadata.get('update_request_exclude'):
+                    continue
+            fields.append((field.name, requestdict_field_spec(field)))
+        return fields
 
     @classmethod
     def database_fields(cls) -> list[str]:

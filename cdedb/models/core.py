@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import Accounts, CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
@@ -20,6 +20,37 @@ __all__ = ["AnonymousMessageData"]
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+
+@dataclasses.dataclass
+class MetaInfo(CdEDataclass):
+    database_table = "core.meta_info"
+
+    id: vtypes.ProtoID = dataclasses.field(
+        init=False, default=vtypes.ProtoID(1), metadata={'update_exclude': True},
+    )
+
+    Finanzvorstand_Name: str | None = None
+    Finanzvorstand_Vorname: str | None = None
+    Finanzvorstand_Ort: str | None = None
+    Finanzvorstand_Adresse_Einzeiler: str | None = None
+    Finanzvorstand_Adresse_Zeile2: str | None = None
+    Finanzvorstand_Adresse_Zeile3: str | None = None
+    Finanzvorstand_Adresse_Zeile4: str | None = None
+    Vorstand: str | None = None
+
+    membership_fee_account: Accounts = Accounts.Sozialbank
+    lastschrift_account: Accounts = Accounts.Sozialbank
+
+    banner_before_login: str | None = None
+    banner_after_login: str | None = None
+    banner_genesis: str | None = None
+    cde_misc: str | None = None
+
+    lockdown_web: bool = False
+
+    def get_sortkey(self) -> Sortkey:
+        return ()
 
 
 @dataclasses.dataclass

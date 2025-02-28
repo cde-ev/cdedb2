@@ -163,14 +163,15 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         SELECT
                             registration_id,
-                            mod(COUNT(checkout_time), 2) = 0 as current
+                            COUNT(*) > 0 AS current
                         FROM event.checkin_periods
+                        WHERE checkout_time IS NULL
                         GROUP BY registration_id
                     ) AS checkin ON reg.id = checkin.registration_id
                     LEFT OUTER JOIN (
                         SELECT registration_id, checkin_time, checkout_time
                         FROM event.checkin_periods
-                    ) AS checkin_at ON reg.id = checkin.registration_id
+                    ) AS checkin_at ON reg.id = checkin_at.registration_id
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}

@@ -71,9 +71,6 @@ class TestEventBackend(BackendTest):
         data: CdEDBObject = {
             'title': "New Link Academy",
             'institution': 1,
-            'description': """Some more text
-
-            on more lines.""",
             'website_url': "https://www.example.com/test",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
@@ -82,6 +79,11 @@ class TestEventBackend(BackendTest):
                                                          tzinfo=datetime.timezone.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'use_additional_questionnaire': False,
+            "notify_on_registration": const.NotifyOnRegistration.never,
+            'description': """Some more text
+
+                on more lines.""",
             'registration_text': None,
             'mail_text': None,
             'participant_info': """Welcome to our
@@ -91,8 +93,6 @@ class TestEventBackend(BackendTest):
             _fancy_
 
             academy! :)""",
-            'use_additional_questionnaire': False,
-            "notify_on_registration": const.NotifyOnRegistration.never,
             'notes': None,
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
@@ -1692,7 +1692,6 @@ class TestEventBackend(BackendTest):
             'title': "KreativAkademie",
             'shortname': "KreAka",
             'institution': 1,
-            'description': None,
             'parts': {
                 -1: {
                     'part_begin': "2222-02-02",
@@ -4674,7 +4673,6 @@ class TestEventBackend(BackendTest):
             "title": "Fragmentierte Akademie",
             "shortname": "frAka",
             "institution": 1,
-            "description": None,
             "parts": {
                 -1: {
                     "title": "A",
@@ -5069,7 +5067,6 @@ class TestEventBackend(BackendTest):
             'title': "TestAkademie",
             'shortname': "tAka",
             'institution': const.PastInstitutions.main_insitution(),
-            'description': None,
             'parts': {
                 -1: {
                     'part_begin': "2222-02-02",

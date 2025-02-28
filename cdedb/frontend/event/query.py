@@ -358,7 +358,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=True))
     def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
                              ) -> Response:
         scope = check(rs, QueryScope, data['scope'])
@@ -400,7 +400,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=False))
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
         custom_filter = rs.ambience['custom_filter']
@@ -408,8 +408,6 @@ class EventQueryMixin(EventBaseFrontend):
 
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id
-        del data['event_id']
-        del data['scope']
 
         data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
         if data:

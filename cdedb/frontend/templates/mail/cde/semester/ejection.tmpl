@@ -17,10 +17,10 @@ werden, indem Du auf das CdE-Konto den halbjährlichen Mitgliedsbeitrag
 von {{ fee|money }} oder (noch lieber ob des geringeren
 Verwaltungsaufwands) ein Vielfaches davon überweist.
 
-Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
-BIC:              {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
+IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
+BIC:              {{ meta_info.membership_fee_account.get_bic() }}
+Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck: {{ transaction_subject }}
 
 Alternativ könntest Du dem CdE auch die Erlaubnis erteilen, jährlich
@@ -40,4 +40,4 @@ dankbar.
 
 
 Viele Grüße
-das Verwaltungsteam
+die CdE-Mitgliederverwaltung

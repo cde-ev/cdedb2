@@ -498,7 +498,7 @@ class LDAPsqlBackend:
                 # We need to use CONCAT here because we want to use both
                 # the wildcard character ('%', escaped as '%%')
                 # and placeholder substitution ('%s').
-                sql.SQL("{} LIKE CONCAT({})").format(
+                sql.SQL("{}::text LIKE CONCAT({})").format(
                     sql.Identifier(attr_replacements[filter_.type.decode()]),
                     pattern,
                 ),

@@ -22,6 +22,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
@@ -42,7 +43,6 @@ from cdedb.common.exceptions import (
     ValidationWarning,
 )
 from cdedb.common.fields import (
-    META_INFO_FIELDS,
     PERSONA_ASSEMBLY_FIELDS,
     PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS,
@@ -69,7 +69,11 @@ from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
+from cdedb.filter import (
+    enum_entries_filter,
+    markdown_parse_safe,
+    money_filter,
+)
 from cdedb.frontend.common import (
     AbstractFrontend,
     Headers,
@@ -85,7 +89,6 @@ from cdedb.frontend.common import (
     make_membership_fee_reference,
     periodic,
     request_dict_extractor,
-    request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
@@ -239,20 +242,22 @@ class CoreBaseFrontend(AbstractFrontend):
     def meta_info_form(self, rs: RequestState) -> Response:
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
-        merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info",
-                           {"meta_info": info, "hard_lockdown": self.conf["LOCKDOWN"]})
+        merge_dicts(rs.values, info.as_dict())
+        accounts = [
+            (str(account), account.display_str())
+            for account in Accounts if account != Accounts.Unknown
+        ]
+        return self.render(rs, "meta_info", {
+            "meta_info": info,
+            "hard_lockdown": self.conf["LOCKDOWN"],
+            "accounts": accounts,
+        })
 
     @access("core_admin", modi={"POST"})
-    def change_meta_info(self, rs: RequestState) -> Response:
+    @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
+    def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
-        info = self.coreproxy.get_meta_info(rs)
-        data_params: vtypes.TypeMapping = {
-            key: Optional[str]  # type: ignore[misc]
-            for key in META_INFO_FIELDS
-        }
-        data = request_extractor(rs, data_params)
-        data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
+        data = check(rs, vtypes.MetaInfo, data)
         if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
@@ -737,10 +742,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
                 or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
         registration_ids: dict[int, int] = {}
