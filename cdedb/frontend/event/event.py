@@ -1319,7 +1319,7 @@ class EventEventMixin(EventBaseFrontend):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         # This check is postponed to trick the event guard into allowing access here
-        if not is_privileged_event(rs, EventPrivileges.all_write, event_id):
+        if not is_privileged_event(rs, EventPrivileges.basic_write, event_id):
             raise werkzeug.exceptions.Forbidden(
                 n_("This page can only be accessed by orgas."))
         # for the sake of simplicity, we ignore all ValidationWarnings here.
