@@ -1656,7 +1656,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.notify("error", msg)
                 rs.notify_validation()
         if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id)
+            return self.change_registrations_form(rs, event_id)  # type: ignore[call-arg]
 
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
