@@ -1442,9 +1442,6 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.balance)
     def balance_event(self, rs: RequestState, event_id: int) -> Response:
         """Balance an event."""
-        if not rs.ambience['event'].is_archived:
-            rs.notify("error", n_("Event is archived."))
-            return self.redirect(rs, "event/show_event")
         if rs.ambience['event'].is_balanced:
             rs.notify("warning", n_("Event already balanced."))
             return self.redirect(rs, "event/show_event")

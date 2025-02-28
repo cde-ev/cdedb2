@@ -782,8 +782,6 @@ CREATE TABLE event.events (
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- whether the event is financially concluded.
         is_balanced                  boolean NOT NULL DEFAULT False,
-        -- balanced implies archived.
-        CONSTRAINT event_balanced_archived CHECK (NOT is_balanced OR is_archived),
         -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
