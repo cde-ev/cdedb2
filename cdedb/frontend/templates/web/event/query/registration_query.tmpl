@@ -43,7 +43,7 @@
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the registration_query -->
 
-        <div class="p">
+        <div class="p query-result-mailto">
             {% if "persona.username" in query.fields_of_interest %}
                     {% set usernames = [] %}
                 {% for entry in result if "persona.username" in entry and entry["persona.username"] %}

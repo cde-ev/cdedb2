@@ -418,6 +418,23 @@ I18N_STRINGS = (
     n_("bool"),
     n_("id"),
 
+    # Meta info fields:
+    n_("Finanzvorstand_Name"),
+    n_("Finanzvorstand_Vorname"),
+    n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"),
+    n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"),
+    n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("Vorstand"),
+    n_("membership_fee_account"),
+    n_("lastschrift_account"),
+    n_("banner_before_login"),
+    n_("banner_after_login"),
+    n_("banner_genesis"),
+    n_("cde_misc"),
+    n_("lockdown_web"),
+
     #
     # Validation errors
     #

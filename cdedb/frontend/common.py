@@ -913,7 +913,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             # put the container in place as message to send
             msg = container
         for header in ("To", "Cc", "Bcc"):
-            value = headers[header]  # type: ignore[literal-required]
+            value = headers[header]
             nonempty = {x for x in value if x}
             if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
@@ -925,8 +925,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if effective:
                 msg[header] = ", ".join(effective)
         for header in ("From", "Reply-To", "Return-Path"):
-            if value := headers.get(header):
-                msg[header] = str(value)
+            if val := headers.get(header):
+                msg[header] = str(val)
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:

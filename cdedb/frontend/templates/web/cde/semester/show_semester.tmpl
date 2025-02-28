@@ -307,6 +307,7 @@
     <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen semester history{% endtrans %}">
                 {{ util.make_icon('arrows-alt-h') }}
     </button>
+    <div class="table-container" id="period-history-container">
     <table id="period-history" class="table" style="background: #fff">
         <thead>
             <tr>
@@ -353,10 +354,11 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <script nonce="{{ csp_nonce }}">
         $(function(){
-            $('#period-history').cdedbMoveToWidePage($('.btn-trigger-wide'));
+            $('#period-history-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
         });
     </script>
 

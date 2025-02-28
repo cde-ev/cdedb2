@@ -192,12 +192,11 @@ class CdEParseMixin(CdEBaseFrontend):
         return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("count", "date", "validate", "event", "membership", "excel",
-                 "ignore_warnings")
+    @REQUESTdata("count", "date", "validate", "excel", "db_import", "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, date: datetime.date,
                        validate: Optional[str] = None,
-                       event: Optional[vtypes.ID] = None,
-                       membership: Optional[str] = None, excel: Optional[str] = None,
+                       excel: Optional[str] = None,
+                       db_import: Optional[str] = None,
                        ignore_warnings: bool = False,
                        ) -> Response:
         """
@@ -231,8 +230,12 @@ class CdEParseMixin(CdEBaseFrontend):
             if account == Accounts.Festgeld:
                 fields = parse.ExportFields.festgeld
             write_header = False
-        else:
-            filename = "DB-Import"
+        elif db_import is not None:
+            accounts = {t.account for t in transactions}
+            if len(accounts) == 1:
+                filename = f"DB-Import_{unwrap(accounts).display_str()}"
+            else:
+                filename = "DB-Import"
             transactions = [
                 t for t in transactions
                 if t.type in {
@@ -244,6 +247,8 @@ class CdEParseMixin(CdEBaseFrontend):
             ]
             fields = parse.ExportFields.db_import
             write_header = False
+        else:
+            return self.parse_statement_form(rs, data, params)
         filename += f"_{date}.csv"
         csv_data = [t.to_dict() for t in transactions]
         csv_data = csv_output(csv_data, fields, write_header,
@@ -500,11 +505,14 @@ class CdEParseMixin(CdEBaseFrontend):
 
         open_issues = any(e['problems'] for e in data)
         saldos: dict[int, decimal.Decimal] = defaultdict(decimal.Decimal)
+        counts: dict[int, int] = defaultdict(int)
         for datum in data:
             if datum['amount'] is None:
                 continue
             saldos[datum['event_id'] or 0] += datum['amount']
+            counts[datum['event_id'] or 0] += 1
             saldos[-1] += datum['amount']
+            counts[-1] += 1
 
         if rs.has_validation_errors() or not data or open_issues:
             rs.values['checksum'] = None
@@ -585,7 +593,7 @@ class CdEParseMixin(CdEBaseFrontend):
                                 'Prefix': "",
                             }
                             self.do_mail(
-                                rs, "parse/transfers_booked", headers,
+                                rs, "parse/event_transfers_booked", headers,
                                 {'num': len(booked_transfers)})
                     for event_id, reimbursements in result.event_reimbursements.items():
                         event = events[event_id]
@@ -604,9 +612,17 @@ class CdEParseMixin(CdEBaseFrontend):
                                 'Prefix': "",
                             }
                             self.do_mail(
-                                rs, "parse/reimbursements_booked", headers,
+                                rs, "parse/event_reimbursements_booked", headers,
                                 {'num': len(reimbursements)})
 
+                headers = {
+                    'To': (self.conf['FINANCE_ADMIN_ADDRESS'],),
+                    'Subject': "Überweisungen eingetragen",
+                    'Prefix': "",
+                }
+                self.do_mail(
+                    rs, "parse/transfers_booked", headers,
+                    {'saldos': saldos, 'counts': counts, 'events': events})
                 return self.redirect(rs, "cde/index")
             elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))

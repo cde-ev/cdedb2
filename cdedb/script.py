@@ -166,11 +166,11 @@ class Script:
         # Allow overriding for evolution trial.
         # Priority is "override > parameter > environment variable".
         if persona_id is None:
-            persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
+            persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", "-1"))
         self.persona_id = int(
             os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id))
         if dry_run is None:
-            dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))
+            dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))  # noqa: PLW1508
         self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
 
         # These parameters can be overridden but are otherwise not taken via env:

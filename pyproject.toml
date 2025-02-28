@@ -37,8 +37,6 @@ ignore = [
     "E501", # Line too long.
     "E731", # Assigning a lambda.
     "S101",  # Use of assert.
-    "ANN101",  # No annotation for `self`.
-    "ANN102",  # No annotation for `cls`.
     "ANN401",  # Use of typing.Any.
     "S608",  # SQL-Injection vector due to query string construction.
     "A003",  # Class attributes shadowing builtin.
@@ -90,16 +88,8 @@ module = [
     "icu",
     # ldap
     "ldaptor.*",
-    "zope.*",
-    # validation
-    "phonenumbers",
     # frontend
-    "cgitb",
-    "dateutil.easter",
-    "magic",
     "mailmanclient.*",
-    "vobject",
-    "qrcode.*",
     "graphviz.*",
     # tests
     "webtest",

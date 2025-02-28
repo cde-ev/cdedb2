@@ -49,7 +49,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
-from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
@@ -727,6 +727,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.as_dict()
         elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
+        elif isinstance(obj, CdEEnum):
+            return obj.value
         return super().default(obj)
 
 
@@ -1041,10 +1043,10 @@ class CourseChoiceToolActions(CdEIntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(CdEEnum):
     """Store the existing CdE Accounts."""
-    Account0 = "DE26370205000008068900"
-    Account1 = "DE96370205000008068901"
+    Sozialbank = "DE26370205000008068900"
+    Sozialbank_Spenden = "DE96370205000008068901"
     Festgeld = "DE45370205000010042605"
     Festgeld2 = "DE05370205000010047205"
     Skatbank = "DE23830654080005374499"
@@ -1054,14 +1056,37 @@ class Accounts(enum.Enum):
 
     def display_str(self) -> str:
         return {
-            Accounts.Account0: "8068900",
-            Accounts.Account1: "8068901",
+            Accounts.Sozialbank: "8068900",
+            Accounts.Sozialbank_Spenden: "8068901",
             Accounts.Festgeld: "Festgeld",
             Accounts.Festgeld2: "Festgeld2",
             Accounts.Skatbank: "Skatbank",
             Accounts.Tagesgeld: "Tagesgeld",
             Accounts.Unknown: "Unknown",
         }[self]
+
+    def get_iban(self) -> str:
+        return self.value
+
+    def get_account_holder(self) -> str:
+        return "CdE e.V."
+
+    def get_bic(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "GENODEF1SLR"
+        return "BFSWDE33XXX"
+
+    def get_bank(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "Skatbank"
+        return "Sozialbank"
+
+    @classmethod
+    def get_event_accounts(cls) -> list["Accounts"]:
+        return [
+            cls.Sozialbank,
+            cls.Skatbank,
+        ]
 
 
 @enum.unique

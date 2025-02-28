@@ -18,8 +18,19 @@ Mandatsreferenz {{ data['mandate_reference'] }} und die
 Gläubiger-Identifikationsnummer {{ data['glaeubiger_id'] }}
 gekennzeichnet.
 
+Hinweis: Der CdE hat ein neues Konto bei der Skatbank, von dem wir künftig
+Lastschriften einziehen werden.
+
+{% if data['original_glaeubiger_id'] and data['glaeubiger_id'] != data['original_glaeubiger_id'] %}
+Außerdem hat sich die Gläubiger-Identifikationsnummer geändert.
+Diese war bisher: {{ data['original_glaeubiger_id'] }}
+
+{% endif %}
+Für dich ändert sich hierdurch nichts.
+
+
 Wenn Du Fragen hast, so erreichst Du uns unter <{{ MANAGEMENT_ADDRESS }}>
 
 
 Viele Grüße
-das Verwaltungsteam
+die CdE-Mitgliederverwaltung
