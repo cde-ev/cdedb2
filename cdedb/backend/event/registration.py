@@ -1126,11 +1126,11 @@ class EventRegistrationBackend(EventBaseBackend):
             # Recalculate the amount owed after all changes have been applied.
             current_amount_owed = self.sql_select_one(
                 rs, models.Registration.database_table, ["amount_owed"], data['id'],
-            )["amount_owed"]
+            )
             self._update_registration_amount_owed(rs, data['id'])
             new_amount_owed = self.sql_select_one(
                 rs, models.Registration.database_table, ["amount_owed"], data['id'],
-            )["amount_owed"]
+            )
 
             if event.is_balanced and current_amount_owed != new_amount_owed:
                 raise ValueError(n_(
