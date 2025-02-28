@@ -811,7 +811,7 @@ msgstr "Entfernen des Fotos fehlgeschlagen."
 
 #: cdedb/backend/core/base.py:1785
 msgid "Involved in unfinished event."
-msgstr "Ist in eine nicht-abgeschlossene Veranstaltung involviert."
+msgstr "Ist in eine nicht-archivierte Veranstaltung involviert."
 
 #: cdedb/backend/core/base.py:1787
 msgid "Unbalanced event balance."
@@ -5006,7 +5006,7 @@ msgstr "Veranstaltung bereits archiviert."
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:448
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:481
 msgid "Event is not concluded yet."
-msgstr "Veranstaltung ist noch nicht abgeschlossen."
+msgstr "Veranstaltung ist noch nicht vorüber."
 
 #: cdedb/frontend/event/event.py:1403
 msgid "Event archived."
