@@ -3084,7 +3084,6 @@ def _registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(REGISTRATION_COMMON_FIELDS,
                                 persona_id=ID, event_id=ID)
         optional_fields = {**REGISTRATION_OPTIONAL_FIELDS}
