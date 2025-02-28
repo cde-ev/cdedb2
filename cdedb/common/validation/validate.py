@@ -2494,6 +2494,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_FREETEXT_FIELDS,
     'offline_lock': bool,
     'is_archived': bool,
+    'is_balanced': bool,
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
