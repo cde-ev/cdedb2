@@ -1412,7 +1412,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.conclude)
+    @event_guard(EventPrivileges.delete)
     @REQUESTdata("ack_delete")
     def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool,
                      ) -> Response:

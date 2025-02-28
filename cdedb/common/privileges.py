@@ -41,11 +41,13 @@ class EventPrivileges(Flag):
     # create = auto()
     conclude = auto()
     balance = auto()
+    delete = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = basic_write | free_texts_write | entities_write | conclude | balance
+    all_write = (basic_write | free_texts_write | entities_write | conclude | balance
+                 | delete)
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
@@ -64,7 +66,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     """
     EP = EventPrivileges
     admin_privileges = ~(EP.conclude | EP.balance)
-    orga_privileges = ~(EP.conclude | EP.balance)
+    orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
                                | EP.registrations_stats | EP.registrations_read_internal)
     auditor_privileges = EP.basic_read | EP.log_read
