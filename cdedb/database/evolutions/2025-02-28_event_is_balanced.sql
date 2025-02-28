@@ -1,0 +1,3 @@
+BEGIN;
+    ALTER TABLE event.events ADD COLUMN is_balanced bool NOT NULL DEFAULT FALSE;
+COMMIT;
