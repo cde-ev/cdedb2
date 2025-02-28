@@ -122,7 +122,7 @@
                             {% if personas %}
                                 <ul class="slim">
                                     {%- for involved, attendees in [(True, involved_attendees), (False, uninvolved_attendees)] %}
-                                        {%- for instructor, registrations in [(False, attendees.learners), (True, attendees.instructors)] %}
+                                        {%- for instructor, registrations in [(True, attendees.instructors), (False, attendees.learners)] %}
                                             {%- for reg in registrations|sort %}
                                                 <li>
                                                     {%- if not involved %}<s>{% endif %}
