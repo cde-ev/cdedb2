@@ -1277,9 +1277,6 @@ class EventRegistrationBackend(EventBaseBackend):
             raise PrivilegeError(n_("Not privileged."))
         event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
-        if event.is_balanced:
-            # TODO: Prevent this at all?
-            raise ValueError(n_("Event is balanced."))
 
         blockers = self.delete_registration_blockers(rs, registration_id)
         if not cascade:
