@@ -448,9 +448,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def _calculate_single_fee(
             self, rs: RequestState, reg: CdEDBObject, persona_id: int | None = None,
+            current: CdEDBObject | None = None,
     ) -> decimal.Decimal:
         """Calculate the fee for one registration based on a (partial) registration."""
-        if current := rs.ambience.get('registration'):
+        if current or (current := rs.ambience.get('registration')):
             registration = {
                 **reg,
                 'persona_id': current['persona_id'],
@@ -1431,6 +1432,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 # This is not an input so this error won't mark any input field.
                 rs.append_validation_error(("amount_owed", ValueError(msg)))
                 rs.notify("error", msg)
+                rs.notify_validation()
         if rs.has_validation_errors():
             return self.change_registration_form(
                 rs, event_id, registration_id, internal=True,
@@ -1486,11 +1488,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
-        if persona_id and self._calculate_single_fee(rs, registration, persona_id):
-            msg = n_("Event is balanced. May not create registration which owes a fee.")
-            # This is not an input so this error won't mark any input field.
-            rs.append_validation_error(("amount_owed", ValueError(msg)))
-            rs.notify("error", msg)
+        if rs.ambience['event'].is_balanced:
+            if persona_id and self._calculate_single_fee(rs, registration, persona_id):
+                msg = n_("Event is balanced. May not create registration which owes a fee.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
+                rs.notify_validation()
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
@@ -1643,6 +1647,20 @@ class EventRegistrationMixin(EventBaseFrontend):
         msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
         msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
         change_note = build_msg("Multi-Edit", change_note)
+
+        if rs.ambience['event'].is_balanced:
+            current_registrations = self.eventproxy.get_registrations(rs, reg_ids)
+            if any(
+                self._calculate_single_fee(
+                    rs, registration, current=current,
+                ) != current['amount_owed']
+                for current in current_registrations.values()
+            ):
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
+                rs.notify_validation()
 
         self.eventproxy.event_keeper_commit(rs, event_id, msg1)
         data = [

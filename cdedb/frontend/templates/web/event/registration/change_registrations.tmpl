@@ -20,6 +20,15 @@
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['event'].is_balanced %}
+        {% call util.notification('warning') %}
+            {% trans %}Event is balanced. Amount owed may no longer change.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% macro form_input_optional(name='', label='', anid=none, info='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
