@@ -6251,8 +6251,8 @@
             "fields": {
                 "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
-                "anzahl_GROSSBUCHSTABEN": 4,
-                "arrival_at": "2022-02-02T10:00:00+01:00"
+                "arrival_at": "2022-02-02T10:00:00+01:00",
+                "anzahl_GROSSBUCHSTABEN": 4
             }
         },
         {
@@ -6355,9 +6355,9 @@
             "list_consent": true,
             "fields": {
                 "is_child": false,
+                "arrival_at": "2022-02-22T15:00:00+01:00",
                 "transportation": "pedes",
-                "anzahl_GROSSBUCHSTABEN": 2,
-                "arrival_at": "2022-02-22T15:00:00+01:00"
+                "anzahl_GROSSBUCHSTABEN": 2
             }
         },
         {
