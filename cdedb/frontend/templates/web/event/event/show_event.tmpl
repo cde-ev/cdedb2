@@ -393,7 +393,7 @@
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
                                         label=gettext("Create orga mailinglist"), aclass="btn btn-primary btn-wrap",
-                                        icon="far fa-plus-square", readonly=not orgas,
+                                        icon="far fa-plus-square", readonly=is_locked or not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -418,7 +418,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=not orgas,
+                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=is_locked or not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -505,15 +505,14 @@
                                 <form action="{{ cdedblink('event/balance_event') }}" method="POST" id="balanceeventform"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/balance_event') }}
-                                    {{ util.input_submit(label=gettext("Balance Event"), readonly=not ambience['event'].is_archived,
-                                                         aclass="btn btn-primary", icon="balance-scale",
-                                                         title=gettext("Event is not archived yet.") if not ambience['event'].is_archived else "") }}
+                                    {{ util.input_submit(label=gettext("Balance Event"), readonly=is_locked,
+                                                         aclass="btn btn-primary", icon="balance-scale") }}
                                 </form>
                             {% else %}
                                 <form action="{{ cdedblink('event/unbalance_event') }}" method="POST" id="unbalanceeventform"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/unbalance_event') }}
-                                    {{ util.input_submit(label=gettext("Unbalance Event"), readonly=not ambience['event'].is_archived,
+                                    {{ util.input_submit(label=gettext("Unbalance Event"), readonly=is_locked,
                                                          aclass="btn btn-primary", icon="balance-scale") }}
                                 </form>
                             {% endif %}
@@ -523,11 +522,11 @@
                         <p class="text-muted">
                             {% if not ambience['event'].is_balanced %}
                                 {% trans %}
-                                    Marks the event as balanced. Disables financial violations and prevents changes to financial configuration and payment data. Is revertible.
+                                    Marks the event as balanced. Prevents changes to financial configuration and payment data. Is reversible.
                                 {% endtrans %}
                             {% else %}
                                 {% trans %}
-                                    Marks the event as not balanced. Reenables financial violations and reallows changes to financial configuration and payment data.
+                                    Marks the event as not balanced. Reallows changes to financial configuration and payment data.
                                 {% endtrans %}
                             {% endif %}
                         </p>
