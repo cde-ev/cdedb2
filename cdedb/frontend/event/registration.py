@@ -452,12 +452,15 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> decimal.Decimal:
         """Calculate the fee for one registration based on a (partial) registration."""
         if current or (current := rs.ambience.get('registration')):
-            registration = {
-                **reg,
+            registration = {**current}
+            for part_id, reg_part in reg.get('parts', {}).items():
+                registration['parts'][part_id].update(reg_part)
+            registration['fields'].update(reg.get('fields', {}))
+            registration.update({
                 'persona_id': current['persona_id'],
                 'is_member': current['is_member'],
                 'personalized_fees': current['personalized_fees'],
-            }
+            })
         else:
             if not persona_id:
                 raise ValueError
@@ -1639,15 +1642,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         registration = self.new_process_registration_input(
             rs, orga_input=True, check_enabled=True)
-        if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id, reg_ids, change_note)
-
-        self.logger.info(
-            f"Updating registrations {reg_ids} with data {registration}")
-        msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
-        msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
-        change_note = build_msg("Multi-Edit", change_note)
-
         if rs.ambience['event'].is_balanced:
             current_registrations = self.eventproxy.get_registrations(rs, reg_ids)
             if any(
@@ -1661,6 +1655,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.append_validation_error(("amount_owed", ValueError(msg)))
                 rs.notify("error", msg)
                 rs.notify_validation()
+        if rs.has_validation_errors():
+            return self.change_registrations_form(rs, event_id)
+
+        self.logger.info(
+            f"Updating registrations {reg_ids} with data {registration}")
+        msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
+        msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
+        change_note = build_msg("Multi-Edit", change_note)
 
         self.eventproxy.event_keeper_commit(rs, event_id, msg1)
         data = [
