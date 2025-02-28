@@ -98,8 +98,9 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:351 cdedb/backend/cde/base.py:609
-#: cdedb/backend/core/base.py:2990 cdedb/backend/event/query.py:697
-#: cdedb/backend/ml.py:323 cdedb/backend/past_event.py:774
+#: cdedb/backend/core/base.py:2990 cdedb/backend/core/base.py:3007
+#: cdedb/backend/event/query.py:697 cdedb/backend/ml.py:323
+#: cdedb/backend/past_event.py:774
 msgid "Bad scope."
 msgstr ""
 
@@ -396,10 +397,10 @@ msgstr ""
 #: cdedb/backend/assembly.py:2360 cdedb/backend/cde/base.py:505
 #: cdedb/backend/cde/lastschrift.py:469 cdedb/backend/common.py:454
 #: cdedb/backend/common.py:460 cdedb/backend/core/base.py:2385
-#: cdedb/backend/event/base.py:1274 cdedb/backend/event/base.py:1298
-#: cdedb/common/__init__.py:279 cdedb/frontend/assembly/ballot.py:538
-#: cdedb/frontend/cde/base.py:753 cdedb/frontend/cde/lastschrift.py:541
-#: cdedb/frontend/cde/lastschrift.py:543
+#: cdedb/backend/core/base.py:2402 cdedb/backend/event/base.py:1274
+#: cdedb/backend/event/base.py:1298 cdedb/common/__init__.py:279
+#: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:753
+#: cdedb/frontend/cde/lastschrift.py:541 cdedb/frontend/cde/lastschrift.py:543
 #: cdedb/frontend/cde/parse_statement.py:740 cdedb/frontend/common.py:701
 #: cdedb/frontend/event/base.py:449 cdedb/frontend/event/query_stats.py:443
 #: cdedb/frontend/event/query_stats.py:633
@@ -411,6 +412,8 @@ msgid "Impossible."
 msgstr ""
 
 #: cdedb/backend/cde/base.py:77 cdedb/backend/cde/lastschrift.py:427
+#: cdedb/frontend/event/registration.py:1989
+#: cdedb/frontend/event/registration.py:1997
 msgid "Impossible"
 msgstr ""
 
@@ -483,6 +486,7 @@ msgid "May not grant trial membership to member."
 msgstr ""
 
 #: cdedb/backend/cde/base.py:574 cdedb/backend/core/base.py:2190
+#: cdedb/backend/core/base.py:2207
 msgid "Too many queries."
 msgstr ""
 
@@ -663,12 +667,15 @@ msgid "Not a relative admin."
 msgstr ""
 
 #: cdedb/backend/core/base.py:875 cdedb/backend/core/base.py:2750
-#: cdedb/backend/core/base.py:2773 cdedb/frontend/core/base.py:2222
+#: cdedb/backend/core/base.py:2767 cdedb/backend/core/base.py:2773
+#: cdedb/backend/core/base.py:2790 cdedb/frontend/core/base.py:2222
 msgid "Nonexistent user."
 msgstr ""
 
 #: cdedb/backend/core/base.py:922 cdedb/backend/core/base.py:2552
-#: cdedb/backend/core/base.py:2575 cdedb/backend/core/base.py:2707
+#: cdedb/backend/core/base.py:2569 cdedb/backend/core/base.py:2575
+#: cdedb/backend/core/base.py:2592 cdedb/backend/core/base.py:2707
+#: cdedb/backend/core/base.py:2724
 msgid "Persona does not exist."
 msgstr ""
 
@@ -771,179 +778,186 @@ msgstr ""
 msgid "Active lastschrift permit found."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1640
+#: cdedb/backend/core/base.py:1640 cdedb/backend/core/base.py:1657
 msgid "You are not allowed to archive this user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1648
+#: cdedb/backend/core/base.py:1648 cdedb/backend/core/base.py:1665
 msgid "Cannot archive admins."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1657
+#: cdedb/backend/core/base.py:1657 cdedb/backend/core/base.py:1674
 msgid "Active lastschrift exists."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1673
+#: cdedb/backend/core/base.py:1673 cdedb/backend/core/base.py:1690
 msgid "Failed to revoke membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1677
+#: cdedb/backend/core/base.py:1677 cdedb/backend/core/base.py:1694
 msgid "Failed to remove foto."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1785
+#: cdedb/backend/core/base.py:1785 cdedb/backend/core/base.py:1802
 msgid "Involved in unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1787
+#: cdedb/backend/core/base.py:1787 cdedb/backend/core/base.py:1804
 msgid "Unbalanced event balance."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1795
+#: cdedb/backend/core/base.py:1795 cdedb/backend/core/base.py:1812
 msgid "Orga of unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1812
+#: cdedb/backend/core/base.py:1812 cdedb/backend/core/base.py:1829
 msgid "Attendee of unfinished assembly."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1822
+#: cdedb/backend/core/base.py:1822 cdedb/backend/core/base.py:1839
 msgid "Presider of unfinished assembly."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1847
+#: cdedb/backend/core/base.py:1847 cdedb/backend/core/base.py:1864
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1879
+#: cdedb/backend/core/base.py:1879 cdedb/backend/core/base.py:1896
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1900 cdedb/frontend/common.py:1404
-#: cdedb/frontend/core/base.py:2597
+#: cdedb/backend/core/base.py:1900 cdedb/backend/core/base.py:1917
+#: cdedb/frontend/common.py:1404 cdedb/frontend/core/base.py:2597
 msgid "User with this E-Mail exists already."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1929
+#: cdedb/backend/core/base.py:1929 cdedb/backend/core/base.py:1946
 msgid "Persona is not archived."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1973
+#: cdedb/backend/core/base.py:1973 cdedb/backend/core/base.py:1990
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1997 cdedb/frontend/core/base.py:2376
+#: cdedb/backend/core/base.py:1997 cdedb/backend/core/base.py:2014
+#: cdedb/frontend/core/base.py:2376
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2017 cdedb/frontend/core/genesis.py:125
-#: cdedb/frontend/core/genesis.py:431
+#: cdedb/backend/core/base.py:2017 cdedb/backend/core/base.py:2034
+#: cdedb/frontend/core/genesis.py:125 cdedb/frontend/core/genesis.py:431
 msgid "Failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2082
+#: cdedb/backend/core/base.py:2082 cdedb/backend/core/base.py:2099
 msgid "Access to persona data inhibited."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2084
+#: cdedb/backend/core/base.py:2084 cdedb/backend/core/base.py:2101
 msgid "Not an event user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2130
+#: cdedb/backend/core/base.py:2130 cdedb/backend/core/base.py:2147
 msgid "May not provide more than one input."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2193
+#: cdedb/backend/core/base.py:2193 cdedb/backend/core/base.py:2210
 msgid "Not a CdE user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2199
+#: cdedb/backend/core/base.py:2199 cdedb/backend/core/base.py:2216
 msgid "Improper access to member data."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2212
+#: cdedb/backend/core/base.py:2212 cdedb/backend/core/base.py:2229
 msgid "Not an ml user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2224
+#: cdedb/backend/core/base.py:2224 cdedb/backend/core/base.py:2241
 msgid "Not an assembly user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2241
+#: cdedb/backend/core/base.py:2241 cdedb/backend/core/base.py:2258
 msgid "Must be privileged."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2266
+#: cdedb/backend/core/base.py:2266 cdedb/backend/core/base.py:2283
 msgid "Unable to create this sort of persona."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2367 cdedb/backend/core/base.py:2631
-#: cdedb/backend/core/base.py:2701
+#: cdedb/backend/core/base.py:2367 cdedb/backend/core/base.py:2384
+#: cdedb/backend/core/base.py:2631 cdedb/backend/core/base.py:2648
+#: cdedb/backend/core/base.py:2701 cdedb/backend/core/base.py:2718
 msgid "Atomized – impossible to escalate."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2557
+#: cdedb/backend/core/base.py:2557 cdedb/backend/core/base.py:2574
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2580 cdedb/frontend/common.py:2053
+#: cdedb/backend/core/base.py:2580 cdedb/backend/core/base.py:2597
+#: cdedb/frontend/common.py:2053
 msgid "Link expired."
 msgstr ""
 
 #: cdedb/backend/core/base.py:2582 cdedb/backend/core/base.py:2584
+#: cdedb/backend/core/base.py:2599 cdedb/backend/core/base.py:2601
 msgid "Link invalid or already used."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2607
+#: cdedb/backend/core/base.py:2607 cdedb/backend/core/base.py:2624
 msgid "Selecting persona allowed for reset only."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2610
+#: cdedb/backend/core/base.py:2610 cdedb/backend/core/base.py:2627
 msgid "Could not determine persona to reset."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2612
+#: cdedb/backend/core/base.py:2612 cdedb/backend/core/base.py:2629
 msgid "No authorization provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2615
+#: cdedb/backend/core/base.py:2615 cdedb/backend/core/base.py:2632
 msgid "Password verification failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2621
+#: cdedb/backend/core/base.py:2621 cdedb/backend/core/base.py:2638
 msgid "No new password provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2624 cdedb/common/validation/validate.py:1292
-#: cdedb/frontend/core/base.py:2179 cdedb/frontend/core/base.py:2345
+#: cdedb/backend/core/base.py:2624 cdedb/backend/core/base.py:2641
+#: cdedb/common/validation/validate.py:1292 cdedb/frontend/core/base.py:2179
+#: cdedb/frontend/core/base.py:2345
 msgid "Password too weak."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2680 cdedb/frontend/cde/base.py:690
-#: cdedb/frontend/cde/parse.py:465 cdedb/frontend/cde/parse.py:470
-#: cdedb/frontend/common.py:1044 cdedb/frontend/event/registration.py:264
+#: cdedb/backend/core/base.py:2680 cdedb/backend/core/base.py:2697
+#: cdedb/frontend/cde/base.py:690 cdedb/frontend/cde/parse.py:465
+#: cdedb/frontend/cde/parse.py:470 cdedb/frontend/common.py:1044
+#: cdedb/frontend/event/registration.py:264
 #: cdedb/frontend/event/registration.py:265
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2682
+#: cdedb/backend/core/base.py:2682 cdedb/backend/core/base.py:2699
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2687 cdedb/frontend/core/base.py:2328
+#: cdedb/backend/core/base.py:2687 cdedb/backend/core/base.py:2704
+#: cdedb/frontend/core/base.py:2328
 msgid "Unknown email address."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2752
+#: cdedb/backend/core/base.py:2752 cdedb/backend/core/base.py:2769
 msgid "Inactive user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2775
+#: cdedb/backend/core/base.py:2775 cdedb/backend/core/base.py:2792
 msgid "Lockdown active."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2889
+#: cdedb/backend/core/base.py:2889 cdedb/backend/core/base.py:2906
 msgid "Unknown message id."
 msgstr ""
 
@@ -1290,6 +1304,8 @@ msgstr ""
 #: cdedb/frontend/event/registration.py:1804
 #: cdedb/frontend/event/registration.py:1842
 #: cdedb/frontend/event/registration.py:1845
+#: cdedb/frontend/event/registration.py:1874
+#: cdedb/frontend/event/registration.py:1877
 #: cdedb/frontend/event/registration.py:1902
 #: cdedb/frontend/event/registration.py:1905
 msgid "Must be in the past."
@@ -5469,6 +5485,7 @@ msgstr ""
 
 #: cdedb/frontend/event/query_stats.py:355
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:84
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:135
 msgid "Never checked-in"
 msgstr ""
 
@@ -5752,6 +5769,7 @@ msgstr ""
 #: cdedb/frontend/event/registration.py:1268
 #: cdedb/frontend/event/registration.py:1269
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:107
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:186
 msgid "No registrations selected."
 msgstr ""
 
@@ -5805,6 +5823,7 @@ msgstr ""
 
 #: cdedb/frontend/event/registration.py:1849
 #: cdedb/frontend/event/registration.py:1853
+#: cdedb/frontend/event/registration.py:1881
 #: cdedb/frontend/event/registration.py:1909
 msgid "Invalid action."
 msgstr ""
@@ -5812,14 +5831,18 @@ msgstr ""
 #: cdedb/frontend/event/registration.py:1863
 #: cdedb/frontend/event/registration.py:1867
 #: cdedb/frontend/event/registration.py:1903
+#: cdedb/frontend/event/registration.py:1904
 #: cdedb/frontend/event/registration.py:1907
+#: cdedb/frontend/event/registration.py:1913
 #: cdedb/frontend/event/registration.py:1923
 #: cdedb/frontend/event/registration.py:1963
+#: cdedb/frontend/event/registration.py:1971
 msgid "Must be after last checkin."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:1869
 #: cdedb/frontend/event/registration.py:1873
+#: cdedb/frontend/event/registration.py:1892
 #: cdedb/frontend/event/registration.py:1929
 msgid "People must be checked in."
 msgstr ""
@@ -5828,15 +5851,31 @@ msgstr ""
 #: cdedb/frontend/event/registration.py:1882
 #: cdedb/frontend/event/registration.py:1889
 #: cdedb/frontend/event/registration.py:1893
+#: cdedb/frontend/event/registration.py:1928
 #: cdedb/frontend/event/registration.py:1938
+#: cdedb/frontend/event/registration.py:1948
 #: cdedb/frontend/event/registration.py:1949
+#: cdedb/frontend/event/registration.py:1957
 msgid "Must be after last checkout."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:1895
 #: cdedb/frontend/event/registration.py:1899
+#: cdedb/frontend/event/registration.py:1934
 #: cdedb/frontend/event/registration.py:1955
 msgid "People must not be checked in."
+msgstr ""
+
+#: cdedb/frontend/event/registration.py:1897
+#: cdedb/frontend/event/registration.py:1899
+#: cdedb/frontend/event/registration.py:1939
+#: cdedb/frontend/event/registration.py:1941
+msgid "Must give exactly one."
+msgstr ""
+
+#: cdedb/frontend/event/registration.py:1920
+#: cdedb/frontend/event/registration.py:1964
+msgid "Field must not be empty."
 msgstr ""
 
 #: cdedb/frontend/ml/__init__.py:46
@@ -8876,6 +8915,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:22
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:15
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:140
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:91
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:168
 msgid "Confirm"
 msgstr ""
 
@@ -12103,6 +12144,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:18
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:152
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:93
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:172
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:297
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:304
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:327
@@ -15682,13 +15724,29 @@ msgid ""
 "can be reset or deleted."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:43
+#, python-format
+msgid ""
+"Below a preview of the checkout values that will be filled from field "
+"“%(field)s” is displayed."
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:46
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:57
 #, python-format
 msgid "present since %(checkin)s"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:47
+msgid ""
+"The checkout time can below be filled from a custom field, or set for all "
+"registrations uniformly."
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:54
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:93
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:94
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:173
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:248
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:253
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:279
@@ -15696,6 +15754,7 @@ msgid "Checkout time"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:56
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:95
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:305
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:314
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:335
@@ -15704,6 +15763,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:57
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:91
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:96
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:170
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:246
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:250
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:276
@@ -15711,42 +15772,100 @@ msgid "Checkin time"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:58
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:97
 msgid "leave empty to delete latest checkin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:59
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:98
 msgid "Change checkin times"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:61
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:100
 msgid "Delete checkin times"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:65
+msgid "new checkout: no entry"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:68
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:107
 msgid "Check in"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:71
+#, python-format
+msgid "new checkout: %(new_time)s (before checkin)"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:72
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:111
 msgid ""
 "The following people can be checked in, or their time of last checkout time "
 "can be reset or deleted."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:77
+#, python-format
+msgid "new checkout: %(new_time)s"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:80
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:131
 #, python-format
 msgid "last checkout %(checkout)s"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:88
+msgid "Set checkout times from custom field"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:95
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:174
 msgid "leave empty to delete latest checkout"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:96
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:175
 msgid "Change checkout times"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:98
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:177
 msgid "Delete checkout times"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:116
+#, python-format
+msgid ""
+"Below a preview of the checkin values that will be filled from field "
+"“%(field)s” is displayed."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:120
+msgid ""
+"The checkin time can below be filled from a custom field, or set for all "
+"registrations uniformly."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:142
+msgid "new checkin: no entry"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:148
+#, python-format
+msgid "new checkin: %(new_time)s (before checkout)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:154
+#, python-format
+msgid "new checkin: %(new_time)s"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:165
+msgid "Set checkin times from custom field"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:12
