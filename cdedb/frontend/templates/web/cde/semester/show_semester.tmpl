@@ -332,7 +332,7 @@
         </thead>
         <tbody>
             {% for period_id, period in period_history|dictsort(reverse=true) %}
-                <tr>
+                <tr id="period-{{ period_id }}">
                     <td class=col-border-right>{{ period['id'] }}</td>
                     <td>{{ period['billing_count'] }}</td>
                     <td class=col-border-right>{{ period['billing_done']|datetime(lang=lang) }}</td>

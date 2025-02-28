@@ -311,6 +311,8 @@ _DEFAULTS = {
         30_000: "30 km",
         80_000: "80 km",
     },
+    # id of the first semester for which relevant data exists.
+    "MIN_RELEVANT_SEMESTER": 42,
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2

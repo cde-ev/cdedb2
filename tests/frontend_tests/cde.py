@@ -2270,6 +2270,11 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
 
+        # Check that old period with no data is hidden from history (id given in config).
+        self.assertIn(41, self.cde.get_period_history(self.key))
+        self.assertNonPresence("41", div="period-41", check_div=False)
+        self.assertPresence("42", div="period-42")
+
         self.assertPresence("Semester Nummer 43", div='current-semester')
 
         # 1.1 Payment Request
