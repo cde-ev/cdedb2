@@ -53,8 +53,15 @@
 
     <h4 class="heading-underline">{% trans %}Composition of the fee{% endtrans %}</h4>
     <p>
-        {{ util.href(cdedblink('event/add_new_personalized_fee'), gettext("Add Personalized Fee"),
-                               icon='plus', aclass='btn btn-success btn-sm') }}
+        {{ util.href(
+                cdedblink('event/add_new_personalized_fee'), gettext("Add Personalized Fee"),
+                icon='plus', aclass='btn btn-success btn-sm',
+                readonly=not is_privileged_for('add_new_personalized_fee') or ambience['event'].is_balanced,
+                title=(
+                    gettext("Event is balanced. May not set personalized fee amount.")
+                    if ambience['event'].is_balanced else
+                    ""
+                )) }}
     </p>
     {{ generic_event.fee_composition_table() }}
 {% endblock %}

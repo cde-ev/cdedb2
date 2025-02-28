@@ -512,7 +512,14 @@
                             <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
                                 {{ util.anti_csrf_token("event/delete_personalized_fee") }}
-                                {{ util.input_submit(icon='minus', label=None, aclass="btn btn-xs btn-danger") }}
+                                {{ util.input_submit(
+                                        icon='minus', label=None, aclass="btn btn-xs btn-danger",
+                                        readonly=not is_privileged_for('delete_personalized_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not set personalized fee amount.")
+                                            if ambience['event'].is_balanced else
+                                            ""
+                                        )) }}
                             </form>
                         </td>
                     {% else %}
@@ -527,7 +534,14 @@
                                 {% endcall %}
                             </td>
                             <td>
-                                {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
+                                {{ util.input_submit(
+                                        icon='plus', label=None, aclass="btn btn-xs btn-success",
+                                        readonly=not is_privileged_for('add_personalized_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not set personalized fee amount.")
+                                            if ambience['event'].is_balanced else
+                                            ""
+                                        )) }}
                             </td>
                         </form>
                     {% endif %}
@@ -556,11 +570,16 @@
                                 ({{ _print_fee_amount_range(fee) }})
                             {% endif %}
                         {% else %}
-                            {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
-                                         anid="personalized_fee{}_multiset".format(fee.id),
-                                         label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
-                                         title=gettext("Set personalized amount for multiple registrations."),
-                                         readonly=not is_privileged_for('personalized_fee_multiset')) }}
+                            {{ util.href(
+                                    cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
+                                    anid="personalized_fee{}_multiset".format(fee.id),
+                                    label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
+                                    readonly=not is_privileged_for('personalized_fee_multiset') or ambience['event'].is_balanced,
+                                    title=(
+                                        gettext("Event is balanced. May not change fee configuration.")
+                                        if ambience['event'].is_balanced else
+                                        gettext("Set personalized amount for multiple registrations.")
+                                    )) }}
                         {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
@@ -576,18 +595,26 @@
                                          aclass="btn btn-xs btn-info") }}
                         {% else %}
                             {{ util.href(
-                                cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
-                                title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
-                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning",
-                                readonly=not is_privileged_for('configure_fee_form')) }}
+                                    cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
+                                    anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning",
+                                    readonly=not is_privileged_for('configure_fee_form') or ambience['event'].is_balanced,
+                                    title=(
+                                        gettext("Event is balanced. May not change fee configuration.")
+                                        if ambience['event'].is_balanced else
+                                        gettext("Change fee %(fee_title)s")|format(fee_title=fee['title'])
+                                    )) }}
                             <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
-                                    title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
-                                    icon='trash-alt' if fee.amount else 'dumpster-fire',
-                                    label=None, aclass="btn btn-sm btn-danger",
-                                    readonly=not is_privileged_for('delete_fee')) }}
+                                        icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                        label=None, aclass="btn btn-sm btn-danger",
+                                        readonly=not is_privileged_for('delete_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not change fee configuration.")
+                                            if ambience['event'].is_balanced else
+                                            gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title'])
+                                        )) }}
                             </form>
                         {% endif %}
                     </td>

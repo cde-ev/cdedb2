@@ -1434,6 +1434,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(
             rs, registration, event=event, visual_debug=visual_debug)
 
+    @access("event")
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""

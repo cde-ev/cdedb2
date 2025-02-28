@@ -15,6 +15,16 @@
     {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
     {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("Add Registration"), active=True) }}
 {% endblock %}
+
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['event'].is_balanced %}
+        {% call util.notification('warning') %}
+            {% trans %}Event is balanced. May not create registration which owes a fee.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block heading %}
     {{ util.context_heading(gettext("New Registration"), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}

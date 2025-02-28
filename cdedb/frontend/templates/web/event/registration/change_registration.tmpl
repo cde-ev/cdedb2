@@ -24,6 +24,15 @@
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['event'].is_balanced %}
+        {% call util.notification('warning') %}
+            {% trans %}Event is balanced. Amount owed may no longer change.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
           class="form-horizontal">

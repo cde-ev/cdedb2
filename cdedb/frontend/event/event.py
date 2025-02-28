@@ -793,6 +793,10 @@ class EventEventMixin(EventBaseFrontend):
                            fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
         rs.ignore_validation_errors()
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))

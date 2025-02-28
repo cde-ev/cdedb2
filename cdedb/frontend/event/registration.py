@@ -446,6 +446,29 @@ class EventRegistrationMixin(EventBaseFrontend):
             'part_options': part_options, **course_choice_params,
         })
 
+    def _calculate_single_fee(
+            self, rs: RequestState, reg: CdEDBObject, persona_id: int | None = None,
+    ) -> decimal.Decimal:
+        """Calculate the fee for one registration based on a (partial) registration."""
+        if current := rs.ambience.get('registration'):
+            registration = {
+                **reg,
+                'persona_id': current['persona_id'],
+                'is_member': current['is_member'],
+                'personalized_fees': current['personalized_fees'],
+            }
+        else:
+            if not persona_id:
+                raise ValueError
+            registration = {
+                **reg,
+                'persona_id': persona_id,
+                'is_member': self.coreproxy.get_persona(rs, persona_id)['is_member'],
+                'personalized_fees': {},
+            }
+        return self.eventproxy._calculate_single_fee(
+            rs, registration, event=rs.ambience['event'])
+
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
@@ -1147,6 +1170,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         The personalized amount for that registration is created at the same time.
         """
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
         return self.render(rs, "event/fee/configure_fee",
@@ -1397,6 +1424,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         much more cumbersome to always use this interface.
         """
         registration = self.new_process_registration_input(rs, orga_input=True)
+        if rs.ambience['event'].is_balanced:
+            new_amount_owed = self._calculate_single_fee(rs, registration)
+            if new_amount_owed != rs.ambience['registration']['amount_owed']:
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.change_registration_form(
                 rs, event_id, registration_id, internal=True,
@@ -1445,15 +1479,18 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.append_validation_error(
                     ("persona.persona_id", ValueError(n_(
                         "This user is not an event user."))))
-        if (not rs.has_validation_errors()
-                and self.eventproxy.list_registrations(rs, event_id, persona_id)):
+        if persona_id and self.eventproxy.list_registrations(rs, event_id, persona_id):
             rs.append_validation_error(("persona.persona_id",
                                         ValueError(n_("Already registered."))))
         registration = self.new_process_registration_input(rs, orga_input=True)
-        if (not rs.has_validation_errors()
-                and not self.eventproxy.check_orga_addition_limit(rs, event_id)):
+        if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
+        if persona_id and self._calculate_single_fee(rs, registration, persona_id):
+            msg = n_("Event is balanced. May not create registration which owes a fee.")
+            # This is not an input so this error won't mark any input field.
+            rs.append_validation_error(("amount_owed", ValueError(msg)))
+            rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
