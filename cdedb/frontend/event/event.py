@@ -54,6 +54,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     REQUESTfile,
+    TransactionObserver,
     access,
     cdedburl,
     check_validation as check,
@@ -532,6 +533,10 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not create new part."))
+            return self.redirect(rs, "event/part_summary")
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
@@ -546,6 +551,11 @@ class EventEventMixin(EventBaseFrontend):
                      *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Event is balanced. May not create new part."))
+            return self.redirect(rs, "event/part_summary")
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
@@ -564,16 +574,20 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
-        code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
-        if code:
-            new_fee = {
-                'kind': const.EventFeeType.common,
-                'title': data['title'],
-                'notes': "Automatisch erstellt.",
-                'amount': fee,
-                'condition': f"part.{data['shortname']}",
-            }
-            self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
+        recipients = []
+        if rs.ambience['event'].orga_address:
+            recipients.append(rs.ambience['event'].orga_address)
+        with TransactionObserver(rs, self, "create_part", recipients=recipients):
+            code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
+            if code:
+                new_fee = {
+                    'kind': const.EventFeeType.common,
+                    'title': data['title'],
+                    'notes': "Automatisch erstellt.",
+                    'amount': fee,
+                    'condition': f"part.{data['shortname']}",
+                }
+                self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
