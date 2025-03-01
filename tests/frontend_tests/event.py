@@ -5101,6 +5101,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkout_time'] = base_time + 2*delta  # future
             self.submit(f, button='action', value='modify_checkout')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
             self.assertPresence("Anton")
             self.assertPresence("Bertå")
             frozen_time.tick(delta)
@@ -5125,6 +5126,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='checkin')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
             self.assertPresence("Anton")
             self.assertPresence("Bertå")
             self.submit(old_f, button='action', value='modify_checkout',
@@ -5151,6 +5153,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='modify_checkin')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
             self.assertPresence("Anton")
             self.assertPresence("Bertå")
             self.get(url)
@@ -5165,6 +5168,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkout_time'] = base_time + 4*delta  # in future
             self.submit(f, button='action', value='checkout')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
             self.assertPresence("Anton")
             self.assertPresence("Bertå")
             frozen_time.tick(delta)
