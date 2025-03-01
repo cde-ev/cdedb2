@@ -16,7 +16,7 @@ import datetime
 import enum
 import itertools
 import re
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
 
 from typing_extensions import TypeAlias
@@ -658,7 +658,7 @@ class Query:
     def __init__(self, scope: QueryScope, spec: QuerySpec,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Sequence[QueryOrder],
+                 order: Iterable[QueryOrder],
                  name: Optional[str] = None, query_id: Optional[int] = None,
                  ):
         """

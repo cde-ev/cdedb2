@@ -5095,6 +5095,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "checkout_time", "Muss in der Vergangenheit liegen.")
             frozen_time.tick(delta)
             self.submit(f, button='action', value='modify_checkout')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.get(url + "?registration_ids=1,6")
             self.assertPresence("Anton Administrator Nie eingecheckt")
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
@@ -5115,6 +5118,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "checkin_time", "Muss nach dem letzten Checkout sein.")
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='checkin')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.submit(old_f, button='action', value='modify_checkout',
                         check_notification=False)
             self.assertNotification("Personen dürfen nicht eingecheckt sein.")
@@ -5139,6 +5145,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='modify_checkin')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.get(url)
             f = self.response.forms['checkoutform']
             f['checkout_time'] = None
@@ -5154,6 +5162,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "checkout_time", "Muss in der Vergangenheit liegen.")
             frozen_time.tick(delta)
             self.submit(f, button='action', value='checkout')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertNotification("Personen müssen eingecheckt sein", "error")
 
