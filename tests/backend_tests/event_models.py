@@ -235,6 +235,19 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     entries=None,
                 ),
+                9: models.EventField(
+                    id=9,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    field_name="arrival_at",  # type: ignore[arg-type]
+                    kind=const.FieldDatatypes.datetime,
+                    association=const.FieldAssociations.registration,
+                    title="Anreise um",
+                    sort_group=None,
+                    sortkey=0,
+                    description=None,
+                    checkin=False,
+                    entries=None,
+                ),
             },
             custom_query_filters={
                 1: models.CustomQueryFilter(

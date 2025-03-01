@@ -180,9 +180,10 @@
             "checkin_periods": [],
             "list_consent": true,
             "fields": {
-                "anzahl_GROSSBUCHSTABEN": 4,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
-                "is_child": false
+                "is_child": false,
+                "arrival_at": "2022-02-02T09:00:00+00:00",
+                "anzahl_GROSSBUCHSTABEN": 4
             },
             "personalized_fees": {
                 "10": "-20.00"
@@ -631,9 +632,10 @@
             ],
             "list_consent": true,
             "fields": {
-                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
-                "transportation": "pedes"
+                "arrival_at": "2022-02-22T14:00:00+00:00",
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 2
             },
             "personalized_fees": {
             },
@@ -858,6 +860,16 @@
                 "sortkey": 0,
                 "sort_group": null,
                 "description": null
+            },
+            "arrival_at": {
+                "association": 1,
+                "checkin": false,
+                "description": null,
+                "entries": null,
+                "kind": 6,
+                "sort_group": null,
+                "sortkey": 0,
+                "title": "Anreise um"
             },
             "brings_balls": {
                 "kind": 2,

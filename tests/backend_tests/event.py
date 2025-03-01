@@ -828,6 +828,8 @@ class TestEventBackend(BackendTest):
             'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
                                          tzinfo=datetime.timezone.utc),
+            'arrival_at': datetime.datetime(2022, 2, 2, 9, 0,
+                                            tzinfo=datetime.timezone.utc),
             'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
                      'garcia@example.cde :)',
             'is_child': False,
@@ -1202,6 +1204,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
+                    'arrival_at': datetime.datetime(2022, 2, 2, 9,
+                                                    tzinfo=datetime.timezone.utc),
                     'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel '
                              'und garcia@example.cde :)',
                     'is_child': False,
@@ -2957,6 +2961,9 @@ class TestEventBackend(BackendTest):
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
+        for reg in expectation['registrations'].values():
+            if timestamp := reg['fields'].get('arrival_at'):
+                reg['fields']['arrival_at'] = datetime.datetime.fromisoformat(timestamp)
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)

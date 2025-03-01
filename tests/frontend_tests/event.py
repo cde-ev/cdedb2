@@ -1065,7 +1065,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Unterkunftsfelder", div="fieldsummaryform")
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_9', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration
@@ -1098,7 +1097,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_9', f.fields)
+        self.assertNotIn('field_name_1001', f.fields)
 
         if self.user_in("annika"):
             self.traverse({'href': '/event/$'},
@@ -1121,7 +1120,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_8', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
-        self.assertNotIn('field_name_9', f.fields)
+        self.assertNotIn('field_name_1001', f.fields)
 
         # If we delete the old field first, this works.
         f['delete_8'] = True
@@ -5165,7 +5164,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             frozen_time.tick(delta)
             f['checkin_time'] = None
             self.submit(f, button='action', value='checkin', check_notification=False)
-            self.assertValidationError("checkin_time", "Darf nicht leer sein.")
+            self.assertValidationError("checkin_time",
+                                       "Genau eins muss angegeben werden.")
             f['checkin_time'] = base_time + delta
             self.submit(f, button='action', value='checkin', check_notification=False)
             self.assertValidationError(
@@ -5207,7 +5207,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f = self.response.forms['checkoutform']
             f['checkout_time'] = None
             self.submit(f, button='action', value='checkout', check_notification=False)
-            self.assertValidationError("checkout_time", "Darf nicht leer sein.")
+            self.assertValidationError("checkout_time",
+                                       "Genau eins muss angegeben werden.")
             f['checkout_time'] = base_time + 2*delta
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertValidationError(
