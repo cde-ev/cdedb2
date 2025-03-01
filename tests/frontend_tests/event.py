@@ -7627,7 +7627,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @event_keeper
     @as_users("garcia")
-    @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1;")
+    @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1 OR id = 2;")
     def test_event_is_balanced(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
                       "Teilnahmebeiträge")
@@ -7694,3 +7694,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['enable_reg.orga_notes'] = True
         f['reg.orga_notes'] = "Test"
         self.submit(f)
+
+        with self.switch_user("farin"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222")
+            f = self.response.forms["unbalanceeventform"]
+            self.submit(f)
+
+        with self.switch_user("berta"):
+            self.traverse("Veranstaltungen", "CdE-Party 2050", "Veranstaltungsteile")
+            self.assertNoLink("part/add")
+            self.get("/event/event/2/part/add")
+            self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+            self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")

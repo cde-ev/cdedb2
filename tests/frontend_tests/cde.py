@@ -32,6 +32,7 @@ from tests.common import (
     FrontendTest,
     UserIdentifier,
     as_users,
+    event_keeper,
     get_user,
     prepsql,
     storage,
@@ -2256,6 +2257,38 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, verbose=True)
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
+
+    @event_keeper
+    @as_users("farin")
+    def test_money_transfer_balanced_event(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        f = self.response.forms["balanceeventform"]
+        self.submit(f)
+        self.traverse("Mitglieder", "Überweisungen eintragen")
+        f = self.response.forms["transfersform"]
+        f["transfers"] = "01.03.2025;338.99;DB-1-9;Administrator;Anton;TestAka"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Diese Veranstaltung ist finanziell abgeschlossen.", div="saldo-row-1")
+        f = self.response.forms["transfersform"]
+        self.submit(f)
+        self.assertNotification("Finanziellen Abschluss von Große Testakademie 2222 aufgehoben.", "info")
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.EventLogCodes.event_balanced,
+                'event_id': 1,
+            },
+            {
+                'code': const.EventLogCodes.event_unbalanced,
+                'event_id': 1,
+            },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 1,
+                'change_note': "338,99 € am 01.03.2025 gezahlt.",
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", offset=11)
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")

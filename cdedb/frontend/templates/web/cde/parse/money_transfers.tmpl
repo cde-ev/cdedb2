@@ -112,7 +112,7 @@
             <table class="table table-slim" id="saldo-table">
                 <tbody>
                     {% for event_id, saldo in saldos|dictsort %}
-                        <tr>
+                        <tr id="saldo-row-{{ event_id }}">
                             <td>
                                 <strong>
                                     {% if event_id == -1 %}
