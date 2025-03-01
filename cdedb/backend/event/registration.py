@@ -14,7 +14,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import Any, NamedTuple, Optional, Protocol, TypeVar
+from typing import Any, NamedTuple, Optional, Protocol, TypeVar, cast
 
 import psycopg2.extensions
 
@@ -1432,6 +1432,21 @@ class EventRegistrationBackend(EventBaseBackend):
             rs, registration, event=event, visual_debug=visual_debug)
 
     @access("event")
+    def calculate_partial_fee(self, rs: RequestState, reg: CdEDBObject, *,
+                              event_id: int) -> decimal.Decimal:
+        """Public helper to calculate a fee for a non-stored (partial) registration.
+
+        Should only be used when needing to calculate the fee for a changed or new
+        registration before storing it to the database.
+
+        This does some validation but currently cannot guarantee that the registration
+        object is sufficient to calculate the fee without raising an error.
+        """
+        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
+        return self._calculate_single_fee(rs, reg, event=event)
+
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
