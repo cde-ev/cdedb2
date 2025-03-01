@@ -240,11 +240,11 @@
                 {% set inputname1 = 'checkin_time_' + period.id|string %}
                 {% set inputname2 = 'checkout_time_' + period.id|string %}
                 <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                <form action="{{ cdedblink('event/change_checkin_period',
-                                           {'registration_id': ambience['registration']['id']}) }}"
+                    <form action="{{ cdedblink('event/change_checkin_period',
+                                           {'registration_id': ambience['registration']['id']}) + '#checkin-periods'|s }}"
                       method="POST"
                       id="changeperiodform{{ loop.index }}">
-                    {{ util.anti_csrf_token('event/change_checkin_period') }}
+                        {{ util.anti_csrf_token('event/change_checkin_period') }}
                         <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                             {{ util.input_hidden(name='period_id', value=period.id) }}
                             {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
@@ -255,11 +255,14 @@
                         </div>
                         {{ util.output_errors(inputname1) }}
                         {{ util.output_errors(inputname2) }}
-                </form>
+                        {{ util.input_ignore_warnings() }}
+                    </form>
                 </td>
                 <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
-                                         formid="changeperiodform" + loop.index|string, aclass="btn btn-primary btn-sm") }}
+                                         formid="changeperiodform" + loop.index|string, aclass="btn btn-primary btn-sm",
+                                         readonly=not is_privileged_for('change_checkin_period'),
+                                         display_ignore_warnings=false) }}
                 </td>
                 <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ period.checkin_time|datetime(lang=lang) }}&#8239;–&#8239;
@@ -271,16 +274,20 @@
                 </td>
                 <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ util.input_submit(icon="pen", label="", title=gettext("Edit times"),
-                                         aclass="btn btn-warning btn-sm showform-button", value=loop.index) }}
+                                         aclass="btn btn-warning btn-sm showform-button", value=loop.index,
+                                         readonly=not is_privileged_for('change_checkin_period'),
+                                         display_ignore_warnings=false) }}
                 </td>
                 <td style="padding-left: 0;">
-                    <form action="{{ cdedblink("event/delete_checkin_period") }}" method="POST"
+                    <form action="{{ cdedblink("event/delete_checkin_period") + '#checkin-periods'|s }}" method="POST"
                           id="deleteperiodform{{ loop.index }}">
                         {{ util.anti_csrf_token('event/delete_checkin_period') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_hidden(name="period_id", value=period.id) }}
                         {{ util.input_submit(icon="trash", label="", title=gettext("Delete these timestamps"),
-                                             aclass="btn btn-danger btn-sm") }}
+                                             aclass="btn btn-danger btn-sm",
+                                             readonly=not is_privileged_for('delete_checkin_period'),
+                                             display_ignore_warnings=false) }}
                     </form>
                 </td>
                 <td>{{ period.get_duration()|timedelta(gettext) }}</td>
@@ -291,19 +298,23 @@
                 <td>
                 {% if not ambience['registration']['checkin_periods']
                       or ambience['registration']['checkin_periods'][-1].checkout_time %}
-                    <form action="{{ cdedblink('event/add_checkin') }}" method="POST" id="checkinform">
+                    <form action="{{ cdedblink('event/add_checkin') + '#checkin-periods'|s }}" method="POST" id="checkinform">
                         {{ util.anti_csrf_token('event/add_checkin') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                             icon="arrow-right-to-bracket", readonly=is_locked) }}
+                                             icon="arrow-right-to-bracket",
+                                             readonly=not is_privileged_for('add_checkin'),
+                                             display_ignore_warnings=false) }}
                     </form>
                 {% else %}
-                    <form action="{{ cdedblink('event/add_checkout') }}" method="POST"
+                    <form action="{{ cdedblink('event/add_checkout') + '#checkin-periods'|s }}" method="POST"
                         id="checkoutform">
                         {{ util.anti_csrf_token('event/add_checkout') }}
                         {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
                         {{ util.input_submit(label=gettext("Checkout"), aclass="btn btn-primary btn-sm",
-                                             icon="arrow-right-from-bracket", readonly=is_locked) }}
+                                             icon="arrow-right-from-bracket",
+                                             readonly=not is_privileged_for('add_checkout'),
+                                             display_ignore_warnings=false) }}
                     </form>
                 {% endif %}
                 </td>
@@ -314,8 +325,8 @@
         </tbody>
     </table>
     <script nonce="{{ csp_nonce }}">
-        $(".nojs-only:not(.has-error)").hide();
-        $(".softhide:not(.has-error)").show();
+        $(".nojs-only:not(.has-error, .has-warning)").hide();
+        $(".softhide:not(.has-error, .has-warning)").show();
         $(".softhide .showform-button").each(function() {
             const rownr = $(this).val();
             $(this).on("click", function() {
@@ -331,6 +342,7 @@
         })
         // nicer icon also in case of validation error
         $(".nojs-only.has-error .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+        $(".nojs-only.has-warning .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
     </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
