@@ -1217,7 +1217,8 @@ class EventBaseBackend(EventLowLevelBackend):
             'is_balanced': True,
         }
         with Atomizer(rs):
-            self.event_keeper_commit(rs, event_id, "Snapshot vor Abschluss.")
+            self.event_keeper_commit(
+                rs, event_id, "Snapshot vor finanziellem Abschluss.")
             ret = self.sql_update(rs, models.Event.database_table, update)
             self.event_log(rs, const.EventLogCodes.event_balanced, event_id)
         return ret
@@ -1234,7 +1235,7 @@ class EventBaseBackend(EventLowLevelBackend):
         }
         with Atomizer(rs):
             self.event_keeper_commit(
-                rs, event_id, "Snapshot vor Aufhebung von Abschluss.")
+                rs, event_id, "Snapshot vor Aufhebung von finanziellem Abschluss.")
             ret = self.sql_update(rs, models.Event.database_table, update)
             self.event_log(rs, const.EventLogCodes.event_unbalanced, event_id)
         return ret

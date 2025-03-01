@@ -7638,13 +7638,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.get("/event/event/1/fee/add?personalized=True")
         self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         self.get("/event/event/1/fee/add?personalized=False")
         self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         self.get("/event/event/1/fee/1/change")
         self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
 
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
         self.assertNoLink("fee/add")
@@ -7653,43 +7653,43 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.get("/event/event/1/registration/3/fee/add")
         self.assertTitle("Teilnahmebeitragsdetails für Garcia Generalis (Große Testakademie 2222)")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
 
         self.get("/event/event/1/registration/2/fee/summary")
         f = self.response.forms['addpersonalizedfeeform10']
         self.assertIn("disabled", f['submitform'].attrs)
 
         self.get("/event/event/1/registration/2/change")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "warning", static=True)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
         f = self.response.forms['changeregistrationform']
         self.assertEqual(f['part1.status'].value, str(const.RegistrationPartStati.waitlist))
         f['part1.status'].value = const.RegistrationPartStati.cancelled
         self.submit(f, check_notification=False)
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         f['part1.status'].value = const.RegistrationPartStati.participant
         self.submit(f)
 
         self.traverse("Anmeldungen", "Anmeldung hinzufügen")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "warning", static=True)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-4-3"
         self.submit(f, check_notification=False)
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         f['part1.status'] = f['part2.status'] = f['part3.status'] = const.RegistrationPartStati.not_applied
         self.submit(f)
 
         self.get("/event/event/1/registration/multiedit?reg_ids=1,2")
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "warning", static=True)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
         f = self.response.forms['changeregistrationsform']
         f['enable_part1.status'] = True
         f['part1.status'] = const.RegistrationPartStati.participant
         self.submit(f, check_notification=False)
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         f['enable_part1.status'] = False
         f['enable_fields.is_child'] = True
         f['fields.is_child'] = True
         self.submit(f, check_notification=False)
-        self.assertNotification("Veranstaltung ist abgeschlossen.", "error")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         f['enable_fields.is_child'] = False
         f['enable_reg.orga_notes'] = True
         f['reg.orga_notes'] = "Test"
