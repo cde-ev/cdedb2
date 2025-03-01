@@ -5338,9 +5338,8 @@ msgstr ""
 
 #: cdedb/frontend/event/registration.py:419
 #: cdedb/frontend/event/registration.py:817
-#, fuzzy
 msgid "Event is balanced."
-msgstr "Event balanced"
+msgstr ""
 
 #: cdedb/frontend/event/registration.py:422
 #: cdedb/frontend/event/registration.py:833
