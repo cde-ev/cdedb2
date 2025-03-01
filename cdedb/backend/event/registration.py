@@ -1754,6 +1754,11 @@ class EventRegistrationBackend(EventBaseBackend):
         if event.is_balanced:
             # Balanced events mustn't block booking of payments, therefor unbalance the
             #  event if necessary.
+            rs.notify(
+                "info",
+                n_("Unbalanced event %(event_title)s."),
+                {'event_title': event.title},
+            )
             self.unbalance_event(rs, event_id)
 
         if amount > 0:

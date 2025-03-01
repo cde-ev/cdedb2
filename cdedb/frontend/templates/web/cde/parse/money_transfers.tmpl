@@ -123,6 +123,12 @@
                                         {{ events[event_id].title }}
                                     {% endif %}
                                 </strong>
+                                {% if event_id in events and events[event_id].is_balanced %}
+                                    <div class="text-warning">
+                                        {{ util.make_icon('exclamation-triangle') }}{{ nbsp -}}
+                                        {% trans %}This event is balanced. Booking payments will unbalance the event.{% endtrans %}
+                                    </div>
+                                {% endif %}
                             </td>
                             <td class="text-right-responsive {% if saldo > 0 %}text-success{% else %}text-danger{% endif %}">
                                 <strong>
