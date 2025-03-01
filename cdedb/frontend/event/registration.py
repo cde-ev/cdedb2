@@ -415,6 +415,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_archived:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
+            if rs.ambience['event'].is_balanced:
+                rs.notify("error", n_("Event is balanced."))
+                return self.redirect(rs, "event/show_event")
             if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
@@ -809,6 +812,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
         if rs.ambience['event'].is_archived:
             rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
+        if rs.ambience['event'].is_balanced:
+            rs.notify("error", n_("Event is balanced."))
             return self.redirect(rs, "event/show_event")
         if self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id):
             rs.notify("error", n_("Already registered."))

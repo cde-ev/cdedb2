@@ -832,6 +832,11 @@ class EventEventMixin(EventBaseFrontend):
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
                       personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
+        if rs.ambience['event'].is_balanced:
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
             rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
@@ -848,6 +853,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
         """Delete one event fee."""
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         if fee_id not in rs.ambience['event'].fees:
             rs.notify("error", n_("Unknown fee."))
             return self.redirect(rs, "event/fee_summary")
