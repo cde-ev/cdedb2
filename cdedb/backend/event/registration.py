@@ -24,6 +24,7 @@ import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
+import cdedb.models.finance as models_finance
 from cdedb.backend.common import (
     access,
     affirm_array_validation as affirm_array,
@@ -1729,10 +1730,11 @@ class EventRegistrationBackend(EventBaseBackend):
             return ret
 
     @internal
-    @access("finance_admin")
+    @access("event")
     def book_registration_payment(
-            self, rs: RequestState, registration_id: int,
+            self, rs: RequestState, *, registration_id: int,
             amount: decimal.Decimal, date: datetime.date,
+            by_orga: bool,
     ) -> CdEDBObject:
         """
         Add the given amount to the amount that was paid for this registration.
@@ -1776,9 +1778,12 @@ class EventRegistrationBackend(EventBaseBackend):
             self.sql_update(
                 rs, models.Registration.database_table, update,
             )
+            if by_orga:
+                log_code = const.EventLogCodes.registration_payment_received_orga
+            else:
+                log_code = const.EventLogCodes.registration_payment_received
             self.event_log(
-                rs, const.EventLogCodes.registration_payment_received,
-                event_id=event_id, change_note=change_note,
+                rs, log_code, event_id=event_id, change_note=change_note,
                 persona_id=registration['persona_id'],
             )
             registration.update(update)
@@ -1795,9 +1800,12 @@ class EventRegistrationBackend(EventBaseBackend):
             self.sql_update(
                 rs, models.Registration.database_table, update,
             )
+            if by_orga:
+                log_code = const.EventLogCodes.registration_payment_reimbursed_orga
+            else:
+                log_code = const.EventLogCodes.registration_payment_reimbursed
             self.event_log(
-                rs, const.EventLogCodes.registration_payment_reimbursed,
-                event_id=event_id, change_note=change_note,
+                rs, log_code, event_id=event_id, change_note=change_note,
                 persona_id=registration['persona_id'],
             )
             registration.update(update)
@@ -1806,44 +1814,62 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return registration
 
-    @access("finance_admin")
-    def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
-                  ) -> tuple[bool, Optional[int]]:
-        """Book all paid fees.
-
-        :returns: Success information and
-
-          * for positive outcome the number of recorded transfers
-          * for negative outcome the line where an exception was triggered
-            or None if it was a DB serialization error
-        """
-        data = affirm_array(vtypes.FeeBookingEntry, data)
+    @access("event")
+    def book_fees(self, rs: RequestState, event_id: int, transfers: list[CdEDBObject],
+                  ) -> models_finance.MoneyTransfersResult:
+        """Similar to `cdedb.backend.cde.base.book_money_transfers`."""
+        transfers = affirm_array(vtypes.MoneyTransferEntry, transfers, event_only=True)
+        index = 0
 
         self.assert_offline_lock(rs, event_id=event_id)
+        event = self.get_event(rs, event_id)
 
-        index = 0
+        if not is_privileged(rs, EventPrivileges.payment_write, event_id):
+            raise PrivilegeError
+
+        if event.is_balanced:
+            raise ValueError(n_("Event is balanced."))
+
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                all_reg_ids = {datum['registration_id'] for datum in data}
-                if not all_reg_ids:
-                    return True, 0
+                result = models_finance.MoneyTransfersResult()
+                registration_ids = {t['registration_id'] for t in transfers}
+                if not registration_ids:
+                    return result
                 query = f"""
                     SELECT DISTINCT event_id
                     FROM {models.Registration.database_table}
                     WHERE id = ANY(%s)
                 """
-                event_ids = set(map(unwrap, self.query_all(rs, query, [all_reg_ids])))
-                if not len(event_ids) == 1:
+                event_ids = self.query_all(rs, query, (registration_ids,))
+                if len(event_ids) > 1:
                     raise ValueError(n_(
-                        "Only registrations from exactly one event allowed."))
-                for index, datum in enumerate(data):
-                    self.book_registration_payment(
-                        rs, datum['registration_id'], datum['amount'], datum['date'])
+                        "All registrations must belong to the same event."))
+                if event_ids[0]['event_id'] != event_id:
+                    raise ValueError(n_("Event mismatch."))
+                persona_ids = {t['persona_id'] for t in transfers}
+                personas = self.core.get_personas(rs, persona_ids)
+
+                for index, transfer in enumerate(transfers):
+                    registration = self.book_registration_payment(
+                        rs, registration_id=transfer['registration_id'],
+                        amount=transfer['amount'], date=transfer['date'], by_orga=True,
+                    )
+                    ret = models_finance.MoneyTransfer(
+                        persona=personas[transfer['persona_id']],
+                        registration=registration,
+                        amount=transfer['amount'],
+                        date=transfer['date'],
+                    )
+                    if transfer['amount'] > 0:
+                        result.event_fees[event_id].append(ret)
+                    else:
+                        result.event_reimbursements[event_id].append(ret)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None
+            return models_finance.MoneyTransfersResult(success=False)
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -1856,8 +1882,9 @@ class EventRegistrationBackend(EventBaseBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index
-        return True, len(data)
+
+            return models_finance.MoneyTransfersResult(success=False, index=index)
+        return result
 
     @access("event")
     def add_checkins(self, rs: RequestState, registration_ids: Collection[int],

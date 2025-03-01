@@ -9,7 +9,7 @@ import csv
 import datetime
 import decimal
 import io
-import re
+import itertools
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
@@ -20,6 +20,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models
 from cdedb.common import (
     Accounts,
@@ -29,7 +30,6 @@ from cdedb.common import (
     ValidationWarning,
     build_msg,
     determine_age_class,
-    diacritic_patterns,
     get_hash,
     json_serialize,
     make_persona_name,
@@ -43,9 +43,9 @@ from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import date_filter, money_filter
+from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
-    Headers,
     REQUESTdata,
     REQUESTdatadict,
     REQUESTfile,
@@ -55,7 +55,6 @@ from cdedb.frontend.common import (
     check_validation as check,
     check_validation_optional as check_optional,
     event_guard,
-    inspect_validation as inspect,
     make_event_fee_reference,
     periodic,
     request_extractor,
@@ -64,256 +63,135 @@ from cdedb.frontend.event.base import EventBaseFrontend
 
 
 class EventRegistrationMixin(EventBaseFrontend):
-    @access("finance_admin")
-    def batch_fees_form(self, rs: RequestState, event_id: int,
-                        data: Optional[Collection[CdEDBObject]] = None,
-                        csvfields: Optional[Collection[str]] = None,
-                        saldo: Optional[decimal.Decimal] = None) -> Response:
-        """Render form.
+    @access("event")
+    @event_guard(EventPrivileges.payment_write)
+    def batch_fees_form(
+            self, rs: RequestState, event_id: int,
+            data: Optional[list[CdEDBObject]] = None,
+            csvfields: Optional[Collection[str]] = None,
+            saldo: Optional[decimal.Decimal] = None,
+    ) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.notify("error", "Event is balanced. May not book payments.")
+            return self.redirect(rs, "event/show_event")
 
-        The ``data`` parameter contains all extra information assembled
-        during processing of a POST request.
-        """
-        # manual check for offline log, since we can not use event_guard here
-        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
-        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            raise werkzeug.exceptions.Forbidden(
-                n_("This event is locked for offline usage."))
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
-        return self.render(rs, "registration/batch_fees",
-                           {'data': data, 'csvfields': csv_position,
-                            'saldo': saldo})
-
-    def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                     expected_fees: dict[int, decimal.Decimal],
-                     seen_reg_ids: set[int],
-                     ) -> CdEDBObject:
-        """Check one line specifying a paid fee. Uninlined from `batch_fees`.
-
-        We test for fitness of the data itself.
-
-        :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
-
-        :returns: The processed input datum.
-        """
-        event = rs.ambience['event']
-        warnings = []
-        infos = []
-        # Allow an amount of zero to allow non-modification of amount_paid.
-        amount: Optional[decimal.Decimal]
-        amount, problems = inspect(decimal.Decimal,
-            (datum['raw']['amount'] or "").strip(), argname="amount")
-        persona_id, p = inspect(vtypes.CdedbID,
-            (datum['raw']['id'] or "").strip(), argname="persona_id")
-        problems.extend(p)
-        family_name, p = inspect(str,
-            datum['raw']['family_name'], argname="family_name")
-        problems.extend(p)
-        given_names, p = inspect(str,
-            datum['raw']['given_names'], argname="given_names")
-        problems.extend(p)
-        date, p = inspect(datetime.date,
-            (datum['raw']['date'] or "").strip(), argname="date")
-        problems.extend(p)
-
-        registration_id = None
-        if persona_id:
-            try:
-                persona = self.coreproxy.get_persona(rs, persona_id)
-            except KeyError:
-                problems.append(('persona_id',
-                                 ValueError(
-                                     n_("No Member with ID %(p_id)s found."),
-                                     {"p_id": persona_id})))
-            else:
-                registration_ids = self.eventproxy.list_registrations(
-                    rs, event.id, persona_id).keys()
-                if registration_ids:
-                    registration_id = unwrap(registration_ids)
-                    if registration_id in seen_reg_ids:
-                        warnings.append(
-                            ('persona_id',
-                             ValueError(n_("Multiple transfers for this user."))))
-                    seen_reg_ids.add(registration_id)
-                    registration = self.eventproxy.get_registration(
-                        rs, registration_id)
-                    if not amount:
-                        problems.append(
-                            ('amount', ValueError(n_("Must not be zero."))))
-                    else:
-                        amount_paid = registration['amount_paid']
-                        total = amount + amount_paid
-                        fee = expected_fees[registration_id]
-                        params = {
-                            'total': money_filter(total, lang=rs.lang),
-                            'expected': money_filter(fee, lang=rs.lang),
-                        }
-                        if total < fee:
-                            infos.append((
-                                'amount',
-                                ValueError(
-                                    n_("Not enough money. %(total)s < %(expected)s"),
-                                    params,
-                                ),
-                            ))
-                        elif total > fee:
-                            infos.append((
-                                'amount',
-                                ValueError(
-                                    n_("Too much money. %(total)s > %(expected)s"),
-                                    params,
-                                ),
-                            ))
-                        expected_fees[registration_id] -= amount
-                else:
-                    problems.append(('persona_id',
-                                     ValueError(n_("No registration found."))))
-
-                if family_name is not None and not re.search(
-                    diacritic_patterns(re.escape(family_name)),
-                    persona['family_name'],
-                    flags=re.IGNORECASE,
-                ):
-                    warnings.append(('family_name', ValueError(
-                        n_("Family name doesn’t match."))))
-
-                if given_names is not None and not re.search(
-                    diacritic_patterns(re.escape(given_names)),
-                    persona['given_names'],
-                    flags=re.IGNORECASE,
-                ):
-                    warnings.append(('given_names', ValueError(
-                        n_("Given names don’t match."))))
-        datum.update({
-            'persona_id': persona_id,
-            'registration_id': registration_id,
-            'date': date,
-            'amount': amount,
-            'warnings': warnings,
-            'problems': problems,
-            'infos': infos,
+        return self.render(rs, "registration/batch_fees", {
+            'data': data, 'csvfields': csv_position, 'saldo': saldo,
         })
-        return datum
 
-    def book_fees(self, rs: RequestState,
-                  data: Collection[CdEDBObject], send_notifications: bool = False,
-                  ) -> tuple[bool, Optional[int]]:
-        """Book all paid fees.
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.payment_write)
+    @REQUESTfile("transfers_file")
+    @REQUESTdata("send_notifications", "transfers", "checksum")
+    def batch_fees(
+            self, rs: RequestState, event_id: int, send_notifications: bool,
+            transfers: Optional[str], checksum: Optional[str],
+            transfers_file: Optional[werkzeug.datastructures.FileStorage],
+    ) -> Response:
+        event = rs.ambience['event']
+        if event.is_balanced:
+            rs.notify("error", "Event is balanced. May not book payments.")
+            return self.redirect(rs, "event/show_event")
 
-        :returns: Success information and
-
-          * for positive outcome the number of recorded transfers
-          * for negative outcome the line where an exception was triggered
-            or None if it was a DB serialization error
-        """
-        relevant_keys = {'registration_id', 'date', 'amount'}
-        relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
-                         for item in data]
-        with TransactionObserver(rs, self, "book_fees"):
-            success, number = self.eventproxy.book_fees(
-                rs, rs.ambience['event'].id, relevant_data)
-            if success and send_notifications:
-                persona_amounts = {e['persona_id']: e['amount'] for e in data}
-                personas = self.coreproxy.get_personas(rs, persona_amounts)
-                subject = f"Überweisung für {rs.ambience['event'].title} eingetroffen"
-                for persona in personas.values():
-                    headers: Headers = {
-                        'To': (persona['username'],),
-                        'Subject': subject,
-                    }
-                    if rs.ambience['event'].orga_address:
-                        headers['Reply-To'] = rs.ambience['event'].orga_address
-                    self.do_mail(rs, "transfer_received", headers, {
-                        'persona': persona, 'amount': persona_amounts[persona['id']]})
-            return success, number
-
-    @access("finance_admin", modi={"POST"})
-    @REQUESTfile("fee_data_file")
-    @REQUESTdata("force", "fee_data", "checksum", "send_notifications")
-    def batch_fees(self, rs: RequestState, event_id: int, force: bool,
-                   fee_data: Optional[str],
-                   fee_data_file: Optional[werkzeug.datastructures.FileStorage],
-                   checksum: Optional[str], send_notifications: bool) -> Response:
-        """Allow finance admins to add payment information of participants.
-
-        This is the only entry point for those information.
-        """
-        # manual check for offline log, since we can not use event_guard here
-        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
-        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            raise werkzeug.exceptions.Forbidden(
-                n_("This event is locked for offline usage."))
-
-        fee_data_file = check_optional(
-            rs, vtypes.CSVFile, fee_data_file, "fee_data_file")
+        transfers_file = check_optional(
+            rs, vtypes.CSVFile, transfers_file, "transfers_file")
         if rs.has_validation_errors():
             return self.batch_fees_form(rs, event_id)
-
-        if fee_data_file and fee_data:
+        if transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.batch_fees_form(rs, event_id)
-        elif fee_data_file:
-            rs.values["fee_data"] = fee_data_file
-            fee_data = fee_data_file
-            fee_data_lines = fee_data_file.splitlines()
-        elif fee_data:
-            fee_data_lines = fee_data.splitlines()
+        elif transfers_file:
+            rs.values["transfers"] = transfers = transfers_file
+            transferlines = transfers_file.splitlines()
+        elif transfers:
+            transferlines = transfers.splitlines()
         else:
             rs.notify("error", n_("No input provided."))
             return self.batch_fees_form(rs, event_id)
 
-        reg_ids = self.eventproxy.list_registrations(rs, event_id=event_id)
-        expected_fees = self.eventproxy.calculate_fees(rs, reg_ids)
+        events_by_shortname = {event.shortname: event}
+        fields = parse.ExportFields.db_import
 
-        fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
-            fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
+            transferlines, fieldnames=fields, dialect=CustomCSVDialect())
+
         data = []
-        seen_reg_ids: set[int] = set()
+        amounts_paid: dict[int, decimal.Decimal] = {}
+
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
-            data.append(self._examine_fee(
-                rs, dataset, expected_fees, seen_reg_ids=seen_reg_ids))
+            data.append(
+                CdEFrontend.examine_money_transfer(
+                    rs, dataset, events_by_shortname=events_by_shortname,
+                    amounts_paid=amounts_paid, get_persona=self.coreproxy.get_persona,
+                    list_registrations=self.eventproxy.list_registrations,
+                    get_registration=self.eventproxy.get_registration,
+                    category=rs.ambience['event'].shortname,
+                ),
+            )
+
+        for ds1, ds2 in itertools.combinations(data, 2):
+            if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
+                info = (
+                    None,
+                    ValueError(
+                        n_("More than one transfer for this account"
+                           " (lines %(first)s and %(second)s)."),
+                        {'first': ds1['lineno'] + 1, 'second': ds2['lineno'] + 1}),
+                )
+                ds1['infos'].append(info)
+                ds2['infos'].append(info)
+
+        if len(data) != len(transferlines):
+            rs.append_validation_error(
+                ("transfers", ValueError(n_("Lines didn’t match up."))))
+
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
-        if not force:
-            open_issues = open_issues or any(e['warnings'] for e in data)
+
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(
                 rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
-        current_checksum = get_hash(fee_data.encode())
+        current_checksum = get_hash(transfers.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.batch_fees_form(
                 rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         # Here validation is finished
-        success, num = self.book_fees(rs, data, send_notifications)
-        if success:
-            rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
-            if send_notifications and (
-                    orga_address := rs.ambience['event'].orga_address):
-                headers: Headers = {
-                    'To': (orga_address,),
-                    'Reply-To': self.conf["FINANCE_ADMIN_ADDRESS"],
-                    'Subject': "Neue Überweisungen für Eure Veranstaltung",
-                    'Prefix': "",
-                }
-                self.do_mail(rs, "transfers_booked", headers, {'num': num})
-            return self.redirect(rs, "event/show_event")
-        else:
-            if num is None:
+        transfers = [
+            {
+                'persona_id': datum['persona_id'],
+                'registration_id': datum['registration_id'],
+                'amount': datum['amount'],
+                'date': datum['date'],
+            }
+            for datum in data
+        ]
+        recipients = [event.orga_address, self.conf["EVENT_FINANCE_ADMIN_ADDRESS"]]
+        with TransactionObserver(rs, self, "book_fees", recipients=recipients):
+            if result := self.eventproxy.book_fees(rs, event_id, transfers):
+                if send_notifications:
+                    result.send_notifications(
+                        rs, by_orga=True, do_mail=self.do_mail, events={event.id: event},
+                    )
+                return self.redirect(rs, "event/show_event")
+            elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num + 1})
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                rs.notify(
+                    "error",
+                    n_("Unexpected error on line %(num)s."),
+                    {'num': result.index + 1},
+                )
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
     def get_course_choice_params(self, rs: RequestState, event_id: int,
                                  orga: bool = True) -> CdEDBObject:

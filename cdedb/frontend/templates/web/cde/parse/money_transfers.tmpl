@@ -26,7 +26,7 @@
         {{ util.input_hidden("checksum") }}
         {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications"), defaultvalue="True",
                 info=gettext("If checked, all affected users will be notified and orgateams will receive a summary of their fees.")) }}
-        {{ util.form_input_file(name="transfers_file", label=gettext("Transfers"), horizontal=False,
+        {{ util.form_input_file(name="transfers_file", horizontal=False, label=gettext("Transfers"),
                 accept="text/csv,.csv") }}
         {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
@@ -40,58 +40,29 @@
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
             <ol class="list-unstyled" id="transfer-validation">
-            {% for dataset in data %}
-                <li>
-                <strong>
-                    <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
-                    </span>:
-                    {% if dataset['event'] and dataset['persona'] %}
-                        {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']), event=dataset['event'].title %}
-                            {{ amount }} for {{ name }} for {{ event }}
-                        {% endtrans %}
-                    {% elif dataset['persona'] %}
-                        {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']) -%}
-                            {{ amount }} for {{ name }}
-                        {% endtrans %}
-                    {% elif dataset['event'] %}
-                        {% trans amount=dataset['amount']|money(lang=lang) %}
-                            {{ amount }} for unknown user.
-                        {% endtrans %}
-                    {% endif %}
-                </strong>
-                {% if dataset['problems'] or dataset['infos'] %}
-                    <div class="money-parse-line">
-                        <ul class="list-unstyled">
-                            {% for key, problem in dataset['problems'] %}
-                                <li class="text-danger">
-                                    {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
-                                    {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                            data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key -}}
-                                        </em>:
-                                    {% endif %}
-                                    {{ util.format_error(problem) }}
-                                </li>
-                            {% endfor %}
-                            {% for key, info in dataset['infos'] %}
-                                <li class="text-info">
-                                    {{ util.make_icon('exclamation-circle', title=gettext("Info")) }}
-                                    {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                            data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key -}}
-                                        </em>:
-                                    {% endif %}
-                                    {{ util.format_error(info) }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-                </li>
-            {% endfor %}
+                {% for dataset in data %}
+                    <li>
+                    <strong>
+                        <span class="row-key" data-row="{{ dataset['lineno'] }}">
+                            {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
+                        </span>:
+                        {% if dataset['event'] and dataset['persona'] %}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']), event=dataset['event'].title %}
+                                {{ amount }} for {{ name }} for {{ event }}
+                            {% endtrans %}
+                        {% elif dataset['persona'] %}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']) -%}
+                                {{ amount }} for {{ name }}
+                            {% endtrans %}
+                        {% elif dataset['event'] %}
+                            {% trans amount=dataset['amount']|money(lang=lang) %}
+                                {{ amount }} for unknown user.
+                            {% endtrans %}
+                        {% endif %}
+                    </strong>
+                    {{ util.print_money_transfer_problems(dataset, csvfields) }}
+                    </li>
+                {% endfor %}
             </ol>
             <script nonce="{{ csp_nonce }}">
                 $(function() {

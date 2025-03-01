@@ -76,6 +76,7 @@ class TestEventFrontend(FrontendTest):
         current = self.event.get_registration(self.key, reg_id)
         data = {
             'registration_id': reg_id,
+            'persona_id': current['persona_id'],
             'date': payment or now().date(),
             # used in log entry
             'amount': amount_paid - current['amount_paid'],
@@ -452,8 +453,9 @@ class TestEventFrontend(FrontendTest):
         orga = {
             "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
             "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
+            "Überweisungen eintragen",
         }
-        finance_admin = {"Überweisungen eintragen"}
+        finance_admin: set[str] = set()
 
         for user in ("annika", "emilia", "garcia", "martin", "vera", "werner",
                      "katarina", "farin", "petra"):
@@ -507,12 +509,14 @@ class TestEventFrontend(FrontendTest):
                     ins = (
                             everyone | not_registered | privileged
                             | registered_or_privileged | finance_admin
-                    ) - registrations_stats
-                    out = registered | orga | registrations_stats
+                    ) - registrations_stats | {"Überweisungen eintragen"}
+                    # TODO: solve this more elegantly.
+                    out = (registered | orga | registrations_stats) - {"Überweisungen eintragen"}
                 else:
                     self.fail("Please adjust users for this tests.")
 
-                self.check_sidebar(ins, out)
+                with self.subTest(user=user):
+                    self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
     def test_no_soft_limit(self) -> None:
@@ -2772,26 +2776,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Überweisungen eintragen")
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """
-353.99;DB-1-9;Admin;Anton;01.04.18
-455.99;DB-5-1;Eventis;Emilia;02.04.18
-999.99;DB-100-7;Abukara;Akira;03.04.18
-570.99;DB-11-6;K;Kalif;04.04.18
-0.0;DB-666-1;Y;Z;77.04.18;stuff
--116.49;DB-9-4;Iota;Inga;30.12.19
+        f['transfers'] = """
+01.04.18;353.99;DB-1-9;Administrator;Anton
+02.04.18;455.99;DB-5-1;Eventis;Emilia
+03.04.18;999.99;DB-100-7;Abukara;Akira
+04.04.18;570.99;DB-11-6;Karabatschi;Kalif
+77.04.18;0.0;DB-666-1;Y;Z
+30.12.19;-116.49;DB-9-4;Iota;Inga
 """
         self.submit(f, check_notification=False)
         self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
         self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
-        self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
+        self.assertPresence("Benutzer ist nicht für diese Veranstaltung angemeldet.", div="line3_problems")
         self.assertPresence("Ungültige Eingabe für ein Datum.", div="line4_problems")
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
+        self.assertPresence("amount: Darf nicht null sein.", div="line4_problems")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """
-353.99;DB-1-9;Admin;Anton;01.04.18
-455.99;DB-5-1;Eventis;Emilia;02.04.18
-999.99;DB-100-7;Abukara;Akira;03.04.18
--116.49;DB-9-4;Iota;Inga;30.12.19
+        f['transfers'] = """
+01.04.18;353.99;DB-1-9;Administrator;Anton
+02.04.18;455.99;DB-5-1;Eventis;Emilia
+03.04.18;999.99;DB-100-7;Abukara;Akira
+30.12.19;-116.49;DB-9-4;Iota;Inga
 """
         self.submit(f, check_notification=False)
         self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
@@ -2806,12 +2811,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             text = self.fetch_mail_content(i)
             if i == 1:
                 self.assertIn("455,99", text)
-            if i == 4:
-                self.assertIn("Für Eure Veranstaltung in der CdE-Datenbank wurden"
-                              " 4 neue Überweisungen eingetragen.", text)
+            if i == 3:
+                self.assertIn(
+                    "Für Eure Veranstaltung in der CdE-Datenbank wurden"
+                    " 3 neue Überweisungen eingetragen.",
+                    text,
+                )
+            elif i == 4:
+                self.assertIn(
+                    "Für Eure Veranstaltung in der CdE-Datenbank wurden"
+                    " 1 Erstattungen durchgeführt\nund in der Datenbank eingetragen.",
+                    text,
+                )
             else:
-                self.assertIn("Überweisung für die Veranstaltung", text)
-                self.assertIn('"Große Testakademie 2222"', text)
+                self.assertIn(
+                    "Deine Überweisung für die Veranstaltung",
+                    text,
+                )
+                self.assertIn(
+                    "Große Testakademie 2222",
+                    text,
+                )
         self.logout()
 
         # Now, test the results. To do so, switch to Garcia (Orga of this event)
@@ -2841,25 +2861,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         log_expectation = [
             {
                 'persona_id': 1,
-                'code': const.EventLogCodes.registration_payment_received,
+                'code': const.EventLogCodes.registration_payment_received_orga,
                 'change_note': "353,99 € am 01.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
                 'persona_id': 5,
-                'code': const.EventLogCodes.registration_payment_received,
+                'code': const.EventLogCodes.registration_payment_received_orga,
                 'change_note': "455,99 € am 02.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
                 'persona_id': 100,
-                'code': const.EventLogCodes.registration_payment_received,
+                'code': const.EventLogCodes.registration_payment_received_orga,
                 'change_note': "999,99 € am 03.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
                 'persona_id': 9,
-                'code': const.EventLogCodes.registration_payment_reimbursed,
+                'code': const.EventLogCodes.registration_payment_reimbursed_orga,
                 'change_note': "116,49 € am 30.12.2019 zurückerstattet.",
                 'submitted_by': 32,
             },
@@ -2875,7 +2895,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       {'href': '/event/event/1/batchfee'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = "666.66;DB-1-9;Fiese[;Zeichen{;01.04.18;überall("
+        f['transfers'] = "01.04.18;666.66;DB-1-9;Fiese[;Zeichen{;überall("
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
@@ -2887,25 +2907,23 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       {'href': '/event/event/1/batchfees'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """
-466.49;DB-5-1;Eventis;Emilia;01.04.18
-466.49;DB-5-1;Eventis;Emilia;02.04.18
+        f['transfers'] = """
+01.04.18;466.49;DB-5-1;Eventis;Emilia
+02.04.18;466.49;DB-5-1;Eventis;Emilia
 """
         self.submit(f, check_notification=False)
-        self.assertNonPresence("Zu viel Geld.", div="line0_warnings", check_div=False)
-        self.assertPresence("Mehrere Überweisungen für diese Person.",
-                            div="line1_warnings")
+        self.assertNonPresence("Zu viel Geld.", div="line0_infos", check_div=False)
+        self.assertPresence("Mehrere Überweisungen für diesen Account", div="line1_infos")
         self.assertPresence("Zu viel Geld.", div="line1_infos")
 
-        f['fee_data'] = """
-400;DB-5-1;Eventis;Emilia;01.04.18
-66.49;DB-5-1;Eventis;Emilia;02.04.18
+        f['transfers'] = """
+01.04.18;400;DB-5-1;Eventis;Emilia
+02.04.18;66.49;DB-5-1;Eventis;Emilia
 """
         self.submit(f, check_notification=False)
         self.assertPresence("Nicht genug Geld.", div="line0_infos")
         self.assertNonPresence("Zu viel Geld.", div="line1_infos")
-        self.assertPresence("Mehrere Überweisungen für diese Person.",
-                            div="line1_warnings")
+        self.assertPresence("Mehrere Überweisungen für diesen Account", div="line1_infos")
 
     @as_users("farin")
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
@@ -2917,8 +2935,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['send_notifications'].checked = True
-        f['force'].checked = True
-        f['fee_data'] = """266.49;DB-5-1;Eventis;Emilia;01.04.18"""
+        f['transfers'] = """01.04.18;266.49;DB-5-1;Eventis;Emilia"""
         self.submit(f, check_notification=False)
         # submit again because of checksum
         self.assertPresence("Bestätigen")
@@ -2944,7 +2961,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['send_notifications'].checked = True
-        f['fee_data'] = """200.00;DB-5-1;Eventis;Emilia;02.04.18"""
+        f['transfers'] = """02.04.18;200.00;DB-5-1;Eventis;Emilia"""
         self.submit(f, check_notification=False)
         # submit again because of checksum
         f = self.response.forms['batchfeesform']

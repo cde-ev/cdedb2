@@ -76,9 +76,10 @@
                 {{ util.href(cdedblink("event/orga_token_summary", {"event_id": event['id']}), gettext("Orga Tokens"),
                         aclass="list-group-item", icon="robot", active=(sidenav_active == 'orga_tokens')) }}
             {% endif %}
-            {% if 'finance' in user.admin_views %}
+            {% if 'finance' in user.admin_views or is_privileged_for("batch_fees_form") %}
                 {{ util.href(cdedblink("event/batch_fees_form", {"event_id": event['id']}), gettext("Enter Money Transfers"),
-                             aclass="list-group-item", icon="euro-sign", readonly=is_locked,
+                             aclass="list-group-item", icon="euro-sign", readonly=is_locked or event.is_balanced,
+                             title=gettext("Event is balanced. May not book paments.") if event.is_balanced else "",
                              active=(sidenav_active == 'event_batch_fees')) }}
             {% endif %}
         </div>

@@ -1058,3 +1058,38 @@ mailto:
         </ul>
     </nav>
 {% endmacro %}
+
+{% macro print_money_transfer_problems(dataset, csvfields) %}
+    {% if dataset['problems'] or dataset['infos'] %}
+        <div class="money-parse-line">
+            <ul class="list-unstyled" id="line{{ dataset['lineno'] }}_problems">
+                {% for key, problem in dataset['problems'] %}
+                    <li class="text-danger">
+                        {{ make_icon('exclamation-circle', title=gettext("Error")) }}
+                        {% if key %}
+                            <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                data-col="{{ csvfields.get(key, -1) }}">
+                                {{ key -}}
+                            </em>:
+                        {% endif %}
+                        {{ format_error(problem) }}
+                    </li>
+                {% endfor %}
+            </ul>
+            <ul class="list-unstyled" id="line{{ dataset['lineno'] }}_infos">
+                {% for key, info in dataset['infos'] %}
+                    <li class="text-info">
+                        {{ make_icon('exclamation-circle', title=gettext("Info")) }}
+                        {% if key %}
+                            <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                data-col="{{ csvfields.get(key, -1) }}">
+                                {{ key -}}
+                            </em>:
+                        {% endif %}
+                        {{ format_error(info) }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endmacro %}

@@ -235,6 +235,8 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
     # email for replies to finance mails
     "FINANCE_ADMIN_ADDRESS": "buchhaltung@lists.cde-ev.de",
+    # email for event related finance mails
+    "EVENT_FINANCE_ADMIN_ADDRESS": "aka-finanzen@lists.cde-ev.de",
 
     # email for privilege changes
     "META_ADMIN_ADDRESS": "admin@cde-ev.de",
