@@ -2980,17 +2980,20 @@ class TestEventBackend(BackendTest):
             data = json.load(datafile)
 
         # first a test run
-        token1, delta = self.event.partial_import_event(self.key, data,
-                                                        dryrun=True)
+        token1, delta = self.event.partial_import_event(
+            self.key, event.id, data, dryrun=True,
+        )
         expectation = copy.deepcopy(delta)
         self.assertEqual(expectation, delta)
         # second check the token functionality
         with self.assertRaises(PartialImportError):
-            self.event.partial_import_event(self.key, data, dryrun=False,
-                                            token=token1 + "wrong")
+            self.event.partial_import_event(
+                self.key, event.id, data, dryrun=False, token=token1 + "wrong",
+            )
         # now for real
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, token=token1)
+            self.key, event.id, data, dryrun=False, token=token1,
+        )
         self.assertEqual(token1, token2)
 
         updated = self.event.partial_export_event(self.key, 1)
@@ -3240,6 +3243,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
+        event_id = 1
         with open(
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
@@ -3262,7 +3266,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of courses violated.",
                       cm.exception.args)
 
@@ -3278,7 +3283,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of lodgements violated.",
                       cm.exception.args)
 
@@ -3290,7 +3296,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of lodgement groups violated.",
                       cm.exception.args)
 
@@ -3298,6 +3305,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
+        event_id = 1
         with open(
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
@@ -3305,17 +3313,21 @@ class TestEventBackend(BackendTest):
 
         # first a test run
         token1, delta = self.event.partial_import_event(
-            self.key, data, dryrun=True)
+            self.key, event_id, data, dryrun=True,
+        )
         # second a real run
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, token=token1)
+            self.key, event_id, data, dryrun=False, token=token1,
+        )
         self.assertEqual(token1, token2)
         # third another concurrent real run
         with self.assertRaises(PartialImportError):
             self.event.partial_import_event(
-                self.key, data, dryrun=False, token=token1)
+                self.key, event_id, data, dryrun=False, token=token1,
+            )
         token3, delta = self.event.partial_import_event(
-            self.key, data, dryrun=True)
+            self.key, event_id, data, dryrun=True,
+        )
         self.assertNotEqual(token1, token3)
         expectation = {
             'courses': {
