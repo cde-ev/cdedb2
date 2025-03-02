@@ -353,7 +353,7 @@
                 // can only submit one form at once, to avoid confusion hide other forms
                 $(".nojs-only").hide();
                 $(".softhide").show();
-                $(".add-backdated-button").show();
+                $(".add-backdated-button").removeClass('active');
 
                 $(".softhide.period-display-" + rownr).hide();
                 $(".nojs-only.period-form-" + rownr).show();
@@ -370,14 +370,18 @@
             // hide all other js-only forms
             $(".nojs-only").hide();
             $(".softhide").show();
-            $(".add-backdated-button").show();
-            // place and configure this form
-            $(this).hide();
-            const idx = $(this).val() - 1;  // after this index, the addperiodrow is to insert
-            if (idx === 0)
-                $('#row-1').before($("#addperiodrow").show());
-            else
-                $(`#row-${idx}`).after($("#addperiodrow").show());
+            if ($(this).hasClass("active")) {
+                $(this).removeClass("active");
+            } else {
+                $(".add-backdated-button").removeClass('active');
+                // place and configure this form
+                $(this).addClass("active");
+                const idx = $(this).val() - 1;  // after this index, the addperiodrow is to insert
+                if (idx === 0)
+                    $('#row-1').before($("#addperiodrow").show());
+                else
+                    $(`#row-${idx}`).after($("#addperiodrow").show());
+            }
         })
     </script>
 
