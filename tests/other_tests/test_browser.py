@@ -168,7 +168,7 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-2"]').click()
         page.locator('input[name="field_name_-2"]').fill("held")
 
-        page.locator("#dynamicrow-delete-button-8").click()
+        page.locator("#dynamicrow-delete-button-9").click()
 
         page.get_by_role("button", name="Speichern").click()
         page.wait_for_url("http://localhost:5000/event/event/1/field/summary")
