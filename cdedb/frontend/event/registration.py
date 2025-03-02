@@ -26,6 +26,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
+    ValidationWarning,
     build_msg,
     determine_age_class,
     diacritic_patterns,
@@ -1799,9 +1800,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         if checkin_time > ref_time:
             rs.append_validation_error(
                 (f'checkin_time_{period_id}', ValueError(n_("Must be in the past."))))
-        if checkout_time and checkout_time > ref_time:
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
             rs.append_validation_error(
-                (f'checkout_time_{period_id}', ValueError(n_("Must be in the past."))))
+                (f'checkout_time_{period_id}', ValidationWarning(
+                    n_("Should be less than 6 hours in the future."))))
         if checkout_time and not checkin_time < checkout_time:
             rs.append_validation_error(
                 (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
@@ -1900,9 +1903,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         if checkin_time and checkin_time > ref_time:
             rs.append_validation_error(
                 ('checkin_time', ValueError(n_("Must be in the past."))))
-        if checkout_time and checkout_time > ref_time:
-            rs.append_validation_error(
-                ('checkout_time', ValueError(n_("Must be in the past."))))
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
+            rs.append_validation_error(('checkout_time', ValidationWarning(n_(
+                "Should be less than 6 hours in the future."))))
         if rs.has_validation_errors():
             return self.checkin_multiset_form(rs, event_id, internal=True)
         if action not in {'checkin', 'modify_checkout', 'checkout', 'modify_checkin'}:
@@ -1968,17 +1972,21 @@ class EventRegistrationMixin(EventBaseFrontend):
         ret = 1
         if action == 'checkin':
             ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+            sortkey = "checkin_periods.max_checkin_time"
         elif action == 'checkout':
             ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            sortkey = "checkin_periods.max_checkout_time"
         elif action == 'modify_checkin':
             if not checkin_time:  # delete latest checkins
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.delete_checkin_period(
                         rs, reg_id, reg['checkin_periods'][-1].id)
+                sortkey = "checkin_periods.max_checkout_time"
             else:
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, reg['checkin_periods'][-1].id, checkin_time, None)
+                sortkey = "checkin_periods.max_checkin_time"
         elif action == 'modify_checkout':
             for reg_id, reg in regs.items():
                 if reg['checkin_periods']:
@@ -1986,10 +1994,20 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)
+            sortkey = "checkin_periods.max_checkout_time"
 
         rs.notify_return_code(ret)
-        return self.redirect(rs, 'event/registration_query',
-                             {'event_id': event_id})
+        # redirect to query of changed registrations
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
+            ("persona.given_names", "persona.family_name", "persona.username",
+             "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
+             "checkin.current"),
+            (("reg.id", QueryOperators.oneof, registration_ids),),
+            ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
+        )
+        return self.redirect(rs, 'event/registration_query', query.serialize_to_url())
 
     def _get_payment_data(self, rs: RequestState, event_id: int,
                           registration_id: Optional[int] = None) -> CdEDBObject:

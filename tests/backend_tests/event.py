@@ -4312,26 +4312,23 @@ class TestEventBackend(BackendTest):
         reg_id = 1
         base_time = now().replace(microsecond=0)
         delta = datetime.timedelta(seconds=42)
+        future_time = base_time + 42 * delta
         with freezegun.freeze_time(base_time) as frozen_time:
             # single checkins / checkouts first
             p_id = self.event.add_checkin(self.key, reg_id)
             self.assertEqual(self.event.add_checkin(self.key, reg_id), 0)
             frozen_time.tick(delta)
             self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
-            self.assertGreater(self.event.add_checkout(self.key, reg_id), 0)
-            future_time = base_time + 42 * delta
+            self.assertGreater(self.event.add_checkout(self.key, reg_id, future_time), 0)
             with self.assertRaises(ValueError) as cm:
                 self.event.add_checkin(self.key, reg_id, future_time)
-            self.assertEqual(cm.exception.args[0], "Must be in the past.")
-            with self.assertRaises(ValueError) as cm:
-                self.event.add_checkout(self.key, reg_id, future_time)
             self.assertEqual(cm.exception.args[0], "Must be in the past.")
             self.assertEqual(self.event.add_checkout(self.key, reg_id), 0)
             period: CdEDBObject = {
                 "id": p_id,
                 "registration_id": reg_id,
                 "checkin_time": base_time,
-                "checkout_time": base_time + delta,
+                "checkout_time": future_time,
             }
             reg = self.event.get_registration(self.key, reg_id)
             self.assertEqual(
@@ -4340,24 +4337,18 @@ class TestEventBackend(BackendTest):
             # change a period
             period["checkin_time"] += delta
             period["checkout_time"] += delta
-            with self.assertRaises(ValueError) as cm:
-                self.assertGreater(self.event.change_checkin_period(
-                    self.key, reg_id, p_id, checkin_time=period["checkin_time"],
-                    checkout_time=period["checkout_time"],
-                ), 0)
-            self.assertEqual("Must be in the past.", cm.exception.args[0])
             frozen_time.tick(2*delta)
             with self.assertRaises(ValueError) as cm:
-                self.assertGreater(self.event.change_checkin_period(
-                    self.key, reg_id, p_id, checkin_time=period["checkout_time"],
+                self.event.change_checkin_period(
+                    self.key, reg_id, p_id, checkin_time=period["checkin_time"] + delta,
                     checkout_time=period["checkin_time"],
-                ), 0)
+                )
             self.assertEqual("Checkout must be after checkin.", cm.exception.args[0])
             with self.assertRaises(ValueError) as cm:
-                self.assertGreater(self.event.change_checkin_period(
+                self.event.change_checkin_period(
                     self.key, reg_id, p_id + 42, checkin_time=period["checkin_time"],
                     checkout_time=period["checkout_time"],
-                ), 0)
+                )
             self.assertEqual("Period is not from this registration.", cm.exception.args[0])
 
             self.assertGreater(self.event.change_checkin_period(
