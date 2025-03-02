@@ -310,8 +310,8 @@
                     </form>
                 </td>
                 <td style="padding-left: 0;">
-                    {{ util.input_submit(icon="plus", label="", title=gettext("Insert new period in front of here."),
-                                         aclass="btn btn-success btn-sm add-backdated-button", value=loop.index) }}
+                    {{ util.input_submit(icon="chevron-up", label="", title=gettext("Insert previous period"),
+                                         aclass="btn btn-success btn-sm add-backdated-button softhide", value=loop.index) }}
                 </td>
                 <td>{{ period.get_duration()|timedelta(gettext) }}</td>
             </tr>
