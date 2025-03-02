@@ -1920,10 +1920,6 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_ids = affirm_set(vtypes.ID, registration_ids)
         checkout_time = affirm_optional(datetime.datetime, checkout_time)
 
-        ref_time = now()
-        if checkout_time and checkout_time > ref_time:
-            raise ValueError(n_("Must be in the past."))
-
         ret = 1
         # Return early to avoid StopIteration exception in is_privileged
         if not registration_ids:
@@ -1949,7 +1945,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 data: CdEDBObject = {
                     'id': reg['checkin_periods'][-1].id,
                     # we require this to be in the past, prevent rounding up
-                    'checkout_time': (checkout_time or ref_time).replace(microsecond=0),
+                    'checkout_time': (checkout_time or now()).replace(microsecond=0),
                 }
                 ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkout_added,
@@ -2040,7 +2036,7 @@ class EventRegistrationBackend(EventBaseBackend):
         checkout_time = affirm_optional(datetime.datetime, checkout_time)
 
         ref_time = now()
-        if checkin_time > ref_time or checkout_time and checkout_time > ref_time:
+        if checkin_time > ref_time:
             raise ValueError(n_("Must be in the past."))
         elif checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))

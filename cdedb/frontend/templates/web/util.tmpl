@@ -516,7 +516,7 @@
 
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
-        aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='') -%}
+        aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
@@ -527,6 +527,7 @@
             value=value,
             checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
+            form=formid,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
@@ -703,11 +704,17 @@
     {%- endcall %}
 {%- endmacro %}
 
+{% macro input_ignore_warnings(readonly=False, formid=none) %}
+    {% if has_warnings() %}
+        {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly, formid=formid) }}
+    {% endif %}
+{% endmacro %}
+
 {% macro input_submit(label=gettext("Save"), value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
          readonly=False, title=none, ariahidden=false, formid=none, formmethod=none, formaction=none,
          display_ignore_warnings=True) %}
-    {% if has_warnings() and display_ignore_warnings %}
-        {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly) }}
+    {% if display_ignore_warnings %}
+        {{ input_ignore_warnings(readonly, formid) }}
     {% endif %}
     <button{{ dict(
         type="submit",
