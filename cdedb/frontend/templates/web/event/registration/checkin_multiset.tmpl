@@ -87,7 +87,7 @@
                     {{ util.form_input_select('field_id', entries=datetime_registration_fields.items(), nulloption="",
                                               label=gettext("Set checkout times from custom field")) }}
                     {{ util.input_hidden('confirm_field_id') }}
-                    {% if values.get('field_id') %}
+                    {% if values.get('field_id') and 'field_id' not in errors %}
                         {{ util.form_input_checkbox('ack_field', label=gettext("Confirm")) }}
                     {% else %}
                         {{ util.form_input_text('checkout_time', label=gettext("Checkout time"), type='datetime-local') }}
@@ -164,7 +164,7 @@
                     {{ util.form_input_select('field_id', entries=datetime_registration_fields.items(), nulloption="",
                                               label=gettext("Set checkin times from custom field")) }}
                     {{ util.input_hidden('confirm_field_id') }}
-                    {% if values.get('field_id') %}
+                    {% if values.get('field_id') and 'field_id' not in errors %}
                         {{ util.form_input_checkbox('ack_field', label=gettext("Confirm")) }}
                     {% else %}
                         {{ util.form_input_text('checkin_time', label=gettext("Checkin time"), type='datetime-local') }}
