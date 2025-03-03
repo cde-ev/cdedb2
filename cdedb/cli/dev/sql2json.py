@@ -9,6 +9,7 @@ from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import CdEDBObject, nearly_now
+from cdedb.common.sorting import xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
 
@@ -120,6 +121,8 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
                 elif isinstance(value, datetime.date) and datetime_from_date(
                         value) == reference_frame:
                     sorted_entity[field] = "---now---"
+                elif isinstance(value, dict):
+                    sorted_entity[field] = {k: value[k] for k in xsorted(value)}
                 else:
                     sorted_entity[field] = value
             sorted_entities.append(sorted_entity)
