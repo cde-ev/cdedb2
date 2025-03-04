@@ -1948,6 +1948,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         regs = self.eventproxy.get_registrations(rs, registration_ids)
         # first, validate
         consistent = True
+        if field_id:
+            field_name = rs.ambience['event'].fields[field_id].field_name
+            if not all(reg['fields'].get(field_name) for reg in regs.values()):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Field must not be empty."))))
         if action in {'checkout', 'modify_checkin'}:
             if any(
                 not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
@@ -1961,27 +1966,17 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ('checkout_time', ValueError(n_("Must give exactly one."))))
                 rs.append_validation_error(
                     ('field_id', ValueError(n_("Must give exactly one."))))
-            elif checkout_time and checkout_time < max(
+            elif checkout_time and consistent and checkout_time < max(
                 reg['checkin_periods'][-1].checkin_time for reg in regs.values()
             ):
                 rs.append_validation_error(
                     ('checkout_time', ValueError(n_("Must be after last checkin."))))
-            elif field_id:
-                field_name = rs.ambience['event'].fields[field_id].field_name
-                if consistent and any(  # consistent ensures that everyone is checked in
-                    reg['checkin_periods'][-1].checkin_time >= reg['fields'][field_name]
-                    for reg in regs.values()
-                    if reg['checkin_periods'] and field_name in reg['fields']
-                ):
-                    rs.append_validation_error(
-                        ('field_id', ValueError(n_("Must be after last checkin."))))
-                if any(
-                    field_name not in reg['fields']
-                    or not reg['fields'][field_name]
-                    for reg in regs.values()
-                ):
-                    rs.append_validation_error(
-                        ('field_id', ValueError(n_("Field must not be empty."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkin_time >= reg['fields'][field_name]
+                for reg in regs.values() if reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkin."))))
         if (action == 'modify_checkin'
             and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
             and checkin_time < max(
@@ -2003,29 +1998,20 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ('field_id', ValueError(n_("Must give exactly one."))))
                 rs.append_validation_error(
                     ('checkin_time', ValueError(n_("Must give exactly one."))))
-            elif (checkin_time and any(reg['checkin_periods'] for reg in regs.values())
+            elif (checkin_time and consistent
+                  and any(reg['checkin_periods'] for reg in regs.values())
                   and checkin_time <= max(
                     reg['checkin_periods'][-1].checkout_time
                     for reg in regs.values() if reg['checkin_periods'])
             ):
                 rs.append_validation_error(
                     ('checkin_time', ValueError(n_("Must be after last checkout."))))
-            elif field_id:
-                field_name = rs.ambience['event'].fields[field_id].field_name
-                if consistent and any(  # consistent ensures that everyone is checked out
-                    reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
-                    for reg in regs.values()
-                    if reg['checkin_periods'] and field_name in reg['fields']
-                ):
-                    rs.append_validation_error(
-                        ('field_id', ValueError(n_("Must be after last checkout."))))
-                if any(
-                    field_name not in reg['fields']
-                    or not reg['fields'][field_name]
-                    for reg in regs.values()
-                ):
-                    rs.append_validation_error(
-                        ('field_id', ValueError(n_("Field must not be empty."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
+                for reg in regs.values() if reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkout."))))
         if (action == 'modify_checkout'
             and any(reg['checkin_periods'] for reg in regs.values())
             and checkout_time < max(reg['checkin_periods'][-1].checkin_time
