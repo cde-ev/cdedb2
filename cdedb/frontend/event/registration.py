@@ -2008,7 +2008,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ('checkin_time', ValueError(n_("Must be after last checkout."))))
             elif field_id and consistent and any(
                 reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
-                for reg in regs.values() if reg['fields'].get(field_name)
+                for reg in regs.values()
+                if reg['checkin_periods'] and reg['fields'].get(field_name)
             ):
                 rs.append_validation_error(
                     ('field_id', ValueError(n_("Must be after last checkout."))))
