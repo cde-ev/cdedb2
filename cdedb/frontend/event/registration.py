@@ -2034,8 +2034,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if checkin_time:
                 ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
             elif field_id:
-                for reg_id, reg in regs.items():
-                    self.eventproxy.add_checkin(rs, reg_id, reg['fields'][field_name])
+                self.eventproxy.add_checkins_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
             else:
                 raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkin_time"
@@ -2043,8 +2044,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if checkout_time:
                 ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
             elif field_id:
-                for reg_id, reg in regs.items():
-                    self.eventproxy.add_checkout(rs, reg_id, reg['fields'][field_name])
+                self.eventproxy.add_checkouts_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
             else:
                 raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkout_time"

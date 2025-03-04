@@ -1814,15 +1814,28 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkins(self, rs: RequestState, registration_ids: Collection[int],
                      checkin_time: Optional[datetime.datetime] = None,
                      ) -> DefaultReturnCode:
-        """Check participants in.
+        """Check participants in, all with the same time.
 
         :param checkin_time: defaults to current time
         """
-        registration_ids = affirm_set(vtypes.ID, registration_ids)
-        checkin_time = affirm_optional(datetime.datetime, checkin_time)
+        timestamp = checkin_time or now()
+        return self.add_checkins_multi(
+            rs, {r_id: timestamp for r_id in registration_ids})
+
+    @access("event")
+    def add_checkins_multi(
+        self, rs: RequestState, reg_checkin_times: Mapping[int, datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Check participants in, individual times per registration.
+
+        :param reg_checkin_times: Mapping of registration id to checkin time.
+        """
+        # TODO: How do we affirm dicts?
+        registration_ids = affirm_set(vtypes.ID, reg_checkin_times.keys())
+        # checkin_times = affirm_set(datetime.datetime, reg_checkin_times.values())
 
         ref_time = now()
-        if checkin_time and checkin_time > ref_time:
+        if any(checkin_time > ref_time for checkin_time in reg_checkin_times.values()):
             raise ValueError(n_("Must be in the past."))
 
         ret = 1
@@ -1840,17 +1853,22 @@ class EventRegistrationBackend(EventBaseBackend):
                    for reg in regs.values()):
                 # someone is currently checked in.
                 return 0
+            if any(reg['checkin_periods']
+                   and reg['checkin_periods'][-1].checkout_time >= reg_checkin_times[reg_id]
+                   for reg_id, reg in regs.items()):
+                # checkin time too early
+                return 0
 
             for reg_id, reg in regs.items():
                 data: CdEDBObject = {
                     'registration_id': reg_id,
                     # we require this to be in the past, prevent rounding up
-                    'checkin_time': (checkin_time or ref_time).replace(microsecond=0),
+                    'checkin_time': reg_checkin_times[reg_id].replace(microsecond=0),
                 }
                 ret *= self.sql_insert(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkin_added,
                                reg['event_id'], reg['persona_id'],
-                               change_note=datetime_filter(checkin_time,
+                               change_note=datetime_filter(data['checkin_time'],
                                                            lang=rs.log_lang))
         return ret
 
@@ -1865,12 +1883,25 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
                       checkout_time: Optional[datetime.datetime] = None,
                       ) -> DefaultReturnCode:
-        """Check participants out
+        """Check participants out, all at the same time.
 
         :param checkout_time: defaults to current time
         """
-        registration_ids = affirm_set(vtypes.ID, registration_ids)
-        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+        timestamp = checkout_time or now()
+        return self.add_checkouts_multi(
+            rs, {r_id: timestamp for r_id in registration_ids})
+
+    @access("event")
+    def add_checkouts_multi(
+        self, rs: RequestState, reg_checkout_times: Mapping[int, datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Check participants out, individual times per registration.
+
+        :param reg_checkout_times: mapping of registration id to checkout time.
+        """
+        # TODO: how to affirm a mapping?
+        registration_ids = affirm_set(vtypes.ID, reg_checkout_times.keys())
+        # checkout_times = affirm_set(datetime.datetime, reg_checkout_times.values())
 
         ret = 1
         # Return early to avoid StopIteration exception in is_privileged
@@ -1887,8 +1918,9 @@ class EventRegistrationBackend(EventBaseBackend):
                    for reg in regs.values()):
                 # someone is not checked in
                 return 0
-            if checkout_time and checkout_time <= max(
-              reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            if any(
+                reg['checkin_periods'][-1].checkin_time >= reg_checkout_times[reg_id]
+                for reg_id, reg in regs.items()
             ):
                 # cannot checkout earlier than last checkin
                 return 0
@@ -1897,12 +1929,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 data: CdEDBObject = {
                     'id': reg['checkin_periods'][-1].id,
                     # we require this to be in the past, prevent rounding up
-                    'checkout_time': (checkout_time or now()).replace(microsecond=0),
+                    'checkout_time': reg_checkout_times[reg_id].replace(microsecond=0),
                 }
                 ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
                 self.event_log(rs, const.EventLogCodes.checkout_added,
                                reg['event_id'], reg['persona_id'],
-                               change_note=datetime_filter(checkout_time,
+                               change_note=datetime_filter(reg_checkout_times[reg_id],
                                                            lang=rs.log_lang))
         return ret
 
