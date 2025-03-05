@@ -556,6 +556,38 @@ class BackendTest(CdEDBTest):
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
         self.assertEqual(log, tuple(log_expectation))
 
+    def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
+                        msg: str | None = None) -> None:
+        """Helper to get more readable diffs of long dicts.
+
+        This is useful since unittest by default outputs a text-based diff, while we
+        consider some technically different values as equal, especially enum members and
+        their numerical values or our NearlyNow() objects and datetimes. Thus, only
+        output elements that are considered semantically different by python.
+        """
+        super().assertDictEqual(*self._generate_diff_dicts(dict1, dict2), msg)
+
+    @staticmethod
+    def _generate_diff_dicts(dict1: Mapping[Any, object], dict2: Mapping[Any, object],
+                             ) -> tuple[CdEDBObject, CdEDBObject]:
+        """Helper to extract differences from longer dicts.
+
+        :return: two dicts containing only the differences between the input dicts.
+        """
+        res1: CdEDBObject = dict()
+        res2: CdEDBObject = dict()
+        for key in dict1.keys() - dict2.keys():
+            res1[key] = dict1[key]
+        for key in dict2.keys() - dict1.keys():
+            res2[key] = dict2[key]
+        for key in dict1.keys() & dict2.keys():
+            if (v1 := dict1[key]) != (v2 := dict2[key]):
+                if isinstance(v1, dict) and isinstance(v2, dict):
+                    res1[key], res2[key] = BackendTest._generate_diff_dicts(v1, v2)
+                else:
+                    res1[key], res2[key] = v1, v2
+        return res1, res2
+
     @classmethod
     def initialize_raw_backend(cls, backendcls: type[SessionBackend],
                                ) -> SessionBackend:

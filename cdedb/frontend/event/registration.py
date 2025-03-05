@@ -1794,6 +1794,66 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access('event', modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("checkin_time", "checkout_time")
+    def add_backdated_checkin_period(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
+    ) -> Response:
+        """Insert a timespan where a participant was present."""
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        ref_time = now()
+        if checkin_time > ref_time:
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkout_time > ref_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkin_time >= checkout_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Checkout must be after checkin."))))
+        reg = self.eventproxy.get_registration(rs, registration_id)
+        prev_period: Optional[models.CheckinPeriod] = None
+        for next_period in reg['checkin_periods']:
+            if next_period.checkin_time > checkin_time:
+                # period is to insert between prev_period and next_period
+                if (prev_period and prev_period.checkout_time
+                        and prev_period.checkout_time > checkin_time):
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Checkin must be after previous checkout."))))
+                if not checkout_time:
+                    rs.append_validation_error(
+                        ('checkout_time', ValueError(n_("Must not be empty."))))
+                elif checkout_time > next_period.checkin_time:
+                    rs.append_validation_error(
+                        ('checkout_time',
+                         ValueError(n_("Checkout must be before next checkin."))))
+                break
+            prev_period = next_period
+        else:  # period is appended to the end
+            if prev_period:
+                if (prev_period.checkout_time
+                    and prev_period.checkout_time > checkin_time):
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Checkin must be after previous checkout."))))
+                elif not prev_period.checkout_time:
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Cannot check in checked-in users."))))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        code = self.eventproxy.add_backdated_checkin_period(
+            rs, registration_id, checkin_time, checkout_time)
+        rs.notify_return_code(code, error=n_("Action failed."))
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("period_id")
     def change_checkin_period(self, rs: RequestState, event_id: int,
                               registration_id: vtypes.ID, period_id: vtypes.ID,
@@ -1986,17 +2046,21 @@ class EventRegistrationMixin(EventBaseFrontend):
         ret = 1
         if action == 'checkin':
             ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+            sortkey = "checkin_periods.max_checkin_time"
         elif action == 'checkout':
             ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            sortkey = "checkin_periods.max_checkout_time"
         elif action == 'modify_checkin':
             if not checkin_time:  # delete latest checkins
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.delete_checkin_period(
                         rs, reg_id, reg['checkin_periods'][-1].id)
+                sortkey = "checkin_periods.max_checkout_time"
             else:
                 for reg_id, reg in regs.items():
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, reg['checkin_periods'][-1].id, checkin_time, None)
+                sortkey = "checkin_periods.max_checkin_time"
         elif action == 'modify_checkout':
             for reg_id, reg in regs.items():
                 if reg['checkin_periods']:
@@ -2004,10 +2068,20 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ret *= self.eventproxy.change_checkin_period(
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)
+            sortkey = "checkin_periods.max_checkout_time"
 
         rs.notify_return_code(ret)
-        return self.redirect(rs, 'event/registration_query',
-                             {'event_id': event_id})
+        # redirect to query of changed registrations
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
+            ("persona.given_names", "persona.family_name", "persona.username",
+             "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
+             "checkin.current"),
+            (("reg.id", QueryOperators.oneof, registration_ids),),
+            ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
+        )
+        return self.redirect(rs, 'event/registration_query', query.serialize_to_url())
 
     def _get_payment_data(self, rs: RequestState, event_id: int,
                           registration_id: Optional[int] = None) -> CdEDBObject:
