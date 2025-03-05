@@ -1859,16 +1859,17 @@ class EventRegistrationBackend(EventBaseBackend):
                 # checkin time too early
                 return 0
 
-            for reg_id, reg in regs.items():
-                data: CdEDBObject = {
+            data = [{
                     'registration_id': reg_id,
                     # we require this to be in the past, prevent rounding up
-                    'checkin_time': reg_checkin_times[reg_id].replace(microsecond=0),
-                }
-                ret *= self.sql_insert(rs, models.CheckinPeriod.database_table, data)
+                    'checkin_time': checkin_time.replace(microsecond=0),
+                } for reg_id, checkin_time in reg_checkin_times.items()
+            ]
+            ret *= self.sql_insert_many(rs, models.CheckinPeriod.database_table, data)
+            for reg_id, reg in regs.items():
                 self.event_log(rs, const.EventLogCodes.checkin_added,
                                reg['event_id'], reg['persona_id'],
-                               change_note=datetime_filter(data['checkin_time'],
+                               change_note=datetime_filter(reg_checkin_times[reg_id],
                                                            lang=rs.log_lang))
         return ret
 

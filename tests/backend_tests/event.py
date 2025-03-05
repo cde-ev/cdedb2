@@ -4334,7 +4334,8 @@ class TestEventBackend(BackendTest):
         future_time = base_time + 42 * delta
         with freezegun.freeze_time(base_time) as frozen_time:
             # single checkins / checkouts first
-            p_id = self.event.add_checkin(self.key, reg_id)
+            p_id = 1001
+            self.event.add_checkin(self.key, reg_id)
             self.assertEqual(self.event.add_checkin(self.key, reg_id), 0)
             frozen_time.tick(delta)
             self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
