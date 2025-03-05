@@ -107,9 +107,9 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
             entities = sql.query_all(rs, query, ())
             if not silent:
                 print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        # take care we obtain a stable order
         sorted_entities = list()
         for entity in entities:
-            # take care that the order is preserved
             sorted_entity: dict[str, Any] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
