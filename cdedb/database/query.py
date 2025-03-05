@@ -200,6 +200,39 @@ class SqlQueryBackend:
         params = tuple(data[key] for key in keys) + (data[entity_key],)
         return self.query_exec(container, query, params)
 
+    def sql_update_many(self, container: ConnectionContainer, table: str,
+                        data: Sequence[CdEDBObject], entity_key: str = "id") -> int:
+        """Generic SQL update query.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :returns: number of affected rows
+        """
+        keys = tuple(key for key in data[0] if key != entity_key)
+        if not keys:
+            # no input is an automatic success
+            return 1
+        key_set = data[0].keys()
+        for entry in data:
+            if entry.keys() != key_set:
+                raise ValueError(n_("Dict keys do not match."))
+
+        # query pattern taken from https://stackoverflow.com/a/18799497
+        dataline = '(%s' + ', %s' * len(keys) + ')'
+        query = (f"UPDATE {table} AS t SET"
+                 f"    {', '.join(f'{key} = d.{key}' for key in keys)}"
+                 f" FROM  (VALUES"
+                 f"    {', '.join([dataline] * len(data))}"
+                 f" ) AS d({', '.join((entity_key,) + keys)})"
+                 f" WHERE d.{entity_key} = t.{entity_key}")
+        params = sum(
+            ((entity[entity_key],) + tuple(entity[key] for key in keys)
+             for entity in data),
+            (),
+        )
+        ret = self.query_exec(container, query, params)
+        return ret
+
     def sql_json_inplace_update(self, container: ConnectionContainer, table: str,
                                 data: CdEDBObject, entity_key: str = "id",
                                 ) -> int:

@@ -1926,13 +1926,14 @@ class EventRegistrationBackend(EventBaseBackend):
                 # cannot checkout earlier than last checkin
                 return 0
 
-            for reg_id, reg in regs.items():
-                data: CdEDBObject = {
+            data = [{
                     'id': reg['checkin_periods'][-1].id,
                     # we require this to be in the past, prevent rounding up
                     'checkout_time': reg_checkout_times[reg_id].replace(microsecond=0),
-                }
-                ret *= self.sql_update(rs, models.CheckinPeriod.database_table, data)
+                } for reg_id, reg in regs.items()
+            ]
+            ret *= self.sql_update_many(rs, models.CheckinPeriod.database_table, data)
+            for reg_id, reg in regs.items():
                 self.event_log(rs, const.EventLogCodes.checkout_added,
                                reg['event_id'], reg['persona_id'],
                                change_note=datetime_filter(reg_checkout_times[reg_id],
