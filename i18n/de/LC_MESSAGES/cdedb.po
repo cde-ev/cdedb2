@@ -15303,7 +15303,7 @@ msgid ""
 "and payment data."
 msgstr ""
 "Entfernt die Markierung als finanziell abgeschlossen. Erlaubt wieder "
-"Änderungen an finanzieller Konfigurations und Zahlungsdaten."
+"Änderungen an finanzieller Konfiguration und Zahlungsdaten."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:53
 msgid "Not set yet."

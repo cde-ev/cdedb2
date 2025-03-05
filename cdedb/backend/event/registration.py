@@ -1432,8 +1432,9 @@ class EventRegistrationBackend(EventBaseBackend):
             rs, registration, event=event, visual_debug=visual_debug)
 
     @access("event")
-    def calculate_partial_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event_id: int) -> decimal.Decimal:
+    def calculate_fee_for_partial_registration(
+            self, rs: RequestState, reg: CdEDBObject, *, event_id: int,
+    ) -> decimal.Decimal:
         """Public helper to calculate a fee for a non-stored (partial) registration.
 
         Should only be used when needing to calculate the fee for a changed or new

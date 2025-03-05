@@ -484,7 +484,9 @@ class EventRegistrationMixin(EventBaseFrontend):
                 'is_member': self.coreproxy.get_persona(rs, persona_id)['is_member'],
                 'personalized_fees': {},
             }
-        return self.eventproxy.calculate_partial_fee(rs, registration, event_id=event_id)
+        return self.eventproxy.calculate_fee_for_partial_registration(
+            rs, registration, event_id=event_id,
+        )
 
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
