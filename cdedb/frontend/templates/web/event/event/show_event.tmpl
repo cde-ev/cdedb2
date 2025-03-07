@@ -379,7 +379,7 @@
     </div>
 
 
-    {% if "event_mgmt" in user.admin_views or (
+    {% if "event_mgmt" in user.admin_views or "finance" in user.admin_views or (
             values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
         {# This ensures no empty box is shown for orgas. #}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
@@ -393,7 +393,7 @@
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
                                         label=gettext("Create orga mailinglist"), aclass="btn btn-primary btn-wrap",
-                                        icon="far fa-plus-square", readonly=not orgas,
+                                        icon="far fa-plus-square", readonly=is_locked or not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -418,7 +418,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=not orgas,
+                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=is_locked or not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -470,32 +470,68 @@
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
                 {% endif %}
-            <div class="row" id="delete-event">
-                <div class="col-sm-4">
-                    <div class="p">
-                        <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
-                              style="display: inline;">
-                            {{ util.anti_csrf_token('event/delete_event') }}
-                            {{ util.input_submit(label=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                 aclass="btn btn-danger", icon="trash-alt",
-                                                 title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                        </form>
-                        <script nonce="{{ csp_nonce }}">
-                            $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-                            $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
+                <div class="row" id="delete-event">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
+                                  style="display: inline;">
+                                {{ util.anti_csrf_token('event/delete_event') }}
+                                {{ util.input_submit(label=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                                     aclass="btn btn-danger", icon="trash-alt",
+                                                     title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
+                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            </form>
+                            <script nonce="{{ csp_nonce }}">
+                                $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
+                                $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                            </script>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="p text-muted">
+                            {% trans %}
+                                Deletes the event, including all course and participant information.
+                                This should usually not be done before the event has been archived and fully concluded.
+                            {% endtrans %}
+                        </div>
                     </div>
                 </div>
-                <div class="col-sm-8">
-                    <div class="p text-muted">
-                        {% trans %}
-                            Deletes the event, including all course and participant information.
-                            This should usually not be done before the event has been archived and fully concluded.
-                        {% endtrans %}
+            {% endif %}
+            {% if "finance" in user.admin_views %}
+                <div class="row" id="balance-event">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if not ambience['event'].is_balanced %}
+                                <form action="{{ cdedblink('event/balance_event') }}" method="POST" id="balanceeventform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/balance_event') }}
+                                    {{ util.input_submit(label=gettext("Balance Event"), readonly=is_locked,
+                                                         aclass="btn btn-primary", icon="balance-scale") }}
+                                </form>
+                            {% else %}
+                                <form action="{{ cdedblink('event/unbalance_event') }}" method="POST" id="unbalanceeventform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/unbalance_event') }}
+                                    {{ util.input_submit(label=gettext("Unbalance Event"), readonly=is_locked,
+                                                         aclass="btn btn-danger", icon="balance-scale") }}
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if not ambience['event'].is_balanced %}
+                                {% trans %}
+                                    Marks the event as balanced. Prevents changes to financial configuration and payment data. Is reversible.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    Marks the event as not balanced. Reallows changes to financial configuration and payment data.
+                                {% endtrans %}
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
-            </div>
             {% endif %}
         {% endcall %}
     {% endif %}

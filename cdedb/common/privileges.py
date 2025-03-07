@@ -40,11 +40,14 @@ class EventPrivileges(Flag):
     # send_email = auto()  #: api only? tool suggested recently
     # create = auto()
     conclude = auto()
+    balance = auto()
+    delete = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = basic_write | free_texts_write | entities_write
+    all_write = (basic_write | free_texts_write | entities_write | conclude | balance
+                 | delete)
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
@@ -62,19 +65,23 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     from templates.
     """
     EP = EventPrivileges
-    orga_privileges = ~EP.conclude
-    event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read |
-                               EP.registrations_stats | EP.registrations_read_internal)
+    admin_privileges = ~(EP.conclude | EP.balance)
+    orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
+    event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
+                               | EP.registrations_stats | EP.registrations_read_internal)
     auditor_privileges = EP.basic_read | EP.log_read
-    finance_admin_privileges = EP.basic_read | EP.registrations_read_internal
+    finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
+                                | EP.balance)
 
     return (
-        "event_admin" in user.roles
+        # Special case for conclude which requires two admin privileges.
+        {"event_admin", "cde_admin"} <= user.roles and required_privilege == EP.conclude
+        or "event_admin" in user.roles and required_privilege in admin_privileges
         or event_id in user.orga and required_privilege in orga_privileges
         # Due to use in ml realm, users without event realm might come across this
         or ("event_helper" in user.realm_roles.get('event', {})
             and required_privilege in event_helper_privileges)
-        # finance_admins are allowed here to book event fees.
+        # finance_admins may book fees and balance events.
         or ("finance_admin" in user.roles
             and required_privilege in finance_admin_privileges)
         or "auditor" in user.roles and required_privilege in auditor_privileges

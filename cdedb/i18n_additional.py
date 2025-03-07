@@ -151,6 +151,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.checkin_changed"),
     n_("EventLogCodes.checkout_changed"),
     n_("EventLogCodes.checkin_period_deleted"),
+    n_("EventLogCodes.event_balanced"),
+    n_("EventLogCodes.event_unbalanced"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),

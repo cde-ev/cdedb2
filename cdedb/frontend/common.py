@@ -2229,9 +2229,6 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
     The event has to be organized via the DB. Only orgas and privileged
     users are admitted. Additionally this can check for the offline
     lock, so that no modifications happen to locked events.
-
-    :param argname: name of the keyword argument specifying the id
-    :param check_offline: defaults to False
     """
 
     def wrap(fun: F) -> F:

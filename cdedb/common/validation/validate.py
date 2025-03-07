@@ -2494,6 +2494,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_FREETEXT_FIELDS,
     'offline_lock': bool,
     'is_archived': bool,
+    'is_balanced': bool,
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
@@ -3085,7 +3086,6 @@ def _registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(REGISTRATION_COMMON_FIELDS,
                                 persona_id=ID, event_id=ID)
         optional_fields = {**REGISTRATION_OPTIONAL_FIELDS}

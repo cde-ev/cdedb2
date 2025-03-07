@@ -54,6 +54,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     REQUESTfile,
+    TransactionObserver,
     access,
     cdedburl,
     check_validation as check,
@@ -532,6 +533,10 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not create new part."))
+            return self.redirect(rs, "event/part_summary")
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
@@ -546,6 +551,11 @@ class EventEventMixin(EventBaseFrontend):
                      *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Event is balanced. May not create new part."))
+            return self.redirect(rs, "event/part_summary")
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
@@ -564,16 +574,20 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
-        code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
-        if code:
-            new_fee = {
-                'kind': const.EventFeeType.common,
-                'title': data['title'],
-                'notes': "Automatisch erstellt.",
-                'amount': fee,
-                'condition': f"part.{data['shortname']}",
-            }
-            self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
+        recipients = []
+        if rs.ambience['event'].orga_address:
+            recipients.append(rs.ambience['event'].orga_address)
+        with TransactionObserver(rs, self, "create_part", recipients=recipients):
+            code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
+            if code:
+                new_fee = {
+                    'kind': const.EventFeeType.common,
+                    'title': data['title'],
+                    'notes': "Automatisch erstellt.",
+                    'amount': fee,
+                    'condition': f"part.{data['shortname']}",
+                }
+                self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -793,6 +807,10 @@ class EventEventMixin(EventBaseFrontend):
                            fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
         rs.ignore_validation_errors()
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
@@ -814,6 +832,11 @@ class EventEventMixin(EventBaseFrontend):
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
                       personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
+        if rs.ambience['event'].is_balanced:
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
             rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
@@ -830,6 +853,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
         """Delete one event fee."""
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/fee_summary")
         if fee_id not in rs.ambience['event'].fees:
             rs.notify("error", n_("Unknown fee."))
             return self.redirect(rs, "event/fee_summary")
@@ -1315,7 +1342,9 @@ class EventEventMixin(EventBaseFrontend):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         # This check is postponed to trick the event guard into allowing access here
-        if not is_privileged_event(rs, EventPrivileges.all_write, event_id):
+        required_priv = (EventPrivileges.basic_write | EventPrivileges.free_texts_write
+                         | EventPrivileges.entities_write)
+        if not is_privileged_event(rs, required_priv, event_id):
             raise werkzeug.exceptions.Forbidden(
                 n_("This page can only be accessed by orgas."))
         # for the sake of simplicity, we ignore all ValidationWarnings here.
@@ -1408,7 +1437,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.conclude)
+    @event_guard(EventPrivileges.delete)
     @REQUESTdata("ack_delete")
     def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool,
                      ) -> Response:
@@ -1437,6 +1466,30 @@ class EventEventMixin(EventBaseFrontend):
         else:
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
+
+    @access("finance_admin", modi={"POST"})
+    @event_guard(EventPrivileges.balance)
+    def balance_event(self, rs: RequestState, event_id: int) -> Response:
+        """Balance an event."""
+        if rs.ambience['event'].is_balanced:
+            rs.notify("warning", n_("Event already balanced."))
+            return self.redirect(rs, "event/show_event")
+
+        code = self.eventproxy.balance_event(rs, event_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_event")
+
+    @access("finance_admin", modi={"POST"})
+    @event_guard(EventPrivileges.balance)
+    def unbalance_event(self, rs: RequestState, event_id: int) -> Response:
+        """Unbalance an event."""
+        if not rs.ambience['event'].is_balanced:
+            rs.notify("warning", n_("Event isn't balanced."))
+            return self.redirect(rs, "event/show_event")
+
+        code = self.eventproxy.unbalance_event(rs, event_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
