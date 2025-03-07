@@ -27,6 +27,7 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
     affirm_array_validation as affirm_array,
+    affirm_dict_validation as affirm_dict,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -1879,9 +1880,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param reg_checkin_times: Mapping of registration id to checkin time.
         """
-        # TODO: How do we affirm dicts?
-        registration_ids = affirm_set(vtypes.ID, reg_checkin_times.keys())
-        # checkin_times = affirm_set(datetime.datetime, reg_checkin_times.values())
+        reg_checkin_times = affirm_dict(vtypes.ID, datetime.datetime, reg_checkin_times)
+        registration_ids = reg_checkin_times.keys()
 
         ref_time = now()
         if any(checkin_time > ref_time for checkin_time in reg_checkin_times.values()):
@@ -1949,9 +1949,9 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param reg_checkout_times: mapping of registration id to checkout time.
         """
-        # TODO: how to affirm a mapping?
-        registration_ids = affirm_set(vtypes.ID, reg_checkout_times.keys())
-        # checkout_times = affirm_set(datetime.datetime, reg_checkout_times.values())
+        reg_checkout_times = affirm_dict(
+            vtypes.ID, datetime.datetime, reg_checkout_times)
+        registration_ids = reg_checkout_times.keys()
 
         ret = 1
         # Return early to avoid StopIteration exception in is_privileged
