@@ -136,6 +136,7 @@ class Event(EventDataclass):
         metadata={'request_exclude': True})
 
     is_cancelled: bool
+    is_balanced: bool
     is_visible: bool
     is_course_list_visible: bool
     is_course_state_visible: bool
