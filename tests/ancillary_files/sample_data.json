@@ -1892,22 +1892,22 @@
         {
             "id": 1,
             "info": {
-                "id": 1,
-                "Vorstand": "Anton und Berta",
-                "cde_misc": null,
-                "lockdown_web": false,
-                "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
-                "Finanzvorstand_Ort": "Utopia",
                 "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*",
-                "Finanzvorstand_Name": "Bertålotta Beispiel",
                 "banner_before_login": "Das Passwort ist secret!",
-                "lastschrift_account": "DE26370205000008068900",
-                "Finanzvorstand_Vorname": "Bertålotta",
-                "membership_fee_account": "DE26370205000008068900",
+                "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
+                "cde_misc": null,
+                "Finanzvorstand_Adresse_Einzeiler": "Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia",
                 "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
                 "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
                 "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
-                "Finanzvorstand_Adresse_Einzeiler": "Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia"
+                "Finanzvorstand_Name": "Bertålotta Beispiel",
+                "Finanzvorstand_Ort": "Utopia",
+                "Finanzvorstand_Vorname": "Bertålotta",
+                "id": 1,
+                "lastschrift_account": "DE26370205000008068900",
+                "lockdown_web": false,
+                "membership_fee_account": "DE26370205000008068900",
+                "Vorstand": "Anton und Berta"
             }
         }
     ],
@@ -6236,9 +6236,9 @@
             "mixed_lodging": true,
             "list_consent": true,
             "fields": {
-                "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
+                "anzahl_GROSSBUCHSTABEN": 4,
                 "is_child": false,
-                "anzahl_GROSSBUCHSTABEN": 4
+                "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)"
             }
         },
         {
@@ -6256,11 +6256,11 @@
             "mixed_lodging": true,
             "list_consent": true,
             "fields": {
-                "lodge": "015112345678",
-                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "brings_balls": true,
-                "transportation": "pedes",
-                "anzahl_GROSSBUCHSTABEN": 3
+                "is_child": false,
+                "lodge": "015112345678",
+                "transportation": "pedes"
             }
         },
         {
@@ -6278,9 +6278,9 @@
             "mixed_lodging": true,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
-                "transportation": "car",
-                "anzahl_GROSSBUCHSTABEN": 3
+                "transportation": "car"
             }
         },
         {
@@ -6298,11 +6298,11 @@
             "mixed_lodging": false,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
+                "brings_balls": false,
                 "is_child": true,
                 "may_reserve": true,
-                "brings_balls": false,
-                "transportation": "etc",
-                "anzahl_GROSSBUCHSTABEN": 2
+                "transportation": "etc"
             }
         },
         {
@@ -6320,9 +6320,9 @@
             "mixed_lodging": false,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
-                "transportation": "pedes",
-                "anzahl_GROSSBUCHSTABEN": 2
+                "transportation": "pedes"
             }
         },
         {
@@ -6340,9 +6340,9 @@
             "mixed_lodging": true,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
-                "transportation": "pedes",
-                "anzahl_GROSSBUCHSTABEN": 2
+                "transportation": "pedes"
             }
         },
         {
@@ -7193,16 +7193,16 @@
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {
-                "scope": 30,
-                "qord_0": "persona.birthday",
                 "is_search": true,
-                "query_name": "Test-Query",
-                "qsel_reg.id": true,
-                "qsel_persona.id": true,
-                "qord_0_ascending": true,
                 "qop_persona.birthday": 20,
+                "qord_0": "persona.birthday",
+                "qord_0_ascending": true,
                 "qsel_persona.birthday": true,
-                "qval_persona.birthday": "2000-01-01"
+                "qsel_persona.id": true,
+                "qsel_reg.id": true,
+                "query_name": "Test-Query",
+                "qval_persona.birthday": "2000-01-01",
+                "scope": 30
             }
         }
     ],
