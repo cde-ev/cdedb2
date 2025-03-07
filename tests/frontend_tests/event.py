@@ -5667,10 +5667,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         self.traverse({'href': '/event/event/1/download/partial'})
         result = json.loads(self.response.text)
-        with open(
-                self.testfile_dir / "TestAka_partial_export_event.json",
-                encoding="utf-8",
-        ) as f:
+        reference_export_file = self.testfile_dir / "TestAka_partial_export_event.json"
+        with open(reference_export_file, encoding="utf-8") as f:
             expectation = json.load(f)
         expectation['timestamp'] = result['timestamp']
         for reg_id, reg in result['registrations'].items():
@@ -5679,6 +5677,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for token_id, token in expectation['event']['orga_tokens'].items():
             token['ctime'] = result['event']['orga_tokens'][token_id]['ctime']
         self.assertEqual(expectation, result)
+
+        # ensure stable sorting of the export file
+        ref_export_lines = reference_export_file.read_text().splitlines()
+        expected_lines = [
+            ln for ln in ref_export_lines if not (
+                "ctime" in ln or "mtime" in ln or "timestamp" in ln)
+        ]
+        exported_lines = [
+            ln for ln in self.response.text.splitlines() if not (
+                "ctime" in ln or "mtime" in ln or "timestamp" in ln)
+        ]
+        self.assertEqual("\n".join(expected_lines), "\n".join(exported_lines))
 
     @event_keeper
     @as_users("annika", "garcia")
