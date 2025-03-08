@@ -4477,6 +4477,60 @@ class TestEventBackend(BackendTest):
                 reg['checkin_periods'],
                 [models.CheckinPeriod.from_database(p) for p in new_periods])
 
+            # multi-checkin
+            new_periods.append({
+                "id": p_id + 5,
+                "registration_id": reg_id,
+                "checkin_time": now() - delta,
+                "checkout_time": now() + delta,
+            })
+            new_period2 = {
+                "id": p_id + 6,
+                "registration_id": reg_id + 1,
+                "checkin_time": base_time,
+                "checkout_time": base_time + delta,
+            }
+            self.assertEqual(  # checkin time too early
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: base_time, reg_id+1: base_time}),
+                0,
+            )
+            self.assertEqual(
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: now() - delta, reg_id + 1: base_time}),
+                2,
+            )
+            self.assertEqual(  # someone already checked in
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: now(), reg_id + 2: base_time}),
+                0,
+            )
+            self.assertEqual(  # checkout time before last checkin
+                self.event.add_checkouts_multi(
+                    self.key, {reg_id: base_time, reg_id + 1: base_time}),
+                0,
+            )
+            self.assertEqual(
+                self.event.add_checkouts_multi(  # someone not checked in
+                    self.key, {reg_id: now(), reg_id + 2: base_time + delta}),
+                0,
+            )
+            self.assertGreater(
+                self.event.add_checkouts_multi(
+                    self.key, {reg_id: now() + delta, reg_id + 1: base_time + delta}),
+                0,
+            )
+            reg = self.event.get_registration(self.key, reg_id)
+            reg1 = self.event.get_registration(self.key, reg_id + 1)
+            reg2 = self.event.get_registration(self.key, reg_id + 2)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
+            self.assertEqual(
+                reg1['checkin_periods'],
+                [models.CheckinPeriod.from_database(new_period2)])
+            self.assertEqual(reg2['checkin_periods'], [])
+
     @as_users("emilia")
     def test_part_groups(self) -> None:
         event_id = 4
