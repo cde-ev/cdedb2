@@ -546,71 +546,78 @@ class LDAPsqlBackend:
 
         Returns a dict, mapping persona_id to a list of their group dn strings.
         """
-        ret: dict[int, list[str]] = {anid: [] for anid in persona_ids}
-
-        # TODO: This could each be turned into it's own coroutine to then be
-        #  executed concurrently. Maybe this could even be combined with the other
-        #  helpers, ensuring equivalency.
 
         # Status groups
-        query = """
-                SELECT id,
-                    is_active, is_member, is_searchable AND is_member AS is_searchable,
-                    is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
-                    is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
-                    is_core_admin, is_finance_admin, is_cdelokal_admin
-                FROM core.personas WHERE personas.id = ANY(%s)
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["id"]].extend(self.status_group_dn(flag)
-                                for flag in e.keys() if e[flag] and flag != "id")
+        async def get_stati() -> dict[int, list[str]]:
+            query = """
+                    SELECT id,
+                        is_active, is_member, is_searchable AND is_member AS is_searchable,
+                        is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
+                        is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
+                        is_core_admin, is_finance_admin, is_cdelokal_admin
+                    FROM core.personas WHERE personas.id = ANY(%s)
+                    """
+            return {e['id']: [self.status_group_dn(flag) for flag in e.keys()
+                              if e[flag] and flag != "id"]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Presider groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
-                FROM assembly.presiders
-                WHERE persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.presider_group_dn(assembly_id)
-                                        for assembly_id in e["assembly_ids"])
+        async def get_presiders() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
+                    FROM assembly.presiders
+                    WHERE persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            return {e['persona_id']: [self.presider_group_dn(assembly_id)
+                                      for assembly_id in e['assembly_ids']]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Orga groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
-                FROM event.orgas
-                WHERE persona_id = ANY(%s)
-                GROUP BY persona_id"""
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.orga_group_dn(event_id)
-                                        for event_id in e["event_ids"])
+        async def get_orgas() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
+                    FROM event.orgas
+                    WHERE persona_id = ANY(%s)
+                    GROUP BY persona_id"""
+            return {e['persona_id']: [self.orga_group_dn(event_id)
+                                      for event_id in e['event_ids']]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Subscriber groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(address) AS addresses
-                FROM ml.subscription_states, ml.mailinglists
-                WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
-                    AND subscription_state = ANY(%s)
-                    AND persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        states = SubscriptionState.subscribing_states()
-        async for e in self.query_all(query, (states, persona_ids)):
-            ret[e["persona_id"]].extend(self.subscriber_group_dn(address)
-                                        for address in e["addresses"])
+        async def get_subscribers() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(address) AS addresses
+                    FROM ml.subscription_states, ml.mailinglists
+                    WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
+                        AND subscription_state = ANY(%s)
+                        AND persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            states = SubscriptionState.subscribing_states()
+            return {e['persona_id']: [self.subscriber_group_dn(address)
+                                      for address in e['addresses']]
+                    async for e in self.query_all(query, (states, persona_ids))}
 
         # Moderator groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(address) AS addresses
-                FROM ml.moderators, ml.mailinglists
-                WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
-                    AND persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.moderator_group_dn(address)
-                                        for address in e["addresses"])
+        async def get_moderators() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(address) AS addresses
+                    FROM ml.moderators, ml.mailinglists
+                    WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
+                        AND persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            return {e['persona_id']: [self.moderator_group_dn(address)
+                                      for address in e['addresses']]
+                    async for e in self.query_all(query, (persona_ids,))}
+
+        ret: dict[int, list[str]] = defaultdict(list)
+        all_data = await asyncio.gather(get_stati(), get_presiders(), get_orgas(),
+                                        get_subscribers(), get_moderators())
+        for data in all_data:
+            for anid, groups in data.items():
+                ret[anid].extend(groups)
 
         return ret
 
