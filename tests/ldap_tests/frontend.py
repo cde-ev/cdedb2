@@ -470,7 +470,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter, except_users={"cloud", "apache"})
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
