@@ -170,6 +170,7 @@
             "fields": {
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
+                "arrival_at": "2022-02-02T10:00:00+01:00",
                 "anzahl_GROSSBUCHSTABEN": 4
             },
             "orga_notes": null,
@@ -269,8 +270,9 @@
             "amount_paid": "10.50",
             "event_id": 1,
             "fields": {
-                "transportation": "pedes",
                 "is_child": false,
+                "arrival_at": "2022-02-22T15:00:00+01:00",
+                "transportation": "pedes",
                 "anzahl_GROSSBUCHSTABEN": 2
             },
             "id": 6,
@@ -418,6 +420,19 @@
             "id": 8,
             "kind": 3,
             "checkin": true
+        },
+        "9": {
+            "association": 1,
+            "entries": null,
+            "event_id": 1,
+            "field_name": "arrival_at",
+            "title": "Anreise um",
+            "sortkey": 0,
+            "sort_group": null,
+            "description": null,
+            "id": 9,
+            "kind": 6,
+            "checkin": false
         }
     },
     "EVENT_SCHEMA_VERSION": [
