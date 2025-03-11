@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         19,
-        0
+        1
     ],
     "courses": {
         "1": {
@@ -189,6 +189,16 @@
                 "sort_group": null,
                 "sortkey": 0,
                 "title": "Anzahl Gro\u00dfbuchstaben"
+            },
+            "arrival_at": {
+                "association": 1,
+                "checkin": false,
+                "description": null,
+                "entries": null,
+                "kind": 6,
+                "sort_group": null,
+                "sortkey": 0,
+                "title": "Anreise um"
             },
             "brings_balls": {
                 "association": 1,
@@ -487,6 +497,7 @@
             "checkin_periods": [],
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
+                "arrival_at": "2022-02-02T09:00:00+00:00",
                 "is_child": false,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)"
             },
@@ -935,6 +946,7 @@
             ],
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
+                "arrival_at": "2022-02-22T14:00:00+00:00",
                 "is_child": false,
                 "transportation": "pedes"
             },
