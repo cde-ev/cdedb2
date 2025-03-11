@@ -612,9 +612,26 @@ class LDAPsqlBackend:
                                       for address in e['addresses']]
                     async for e in self.query_all(query, (persona_ids,))}
 
+        # Any groups
+        async def get_any_presider() -> dict[int, list[str]]:
+            query = "SELECT DISTINCT persona_id FROM assembly.presiders"
+            return {e['persona_id']: [self.any_group_dn("presider")]
+                    async for e in self.query_all(query, [])}
+
+        async def get_any_orga() -> dict[int, list[str]]:
+            query = "SELECT DISTINCT persona_id FROM event.orgas"
+            return {e['persona_id']: [self.any_group_dn("orga")]
+                    async for e in self.query_all(query, [])}
+
+        async def get_any_moderator() -> dict[int, list[str]]:
+            query = "SELECT DISTINCT persona_id FROM ml.moderators"
+            return {e['persona_id']: [self.any_group_dn("moderator")]
+                    async for e in self.query_all(query, [])}
+
         ret: dict[int, list[str]] = defaultdict(list)
-        all_data = await asyncio.gather(get_stati(), get_presiders(), get_orgas(),
-                                        get_subscribers(), get_moderators())
+        all_data = await asyncio.gather(
+            get_stati(), get_presiders(), get_orgas(), get_subscribers(),
+            get_moderators(), get_any_presider(), get_any_orga(), get_any_moderator())
         for data in all_data:
             for anid, groups in data.items():
                 ret[anid].extend(groups)
@@ -1133,3 +1150,60 @@ class LDAPsqlBackend:
             }
             ret[dn] = self._to_bytes(group)
         return ret
+
+    #
+    # any
+    #
+
+    @classproperty
+    def any_groups_dn(self) -> DN:
+        return DN(f"ou=any,{self.groups_dn.getText()}")
+
+    @staticmethod
+    def any_group_cn(scope: str) -> str:
+        """Construct the 'cn' of an any group from its scope."""
+        return scope
+
+    @classmethod
+    def any_group_dn(cls, scope: str) -> DN:
+        """Construct an any groups dn from its scope."""
+        return DN(f"cn={cls.any_group_cn(scope)},{cls.any_groups_dn.getText()}")
+
+    async def get_any_presider_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are presider of any assembly."""
+        scope = "presider"
+        query = "SELECT DISTINCT persona_id from assembly.presiders"
+        presiders = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in presiders],
+            b"ipaUniqueID": ["any/presider"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)
+
+    async def get_any_orga_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are orgas of any event."""
+        scope = "orga"
+        query = "SELECT DISTINCT persona_id from event.orgas"
+        orgas = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in orgas],
+            b"ipaUniqueID": ["any/orga"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)
+
+    async def get_any_moderator_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are moderator of any mailinglist."""
+        scope = "moderator"
+        query = "SELECT DISTINCT persona_id from ml.moderators"
+        moderators = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in moderators],
+            b"ipaUniqueID": ["any/moderator"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)

@@ -211,7 +211,6 @@ class TestLDAP(BasicTest):
         attributes = ["memberOf"]
         expectation = {
             'memberOf': [
-
                 'cn=42-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -239,8 +238,10 @@ class TestLDAP(BasicTest):
                 'cn=lokalgruppen-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=migration-owner@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=moderator,ou=any,ou=groups,dc=cde-ev,dc=de',
                 'cn=moderatoren-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=orga,ou=any,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -445,6 +446,33 @@ class TestLDAP(BasicTest):
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
+    def test_any_group_entity(self) -> None:
+        """Check if all attributes of any groups are correctly present."""
+        group_cn = "orga"
+        search_base = "ou=any,ou=groups,dc=cde-ev,dc=de"
+        expectation = {
+            'cn': [group_cn],
+            'ipaUniqueID': ['any/orga'],
+            'uniqueMember': [
+                'uid=1,ou=users,dc=cde-ev,dc=de',
+                'uid=2,ou=users,dc=cde-ev,dc=de',
+                'uid=5,ou=users,dc=cde-ev,dc=de',
+                'uid=7,ou=users,dc=cde-ev,dc=de',
+                'uid=100,ou=users,dc=cde-ev,dc=de',
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.single_result_search(search_filter, expectation, search_base=search_base,
+                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+
     def test_dua_entity(self) -> None:
         """Check if all attributes of DUAs are correctly present."""
         dua_cn = "test"
@@ -476,7 +504,6 @@ class TestLDAP(BasicTest):
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-
             'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -490,7 +517,6 @@ class TestLDAP(BasicTest):
             'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
-
             'cn=aka-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=test-gast-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=participants-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
@@ -501,9 +527,13 @@ class TestLDAP(BasicTest):
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_presider: set[str] = set()
+        expectation_any = {
+            'cn=orga,ou=any,ou=groups,dc=cde-ev,dc=de',
+            'cn=moderator,ou=any,ou=groups,dc=cde-ev,dc=de',
+        }
         expectation_all = {
             *expectation_status, *expectation_subscriber, *expectation_moderator,
-            *expectation_orga, *expectation_presider}
+            *expectation_orga, *expectation_presider, *expectation_any}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"
@@ -553,9 +583,13 @@ class TestLDAP(BasicTest):
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
         }
+        expectation_any = {
+            'cn=moderator,ou=any,ou=groups,dc=cde-ev,dc=de',
+            'cn=presider,ou=any,ou=groups,dc=cde-ev,dc=de',
+        }
         expectation_all = {
             *expectation_status, *expectation_subscriber, *expectation_moderator,
-            *expectation_orga, *expectation_presider}
+            *expectation_orga, *expectation_presider, *expectation_any}
         search_filter = (
             "(&"
                 "(objectClass=groupOfUniqueNames)"

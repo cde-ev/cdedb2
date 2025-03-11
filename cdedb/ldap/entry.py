@@ -676,7 +676,8 @@ class GroupsEntry(CdEDBStaticEntry):
         orgas = OrgaGroupsEntry(self.backend)
         moderators = ModeratorGroupsEntry(self.backend)
         subscribers = SubscriberGroupsEntry(self.backend)
-        return [status, presiders, orgas, moderators, subscribers]
+        any_groups = AnyGroupsEntry(self.backend)
+        return [status, presiders, orgas, moderators, subscribers, any_groups]
 
     async def lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
         if dn == self.dn:
@@ -696,6 +697,9 @@ class GroupsEntry(CdEDBStaticEntry):
         elif self.backend.subscriber_groups_dn.contains(dn):
             subscribers = SubscriberGroupsEntry(self.backend)
             return await subscribers.lookup(dn)
+        elif self.backend.any_groups_dn.contains(dn):
+            any_groups = AnyGroupsEntry(self.backend)
+            return await any_groups.lookup(dn)
         else:
             raise LDAPNoSuchObject(dn.getText())
 
@@ -916,3 +920,55 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
 
     def is_children_dn(self, dn: DistinguishedName) -> bool:
         return self.backend.is_subscriber_group_dn(dn)
+
+
+class AnyGroupsEntry(CdEDBStaticEntry):
+    def __init__(self, backend: LDAPsqlBackend) -> None:
+        super().__init__(backend.any_groups_dn, backend)
+
+    def fetch(self, *attributes: bytes) -> LDAPObject:
+        attrs = {
+            b"objectClass": [b"organizationalUnit"],
+            b"o": [b"Any Groups"],
+        }
+        return {k: attrs[k] for k in attributes} if attributes else attrs
+
+    async def children(
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        *,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
+        attributes: Optional[AttributeDescriptionList] = None,
+    ) -> LDAPEntries:
+        data = await asyncio.gather(
+            self.backend.get_any_presider_group(), self.backend.get_any_orga_group(),
+            self.backend.get_any_moderator_group())
+        ret = [AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
+               for dn, attributes in data]
+        return ret
+
+    async def lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
+        if dn == self.dn:
+            return self
+        elif dn == self.backend.any_group_dn("presider"):
+            _, attributes = await self.backend.get_any_presider_group()
+            child = AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
+            return await child.lookup(dn)
+        elif dn == self.backend.any_group_dn("orga"):
+            _, attributes = await self.backend.get_any_orga_group()
+            child = AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
+            return await child.lookup(dn)
+        elif dn == self.backend.any_group_dn("moderator"):
+            _, attributes = await self.backend.get_any_moderator_group()
+            child = AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
+            return await child.lookup(dn)
+        else:
+            raise LDAPNoSuchObject(dn.getText())
+
+    def parent(self) -> "CdEDBBaseLDAPEntry":
+        return GroupsEntry(self.backend)
+
+
+class AnyGroupEntry(CdEDBLeafEntry):
+    def parent(self) -> "CdEDBBaseLDAPEntry":
+        return AnyGroupsEntry(self.backend)
