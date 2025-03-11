@@ -609,6 +609,12 @@
             </tfoot>
         </table>
         </div>
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Press <code>Ctrl</code> and click anywhere in a result line to (un)select it additionally to already selected lines.
+            {% endtrans %}
+        </p>
     {% endif %}
 {% endmacro %}
 

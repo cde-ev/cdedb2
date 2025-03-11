@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-03-08 22:02+0000\n"
+"POT-Creation-Date: 2025-03-11 22:49+0000\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -15598,6 +15598,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:578
 msgid "Number of Null entries"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:614
+msgid ""
+"Press <code>Ctrl</code> and click anywhere in a result line to (un)select it "
+"additionally to already selected lines."
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:5
