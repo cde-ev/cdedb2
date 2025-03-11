@@ -77,7 +77,7 @@ class TestLDAP(BasicTest):
                     result.pop(attribute)
             self.assertEqual(expectation, result)
 
-    def no_result_search(
+    def check_search_access(
         self,
         search_filter: str, *,
         except_users: Optional[set[str]] = None,
@@ -345,7 +345,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, user=self.admin_dua_dn,
                                   password=self.admin_dua_pw)
 
@@ -370,7 +370,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -394,7 +394,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -418,7 +418,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -442,7 +442,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -462,7 +462,7 @@ class TestLDAP(BasicTest):
             f"(cn={dua_cn})"
             ")"
         )
-        self.no_result_search(search_filter, only_duas={"test"})
+        self.check_search_access(search_filter, only_duas={"test"})
         self.single_result_search(search_filter, expectation)
 
     def test_search_groups_of_user(self) -> None:
@@ -511,7 +511,7 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         with ldap3.Connection(
                 self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
@@ -557,7 +557,7 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         with ldap3.Connection(
             self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
@@ -580,7 +580,7 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames'],
         }
-        self.no_result_search(search_filter)
+        self.check_search_access(search_filter)
         # TODO use appropiate non-admin-dua here
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
