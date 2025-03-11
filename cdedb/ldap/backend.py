@@ -612,28 +612,17 @@ class LDAPsqlBackend:
                                       for address in e['addresses']]
                     async for e in self.query_all(query, (persona_ids,))}
 
-        # Any groups
-        async def get_any_presider() -> dict[int, list[str]]:
-            query = "SELECT DISTINCT persona_id FROM assembly.presiders"
-            return {e['persona_id']: [self.any_group_dn("presider")]
-                    async for e in self.query_all(query, [])}
-
-        async def get_any_orga() -> dict[int, list[str]]:
-            query = "SELECT DISTINCT persona_id FROM event.orgas"
-            return {e['persona_id']: [self.any_group_dn("orga")]
-                    async for e in self.query_all(query, [])}
-
-        async def get_any_moderator() -> dict[int, list[str]]:
-            query = "SELECT DISTINCT persona_id FROM ml.moderators"
-            return {e['persona_id']: [self.any_group_dn("moderator")]
-                    async for e in self.query_all(query, [])}
-
         ret: dict[int, list[str]] = defaultdict(list)
-        all_data = await asyncio.gather(
+        stati, presiders, orgas, subscribers, moderators = await asyncio.gather(
             get_stati(), get_presiders(), get_orgas(), get_subscribers(),
-            get_moderators(), get_any_presider(), get_any_orga(), get_any_moderator())
-        for data in all_data:
+            get_moderators())
+        for data in [stati, subscribers]:
             for anid, groups in data.items():
+                ret[anid].extend(groups)
+        for scope, data in [("presider", presiders), ("orga", orgas), ("moderator", moderators)]:
+            any_group_dn = self.any_group_dn(scope)
+            for anid, groups in data.items():
+                ret[anid].append(any_group_dn)
                 ret[anid].extend(groups)
 
         return ret
