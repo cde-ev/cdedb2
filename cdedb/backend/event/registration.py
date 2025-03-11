@@ -14,7 +14,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import Any, NamedTuple, Optional, Protocol, TypeVar
+from typing import Any, NamedTuple, Optional, Protocol, TypeVar, cast
 
 import psycopg2.extensions
 
@@ -27,6 +27,7 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
     affirm_array_validation as affirm_array,
+    affirm_dict_validation as affirm_dict,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -1033,6 +1034,9 @@ class EventRegistrationBackend(EventBaseBackend):
                                           event_id=event_id)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
+            if "amount_paid" in data:
+                raise RuntimeError(n_(
+                    "Cannot alter `amount_paid` via `set_registration`."))
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -1121,7 +1125,18 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
+            current_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )
             self._update_registration_amount_owed(rs, data['id'])
+            new_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )
+
+            if event.is_balanced and current_amount_owed != new_amount_owed:
+                raise ValueError(n_(
+                    "Event is balanced. Amount owed may no longer change."))
+
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1162,6 +1177,9 @@ class EventRegistrationBackend(EventBaseBackend):
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
+            if event.is_balanced and data['amount_owed']:
+                raise ValueError(n_(
+                    "Event is balanced. May not create registration which owes a fee."))
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
@@ -1413,6 +1431,23 @@ class EventRegistrationBackend(EventBaseBackend):
         event = self.get_event(rs, registration['event_id'])
         return self._calculate_complex_fee(
             rs, registration, event=event, visual_debug=visual_debug)
+
+    @access("event")
+    def calculate_fee_for_partial_registration(
+            self, rs: RequestState, reg: CdEDBObject, *, event_id: int,
+    ) -> decimal.Decimal:
+        """Public helper to calculate a fee for a non-stored (partial) registration.
+
+        Should only be used when needing to calculate the fee for a changed or new
+        registration before storing it to the database.
+
+        This does some validation but currently cannot guarantee that the registration
+        object is sufficient to calculate the fee without raising an error.
+        """
+        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
+        return self._calculate_single_fee(rs, reg, event=event)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event) -> decimal.Decimal:
@@ -1668,6 +1703,9 @@ class EventRegistrationBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.registrations_write, event_id):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
+            if event.is_balanced:
+                raise ValueError(n_(
+                    "Event is balanced. May not set personalized fee amount."))
             if fee_id not in event.fees:
                 raise KeyError
             if not event.fees[fee_id].is_personalized():
@@ -1710,8 +1748,20 @@ class EventRegistrationBackend(EventBaseBackend):
         event_log_transfer_template = "{amount} am {date} gezahlt."
         event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
 
+        self.affirm_atomized_context(rs)
+
         registration = self.get_registration(rs, registration_id)
         event_id = registration['event_id']
+        event = self.get_event(rs, event_id)
+        if event.is_balanced:
+            # Balanced events mustn't block booking of payments, therefor unbalance the
+            #  event if necessary.
+            rs.notify(
+                "info",
+                n_("Unbalanced event %(event_title)s."),
+                {'event_title': event.title},
+            )
+            self.unbalance_event(rs, event_id)
 
         if amount > 0:
             update = {
@@ -1830,9 +1880,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param reg_checkin_times: Mapping of registration id to checkin time.
         """
-        # TODO: How do we affirm dicts?
-        registration_ids = affirm_set(vtypes.ID, reg_checkin_times.keys())
-        # checkin_times = affirm_set(datetime.datetime, reg_checkin_times.values())
+        reg_checkin_times = affirm_dict(vtypes.ID, datetime.datetime, reg_checkin_times)
+        registration_ids = reg_checkin_times.keys()
 
         ref_time = now()
         if any(checkin_time > ref_time for checkin_time in reg_checkin_times.values()):
@@ -1900,9 +1949,9 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :param reg_checkout_times: mapping of registration id to checkout time.
         """
-        # TODO: how to affirm a mapping?
-        registration_ids = affirm_set(vtypes.ID, reg_checkout_times.keys())
-        # checkout_times = affirm_set(datetime.datetime, reg_checkout_times.values())
+        reg_checkout_times = affirm_dict(
+            vtypes.ID, datetime.datetime, reg_checkout_times)
+        registration_ids = reg_checkout_times.keys()
 
         ret = 1
         # Return early to avoid StopIteration exception in is_privileged

@@ -18,7 +18,7 @@ import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -82,6 +82,9 @@ from cdedb.models.event_constraint_violations import (
     RemainingOwedCV,
     ViolationList,
 )
+
+if TYPE_CHECKING:
+    from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -509,7 +512,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
-        _choice_stats, attendees = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        choice_stats: "ChoiceStats"  # noqa: UP037
+        attendee_stats: "AttendeeStats"  # noqa: UP037
+        choice_stats, attendee_stats = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.get_lodgements(
@@ -685,7 +690,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for track in sorted_tracks:
                 parameters.update({
                     'track': track,
-                    'attendees': attendees[course['id'], track.id],
+                    'attendees': attendee_stats.involved[course['id'], track.id],
                 })
                 _check_violation(course_violation_spec['track'], parameters)
 
@@ -714,9 +719,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             'all_registrations': all_registrations,
             'registrations': registrations,
             'personas': personas,
+            'all_courses': all_courses,
             'courses': courses,
-            'choice_stats': _choice_stats,
-            'attendees': attendees,
+            'choice_stats': choice_stats,
+            'attendee_stats': attendee_stats,
             'all_lodgements': all_lodgements,
             'lodgements': lodgements,
             'inhabitants': inhabitants,

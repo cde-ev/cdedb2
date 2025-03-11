@@ -437,7 +437,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         19,
-        0
+        1
     ],
     "event.registration_parts": {
         "2": {
@@ -1551,6 +1551,7 @@
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notes": "Todoliste ... just kidding ;)",
             "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
             "title": "Gro\u00dfe Testakademie 2222"

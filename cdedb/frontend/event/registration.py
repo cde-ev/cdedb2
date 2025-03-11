@@ -416,6 +416,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_archived:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
+            if rs.ambience['event'].is_balanced:
+                rs.notify("error", n_("Event is balanced."))
+                return self.redirect(rs, "event/show_event")
             if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
@@ -446,6 +449,44 @@ class EventRegistrationMixin(EventBaseFrontend):
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
             'part_options': part_options, **course_choice_params,
         })
+
+    def _calculate_partial_fee(
+            self, rs: RequestState,
+            event_id: int,
+            reg: CdEDBObject,
+            persona_id: int | None = None,
+            current: CdEDBObject | None = None,
+    ) -> decimal.Decimal:
+        """Calculate the fee for one registration based on a (partial) registration.
+
+        For a new registration (current=None) the registration should be validated to
+        have the necessary data (parts and fields).
+        """
+        if current:
+            # Altering existing registration. 'parts' and 'fields' may be present in the
+            #  changed data. Default to existing values.
+            registration = {**current}
+            for part_id, reg_part in reg.get('parts', {}).items():
+                registration['parts'][part_id].update(reg_part)
+            registration['fields'].update(reg.get('fields', {}))
+            registration.update({
+                'persona_id': current['persona_id'],
+                'is_member': current['is_member'],
+                'personalized_fees': current['personalized_fees'],
+            })
+        else:
+            # Creating a new registration. 'parts' and 'fields' should be present.
+            if not persona_id:
+                raise ValueError
+            registration = {
+                **reg,
+                'persona_id': persona_id,
+                'is_member': self.coreproxy.get_persona(rs, persona_id)['is_member'],
+                'personalized_fees': {},
+            }
+        return self.eventproxy.calculate_fee_for_partial_registration(
+            rs, registration, event_id=event_id,
+        )
 
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
@@ -774,6 +815,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
         if rs.ambience['event'].is_archived:
             rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
+        if rs.ambience['event'].is_balanced:
+            rs.notify("error", n_("Event is balanced."))
             return self.redirect(rs, "event/show_event")
         if self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id):
             rs.notify("error", n_("Already registered."))
@@ -1148,6 +1192,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         The personalized amount for that registration is created at the same time.
         """
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
         return self.render(rs, "event/fee/configure_fee",
@@ -1398,6 +1446,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         much more cumbersome to always use this interface.
         """
         registration = self.new_process_registration_input(rs, orga_input=True)
+        if rs.ambience['event'].is_balanced:
+            new_amount_owed = self._calculate_partial_fee(
+                rs, event_id, registration, current=rs.ambience['registration'])
+            if new_amount_owed != rs.ambience['registration']['amount_owed']:
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.change_registration_form(
                 rs, event_id, registration_id, internal=True,
@@ -1446,15 +1502,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.append_validation_error(
                     ("persona.persona_id", ValueError(n_(
                         "This user is not an event user."))))
-        if (not rs.has_validation_errors()
-                and self.eventproxy.list_registrations(rs, event_id, persona_id)):
+        if persona_id and self.eventproxy.list_registrations(rs, event_id, persona_id):
             rs.append_validation_error(("persona.persona_id",
                                         ValueError(n_("Already registered."))))
         registration = self.new_process_registration_input(rs, orga_input=True)
-        if (not rs.has_validation_errors()
-                and not self.eventproxy.check_orga_addition_limit(rs, event_id)):
+        if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
+        if rs.ambience['event'].is_balanced:
+            if persona_id and self._calculate_partial_fee(
+                    rs, event_id, registration, persona_id,
+            ):
+                msg = n_("Event is balanced. May not create registration which owes a fee.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
@@ -1599,8 +1661,20 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         registration = self.new_process_registration_input(
             rs, orga_input=True, check_enabled=True)
+        if rs.ambience['event'].is_balanced:
+            current_registrations = self.eventproxy.get_registrations(rs, reg_ids)
+            if any(
+                self._calculate_partial_fee(
+                    rs, event_id, registration, current=current,
+                ) != current['amount_owed']
+                for current in current_registrations.values()
+            ):
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id, reg_ids, change_note)
+            return self.change_registrations_form(rs, event_id)  # type: ignore[call-arg]
 
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")

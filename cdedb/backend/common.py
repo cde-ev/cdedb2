@@ -57,6 +57,7 @@ from cdedb.models.common import CdEDataclass
 F = TypeVar('F', bound=Callable[..., Any])
 LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
+T2 = TypeVar('T2')
 S = TypeVar('S')
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -677,6 +678,17 @@ def affirm_set_validation(
         affirm_validation(assertion, value, **kwargs)
         for value in values
     )
+
+
+def affirm_dict_validation(
+    key_type: type[T], value_type: type[T2], data: Mapping[T, T2], **kwargs: Any,
+) -> dict[T, T2]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a dict."""
+    return {
+        affirm_validation(key_type, k, **kwargs):
+            affirm_validation(value_type, v, **kwargs)
+        for k, v in data.items()
+    }
 
 
 def inspect_validation(
