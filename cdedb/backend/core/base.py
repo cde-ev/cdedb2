@@ -1486,6 +1486,8 @@ class CoreBaseBackend(AbstractBackend):
             * The persona being involved (presider/attendee) with an active assembly.
             * The persona being a pure assembly user.
             * The persona being explicitly subscribed to any mailinglist.
+            * The persona being the sole moderator of a mailinglist
+                (this prevents archival in general).
         """
         persona_id = affirm(vtypes.ID, persona_id)
         reference_date = affirm(datetime.date, reference_date or now().date())
@@ -1599,6 +1601,21 @@ class CoreBaseBackend(AbstractBackend):
                 const.SubscriptionState.pending,
             }
             if self.query_all(rs, query, (persona_id, states)):
+                return False
+
+            # Check being the sole moderator of a mailinglist.
+            query = """
+                SELECT mailinglist_id, COUNT(persona_id)
+                FROM
+                    ml.moderators
+                WHERE mailinglist_id IN (
+                    SELECT mailinglist_id FROM ml.moderators WHERE persona_id = %s
+                )
+                GROUP BY mailinglist_id
+                HAVING COUNT(persona_id) = 1
+                ORDER BY mailinglist_id
+            """
+            if self.query_all(rs, query, (persona_id,)):
                 return False
 
         return True

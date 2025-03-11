@@ -123,7 +123,7 @@
     {% if orga_events %}
         {{ util.h(n_("Organized Events")) }}
         <ul class="spaced" id="organized-events">
-            {% for entry in orga_events.values()|sort %}
+            {% for entry in orga_events.values()|sort(reverse=True) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": entry.id}), entry['title']) }}
                     <br />

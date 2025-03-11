@@ -24,8 +24,14 @@
 {% block content %}
     <div class="p button-par">
         {% if may_change_part_ids %}
-            {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
-                                   icon='plus', aclass='btn btn-success btn-sm') }}
+            {{ util.href(
+                    cdedblink('event/add_part_form'), gettext("Add Part"),
+                    icon='plus', aclass='btn btn-success btn-sm',
+                    readonly=ambience['event'].is_balanced,
+                    title=(
+                        gettext("Event is balanced. May not create new part.")
+                        if ambience['event'].is_balanced else ""
+                    )) }}
         {% endif %}
         {{ util.href(cdedblink('event/group_summary'), gettext("Groups_[[part or track]]"), icon='bullseye',
                      aclass='btn btn-info btn-sm') }}

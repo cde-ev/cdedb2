@@ -1430,6 +1430,7 @@ class TestCoreBackend(BackendTest):
              " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
         self.login("anton")
+        admin_key = self.key
         self.event.delete_registration(self.key, 7,
                                        ("registration_parts", "course_choices",
                                         "registration_tracks"))
@@ -1442,6 +1443,19 @@ class TestCoreBackend(BackendTest):
                 if u["id"] == 4:
                     self.assertTrue(res)
                     key = self.key
+
+                    ml_id = 13
+                    self.ml.add_moderators(admin_key, ml_id, persona_ids=[u["id"]])
+                    self.ml.remove_moderator(admin_key, ml_id, persona_id=1)
+
+                    self.assertFalse(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
+
+                    self.ml.add_moderators(admin_key, ml_id, persona_ids=[1])
+
+                    self.assertTrue(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
+
                     self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
                         change_note="Diese Änderung wurde maschinell erstellt und ist"

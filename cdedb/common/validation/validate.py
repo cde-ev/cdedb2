@@ -2494,6 +2494,7 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_FREETEXT_FIELDS,
     'offline_lock': bool,
     'is_archived': bool,
+    'is_balanced': bool,
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
@@ -3017,8 +3018,10 @@ def _course(
         mandatory_fields = {'id': ID}
         optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
 
+    # The check of fields is performed later via EventAssociatedFields.
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields, **kwargs,
+    )
 
     errs = ValidationSummary()
     if 'segments' in val:
@@ -3047,7 +3050,6 @@ def _course(
         if not val['active_segments'] <= val['segments']:
             errs.append(ValueError('segments', n_(
                 "Must be a superset of active segments.")))
-    # the check of fields is delegated to _event_associated_fields
 
     if errs:
         raise errs
@@ -3084,7 +3086,6 @@ def _registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(REGISTRATION_COMMON_FIELDS,
                                 persona_id=ID, event_id=ID)
         optional_fields = {**REGISTRATION_OPTIONAL_FIELDS}
@@ -3093,8 +3094,10 @@ def _registration(
         mandatory_fields = {'id': ID}
         optional_fields = {**REGISTRATION_COMMON_FIELDS, **REGISTRATION_OPTIONAL_FIELDS}
 
+    # The check of fields is performed later via EventAssociatedFields.
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields, **kwargs,
+    )
 
     errs = ValidationSummary()
     if 'parts' in val:
@@ -3121,7 +3124,6 @@ def _registration(
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
-    # the check of fields is delegated to _event_associated_fields
 
     # TODO check if raising early is possible (do we use all errors?)
     if errs:
@@ -3314,9 +3316,12 @@ def _lodgement(
         mandatory_fields = {'id': ID}
         optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
-    # the check of fields is delegated to _event_associated_fields
-    return Lodgement(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
+    # The check of fields is performed later via EventAssociatedFields.
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs,
+    )
+
+    return Lodgement(val)
 
 
 FIELD_DATATYPE_VALIDATORS = {
@@ -3816,7 +3821,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
 
 PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Mapping,
-    'fields': Mapping,
+    'fields': EventAssociatedFields,
 }
 
 
@@ -3839,8 +3844,11 @@ def _partial_course(
         optional_fields = {**PARTIAL_COURSE_COMMON_FIELDS,
                            **PARTIAL_COURSE_OPTIONAL_FIELDS}
 
+    # The check of fields is delegated to EventAssociatedFields.
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields,
+        **dict(kwargs, association=const.FieldAssociations.course),
+    )
 
     errs = ValidationSummary()
     if 'segments' in val:
@@ -3855,7 +3863,6 @@ def _partial_course(
             else:
                 new_dict[new_key] = new_entry
         val['segments'] = new_dict
-    # the check of fields is delegated to _event_associated_fields
 
     if errs:
         raise errs
@@ -3900,7 +3907,7 @@ PARTIAL_LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 PARTIAL_LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
-    'fields': Mapping,
+    'fields': EventAssociatedFields,
 }
 
 
@@ -3923,9 +3930,13 @@ def _partial_lodgement(
         optional_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS,
                            **PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
 
-    # the check of fields is delegated to _event_associated_fields
-    return PartialLodgement(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
+    # The check of fields is delegated to EventAssociatedFields.
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields,
+        **dict(kwargs, association=const.FieldAssociations.lodgement),
+    )
+
+    return PartialLodgement(val)
 
 
 PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
@@ -3939,7 +3950,7 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'fields': Mapping,
+    'fields': EventAssociatedFields,
     'personalized_fees': Mapping,
     'checkin_periods': list[ReducedCheckinPeriod],
 }
@@ -3969,8 +3980,11 @@ def _partial_registration(
         optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
                            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
 
+    # The check of fields is delegated to EventAssociatedFields.
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields,
+        **dict(kwargs, association=const.FieldAssociations.registration),
+    )
 
     errs = ValidationSummary()
     if 'amount_owed' in val:
@@ -4039,7 +4053,6 @@ def _partial_registration(
     if errs:
         raise errs
 
-    # the check of fields is delegated to _event_associated_fields
     return PartialRegistration(val)
 
 

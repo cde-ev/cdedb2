@@ -611,6 +611,8 @@ class EventLogCodes(CdEIntEnum):
     checkin_changed = 510  #:
     checkout_changed = 515  #:
     checkin_period_deleted = 530  #:
+    event_balanced = 600  #:
+    event_unbalanced = 610  #:
 
 
 @enum.unique

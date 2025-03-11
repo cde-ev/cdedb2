@@ -44,6 +44,7 @@ class TestEventModels(BackendTest):
             offline_lock=False,
             is_archived=False,
             is_cancelled=False,
+            is_balanced=False,
             is_visible=True,
             is_course_list_visible=True,
             is_course_state_visible=False,
@@ -233,6 +234,19 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     description=None,
                     checkin=True,
+                    entries=None,
+                ),
+                9: models.EventField(
+                    id=9,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    field_name="arrival_at",  # type: ignore[arg-type]
+                    kind=const.FieldDatatypes.datetime,
+                    association=const.FieldAssociations.registration,
+                    title="Anreise um",
+                    sort_group=None,
+                    sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=None,
                 ),
             },
@@ -426,6 +440,7 @@ class TestEventModels(BackendTest):
             offline_lock=False,
             is_archived=False,
             is_cancelled=False,
+            is_balanced=False,
             is_visible=True,
             is_course_list_visible=True,
             is_course_state_visible=False,

@@ -1065,7 +1065,6 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Unterkunftsfelder", div="fieldsummaryform")
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_9', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration
@@ -1098,7 +1097,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_9', f.fields)
+        self.assertNotIn('field_name_1001', f.fields)
 
         if self.user_in("annika"):
             self.traverse({'href': '/event/$'},
@@ -1121,7 +1120,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_8', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
-        self.assertNotIn('field_name_9', f.fields)
+        self.assertNotIn('field_name_1001', f.fields)
 
         # If we delete the old field first, this works.
         f['delete_8'] = True
@@ -5024,20 +5023,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         base_time = now().replace(microsecond=0)
         delta = datetime.timedelta(seconds=42)
+        # check adding future checkout times
         f = self.response.forms['changeperiodform1']
-        f['checkout_time_1'] = "2222-02-01T10:00:00+02:00"
+        f['checkout_time_1'] = "2222-02-01T10:00:00+01:00"
         self.submit(f, check_notification=False)
-        self.assertValidationError('checkout_time_1', "Muss in der Vergangenheit liegen.")
+        self.assertValidationWarning(
+            'checkout_time_1', "Sollte weniger als 6 Stunden in der Zukunft sein.")
+        f = self.response.forms['changeperiodform1']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+        self.assertPresence("22.02.2022, 18:00:00 – 01.02.2222, 10:00:00")
+        f = self.response.forms['changeperiodform1']
+        f['checkout_time_1'] = "2022-02-23T10:00:00+01:00"
+        self.submit(f)
+        self.assertPresence("22.02.2022, 18:00:00 – 23.02.2022, 10:00:00")
 
         with freezegun.freeze_time(base_time) as frozen_time:
             self.assertNotIn('checkoutform', self.response.forms)
             # check Berta in
             f = self.response.forms['checkinform']
-            self.submit(f)
+            self.submit(f)  # period id 1001
             self.submit(f, check_notification=False)
             self.assertNotification("Bereits eingecheckt.", "error")
             self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
-            frozen_time.tick(delta)
+            frozen_time.tick(delta / 2)
             self.assertNotIn('checkinform', self.response.forms)
             # check Berta out again
             f = self.response.forms['checkoutform']
@@ -5046,6 +5055,53 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertNotification("Bereits ausgecheckt.", "error")
             self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
 
+            # adding a backdated checkin period
+            f = self.response.forms['addperiodform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Muss ein valides Datum mit Uhrzeit sein.")
+            f['checkin_time'] = "2022-02-22T00:00:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('checkout_time', "Darf nicht leer sein.")
+            f['checkin_time'] = "2022-02-22T00:00:00+01:00"
+            f['checkout_time'] = "2022-02-23T00:00:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkout_time', "Checkout muss vor folgendem Checkin sein.")
+            f['checkin_time'] = "2022-02-23T00:00+01:00"
+            f['checkout_time'] = "2022-02-22T18:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Checkin muss nach vorhergehendem Checkout sein.")
+            self.assertValidationError(
+                'checkout_time', "Checkout muss nach Checkin liegen.")
+            f['checkin_time'] = "2222-02-23T00:00+01:00"
+            f['checkout_time'] = "2222-02-22T18:00+01:00"
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Muss in der Vergangenheit liegen.")
+            self.assertValidationError(
+                'checkout_time', "Checkout muss nach Checkin liegen.")
+            f['checkin_time'] = "2022-03-03T18:00+01:00"
+            f['checkout_time'] = "2022-03-04T10:00+01:00"
+            self.submit(f)  # period id 1002
+            self.assertPresence("03.03.2022, 18:00:00 – 04.03.2022, 10:00:00")
+            frozen_time.tick(delta/2)
+            # adding a checkin via this form is possible
+            f['checkin_time'] = base_time + delta/4
+            f['checkout_time'] = None
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Checkin muss nach vorhergehendem Checkout sein.")
+            f['checkin_time'] = base_time + delta
+            f['checkout_time'] = None
+            self.submit(f)  # period id 1003
+            self.submit(f, check_notification=False)
+            self.assertValidationError(
+                'checkin_time', "Kann eingecheckte Nutzer nicht einchecken.")
+            self.submit(self.response.forms['deleteperiodform1003'])
+
+            # changing a checkin period
             f = self.response.forms['changeperiodform1']
             f['checkout_time_1'] = base_time + delta
             original_checkin = f['checkin_time_1'].value
@@ -5055,7 +5111,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'checkout_time_1', "Checkout muss vor folgendem Checkin sein.")
             self.assertValidationError('checkin_time_1', "Checkout muss nach Checkin liegen.")
 
-            f = self.response.forms['changeperiodform2']
+            f = self.response.forms['changeperiodform1001']
             f['checkin_time_1001'] = "2000-01-01T00:00:00+02:00"
             self.submit(f, check_notification=False)
             self.assertValidationError(
@@ -5086,15 +5142,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("Einchecken")
             self.assertPresence("Anton Administrator Nie eingecheckt")
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
-                                f" {datetime_filter(base_time + delta, lang='de')}")
+                                f" {datetime_filter(base_time + delta/2, lang='de')}")
             f = self.response.forms['checkinform']
-            f['checkout_time'] = base_time + 2*delta
-            self.submit(f, button='action', value='modify_checkout',
-                        check_notification=False)
-            self.assertValidationError(
-                "checkout_time", "Muss in der Vergangenheit liegen.")
-            frozen_time.tick(delta)
+            f['checkout_time'] = base_time + 2*delta  # future
             self.submit(f, button='action', value='modify_checkout')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
+            frozen_time.tick(delta)
             self.get(url + "?registration_ids=1,6")
             self.assertPresence("Anton Administrator Nie eingecheckt")
             self.assertPresence(f"Bertå Beispiel letzter Checkout"
@@ -5108,13 +5164,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             frozen_time.tick(delta)
             f['checkin_time'] = None
             self.submit(f, button='action', value='checkin', check_notification=False)
-            self.assertValidationError("checkin_time", "Darf nicht leer sein.")
+            self.assertValidationError("checkin_time",
+                                       "Genau eins muss angegeben werden.")
             f['checkin_time'] = base_time + delta
             self.submit(f, button='action', value='checkin', check_notification=False)
             self.assertValidationError(
                 "checkin_time", "Muss nach dem letzten Checkout sein.")
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='checkin')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.submit(old_f, button='action', value='modify_checkout',
                         check_notification=False)
             self.assertNotification("Personen dürfen nicht eingecheckt sein.")
@@ -5139,23 +5200,94 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['checkin_time'] = base_time + 3*delta
             self.submit(f, button='action', value='modify_checkin')
             self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
             self.get(url)
             f = self.response.forms['checkoutform']
             f['checkout_time'] = None
             self.submit(f, button='action', value='checkout', check_notification=False)
-            self.assertValidationError("checkout_time", "Darf nicht leer sein.")
+            self.assertValidationError("checkout_time",
+                                       "Genau eins muss angegeben werden.")
             f['checkout_time'] = base_time + 2*delta
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertValidationError(
                 "checkout_time", "Muss nach dem letzten Checkin sein.")
-            f['checkout_time'] = base_time + 4*delta
-            self.submit(f, button='action', value='checkout', check_notification=False)
-            self.assertValidationError(
-                "checkout_time", "Muss in der Vergangenheit liegen.")
-            frozen_time.tick(delta)
+            f['checkout_time'] = base_time + 4*delta  # in future
             self.submit(f, button='action', value='checkout')
+            self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+            self.assertPresence("Ergebnis [2]", div='query-results')
+            self.assertPresence("Anton")
+            self.assertPresence("Bertå")
+            frozen_time.tick(delta)
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertNotification("Personen müssen eingecheckt sein", "error")
+
+    @as_users("garcia")
+    def test_checkin_multiset(self) -> None:
+        # multiset from field is tested here, multiset from form input above
+        url = "/event/event/1/registration/checkin/multiset"
+        self.get(url)
+        f = self.response.forms["checkinform"]
+        f['field_id'] = 9
+        f['checkin_time'] = "2022-02-02T20:22:00+02:00"
+        self.submit(f, button='action', value='checkin', check_notification=False)
+        self.assertValidationError("field_id", "Genau eins muss angegeben werden.")
+        self.assertValidationError("checkin_time", "Genau eins muss angegeben werden.")
+        f['checkin_time'] = None
+        self.submit(f, button='action', value='checkin', check_notification=False)
+        self.assertValidationError("field_id", "Muss nach dem letzten Checkout sein.")
+        self.assertValidationError("field_id", "Feld darf nicht leer sein.")
+        self.assertPresence("Akira Abukara Nie eingecheckt neuer Checkin: kein Eintrag")
+        self.assertPresence("Anton Administrator Nie eingecheckt"
+                            " neuer Checkin: 02.02.2022, 10:00:00")
+        self.assertPresence("Bertå Beispiel letzter Checkout 23.02.2022, 10:00:00"
+                            " neuer Checkin: 22.02.2022, 15:00:00 (vor Checkout)")
+        self.get(url + '?registration_ids=1')
+        f = self.response.forms["checkinform"]
+        f['field_id'] = 9
+        self.submit(f, button='action', value='checkin', check_notification=False)
+        f = self.response.forms["checkinform"]
+        f['ack_field'].checked = True
+        self.submit(f, button='action', value='checkin')
+
+        self.get(url + '?registration_ids=2')
+        f = self.response.forms['checkinform']
+        f['checkin_time'] = now().isoformat()
+        self.submit(f, button='action', value='checkin')
+
+        def _change_antons_arrival(timestamp: str) -> None:
+            saved = self.response
+            self.get('/event/event/1/registration/1/change')
+            f = self.response.forms['changeregistrationform']
+            f['fields.arrival_at'] = timestamp
+            self.submit(f)
+            self.response = saved
+
+        _change_antons_arrival("2022-02-02T00:00:00+02:00")
+        self.get(url)
+        self.assertPresence("Anton Administrator anwesend seit")
+        self.assertPresence("Emilia Eventis anwesend seit")
+        f = self.response.forms['checkoutform']
+        f['field_id'] = 9
+        f['checkout_time'] = "2022-02-02T20:22:00+02:00"
+        self.submit(f, button='action', value='checkout', check_notification=False)
+        self.assertValidationError("field_id", "Genau eins muss angegeben werden.")
+        self.assertValidationError("checkout_time", "Genau eins muss angegeben werden.")
+        f['checkout_time'] = None
+        self.submit(f, button='action', value='checkout', check_notification=False)
+        self.assertValidationError("field_id", "Muss nach dem letzten Checkin sein.")
+        self.assertValidationError("field_id", "Feld darf nicht leer sein.")
+        _change_antons_arrival("2022-02-02T20:00:00+02:00")
+        self.submit(f, button='action', value='checkout', check_notification=False)
+        self.assertValidationError("field_id", "Feld darf nicht leer sein.")
+        self.get(url + '?registration_ids=1')
+        f = self.response.forms['checkoutform']
+        f['field_id'] = 9
+        self.submit(f, button='action', value='checkout', check_notification=False)
+        f = self.response.forms['checkoutform']
+        f['ack_field'].checked = True
+        self.submit(f, button='action', value='checkout')
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:
@@ -5602,10 +5734,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         self.traverse({'href': '/event/event/1/download/partial'})
         result = json.loads(self.response.text)
-        with open(
-                self.testfile_dir / "TestAka_partial_export_event.json",
-                encoding="utf-8",
-        ) as f:
+        reference_export_file = self.testfile_dir / "TestAka_partial_export_event.json"
+        with open(reference_export_file, encoding="utf-8") as f:
             expectation = json.load(f)
         expectation['timestamp'] = result['timestamp']
         for reg_id, reg in result['registrations'].items():
@@ -5614,6 +5744,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for token_id, token in expectation['event']['orga_tokens'].items():
             token['ctime'] = result['event']['orga_tokens'][token_id]['ctime']
         self.assertEqual(expectation, result)
+
+        # ensure stable sorting of the export file
+        ref_export_lines = reference_export_file.read_text().splitlines()
+        expected_lines = [
+            ln for ln in ref_export_lines if not (
+                "ctime" in ln or "mtime" in ln or "timestamp" in ln)
+        ]
+        exported_lines = [
+            ln for ln in self.response.text.splitlines() if not (
+                "ctime" in ln or "mtime" in ln or "timestamp" in ln)
+        ]
+        self.assertEqual("\n".join(expected_lines), "\n".join(exported_lines))
 
     @event_keeper
     @as_users("annika", "garcia")
@@ -7624,3 +7766,85 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+
+    @event_keeper
+    @as_users("garcia")
+    @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1 OR id = 2;")
+    def test_event_is_balanced(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Teilnahmebeiträge")
+        self.assertNoLink("fee/add")
+        self.assertNoLink(r"fee/\d/change")
+        f = self.response.forms['deleteeventfeeform1']
+        self.assertIn("disabled", f['submitform'].attrs)
+
+        self.get("/event/event/1/fee/add?personalized=True")
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        self.get("/event/event/1/fee/add?personalized=False")
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        self.get("/event/event/1/fee/1/change")
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
+        self.assertNoLink("fee/add")
+        f = self.response.forms['deletepersonalizedfeeform10']
+        self.assertIn("disabled", f['submitform'].attrs)
+
+        self.get("/event/event/1/registration/3/fee/add")
+        self.assertTitle("Teilnahmebeitragsdetails für Garcia Generalis (Große Testakademie 2222)")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+
+        self.get("/event/event/1/registration/2/fee/summary")
+        f = self.response.forms['addpersonalizedfeeform10']
+        self.assertIn("disabled", f['submitform'].attrs)
+
+        self.get("/event/event/1/registration/2/change")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(f['part1.status'].value, str(const.RegistrationPartStati.waitlist))
+        f['part1.status'].value = const.RegistrationPartStati.cancelled
+        self.submit(f, check_notification=False)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        f['part1.status'].value = const.RegistrationPartStati.participant
+        self.submit(f)
+
+        self.traverse("Anmeldungen", "Anmeldung hinzufügen")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-4-3"
+        self.submit(f, check_notification=False)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        f['part1.status'] = f['part2.status'] = f['part3.status'] = const.RegistrationPartStati.not_applied
+        self.submit(f)
+
+        self.get("/event/event/1/registration/multiedit?reg_ids=1,2")
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
+        f = self.response.forms['changeregistrationsform']
+        f['enable_part1.status'] = True
+        f['part1.status'] = const.RegistrationPartStati.participant
+        self.submit(f, check_notification=False)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        f['enable_part1.status'] = False
+        f['enable_fields.is_child'] = True
+        f['fields.is_child'] = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        f['enable_fields.is_child'] = False
+        f['enable_reg.orga_notes'] = True
+        f['reg.orga_notes'] = "Test"
+        self.submit(f)
+
+        with self.switch_user("farin"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222")
+            f = self.response.forms["unbalanceeventform"]
+            self.submit(f)
+
+        with self.switch_user("berta"):
+            self.traverse("Veranstaltungen", "CdE-Party 2050", "Veranstaltungsteile")
+            self.assertNoLink("part/add")
+            self.get("/event/event/2/part/add")
+            self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+            self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
