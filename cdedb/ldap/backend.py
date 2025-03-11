@@ -263,8 +263,6 @@ class LDAPsqlBackend:
             raise ValueError("The given LDAPEntry is no user!")
         if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
             raise ValueError("The given DN is no dua!")
-
-        # TODO we may restrict access of duas to users by f.e. group membership.
         return True
 
     @classmethod
@@ -274,15 +272,7 @@ class LDAPsqlBackend:
             raise ValueError("The given LDAPEntry is no group!")
         if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
             raise ValueError("The given DN is no dua!")
-
-        # TODO we may restrict access of duas to type of groups
-        if dua in {cls.dua_dn("apache"), cls.dua_dn("cloud")}:
-            return True
-        # allow RequestTracker access to ml subscriber groups
-        if dua == cls.dua_dn("rqt") and cls.subscriber_groups_dn.contains(group.dn):
-            return True
-
-        return False
+        return True
 
     ###############
     # operational #

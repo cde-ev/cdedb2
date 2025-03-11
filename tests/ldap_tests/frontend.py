@@ -23,18 +23,12 @@ class TestLDAP(BasicTest):
     # all duas except the admin dua
     DUAs = {
         "apache": f'cn=apache,ou=duas,{root_dn}',
-        "cloud": f'cn=cloud,ou=duas,{root_dn}',
-        "cyberaka": f'cn=cyberaka,ou=duas,{root_dn}',
-        "dokuwiki": f'cn=dokuwiki,ou=duas,{root_dn}',
-        "rqt": f'cn=rqt,ou=duas,{root_dn}',
+        "keycloak": f'cn=keycloak,ou=duas,{root_dn}',
         "test": f'cn=test,ou=duas,{root_dn}',
     }
     DUA_passwords = {
         "apache": "secret",
-        "cloud": "secret",
-        "cyberaka": "secret",
-        "dokuwiki": "secret",
-        "rqt": "secret",
+        "keycloak": "secret",
         "test": "secret",
     }
 
@@ -83,36 +77,43 @@ class TestLDAP(BasicTest):
                     result.pop(attribute)
             self.assertEqual(expectation, result)
 
-    def no_result_search(
+    def check_search_access(
         self,
         search_filter: str, *,
         except_users: Optional[set[str]] = None,
+        only_duas: Optional[set[str]] = None,
         search_base: str = root_dn,
         attributes: Union[list[str], str] = ALL_ATTRIBUTES,
     ) -> None:
-        """Test that this search yields no results for all DUAs and all users.
+        """Test that this search yields no results for all users and some result
+        for all duas.
 
         The 'except_users' argument may be used to exclude some users from this check.
+        If 'only_duas' are given, check that only this duas have access.
         """
-        users: dict[str, str] = {**self.DUAs, **self.USERS}
-        passwords: dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
         except_users = except_users or set()
-        for dua, user in users.items():
-            with self.subTest(dua):
-                with ldap3.Connection(
-                    self.server, user=user, password=passwords[dua],
-                    raise_exceptions=True,
-                ) as conn:
-                    conn.search(
-                        search_base=search_base,
-                        search_filter=search_filter,
-                        attributes=attributes,
-                    )
-                    # if the current user should access the entries, we check if he does
-                    if dua in except_users:
-                        self.assertNotEqual(0, len(conn.entries), conn.entries)
-                    else:
-                        self.assertEqual(0, len(conn.entries), conn.entries)
+        # by default, all duas are expected to yield some results
+        only_duas = only_duas or self.DUAs
+        for identities, passwords, exceptions in [
+            (self.USERS, self.USER_passwords, except_users),
+            (self.DUAs, self.DUA_passwords, only_duas),
+        ]:
+            for cn, identity in identities.items():
+                with self.subTest(cn):
+                    with ldap3.Connection(
+                        self.server, user=identity, password=passwords[cn],
+                        raise_exceptions=True,
+                    ) as conn:
+                        conn.search(
+                            search_base=search_base,
+                            search_filter=search_filter,
+                            attributes=attributes,
+                        )
+                        # if the current user should access the entries, we check if he does
+                        if cn in exceptions:
+                            self.assertNotEqual(0, len(conn.entries), conn.entries)
+                        else:
+                            self.assertEqual(0, len(conn.entries), conn.entries)
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
@@ -345,7 +346,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, user=self.admin_dua_dn,
                                   password=self.admin_dua_pw)
 
@@ -370,7 +371,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -394,7 +395,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -418,7 +419,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -442,7 +443,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
@@ -489,7 +490,7 @@ class TestLDAP(BasicTest):
             f"(cn={dua_cn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"test"})
+        self.check_search_access(search_filter, only_duas={"test"})
         self.single_result_search(search_filter, expectation)
 
     def test_search_groups_of_user(self) -> None:
@@ -540,19 +541,13 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
+        self.check_search_access(search_filter)
         with ldap3.Connection(
                 self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
-        with ldap3.Connection(
-                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"],
-        ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation_subscriber, result_names)
 
         # Werner has status fields, is presider, subscriber and moderator
         user_id = 23
@@ -596,19 +591,13 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
+        self.check_search_access(search_filter)
         with ldap3.Connection(
             self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
-        with ldap3.Connection(
-                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"],
-        ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names = {entry.entry_dn for entry in conn.entries}
-            self.assertEqual(expectation_subscriber, result_names)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
         user_id = 10
@@ -625,7 +614,7 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames'],
         }
-        self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
+        self.check_search_access(search_filter)
         # TODO use appropiate non-admin-dua here
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)

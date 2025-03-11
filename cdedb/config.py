@@ -391,12 +391,10 @@ _SECRECTS_DEFAULTS = {
 
     # ldap related stuff
     "LDAP_DUA_PW": {
+        # special dua without access restrictions
         "admin": "secret",
         "apache": "secret",
-        "cloud": "secret",
-        "cyberaka": "secret",
-        "dokuwiki": "secret",
-        "rqt": "secret",
+        "keycloak": "secret",
         "test": "secret",
     },
 }
