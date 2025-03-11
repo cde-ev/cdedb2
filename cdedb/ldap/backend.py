@@ -1151,11 +1151,12 @@ class LDAPsqlBackend:
     async def get_any_presider_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are presider of any assembly."""
         scope = "presider"
-        query = "SELECT DISTINCT persona_id from assembly.presiders"
+        query = "SELECT DISTINCT persona_id FROM assembly.presiders"
         presiders = [e['persona_id'] async for e in self.query_all(query, [])]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Presider of any assembly."],
             b"uniqueMember": [self.user_dn(e) for e in presiders],
             b"ipaUniqueID": ["any/presider"],
         }
@@ -1164,11 +1165,12 @@ class LDAPsqlBackend:
     async def get_any_orga_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are orgas of any event."""
         scope = "orga"
-        query = "SELECT DISTINCT persona_id from event.orgas"
+        query = "SELECT DISTINCT persona_id FROM event.orgas"
         orgas = [e['persona_id'] async for e in self.query_all(query, [])]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Orga of any event."],
             b"uniqueMember": [self.user_dn(e) for e in orgas],
             b"ipaUniqueID": ["any/orga"],
         }
@@ -1177,11 +1179,12 @@ class LDAPsqlBackend:
     async def get_any_moderator_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are moderator of any mailinglist."""
         scope = "moderator"
-        query = "SELECT DISTINCT persona_id from ml.moderators"
+        query = "SELECT DISTINCT persona_id FROM ml.moderators"
         moderators = [e['persona_id'] async for e in self.query_all(query, [])]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Moderator of any mailinglist."],
             b"uniqueMember": [self.user_dn(e) for e in moderators],
             b"ipaUniqueID": ["any/moderator"],
         }

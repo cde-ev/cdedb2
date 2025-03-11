@@ -454,6 +454,7 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': [group_cn],
             'ipaUniqueID': ['any/orga'],
+            'description': ['Orga of any event.'],
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',
                 'uid=2,ou=users,dc=cde-ev,dc=de',
@@ -470,7 +471,7 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.check_search_access(search_filter, except_users={"cloud", "apache"})
+        self.check_search_access(search_filter)
         self.single_result_search(search_filter, expectation, search_base=search_base,
                                   user=self.admin_dua_dn, password=self.admin_dua_pw)
 
