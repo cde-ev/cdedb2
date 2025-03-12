@@ -516,7 +516,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 ['checkin_periods.max_checkin_time'],
                 [
                     _participant_constraint(part),
-                    ('checkin.current', QueryOperators.equal, True),
+                    ('reg.is_checked_in', QueryOperators.equal, True),
                 ],
                 [],
             )
@@ -527,11 +527,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                     'checkin_periods.min_checkout_time',
                     'checkin_periods.max_checkin_time',
                     'checkin_periods.max_checkout_time',
-                    'checkin.current',
+                    'reg.is_checked_in',
+                    'reg.has_been_checked_in',
                 ],
                 [
                     _participant_constraint(part),
-                    ('checkin_periods.min_checkin_time', QueryOperators.nonempty, None),
+                    ('reg.has_been_checked_in', QueryOperators.equal, True),
                 ],
                 [],
             )
@@ -540,7 +541,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [],
                 [
                     _participant_constraint(part),
-                    ('checkin_periods.min_checkin_time', QueryOperators.empty, None),
+                    ('reg.has_been_checked_in', QueryOperators.equal, False),
                 ],
                 [],
             )
