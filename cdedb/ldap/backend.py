@@ -28,8 +28,13 @@ from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
 
-from cdedb.config import SecretsConfig
-from cdedb.database.constants import SubscriptionState
+from cdedb.config import Config, SecretsConfig
+from cdedb.database.constants import (
+    AssemblyLogCodes,
+    EventLogCodes,
+    MlLogCodes,
+    SubscriptionState,
+)
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
 from cdedb.ldap.types import AttributeDescriptionList, FilterLike
@@ -130,6 +135,7 @@ class LDAPsqlBackend:
         # encrypting dua passwords once at startup, to increase runtime performance
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
+        self.config = Config()
 
     @staticmethod
     async def execute_db_query(cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
@@ -274,11 +280,13 @@ class LDAPsqlBackend:
     #                   / g-differential
     # g-differential  = ( MINUS / PLUS ) hour [ minute ]
     # MINUS           = %x2D  ; minus sign ("-")
-    @staticmethod
-    def format_timestamp(timestamp: Optional[datetime.datetime]) -> str:
+    def format_timestamp(self, timestamp: Optional[datetime.datetime]) -> str:
         """Create a string representation of a GeneralizedTime."""
-        # this happens only in the test suite due to insufficient sample data
-        timestamp = timestamp or now()
+        if timestamp is None:
+            # this happens in the test suite due to insufficient sample data
+            if not self.config["CDEDB_TEST"]:
+                logger.error("Timestamp must not be None.")
+            timestamp = now()
         # our timestamps are always in UTC
         return timestamp.strftime("%Y%m%d%H%M%SZ")
 
@@ -657,30 +665,30 @@ class LDAPsqlBackend:
     def _event_log_codes(self) -> list[int]:
         """EventLogCodes affecting the modifyTimestamp LDAP property."""
         return [
-            10,  # orga_added
-            11,  # orga_removed
+            EventLogCodes.orga_added,
+            EventLogCodes.orga_removed,
         ]
 
     @property
     def _assembly_log_codes(self) -> list[int]:
         """AssemblyLogCodes affecting the modifyTimestamp LDAP property."""
         return [
-            35,  # assembly_presider_added
-            36,  # assembly_presider_removed
+            AssemblyLogCodes.assembly_presider_added,
+            AssemblyLogCodes.assembly_presider_removed,
         ]
 
     @property
     def _ml_log_codes(self) -> list[int]:
         """MlLogCodes affecting the modifyTimestamp LDAP property."""
         return [
-            10,  # moderator_added
-            11,  # moderator_removed
-            21,  # subscribed
-            23,  # unsubscribed
-            24,  # marked_override
-            25,  # marked_blocked
-            27,  # reset
-            28,  # automatically_removed
+            MlLogCodes.moderator_added,
+            MlLogCodes.moderator_removed,
+            MlLogCodes.subscribed,
+            MlLogCodes.unsubscribed,
+            MlLogCodes.marked_override,
+            MlLogCodes.marked_blocked,
+            MlLogCodes.reset,
+            MlLogCodes.automatically_removed,
         ]
 
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
