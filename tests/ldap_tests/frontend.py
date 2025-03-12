@@ -8,7 +8,7 @@ import ldap3
 from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
 
-from tests.common import USER_DICT, BasicTest
+from tests.common import USER_DICT, BasicTest, nearly_now
 
 
 class TestLDAP(BasicTest):
@@ -307,6 +307,7 @@ class TestLDAP(BasicTest):
             'uid': ['1'],
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
+            'modifyTimestamp': [nearly_now()],
 
             'cn': ['Anton Administrator'],
             'displayName': ['Anton Administrator'],
@@ -338,6 +339,7 @@ class TestLDAP(BasicTest):
                 'uid=100,ou=users,dc=cde-ev,dc=de',
                 'uid=38,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
         search_filter = (
@@ -362,6 +364,7 @@ class TestLDAP(BasicTest):
                 'uid=100,ou=users,dc=cde-ev,dc=de',
                 'uid=11,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
 
@@ -386,6 +389,7 @@ class TestLDAP(BasicTest):
             'uniqueMember': [
                 'uid=9,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
 
@@ -410,6 +414,7 @@ class TestLDAP(BasicTest):
             'uniqueMember': [
                 'uid=7,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
 
@@ -434,6 +439,7 @@ class TestLDAP(BasicTest):
             'uniqueMember': [
                 'uid=23,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
 
@@ -462,6 +468,7 @@ class TestLDAP(BasicTest):
                 'uid=7,ou=users,dc=cde-ev,dc=de',
                 'uid=100,ou=users,dc=cde-ev,dc=de',
             ],
+            'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
 
