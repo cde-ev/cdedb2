@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-03-14 12:36+0000\n"
+"POT-Creation-Date: 2025-03-14 18:54+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2503,7 +2503,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:50
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:51
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:99
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:123
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:124
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:95
 msgid "Orga-Notes"
 msgstr ""
@@ -5317,7 +5317,7 @@ msgstr "statistica consociorum"
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:60
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:70
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:132
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:82
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:83
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:199
 msgid "Lodgement"
 msgstr ""
@@ -6722,7 +6722,7 @@ msgstr "tabellae epistularum electronicarum moderatae"
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:87
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:20
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:16
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:134
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:135
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:24
 msgid "Edit"
 msgstr ""
@@ -7629,7 +7629,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:71
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:44
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:106
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:137
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:138
 #: cdedb/frontend/templates/web/generic.tmpl:519
 #: cdedb/frontend/templates/web/generic.tmpl:522
 #: cdedb/frontend/templates/web/generic.tmpl:525
@@ -9064,7 +9064,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:25
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:24
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:20
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:13
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:14
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:18
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:39
 #: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:14
@@ -12092,9 +12092,9 @@ msgid "Constraint Violations"
 msgstr "notitiae rationis"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:128
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:13
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:18
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:150
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:7
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:19
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:152
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:93
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:334
 #, fuzzy
@@ -12309,8 +12309,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:68
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:38
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:23
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:27
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:24
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:28
 #: cdedb/frontend/templates/web/generic.tmpl:153
 #: cdedb/frontend/templates/web/generic.tmpl:259
 #: cdedb/frontend/templates/web/logging.tmpl:80
@@ -12371,7 +12371,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:125
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:78
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:99
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:33
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:34
 msgid "Go!"
 msgstr ""
 
@@ -15604,46 +15604,47 @@ msgid ""
 "\""
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:8
-#, python-format
-msgid "Checkin (%(title)s)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:29
-msgid "Show only participants in parts:"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:36
-#, fuzzy
-msgid "Show Checkin"
-msgstr "ostende facultatum indicem principalem"
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:38
-#, fuzzy
-msgid "Show Checkout"
-msgstr "ostende facultatum indicem principalem"
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:43
-msgid "Name to Search"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:44
-#, fuzzy
-msgid "Search Name"
-msgstr "visibilitas"
-
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:150
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:7
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:152
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:56
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:344
 msgid "Checkout"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:191
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:9
+#, fuzzy, python-format
+msgid "%(pagename)s (%(title)s)"
+msgstr "(ab %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:30
+msgid "Show only participants in parts:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:37
+#, fuzzy
+msgid "Show Checkin"
+msgstr "ostende facultatum indicem principalem"
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:39
+#, fuzzy
+msgid "Show Checkout"
+msgstr "ostende facultatum indicem principalem"
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:44
+msgid "Name to Search"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:45
+#, fuzzy
+msgid "Search Name"
+msgstr "visibilitas"
+
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:193
 #, fuzzy
 msgid "The participant will be checked out"
 msgstr "vestigium novum crea"
 
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:192
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:194
 #, fuzzy
 msgid "The participant will be checked in."
 msgstr "vestigium novum crea"

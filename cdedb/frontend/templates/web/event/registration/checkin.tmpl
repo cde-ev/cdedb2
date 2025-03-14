@@ -4,13 +4,14 @@
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
+{% set pagename = gettext("Checkout") if checkout else gettext("Checkin") %}
 {% block title %}
-    {% trans title=ambience['event']['title'] %}
-        Checkin ({{ title }})
+    {% trans pagename=pagename, title=ambience['event']['title'] %}
+        {{ pagename }} ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Checkin"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(pagename, ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
