@@ -30,7 +30,7 @@
                     {{ util.input_checkboxes(name="part_ids", slice=4,
                         entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
                      <div style="clear:both"></div>
-                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
+                     {{ util.input_submit(label=gettext("Go!"), icon="filter", name="checkout", value=checkout) }}
                  {% endif %}
                  {% if checkout %}
                      {{ util.input_submit(name="checkout", value=false, label=gettext("Show Checkin"), icon="arrow-right-to-bracket", aclass="btn btn-default") }}
@@ -145,6 +145,7 @@
                             {% for part_id in part_ids %}
                                 {{ util.input_hidden(name="part_ids", value=part_id) }}
                             {% endfor %}
+                            {{ util.input_hidden(name="checkout", value=checkout) }}
                             {{ util.input_hidden(name="from_checkin_page", value="True") }}
                             {{ util.input_submit(
                                 label=(gettext("Checkout") if checkout else gettext("Checkin")),
