@@ -1165,7 +1165,7 @@ class FrontendTest(BackendTest):
         if value and not button:
             raise ValueError(
                 "Cannot specify button value without specifying button name.")  # pragma: no cover
-        if not form.get(button, default=None):
+        if not form.get(button, index=0, default=None):
             self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
         self.follow()
