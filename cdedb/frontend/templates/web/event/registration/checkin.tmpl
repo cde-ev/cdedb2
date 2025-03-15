@@ -19,32 +19,50 @@
 {{ util.breadcrumb_link(cdedblink("event/checkin_form"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
-     <div class="panel panel-primary panel-condensed">
-         <div class="panel-heading">
-             <h3 class="panel-title">{{ util.make_icon("search") }}{{ nbsp }}{{ gettext("Filter") }}</h3>
-         </div>
-         <div class="panel-body">
-             <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"
-                       aria-label="{% trans %}Filter{% endtrans %}">
-                 {% if ambience['event']['parts']|length != 1 %}
+    {% if ambience['event']['parts']|length == 1 %}
+        <div class="panel panel-primary panel-condensed softhide" id="namesearch">
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ util.make_icon("search") }}{{ nbsp }}{{ gettext("Filter") }}</h3>
+            </div>
+            <div class="panel-footer text-right">
+                <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}"
+                       placeholder="{{ gettext("Search Name") }}"/>
+            </div>
+        </div>
+    {% else %}
+        <div class="panel panel-primary panel-condensed">
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
+            </div>
+            <div class="panel-body">
+                <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"
+                          aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
                         entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
-                     <div style="clear:both"></div>
-                     {{ util.input_submit(label=gettext("Go!"), icon="filter", name="checkout", value=checkout) }}
-                 {% endif %}
-                 {% if checkout %}
-                     {{ util.input_submit(name="checkout", value=false, label=gettext("Show Checkin"), icon="arrow-right-to-bracket", aclass="btn btn-default") }}
-                 {% else %}
-                     {{ util.input_submit(name="checkout", value=true, label=gettext("Show Checkout"), icon="arrow-right-from-bracket", aclass="btn btn-default") }}
-                 {% endif %}
-             </form>
-         </div>
-         <div class="panel-footer text-right softhide" id="namesearch">
-             <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}",
-             placeholder="{{ gettext("Search Name") }}"/>
-         </div>
-     </div>
+                    {{ util.input_hidden(name="checkout", value=checkout) }}
+                    {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
+                </form>
+            </div>
+            <div class="panel-footer text-right softhide" id="namesearch">
+                <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}",
+                placeholder="{{ gettext("Search Name") }}"/>
+            </div>
+        </div>
+    {% endif %}
+
+
+    <nav>
+        <ul class="nav nav-tabs mosp">
+            <li role="presentation" {% if not checkout %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('event/checkin_form', {'part_ids': part_ids, 'checkout': false}), gettext("Checkin")) }}
+            </li>
+            <li role="presentation" {% if checkout %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('event/checkin_form', {'part_ids': part_ids, 'checkout': true}), gettext("Checkout")) }}
+            </li>
+        </ul>
+    </nav>
+
 
     {% set target='event/add_checkout' if checkout else 'event/add_checkin' %}
     <div class="list-group list-group-hover" id="checkin-list">

@@ -4942,7 +4942,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         f['checkin_8'].checked = False
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.traverse("Checkin")
         self.assertNonPresence("Anzahl Großbuchstaben", div="checkin-list")
 
@@ -4952,25 +4952,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia", div="checkin-list")
         f = self.response.forms['checkinfilterform']
         f['part_ids'] = [1, 2, 3]
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.assertPresence("Anton", div="checkin-list")
         self.assertPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertPresence("Emilia", div="checkin-list")
         f = self.response.forms['checkinfilterform']
         f['part_ids'] = [1]
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.assertNonPresence("Anton", div="checkin-list")
         self.assertPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertNonPresence("Emilia", div="checkin-list")
         f = self.response.forms['checkinfilterform']
         f['part_ids'] = [2]
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.assertNonPresence("Anton", div="checkin-list")
         self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertPresence("Emilia", div="checkin-list")
         f = self.response.forms['checkinfilterform']
         f['part_ids'] = [3]
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.assertPresence("Anton", div="checkin-list")
         self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertPresence("Emilia", div="checkin-list")
@@ -4978,7 +4978,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['checkinfilterform']
         parts_wo_berta = [2, 3]
         f['part_ids'] = parts_wo_berta
-        self.submit(f, button="checkout", value="False")
+        self.submit(f)
         self.assertPresence("Anton", div="checkin-list")
         self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertPresence("Emilia", div="checkin-list")
@@ -4989,17 +4989,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with freezegun.freeze_time(now() - delta) as frozen_time:
             f = self.response.forms['checkinfilterform']
             f['part_ids'] = []
-            self.submit(f, button="checkout", value="False")
+            self.submit(f)
             self.submit(self.response.forms['checkinform1'])
             self.submit(self.response.forms['checkinform6'])
             f = self.response.forms['checkinfilterform']
             f['part_ids'] = parts_wo_berta
-            self.submit(f, button="checkout", value="True")
+            self.submit(f)
+            self.traverse({'description': "Checkout"})
             self.assertPresence("Anton", div="checkin-list")
             self.assertNonPresence("Bertå", div="checkin-list")
             f = self.response.forms['checkinfilterform']
             f['part_ids'] = []
-            self.submit(f, button="checkout", value="True")
+            self.submit(f)
             self.assertPresence("Anton", div="checkin-list")
             self.assertPresence("Bertå", div="checkin-list")
             frozen_time.tick(delta)
@@ -5009,12 +5010,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertNotification("Bereits ausgecheckt.", 'error')
             self.assertPresence("Anton", div="checkin-list")
             self.assertNonPresence("Bertå", div="checkin-list")
-            f = self.response.forms['checkinfilterform']
-            self.submit(f, button="checkout", value="False")
+            self.traverse({'description': "Checkin", 'index': 1})
             self.assertNonPresence("Anton", div="checkin-list")
             self.assertPresence("Bertå", div="checkin-list")
-            f = self.response.forms['checkinfilterform']
-            self.submit(f, button="checkout", value="False")
 
         f = self.response.forms['checkinform2']
         self.submit(f)
