@@ -635,15 +635,19 @@ class EventQueryMixin(EventBaseFrontend):
                 spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
-                    ("registrations.id", "username", "family_name",
+                    ("persona_id", "registrations.id", "username", "family_name",
                      "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
                 data = list(self.eventproxy.submit_general_query(
                     rs, query, event_id=aux))
+                # add 'id' to each object, to enable usage of EntitySorter.persona
+                for datum in data:
+                    datum["id"] = datum["persona_id"]
+                data = xsorted(data, key=EntitySorter.persona)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            data = xsorted(data, key=lambda e: e['id'])[:num_preview_personas]
+            data = data[:num_preview_personas]
 
         def name(x: CdEDBObject) -> str:
             return "{} {}".format(x['given_names'], x['family_name'])
@@ -657,7 +661,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         # Generate return JSON list
         ret = []
-        for entry in xsorted(data, key=EntitySorter.persona):
+        for entry in data:
             result = {
                 'id': entry['id'],
                 'name': name(entry),
