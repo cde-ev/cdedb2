@@ -5695,11 +5695,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
             'registrations': [{'email': 'emilia@example.cde',
-                               'id': 2,
+                               'id': 5,
                                'name': 'Emilia Eventis'}]}
-        if not self.user_in("annika"):
-            del expectation['registrations'][0]['email']
         self.assertEqual(expectation, self.response.json)
+        self.get('/event/registration'
+                 + '/select?kind=orga_registration&phrase=@exam&aux=1')
+        expectation = (100, 1, 2, 5, 7, 9)
+        reality = tuple(e['id'] for e in self.response.json['registrations'])
+        self.assertEqual(expectation, reality)
 
     @as_users("annika", "garcia")
     def test_quick_registration(self) -> None:
