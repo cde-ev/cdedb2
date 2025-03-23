@@ -589,9 +589,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         search_additions: list[QueryConstraint] = []
         event = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
-                                if {"core_admin", "meta_admin"} & rs.user.roles
-                                else self.conf["NUM_PREVIEW_PERSONAS"])
+        # higher number of previews is more convenient for orgas
+        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
         if kind == "orga_registration":
             if aux is None:
                 return self.send_json(rs, {})
@@ -652,30 +651,13 @@ class EventQueryMixin(EventBaseFrontend):
         def name(x: CdEDBObject) -> str:
             return "{} {}".format(x['given_names'], x['family_name'])
 
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(int)
-        for entry in data:
-            counter[name(entry)] += 1
-            if 'id' not in entry:
-                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
-
         # Generate return JSON list
         ret = []
         for entry in data:
             result = {
                 'id': entry['id'],
+                'email': entry['username'],
                 'name': name(entry),
             }
-            # Email/username is only delivered if we have admins
-            # rights, a search term with an @ (and more) matches the
-            # mail address, or the mail address is required to
-            # distinguish equally named users
-            searched_email = any(
-                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
-                and entry['username'] and t in entry['username']
-                for t in terms)
-            if (counter[name(entry)] > 1 or searched_email or
-                    self.is_admin(rs)):
-                result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})
