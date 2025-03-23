@@ -545,9 +545,6 @@ class NearlyNow(datetime.datetime):
         self._delta = delta
         return self
 
-    def __hash__(self):
-        return hash(repr(self) + repr(self._delta))
-
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
             delta = other - self

@@ -836,7 +836,7 @@ class LDAPsqlBackend:
         else:
             condition = name
         query = "SELECT MAX(ctime) AS ctime FROM core.changelog"
-        ctime = (await self.query_one(query, []))["ctime"]
+        ctime = (await self.query_one(query, []))["ctime"]  # type: ignore[index]
         query = f"SELECT id FROM core.personas WHERE {condition}"
         return dn, self._to_bytes({
             b"cn": [self.status_group_cn(name)],
@@ -1264,7 +1264,7 @@ class LDAPsqlBackend:
         query = "SELECT DISTINCT persona_id FROM assembly.presiders"
         presiders = [e['persona_id'] async for e in self.query_all(query, [])]
         query = "SELECT MAX(ctime) AS ctime FROM assembly.log WHERE code = ANY(%s)"
-        ctime = (await self.query_one(query, (self._assembly_log_codes,)))["ctime"]
+        ctime = (await self.query_one(query, (self._assembly_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
@@ -1281,7 +1281,7 @@ class LDAPsqlBackend:
         query = "SELECT DISTINCT persona_id FROM event.orgas"
         orgas = [e['persona_id'] async for e in self.query_all(query, [])]
         query = "SELECT MAX(ctime) AS ctime FROM event.log WHERE code = ANY(%s)"
-        ctime = (await self.query_one(query, (self._event_log_codes,)))["ctime"]
+        ctime = (await self.query_one(query, (self._event_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
@@ -1298,7 +1298,7 @@ class LDAPsqlBackend:
         query = "SELECT DISTINCT persona_id FROM ml.moderators"
         moderators = [e['persona_id'] async for e in self.query_all(query, [])]
         query = "SELECT MAX(ctime) AS ctime FROM ml.log WHERE code = ANY(%s)"
-        ctime = (await self.query_one(query, (self._ml_log_codes,)))["ctime"]
+        ctime = (await self.query_one(query, (self._ml_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],

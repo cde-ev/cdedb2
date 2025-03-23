@@ -2,12 +2,14 @@
 """Module containing all tests for the CdEDB-LDAP interface."""
 
 import ssl
+from collections.abc import Mapping
 from typing import Optional, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
 
+from cdedb.common import NearlyNow
 from tests.common import USER_DICT, BasicTest, nearly_now
 
 
@@ -53,7 +55,7 @@ class TestLDAP(BasicTest):
             use_ssl=True, tls=tls)
 
     def single_result_search(
-        self, search_filter: str, raw_expectation: dict[str, list[str]], *,
+        self, search_filter: str, raw_expectation: Mapping[str, list[str] | list[NearlyNow]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: Union[list[str], str] = ALL_ATTRIBUTES,
@@ -70,8 +72,8 @@ class TestLDAP(BasicTest):
             self.assertEqual(1, len(conn.entries), conn.entries)
             raw_result: dict[str, list[str]] = conn.entries[0].entry_attributes_as_dict
             # Accordingly to RFC 4511, attributes and values of attributes are unordered
-            result = {key: set(values) for key, values in raw_result.items()}
-            expectation = {key: set(values) for key, values in raw_expectation.items()}
+            result = {key: sorted(values) for key, values in raw_result.items()}
+            expectation = {key: sorted(values) for key, values in raw_expectation.items()}
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)
@@ -193,7 +195,7 @@ class TestLDAP(BasicTest):
 
         # users may access their own data
         attributes = ["objectClass", "cn"]
-        expectation: dict[str, list[str]] = {
+        expectation = {
             'cn': ['Anton Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
@@ -303,7 +305,7 @@ class TestLDAP(BasicTest):
     def test_user_entity(self) -> None:
         """Check if all attributes of an user are correctly present."""
         user_id = 1
-        expectation: dict[str, list[str]] = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
@@ -330,7 +332,7 @@ class TestLDAP(BasicTest):
     def test_static_group_entity(self) -> None:
         """Check if all attributes of static groups are correctly present."""
         group_cn = "is_cdelokal_admin"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': ['is_cdelokal_admin'],
             'description': ['CdELokal-Administratoren'],
             'ipaUniqueID': ['status_groups/is_cdelokal_admin'],
@@ -356,7 +358,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of ml-subscriber groups are correctly present."""
         group_cn = "gutscheine@lists.cde-ev.de"
         search_base = "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': ['gutscheine@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
             'ipaUniqueID': ['mls/gutscheine@lists.cde-ev.de'],
@@ -382,7 +384,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of ml-moderator groups are correctly present."""
         group_cn = "gutscheine-owner@lists.cde-ev.de"
         search_base = "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': ['gutscheine-owner@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine-owner@lists.cde-ev.de>'],
             'ipaUniqueID': ['ml_moderator_groups/gutscheine@lists.cde-ev.de'],
@@ -407,7 +409,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of event-orga groups are correctly present."""
         group_cn = "orgas-1"
         search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': [group_cn],
             'description': ['Große Testakademie 2222 (TestAka)'],
             'ipaUniqueID': ['event_orga_groups/1'],
@@ -432,7 +434,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of assembly-presider groups are correctly present."""
         group_cn = "presiders-1"
         search_base = "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': [group_cn],
             'description': ['Internationaler Kongress (kongress)'],
             'ipaUniqueID': ['assembly_presider_groups/1'],
@@ -457,7 +459,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of any groups are correctly present."""
         group_cn = "orga"
         search_base = "ou=any,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': [group_cn],
             'ipaUniqueID': ['any/orga'],
             'description': ['Orga of any event.'],
@@ -485,7 +487,7 @@ class TestLDAP(BasicTest):
     def test_dua_entity(self) -> None:
         """Check if all attributes of DUAs are correctly present."""
         dua_cn = "test"
-        expectation: dict[str, list[str]] = {
+        expectation = {
             'cn': ['test'],
             'ipaUniqueID': ['duas/test'],
             'objectClass': ['person', 'simpleSecurityObject'],
