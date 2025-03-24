@@ -1001,6 +1001,8 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            # adding archived users to past events is a common task
+            scope = QueryScope.all_core_users
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":

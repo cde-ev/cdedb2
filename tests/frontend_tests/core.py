@@ -654,6 +654,14 @@ class TestCoreFrontend(FrontendTest):
             self.get(f'/core/persona/select?kind=ml_subscriber'
                      f'&phrase=@exam&aux={ml_id}', status=403)
 
+    @as_users("quintus")
+    def test_selectpersona_past_event(self) -> None:
+        # yield archived users
+        self.get('/core/persona/select?kind=past_event_user&phrase=Hades')
+        expectation = (8,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
     @as_users("paul")
     def test_selectpersona_ids(self) -> None:
         self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
