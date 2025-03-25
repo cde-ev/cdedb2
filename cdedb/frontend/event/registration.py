@@ -2143,6 +2143,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)
             sortkey = "checkin_periods.max_checkout_time"
+        else:
+            raise RuntimeError(n_("Impossible."))
 
         rs.notify_return_code(ret)
         # redirect to query of changed registrations
@@ -2151,7 +2153,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ("persona.given_names", "persona.family_name", "persona.username",
              "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
-             "checkin.current"),
+             "reg.is_checked_in"),
             (("reg.id", QueryOperators.oneof, registration_ids),),
             ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
         )

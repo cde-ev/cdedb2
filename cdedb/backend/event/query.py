@@ -135,7 +135,17 @@ class EventQueryBackend(EventBaseBackend):
                             EXISTS (
                                 SELECT * FROM event.orgas
                                 WHERE persona_id = registrations.persona_id AND event_id = {event_id}
-                            ) AS is_orga
+                            ) AS is_orga,
+                            EXISTS (
+                                SELECT * FROM event.checkin_periods
+                                WHERE
+                                    checkout_time IS NULL
+                                    AND registration_id = registrations.id
+                            ) AS is_checked_in,
+                            EXISTS (
+                                SELECT * FROM event.checkin_periods
+                                WHERE registration_id = registrations.id
+                            ) AS has_been_checked_in
                         FROM event.registrations
                         WHERE event_id = {event_id}
                     ) AS reg
@@ -160,14 +170,6 @@ class EventQueryBackend(EventBaseBackend):
                         FROM event.checkin_periods
                         GROUP BY registration_id
                     ) AS checkin_periods ON reg.id = checkin_periods.registration_id
-                    LEFT OUTER JOIN (
-                        SELECT
-                            registration_id,
-                            COUNT(*) > 0 AS current
-                        FROM event.checkin_periods
-                        WHERE checkout_time IS NULL
-                        GROUP BY registration_id
-                    ) AS checkin ON reg.id = checkin.registration_id
                     LEFT OUTER JOIN (
                         SELECT registration_id, checkin_time, checkout_time
                         FROM event.checkin_periods
