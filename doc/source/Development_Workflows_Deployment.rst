@@ -24,7 +24,7 @@ following steps to deploy a new revision.
      ./bin/push-stable.sh
 
 * Log into the server. If no commits with deployment relevance exist, simply
-  execute the cdedb-update.sh script::
+  execute the `cdedb-update.sh <https://tracker.cde-ev.de/gitea/cdedb/cdedb-deploy>`_ script::
 
     ssh cde-db2 # replace with your alias from your ssh config
     sudo cdedb-update.sh
