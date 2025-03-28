@@ -2103,6 +2103,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.checkin_multiset_form(rs, event_id, internal=True)
 
         # then, process
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Checkin-Multiset.")
         ret = 1
         if action == 'checkin':
             if checkin_time:
@@ -2145,8 +2146,10 @@ class EventRegistrationMixin(EventBaseFrontend):
             sortkey = "checkin_periods.max_checkout_time"
         else:
             raise RuntimeError(n_("Impossible."))
-
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Nach Checkin-Multiset.", after_change=True)
         rs.notify_return_code(ret)
+
         # redirect to query of changed registrations
         query = Query(
             QueryScope.registration,
