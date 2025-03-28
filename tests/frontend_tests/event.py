@@ -5015,6 +5015,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Checkin", div="1-1003")
 
+    @event_keeper
     @as_users("garcia")
     def test_checkin_periods(self) -> None:
         self.get('/event/event/1/registration/6/show')
@@ -5223,6 +5224,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertNotification("Personen müssen eingecheckt sein", "error")
 
+    @event_keeper
     @as_users("garcia")
     def test_checkin_multiset(self) -> None:
         # multiset from field is tested here, multiset from form input above
