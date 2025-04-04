@@ -38,7 +38,7 @@
                                     defaultvalue=util.gettext_country(persona["country"])) }}
         {% else %}
             {{ util.form_input_text(name="full_name", label=gettext("Member")) }}
-            {{ util.form_input_text(name="id", label=gettext("CdEDB-ID")) }}
+            {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID")) }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail")) }}
 
             <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
@@ -54,7 +54,7 @@
                                 attributes='min="%(min)s"" step="0.01"'|s|format(min=min_donation),
                                 defaultvalue=typical_donation) }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
-        {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
+        {{ util.form_input_text(name="account_holder", label=gettext("Account holder (if different)")) }}
 
         {{ util.form_input_submit(label=gettext("Confirm"), icon="file-signature", cancellink=cdedblink("cde/index")) }}
     </form>

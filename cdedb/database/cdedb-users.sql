@@ -1,5 +1,7 @@
 -- This file specifies the accounts in the database and should be pretty stable
 
+set client_min_messages = warning;
+
 -- drop everything to be sure
 DROP DATABASE IF EXISTS cdb WITH (FORCE);
 DROP DATABASE IF EXISTS cdb_test WITH (FORCE);
