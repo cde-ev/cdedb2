@@ -755,20 +755,15 @@ class NotPaidCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class NegativeAmountOwedCV(RegistrationConstraintViolation):
+class ZeroAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
     def check(  # type: ignore[override]
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
-        if registration['amount_owed'] < 0:
-            return cls(
-                event=event,
-                severity=ViolationSeverity.ERROR,
-                registration=registration,
-                persona=persona,
-            )
+        if not event.fees:
+            return None
         if registration['amount_owed'] == 0:
             if any(reg_part['status'].is_involved()
                    for reg_part in registration['parts'].values()):
@@ -786,15 +781,42 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
     def get_translation(
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.registration['amount_owed'] < 0:
-            if entity_page:
-                msg = n_("Owes a negative amount (%(amount_owed)s).")
-            else:
-                msg = n_("%(registration)s owes a negative amount (%(amount_owed)s).")
-        elif entity_page:
+        if entity_page:
             msg = n_("Is involved but owes no fee.")
         else:
             msg = n_("%(registration)s is involved but owes no fee.")
+
+        params = {
+            "registration": make_persona_name(self.persona, include_nickname=True),
+        }
+
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NegativeAmountOwedCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['amount_owed'] < 0:
+            return cls(
+                event=event,
+                severity=ViolationSeverity.ERROR,
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Owes a negative amount (%(amount_owed)s).")
+        else:
+            msg = n_("%(registration)s owes a negative amount (%(amount_owed)s).")
 
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
