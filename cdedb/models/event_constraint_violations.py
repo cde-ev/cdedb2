@@ -1474,6 +1474,8 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
 
         Make the violation DEBUG if no attendees are assigned yet to avoid clutter.
         """
+        event_over = now().date() > event.end
+
         if track.id in course['active_segments']:
             if (
                     course['min_size'] is not None
@@ -1482,12 +1484,15 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                     course['max_size'] is not None
                     and attendees.num_learners > course['max_size']
             ):
+                if not attendees.num_learners:
+                    severity = ViolationSeverity.DEBUG
+                elif event_over:
+                    severity = ViolationSeverity.INFO
+                else:
+                    severity = ViolationSeverity.WARNING
                 return cls(
                     event=event,
-                    severity=(
-                        ViolationSeverity.WARNING if attendees.num_learners
-                        else ViolationSeverity.DEBUG
-                    ),
+                    severity=severity,
                     course=course,
                     track=track,
                     num=attendees.num_learners,
@@ -1625,6 +1630,9 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             inhabitants: "LodgementInhabitants",
             part: models.EventPart,
     ) -> Self | None:
+        event_over = now().date() > event.end
+        severity = None
+
         if (
             lodgement['regular_capacity'] is not None
             and len(inhabitants.regular) > lodgement['regular_capacity']
@@ -1636,41 +1644,38 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
                 [reg for reg in inhabitants.regular
                  if reg['parts'][part.id]['status'] == status.participant])
 
-            return cls(
-                event=event,
-                severity=ViolationSeverity.ERROR if error else ViolationSeverity.WARNING,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
+            if event_over:
+                severity = ViolationSeverity.INFO
+            elif error:
+                severity = ViolationSeverity.ERROR
+            else:
+                severity = ViolationSeverity.WARNING
         if (
             lodgement['camping_mat_capacity'] is not None
             and len(inhabitants.camping_mat) > lodgement['camping_mat_capacity']
         ):
-            return cls(
-                event=event,
-                severity=ViolationSeverity.WARNING,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
+            if event_over:
+                severity = ViolationSeverity.INFO
+            else:
+                severity = ViolationSeverity.WARNING
         if (
             lodgement['regular_capacity'] is not None
             and 0 < len(inhabitants.regular) < lodgement['regular_capacity']
             or lodgement['camping_mat_capacity'] is not None
             and 0 < len(inhabitants.camping_mat) < lodgement['camping_mat_capacity']
         ):
-            return cls(
-                event=event,
-                severity=ViolationSeverity.DEBUG,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
-        return None
+            severity = ViolationSeverity.DEBUG
+
+        if severity is None:
+            return None
+        return cls(
+            event=event,
+            severity=severity,
+            lodgement=lodgement,
+            part=part,
+            num_regular=len(inhabitants.regular),
+            num_camping_mat=len(inhabitants.camping_mat),
+        )
 
     def get_translation(
             self, *, entity_page: str,
