@@ -6656,6 +6656,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
         self.traverse("Akira")
         self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
+        self.traverse("Übersicht")
+        self.assertPresence("Es gibt 1 Anmeldungen ohne zu zahlendem Beitrag.",
+                            div="constraint-violations")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
