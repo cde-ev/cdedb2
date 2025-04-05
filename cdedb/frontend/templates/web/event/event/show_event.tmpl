@@ -3,10 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
+    {{ super() }}
     {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
-        {{ util.cdedb_script('cdedb_searchregistration.js') }}
     {% endif %}
 {% endblock %}
 {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
@@ -154,10 +154,16 @@
         {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
-                    <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
+                    <i class="hidden-xs hidden-sm">
+                    {# TODO: remove this hint (and hide complete panel on wide screens) after some time (e.g. winter25) #}
+                    {% trans %}Moved to the menu on the left.{% endtrans %}
+                    </i>
+                    <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET"
+                          id="quickregistrationform-smallscreen"
+                          class="hidden-md hidden-lg">
                         <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
                         <div class="input-group">
-                            <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
+                            <input type="search" name="phrase" class="form-control" id="input-showregistration-small-id"
                                    aria-label="{% trans %}ID, name or email{% endtrans %}"/>
                             <span class="input-group-btn">
                                 {{ util.input_submit("", icon='search', title=gettext("Search")) }}
@@ -165,7 +171,7 @@
                         </div>
                     </form>
                     <script nonce="{{ csp_nonce }}">
-                        var $i = $('#input-showregistration-id');
+                        var $i = $('#input-showregistration-small-id');
                         $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
                                                        + ('?kind=orga_registration&aux='|s)
                                                        + (values['event_id']|e)
@@ -173,7 +179,7 @@
                                                    [], true, false, "{{ gettext("ID, name or email") }}");
                         $i.change(function(){
                             if ($(this).val()) {
-                                $('#quickregistrationform').submit();
+                                $('#quickregistrationform-smallscreen').submit();
                             }
                         });
                     </script>
@@ -274,6 +280,25 @@
                 {% endcall %}
             </div>
 
+            {% set min_severity = enums['ViolationSeverity'].INFO %}
+            {% set violations = constraint_violations['violations'] if constraint_violations else None %}
+            {% if violations and violations.max_severity >= min_severity %}
+                <div class="col-md-6" id="constraint-violations">
+                    {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
+                        <ul class="slim">
+                            {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
+                                <li><a class="{{ violations_.max_severity.html_class() }}" href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                    {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
+                                             class_name=gettext(class_name) %}
+                                        There are {{ count }} {{ class_name }}.
+                                    {% endtrans %}
+                                </a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+
             <div class="col-md-6" id="offline-use">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download-alt', aclass='panel-danger') %}
                     <p>
@@ -356,25 +381,6 @@
                     {% endif %}
                 {% endcall %}
             </div>
-
-            {% set min_severity = enums['ViolationSeverity'].INFO %}
-            {% set violations = constraint_violations['violations'] if constraint_violations else None %}
-            {% if violations and violations.max_severity >= min_severity %}
-                <div class="col-md-6" id="constraint-violations">
-                    {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
-                        <ul class="slim">
-                            {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-                                <li><a class="{{ violations_.max_severity.html_class() }}" href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
-                                    {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
-                                             class_name=gettext(class_name) %}
-                                        There are {{ count }} {{ class_name }}.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endfor %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
         {% endif %}
     </div>
 
