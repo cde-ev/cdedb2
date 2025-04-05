@@ -52,6 +52,21 @@ Um den Verstoß zu beheben, erinnere die Person daran, ihren Beitrag zu überwei
 ändere ihren Status oder passe ggf. den Teilnahmebeitrag der Person an.
 
 
+.. _ZeroAmountOwedCV:
+
+Anmeldungen ohne zu zahlendem Beitrag
+-------------------------------------
+
+Dieser Verstoß tritt auf, wenn eine Person keinen Teilnahmebeitrag bezahlen muss,
+obwohl Teilnahmebeiträge konfiguriert wurden, außer die Person ist Orga.
+In der Regel deutet dies darauf hin, dass bei der Konfiguration der
+Teilnahmebeiträge etwas schief gelaufen ist.
+
+Um den Verstoß zu beheben, kontrolliere die für die Person aktiven Teilnahmebeiträge.
+Falls du dir nicht sicher bist, wo das Problem liegt, melde dich gerne beim
+Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
+
+
 .. _NegativeAmountOwedCV:
 
 Anmeldungen mit negativem zu zahlenden Beitrag

@@ -81,6 +81,7 @@ from cdedb.models.event_constraint_violations import (
     PresentNeverCheckedinCV,
     RemainingOwedCV,
     ViolationList,
+    ZeroAmountOwedCV,
 )
 
 if TYPE_CHECKING:
@@ -536,6 +537,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 (
                     InconsistentPaymentCV,
                     NotPaidCV,
+                    ZeroAmountOwedCV,
                     NegativeAmountOwedCV,
                     NegativeRemainingOwedCV,
                     RemainingOwedCV,
