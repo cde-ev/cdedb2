@@ -19,6 +19,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     determine_age_class,
+    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -646,7 +647,7 @@ class EventQueryMixin(EventBaseFrontend):
             data = xsorted(data, key=lambda e: e['id'])[:num_preview_personas]
 
         def name(x: CdEDBObject) -> str:
-            return "{} {}".format(x['given_names'], x['family_name'])
+            return make_persona_name(x, include_nickname=True)
 
         # Check if name occurs multiple times to add email address in this case
         counter: dict[str, int] = collections.defaultdict(int)
