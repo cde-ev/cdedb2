@@ -461,7 +461,7 @@ class LDAPsqlBackend:
                 # in handle_LDAPSearchRequest.filter_entry.
                 return (sql.Literal(True), [])
             return (
-                sql.SQL("{} = %s").format(sql.Identifier(
+                sql.SQL("{}::text = %s").format(sql.Identifier(
                     attr_replacements[filter_.attributeDesc.value.decode()],
                 )),
                 [filter_.assertionValue.value.decode()],
