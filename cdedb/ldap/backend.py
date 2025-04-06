@@ -351,6 +351,8 @@ class LDAPsqlBackend:
             if name is None:
                 continue
             dn_to_name[dn] = name
+        if not dn_to_name:
+            return {}
 
         ret = dict()
         for dn, name in dn_to_name.items():
@@ -641,6 +643,8 @@ class LDAPsqlBackend:
             if persona_id is None:
                 continue
             dn_to_persona_id[dn] = persona_id
+        if not dn_to_persona_id:
+            return {}
 
         users, groups = (
             await asyncio.gather(
@@ -765,6 +769,8 @@ class LDAPsqlBackend:
             if name is None:
                 continue
             dn_to_name[dn] = name
+        if not dn_to_name:
+            return {}
 
         # Schedule all tasks at the same time and wait for them all to complete.
         # For convenience, the `_get_status_group` helper returns the dn as the key.
@@ -845,6 +851,8 @@ class LDAPsqlBackend:
             if assembly_id is None:
                 continue
             dn_to_assembly_id[dn] = assembly_id
+        if not dn_to_assembly_id:
+            return {}
 
         assemblies, presiders = await asyncio.gather(
             self.get_assemblies(dn_to_assembly_id.values()),
@@ -928,6 +936,8 @@ class LDAPsqlBackend:
             if event_id is None:
                 continue
             dn_to_event_id[dn] = event_id
+        if not dn_to_event_id:
+            return {}
 
         events, orgas = await asyncio.gather(
             self.get_events(dn_to_event_id.values()),
@@ -1024,6 +1034,8 @@ class LDAPsqlBackend:
             if address is None:
                 continue
             dn_to_address[dn] = address
+        if not dn_to_address:
+            return {}
 
         mls, moderators = await asyncio.gather(
             self.get_mailinglists(dn_to_address.values()),
@@ -1107,6 +1119,8 @@ class LDAPsqlBackend:
             if address is None:
                 continue
             dn_to_address[dn] = address
+        if not dn_to_address:
+            return {}
 
         mls, subscribers = await asyncio.gather(
             self.get_mailinglists(dn_to_address.values()),
