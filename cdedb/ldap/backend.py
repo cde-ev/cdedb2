@@ -141,12 +141,16 @@ class LDAPsqlBackend:
         sanitized_params = tuple(to_db_input(p) for p in params)
         # psycopg3 does server-side parameter substitution. Sadly, cur.mogrify is
         # therefore no longer available ...
-        logger.debug(f"Execute PostgreSQL query {query.as_string(cur)} with"
+        if isinstance(query, psycopg.sql.Composable):
+            query = query.as_string(cur)
+        elif isinstance(query, bytes):
+            query = query.decode("utf-8")
+        logger.debug(f"Execute PostgreSQL query {query} with"
                      f" parameters {sanitized_params}.")
         try:
             await cur.execute(query, sanitized_params)
         except Exception as e:
-            raise RuntimeError((query.as_string(cur), sanitized_params)) from e
+            raise RuntimeError((query, sanitized_params)) from e
 
     async def query_exec(
         self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
