@@ -20,7 +20,7 @@ from twisted.python.util import InsensitiveDict
 
 from cdedb.database.query import DatabaseValue_s
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
-from cdedb.ldap.types import AttributeDescriptionList, FilterLike
+from cdedb.ldap.util import AttributeDescriptionList, FilterLike
 from tests.common import AsyncBasicTest, BasicTest
 
 
