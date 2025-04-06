@@ -424,7 +424,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertEqual(
             await parse_and_lower("(&(s=1)(|(t=2)(t=3)))", {"s": "x", "t": "y"}),
             (
-                '("x" = %s) AND (("y" = %s) OR ("y" = %s))',
+                '("x"::text = %s) AND (("y"::text = %s) OR ("y"::text = %s))',
                 ["1", "2", "3"],
             ),
         )
