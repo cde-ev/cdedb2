@@ -1,7 +1,6 @@
 """The ldaptor backend, mediating all queries to the database."""
 
 import asyncio
-import logging
 import pkgutil
 import re
 from collections import defaultdict

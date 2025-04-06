@@ -1,7 +1,6 @@
 """Custom ldaptor server."""
 
 import asyncio
-import logging
 import sys
 from asyncio import StreamReader, StreamWriter
 from collections.abc import Coroutine
