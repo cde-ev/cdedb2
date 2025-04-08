@@ -1263,6 +1263,7 @@ class TestCoreFrontend(FrontendTest):
         new_admin_copy = self._approve_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], new_admin,
             new_privileges, old_privileges, new_password=new_password)
+        self.assertNotification("E-Mail", 'info')
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle("Privilegien ändern für {}".format(
@@ -1316,6 +1317,7 @@ class TestCoreFrontend(FrontendTest):
         self._reject_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], new_admin,
             new_privileges, old_privileges)
+        self.assertNonPresence("E-Mail")
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle("Privilegien ändern für {}".format(
@@ -1444,8 +1446,9 @@ class TestCoreFrontend(FrontendTest):
                       {'description': new_admin['family_name']})
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
-        self.assertPresence("Änderung wurde übernommen.", div="notifications")
+        self.assertNotification("Änderung wurde übernommen.", 'success')
         if new_password:
+            saved = self.response
             link = self.fetch_link(num=2)
             self.get(link)
             f = self.response.forms["passwordresetform"]
@@ -1455,6 +1458,7 @@ class TestCoreFrontend(FrontendTest):
             # Only do this with a deepcopy of the user!
             new_admin = dict(new_admin)
             new_admin['password'] = new_password
+            self.response = saved
         return new_admin
 
     def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
