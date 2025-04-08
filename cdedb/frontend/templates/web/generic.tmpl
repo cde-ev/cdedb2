@@ -511,6 +511,7 @@
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                               title=gettext("Ctrl+Click anywhere in this line to (un)select it"),
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
                     <td class="hidden-print">
@@ -608,6 +609,12 @@
             </tfoot>
         </table>
         </div>
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Press <code>Ctrl</code> and click anywhere in a result line to (un)select it additionally to already selected lines.
+            {% endtrans %}
+        </p>
     {% endif %}
 {% endmacro %}
 

@@ -94,6 +94,7 @@ class LDAPBackendTest(BasicTest):
             "de_dn", "cde_dn", "duas_dn", "users_dn", "groups_dn", "status_groups_dn",
             "presider_groups_dn", "orga_groups_dn", "moderator_groups_dn", "root_dn",
             "subscriber_groups_dn", "anonymous_accessible_dns", "subschema_dn",
+            "any_groups_dn",
         }
         for name, attr in self.ldap_backend_class.__dict__.items():
             with self.subTest(name):
@@ -232,6 +233,17 @@ class LDAPBackendTest(BasicTest):
         self.assertFalse(self.ldap_backend_class.is_moderator_group_dn(dn))
         self.assertEqual(address, self.ldap_backend_class.subscriber_group_address(dn))
 
+    def test_any_groups_dn(self) -> None:
+        expectation = DN("ou=any,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(expectation, self.ldap_backend_class.any_groups_dn)
+
+    def test_any_group_dn(self) -> None:
+        scope = "orga"
+        expectation = DN(f"cn={scope},ou=any,ou=groups,dc=cde-ev,dc=de")
+        self.assertEqual(scope, self.ldap_backend_class.any_group_cn(scope))
+        dn = self.ldap_backend_class.any_group_dn(scope)
+        self.assertEqual(expectation, dn)
+
 
 class AsyncLDAPBackendTest(AsyncBasicTest):
     ldap: LDAPsqlBackend
@@ -310,6 +322,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             await list_and_filter("(|(foo=bar)(uid<=10))"),
             await self.ldap.list_users(),
         )
+        # check that arbitrary input is valid, especially text for non-text columns
+        self.assertEqual(await list_and_filter("(uid=asdf)"), [])
+        self.assertEqual(await list_and_filter("(sn=21234)"), [])
 
     async def test_get_status_groups(self) -> None:
         status_group_dns = await self.ldap.list_status_groups()
@@ -363,6 +378,17 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         mls = await self.ldap.get_mailinglists(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", mls)
 
+    async def test_any_groups(self) -> None:
+        presider = 23
+        _, any_presider_group = await self.ldap.get_any_presider_group()
+        self.assertIn(self.ldap.user_dn(presider), any_presider_group[b"uniqueMember"])
+        orga = 1
+        _, any_orga_group = await self.ldap.get_any_orga_group()
+        self.assertIn(self.ldap.user_dn(orga), any_orga_group[b"uniqueMember"])
+        moderator = 11
+        _, any_moderator_group = await self.ldap.get_any_moderator_group()
+        self.assertIn(self.ldap.user_dn(moderator), any_moderator_group[b"uniqueMember"])
+
     async def test_ldap_filter_lowering(self) -> None:
         async def parse_and_lower(
             filter_string: str,
@@ -398,7 +424,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertEqual(
             await parse_and_lower("(&(s=1)(|(t=2)(t=3)))", {"s": "x", "t": "y"}),
             (
-                '("x" = %s) AND (("y" = %s) OR ("y" = %s))',
+                '("x"::text = %s) AND (("y"::text = %s) OR ("y"::text = %s))',
                 ["1", "2", "3"],
             ),
         )

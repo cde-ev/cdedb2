@@ -1932,12 +1932,15 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access('event')
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("registration_ids")
+    @REQUESTdata("registration_ids", "field_id")
     def checkin_multiset_form(self, rs: RequestState, event_id: int,
                               registration_ids: Optional[vtypes.IntCSVList] = None,
+                              field_id: Optional[vtypes.ID] = None,
                               internal: bool = False) -> Response:
         """Form to check in or out multiple people at once,
 
+        :param field_id: if given, display a preview for setting timestamps from
+         this custom field.
         :param internal: if called from another frontend method,
          use to avoid further redirects on validation errors.
         """
@@ -1968,21 +1971,50 @@ class EventRegistrationMixin(EventBaseFrontend):
             reg_id: reg['checkin_periods'] for reg_id, reg in registrations.items()
             if reg_id not in present
         }
-        return self.render(rs, 'registration/checkin_multiset',
-                           {'names': names, 'present': present, 'absent': absent})
+
+        datetime_registration_fields = {
+            field.id: field.title
+            for field in xsorted(rs.ambience['event'].fields.values())
+            if field.association == const.FieldAssociations.registration
+               and field.kind == const.FieldDatatypes.datetime
+        }
+        if field_id:
+            field_preview_values = {
+                reg_id: reg['fields'].get(rs.ambience['event'].fields[field_id].field_name)
+                for reg_id, reg in registrations.items()
+            }
+        else:
+            field_preview_values = {}
+        return self.render(
+            rs, 'registration/checkin_multiset',
+            {'names': names, 'present': present, 'absent': absent,
+             'datetime_registration_fields': datetime_registration_fields,
+             'field_preview_values': field_preview_values})
 
     @access('event', modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("registration_ids", "action", "checkin_time", "checkout_time")
-    def checkin_multiset(self, rs: RequestState, event_id: int,
-                         registration_ids: vtypes.IntCSVList, action: str,
-                         checkin_time: Optional[datetime.datetime],
-                         checkout_time: Optional[datetime.datetime]) -> Response:
+    @REQUESTdata("registration_ids", "action", "field_id", "confirm_field_id",
+                 "ack_field", "checkin_time", "checkout_time")
+    def checkin_multiset(
+        self, rs: RequestState, event_id: int,
+        registration_ids: vtypes.IntCSVList, action: str, field_id: Optional[vtypes.ID],
+        confirm_field_id: Optional[vtypes.ID], ack_field: Optional[bool],
+        checkin_time: Optional[datetime.datetime],
+        checkout_time: Optional[datetime.datetime],
+    ) -> Response:
         """Checkin/-out multiple people at once.
+
+        At most one of checkin_time, checkout_time and field_id may be provided.
 
         :param action: One of 'checkout','modify_checkin', 'checkin', 'modify_checkout'.
             The modify_ options mass-reset the latest respective timestamp and
             the others add new ones.
+        :param checkin_time: set checkin time to this time.
+        :param checkout_time: set checkout time to this time.
+        :param field_id: if given, preview to set checkin/-out time from this field
+            (depending on action)
+        :param confirm_field_id: field id for that the preview was displayed
+        :param ack_field: confirm to save times from confirm_field_id
         """
         ref_time = now()
         if checkin_time and checkin_time > ref_time:
@@ -2001,15 +2033,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         regs = self.eventproxy.get_registrations(rs, registration_ids)
         # first, validate
         consistent = True
-        if action == 'checkout':
-            if not checkout_time:
+        if field_id:
+            field_name = rs.ambience['event'].fields[field_id].field_name
+            if not all(reg['fields'].get(field_name) for reg in regs.values()):
                 rs.append_validation_error(
-                    ('checkout_time', ValueError(n_("Must not be empty."))))
-            elif checkout_time < max(
-                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
-            ):
-                rs.append_validation_error(
-                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
+                    ('field_id', ValueError(n_("Field must not be empty."))))
         if action in {'checkout', 'modify_checkin'}:
             if any(
                 not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
@@ -2017,6 +2045,23 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 rs.notify('error', n_("People must be checked in."))
                 consistent = False
+        if action == 'checkout':
+            if bool(checkout_time) == bool(field_id):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must give exactly one."))))
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must give exactly one."))))
+            elif checkout_time and consistent and checkout_time < max(
+                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            ):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkin_time >= reg['fields'][field_name]
+                for reg in regs.values() if reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkin."))))
         if (action == 'modify_checkin'
             and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
             and checkin_time < max(
@@ -2025,17 +2070,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         ):
             rs.append_validation_error(
                 ('checkin_time', ValueError(n_("Must be after last checkout."))))
-        if action == 'checkin':
-            if not checkin_time:
-                rs.append_validation_error(
-                    ('checkin_time', ValueError(n_("Must not be empty."))))
-            elif (any(reg['checkin_periods'] for reg in regs.values())
-                  and checkin_time <= max(
-                    reg['checkin_periods'][-1].checkout_time
-                    for reg in regs.values() if reg['checkin_periods'])
-            ):
-                rs.append_validation_error(
-                    ('checkin_time', ValueError(n_("Must be after last checkout."))))
         if action in {'checkin', 'modify_checkout'}:
             if any(
                 reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
@@ -2043,6 +2077,27 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 rs.notify('error', n_("People must not be checked in."))
                 consistent = False
+        if action == 'checkin':
+            if bool(checkin_time) == bool(field_id):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must give exactly one."))))
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must give exactly one."))))
+            elif (checkin_time and consistent
+                  and any(reg['checkin_periods'] for reg in regs.values())
+                  and checkin_time <= max(
+                    reg['checkin_periods'][-1].checkout_time
+                    for reg in regs.values() if reg['checkin_periods'])
+            ):
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must be after last checkout."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
+                for reg in regs.values()
+                if reg['checkin_periods'] and reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkout."))))
         if (action == 'modify_checkout'
             and any(reg['checkin_periods'] for reg in regs.values())
             and checkout_time < max(reg['checkin_periods'][-1].checkin_time
@@ -2050,16 +2105,36 @@ class EventRegistrationMixin(EventBaseFrontend):
         ):
             rs.append_validation_error(
                 ('checkout_time', ValueError(n_("Must be after last checkin."))))
-        if rs.has_validation_errors() or not consistent:
+        # return form with preview of times from custom field
+        validate_from_field = (field_id != confirm_field_id
+                               or (field_id and not ack_field))
+        if validate_from_field:
+            rs.values['confirm_field_id'] = field_id
+        if rs.has_validation_errors() or not consistent or validate_from_field:
             return self.checkin_multiset_form(rs, event_id, internal=True)
 
         # then, process
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Checkin-Multiset.")
         ret = 1
         if action == 'checkin':
-            ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+            if checkin_time:
+                ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+            elif field_id:
+                self.eventproxy.add_checkins_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
+            else:
+                raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkin_time"
         elif action == 'checkout':
-            ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            if checkout_time:
+                ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            elif field_id:
+                self.eventproxy.add_checkouts_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
+            else:
+                raise RuntimeError(n_("Impossible"))
             sortkey = "checkin_periods.max_checkout_time"
         elif action == 'modify_checkin':
             if not checkin_time:  # delete latest checkins
@@ -2080,15 +2155,19 @@ class EventRegistrationMixin(EventBaseFrontend):
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)
             sortkey = "checkin_periods.max_checkout_time"
-
+        else:
+            raise RuntimeError(n_("Impossible."))
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Nach Checkin-Multiset.", after_change=True)
         rs.notify_return_code(ret)
+
         # redirect to query of changed registrations
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ("persona.given_names", "persona.family_name", "persona.username",
              "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
-             "checkin.current"),
+             "reg.is_checked_in"),
             (("reg.id", QueryOperators.oneof, registration_ids),),
             ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
         )

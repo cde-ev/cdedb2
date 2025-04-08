@@ -106,10 +106,15 @@ class EventImportMixin(EventBaseFrontend):
         rs.ignore_warnings = True
 
         if partial_import_data:
-            data = check(rs, vtypes.SerializedPartialEvent,
-                         json.loads(partial_import_data))
+            data = check(
+                rs, vtypes.SerializedPartialEvent, json.loads(partial_import_data),
+                fields=rs.ambience['event'].fields,
+            )
         else:
-            data = check(rs, vtypes.SerializedPartialEventUpload, json_file)
+            data = check(
+                rs, vtypes.SerializedPartialEventUpload, json_file,
+                fields=rs.ambience['event'].fields,
+            )
         if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
         assert data is not None
@@ -139,13 +144,15 @@ class EventImportMixin(EventBaseFrontend):
         # Second invoke partial import
         try:
             new_token, delta = self.eventproxy.partial_import_event(
-                rs, data, dryrun=(not bool(token)), token=token)
+                rs, event_id, data, dryrun=(not bool(token)), token=token,
+            )
         except PartialImportError:
             rs.notify("warning",
                       n_("The data changed, please review the difference."))
             token = None
             new_token, delta = self.eventproxy.partial_import_event(
-                rs, data, dryrun=True)
+                rs, event_id, data, dryrun=True,
+            )
 
         # Third check if we were successful
         if token == new_token:

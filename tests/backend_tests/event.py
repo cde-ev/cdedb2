@@ -830,6 +830,8 @@ class TestEventBackend(BackendTest):
             'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
                                          tzinfo=datetime.timezone.utc),
+            'arrival_at': datetime.datetime(2022, 2, 2, 9, 0,
+                                            tzinfo=datetime.timezone.utc),
             'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
                      'garcia@example.cde :)',
             'is_child': False,
@@ -1204,6 +1206,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
+                    'arrival_at': datetime.datetime(2022, 2, 2, 9,
+                                                    tzinfo=datetime.timezone.utc),
                     'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel '
                              'und garcia@example.cde :)',
                     'is_child': False,
@@ -2959,6 +2963,9 @@ class TestEventBackend(BackendTest):
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
+        for reg in expectation['registrations'].values():
+            if timestamp := reg['fields'].get('arrival_at'):
+                reg['fields']['arrival_at'] = datetime.datetime.fromisoformat(timestamp)
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
@@ -2975,17 +2982,20 @@ class TestEventBackend(BackendTest):
             data = json.load(datafile)
 
         # first a test run
-        token1, delta = self.event.partial_import_event(self.key, data,
-                                                        dryrun=True)
+        token1, delta = self.event.partial_import_event(
+            self.key, event.id, data, dryrun=True,
+        )
         expectation = copy.deepcopy(delta)
         self.assertEqual(expectation, delta)
         # second check the token functionality
         with self.assertRaises(PartialImportError):
-            self.event.partial_import_event(self.key, data, dryrun=False,
-                                            token=token1 + "wrong")
+            self.event.partial_import_event(
+                self.key, event.id, data, dryrun=False, token=token1 + "wrong",
+            )
         # now for real
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, token=token1)
+            self.key, event.id, data, dryrun=False, token=token1,
+        )
         self.assertEqual(token1, token2)
 
         updated = self.event.partial_export_event(self.key, 1)
@@ -3235,6 +3245,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
+        event_id = 1
         with open(
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
@@ -3257,7 +3268,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of courses violated.",
                       cm.exception.args)
 
@@ -3273,7 +3285,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of lodgements violated.",
                       cm.exception.args)
 
@@ -3285,7 +3298,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.partial_import_event(
-                self.key, data, dryrun=False)
+                self.key, event_id, data, dryrun=False,
+            )
         self.assertIn("Referential integrity of lodgement groups violated.",
                       cm.exception.args)
 
@@ -3293,6 +3307,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
+        event_id = 1
         with open(
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
@@ -3300,17 +3315,21 @@ class TestEventBackend(BackendTest):
 
         # first a test run
         token1, delta = self.event.partial_import_event(
-            self.key, data, dryrun=True)
+            self.key, event_id, data, dryrun=True,
+        )
         # second a real run
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, token=token1)
+            self.key, event_id, data, dryrun=False, token=token1,
+        )
         self.assertEqual(token1, token2)
         # third another concurrent real run
         with self.assertRaises(PartialImportError):
             self.event.partial_import_event(
-                self.key, data, dryrun=False, token=token1)
+                self.key, event_id, data, dryrun=False, token=token1,
+            )
         token3, delta = self.event.partial_import_event(
-            self.key, data, dryrun=True)
+            self.key, event_id, data, dryrun=True,
+        )
         self.assertNotEqual(token1, token3)
         expectation = {
             'courses': {
@@ -4317,7 +4336,8 @@ class TestEventBackend(BackendTest):
         future_time = base_time + 42 * delta
         with freezegun.freeze_time(base_time) as frozen_time:
             # single checkins / checkouts first
-            p_id = self.event.add_checkin(self.key, reg_id)
+            p_id = 1001
+            self.event.add_checkin(self.key, reg_id)
             self.assertEqual(self.event.add_checkin(self.key, reg_id), 0)
             frozen_time.tick(delta)
             self.assertEqual(self.event.add_checkout(self.key, reg_id, base_time - delta), 0)
@@ -4456,6 +4476,60 @@ class TestEventBackend(BackendTest):
             self.assertEqual(
                 reg['checkin_periods'],
                 [models.CheckinPeriod.from_database(p) for p in new_periods])
+
+            # multi-checkin
+            new_periods.append({
+                "id": p_id + 5,
+                "registration_id": reg_id,
+                "checkin_time": now() - delta,
+                "checkout_time": now() + delta,
+            })
+            new_period2 = {
+                "id": p_id + 6,
+                "registration_id": reg_id + 1,
+                "checkin_time": base_time,
+                "checkout_time": base_time + delta,
+            }
+            self.assertEqual(  # checkin time too early
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: base_time, reg_id+1: base_time}),
+                0,
+            )
+            self.assertEqual(
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: now() - delta, reg_id + 1: base_time}),
+                2,
+            )
+            self.assertEqual(  # someone already checked in
+                self.event.add_checkins_multi(
+                    self.key, {reg_id: now(), reg_id + 2: base_time}),
+                0,
+            )
+            self.assertEqual(  # checkout time before last checkin
+                self.event.add_checkouts_multi(
+                    self.key, {reg_id: base_time, reg_id + 1: base_time}),
+                0,
+            )
+            self.assertEqual(
+                self.event.add_checkouts_multi(  # someone not checked in
+                    self.key, {reg_id: now(), reg_id + 2: base_time + delta}),
+                0,
+            )
+            self.assertGreater(
+                self.event.add_checkouts_multi(
+                    self.key, {reg_id: now() + delta, reg_id + 1: base_time + delta}),
+                0,
+            )
+            reg = self.event.get_registration(self.key, reg_id)
+            reg1 = self.event.get_registration(self.key, reg_id + 1)
+            reg2 = self.event.get_registration(self.key, reg_id + 2)
+            self.assertEqual(
+                reg['checkin_periods'],
+                [models.CheckinPeriod.from_database(p) for p in new_periods])
+            self.assertEqual(
+                reg1['checkin_periods'],
+                [models.CheckinPeriod.from_database(new_period2)])
+            self.assertEqual(reg2['checkin_periods'], [])
 
     @as_users("emilia")
     def test_part_groups(self) -> None:

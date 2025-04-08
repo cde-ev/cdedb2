@@ -118,6 +118,7 @@ class Application(BaseApp):
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['json.dumps_kwargs']['sort_keys'] = False
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
