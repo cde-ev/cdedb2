@@ -177,8 +177,8 @@ _DEFAULTS = {
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
     # maximum length of personas presented via select persona API for selection
-    # in an intelligent input field for core admins
-    "NUM_PREVIEW_PERSONAS_CORE_ADMIN": 12,
+    # in an intelligent input field for privileged users (core admins and orgas)
+    "NUM_PREVIEW_PERSONAS_PRIVILEGED": 12,
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,

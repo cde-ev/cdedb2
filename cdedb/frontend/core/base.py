@@ -983,7 +983,7 @@ class CoreBaseFrontend(AbstractFrontend):
         search_additions = []
         scope = QueryScope.core_user
         mailinglist = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
