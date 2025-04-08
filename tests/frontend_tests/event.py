@@ -5728,7 +5728,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         expectation = {
             'registrations': [{'email': 'emilia@example.cde',
                                'id': 5,
-                               'name': 'Emilia Eventis'}]}
+                               'name': 'Emilia (Emmy) Eventis'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=@exam&aux=1')
