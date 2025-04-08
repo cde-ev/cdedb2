@@ -31,7 +31,7 @@
                 <tr>
                     <td>{{ titles.get(key, key) }}</td>
                     <td class="{% if old is not none %}bg-danger{% endif %}">
-                        {% if old is sequence and not old is string%}
+                        {% if old is sequence and not old is string %}
                             [{% for o in old %}
                                 {{- choices.get(key, {}).get(o, o) }}
                                 {%- if not loop.last %}, {% endif %}
@@ -62,7 +62,7 @@
     "payment": gettext("Payment"),
     "parental_agreement": gettext("Parental Consent"),
     "mixed_lodging": gettext("Mixed Lodging"),
-    "checkin": gettext("Checkin"),
+    "checkin_periods": gettext("Checkin Periods"),
     "list_consent": gettext("Participant List Consent"),
     }) %}
 {% do course_titles.update({
@@ -116,7 +116,7 @@
                                 <li>
                                     <details>
                                         <summary>
-                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']], include_nickname=True) }}
                                         </summary>
                                         {{ diff_table(reg_diff, reg_titles, reg_choices) }}
                                     </details>
@@ -147,7 +147,7 @@
                         <ul class="slim">
                             {% for reg_id in summary['new_registration_ids'] %}
                                 <li>
-                                    {{ util.persona_name(personas[delta['registrations'][reg_id]['persona_id']]) }}
+                                    {{ util.persona_name(personas[delta['registrations'][reg_id]['persona_id']], include_nickname=True) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -163,7 +163,7 @@
                         <ul class="slim">
                             {% for reg_id in summary['real_deleted_registration_ids'] %}
                                 <li>
-                                    {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
+                                    {{ util.persona_name(personas[registrations[reg_id]['persona_id']], include_nickname=True) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -390,7 +390,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if not (summary['changed_registratios'] or summary['new_registration_ids']
+    {% if not (summary['changed_registrations'] or summary['new_registration_ids']
                or summary['real_deleted_registration_ids'] or summary['changed_courses']
                or summary['new_course_ids'] or summary['real_deleted_course_ids']
                or summary['changed_lodgements'] or summary['new_lodgement_ids']

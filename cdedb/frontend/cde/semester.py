@@ -52,6 +52,10 @@ class CdESemesterMixin(CdEBaseFrontend):
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
         stats = self.cdeproxy.finance_statistics(rs)
+        # Hide old semesters where no meaningful data is available
+        MIN_SEMESTER = self.conf["MIN_RELEVANT_SEMESTER"]
+        period_history = {id: period_history[id] for id in period_history if id >= MIN_SEMESTER}
+        expuls_history = {id: expuls_history[id] for id in expuls_history if id >= MIN_SEMESTER}
         return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,

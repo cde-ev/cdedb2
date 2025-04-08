@@ -103,9 +103,14 @@ CREATE TABLE core.personas (
         CONSTRAINT personas_archived_purged
             CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
-        display_name            varchar NOT NULL,
+        nickname                varchar DEFAULT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
+        legal_given_names       varchar DEFAULT NULL,
+        -- whether to show legal given names in member search
+        show_legal_given_names  boolean NOT NULL DEFAULT FALSE,
+        searchable_legal_given_names varchar GENERATED ALWAYS AS (
+            CASE WHEN show_legal_given_names THEN legal_given_names ELSE NULL END) STORED,
         -- "Nachname"
         family_name             varchar NOT NULL,
 
@@ -206,10 +211,10 @@ CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
-GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
+GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
-GRANT UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, show_address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (nickname, given_names, legal_given_names, show_legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, show_address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
 GRANT UPDATE (birth_name, address_supplement2, address2, show_address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
 -- includes notes in addition to cdb_member
 GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
@@ -402,8 +407,10 @@ CREATE TABLE core.changelog (
         is_searchable           boolean,
         is_archived             boolean,
         is_purged               boolean,
-        display_name            varchar,
+        nickname                varchar,
         given_names             varchar,
+        legal_given_names       varchar,
+        show_legal_given_names  boolean NOT NULL DEFAULT FALSE,
         family_name             varchar,
         title                   varchar,
         name_supplement         varchar,
@@ -773,6 +780,8 @@ CREATE TABLE event.events (
         is_course_assignment_visible boolean NOT NULL DEFAULT False,
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
+        -- whether the event is financially concluded.
+        is_balanced                  boolean NOT NULL DEFAULT False,
         -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
@@ -978,6 +987,14 @@ GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.helpers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+);
+GRANT INSERT, UPDATE, DELETE ON event.helpers TO cdb_admin;
+GRANT SELECT, UPDATE ON event.helpers_id_seq TO cdb_admin;
+GRANT SELECT ON event.helpers TO cdb_anonymous, cdb_ldap;
+
 CREATE TABLE event.orga_apitokens (
         id                      serial PRIMARY KEY,
         -- Event which this token grants access to.
@@ -1050,7 +1067,6 @@ CREATE TABLE event.registrations (
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
-        checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- consent to information being included in participant list send to all participants.
         list_consent            boolean NOT NULL,
 
@@ -1105,6 +1121,20 @@ CREATE TABLE event.course_choices (
 CREATE INDEX course_choices_track_id_rank_idx ON event.course_choices(track_id, rank);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
+
+CREATE TABLE event.checkin_periods (
+        id                      bigserial PRIMARY KEY,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+        -- being automatically calculated but possible to change later, higher precision may create issues
+        checkin_time            timestamp(0) WITH TIME ZONE NOT NULL,
+        checkout_time           timestamp(0) WITH TIME ZONE,
+        UNIQUE (registration_id, checkin_time),
+        UNIQUE (registration_id, checkout_time), -- (registration_id, NULL) is unique too
+        CONSTRAINT checkin_period_time_order CHECK (checkin_time < checkout_time)
+);
+CREATE INDEX checkin_periods_registration_id_idx ON event.checkin_periods(registration_id);
+GRANT SELECT, INSERT, DELETE, UPDATE ON event.checkin_periods TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_periods_id_seq TO cdb_persona;
 
 CREATE TABLE event.personalized_fees (
         id                      bigserial PRIMARY KEY,

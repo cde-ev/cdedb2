@@ -27,6 +27,7 @@ from typing import (
 )
 
 import bleach
+import freezegun.api
 import icu
 import jinja2
 import markdown
@@ -96,7 +97,7 @@ def date_filter(val: Union[datetime.date, str, None],
       following values: short, medium, long and full.
     :param passthrough: If True return strings unmodified.
     """
-    if val is None or val == '' or not isinstance(val, datetime.date):
+    if not val or not isinstance(val, datetime.date):
         if passthrough and isinstance(val, str) and val and val != datetime.date.min:
             return val
         return None
@@ -139,7 +140,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     :param lang: If not None, then localize to the passed language.
     :param passthrough: If True return strings unmodified.
     """
-    if val is None or val == '' or not isinstance(val, datetime.datetime):
+    if not val or not isinstance(val, datetime.datetime):
         if passthrough and isinstance(val, str) and val:
             return val
         return None
@@ -155,9 +156,30 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
         zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
+        # isinstance check is always true since freezegun overiddes __instancecheck__
+        # if isinstance(val, freezegun.api.FakeDatetime):
+        if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+            # icu cannot deal with FakeDatetime objects, convert them
+            val = datetime.datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
+
+
+def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -> str:
+    """Pretty representation of duration."""
+    if delta.days:
+        return gettext("{days}\xa0days, {hours}\xa0hours").format(
+            days=delta.days, hours=delta.seconds // (60*60),
+        )
+    elif hours := delta.seconds // (60*60):
+        return gettext("{hours}\xa0hours, {minutes}\xa0minutes").format(
+            hours=hours, minutes=(delta.seconds % (60*60)) // 60,
+        )
+    else:
+        return gettext("{minutes}\xa0minutes, {seconds}\xa0seconds").format(
+            minutes=delta.seconds // 60, seconds=delta.seconds % 60,
+        )
 
 
 @overload
@@ -669,7 +691,7 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
       input_select macros), built from the selected fields of the dicts
     """
     # TODO this leads to cyclic imports otherwise
-    from cdedb.models.common import (  # pylint: disable=import-outside-toplevel
+    from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         CdEDataclass,
     )
     values = [v.to_database() if isinstance(v, CdEDataclass) else v for _, v in items]
@@ -728,6 +750,7 @@ def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
 JINJA_FILTERS = {
     'date': date_filter,
     'datetime': datetime_filter,
+    'timedelta': timedelta_filter,
     'money': money_filter,
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,

@@ -193,7 +193,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, attachment_id)
 
         # Prefill information, if possible and untouched
-        for metadatum in {'title', 'authors', 'filename'}:
+        for metadatum in ('title', 'authors', 'filename'):
             if metadatum not in rs.values:
                 rs.values[metadatum] = latest_version[metadatum]
 

@@ -229,9 +229,15 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
         for given_name in persona['given_names'].split()
     ]
-    patterns.append(
-        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
-    )
+    if persona['nickname']:
+        patterns.append(
+            rf"{escape(persona['nickname'])}\s+{escape(persona['family_name'])}",
+        )
+    if persona['legal_given_names'] and persona['show_legal_given_names']:
+        patterns.extend(
+            rf"{escape(lgn)}\s+{escape(persona['family_name'])}"
+            for lgn in persona['legal_given_names'].split()
+        )
     persona_id = persona['id']
     assert isinstance(persona_id, int)
     patterns.append(re.escape(cdedbid_filter(persona_id)))
@@ -278,8 +284,8 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
     `not_specified` and `other` to be equivalent to any Gender.
     """
     return (first == second
-            or first in (Genders.not_specified, Genders.other)
-            or second in (Genders.not_specified, Genders.other))
+            or first in {Genders.not_specified, Genders.other}
+            or second in {Genders.not_specified, Genders.other})
 
 
 def create_lodgement_wishes_graph(
@@ -399,7 +405,7 @@ def create_lodgement_wishes_graph(
                 subgraph = lodgement_clusters[lodgement_id]
             elif cluster_by_lodgement_group:
                 if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
-                    subgraph = lodgement_group_clusters[lodgement_group_id]  # pylint: disable=undefined-loop-variable
+                    subgraph = lodgement_group_clusters[lodgement_group_id]
         # Create node
         is_present = (
             filter_part_id in present_parts if filter_part_id
@@ -512,7 +518,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     if raw_wishes := registration['fields'].get(lodge_field_name):
         wishes = f"\n\n{raw_wishes}"
     return "{name}\n{email}{parts}{wishes}".format(
-        name=make_persona_name(persona, given_and_display_names=True),
+        name=make_persona_name(persona, include_nickname=True),
         email=persona['username'],
         parts=parts,
         wishes=wishes,

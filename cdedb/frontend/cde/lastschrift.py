@@ -27,6 +27,7 @@ from cdedb.common import (
     asciificator,
     determine_age_class,
     lastschrift_reference,
+    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -266,7 +267,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         easter = dateutil.easter.easter(payment_date.year)
         good_friday = easter - datetime.timedelta(days=2)
         easter_monday = easter + datetime.timedelta(days=1)
-        if payment_date in (good_friday, easter_monday):
+        if payment_date in {good_friday, easter_monday}:
             payment_date = easter + datetime.timedelta(days=2)
 
         # First: check we are not on the weekend.
@@ -276,7 +277,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             payment_date += datetime.timedelta(days=1)
 
         # Second: check we are not on some special day.
-        if payment_date.day == 1 and payment_date.month in (1, 5):
+        if payment_date.day == 1 and payment_date.month in {1, 5}:
             payment_date += datetime.timedelta(days=1)
         elif payment_date.month == 12 and payment_date.day == 25:
             payment_date += datetime.timedelta(days=2)
@@ -318,6 +319,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             now().timestamp(),
             ''.join(random.choice(string.ascii_letters + string.digits)
                     for _ in range(10)))
+        meta_info = self.coreproxy.get_meta_info(rs)
         meta = {
             'message_id': message_id,
             'total_sum': sum(e['amount'] for e in transactions),
@@ -325,11 +327,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                              for key, value in sorted_transactions.items()},
             'count': len(transactions),
             'sender': {
-                'name': self.conf["SEPA_SENDER_NAME"],
+                'name': meta_info.lastschrift_account.get_account_holder(),
                 'address': self.conf["SEPA_SENDER_ADDRESS"],
                 'country': self.conf["SEPA_SENDER_COUNTRY"],
-                'iban': self.conf["SEPA_SENDER_IBAN"],
+                'iban': meta_info.lastschrift_account.get_iban(),
                 'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
+                'original_glaeubigerid': self.conf["SEPA_ORIGINAL_GLAEUBIGERID"],
             },
             'payment_date': self._calculate_payment_date(),
         }
@@ -389,8 +392,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
-                transaction['account_owner'] = "{} {}".format(
-                    persona['given_names'], persona['family_name'])
+                transaction['account_owner'] = make_persona_name(
+                    persona, use_legal_name=True)
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
@@ -457,6 +460,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'mandate_reference': lastschrift_reference(
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
+                'original_glaeubiger_id': self.conf["SEPA_ORIGINAL_GLAEUBIGERID"],
             }
             subject = "Anstehender Lastschrifteinzug Lastschriftinitiative"
             self.do_mail(rs, "lastschrift/sepa_pre-notification",

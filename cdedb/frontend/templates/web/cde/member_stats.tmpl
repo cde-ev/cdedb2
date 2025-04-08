@@ -15,7 +15,7 @@
             <thead>
                 <tr>
                     <th colspan="2"></th>
-                    <th>{% trans %}Count{% endtrans %}</th>
+                    <th class="text-right">{% trans %}Count{% endtrans %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,9 +41,9 @@
         <table class="table table-slim table-condensed" id="year-stats">
             <thead>
                 <tr>
-                    <td></td>
+                    <th></th>
                     {% for key, value in year_stats.items() %}
-                    <th>{{ gettext(key) }}</th>
+                    <th class="text-right">{{ gettext(key) }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -78,8 +78,8 @@
     <table class="table table-slim table-condensed" id="complex-stats-{{ view }}">
         <thead>
             <tr>
-                <td></td>
-                <th>{{ gettext(view) }}</th>
+                <th></th>
+                <th class="text-right">{{ gettext(view) }}</th>
             </tr>
         </thead>
         <tbody>

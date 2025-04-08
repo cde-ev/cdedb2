@@ -21,7 +21,7 @@ http header. The key of that header is defined globally in
 
 .. autoclass:: cdedb.models.droid.DynamicAPIToken
     :show-inheritance:
-    :members: name, title, notes, etime, ctime, rtime, atime, fixed_fields
+    :members: name, title, notes, etime, ctime, rtime, atime
     :member-order: bysource
 
 Currently two static APIs exist:
@@ -37,7 +37,7 @@ Currently two static APIs exist:
 Currently one dynamic API exists:
 
 .. autoclass:: cdedb.models.droid.OrgaToken
-    :members: name, event_id, fixed_fields, database_table
+    :members: name, event_id, database_table
     :member-order: bysource
 
 This class implements the :doc:`API_Orga`.

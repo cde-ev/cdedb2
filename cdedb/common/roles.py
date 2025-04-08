@@ -6,7 +6,7 @@ import collections
 import decimal
 from typing import TYPE_CHECKING, Any
 
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig
 
@@ -14,12 +14,6 @@ _CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
-
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
 
 # Admin views a user may activate/deactivate.
 AdminView = str
@@ -195,6 +189,9 @@ PERSONA_DEFAULTS = {
     'is_searchable': False,
     'is_active': True,
     'title': None,
+    'nickname': None,
+    'legal_given_names': None,
+    'show_legal_given_names': False,
     'name_supplement': None,
     'gender': None,
     'pronouns': None,
@@ -303,10 +300,11 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 #: every admin view with one admin role per row (except of genesis)
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
-    "core_user", "core", "user_review",
+    "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
+    "event_user", "event_mgmt", "event_list", "event_orga",
+    "ml_mgmt_event", "ml_mod_event",
     "ml_user", "ml_mgmt", "ml_mod",
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
@@ -316,12 +314,14 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
 }
 
 ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
-    "ml_mod_assembly"}
+    "ml_mod", "ml_mod_core", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod_assembly",
+}
 
 ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
-    "ml_mgmt_assembly"}
+    "ml_mgmt", "ml_mgmt_core", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt_assembly",
+}
 
 
 def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
@@ -330,15 +330,19 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core", "core_user", "cde_user", "event_user",
-                   "assembly_user", "ml_user", "user_review"}
+        result |= {
+            "core", "core_user", "cde_user", "event_user", "assembly_user",
+            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
+        }
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
-        result |= {"finance"}
+        result |= {"finance", "event_orga"}
     if "event_admin" in roles:
-        result |= {"event_user", "user_review", "event_mgmt", "event_orga",
-                   "ml_mgmt_event", "ml_mod_event"}
+        result |= {"event_user", "user_review", "event_mgmt", "event_list",
+                   "event_orga", "ml_mgmt_event", "ml_mod_event"}
+    if "event_helper" in roles:
+        result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:
@@ -347,7 +351,7 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
     if "auditor" in roles:
-        result |= {"auditor"}
+        result |= {"auditor", "event_orga"}
     if roles & ({'core_admin'} | set(
             f"{realm}_admin"
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):

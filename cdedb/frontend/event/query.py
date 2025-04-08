@@ -24,6 +24,7 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import (
     Query,
     QueryConstraint,
@@ -59,7 +60,7 @@ from cdedb.frontend.event.query_stats import (
 
 class EventQueryMixin(EventBaseFrontend):
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_stats | EventPrivileges.courses_read)
     def stats(self, rs: RequestState, event_id: int) -> Response:
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event'].parts
@@ -169,7 +170,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("download", "is_search")
     def registration_query(self, rs: RequestState, event_id: int,
                            download: Optional[str], is_search: bool,
@@ -224,7 +225,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.render(rs, "query/registration_query", params)
 
     @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_name", "query_scope")
     def store_event_query(self, rs: RequestState, event_id: int, query_name: str,
                           query_scope: QueryScope) -> Response:
@@ -249,7 +250,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(self, rs: RequestState, event_id: int,
                            query_id: int, query_scope: QueryScope) -> Response:
@@ -300,7 +301,7 @@ class EventQueryMixin(EventBaseFrontend):
         ))
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("scope")
     def custom_filter_summary(self, rs: RequestState, event_id: int,
                               scope: Optional[QueryScope] = None) -> Response:
@@ -317,17 +318,17 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_registration_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_course_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
 
@@ -356,8 +357,8 @@ class EventQueryMixin(EventBaseFrontend):
                     "A filter with this selection of fields already exists."))))
 
     @access("event", modi={"POST"})
-    @event_guard()
-    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    @event_guard(EventPrivileges.basic_write)
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=True))
     def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
                              ) -> Response:
         scope = check(rs, QueryScope, data['scope'])
@@ -383,7 +384,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def change_custom_filter_form(self, rs: RequestState, event_id: int,
                                   custom_filter_id: int) -> Response:
         custom_filter = rs.ambience['custom_filter']
@@ -398,8 +399,8 @@ class EventQueryMixin(EventBaseFrontend):
         return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
 
     @access("event", modi={"POST"})
-    @event_guard()
-    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    @event_guard(EventPrivileges.basic_write)
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=False))
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
         custom_filter = rs.ambience['custom_filter']
@@ -407,8 +408,6 @@ class EventQueryMixin(EventBaseFrontend):
 
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id
-        del data['event_id']
-        del data['scope']
 
         data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
         if data:
@@ -423,7 +422,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def delete_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int) -> Response:
         code = self.eventproxy.delete_custom_query_filter(rs, custom_filter_id)
@@ -433,7 +432,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool,
@@ -483,7 +482,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.render(rs, "query/course_query", params)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
                         download: Optional[str], is_search: bool,
@@ -590,9 +589,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         search_additions: list[QueryConstraint] = []
         event = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
-                                if {"core_admin", "meta_admin"} & rs.user.roles
-                                else self.conf["NUM_PREVIEW_PERSONAS"])
+        # higher number of previews is more convenient for orgas
+        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
         if kind == "orga_registration":
             if aux is None:
                 return self.send_json(rs, {})
@@ -629,51 +627,37 @@ class EventQueryMixin(EventBaseFrontend):
             if not valid:
                 data = []
             else:
-                key = "username,family_name,given_names,display_name"
+                key = "username,family_name,given_names,nickname,legal_given_names"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = QueryScope.quick_registration.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
-                    ("registrations.id", "username", "family_name",
-                     "given_names", "display_name"),
+                    ("persona_id", "registrations.id", "username", "family_name",
+                     "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
                 data = list(self.eventproxy.submit_general_query(
                     rs, query, event_id=aux))
+                # add 'id' to each object, to enable usage of EntitySorter.persona
+                for datum in data:
+                    datum["id"] = datum["persona_id"]
+                data = xsorted(data, key=EntitySorter.persona)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            data = xsorted(data, key=lambda e: e['id'])[:num_preview_personas]
+            data = data[:num_preview_personas]
 
         def name(x: CdEDBObject) -> str:
             return "{} {}".format(x['given_names'], x['family_name'])
 
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(int)
-        for entry in data:
-            counter[name(entry)] += 1
-            if 'id' not in entry:
-                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
-
         # Generate return JSON list
         ret = []
-        for entry in xsorted(data, key=EntitySorter.persona):
+        for entry in data:
             result = {
                 'id': entry['id'],
+                'email': entry['username'],
                 'name': name(entry),
-                'display_name': entry['display_name'],
             }
-            # Email/username is only delivered if we have admins
-            # rights, a search term with an @ (and more) matches the
-            # mail address, or the mail address is required to
-            # distinguish equally named users
-            searched_email = any(
-                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
-                and entry['username'] and t in entry['username']
-                for t in terms)
-            if (counter[name(entry)] > 1 or searched_email or
-                    self.is_admin(rs)):
-                result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})

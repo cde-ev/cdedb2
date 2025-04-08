@@ -37,10 +37,13 @@ from cdedb.common import (
     build_msg,
     get_hash,
     json_serialize,
-    unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.models.droid import OrgaToken
@@ -221,7 +224,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -344,7 +347,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         This is a combined action so that we stay consistent.
         """
         data = affirm(vtypes.SerializedEvent, data)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
+        required_priv = (EventPrivileges.basic_write | EventPrivileges.free_texts_write
+                         | EventPrivileges.entities_write)
+        if not is_privileged(rs, required_priv, event_id=data['id']):
             raise PrivilegeError(n_("Not privileged."))
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Imports into an offline instance must"
@@ -392,6 +397,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                       ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),
+                      ('event.checkin_periods', None),
                       ('event.registration_parts', None),
                       ('event.registration_tracks', None),
                       ('event.course_choices', None),
@@ -437,9 +443,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         return ret
 
     @access("event")
-    def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: Optional[str] = None,
-                             ) -> tuple[str, CdEDBObject]:
+    def partial_import_event(
+            self, rs: RequestState, event_id: int, data: CdEDBObject,
+            dryrun: bool, token: Optional[str] = None,
+    ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -453,14 +460,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
           transaction token describes the change and can be submitted to
           guarantee a certain effect.
         """
-        data = affirm(vtypes.SerializedPartialEvent, data)
-        dryrun = affirm(bool, dryrun)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['id'])
-        if not ((EVENT_SCHEMA_VERSION[0], 0) <= data["EVENT_SCHEMA_VERSION"]
-                <= EVENT_SCHEMA_VERSION):
-            raise ValueError(n_("Version mismatch – aborting."))
 
         def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any],
                       ) -> tuple[dict[Any, Any], dict[Any, Any]]:
@@ -470,26 +469,40 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             for key, value in new.items():
                 if key not in old:
                     delta[key] = value
+                elif value == old[key]:
+                    pass
+                elif isinstance(value, collections.abc.Mapping):
+                    d, p = dict_diff(old[key], value)
+                    if d:
+                        delta[key], previous[key] = d, p
                 else:
-                    if value == old[key]:
-                        pass
-                    elif isinstance(value, collections.abc.Mapping):
-                        d, p = dict_diff(old[key], value)
-                        if d:
-                            delta[key], previous[key] = d, p
-                    else:
-                        delta[key] = value
-                        previous[key] = old[key]
+                    delta[key] = value
+                    previous[key] = old[key]
             return delta, previous
 
         with Atomizer(rs):
-            event = unwrap(self.get_events(rs, (data['id'],)))
+            event_id = affirm(vtypes.ID, event_id)
+            dryrun = affirm(bool, dryrun)
+
+            self.assert_offline_lock(rs, event_id=event_id)
+
+            event = self.get_event(rs, event_id)
+            data = affirm(vtypes.SerializedPartialEvent, data, fields=event.fields)
+
+            if not is_privileged(rs, EventPrivileges.entities_write, event_id=event_id):
+                raise PrivilegeError
+            if event_id != data['id']:
+                raise ValueError(n_("Event mismatch."))
+            if not ((EVENT_SCHEMA_VERSION[0], 0) <= data["EVENT_SCHEMA_VERSION"]
+                    <= EVENT_SCHEMA_VERSION):
+                raise ValueError(n_("Version mismatch – aborting."))
+
             all_current_data = self.event_keeper_commit(
-                rs, data['id'], "Snapshot vor partiellem Import.")
+                rs, event_id, "Snapshot vor partiellem Import.")
             if all_current_data is None:
-                all_current_data = self.partial_export_event(rs, data["id"])
-            oregistration_ids = self.list_registrations(rs, data['id'])
-            old_registrations = self.get_registrations(rs, oregistration_ids)
+                all_current_data = self.partial_export_event(rs, event_id)
+            old_registration_ids = self.list_registrations(rs, event_id)
+            old_registrations = self.get_registrations(rs, old_registration_ids)
 
             # check referential integrity
             all_track_ids = {key for course in data.get('courses', {}).values()
@@ -589,7 +602,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     gprevious[group_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_group)
-                        new['event_id'] = data['id']
+                        new['event_id'] = event_id
                         new_id = self.create_lodgement_group(rs, new)
                         gmap[group_id] = new_id
                 else:
@@ -626,7 +639,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     lprevious[lodgement_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_lodgement)
-                        new['event_id'] = data['id']
+                        new['event_id'] = event_id
                         if new['group_id'] in gmap:
                             old_id = new['group_id']
                             new['group_id'] = gmap[old_id]
@@ -678,7 +691,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     cprevious[course_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_course)
-                        new['event_id'] = data['id']
+                        new['event_id'] = event_id
                         segments = new.pop('segments')
                         new['segments'] = list(segments.keys())
                         new['active_segments'] = [key for key in segments
@@ -750,7 +763,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     rprevious[registration_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_registration)
-                        new['event_id'] = data['id']
+                        new['event_id'] = event_id
                         for track in new['tracks'].values():
                             keys = {'course_id', 'course_instructor'}
                             for key in keys:
@@ -767,10 +780,12 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                 tmp_id = part['lodgement_id']
                                 part['lodgement_id'] = lmap[tmp_id]
                         personalized_fees = new.pop('personalized_fees', {})
+                        checkin_periods = new.pop('checkin_periods', [])
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
                         for fee_id, amount in personalized_fees.items():
                             self.set_personalized_fee_amount(rs, new_id, fee_id, amount)
+                        self.replace_checkin_periods(rs, new_id, checkin_periods)
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
@@ -799,16 +814,23 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                             tmp_id = part['lodgement_id']
                                             part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
-                            # change_note for log entry for registrations
-                            change_note = "Partieller Import."
-                            if data.get('summary'):
-                                change_note = ("Partieller Import: "
-                                               + data['summary'])
+                            # Only set registration of "usual" fields are concerned
                             personalized_fees = changed_reg.pop('personalized_fees', {})
-                            self.set_registration(rs, changed_reg, change_note)
+                            checkin_periods = changed_reg.pop('checkin_periods', None)
+                            if changed_reg.keys() > {'id'}:
+                                # change_note for log entry for registrations
+                                change_note = "Partieller Import."
+                                if data.get('summary'):
+                                    change_note = ("Partieller Import: "
+                                                   + data['summary'])
+                                self.set_registration(rs, changed_reg, change_note)
                             for fee_id, amount in personalized_fees.items():
                                 self.set_personalized_fee_amount(
                                     rs, registration_id, fee_id, amount)
+                            if (checkin_periods is not None
+                                    and current['checkin_periods'] != checkin_periods):
+                                self.replace_checkin_periods(
+                                    rs, registration_id, checkin_periods)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
@@ -820,9 +842,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
-                self._update_registrations_amount_owed(rs, data['id'])
+                self._update_registrations_amount_owed(rs, event_id)
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
-                               data['id'], change_note=data.get('summary'))
+                               event_id, change_note=data.get('summary'))
                 msg = build_msg("Importiere partiell", data.get('summary'))
-                self.event_keeper_commit(rs, data['id'], msg, after_change=True)
+                self.event_keeper_commit(rs, event_id, msg, after_change=True)
         return result, total_delta

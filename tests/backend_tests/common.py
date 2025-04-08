@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import multiprocessing
 import threading
@@ -50,7 +49,7 @@ def database_lock_job(
             translations=translations,
         )
         # We want to use this in the frontend, so we need to peek
-        rs._conn = connpool['cdb_admin']  # pylint: disable=protected-access
+        rs._conn = connpool['cdb_admin']
         rs.conn = None  # type: ignore[assignment]
         return rs
 
@@ -76,7 +75,7 @@ class TestBackendCommon(unittest.TestCase):
         self.assertTrue(callable(proxy.login))
         self.assertTrue(callable(proxy.verify_personas))
         with self.assertRaises(PrivilegeError):
-            # pylint: disable=pointless-statement
+
             proxy.verify_password  # exception in __getitem__
 
     def test_database_lock(self) -> None:

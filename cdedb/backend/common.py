@@ -31,7 +31,6 @@ import psycopg2.extensions
 import psycopg2.extras
 from passlib.hash import sha512_crypt
 
-import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
@@ -46,17 +45,19 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators
+from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, SqlQueryBackend
+from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.models.common import CdEDataclass
 
 F = TypeVar('F', bound=Callable[..., Any])
 LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
+T2 = TypeVar('T2')
 S = TypeVar('S')
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -92,9 +93,8 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
-    # pylint: disable=used-before-assignment
     @functools.wraps(function)
-    def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
+    def singularized(self: "AbstractBackend", rs: RequestState, *args: Any,
                      **kwargs: Any) -> T:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
@@ -130,7 +130,7 @@ def read_conditional_write_composer(
     """
 
     @functools.wraps(writer)
-    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+    def composed(self: "AbstractBackend", rs: RequestState, *args: Any,
                  **kwargs: Any) -> DefaultReturnCode:
         ret = 1
         reader_kwargs = kwargs.copy()
@@ -163,7 +163,7 @@ def access(*roles: Role) -> Callable[[F], F]:
     def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self: AbstractBackend, rs: RequestState, *args: Any,
+        def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
@@ -233,7 +233,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
+        from cdedb.backend.core import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
             CoreBackend,
         )
         self.core: CoreBackend
@@ -293,7 +293,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 agg[
                     f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"
-                if query.spec[field].type in ("int", "float"):
+                if query.spec[field].type in {"int", "float", "money"}:
                     agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
                     agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     agg[f'MIN("{field_as}")'] = f"min.{field_as}"
@@ -301,7 +301,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     agg[f'STDDEV_SAMP("{field_as}")'] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
                     agg[f'SUM("{field_as}"::int)'] = f"sum.{field_as}"
-                elif query.spec[field].type in ("date", "datetime"):
+                elif query.spec[field].type in {"date", "datetime"}:
                     agg[f'MIN("{field_as}")'] = f"min.{field_as}"
                     agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     # TODO add avg for dates
@@ -326,8 +326,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(query: Query, distinct: bool, view: Optional[str],
-                         aggregate_select: str) -> tuple[str, list[DatabaseValue]]:
-        params: list[DatabaseValue] = []
+                         aggregate_select: str) -> tuple[str, list[DatabaseValue_s]]:
+        params: list[DatabaseValue_s] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
@@ -349,8 +349,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # each value in any column, without caring that the columns are
             # the same. All other operators want to find one column
             # fulfilling their constraint.
-            if operator in (_ops.containsall, _ops.containsnone,
-                            _ops.containssome):
+            if operator in {_ops.containsall, _ops.containsnone,
+                            _ops.containssome}:
                 values = tuple(diacritic_patterns(x) for x in value)
                 subphrase = "{0} ~* %s"
                 phrase = "( ( {} ) )".format(" ) OR ( ".join(
@@ -373,14 +373,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
-            elif operator in (_ops.equal, _ops.unequal, _ops.equalornull,
-                              _ops.unequalornull):
-                if operator in (_ops.equal, _ops.equalornull):
+            elif operator in {_ops.equal, _ops.unequal, _ops.equalornull,
+                              _ops.unequalornull}:
+                if operator in {_ops.equal, _ops.equalornull}:
                     phrase = "( {0} = %s"
                 else:
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
-                if operator in (_ops.equalornull, _ops.unequalornull):
+                if operator in {_ops.equalornull, _ops.unequalornull}:
                     if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
@@ -388,19 +388,19 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 else:
                     phrase += " )"
                 phrase = phrase.format(sql_param_str)
-            elif operator in (_ops.oneof, _ops.otherthan):
+            elif operator in {_ops.oneof, _ops.otherthan}:
                 if operator == _ops.oneof:
                     phrase = f"{sql_param_str} = ANY(%s)"
                 else:
                     phrase = f"NOT({sql_param_str} = ANY(%s))"
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
-            elif operator in (_ops.match, _ops.unmatch):
+                params.extend((tuple(caser(x) for x in value),) * len(columns))
+            elif operator in {_ops.match, _ops.unmatch}:
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
                 else:
                     phrase = "{} !~* %s"
                 params.extend((diacritic_patterns(value),) * len(columns))
-            elif operator in (_ops.regex, _ops.notregex):
+            elif operator in {_ops.regex, _ops.notregex}:
                 if operator == _ops.regex:
                     phrase = "{} ~ %s"
                 else:
@@ -415,7 +415,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
                 params.extend((value,) * len(columns))
-            elif operator in (_ops.between, _ops.outside):
+            elif operator in {_ops.between, _ops.outside}:
                 if operator == _ops.between:
                     phrase = "(%s <= {0} AND {0} <= %s)"
                 else:
@@ -427,6 +427,36 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,) * len(columns))
+            # These are hard coded special cases for some useful, but very specific
+            # conditions. Modelling with special query operators is more flexible.
+            elif operator in VALID_QUERY_OPERATORS["checkin_datetime"]:
+                phrase = "/* {} */ "
+                subphrase = """
+                    checkin_at.checkin_time < %s AND (
+                        checkin_at.checkout_time > %s
+                        OR checkin_at.checkout_time IS NULL)
+                """
+                if operator == _ops.checkedin_at:
+                    phrase += subphrase
+                    params.extend((value,) * 2 * len(columns))
+                elif operator == _ops.checkedin_notat:
+                    phrase += "NOT(" + subphrase + ")"
+                    params.extend((value,) * 2 * len(columns))
+                else:
+                    if operator == _ops.checkedin_oneof:
+                        phrase += " OR ".join((subphrase,) * len(value))
+                    elif operator == _ops.checkedin_noneof:
+                        phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
+                    elif operator == _ops.checkedin_allof:
+                        phrase += " AND ".join((subphrase,) * len(value))
+                    elif operator == _ops.checkedin_notallof:
+                        phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
+                    else:
+                        raise RuntimeError(n_("Impossible."))
+                    extension: list[str] = []
+                    for x in value:
+                        extension.extend((x,) * 2)
+                    params.extend(extension * len(columns))
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
@@ -648,6 +678,17 @@ def affirm_set_validation(
         affirm_validation(assertion, value, **kwargs)
         for value in values
     )
+
+
+def affirm_dict_validation(
+    key_type: type[T], value_type: type[T2], data: Mapping[T, T2], **kwargs: Any,
+) -> dict[T, T2]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a dict."""
+    return {
+        affirm_validation(key_type, k, **kwargs):
+            affirm_validation(value_type, v, **kwargs)
+        for k, v in data.items()
+    }
 
 
 def inspect_validation(

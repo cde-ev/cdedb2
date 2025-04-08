@@ -356,11 +356,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 rs.append_validation_error(
                     ('presider_ids', ValueError(
                         n_("Some of these users are not assembly users."))))
-        else:
-            if create_presider_list or create_attendee_list:
-                rs.append_validation_error(
-                    ('presider_ids', ValueError(
-                        n_("Must not be empty in order to create a mailinglist."))))
+        elif create_presider_list or create_attendee_list:
+            rs.append_validation_error(
+                ('presider_ids', ValueError(
+                    n_("Must not be empty in order to create a mailinglist."))))
         if rs.has_validation_errors():
             # as there may be other notifications already, notify errors explicitly
             rs.notify_validation()

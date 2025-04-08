@@ -22,6 +22,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
@@ -42,7 +43,6 @@ from cdedb.common.exceptions import (
     ValidationWarning,
 )
 from cdedb.common.fields import (
-    META_INFO_FIELDS,
     PERSONA_ASSEMBLY_FIELDS,
     PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS,
@@ -69,7 +69,11 @@ from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
+from cdedb.filter import (
+    enum_entries_filter,
+    markdown_parse_safe,
+    money_filter,
+)
 from cdedb.frontend.common import (
     AbstractFrontend,
     Headers,
@@ -85,7 +89,6 @@ from cdedb.frontend.common import (
     make_membership_fee_reference,
     periodic,
     request_dict_extractor,
-    request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
@@ -239,20 +242,22 @@ class CoreBaseFrontend(AbstractFrontend):
     def meta_info_form(self, rs: RequestState) -> Response:
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
-        merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info",
-                           {"meta_info": info, "hard_lockdown": self.conf["LOCKDOWN"]})
+        merge_dicts(rs.values, info.as_dict())
+        accounts = [
+            (str(account), account.display_str())
+            for account in Accounts if account != Accounts.Unknown
+        ]
+        return self.render(rs, "meta_info", {
+            "meta_info": info,
+            "hard_lockdown": self.conf["LOCKDOWN"],
+            "accounts": accounts,
+        })
 
     @access("core_admin", modi={"POST"})
-    def change_meta_info(self, rs: RequestState) -> Response:
+    @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
+    def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
-        info = self.coreproxy.get_meta_info(rs)
-        data_params: vtypes.TypeMapping = {
-            key: Optional[str]  # type: ignore[misc]
-            for key in META_INFO_FIELDS
-        }
-        data = request_extractor(rs, data_params)
-        data = check(rs, vtypes.MetaInfo, data, keys=info.keys())
+        data = check(rs, vtypes.MetaInfo, data)
         if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
@@ -398,7 +403,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("ml", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
-    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:  # pylint: disable=no-self-use
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
         if rs.has_validation_errors():
             return Response("", mimetype='text/plain')
         html_str = markdown_parse_safe(md_str)
@@ -440,26 +445,26 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This is a rewritten form of `segno.helpers.make_vcard_data` to suite our needs.
         """
-        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]
 
         name = [persona['family_name'], persona['given_names'], "",
                 persona['title'], persona['name_supplement']]
         data = ['BEGIN:VCARD', 'VERSION:3.0',
                 f'N:{";".join(escape(e or "") for e in name)}',
-                f'FN:{escape(make_persona_name(persona, only_given_names=True))}',
+                f'FN:{escape(make_persona_name(persona))}',
                 f'EMAIL:{escape(persona["username"])}']
         if persona["mobile"]:
             data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
         if persona["telephone"]:
             data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
-        if persona['display_name']:
-            data.append(f'NICKNAME:{escape(persona["display_name"])}')
+        if persona['nickname']:
+            data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
             address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
                        persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
-                if sub == "":
+                if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
                 else:
                     prefix = 'ADR;TYPE=intl,home,postal:;'
@@ -673,11 +678,14 @@ class CoreBaseFrontend(AbstractFrontend):
                     "is_ml_realm", "is_assembly_realm", "is_archived",
                     "notes"])
             if "orga" not in access_levels:
-                masks.extend(["is_member", "gender", "pronouns_nametag"])
-                # Primary address may be hidden from member search,
+                masks.extend(["is_member", "gender", "pronouns_nametag",
+                              "show_legal_given_names"])
+                # Primary address and legal given names may be hidden from member search,
                 # but not from orga view.
                 if not data.get('show_address', True):
                     masks.extend(["address", "address_supplement"])
+                if not data.get('show_legal_given_names', False):
+                    masks.append("legal_given_names")
             if not data.get('show_address2', True):
                 masks.extend(["address2", "address_supplement2"])
             for key in masks:
@@ -734,10 +742,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
                 or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
         registration_ids: dict[int, int] = {}
@@ -867,11 +871,10 @@ class CoreBaseFrontend(AbstractFrontend):
                         eventual_status[f][anchor] = stati.nacked
                     if (this_status == stati.pending
                             and (eventual_status[f][anchor]
-                                 not in (stati.committed, stati.nacked))):
+                                 not in {stati.committed, stati.nacked})):
                         eventual_status[f][anchor] = stati.pending
         persona_ids = {e['submitted_by'] for e in history.values()}
-        persona_ids = persona_ids | {e['reviewed_by'] for e in history.values()
-                                     if e['reviewed_by']}
+        persona_ids |= {e['reviewed_by'] for e in history.values() if e['reviewed_by']}
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "show_history", {
             'entries': history, 'constants': constants, 'current': current,
@@ -907,14 +910,14 @@ class CoreBaseFrontend(AbstractFrontend):
 
         scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        key = "username,family_name,given_names,display_name"
+        key = "username,family_name,given_names,legal_given_names,nickname"
         spec = scope.get_spec()
         spec[key] = QuerySpecEntry("str", "")
         query = Query(
             scope=scope,
             spec=spec,
             fields_of_interest=("personas.id", "family_name", "given_names",
-                                "display_name", "username"),
+                                "nickname", "username"),
             constraints=[(key, QueryOperators.match, t) for t in terms],
             order=(("personas.id", True),),
         )
@@ -980,7 +983,7 @@ class CoreBaseFrontend(AbstractFrontend):
         search_additions = []
         scope = QueryScope.core_user
         mailinglist = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
@@ -998,6 +1001,8 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            # adding archived users to past events is a common task
+            scope = QueryScope.all_core_users
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
@@ -1016,6 +1021,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
+            # TODO How to migrate this to EventPrivileges?
             if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
@@ -1083,15 +1089,17 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: list[tuple[str, QueryOperators, Any]]
-                key = "username,family_name,given_names,display_name"
+                # TODO Decide when to include legal_given_names here
+                key = ("username,family_name,given_names,nickname,"
+                       "searchable_legal_given_names")
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = scope.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
+                fields_of_interest = ["personas.id", "username", "family_name",
+                                      "given_names", "nickname"]
                 query = Query(
-                    scope, spec,
-                    ("personas.id", "username", "family_name", "given_names",
-                     "display_name"), search, (("personas.id", True),))
+                    scope, spec, fields_of_interest, search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
         # Filter result to get only users allowed to be a subscriber of a list,
@@ -1164,6 +1172,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if "donation" in ret and not self.cdeproxy.list_lastschrift(
                 rs, [user.persona_id], active=True):
             ret.remove("donation")
+
+        # hide the member search toggles if no cde realm
+        for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
+            if "cde" not in user.roles:
+                ret.remove(key)
 
         restricted_fields = {"notes", "birthday", "is_searchable"}
         if restricted:
@@ -1389,11 +1402,12 @@ class CoreBaseFrontend(AbstractFrontend):
         persona_ids = set(itertools.chain.from_iterable(admins.values()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        for admin in admins:
-            admins[admin] = xsorted(
-                admins[admin],
-                key=lambda anid: EntitySorter.persona(personas[anid]),
+        admins = {
+            admin_role: xsorted(
+                admin_users, key=lambda anid: EntitySorter.persona(personas[anid]),
             )
+            for admin_role, admin_users in admins.items()
+        }
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
@@ -1852,8 +1866,12 @@ class CoreBaseFrontend(AbstractFrontend):
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers: Headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
-            self.do_mail(rs, "privilege_change_finalized", headers, params)
+            if case_status == const.PrivilegeChangeStati.approved:
+                headers: Headers = {
+                    "To": {email},
+                    "Subject": "Admin-Privilegien geändert",
+                }
+                self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
@@ -2511,10 +2529,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
+        pending['full_name'] = make_persona_name(pending, include_nickname=True)
         current = history[max(
             key for key in history
             if (history[key]['code']
                 == const.PersonaChangeStati.committed))]
+        current['full_name'] = make_persona_name(current, include_nickname=True)
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
@@ -2555,7 +2575,10 @@ class CoreBaseFrontend(AbstractFrontend):
             msg = e.args[0]
             args = e.args[1] if len(e.args) > 1 else {}
             rs.notify("error", msg, args)
-            code = 0
+            rs.values['ack_delete'] = False
+            return self.show_user(
+                rs, persona_id, confirm_id=persona_id, internal=True,
+                quote_me=False, event_id=None, ml_id=None)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 

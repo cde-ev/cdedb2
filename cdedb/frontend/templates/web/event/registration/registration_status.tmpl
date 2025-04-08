@@ -47,7 +47,12 @@
 
 {% block content %}
     {% if ambience['event']['registration_text'] %}
-        {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
+        {% set button = None %}
+        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+            {% set button = generic_event.edit_free_text_button("registration_text") %}
+        {% endif %}
+        {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
+                                     icon="info-circle", aclass="panel-info") %}
             {{ ambience['event']['registration_text']|md }}
         {% endcall %}
     {% endif %}
@@ -119,19 +124,19 @@
                 <tbody>
                     <tr>
                         <td>{% trans %}Account holder{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
+                        <td>{{ ambience['event'].iban.get_account_holder() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}IBAN{% endtrans %}</td>
-                        <td>{{ ambience['event']['iban']|iban }}</td>
+                        <td>{{ ambience['event'].iban.get_iban()|iban }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}BIC{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
+                        <td>{{ ambience['event'].iban.get_bic() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Bank{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
+                        <td>{{ ambience['event'].iban.get_bank() }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Amount{% endtrans %}</td>

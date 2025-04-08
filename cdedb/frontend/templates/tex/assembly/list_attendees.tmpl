@@ -2,20 +2,20 @@
 
 % All attendees:
 <<% for id, attendee in attendees.all|keydictsort(EntitySorter.persona) -%>>
-\participant{<<< attendee|persona_name(only_given_names=True)|te >>>}
+\participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Early attendees (cutoff: <<< attendees.cutoff|datetime >>>):
 <<% for id, attendee in attendees.early|keydictsort(EntitySorter.persona) -%>>
-\participant{<<< attendee|persona_name(only_given_names=True)|te >>>}
+\participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Late attendees (cutoff: <<< attendees.cutoff|datetime >>>):
 <<% for id, attendee in attendees.late|keydictsort(EntitySorter.persona) -%>>
-\participant{<<< attendee|persona_name(only_given_names=True)|te >>>}
+\participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Other attendees:
 <<% for id, attendee in attendees.undetermined|keydictsort(EntitySorter.persona) -%>>
-\participant{<<< attendee|persona_name(only_given_names=True)|te >>>}
+\participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>

@@ -1,4 +1,4 @@
-# pylint: disable=missing-module-docstring
+
 import datetime
 import decimal
 
@@ -6,7 +6,7 @@ import decimal
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import NearlyNow, nearly_now
+from cdedb.common import Accounts, NearlyNow, nearly_now
 from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
 
@@ -22,7 +22,7 @@ class TestEventModels(BackendTest):
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
             description="Everybody come!",
-            iban="DE26370205000008068900",
+            iban=Accounts.Sozialbank,
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
@@ -44,6 +44,7 @@ class TestEventModels(BackendTest):
             offline_lock=False,
             is_archived=False,
             is_cancelled=False,
+            is_balanced=False,
             is_visible=True,
             is_course_list_visible=True,
             is_course_state_visible=False,
@@ -235,6 +236,19 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     entries=None,
                 ),
+                9: models.EventField(
+                    id=9,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    field_name="arrival_at",  # type: ignore[arg-type]
+                    kind=const.FieldDatatypes.datetime,
+                    association=const.FieldAssociations.registration,
+                    title="Anreise um",
+                    sort_group=None,
+                    sortkey=0,
+                    description=None,
+                    checkin=False,
+                    entries=None,
+                ),
             },
             custom_query_filters={
                 1: models.CustomQueryFilter(
@@ -409,7 +423,7 @@ class TestEventModels(BackendTest):
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
-            iban="DE26370205000008068900",
+            iban=Accounts.Sozialbank,
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
@@ -426,6 +440,7 @@ class TestEventModels(BackendTest):
             offline_lock=False,
             is_archived=False,
             is_cancelled=False,
+            is_balanced=False,
             is_visible=True,
             is_course_list_visible=True,
             is_course_state_visible=False,
@@ -581,7 +596,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 1. Hälfte",
                     shortname="TN 1H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
                 7: models.PartGroup(
@@ -590,7 +605,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 2. Hälfte",
                     shortname="TN 2H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
                 10: models.PartGroup(

@@ -246,7 +246,7 @@ class StatisticMixin:
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
-class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
+class StatisticPartMixin(StatisticMixin):
     """
     Helper class for methods to delegate tests and query construction for part stats.
     """
@@ -273,7 +273,7 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
 
 
 # This class is still abstract, but adding abc.ABC doesn't play nice with enum.Enum.
-class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
+class StatisticTrackMixin(StatisticMixin):
     """
     Helper class for methods to delegate tests and query construction for track stats.
     """
@@ -350,8 +350,9 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     u16 = n_("U16"), 2
     u14 = n_("U14"), 2
     u10 = n_("U10"), 1
-    checked_in = n_("Checked-In"), 1
-    not_checked_in = n_("Not Checked-In"), 1
+    checked_in = n_("Currently checked-in"), 1
+    has_been_checked_in = n_("Has been checked-in"), 1
+    never_checked_in = n_("Never checked-in"), 1
     orgas = n_("Orgas"), 1
     waitlist = n_("Waitinglist")
     guest = n_("Guests")
@@ -374,7 +375,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             EventRegistrationPartStatistic.birthdays,
         }
 
-    def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:
         """
         Test whether the given registration fits into this statistic for the given part.
         """
@@ -397,9 +398,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.u10:
             return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
-            return _is_participant(part) and reg['checkin']
-        elif self == self.not_checked_in:
-            return _is_participant(part) and not reg['checkin']
+            return (_is_participant(part) and reg['checkin_periods']
+                    and reg['checkin_periods'][-1].checkout_time is None)
+        elif self == self.has_been_checked_in:
+            return _is_participant(part) and reg['checkin_periods']
+        elif self == self.never_checked_in:
+            return _is_participant(part) and not reg['checkin_periods']
         elif self == self.orgas:
             return _is_participant(part) and reg['persona_id'] in event.orgas
         elif self == self.waitlist:
@@ -438,7 +442,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, part_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, part_id: int) -> StatQueryAux:
         """
         Return fields of interest, constraints and order for this statistic for a part.
         """
@@ -509,19 +513,35 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.checked_in:
             return (
-                ['reg.checkin'],
+                ['checkin_periods.max_checkin_time'],
                 [
                     _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.nonempty, None),
+                    ('reg.is_checked_in', QueryOperators.equal, True),
                 ],
                 [],
             )
-        elif self == self.not_checked_in:
+        elif self == self.has_been_checked_in:
+            return (
+                [
+                    'checkin_periods.min_checkin_time',
+                    'checkin_periods.min_checkout_time',
+                    'checkin_periods.max_checkin_time',
+                    'checkin_periods.max_checkout_time',
+                    'reg.is_checked_in',
+                    'reg.has_been_checked_in',
+                ],
+                [
+                    _participant_constraint(part),
+                    ('reg.has_been_checked_in', QueryOperators.equal, True),
+                ],
+                [],
+            )
+        elif self == self.never_checked_in:
             return (
                 [],
                 [
                     _participant_constraint(part),
-                    ('reg.checkin', QueryOperators.empty, None),
+                    ('reg.has_been_checked_in', QueryOperators.equal, False),
                 ],
                 [],
             )
@@ -643,7 +663,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         # All queries have only a single constraint.
         return True
 
-    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
             return track_id in course['segments']
@@ -656,7 +676,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:
         # Track specific constraints need to be single-field so the relation between
         #  two constraints isn't spread across different fields for joined queries.
         if self == self.offered:
@@ -708,8 +728,8 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         obj.id_field = "reg.id"
         return obj
 
-    all_instructors = n_("(Potential) Instructor")
-    instructors = n_("Instructor")
+    all_instructors = n_("(Potential) Instructors")
+    instructors = n_("Instructors")
     attendees = n_("Attendees")
     no_course = n_("No Course")
 
@@ -718,7 +738,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         #  correlations between constraints.
         return False
 
-    def test(self, event: models.Event, reg: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, reg: CdEDBObject, track_id: int) -> bool:
         """Determine whether the registration fits this stat for the given track."""
         track = reg['tracks'][track_id]
         part = reg['parts'][event.tracks[track_id].part_id]
@@ -740,7 +760,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:
         track = event.tracks[track_id]
         part = event.parts[track.part_id]
         if self == self.all_instructors:

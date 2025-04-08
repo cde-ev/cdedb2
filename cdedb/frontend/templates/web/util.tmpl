@@ -36,7 +36,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="") -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="", attributes='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -47,7 +47,7 @@
     title=title,
     id=anid,
     **{ "aria-current": "page" if active }
-)|xmlattr }}{# We use the `active` attribute for navigation only #}>
+)|xmlattr }} {{ attributes }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
@@ -86,14 +86,32 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon=none, anid=none) %}
+{% macro bootstrap_panel(
+        title="", aclass="panel-default", icon=none, anid=none, button=none,
+        footer_text=none, footer_class="", footer_icon=none
+) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
-        {%- if title or icon %}
+        {%- if title or icon or button %}
             <div class="panel-heading">
-                <h3 class="panel-title">{{ make_icon(icon) + " " if icon }}{{ title }}</h3>
+                {{- button -}}
+                <h3 class="panel-title">
+                    {{- make_icon(icon) + nbsp if icon }}
+                    {{- title -}}
+                </h3>
+                <div style="clear:both;"></div>
             </div>
         {%- endif %}
-        <div class="panel-body">{{- caller() }}</div>
+        <div class="panel-body">
+            {{- caller() -}}
+        </div>
+        {% if footer_text or footer_icon -%}
+            <div class="panel-footer {{ footer_class }}">
+                {%- if footer_icon -%}
+                    {{ make_icon(footer_icon) }}{{ nbsp }}
+                {%- endif -%}
+                {{- footer_text -}}
+            </div>
+        {%- endif %}
     </div>
 {%- endmacro %}
 
@@ -143,10 +161,9 @@
 {# Create a link to a persona's profile page, labeled with some variant of their name
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
-   only_given_names:        see 'persona_name' macro
-   only_display_name:       see 'persona_name' macro
-   given_and_display_names: see 'persona_name' macro
+                            'id', 'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
+   use_legal_name:          see 'persona_name' macro
+   include_nickname:        see 'persona_name' macro
    with_family_name:        see 'persona_name' macro
    with_titles:             see 'persona_name' macro
    quote_me:                see show_user_link()
@@ -156,58 +173,40 @@
    readonly:                see 'href' macro
    title:                   see 'href' macro
 #}
-{% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                        with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
-                        aclass='', readonly=False, title=none) %}
+{% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
+                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-            persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
+            persona_name(persona, use_legal_name, include_nickname, with_family_name),
             aclass=aclass, readonly=readonly, title=title) -}}
 {% endmacro %}
 
 {# Display the name of a given persona
 
-   Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
-   this macro includes some logic to display a person's name correctly, depending on the context and the person's
-   display name. For a full specification, which name variant should be used in which context, see the documentation
+   This macro includes some logic to display a person's name correctly, depending on the context.
+   For a full specification, which name variant should be used in which context, see the documentation
    page about "User Experience Conventions".
 
    For usage in Python code, the `cdedb.common.make_persona_name()` function implements the same logic.
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
-   only_given_names:        If True, the display_name is ignored. Should only be used in a legal/formal context.
-   only_display_name:       If True, the given_names are ignored. Should be used when the person is addressed directly.
-   given_and_display_names: If True, the display of all given_names and the display name (if not equal) is enforced.
-                            This is the "long" version of the name.
+                            'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
+   use_legal_name:          If True, use legal_given_names. Can not be combined with 'include_nickname'.
+   include_nickname:        If True, the display of all given_names and the nickname (if not equal) is enforced.
+                            Should only be used for orga-facing pages.
    with_family_name:        If True (default), the family name is included in the macro output
    with_titles:             If True, the person's title(s) and name supplement are included in the macro output
 #}
-{% macro persona_name(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                      with_family_name=True, with_titles=False) %}
-    {%- set display_name = persona['display_name'] %}
+{% macro persona_name(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False) %}
+    {%- set nickname = persona['nickname'] or "" %}
     {%- set given_names = persona['given_names'] %}
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
-    {%- if only_given_names -%}
+    {%- if use_legal_name -%}
+        {{ persona['legal_given_names'] or given_names }}
+    {%- elif include_nickname and nickname -%}
+        {{ given_names }} ({{ nickname }})
+    {%- else -%}
         {{ given_names }}
-    {%- elif only_display_name -%}
-        {{ display_name }}
-    {%- elif given_and_display_names %}
-        {%- if display_name in given_names %}
-            {%- if not display_name or display_name == given_names -%}
-                {{ given_names }}
-            {%- else -%}
-                {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
-            {%- endif %}
-        {%- else -%}
-            {{ given_names }} ({{ display_name }})
-        {%- endif -%}
-    {% else %}
-        {%- if display_name in given_names -%}
-            {{ display_name }}
-        {%- else -%}
-            {{ given_names }}
-        {%- endif -%}
-    {% endif %}
+    {%- endif %}
     {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
     {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
@@ -425,6 +424,7 @@
             placeholder="YYYY-MM-DD HH:MM"
             pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}( |T)[0-9]{2}:[0-9]{2}(:[0-9]{2})?"
             title="{{ gettext("Datetime in the format YYYY-MM-DD HH:MM") }}"
+            step="1"
         {%- elif type == 'iban' %}
             placeholder="DE22100100500123456789"
             pattern="(\s*[A-Za-z]){2}(\s*[0-9]){2}(\s*[0-9A-Za-z]){11,27}\s*"
@@ -516,7 +516,7 @@
 
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
-        aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='') -%}
+        aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
@@ -527,6 +527,7 @@
             value=value,
             checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
+            form=formid,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }}/>
         {{ label -}}
@@ -703,10 +704,17 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none, display_ignore_warnings=True) %}
-    {% if has_warnings() and display_ignore_warnings %}
-        {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly) }}
+{% macro input_ignore_warnings(readonly=False, formid=none) %}
+    {% if has_warnings() %}
+        {{ input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True, readonly=readonly, formid=formid) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro input_submit(label=gettext("Save"), value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
+         readonly=False, title=none, ariahidden=false, formid=none, formmethod=none, formaction=none,
+         display_ignore_warnings=True) %}
+    {% if display_ignore_warnings %}
+        {{ input_ignore_warnings(readonly, formid) }}
     {% endif %}
     <button{{ dict(
         type="submit",
@@ -716,6 +724,7 @@
         title=title,
         value=value,
         disabled="disabled" if readonly,
+        form=formid,
         formmethod=formmethod,
         formaction=formaction,
         **{ "aria-hidden": "true" if ariahidden }
@@ -725,7 +734,7 @@
     </button>
 {%- endmacro %}
 
-{% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
+{% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
@@ -742,7 +751,7 @@
                     {{- info -}}
                 </p>
             {%- endif %}
-            {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
+            {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
@@ -883,14 +892,11 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
-    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
-    {% set forename = display_name if display_name and display_name in given_names else given_names %}
     {{ href(
         mailto(
             address=email or persona.get("username", persona.get("persona.username", "")),
             name="{} {}".format(
-                forename,
+                persona.get("given_names", persona.get("persona.given_names", "")),
                 persona.get("family_name", persona.get("persona.family_name", ""))
             )
         ),
@@ -899,9 +905,9 @@ mailto:
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
-    {% if meta_info.get(fieldname) %}
+    {% if meta_info[fieldname] %}
         {% call bootstrap_panel() %}
-            {{ meta_info.get(fieldname)|md }}
+            {{ meta_info[fieldname]|md }}
         {% endcall %}
     {% endif %}
 {% endmacro %}
@@ -978,9 +984,9 @@ mailto:
 
 {% macro print_doppelganger(persona, link=False) %}
     {% if link %}
-        {{ persona_anchor(persona, given_and_display_names=True) }}
+        {{ persona_anchor(persona, include_nickname=True) }}
     {% else %}
-        {{ persona_name(persona, given_and_display_names=True) }}
+        {{ persona_name(persona, include_nickname=True) }}
     {% endif %}
     {%- if persona['birth_name'] %}
         ({{ persona['birth_name'] }})

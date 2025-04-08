@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -10,6 +9,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     GenesisDecision,
     RequestState,
@@ -46,9 +46,11 @@ PERSONA_TEMPLATE = {
     'is_member': False,
     'is_searchable': False,
     'is_active': True,
-    'display_name': "Zelda",
+    'nickname': None,
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
+    'legal_given_names': None,
+    'show_legal_given_names': False,
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -156,9 +158,9 @@ class TestCoreBackend(BackendTest):
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
-                                         'display_name': new_name})
+                                         'nickname': new_name})
         self.assertEqual(new_name, self.core.retrieve_persona(
-            self.key, self.user['id'])['display_name'])
+            self.key, self.user['id'])['nickname'])
 
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
@@ -639,13 +641,17 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_meta_info(self) -> None:
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        expectation['membership_fee_account'] = Accounts(
+            expectation['membership_fee_account'])
+        expectation['lastschrift_account'] = Accounts(
+            expectation['lastschrift_account'])
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
         update = {
             'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
-        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        self.assertEqual(expectation, self.core.get_meta_info(self.key).as_dict())
 
     @as_users("vera")
     def test_genesis_deletion(self) -> None:
@@ -794,7 +800,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -803,6 +808,9 @@ class TestCoreBackend(BackendTest):
             'is_searchable': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': None,
+            'show_legal_given_names': False,
             'pronouns': None,
             'pronouns_nametag': False,
             'pronouns_profile': False,
@@ -878,7 +886,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -887,6 +894,9 @@ class TestCoreBackend(BackendTest):
             'is_searchable': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': None,
+            'show_legal_given_names': False,
         })
         self.assertEqual(expectation, value)
 
@@ -919,7 +929,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError) as e:
             self.core.genesis_request(ANONYMOUS, data)
         self.assertEqual("File has been lost.", str(e.exception))
-        # pylint: disable=line-too-long
+
         attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
         attachment = attachment_content.encode('ascii')
         data['attachment_hash'] = self.core.get_genesis_attachment_store(
@@ -965,7 +975,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': True,
             'is_cde_realm': True,
@@ -977,6 +986,8 @@ class TestCoreBackend(BackendTest):
             'pronouns_profile': False,
             'name_supplement': None,
             'title': None,
+            'nickname': None,
+            'legal_given_names': None,
             'balance': decimal.Decimal("0.00"),
             'donation': decimal.Decimal("0.00"),
             'trial_member': True,
@@ -998,6 +1009,7 @@ class TestCoreBackend(BackendTest):
             'paper_expuls': True,
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -1058,9 +1070,11 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_user_getters(self) -> None:
         expectation = {
-            'display_name': 'Bertå',
             'family_name': 'Beispiel',
-            'given_names': 'Bertålotta',
+            'given_names': 'Bertå',
+            'legal_given_names': 'Bertålotta',
+            'show_legal_given_names': False,
+            'nickname': 'Bindi',
             'name_supplement': 'MdB',
             'title': 'Dr.',
             'id': 2,
@@ -1122,6 +1136,7 @@ class TestCoreBackend(BackendTest):
             'postal_code2': '8XA 45-$',
             'show_address': True,
             'show_address2': True,
+            'show_legal_given_names': False,
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+495432987654321',
             'timeline': 'Überall',
@@ -1221,6 +1236,7 @@ class TestCoreBackend(BackendTest):
         # Test archival of user that is no moderator.
         self.core.archive_persona(self.key, 8, "Testing")
 
+    @prepsql("UPDATE event.events SET is_archived = True WHERE id = 3")
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
@@ -1244,7 +1260,7 @@ class TestCoreBackend(BackendTest):
     @prepsql("DELETE FROM ml.moderators WHERE persona_id = 10")
     def test_purge(self) -> None:
         purged_personas = {}
-        for p_id, name in ((8, "Hades"), (3, "Charly C."), (10, "Janis")):
+        for p_id, name in ((8, "Hades"), (3, "Charly"), (10, "Janis")):
             if p_id != 8:
                 self.core.archive_persona(self.key, p_id, "Archived for testing.")
             data = self.core.get_total_persona(self.key, p_id)
@@ -1253,7 +1269,10 @@ class TestCoreBackend(BackendTest):
             self.assertLess(0, ret)
             purged_personas[p_id] = self.core.get_total_persona(self.key, p_id)
             del purged_personas[p_id]['id']
-            self.assertEqual("N.", purged_personas[p_id]['given_names'])
+            for f in ['given_names', 'family_name']:
+                self.assertEqual("N.", purged_personas[p_id][f])
+            for f in ['legal_given_names', 'nickname']:
+                self.assertEqual(None, purged_personas[p_id][f])
         self.assertEqual(purged_personas[3], purged_personas[10])
 
     def test_privilege_change(self) -> None:
@@ -1411,6 +1430,7 @@ class TestCoreBackend(BackendTest):
              " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
         self.login("anton")
+        admin_key = self.key
         self.event.delete_registration(self.key, 7,
                                        ("registration_parts", "course_choices",
                                         "registration_tracks"))
@@ -1423,6 +1443,19 @@ class TestCoreBackend(BackendTest):
                 if u["id"] == 4:
                     self.assertTrue(res)
                     key = self.key
+
+                    ml_id = 13
+                    self.ml.add_moderators(admin_key, ml_id, persona_ids=[u["id"]])
+                    self.ml.remove_moderator(admin_key, ml_id, persona_id=1)
+
+                    self.assertFalse(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
+
+                    self.ml.add_moderators(admin_key, ml_id, persona_ids=[1])
+
+                    self.assertTrue(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
+
                     self.core.set_persona(
                         key, {"id": u["id"], "notes": "test"},
                         change_note="Diese Änderung wurde maschinell erstellt und ist"
@@ -1460,6 +1493,10 @@ class TestCoreBackend(BackendTest):
             e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual(reality, all_moderators)
+        self.assertEqual(
+            all_moderators - {42},
+            self.core.list_all_moderators(self.key, active=True),
+        )
         MT = const.MailinglistTypes
         reality = self.core.list_all_moderators(
             self.key, {MT.member_moderated_opt_in, MT.cdelokal})

@@ -23,8 +23,8 @@ IFS=
 
 # given a file, find the path that matches its contents
 show_file() {
-  hash=`git hash-object "${1}"`
-  git ls-tree -r HEAD | fgrep "$hash" | cut -b54-
+  hash=$(git hash-object "${1}")
+  git ls-tree -r HEAD | grep -F "$hash" | cut -b54-
 }
 
 # wraps msgmerge with default options

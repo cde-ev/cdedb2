@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-
-import collections
 import collections.abc
 from collections.abc import Collection, Generator, Iterable, KeysView
 from typing import Any, Callable, Protocol, TypeVar, Union
@@ -39,9 +37,10 @@ def collate(sortkey: Any) -> Any:
     positive numbers, as minus and hyphens can not be distinguished."""
     if isinstance(sortkey, str):
         return COLLATOR.getSortKey(sortkey)
-    if isinstance(sortkey, collections.abc.Iterable):
+    if isinstance(sortkey, (tuple, list, dict, set, frozenset, collections.abc.Iterator)):
         # Make sure strings in nested Iterables are sorted
         # correctly as well.
+        # Don't be too eager and do this for all iterables.
         return tuple(map(collate, sortkey))
     return sortkey
 
@@ -53,34 +52,29 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     For users, the interface of this function should be identical
     to sorted().
     """
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
+    return sorted(iterable, key=lambda x: collate(key(x)),
                   reverse=reverse)
 
 
 def make_persona_forename(persona: CdEDBObject,
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False) -> str:
+                          use_legal_name: bool = False,
+                          include_nickname: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
-    if only_display_name + only_given_names + given_and_display_names > 1:
+    if use_legal_name and include_nickname:
         raise RuntimeError(n_("Invalid use of keyword parameters."))
-    display_name: str = persona.get('display_name', "")
+    nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
-    if only_given_names:
-        return given_names
-    elif only_display_name:
-        return display_name
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
+    if use_legal_name:
+        return persona['legal_given_names'] or given_names
+    if include_nickname:
+        if not nickname:
             return given_names
         else:
-            return f"{given_names} ({display_name})"
-    elif display_name and display_name in given_names:
-        return display_name
+            return f"{given_names} ({nickname})"
     return given_names
 
 
@@ -92,9 +86,7 @@ Sortkey = tuple[Comparable, ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
-def _make_persona_sorter(only_given_names: bool = False,
-                        only_display_name: bool = False,
-                        given_and_display_names: bool = False,
+def _make_persona_sorter(include_nickname: bool = False,
                         family_name_first: bool = True) -> KeyFunction:
     """Create a function to sort names accordingly to the display name specification
 
@@ -110,10 +102,7 @@ def _make_persona_sorter(only_given_names: bool = False,
     """
 
     def sorter(persona: CdEDBObject) -> Sortkey:
-        forename = make_persona_forename(
-            persona, only_given_names=only_given_names,
-            only_display_name=only_display_name,
-            given_and_display_names=given_and_display_names)
+        forename = make_persona_forename(persona, include_nickname=include_nickname)
 
         forename = forename.lower()
         family_name = persona["family_name"].lower()

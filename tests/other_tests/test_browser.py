@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# pylint: disable=no-self-use
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import re
 import unittest
 from typing import Callable
 
@@ -126,7 +126,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/")
         page.locator(".selectize-input").click()
         page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
-        page.get_by_text("Emilia E. EventisDB-5-1 • emilia@example.cde").click()
+        page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(
@@ -168,7 +168,7 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-2"]').click()
         page.locator('input[name="field_name_-2"]').fill("held")
 
-        page.locator("#dynamicrow-delete-button-8").click()
+        page.locator("#dynamicrow-delete-button-9").click()
 
         page.get_by_role("button", name="Speichern").click()
         page.wait_for_url("http://localhost:5000/event/event/1/field/summary")
@@ -203,7 +203,7 @@ class TestBrowser(BrowserTest):
         page.get_by_placeholder("– Filter hinzufügen –").click()
         page.locator(".selectize-input").first.click()
 
-        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("o")
         page.locator(".selectize-input").first.click()
@@ -213,7 +213,7 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("span:has-text(\"Nachname\")").get_by_role(
+        page.locator("span:has-text(\"Familienname\")").get_by_role(
             "button", name="").click()
         page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
                      " > .selectize-input").click()
@@ -245,21 +245,21 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/event/event/1/show")
         page.get_by_role("button", name="Orga-Schaltflächen").click()
         page.wait_for_url("http://localhost:5000/event/event/1/show")
-        page.get_by_role("link", name="Anmeldungen").click()
+        page.get_by_role("link", name=re.compile("^Anmeldungen$")).click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
                      ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
+        page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
         page.locator(".selectize-input").first.click()
-        page.locator("#tab_qf_js").get_by_text("Nachname").first.click()
-        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
+        page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
+        page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").click()
-        page.locator("li:has-text(\"Nachname passt zupasst nicht\")").get_by_role(
+        page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").fill("e")
-        page.locator("li:has-text(\"Vorname(n) passt zupasst nicht\")").get_by_role(
+        page.locator("li:has-text(\"Rufname passt zupasst nicht\")").get_by_role(
             "button", name="").click()
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
@@ -280,6 +280,6 @@ class TestBrowser(BrowserTest):
 
         expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
         expect(page.locator('#content')).to_contain_text('Emilia')
-        expect(page.locator('#content')).to_contain_text('0.00')
+        expect(page.locator('#content')).to_contain_text('0,00 €')
         expect(page.locator('#content')).to_contain_text('weiblich')
         expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')

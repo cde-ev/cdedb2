@@ -177,8 +177,8 @@ _DEFAULTS = {
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
     # maximum length of personas presented via select persona API for selection
-    # in an intelligent input field for core admins
-    "NUM_PREVIEW_PERSONAS_CORE_ADMIN": 12,
+    # in an intelligent input field for privileged users (core admins and orgas)
+    "NUM_PREVIEW_PERSONAS_PRIVILEGED": 12,
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,
@@ -217,10 +217,19 @@ _DEFAULTS = {
     "TROUBLESHOOTING_ADDRESS": "admin@cde-ev.de",
 
     # email for cde account requests
-    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
+    "CDE_USER_MANAGEMENT_ADDRESS": "cde-admins@cde-ev.de",
     # email for event account requests
-    "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
+    "EVENT_USER_MANAGEMENT_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests
+    "ML_USER_MANAGEMENT_ADDRESS": "ml-admins@cde-ev.de",
+    # email for assembly user management
+    "ASSEMBLY_USER_MANAGEMENT_ADDRESS": "vorstand@cde-ev.de",
+
+    # email for cde realm management
+    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
+    # email for event management
+    "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
+    # email for mailinglist management
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
     # email for replies to assembly mails
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
@@ -252,7 +261,8 @@ _DEFAULTS = {
     # aliases which are recognized for mailinglists
     "MAILMAN_ACCEPTABLE_ALIASES": {
         "verwaltung@lists.cde-ev.de": ["datenbank@cde-ev.de"],
-        "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
+        "vorstand@lists.cde-ev.de": ["info@cde-ev.de",
+                                     "thomas.riebe@foerderverein-eisenberg.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
         "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
@@ -269,6 +279,8 @@ _DEFAULTS = {
 
     # amount of time after which an inactive account may be archived.
     "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
+    # ID of the last event where we do not care about remaining_owed.
+    "EVENT_ARCHIVAL_BALANCE_CUTOFF": 64,  # NachhaltigkeitsAkademie 2023
 
     #
     # Session stuff
@@ -299,6 +311,8 @@ _DEFAULTS = {
         30_000: "30 km",
         80_000: "80 km",
     },
+    # id of the first semester for which relevant data exists.
+    "MIN_RELEVANT_SEMESTER": 42,
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2
@@ -309,16 +323,14 @@ _DEFAULTS = {
     # the predefined donation amount of a lastschrift, if the user didn't specified one
     "TYPICAL_LASTSCHRIFT_DONATION": decimal.Decimal('20.00'),
 
-    # Name of the organization where the SEPA transaction originated
-    "SEPA_SENDER_NAME": "CdE e.V.",
     # Address of the originating organization
     # The actual address consists of multiple lines
     "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
     "SEPA_SENDER_COUNTRY": "DE",
-    # Bank details of the originator
-    "SEPA_SENDER_IBAN": "DE87200500001234567890",
     # "Gläubiger-ID" for direct debit transfers
     "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
+    # Old "Gläubiger-ID" if it changed.
+    "SEPA_ORIGINAL_GLAEUBIGERID": "",
     # Date at which SEPA was introduced
     "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
     # Date after which SEPA was used exclusively
@@ -332,11 +344,6 @@ _DEFAULTS = {
     # event stuff
     #
 
-    # Bank accounts. First is shown to participants,
-    # second is a web label for orgas
-    "EVENT_BANK_ACCOUNTS": (
-        ("DE26370205000008068900", "DE26370205000008068900"),
-    ),
     # Rate limit for orgas adding persons to their event
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
@@ -386,12 +393,10 @@ _SECRECTS_DEFAULTS = {
 
     # ldap related stuff
     "LDAP_DUA_PW": {
+        # special dua without access restrictions
         "admin": "secret",
         "apache": "secret",
-        "cloud": "secret",
-        "cyberaka": "secret",
-        "dokuwiki": "secret",
-        "rqt": "secret",
+        "keycloak": "secret",
         "test": "secret",
     },
 }
@@ -471,7 +476,7 @@ class LazyConfig(Config):
     """
 
     # noinspection PyMissingConstructor
-    # pylint: disable=super-init-not-called
+
     def __init__(self) -> None:
         name = self.__class__.__name__
         _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")

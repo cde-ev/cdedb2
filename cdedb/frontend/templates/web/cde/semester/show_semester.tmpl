@@ -307,8 +307,9 @@
     <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen semester history{% endtrans %}">
                 {{ util.make_icon('arrows-alt-h') }}
     </button>
+    <div class="table-container" id="period-history-container">
     <table id="period-history" class="table" style="background: #fff">
-        <thead>
+        <thead style="position: sticky; top: 0px; background: #fff">
             <tr>
                 <th class=col-border-right>{% trans %}Semester{% endtrans %}</th>
                 <th>{% trans %}Billing Mails Sent{% endtrans %}</th>
@@ -330,8 +331,8 @@
             </tr>
         </thead>
         <tbody>
-            {% for period_id, period in period_history|dictsort %}
-                <tr>
+            {% for period_id, period in period_history|dictsort(reverse=true) %}
+                <tr id="period-{{ period_id }}">
                     <td class=col-border-right>{{ period['id'] }}</td>
                     <td>{{ period['billing_count'] }}</td>
                     <td class=col-border-right>{{ period['billing_done']|datetime(lang=lang) }}</td>
@@ -353,10 +354,11 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <script nonce="{{ csp_nonce }}">
         $(function(){
-            $('#period-history').cdedbMoveToWidePage($('.btn-trigger-wide'));
+            $('#period-history-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
         });
     </script>
 
@@ -442,7 +444,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for expuls_id, expuls in expuls_history|dictsort %}
+            {% for expuls_id, expuls in expuls_history|dictsort(reverse=True) %}
                 <tr>
                     <td>{{ expuls['id'] }}</td>
                     <td>{{ expuls['addresscheck_count'] }}</td>

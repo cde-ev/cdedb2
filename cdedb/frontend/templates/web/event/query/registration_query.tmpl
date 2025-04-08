@@ -23,10 +23,10 @@
         <div class="col-md-4">
             <div class="p button-par">
                 {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
-                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                             readonly=not is_privileged_for("add_registration"), icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
                     {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
-                                  readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                                  readonly=not is_privileged_for("field_multiset_select"), icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
                 {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
             </div>
@@ -43,7 +43,7 @@
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the registration_query -->
 
-        <div class="p">
+        <div class="p query-result-mailto">
             {% if "persona.username" in query.fields_of_interest %}
                     {% set usernames = [] %}
                 {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
@@ -80,6 +80,9 @@
             {{ generic.query_result_dynamic_action(
                     label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
                     params={"kind": enums['FieldAssociations'].registration}, magic_placeholders=["ids"]) }}
+            {{ generic.query_result_dynamic_action(
+                    label=gettext("Checkin/-out"), icon="calendar-check", target="event/checkin_multiset",
+                    magic_placeholders=["registration_ids"]) }}
             {{ generic.query_result_dynamic_action(
                     label=gettext("Edit"), icon="pen", target="event/change_registrations_form",
                     magic_placeholders=["reg_ids"]) }}

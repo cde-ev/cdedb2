@@ -2,6 +2,7 @@
 {% set sidenav_active='event_registration' %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
+{% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
@@ -15,12 +16,13 @@
 {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), active=True, icon="user") }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(util.persona_name(persona), ambience['event']['title'],
+    {{ util.context_heading(util.persona_name(persona, include_nickname=True), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
+        {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"),
+                     readonly=not is_privileged_for("change_registration"),
                      aclass="btn btn-warning btn-sm", icon="pen") }}
         {{ util.href(cdedblink("event/show_registration_fee"), gettext("Fee Details"),
                      aclass="btn btn-info btn-sm", icon="coins") }}
@@ -33,8 +35,14 @@
     <dl class="dl-horizontal">
         <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
         <dd>
-            {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
+            {{ util.persona_name(persona, include_nickname=True) }}
         </dd>
+        {% if persona['legal_given_names'] %}
+            <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
+            <dd>
+                {{ util.persona_name(persona, use_legal_name=True, with_titles=True) }}
+            </dd>
+        {% endif %}
         <dt title="{% trans %}CdEDB-ID{% endtrans %}">{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
@@ -89,10 +97,12 @@
             {{ ambience['registration']['orga_notes']|md }}
         {% endcall %}
     {% endif %}
-    {% if mep_violations or ccs_violations %}
-        {% call generic_event.constraint_violations_panel(violation_severity) %}
-            {{ generic_event.list_mep_violations(mep_violations, {persona['id']: persona}) }}
-            {{ generic_event.list_ccs_violations(ccs_violations, {persona['id']: persona}) }}
+
+    {% set min_severity = enums['ViolationSeverity'].INFO %}
+    {% set violations = constraint_violations['violations'] %}
+    {% if violations.max_severity >= min_severity %}
+        {% call generic_event.constraint_violations_panel(violations.max_severity) %}
+            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration") }}
         {% endcall %}
     {% endif %}
 
@@ -129,11 +139,6 @@
             {% else %}
                 {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
             {% endif %}
-        </dd>
-
-        <dt title="{% trans %}Checked-In at{% endtrans %}">{% trans %}Checked-In at{% endtrans %}</dt>
-        <dd id="checkin-time">
-            {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
         </dd>
     </dl>
 
@@ -215,6 +220,178 @@
         {% endfor %}
         </div>
     {% endfor %}
+
+    {{ util.h(gettext("Presence"), level=3, underline=True) }}
+    <table id="checkin-periods" class="table table-slim">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th class="col-sm-9">{% trans %}Timespan{% endtrans %}</th>
+                <th>{# save change button #}</th>
+                <th>{# deletion button #}</th>
+                <th>{# add new period button #}</th>
+                <th class="col-sm-3">{% trans %}Duration{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="addperiodrow" class="nojs-only drow-new">
+                <td></td>
+                <td class="{{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
+                    <form action="{{ cdedblink('event/add_backdated_checkin_period') }}" method="POST"
+                          id="addperiodform">
+                        {{ util.anti_csrf_token('event/add_backdated_checkin_period') }}
+                        <div class="input-group {{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
+                            {{ util.input_text(name='checkin_time', type='datetime-local', arialabel=gettext('Checkin time')) }}
+                            <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
+                            {{ util.input_text(name='checkout_time', type='datetime-local', arialabel=gettext('Checkout time')) }}
+                        </div>
+                        {{ util.output_errors('checkin_time') }}
+                        {{ util.output_errors('checkout_time') }}
+                    </form>
+                </td>
+                <td>
+                    {{ util.input_submit(icon='check', label="", title=gettext("Add"), formid="addperiodform",
+                                         aclass="btn btn-primary btn-sm") }}
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        {% for period in ambience['registration']['checkin_periods'] %}
+            <tr id="row-{{ loop.index }}">
+                <td>{{ loop.index }}</td>
+                {# add the ID so that on validation errors values can be filled correctly #}
+                {% set inputname1 = 'checkin_time_' + period.id|string %}
+                {% set inputname2 = 'checkout_time_' + period.id|string %}
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    <form action="{{ cdedblink('event/change_checkin_period') + '#checkin-periods'|s }}"
+                          method="POST" id="changeperiodform{{ period.id }}">
+                        {{ util.anti_csrf_token('event/change_checkin_period') }}
+                        <div class="input-group">
+                            {{ util.input_hidden(name='period_id', value=period.id) }}
+                            {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
+                                               defaultvalue=period.checkin_time) }}
+                            <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
+                            {{ util.input_text(name=inputname2, type='datetime-local', arialabel=gettext('Checkout time'),
+                                               defaultvalue=period.checkout_time) }}
+                        </div>
+                        {{ util.output_errors(inputname1) }}
+                        {{ util.output_errors(inputname2) }}
+                        {{ util.input_ignore_warnings() }}
+                    </form>
+                </td>
+                <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
+                                         formid="changeperiodform" + period.id|string, aclass="btn btn-primary btn-sm",
+                                         readonly=not is_privileged_for('change_checkin_period'),
+                                         display_ignore_warnings=false) }}
+                </td>
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ period.checkin_time|datetime(lang=lang) }}&#8239;–&#8239;
+                    {%- if period.checkout_time -%}
+                        {{- period.checkout_time|datetime(lang=lang) -}}
+                    {%- else -%}
+                        <i>{% trans %}now{% endtrans %}</i>
+                    {%- endif -%}
+                </td>
+                <td class="softhide period-display-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                    {{ util.input_submit(icon="pen", label="", title=gettext("Edit times"),
+                                         aclass="btn btn-warning btn-sm showform-button", value=loop.index,
+                                         readonly=not is_privileged_for('change_checkin_period'),
+                                         display_ignore_warnings=false) }}
+                </td>
+                <td style="padding-left: 0;">
+                    <form action="{{ cdedblink("event/delete_checkin_period") + '#checkin-periods'|s }}" method="POST"
+                          id="deleteperiodform{{ period.id }}">
+                        {{ util.anti_csrf_token('event/delete_checkin_period') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_hidden(name="period_id", value=period.id) }}
+                        {{ util.input_submit(icon="trash", label="", title=gettext("Delete these timestamps"),
+                                             aclass="btn btn-danger btn-sm",
+                                             readonly=not is_privileged_for('delete_checkin_period'),
+                                             display_ignore_warnings=false) }}
+                    </form>
+                </td>
+                <td style="padding-left: 0;">
+                    {{ util.input_submit(icon="chevron-up", label="", title=gettext("Insert previous period"),
+                                         aclass="btn btn-success btn-sm add-backdated-button softhide", value=loop.index) }}
+                </td>
+                <td>{{ period.get_duration()|timedelta(gettext) }}</td>
+            </tr>
+        {% endfor %}
+            <tr>
+                <td></td>
+                <td>
+                {% if not ambience['registration']['checkin_periods']
+                      or ambience['registration']['checkin_periods'][-1].checkout_time %}
+                    <form action="{{ cdedblink('event/add_checkin') + '#checkin-periods'|s }}" method="POST" id="checkinform">
+                        {{ util.anti_csrf_token('event/add_checkin') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
+                                             icon="arrow-right-to-bracket",
+                                             readonly=not is_privileged_for('add_checkin'),
+                                             display_ignore_warnings=false) }}
+                    </form>
+                {% else %}
+                    <form action="{{ cdedblink('event/add_checkout') + '#checkin-periods'|s }}" method="POST"
+                        id="checkoutform">
+                        {{ util.anti_csrf_token('event/add_checkout') }}
+                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                        {{ util.input_submit(label=gettext("Checkout"), aclass="btn btn-primary btn-sm",
+                                             icon="arrow-right-from-bracket",
+                                             readonly=not is_privileged_for('add_checkout'),
+                                             display_ignore_warnings=false) }}
+                    </form>
+                {% endif %}
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <script nonce="{{ csp_nonce }}">
+        // hide forms for changing period
+        $(".nojs-only:not(.has-error, .has-warning)").hide();
+        $(".softhide:not(.has-error, .has-warning)").show();
+        $(".softhide .showform-button").each(function() {
+            const rownr = $(this).val();
+            $(this).on("click", function() {
+                // can only submit one form at once, to avoid confusion hide other forms
+                $(".nojs-only").hide();
+                $(".softhide").show();
+                $(".add-backdated-button").removeClass('active');
+
+                $(".softhide.period-display-" + rownr).hide();
+                $(".nojs-only.period-form-" + rownr).show();
+                // change icon of submit button
+                $(".nojs-only.period-form-" + rownr + " .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+            })
+        })
+        // nicer icon also in case of validation error
+        $(".nojs-only.has-error .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+        $(".nojs-only.has-warning .btn .fa-pen").removeClass("fa-pen").addClass("fa-check");
+
+        // make form to insert a backdated period available
+        $("#addperiodrow:not(.has-error)").hide();
+        $(".add-backdated-button").on('click', function() {
+            // hide all other js-only forms
+            $(".nojs-only").hide();
+            $(".softhide").show();
+            if ($(this).hasClass("active")) {
+                $(this).removeClass("active");
+            } else {
+                $(".add-backdated-button").removeClass('active');
+                // place and configure this form
+                $(this).addClass("active");
+                const idx = $(this).val() - 1;  // after this index, the addperiodrow is to insert
+                if (idx === 0)
+                    $('#row-1').before($("#addperiodrow").show());
+                else
+                    $(`#row-${idx}`).after($("#addperiodrow").show());
+            }
+        })
+    </script>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">
@@ -305,10 +482,10 @@ Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags 
 Überweise dazu {{ to_pay|money(lang=lang) }} auf folgendes Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger keine Gebühren zahlen muss.
 
-Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:               {{ ambience['event']['iban']|iban }}
-BIC:                {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:       {{ ambience['event'].iban.get_account_holder() }}
+IBAN:               {{ ambience['event'].iban.get_iban()|iban }}
+BIC:                {{ ambience['event'].iban.get_bic() }}
+Kreditinstitut:     {{ ambience['event'].iban.get_bank() }}
 Betrag:             {{ to_pay|money(lang=lang) }}
 Verwendungszweck:   {{ reference }}
 </pre>
@@ -325,7 +502,8 @@ Verwendungszweck:   {{ reference }}
                                              aclass="btn btn-sm btn-danger", icon='trash-alt',
                                              title=(gettext("Registration has paid non-zero amount.")
                                                 if ambience['registration']['amount_paid'] else "")) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
+                                               readonly=not is_privileged_for("delete_registration")) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(

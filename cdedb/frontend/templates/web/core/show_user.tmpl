@@ -103,7 +103,7 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
                 {% endif %}
-                {% if (is_relative_admin_view or "event_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin_view or "event_user" in user.admin_views %}
                     {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
                                  gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
@@ -174,13 +174,27 @@
                 {% trans %}Name{% endtrans %}
             </dt>
             <dd>
-                {{ util.persona_name(data, given_and_display_names=True, with_titles=True) }}
+                {{ util.persona_name(data, include_nickname=True, with_titles=True) }}
                 {% if data['pronouns'] and data['pronouns_profile'] %}
                     <small class="text-muted">
                         ({{ data['pronouns'] }})
                     </small>
                 {% endif %}
             </dd>
+            {% if data['legal_given_names'] %}
+                <dt title="{% trans %}Legal Name{% endtrans %}">
+                    {% trans %}Legal Name{% endtrans %}
+                </dt>
+                <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
+                {% if "show_legal_given_names" in data %}
+                    <dt title="{% trans %}Show legal name in member search{% endtrans %}">
+                        {% trans %}Show legal name in member search{% endtrans %}
+                    </dt>
+                    <dd id="show_legal_given_names">
+                        {{ util.deko_checkbox(checked=data['show_legal_given_names'], titles=[gettext("No"), gettext("Yes")]) }}
+                    </dd>
+                {% endif %}
+            {% endif %}
             {% if data['birth_name'] %}
                 <dt title="{% trans %}Birth Name{% endtrans %}">
                     {% trans %}Birth Name{% endtrans %}
@@ -610,7 +624,7 @@
                                                                                     "pcourse_id": pcourse_id}),
                                                  pcourse['title'], readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
-                                        {% trans %}(Instructor){% endtrans %}
+                                        ({% trans %}Instructor{% endtrans %})
                                     {%- endif -%}
                                     {% if not loop.last %}<br />{% endif %}
                                 {% endfor %}
@@ -627,10 +641,10 @@
                 and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
-Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:               {{ meta_info['CdE_Konto_IBAN']|iban }}
-BIC:                {{ meta_info['CdE_Konto_BIC'] }}
-Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
+Kontoinhaber:       {{ meta_info.membership_fee_account.get_account_holder() }}
+IBAN:               {{ meta_info.membership_fee_account.get_iban()|iban }}
+BIC:                {{ meta_info.membership_fee_account.get_bic() }}
+Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck:   {{ reference }}
 
 Bei Überweisungen aus dem Ausland achte bitte darauf, dass der

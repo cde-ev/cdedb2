@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import pathlib
@@ -29,7 +28,7 @@ class TestCommon(BasicTest):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
                          [0, 3, 5, 8, -3, -4])
-        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))  # pylint: disable=bad-builtin
+        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
 
     def test_extract_roles(self) -> None:
         self.assertEqual({

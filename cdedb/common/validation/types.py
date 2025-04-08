@@ -142,6 +142,7 @@ SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", _CdEDBOb
 SerializedEventQuestionnaireUpload = _NewType(
     "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire)
 SerializedEventConfiguration = _NewType("SerializedEventConfiguration", _CdEDBObject)
+SerializedEventFreetexts = _NewType("SerializedEventFreetexts", _CdEDBObject)
 
 PartialCourse = _NewType("PartialCourse", _CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", _CdEDBObject)
@@ -149,6 +150,8 @@ PartialLodgement = _NewType("PartialLodgement", _CdEDBObject)
 PartialRegistration = _NewType("PartialRegistration", _CdEDBObject)
 PartialRegistrationPart = _NewType("PartialRegistrationPart", _CdEDBObject)
 PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
+PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
+                                            _CdEDBObject)
 
 Mailinglist = _NewType("Mailinglist", _CdEDBObject)
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)
@@ -172,12 +175,14 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "float": float,
     "date": _datetime.date,
     "datetime": _datetime.datetime,
+    "checkin_datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
-    "non_negtative_float": NonNegativeFloat,
+    "non_negative_float": NonNegativeFloat,
     "phone": Phone,
     # This is not strictly accurate, but an acceptable fallback.
     "iban": str,
     "enum_int": int,
     "enum_str": str,
+    "money": float,
 }

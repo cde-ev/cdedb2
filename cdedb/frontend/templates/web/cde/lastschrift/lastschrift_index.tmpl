@@ -56,7 +56,7 @@
                 <td>
                     {% set persona = personas[lastschrift['persona_id']] %}
                     {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
-                                 util.persona_name(persona, only_given_names=True)) }}
+                                 util.persona_name(persona)) }}
                 </td>
                 <td>
                     <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
@@ -157,7 +157,7 @@
                         <td>
                             {% set persona = personas[all_lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
-                                         util.persona_name(persona, only_given_names=True)) }}
+                                         util.persona_name(persona)) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
                                 <b class="text-danger">
                                 {{ util.make_icon('exclamation-triangle') }}
@@ -220,7 +220,7 @@
                         <li class="clearfix-after">
                             {% set persona = personas[lastschrift['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
-                                         util.persona_name(persona, only_given_names=True)) }}
+                                         util.persona_name(persona)) }}
                             {{ util.href(show_user_link(user, lastschrift['persona_id']),
                                          gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
                         </li>
@@ -245,7 +245,7 @@
                         <li class="clearfix-after">
                             {% set persona = personas[lastschrift['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
-                                         util.persona_name(persona, only_given_names=True)) }}
+                                         util.persona_name(persona)) }}
                             {{ util.href(show_user_link(user, lastschrift['persona_id']),
                                          gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
                         </li>

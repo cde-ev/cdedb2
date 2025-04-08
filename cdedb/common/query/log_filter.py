@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import decimal
 from collections.abc import Collection
-from typing import ClassVar, Optional
+from typing import Any, ClassVar, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -73,8 +73,8 @@ class GenericLogFilter:
         # Fix offset and length to ensure valid SQL.
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
-            if -self.offset < self.length:  # pylint: disable=invalid-unary-operand-type
-                self.length = self.length + self.offset
+            if -self.offset < self.length:
+                self.length += self.offset
             self.offset = 0
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
@@ -130,7 +130,7 @@ class GenericLogFilter:
         return [
             (field.name, requestdict_field_spec(field))
             for field in dataclasses.fields(cls)
-            if field.name not in ("_offset", "_length")
+            if field.name not in {"_offset", "_length"}
         ]
 
     def to_validation(self) -> CdEDBObject:
@@ -152,7 +152,7 @@ class GenericLogFilter:
         """
         mandatory: TypeMapping = {'length': int}
         optional: TypeMapping = {
-            field.name: field.type for field in dataclasses.fields(cls)
+            field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
         del optional['length']
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]

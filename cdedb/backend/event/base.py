@@ -60,11 +60,9 @@ from cdedb.common.fields import (
     COURSE_SEGMENT_FIELDS,
     COURSE_TRACK_FIELDS,
     EVENT_FEE_FIELDS,
-    EVENT_FIELDS,
     EVENT_PART_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS,
     PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
@@ -72,9 +70,12 @@ from cdedb.common.fields import (
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
     STORED_EVENT_QUERY_FIELDS,
-    TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -146,6 +147,12 @@ class EventBaseBackend(EventLowLevelBackend):
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
+    @access("persona")
+    def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all event helpers."""
+        data = self.query_all(rs, "SELECT persona_id FROM event.helpers", [])
+        return {e['persona_id'] for e in data}
+
     class _OrgaInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
@@ -160,13 +167,8 @@ class EventBaseBackend(EventLowLevelBackend):
         log_filter = affirm_dataclass(EventLogFilter, log_filter)
         event_ids = log_filter.event_ids()
 
-        if self.is_admin(rs) or "auditor" in rs.user.roles:
-            pass
-        elif not event_ids:
-            raise PrivilegeError(n_("Must be admin to access global log."))
-        elif all(self.is_orga(rs, event_id=event_id) for event_id in event_ids):
-            pass
-        else:
+        if not all(is_privileged(rs, EventPrivileges.log_read, event_id=event_id)
+                   for event_id in event_ids):
             raise PrivilegeError(n_("Not privileged."))
 
         return self.generic_retrieve_log(rs, log_filter)
@@ -282,7 +284,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         minor_form = affirm_optional(
             vtypes.PDFFile, minor_form, file_storage=False)
-        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
         path = self.get_minor_form_path(rs, event_id)
@@ -319,6 +321,58 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
+    def validate_persona_ids(self, rs: RequestState, persona_ids: Collection[int],
+                             ) -> None:
+        """Validate whether persona_ids are valid for receiving event privileges."""
+        if not self.core.verify_ids(rs, persona_ids, is_archived=False):
+            raise ValueError(n_(
+                "Some of these personas do not exist or are archived."))
+        if not self.core.verify_personas(rs, persona_ids, {"event"}):
+            raise ValueError(n_("Some of these personas are not event users."))
+
+    @access("event_admin")
+    def add_event_helpers(self, rs: RequestState, persona_ids: Collection[int],
+                          ) -> DefaultReturnCode:
+        """Add event helpers."""
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        ret = 1
+        with Atomizer(rs):
+            self.validate_persona_ids(rs, persona_ids)
+            for anid in xsorted(persona_ids):
+                # on conflict do nothing
+                r = self.sql_insert(rs, "event.helpers", {'persona_id': anid},
+                                    drop_on_conflict=True)
+                if r:
+                    self.event_log(rs, const.EventLogCodes.helper_added, event_id=None,
+                                   persona_id=anid)
+                ret *= r
+
+        # Update session helper status
+        if rs.user.persona_id in persona_ids:
+            rs.user.realm_roles['event'].add('event_helper')
+
+        return ret
+
+    @access("event_admin")
+    def remove_event_helper(self, rs: RequestState, persona_id: int,
+                            ) -> DefaultReturnCode:
+        """Remove a single event helper."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = "DELETE FROM event.helpers WHERE persona_id = %s"
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, [persona_id])
+            if ret:
+                self.event_log(rs, const.EventLogCodes.helper_removed, event_id=None,
+                               persona_id=persona_id)
+
+            # Update session helper status
+            if rs.user.persona_id == persona_id:
+                rs.user.realm_roles['event'].remove('event_helper')
+
+        return ret
+
+    @access("event_admin")
     def add_event_orgas(self, rs: RequestState, event_id: int,
                         persona_ids: Collection[int]) -> DefaultReturnCode:
         """Add orgas to an event.
@@ -333,11 +387,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
-                raise ValueError(n_(
-                    "Some of these orgas do not exist or are archived."))
-            if not self.core.verify_personas(rs, persona_ids, {"event"}):
-                raise ValueError(n_("Some of these orgas are not event users."))
+            self.validate_persona_ids(rs, persona_ids)
             self.assert_offline_lock(rs, event_id=event_id)
 
             for anid in xsorted(persona_ids):
@@ -390,7 +440,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: Mapping of token ids to titles.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError
         data = self.sql_select(rs, OrgaToken.database_table, ("id", "title"),
                                (event_id,), entity_key="event_id")
@@ -414,7 +464,8 @@ class EventBaseBackend(EventLowLevelBackend):
             event_ids = {token.event_id for token in ret.values()}
             if not len(event_ids) == 1:
                 raise ValueError(n_("Only orga tokens from one event allowed."))
-            if not self.is_orga(rs, event_id=unwrap(event_ids)):
+            if not is_privileged(rs, EventPrivileges.basic_read,
+                                 event_id=unwrap(event_ids)):
                 raise PrivilegeError
 
         return ret
@@ -435,7 +486,8 @@ class EventBaseBackend(EventLowLevelBackend):
         data = affirm_dataclass(OrgaToken, data, creation=True)
 
         with Atomizer(rs):
-            if not self.is_orga(rs, event_id=data.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=data.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -466,7 +518,8 @@ class EventBaseBackend(EventLowLevelBackend):
             current = self.get_orga_token(rs, data['id'])
             current_data = current.to_database()
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -495,7 +548,8 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             current = self.get_orga_token(rs, orga_token_id)
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -574,7 +628,8 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             orga_token = self.get_orga_token(rs, orga_token_id)
 
-            if not self.is_orga(rs, event_id=orga_token.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=orga_token.event_id):
                 raise PrivilegeError
 
             if cascade:
@@ -640,11 +695,15 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Event, data, current=current)
             data['id'] = event_id
 
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.basic_write | EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
-            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            edata = {k: v for k, v in data.items() if k in models.Event.database_fields()}
             # Set top-level event fields.
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
@@ -688,7 +747,8 @@ class EventBaseBackend(EventLowLevelBackend):
         if not data.get('parts'):
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
-            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            edata = {k: v for k, v in data.items()
+                     if k in models.Event.database_fields()}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             if 'orgas' in data:
@@ -714,13 +774,33 @@ class EventBaseBackend(EventLowLevelBackend):
         return new_id
 
     @access("event")
+    def set_event_free_texts(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                             change_note: Optional[str] = None) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        data = affirm(vtypes.SerializedEventFreetexts, data)
+        with Atomizer(rs):
+            if not is_privileged(
+                    rs,
+                    EventPrivileges.free_texts_write,
+                    event_id=event_id,
+            ):
+                raise PrivilegeError(n_("Not privileged."))
+            if not data:
+                return 1
+            data['id'] = event_id
+            ret = self.sql_update(rs, models.Event.database_table, data)
+            self.event_log(rs, const.EventLogCodes.event_changed,
+                           event_id, change_note=change_note)
+        return ret
+
+    @access("event")
     def create_lodgement_group(self, rs: RequestState,
                                data: vtypes.LodgementGroup) -> DefaultReturnCode:
         """Make a new lodgement group."""
         data = affirm(vtypes.LodgementGroup, data, creation=True)
 
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write,
+                             event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
@@ -737,7 +817,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         ret = 1
         if not part_groups:
@@ -787,7 +867,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # updated
             if updated_part_groups:
                 current_part_group_data = {e['id']: e for e in self.sql_select(
-                    rs, "event.part_groups", PART_GROUP_FIELDS, updated_part_groups)}
+                    rs, models.PartGroup.database_table,
+                    models.PartGroup.database_fields(), updated_part_groups)}
                 for x in mixed_existence_sorter(updated_part_groups):
                     updated = part_groups[x]
                     assert updated is not None
@@ -827,7 +908,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         track_groups = affirm(vtypes.EventTrackGroupSetter, track_groups)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
@@ -883,7 +964,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # updated
             if updated_track_groups:
                 current_track_group_data = {e['id']: e for e in self.sql_select(
-                    rs, "event.track_groups", TRACK_GROUP_FIELDS, updated_track_groups)}
+                    rs, models.TrackGroup.database_table,
+                    models.TrackGroup.database_fields(), updated_track_groups)}
                 for x in mixed_existence_sorter(updated_track_groups):
                     current = current_track_group_data[x]
                     updated = track_groups[x]
@@ -928,15 +1010,20 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create, delete and/or update fees for one event."""
         event_id = affirm(vtypes.ID, event_id)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
-        if not fees:
-            return ret
 
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
+
+            if event.is_balanced:
+                raise ValueError(n_(
+                    "Event is balanced. May not change fee configuration."))
+            if not fees:
+                return ret
+
             questionnaire = self.get_questionnaire(rs, event_id)
             fees = affirm(
                 vtypes.EventFeeSetter, fees, event=event.as_dict(),
@@ -1028,8 +1115,8 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: True if limit has not been reached.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.registrations_write,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         if self.is_admin(rs):
             # Admins are exempt
@@ -1092,7 +1179,7 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
                           field_definitions=field_defitions,
                           fees_by_field=fees_by_field)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
@@ -1120,10 +1207,44 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
+    def balance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
+            raise PrivilegeError
+        self.assert_offline_lock(rs, event_id=event_id)
+        update = {
+            'id': event_id,
+            'is_balanced': True,
+        }
+        with Atomizer(rs):
+            self.event_keeper_commit(
+                rs, event_id, "Snapshot vor finanziellem Abschluss.")
+            ret = self.sql_update(rs, models.Event.database_table, update)
+            self.event_log(rs, const.EventLogCodes.event_balanced, event_id)
+        return ret
+
+    @access("event")
+    def unbalance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
+            raise PrivilegeError
+        self.assert_offline_lock(rs, event_id=event_id)
+        update = {
+            'id': event_id,
+            'is_balanced': False,
+        }
+        with Atomizer(rs):
+            self.event_keeper_commit(
+                rs, event_id, "Snapshot vor Aufhebung von finanziellem Abschluss.")
+            ret = self.sql_update(rs, models.Event.database_table, update)
+            self.event_log(rs, const.EventLogCodes.event_unbalanced, event_id)
+        return ret
+
+    @access("event")
     def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
         """Lock an event for offline usage."""
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         # An event in the main instance is considered as locked if offline_lock
@@ -1148,7 +1269,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: dict holding all data of the exported event
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.all_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist: Iterable[CdEDBObject]) -> CdEDBObjectMap:
@@ -1160,7 +1281,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 'kind': "full",  # could also be "partial"
                 'id': event_id,
                 'event.events': list_to_dict(self.sql_select(
-                    rs, "event.events", EVENT_FIELDS, (event_id,))),
+                    rs, "event.events", models.Event.database_fields(), (event_id,))),
                 'timestamp': now(),
             }
             # Table name; column to scan; fields to extract
@@ -1184,6 +1305,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
+                models.CheckinPeriod.full_export_spec(),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 (
@@ -1236,12 +1358,7 @@ class EventBaseBackend(EventLowLevelBackend):
         later on be reintegrated with the partial import facility.
         """
         event_id = affirm(vtypes.ID, event_id)
-        access_ok = (
-            (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
-             and "droid_quick_partial_export" in rs.user.roles)  # the droid
-            or self.is_orga(rs, event_id=event_id)
-            or self.is_admin(rs))
-        if not access_ok:
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist: Collection[CdEDBObject]) -> CdEDBObjectMap:
@@ -1281,6 +1398,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
             )
+            checkin_periods = self.sql_select(
+                rs, models.CheckinPeriod.database_table,
+                models.CheckinPeriod.database_fields(), registrations.keys(),
+                entity_key=models.CheckinPeriod.entity_key)
             tokens = list_to_dict(self.sql_select(
                 rs, OrgaToken.database_table, OrgaToken.database_fields(),
                 (event_id,), entity_key="event_id"))
@@ -1321,11 +1442,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
-        part_lookup: dict[int, dict[int, CdEDBObject]]
+        part_lookup: dict[int, CdEDBObjectMap]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
             part_lookup[e['registration_id']][e['part_id']] = e
-        track_lookup: dict[int, dict[int, CdEDBObject]]
+        track_lookup: dict[int, CdEDBObjectMap]
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
@@ -1335,6 +1456,10 @@ class EventBaseBackend(EventLowLevelBackend):
             if personalized_fee.amount is not None:
                 personalized_fee_lookup[personalized_fee.registration_id][
                     personalized_fee.fee_id] = personalized_fee.amount
+        checkin_period_lookup: dict[int, list[CdEDBObject]]
+        checkin_period_lookup = collections.defaultdict(list)
+        for e in checkin_periods:
+            checkin_period_lookup[e['registration_id']].append(e)
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
@@ -1361,6 +1486,11 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
+            periods = xsorted(checkin_period_lookup[registration_id])
+            for period in periods:
+                del period['registration_id']
+                del period['id']
+            registration['checkin_periods'] = periods
         ret['registrations'] = registrations
 
         ret['event'] = event.as_dict()
@@ -1370,7 +1500,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del orga_token['event_id']
         ret['event']['orga_tokens'] = tokens
 
-        # now we add additional information that is only auxillary and
+        # now we add additional information that is only auxiliary and
         # does not correspond to changeable entries
         #
         # event
@@ -1463,6 +1593,8 @@ class EventBaseBackend(EventLowLevelBackend):
         del ret['event']['orgas']
         ret['event']['fields'] = new_fields
         ret['event']['questionnaire'] = new_questionnaire
+        if ret['event']['iban']:
+            ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
     @access("event")
@@ -1477,7 +1609,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if questionnaire is None:
             raise ValueError(n_(
                 "Cannot use questionnaire import to delete questionnaire."))
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
@@ -1535,9 +1667,10 @@ class EventBaseBackend(EventLowLevelBackend):
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
-            persona = {"display_name": rs.user.display_name,
-                       "given_names": rs.user.given_names,
-                       "family_name": rs.user.family_name}
+            persona = {
+                "given_names": rs.user.given_names,
+                "family_name": rs.user.family_name,
+            }
             author_name = make_persona_name(persona)
             author_email = rs.user.username
         self._event_keeper.commit(

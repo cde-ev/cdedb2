@@ -9,12 +9,13 @@
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
+        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
@@ -267,7 +268,7 @@
                                 <h4 class="filter-title">
                                     {{ util.make_icon('eye') }} {% trans %}Displayed Fields{% endtrans %}</h4>
                                 <p class="viewfield-list"></p>
-                                <div class="input-group has-success">
+                                <div class="input-group has-success queryform-fields">
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
@@ -291,7 +292,7 @@
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row queryform-searchbar">
                     <div class="col-sm-6">
                         <h4 class="filter-title">
                             {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
@@ -474,7 +475,7 @@
             <thead>
                 <tr>
                     <th><span class="softhide" id="js-select-num">(<span id="label-select-num">0</span>)</span></th>
-                    <th></th>
+                    <th class="hidden-print"></th>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
@@ -486,7 +487,7 @@
                                 {% endif %}
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     {% if values.get("qord_" + i|string) == field %}
-                                        <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
+                                        <span id="queryresult-sorted-column-marker" class="label label-default" title="{% trans %}sorted column{% endtrans %}">
                                         {% if values.get("qord_" + i|string + "_ascending") == "False" %}
                                             {{ util.make_icon('sort-alpha-down') }}
                                         {% else %}
@@ -510,9 +511,10 @@
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                               title=gettext("Ctrl+Click anywhere in this line to (un)select it"),
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
-                    <td>
+                    <td class="hidden-print">
                         {%- if query.scope == QueryScope.registration -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
                                          gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
@@ -551,6 +553,8 @@
                                         {{ util.tel_link(row.get(field, None)|phone) }}
                                     {% elif format_spec == ResultFormat.iban %}
                                         {{ row.get(field, None)|iban }}
+                                    {% elif format_spec == ResultFormat.money %}
+                                        {{ row.get(field, None)|money(lang=lang) }}
                                     {% elif format_spec == ResultFormat.event_course and row[field] %}
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
@@ -578,7 +582,7 @@
                     {% endif %}
                     <tr>
                         <td title="{{ gettext(aggregate_title) }}"><b>{{ aggregate_symbol }}</b></td>
-                        <td></td>
+                        <td class="hidden-print"></td>
                         {% for csvfield in query.fields_of_interest %}
                             {% for field in csvfield.split(',') %}
                                     {% set key = aggregate_func + "." + field %}
@@ -590,6 +594,8 @@
                                             {{ value|date(lang=lang) }}
                                         {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
                                             {{ value|datetime(lang=lang) }}
+                                        {% elif (format_spec == ResultFormat.money or format_spec == ResultFormat.event_fee) and value != "–" and aggregate_func != "null" %}
+                                            {{ value|money(lang=lang) }}
                                         {% elif aggregate_func in ("avg", "stddev") and value != "–" %}
                                             {{ value|float|decimal(lang=lang) }}
                                         {% else %}
@@ -603,12 +609,18 @@
             </tfoot>
         </table>
         </div>
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Press <code>Ctrl</code> and click anywhere in a result line to (un)select it additionally to already selected lines.
+            {% endtrans %}
+        </p>
     {% endif %}
 {% endmacro %}
 
 {% macro query_result_dynamic_action(
-        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
-    <button type="button" class="btn btn-sm {{ aclass }}">
+        label, icon, target, readonly=False, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" {% if readonly %}disabled="disabled"{% endif %} class="btn btn-sm {{ aclass }}">
         {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
         <script nonce="{{ csp_nonce }}">
             $('.query-result-dynamic-actions').show();

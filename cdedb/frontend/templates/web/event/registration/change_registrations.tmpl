@@ -20,6 +20,15 @@
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['event'].is_balanced %}
+        {% call util.notification('warning') %}
+            {% trans %}Event is balanced. Amount owed may no longer change.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% macro form_input_optional(name='', label='', anid=none, info='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
@@ -78,7 +87,7 @@
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
                 {{ util.input_static(value=util.persona_name(
-                       personas[reg['persona_id']], given_and_display_names=True, with_titles=True)) }}
+                       personas[reg['persona_id']], include_nickname=True, with_titles=True)) }}
             {% endfor %}
         {% endcall %}
 
@@ -106,10 +115,6 @@
                 {{ util.input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent"),
                                        anid="input_reg_parental_agreement") }}
             </div>
-        {% endcall %}
-
-        {% call form_input_optional('reg.checkin', label=gettext("Checked-In"), anid="input_reg_checkin") %}
-            {{ util.input_text(name="reg.checkin", type="datetime-local", anid="input_reg_checkin") }}
         {% endcall %}
 
         {% for part in ambience['event']['parts'].values()|sort %}

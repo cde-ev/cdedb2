@@ -44,8 +44,9 @@ def persona(context: argparse.Namespace) -> int:
         'is_active': True,
         'username': make_counter(context, 'Email', suffix='@example.cde'),
         'notes': '',
-        'display_name': make_counter(context, 'Spitzname'),
+        'nickname': '',
         'given_names': make_counter(context, 'Vorname'),
+        'legal_given_names': '',
         'family_name': make_counter(context, 'Nachname'),
         'title': '',
         'name_supplement': '',
@@ -82,6 +83,7 @@ def persona(context: argparse.Namespace) -> int:
         'donation': decimal.Decimal(0),
         'show_address': True,
         'show_address2': True,
+        'show_legal_given_names': False,
     }
     core = context.script.make_backend('core', proxy=False)
     ret = core.create_persona(rs, data)

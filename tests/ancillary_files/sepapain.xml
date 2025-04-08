@@ -38,7 +38,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                 </Cdtr>
                                 <CdtrAcct>
                                         <Id>
-                                                <IBAN>DE87200500001234567890</IBAN>
+                                                <IBAN>DE26370205000008068900</IBAN>
                                         </Id>
                                 </CdtrAcct>
                                 <CdtrAgt>
@@ -91,7 +91,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                                         </Id>
                                                 </DbtrAcct>
                                                 <RmtInf>
-                                                        <Ustrd>DB-2-7, Beispiel, Bertalotta LSI Mitgliedsbeitrag u. Spende CdE e.V. z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe</Ustrd>
+                                                        <Ustrd>DB-2-7, Beispiel, Berta LSI Mitgliedsbeitrag u. Spende CdE e.V. z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe</Ustrd>
                                                 </RmtInf>
                                         </DrctDbtTxInf>
                                 <DrctDbtTxInf>

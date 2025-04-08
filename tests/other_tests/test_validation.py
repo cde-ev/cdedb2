@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -9,11 +8,11 @@ import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, TypeVar, Union
 
-import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.validation import validate
 from cdedb.common.validation.types import (
     IBAN,
     ID,
@@ -358,7 +357,6 @@ class TestValidation(unittest.TestCase):
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "given_names": "Blübb",
             "family_name": "the First",
             "is_active": True,
@@ -469,7 +467,6 @@ class TestValidation(unittest.TestCase):
         base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "is_active": True,
             "is_cde_realm": True,
             "family_name": "Thør",
@@ -524,7 +521,6 @@ class TestValidation(unittest.TestCase):
         base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "is_active": True,
             "is_event_realm": True,
             "is_cde_realm": False,
@@ -668,7 +664,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
+            if assertion == GenesisCase:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -695,7 +691,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
+            if assertion == GenesisCase:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -791,7 +787,7 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(1, len(errs))
 
     def test_optional_object_mapping_helper(self) -> None:
-        # pylint: disable=protected-access
+
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {-1: None}, EventPartGroup, "event_part", creation_only=False)
@@ -805,7 +801,7 @@ class TestValidation(unittest.TestCase):
                 {1: None, -1: -1, 2: 2}, int, "int", creation_only=True)
 
     def test_serialized_event_configuration(self) -> None:
-        # pylint: disable=protected-access
+
         with self.assertRaises(validate.ValidationSummary):
             validate._serialized_event_configuration({
                 'id': -1,

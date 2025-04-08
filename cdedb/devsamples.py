@@ -75,7 +75,7 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),  # noqa: E101,W191
+""".strip()),
     MockHeldMessage(
         request_id=2, sender='illuminati@example.cde',
         subject='Verschwurbelung', reason='Zu riesig',
@@ -140,7 +140,7 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),  # noqa: E101,W191
+""".strip()),
     MockHeldMessage(
         request_id=3,
         sender='nigerian_prince@example.cde',
@@ -208,5 +208,5 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),  # noqa: E101,W191
+""".strip()),
 ]

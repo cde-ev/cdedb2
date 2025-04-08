@@ -41,7 +41,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # Prepare some constants for special casing.
 
     # This maps full table names to a list of column names in that table that
-    # require special care, because they contain cycliy references.
+    # require special care, because they contain cyclic references.
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: dict[str, tuple[str, ...]] = {
         "event.events": ("lodge_field_id", "reimbursement_iban_field_id"),
@@ -73,7 +73,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
         "ctime", "atime", "dtime", "foto", "amount", "iban", "granted_at", "revoked_at",
         "issued_at", "processed_at", "tally", "total", "delta", "shortname", "tempus",
         "registration_start", "registration_soft_limit", "registration_hard_limit",
-        "part_begin", "part_end", "fee", "field_name",
+        "part_begin", "part_end", "fee", "field_name", "checkin_time", "checkout_time",
         "amount_paid", "amount_owed", "payment", "presider_address", "signup_end",
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
@@ -151,7 +151,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                 elif isinstance(entry[k], str) and xss_payload is not None:
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
-                        entry[k] = entry[k] + xss_payload
+                        entry[k] += xss_payload
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params_list.extend(entry[k] for k in keys)
@@ -187,7 +187,9 @@ def insert_postal_code_locations() -> SQLCommand:
     """
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
-    with pathlib.Path("/cdedb2/tests/ancillary_files/plz.csv").open() as f:
+    with pathlib.Path(
+            "/cdedb2/tests/ancillary_files/plz.csv",
+    ).open(encoding="utf-8") as f:
         entries = list(csv.DictReader(f, delimiter=',', quotechar='"'))
     command = f"""
         INSERT INTO

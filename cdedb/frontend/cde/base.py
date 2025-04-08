@@ -66,8 +66,8 @@ MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
     'qsel_family_name,birth_name': True,
     'qop_family_name,birth_name': QueryOperators.match,
-    'qsel_given_names,display_name': True,
-    'qop_given_names,display_name': QueryOperators.match,
+    'qsel_given_names,searchable_legal_given_names,nickname': True,
+    'qop_given_names,searchable_legal_given_names,nickname': QueryOperators.match,
     'qsel_username': True,
     'qop_username': QueryOperators.match,
     'qop_telephone,mobile': QueryOperators.match,
@@ -478,7 +478,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_ml_realm': True,
             'is_assembly_realm': True,
             'is_member': True,
-            'display_name': persona['display_name'] or persona['given_names'],
+            'given_names': persona['given_names'] or persona['legal_given_names'],
+            'legal_given_names': (persona['legal_given_names'] if persona['given_names']
+                                  else None),
+            'nickname': None,
             'trial_member': False,
             'honorary_member': False,
             'paper_expuls': True,
@@ -688,8 +691,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs)
 
         fields = (
-            'event', 'course', 'family_name', 'given_names', 'display_name', 'title',
-            'name_supplement', 'birth_name', 'gender', 'address_supplement',
+            'event', 'course', 'family_name', 'legal_given_names', 'given_names',
+            'title', 'name_supplement', 'birth_name', 'gender', 'address_supplement',
             'address', 'postal_code', 'location', 'country', 'telephone',
             'mobile', 'username', 'birthday',
         )
@@ -823,7 +826,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
-        cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
+        cde_misc = meta_data.cde_misc or rs.gettext("*Nothing here yet.*")
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())

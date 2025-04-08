@@ -15,6 +15,14 @@
     {{ util.context_heading(gettext("Event Data"), util.persona_name(ambience['persona']), 'user', gettext("User")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <p>
         {% trans %}

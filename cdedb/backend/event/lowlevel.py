@@ -48,10 +48,13 @@ from cdedb.common.fields import (
     EVENT_FIELD_SPEC,
     EVENT_PART_FIELDS,
     FIELD_DEFINITION_FIELDS,
-    PART_GROUP_FIELDS,
     REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
@@ -77,29 +80,6 @@ class EventLowLevelBackend(AbstractBackend):
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
-
-    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None,
-                course_id: Optional[int] = None, registration_id: Optional[int] = None,
-                ) -> bool:
-        """Check for orga privileges as specified in the event.orgas table.
-
-        Exactly one of the inputs has to be provided.
-        """
-        if self.is_admin(rs):
-            return True
-        num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
-                         if anid is not None)
-        if num_inputs < 1:
-            raise ValueError(n_("No input specified."))
-        if num_inputs > 1:
-            raise ValueError(n_("Too many inputs specified."))
-        if course_id is not None:
-            event_id = unwrap(self.sql_select_one(
-                rs, "event.courses", ("event_id",), course_id))
-        elif registration_id is not None:
-            event_id = unwrap(self.sql_select_one(
-                rs, "event.registrations", ("event_id",), registration_id))
-        return event_id in rs.user.orga
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
@@ -219,7 +199,7 @@ class EventLowLevelBackend(AbstractBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -875,7 +855,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         if not blockers:
             track_group = self.sql_select_one(
-                rs, "event.track_groups", PART_GROUP_FIELDS, track_group_id)
+                rs, models.TrackGroup.database_table,
+                models.TrackGroup.database_fields(), track_group_id)
             if track_group is None:  # pragma: no cover
                 return 0
             type_ = const.CourseTrackGroupType(track_group['constraint_type'])
@@ -1133,7 +1114,7 @@ class EventLowLevelBackend(AbstractBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1302,7 +1283,8 @@ class EventLowLevelBackend(AbstractBackend):
         the other methods in this class which are mostly internal.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.registrations_stats,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
         return bool(unwrap(self.query_one(rs, query, (event_id,))))

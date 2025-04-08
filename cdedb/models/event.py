@@ -39,6 +39,7 @@ from typing import (
     ClassVar,
     ForwardRef,
     Optional,
+    Self,
     get_args,
     get_origin,
 )
@@ -47,7 +48,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import User, cast_fields, now
+from cdedb.common import Accounts, User, cast_fields, now
+from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
     QuerySpec,
@@ -56,15 +58,14 @@ from cdedb.common.query import (
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.filter import datetime_filter
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # pylint: disable=ungrouped-imports
-
     from cdedb.common import CdEDBObject
-    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+    from cdedb.database.query import (
         DatabaseValue_s,
     )
 
@@ -105,25 +106,37 @@ class Event(EventDataclass):
     shortname: str
 
     institution: const.PastInstitutions
-    description: Optional[str]
 
     registration_start: Optional[datetime.datetime]
     registration_soft_limit: Optional[datetime.datetime]
     registration_hard_limit: Optional[datetime.datetime]
 
-    iban: Optional[str]
+    iban: Optional[Accounts]
     orga_address: Optional[vtypes.Email]
     website_url: Optional[str]
 
-    registration_text: Optional[str]
-    mail_text: Optional[str]
-    participant_info: Optional[str]
-    notes: Optional[str]
-    field_definition_notes: Optional[str]
+    # Exclude from request to avoid unsetting when submitting `change_event_form`.
+    description: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    registration_text: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    mail_text: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    participant_info: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    notes: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
+    field_definition_notes: Optional[str] = dataclasses.field(
+        metadata={'update_request_exclude': True})
 
-    offline_lock: bool
-    is_archived: bool
+    # Disallow setting via request altogether.
+    offline_lock: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+    is_archived: bool = dataclasses.field(
+        metadata={'request_exclude': True})
+
     is_cancelled: bool
+    is_balanced: bool
     is_visible: bool
     is_course_list_visible: bool
     is_course_state_visible: bool
@@ -236,8 +249,8 @@ class Event(EventDataclass):
 
          :param privileged: If access in a privileged capacity is to be considered."""
 
-        return is_registered or self.is_visible or (privileged and (
-            "event_admin" in user.roles or user.persona_id in self.orgas))
+        return is_registered or self.is_visible or (privileged and
+            is_privileged_event_user(user, EventPrivileges.basic_read, self.id))
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
@@ -380,7 +393,7 @@ class CourseChoiceObject(abc.ABC):
         ...
 
     def __lt__(self, other: Any) -> bool:
-        # pylint: disable=line-too-long
+
         if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
             return self._lt_inner(other)
         return NotImplemented
@@ -415,7 +428,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return {self.id: self}
 
     @tracks.setter
-    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:  # pylint: disable=no-self-use
+    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:
         raise KeyError
 
     @property
@@ -549,9 +562,9 @@ class CustomQueryFilter(EventDataclass):
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata={'validation_exclude': True},
     )
-    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exlude': True})
+    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exclude': True})
 
-    scope: QueryScope = dataclasses.field(metadata={'update_exlude': True})
+    scope: QueryScope = dataclasses.field(metadata={'update_exclude': True})
     title: str
     notes: Optional[str]
     fields: set[str] = dataclasses.field(metadata={'database_include': True})
@@ -952,7 +965,7 @@ class PersonalizedFee(EventDataclass):
                 DO UPDATE SET amount = EXCLUDED.amount
                 RETURNING id
             """
-            params: tuple[DatabaseValue_s, ...] = (  # pylint: disable=used-before-assignment
+            params: tuple[DatabaseValue_s, ...] = (
                 self.registration_id, self.fee_id, self.amount,
             )
             return query, params
@@ -966,3 +979,35 @@ class PersonalizedFee(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (0, )
+
+
+@dataclasses.dataclass
+class ReducedCheckinPeriod:
+    checkin_time: datetime.datetime
+    checkout_time: Optional[datetime.datetime]
+
+    def pretty(self) -> str:
+        formatstr = "%Y-%m-%d %H:%M"
+        if self.checkout_time:
+            return (f"{datetime_filter(self.checkin_time, formatstr)} – "
+                    f"{datetime_filter(self.checkout_time, formatstr)}")
+        else:
+            return f"{datetime_filter(self.checkin_time, formatstr)} – "
+
+
+@dataclasses.dataclass
+class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
+    database_table = "event.checkin_periods"
+    entity_key = "registration_id"
+
+    registration_id: vtypes.ID
+
+    def get_sortkey(self) -> Sortkey:
+        if self.checkout_time is not None:
+            return (self.checkin_time, True, self.checkout_time, self.registration_id)
+        return (self.checkin_time, False, self.registration_id)
+
+    def get_duration(self) -> datetime.timedelta:
+        if self.checkout_time is not None:
+            return self.checkout_time - self.checkin_time
+        return now() - self.checkin_time

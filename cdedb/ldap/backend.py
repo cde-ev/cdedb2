@@ -17,17 +17,21 @@ from typing import (
     overload,
 )
 
+import psycopg.abc
+from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
-from psycopg import AsyncCursor
+from psycopg import AsyncCursor, sql
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
+from twisted.python.util import InsensitiveDict
 
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
+from cdedb.ldap.types import AttributeDescriptionList, FilterLike
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
@@ -122,7 +126,7 @@ class LDAPsqlBackend:
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
     @staticmethod
-    async def execute_db_query(cur: AsyncCursor[DictRow], query: str,
+    async def execute_db_query(cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
@@ -137,19 +141,29 @@ class LDAPsqlBackend:
         sanitized_params = tuple(to_db_input(p) for p in params)
         # psycopg3 does server-side parameter substitution. Sadly, cur.mogrify is
         # therefore no longer available ...
-        # logger.debug(f"Execute PostgreSQL query"
-        #              f" {cur.mogrify(query, sanitized_params)}.")
-        await cur.execute(query, sanitized_params)
+        if isinstance(query, psycopg.sql.Composable):
+            query = query.as_string(cur)
+        elif isinstance(query, bytes):
+            query = query.decode("utf-8")
+        logger.debug(f"Execute PostgreSQL query {query} with"
+                     f" parameters {sanitized_params}.")
+        try:
+            await cur.execute(query, sanitized_params)
+        except Exception as e:
+            raise RuntimeError((query, sanitized_params)) from e
 
-    async def query_exec(self, query: str, params: Sequence["DatabaseValue_s"]) -> int:
+    async def query_exec(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    async def query_one(self, query: str, params: Sequence["DatabaseValue_s"],
-                        ) -> Optional["CdEDBObject"]:
+    async def query_one(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -159,8 +173,9 @@ class LDAPsqlBackend:
                 await self.execute_db_query(cur, query, params)
                 return from_db_output(await cur.fetchone())
 
-    async def query_all(self, query: str, params: Sequence["DatabaseValue_s"],
-                        ) -> AsyncIterator["CdEDBObject"]:
+    async def query_all(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -255,8 +270,6 @@ class LDAPsqlBackend:
             raise ValueError("The given LDAPEntry is no user!")
         if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
             raise ValueError("The given DN is no dua!")
-
-        # TODO we may restrict access of duas to users by f.e. group membership.
         return True
 
     @classmethod
@@ -266,27 +279,19 @@ class LDAPsqlBackend:
             raise ValueError("The given LDAPEntry is no group!")
         if not (cls.duas_dn.contains(dua) and cls.duas_dn != dua):
             raise ValueError("The given DN is no dua!")
-
-        # TODO we may restrict access of duas to type of groups
-        if dua in {cls.dua_dn("apache"), cls.dua_dn("cloud")}:
-            return True
-        # allow RequestTracker access to ml subscriber groups
-        if dua == cls.dua_dn("rqt") and cls.subscriber_groups_dn.contains(group.dn):
-            return True
-
-        return False
+        return True
 
     ###############
     # operational #
     ###############
 
     @classproperty
-    def root_dn(self) -> DN:  # pylint: disable=no-self-use
+    def root_dn(self) -> DN:
         """The root entry of the ldap tree."""
         return DN("")
 
     @classproperty
-    def subschema_dn(self) -> DN:  # pylint: disable=no-self-use
+    def subschema_dn(self) -> DN:
         """The DN containing information about the supported schemas.
 
         This is needed by f.e. Apache Directory Studio to determine which
@@ -295,7 +300,7 @@ class LDAPsqlBackend:
         return DN("cn=subschema")
 
     @classproperty
-    def de_dn(self) -> DN:  # pylint: disable=no-self-use
+    def de_dn(self) -> DN:
         return DN("dc=de")
 
     @classproperty
@@ -353,6 +358,8 @@ class LDAPsqlBackend:
             if name is None:
                 continue
             dn_to_name[dn] = name
+        if not dn_to_name:
+            return {}
 
         ret = dict()
         for dn, name in dn_to_name.items():
@@ -398,43 +405,6 @@ class LDAPsqlBackend:
     def is_user_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.users_dn, "uid")
 
-    @staticmethod
-    def make_persona_name(persona: "CdEDBObject",
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False,
-                          with_family_name: bool = True,
-                          with_titles: bool = False) -> str:
-        """Mimic the implementation of common.make_persona_name.
-
-        Since we do not want to have cross-dependencies between the web and ldap code
-        base, we need this small logic duplication.
-        """
-        # TODO move into common and use it here
-        display_name: str = persona.get('display_name', "")
-        given_names: str = persona['given_names']
-        ret = []
-        if with_titles and persona.get('title'):
-            ret.append(persona['title'])
-        if only_given_names:
-            ret.append(given_names)
-        elif only_display_name:
-            ret.append(display_name)
-        elif given_and_display_names:
-            if not display_name or display_name == given_names:
-                ret.append(given_names)
-            else:
-                ret.append(f"{given_names} ({display_name})")
-        elif display_name and display_name in given_names:
-            ret.append(display_name)
-        else:
-            ret.append(given_names)
-        if with_family_name:
-            ret.append(persona['family_name'])
-        if with_titles and persona.get('name_supplement'):
-            ret.append(persona['name_supplement'])
-        return " ".join(ret)
-
     @classmethod
     def list_single_user(cls, persona_id: int) -> DN:
         """Uninlined code from list_users.
@@ -443,9 +413,125 @@ class LDAPsqlBackend:
         """
         return cls.user_dn(persona_id)
 
-    async def list_users(self) -> list[DN]:
-        query = "SELECT id FROM core.personas WHERE NOT is_archived"
-        return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
+    @classmethod
+    def lower_ldap_filter_to_sql(
+        cls,
+        filter_: FilterLike,
+        attr_replacements: InsensitiveDict,  # type: ignore[type-arg]
+    ) -> tuple[sql.Composable, list["DatabaseValue_s"]]:
+        """Lower the given LDAP filter to a SQL query.
+
+        This is a helper function to convert LDAP filters to SQL queries
+        and can be used to speed up some queries.
+        Lowering is only implemented for LDAP filters
+        which are used by consumers of our LDAP interface
+        in performance critical paths (e.g. user lookup upon login).
+        """
+        if isinstance(filter_, (pureldap.LDAPFilter_and, pureldap.LDAPFilter_or)):
+            subqueries: list[sql.Composable] = []
+            params: list[DatabaseValue_s] = []
+            for f in filter_.data:
+                q, p = cls.lower_ldap_filter_to_sql(f, attr_replacements)
+                subqueries += [q]
+                params += p
+            return (
+                sql.SQL(
+                    " AND " if isinstance(filter_, pureldap.LDAPFilter_and) else " OR ",
+                ).join(sql.SQL("({})").format(query) for query in subqueries),
+                params,
+            )
+        elif isinstance(filter_, pureldap.LDAPFilter_not):
+            subquery, params = cls.lower_ldap_filter_to_sql(
+                filter_.value, attr_replacements,
+            )
+            return (sql.SQL("NOT ({})").format(subquery), params)
+        elif isinstance(filter_, pureldap.LDAPFilter_present):
+            if filter_.value.decode() not in attr_replacements:
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
+            return (
+                sql.SQL("{} IS NOT NULL").format(
+                    sql.Identifier(attr_replacements[filter_.value.decode()]),
+                ),
+                [],
+            )
+        elif isinstance(filter_, pureldap.LDAPFilter_equalityMatch):
+            if filter_.attributeDesc.value.decode() not in attr_replacements:
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
+            return (
+                sql.SQL("{}::text = %s").format(sql.Identifier(
+                    attr_replacements[filter_.attributeDesc.value.decode()],
+                )),
+                [filter_.assertionValue.value.decode()],
+            )
+        elif isinstance(filter_, pureldap.LDAPFilter_substrings):
+            if filter_.type.decode() not in attr_replacements:
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
+            pattern: sql.Composable = sql.SQL("")
+            if not isinstance(
+                filter_.substrings[0], pureldap.LDAPFilter_substrings_initial,
+            ):
+                pattern += sql.SQL("'%%', ")
+            pattern += sql.SQL(", '%%', ").join(
+                sql.SQL("%s::text") for _ in filter_.substrings
+            )
+            if not isinstance(
+                filter_.substrings[-1], pureldap.LDAPFilter_substrings_final,
+            ):
+                pattern += sql.SQL(", '%%'")
+            return (
+                # We need to use CONCAT here because we want to use both
+                # the wildcard character ('%', escaped as '%%')
+                # and placeholder substitution ('%s').
+                sql.SQL("{}::text LIKE CONCAT({})").format(
+                    sql.Identifier(attr_replacements[filter_.type.decode()]),
+                    pattern,
+                ),
+                [(s.value.decode()) for s in filter_.substrings],
+            )
+        else:
+            return (sql.Literal(True), [])
+
+    async def list_users(
+        self,
+        filterObject: Optional[FilterLike] = None,
+    ) -> list[DN]:
+        query: sql.SQL | sql.Composed = sql.SQL(
+            "SELECT id FROM core.personas WHERE NOT is_archived",
+        )
+        params: list[DatabaseValue_s] = []
+        if filterObject is not None:
+            # We have to replace the attribute names in the LDAP filter with the
+            # corresponding column names in the SQL query.
+            attr_replacements = InsensitiveDict({  # type: ignore[var-annotated]
+                "sn": "family_name",
+                "givenName": "given_names",
+                "mail": "username",
+                "uid": "id",
+            })
+            filter_query, filter_params = self.lower_ldap_filter_to_sql(
+                filterObject, attr_replacements,
+            )
+            query += sql.SQL(" AND (") + filter_query + sql.SQL(")")
+            params += filter_params
+        return [
+            self.list_single_user(e["id"])
+            async for e in self.query_all(query, params)
+        ]
 
     async def get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:
@@ -459,84 +545,99 @@ class LDAPsqlBackend:
 
         Returns a dict, mapping persona_id to a list of their group dn strings.
         """
-        ret: dict[int, list[str]] = {anid: [] for anid in persona_ids}
-
-        # TODO: This could each be turned into it's own coroutine to then be
-        #  executed concurrently. Maybe this could even be combined with the other
-        #  helpers, ensuring equivalency.
 
         # Status groups
-        query = """
-                SELECT id,
-                    is_active, is_member, is_searchable AND is_member AS is_searchable,
-                    is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
-                    is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
-                    is_core_admin, is_finance_admin, is_cdelokal_admin
-                FROM core.personas WHERE personas.id = ANY(%s)
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["id"]].extend(self.status_group_dn(flag)
-                                for flag in e.keys() if e[flag] and flag != "id")
+        async def get_stati() -> dict[int, list[str]]:
+            query = """
+                    SELECT id,
+                        is_active, is_member, is_searchable AND is_member AS is_searchable,
+                        is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
+                        is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
+                        is_core_admin, is_finance_admin, is_cdelokal_admin
+                    FROM core.personas WHERE personas.id = ANY(%s)
+                    """
+            return {e['id']: [self.status_group_dn(flag) for flag in e.keys()
+                              if e[flag] and flag != "id"]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Presider groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
-                FROM assembly.presiders
-                WHERE persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.presider_group_dn(assembly_id)
-                                        for assembly_id in e["assembly_ids"])
+        async def get_presiders() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
+                    FROM assembly.presiders
+                    WHERE persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            return {e['persona_id']: [self.presider_group_dn(assembly_id)
+                                      for assembly_id in e['assembly_ids']]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Orga groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
-                FROM event.orgas
-                WHERE persona_id = ANY(%s)
-                GROUP BY persona_id"""
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.orga_group_dn(event_id)
-                                        for event_id in e["event_ids"])
+        async def get_orgas() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
+                    FROM event.orgas
+                    WHERE persona_id = ANY(%s)
+                    GROUP BY persona_id"""
+            return {e['persona_id']: [self.orga_group_dn(event_id)
+                                      for event_id in e['event_ids']]
+                    async for e in self.query_all(query, (persona_ids,))}
 
         # Subscriber groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(address) AS addresses
-                FROM ml.subscription_states, ml.mailinglists
-                WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
-                    AND subscription_state = ANY(%s)
-                    AND persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        states = SubscriptionState.subscribing_states()
-        async for e in self.query_all(query, (states, persona_ids)):
-            ret[e["persona_id"]].extend(self.subscriber_group_dn(address)
-                                        for address in e["addresses"])
+        async def get_subscribers() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(address) AS addresses
+                    FROM ml.subscription_states, ml.mailinglists
+                    WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
+                        AND subscription_state = ANY(%s)
+                        AND persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            states = SubscriptionState.subscribing_states()
+            return {e['persona_id']: [self.subscriber_group_dn(address)
+                                      for address in e['addresses']]
+                    async for e in self.query_all(query, (states, persona_ids))}
 
         # Moderator groups
-        query = """
-                SELECT persona_id, ARRAY_AGG(address) AS addresses
-                FROM ml.moderators, ml.mailinglists
-                WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
-                    AND persona_id = ANY(%s)
-                GROUP BY persona_id
-                """
-        async for e in self.query_all(query, (persona_ids,)):
-            ret[e["persona_id"]].extend(self.moderator_group_dn(address)
-                                        for address in e["addresses"])
+        async def get_moderators() -> dict[int, list[str]]:
+            query = """
+                    SELECT persona_id, ARRAY_AGG(address) AS addresses
+                    FROM ml.moderators, ml.mailinglists
+                    WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
+                        AND persona_id = ANY(%s)
+                    GROUP BY persona_id
+                    """
+            return {e['persona_id']: [self.moderator_group_dn(address)
+                                      for address in e['addresses']]
+                    async for e in self.query_all(query, (persona_ids,))}
+
+        ret: dict[int, list[str]] = defaultdict(list)
+        stati, presiders, orgas, subscribers, moderators = await asyncio.gather(
+            get_stati(), get_presiders(), get_orgas(), get_subscribers(),
+            get_moderators())
+        for data in [stati, subscribers]:
+            for anid, groups in data.items():
+                ret[anid].extend(groups)
+        for scope, data in [("presider", presiders), ("orga", orgas), ("moderator", moderators)]:
+            any_group_dn = self.any_group_dn(scope)
+            for anid, groups in data.items():
+                ret[anid].append(any_group_dn)
+                ret[anid].extend(groups)
 
         return ret
 
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = (
-            "SELECT id, username, display_name, given_names, family_name, password_hash"
+            "SELECT id, username, given_names, family_name, password_hash"
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
         return {
             e["id"]: e async for e in self.query_all(query, (user_ids,))
         }
 
-    async def get_users(self, dns: list[DN]) -> LDAPObjectMap:
+    async def get_users(
+        self, dns: list[DN], attributes: Optional[AttributeDescriptionList],
+    ) -> LDAPObjectMap:
         """Get the users specified by dn.
 
         The relevant RFCs are
@@ -549,10 +650,22 @@ class LDAPsqlBackend:
             if persona_id is None:
                 continue
             dn_to_persona_id[dn] = persona_id
+        if not dn_to_persona_id:
+            return {}
 
-        users, groups = await asyncio.gather(
-            self.get_users_data(dn_to_persona_id.values()),
-            self.get_users_groups(dn_to_persona_id.values()),
+        users, groups = (
+            await asyncio.gather(
+                self.get_users_data(dn_to_persona_id.values()),
+                self.get_users_groups(dn_to_persona_id.values()),
+            )
+            # Skip fetching groups if they are not requested
+            # and would be filtered out higher up in the stack anyways.
+            if (
+                attributes is None
+                or len(attributes) == 0
+                or b"*" in attributes
+                or b"memberOf" in attributes
+            ) else (await self.get_users_data(dn_to_persona_id.values()), {})
         )
 
         ret = dict()
@@ -564,12 +677,13 @@ class LDAPsqlBackend:
                 b"objectClass": ["inetOrgPerson"],
                 b"cn": [f"{user['given_names']} {user['family_name']}"],
                 b"sn": [user['family_name']],
-                b"displayName": [self.make_persona_name(user)],
+                # TODO do we want to expose the nickname somewhere?
+                b"displayName": [f"{user['given_names']} {user['family_name']}"],
                 b"givenName": [user['given_names']],
                 b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
-                b"memberOf": groups[persona_id],
+                b"memberOf": groups.get(persona_id, []),
                 b"ipaUniqueID": [f"personas/{persona_id}"],
             }
             ret[dn] = self._to_bytes(ldap_user)
@@ -662,6 +776,8 @@ class LDAPsqlBackend:
             if name is None:
                 continue
             dn_to_name[dn] = name
+        if not dn_to_name:
+            return {}
 
         # Schedule all tasks at the same time and wait for them all to complete.
         # For convenience, the `_get_status_group` helper returns the dn as the key.
@@ -742,6 +858,8 @@ class LDAPsqlBackend:
             if assembly_id is None:
                 continue
             dn_to_assembly_id[dn] = assembly_id
+        if not dn_to_assembly_id:
+            return {}
 
         assemblies, presiders = await asyncio.gather(
             self.get_assemblies(dn_to_assembly_id.values()),
@@ -825,6 +943,8 @@ class LDAPsqlBackend:
             if event_id is None:
                 continue
             dn_to_event_id[dn] = event_id
+        if not dn_to_event_id:
+            return {}
 
         events, orgas = await asyncio.gather(
             self.get_events(dn_to_event_id.values()),
@@ -921,6 +1041,8 @@ class LDAPsqlBackend:
             if address is None:
                 continue
             dn_to_address[dn] = address
+        if not dn_to_address:
+            return {}
 
         mls, moderators = await asyncio.gather(
             self.get_mailinglists(dn_to_address.values()),
@@ -1004,6 +1126,8 @@ class LDAPsqlBackend:
             if address is None:
                 continue
             dn_to_address[dn] = address
+        if not dn_to_address:
+            return {}
 
         mls, subscribers = await asyncio.gather(
             self.get_mailinglists(dn_to_address.values()),
@@ -1026,3 +1150,60 @@ class LDAPsqlBackend:
             }
             ret[dn] = self._to_bytes(group)
         return ret
+
+    #
+    # any
+    #
+
+    @classproperty
+    def any_groups_dn(self) -> DN:
+        return DN(f"ou=any,{self.groups_dn.getText()}")
+
+    @staticmethod
+    def any_group_cn(scope: str) -> str:
+        """Construct the 'cn' of an any group from its scope."""
+        return scope
+
+    @classmethod
+    def any_group_dn(cls, scope: str) -> DN:
+        """Construct an any groups dn from its scope."""
+        return DN(f"cn={cls.any_group_cn(scope)},{cls.any_groups_dn.getText()}")
+
+    async def get_any_presider_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are presider of any assembly."""
+        scope = "presider"
+        query = "SELECT DISTINCT persona_id from assembly.presiders"
+        presiders = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in presiders],
+            b"ipaUniqueID": ["any/presider"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)
+
+    async def get_any_orga_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are orgas of any event."""
+        scope = "orga"
+        query = "SELECT DISTINCT persona_id from event.orgas"
+        orgas = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in orgas],
+            b"ipaUniqueID": ["any/orga"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)
+
+    async def get_any_moderator_group(self) -> tuple[DN, LDAPObject]:
+        """The group containing all users which are moderator of any mailinglist."""
+        scope = "moderator"
+        query = "SELECT DISTINCT persona_id from ml.moderators"
+        moderators = [e['persona_id'] async for e in self.query_all(query, [])]
+        group = {
+            b"objectClass": ["groupOfUniqueNames"],
+            b"cn": [self.any_group_cn(scope)],
+            b"uniqueMember": [self.user_dn(e) for e in moderators],
+            b"ipaUniqueID": ["any/moderator"],
+        }
+        return self.any_group_dn(scope), self._to_bytes(group)

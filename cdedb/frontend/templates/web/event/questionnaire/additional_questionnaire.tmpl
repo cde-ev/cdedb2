@@ -55,7 +55,7 @@
                         You can enter lodgement wishes in the respective {{ link }} in the following formats:
                     {% endtrans %}
                     {% trans %}
-                        Full name (any given name plus family name), forename/display name plus family name, email address or CdEDB-ID ("DB-0000-X")
+                        Full name (any given name plus family name), forename/nickname plus family name, email address or CdEDB-ID ("DB-0000-X")
                     {% endtrans %}
                 </div>
                 {% if lodgement_wishes['wished_personas'] %}
@@ -72,7 +72,7 @@
                         {# Already sorted list of wished personas #}
                         {% for persona in lodgement_wishes['wished_personas'] %}
                             <li class="text-info">
-                                {{ util.persona_name(persona) }}
+                                {{ util.persona_name(persona, include_nickname=True) }}
                             </li>
                         {% endfor %}
                     </ul>

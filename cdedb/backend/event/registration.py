@@ -14,7 +14,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import Any, NamedTuple, Optional, Protocol, TypeVar
+from typing import Any, NamedTuple, Optional, Protocol, TypeVar, cast
 
 import psycopg2.extensions
 
@@ -27,6 +27,7 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
     affirm_array_validation as affirm_array,
+    affirm_dict_validation as affirm_dict,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -45,6 +46,7 @@ from cdedb.common import (
     PsycoJson,
     RequestState,
     cast_fields,
+    now,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -54,9 +56,14 @@ from cdedb.common.fields import (
     REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.filter import money_filter
+from cdedb.filter import datetime_filter, money_filter
+from cdedb.models.event import CheckinPeriod, ReducedCheckinPeriod
 
 T = TypeVar("T")
 
@@ -262,7 +269,7 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def validate_single_course_choice(self, rs: RequestState, course_id: int,  # pylint: disable=no-self-use
+    def validate_single_course_choice(self, rs: RequestState, course_id: int,
                                       track_id: int, aux: CourseChoiceValidationAux,
                                       ) -> bool:
         """Check whether a course choice is allowed in a given track.
@@ -433,6 +440,7 @@ class EventRegistrationBackend(EventBaseBackend):
             )[e['part_id']] = const.RegistrationPartStati(e['status'])
         return ret
 
+    @internal
     @access("event", "ml_admin")
     def list_registrations_personas(self, rs: RequestState, event_id: int,
                                     persona_ids: Optional[Collection[int]] = None,
@@ -447,13 +455,9 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of event mailinglists.
-        # finance_admins are allowed here to book event fees.
         if (persona_ids != {rs.user.persona_id}
-                and not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)
-                and {"ml_admin", "finance_admin"}.isdisjoint(rs.user.roles)):
+                and not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                      event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
@@ -505,8 +509,8 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = {e['id']: e['persona_id'] for e in data}
 
         if not (rs.user.persona_id in ret.values()
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)):
+                or is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
@@ -538,9 +542,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         # Check if eligible to check registration status for other users.
         if not (persona_ids == {rs.user.persona_id}
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
+                or is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                 event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
 
         registration_ids = self.list_registrations_personas(rs, event_id, persona_ids)
@@ -571,8 +574,9 @@ class EventRegistrationBackend(EventBaseBackend):
                              ) -> dict[tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set(vtypes.ID, event_ids)
-        if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
-                not self.is_admin(rs)):
+        if not all(is_privileged(rs, EventPrivileges.registrations_read, event_id=anid)
+                   or is_privileged(rs, EventPrivileges.log_read, event_id=anid)
+                   for anid in event_ids):
             raise PrivilegeError(n_("Not privileged."))
 
         data = self.sql_select(
@@ -631,7 +635,7 @@ class EventRegistrationBackend(EventBaseBackend):
                      part_ids: Optional[Collection[int]] = None,
                      ) -> dict[int, Optional[list[int]]]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
         return self._get_waitlist(rs, event_id, part_ids)
 
@@ -649,7 +653,8 @@ class EventRegistrationBackend(EventBaseBackend):
         if persona_id is None:
             persona_id = rs.user.persona_id
         if persona_id != rs.user.persona_id:
-            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            if not is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id):
                 raise PrivilegeError(
                     n_("Must be orga to access full waitlist."))
         reg_ids = self.list_registrations(rs, event_id, persona_id)
@@ -689,8 +694,8 @@ class EventRegistrationBackend(EventBaseBackend):
         reg_ids = reg_ids or set()
         reg_ids = affirm_set(vtypes.ID, reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)
-        if (not self.is_admin(rs)
-                and not self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.registrations_read,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         query = """SELECT DISTINCT
             regs.id, regs.persona_id
@@ -718,13 +723,13 @@ class EventRegistrationBackend(EventBaseBackend):
         if position is not None:
             cfp = CourseFilterPositions
             sub_conditions = []
-            if position.enum in (cfp.instructor, cfp.anywhere):
+            if position.enum in {cfp.instructor, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append("rtracks.course_instructor = %s")
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (cfp.any_choice, cfp.anywhere):
+            if position.enum in {cfp.any_choice, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append(
                         "(choices.course_id = %s AND "
@@ -743,7 +748,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     sub_conditions.append(
                         "(choices.course_id IS NULL AND choices.rank = %s)")
                     params.append(position.int)
-            if position.enum in (cfp.assigned, cfp.anywhere):
+            if position.enum in {cfp.assigned, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
                     params.append(course_id)
@@ -850,14 +855,9 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             # Select appropriate stati filter.
             stati = set(m for m in const.RegistrationPartStati)
-            # orgas and admins have full access to all data
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            # finance_admins are allowed here to book event fees.
-            is_privileged = (
-                self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
-                or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
-            if not is_privileged:
+            is_privileged_ = is_privileged(
+                rs, EventPrivileges.registrations_read_internal, event_id=event_id)
+            if not is_privileged_:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
                 elif not personas <= {rs.user.persona_id}:
@@ -878,8 +878,8 @@ class EventRegistrationBackend(EventBaseBackend):
                     del ret[anid]
 
             # Here comes the promised permission check
-            if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
-                                         for reg in ret.values()):
+            if not is_privileged_ and all(reg['persona_id'] != rs.user.persona_id
+                                          for reg in ret.values()):
                 raise PrivilegeError(n_("No participant of event."))
 
             tdata = self.sql_select(
@@ -889,6 +889,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
+            checkin_periods = models.CheckinPeriod.many_from_database(
+                self.query_all(
+                    rs, *models.CheckinPeriod.get_select_query(registration_ids),
+                ),
+            )
             personalized_fees = models.PersonalizedFee.many_from_database(
                 self.query_all(
                     rs, *models.PersonalizedFee.get_select_query(registration_ids),
@@ -898,6 +903,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 self._get_event_fields(rs, event_id).values())
             for reg in ret.values():
                 reg['tracks'] = {}
+                reg['checkin_periods'] = []
                 reg['personalized_fees'] = {}
                 reg['fields'] = cast_fields(reg['fields'], event_fields)
             for reg_track in tdata:
@@ -907,11 +913,15 @@ class EventRegistrationBackend(EventBaseBackend):
             for choice in choices:
                 reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
                 reg_track['choices'][choice['course_id']] = choice['rank']
+            for period in checkin_periods.values():
+                reg = ret[period.registration_id]
+                reg['checkin_periods'].append(period)
             for personalized_fee in personalized_fees.values():
                 reg = ret[personalized_fee.registration_id]
                 reg['personalized_fees'][personalized_fee.fee_id] = \
                     personalized_fee.amount
             for reg in ret.values():
+                reg['checkin_periods'] = xsorted(reg['checkin_periods'])
                 for reg_track in reg['tracks'].values():
                     tmp = reg_track['choices']
                     reg_track['choices'] = xsorted(tmp.keys(), key=tmp.get)
@@ -966,7 +976,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(event_ids)
-            if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 event_id=event_id):
                 raise PrivilegeError
 
             ret = 1
@@ -1019,10 +1030,13 @@ class EventRegistrationBackend(EventBaseBackend):
             persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
-                    and not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+                    and not is_privileged(rs, EventPrivileges.registrations_write,
+                                          event_id=event_id)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
+            if "amount_paid" in data:
+                raise RuntimeError(n_(
+                    "Cannot alter `amount_paid` via `set_registration`."))
             if "amount_owed" in data:
                 del data["amount_owed"]
 
@@ -1111,7 +1125,18 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
+            current_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )
             self._update_registration_amount_owed(rs, data['id'])
+            new_amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], data['id'],
+            )
+
+            if event.is_balanced and current_amount_owed != new_amount_owed:
+                raise ValueError(n_(
+                    "Event is balanced. Amount owed may no longer change."))
+
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1136,8 +1161,8 @@ class EventRegistrationBackend(EventBaseBackend):
             vtypes.EventAssociatedFields, fdata, fields=event.fields,
             association=const.FieldAssociations.registration)
         if (data['persona_id'] != rs.user.persona_id
-                and not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+                and not is_privileged(rs, EventPrivileges.registrations_write,
+                                      event_id=data['event_id'])):
             raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
             if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
@@ -1152,6 +1177,9 @@ class EventRegistrationBackend(EventBaseBackend):
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
+            if event.is_balanced and data['amount_owed']:
+                raise ValueError(n_(
+                    "Event is balanced. May not create registration which owes a fee."))
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
@@ -1245,7 +1273,8 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         registration_id = affirm(vtypes.ID, registration_id)
         reg = self.get_registration(rs, registration_id)
-        if not self.is_orga(rs, event_id=reg['event_id']):
+        if not is_privileged(rs, EventPrivileges.registrations_write,
+                             event_id=reg['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
@@ -1254,7 +1283,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1403,6 +1432,23 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(
             rs, registration, event=event, visual_debug=visual_debug)
 
+    @access("event")
+    def calculate_fee_for_partial_registration(
+            self, rs: RequestState, reg: CdEDBObject, *, event_id: int,
+    ) -> decimal.Decimal:
+        """Public helper to calculate a fee for a non-stored (partial) registration.
+
+        Should only be used when needing to calculate the fee for a changed or new
+        registration before storing it to the database.
+
+        This does some validation but currently cannot guarantee that the registration
+        object is sufficient to calculate the fee without raising an error.
+        """
+        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
+        return self._calculate_single_fee(rs, reg, event=event)
+
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
@@ -1501,10 +1547,12 @@ class EventRegistrationBackend(EventBaseBackend):
             registration_id = unwrap(
                 self.list_registrations(rs, event_id, persona_id).keys() or None)
 
-        if self.is_orga(rs, event_id=event_id):
+        if is_privileged(rs, EventPrivileges.registrations_read_internal,
+                         event_id=event_id):
             pass
         elif persona_id and persona_id == rs.user.persona_id and (
-                event.is_open or registration_id):
+                event.is_open or registration_id
+                or is_privileged(rs, EventPrivileges.basic_read, event_id=event_id)):
             pass
         else:
             raise PrivilegeError
@@ -1566,10 +1614,8 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
-            # finance_admins are allowed here to book event fees.
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)
-                    and "finance_admin" not in rs.user.roles
+            if (not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                  event_id=event_id)
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
@@ -1654,9 +1700,12 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             persona_id, event_id = self._get_registration_info(rs, registration_id)
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.registrations_write, event_id):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
+            if event.is_balanced:
+                raise ValueError(n_(
+                    "Event is balanced. May not set personalized fee amount."))
             if fee_id not in event.fees:
                 raise KeyError
             if not event.fees[fee_id].is_personalized():
@@ -1699,8 +1748,20 @@ class EventRegistrationBackend(EventBaseBackend):
         event_log_transfer_template = "{amount} am {date} gezahlt."
         event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
 
+        self.affirm_atomized_context(rs)
+
         registration = self.get_registration(rs, registration_id)
         event_id = registration['event_id']
+        event = self.get_event(rs, event_id)
+        if event.is_balanced:
+            # Balanced events mustn't block booking of payments, therefor unbalance the
+            #  event if necessary.
+            rs.notify(
+                "info",
+                n_("Unbalanced event %(event_title)s."),
+                {'event_title': event.title},
+            )
+            self.unbalance_event(rs, event_id)
 
         if amount > 0:
             update = {
@@ -1798,3 +1859,376 @@ class EventRegistrationBackend(EventBaseBackend):
             self.cgitb_log()
             return False, index
         return True, len(data)
+
+    @access("event")
+    def add_checkins(self, rs: RequestState, registration_ids: Collection[int],
+                     checkin_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode:
+        """Check participants in, all with the same time.
+
+        :param checkin_time: defaults to current time
+        """
+        timestamp = checkin_time or now()
+        return self.add_checkins_multi(
+            rs, {r_id: timestamp for r_id in registration_ids})
+
+    @access("event")
+    def add_checkins_multi(
+        self, rs: RequestState, reg_checkin_times: Mapping[int, datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Check participants in, individual times per registration.
+
+        :param reg_checkin_times: Mapping of registration id to checkin time.
+        """
+        reg_checkin_times = affirm_dict(vtypes.ID, datetime.datetime, reg_checkin_times)
+        registration_ids = reg_checkin_times.keys()
+
+        ref_time = now()
+        if any(checkin_time > ref_time for checkin_time in reg_checkin_times.values()):
+            raise ValueError(n_("Must be in the past."))
+
+        ret = 1
+        # Return early to avoid StopIteration exception in is_privileged
+        if not registration_ids:
+            return ret
+        with Atomizer(rs):
+            regs = self.get_registrations(rs, registration_ids)
+            # All registrations have the same event_id, and hence, the same privileges.
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 next(iter(regs.values()))['event_id']):
+                raise PrivilegeError
+
+            if any(reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+                   for reg in regs.values()):
+                # someone is currently checked in.
+                return 0
+            if any(reg['checkin_periods']
+                   and reg['checkin_periods'][-1].checkout_time >= reg_checkin_times[reg_id]
+                   for reg_id, reg in regs.items()):
+                # checkin time too early
+                return 0
+
+            data = [{
+                    'registration_id': reg_id,
+                    # we require this to be in the past, prevent rounding up
+                    'checkin_time': checkin_time.replace(microsecond=0),
+                } for reg_id, checkin_time in reg_checkin_times.items()
+            ]
+            ret *= self.sql_insert_many(rs, models.CheckinPeriod.database_table, data)
+            for reg_id, reg in regs.items():
+                self.event_log(rs, const.EventLogCodes.checkin_added,
+                               reg['event_id'], reg['persona_id'],
+                               change_note=datetime_filter(reg_checkin_times[reg_id],
+                                                           lang=rs.log_lang))
+        return ret
+
+    class _AddCheckinProtocol(Protocol):
+        def __call__(self, rs: RequestState, registration_id: int,
+                     checkin_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode: ...
+    add_checkin: _AddCheckinProtocol = singularize(
+        add_checkins, "registration_ids", "registration_id", passthrough=True)
+
+    @access("event")
+    def add_checkouts(self, rs: RequestState, registration_ids: Collection[int],
+                      checkout_time: Optional[datetime.datetime] = None,
+                      ) -> DefaultReturnCode:
+        """Check participants out, all at the same time.
+
+        :param checkout_time: defaults to current time
+        """
+        timestamp = checkout_time or now()
+        return self.add_checkouts_multi(
+            rs, {r_id: timestamp for r_id in registration_ids})
+
+    @access("event")
+    def add_checkouts_multi(
+        self, rs: RequestState, reg_checkout_times: Mapping[int, datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Check participants out, individual times per registration.
+
+        :param reg_checkout_times: mapping of registration id to checkout time.
+        """
+        reg_checkout_times = affirm_dict(
+            vtypes.ID, datetime.datetime, reg_checkout_times)
+        registration_ids = reg_checkout_times.keys()
+
+        ret = 1
+        # Return early to avoid StopIteration exception in is_privileged
+        if not registration_ids:
+            return ret
+        with Atomizer(rs):
+            regs = self.get_registrations(rs, registration_ids)
+            # All registrations have the same event_id, and hence, the same privileges.
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 next(iter(regs.values()))['event_id']):
+                raise PrivilegeError
+
+            if any(not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
+                   for reg in regs.values()):
+                # someone is not checked in
+                return 0
+            if any(
+                reg['checkin_periods'][-1].checkin_time >= reg_checkout_times[reg_id]
+                for reg_id, reg in regs.items()
+            ):
+                # cannot checkout earlier than last checkin
+                return 0
+
+            data = [{
+                    'id': reg['checkin_periods'][-1].id,
+                    # we require this to be in the past, prevent rounding up
+                    'checkout_time': reg_checkout_times[reg_id].replace(microsecond=0),
+                } for reg_id, reg in regs.items()
+            ]
+            ret *= self.sql_update_many(rs, models.CheckinPeriod.database_table, data)
+            for reg_id, reg in regs.items():
+                self.event_log(rs, const.EventLogCodes.checkout_added,
+                               reg['event_id'], reg['persona_id'],
+                               change_note=datetime_filter(reg_checkout_times[reg_id],
+                                                           lang=rs.log_lang))
+        return ret
+
+    class _AddCheckoutProtocol(Protocol):
+        def __call__(self, rs: RequestState, registration_id: int,
+                     checkout_time: Optional[datetime.datetime] = None,
+                     ) -> DefaultReturnCode: ...
+    add_checkout: _AddCheckoutProtocol = singularize(
+        add_checkouts, "registration_ids", "registration_id", passthrough=True)
+
+    @access("event")
+    def add_backdated_checkin_period(
+        self, rs: RequestState, registration_id: int,
+        checkin_time: datetime.datetime,
+        checkout_time: Optional[datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Add an additional backdated period, where a participant was present."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        checkin_time = affirm(datetime.datetime, checkin_time)
+        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+
+        if checkout_time and checkin_time >= checkout_time:
+            raise ValueError(n_("Checkout must be after checkin."))
+
+        ret = 1
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 reg['event_id']):
+                raise PrivilegeError
+
+            old_periods: list[CheckinPeriod] = reg['checkin_periods']
+
+            # Determine insertion position.
+            pos = 0
+            for pos, old_period in enumerate(old_periods):
+                if old_period.checkin_time > checkin_time:
+                    break
+            else:
+                # New period will be appended.
+                if old_periods and not old_periods[-1].checkout_time:
+                    raise ValueError(n_("Cannot check in checked-in users."))
+                if old_periods and checkin_time <= old_periods[-1].checkout_time:  # type: ignore[operator]
+                    raise ValueError(n_("Checkin must be after previous checkout."))
+                ret *= self.add_checkin(rs, registration_id, checkin_time)
+                if checkout_time:
+                    ret *= self.add_checkout(rs, registration_id, checkout_time)
+                return ret
+            if pos > 0 and checkin_time <= old_periods[pos - 1].checkout_time:  # type: ignore[operator]
+                raise ValueError(n_("Checkin must be after previous checkout."))
+            if not checkout_time:
+                raise ValueError(n_(
+                    "Needs checkout to be backdated before another checkin.",
+                ))
+            if old_periods[pos].checkin_time <= checkout_time:
+                raise ValueError(n_("Checkout must be before next checkin."))
+
+            data: CdEDBObject = {
+                'registration_id': registration_id,
+                'checkin_time': checkin_time,
+                'checkout_time': checkout_time,
+            }
+            ret = self.sql_insert(rs, models.CheckinPeriod.database_table, data)
+            self.event_log(rs, const.EventLogCodes.checkin_added,
+                           reg['event_id'], reg['persona_id'],
+                           change_note=datetime_filter(checkin_time, lang=rs.log_lang))
+            self.event_log(rs, const.EventLogCodes.checkout_added,
+                           reg['event_id'], reg['persona_id'],
+                           change_note=datetime_filter(checkout_time, lang=rs.log_lang))
+        return ret
+
+    @access("event")
+    def change_checkin_period(
+        self, rs: RequestState, registration_id: int, period_id: int,
+        checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
+    ) -> DefaultReturnCode:
+        """Change the time a participant was present.
+
+        :param checkout_time: Optional iff the period is the newest one."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        period_id = affirm(vtypes.ID, period_id)
+        checkin_time = affirm(datetime.datetime, checkin_time)
+        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+
+        ref_time = now()
+        if checkin_time > ref_time:
+            raise ValueError(n_("Must be in the past."))
+        elif checkout_time and checkin_time >= checkout_time:
+            raise ValueError(n_("Checkout must be after checkin."))
+
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 reg['event_id']):
+                raise PrivilegeError
+
+            periods = {t.id: t for t in reg['checkin_periods']}
+            if period_id not in periods:
+                raise ValueError(n_("Period is not from this registration."))
+            period = periods[period_id]
+
+            # Check the change does not mix up transition order.
+            pos = reg['checkin_periods'].index(period)
+            if pos != 0 and reg['checkin_periods'][pos - 1].checkout_time >= checkin_time:
+                raise ValueError(n_("Checkin time to early."))
+            if len(reg['checkin_periods']) > pos + 1:
+                if not checkout_time:
+                    raise ValueError(n_("Checkout time must not be empty."))
+                if reg['checkin_periods'][pos + 1].checkin_time <= checkout_time:
+                    raise ValueError(n_("Checkout time to early."))
+
+            if period.checkin_time != checkin_time:
+                old_time = datetime_filter(period.checkin_time, lang=rs.log_lang)
+                new_time = datetime_filter(checkin_time, lang=rs.log_lang)
+                msg = f"{old_time} -> {new_time}"
+                period.checkin_time = checkin_time
+                self.event_log(rs, const.EventLogCodes.checkin_changed,
+                               reg['event_id'], reg['persona_id'], msg)
+
+            if period.checkout_time is None and checkout_time is not None:
+                return self.add_checkout(rs, registration_id, checkout_time)
+            elif checkout_time is None and period.checkout_time is not None:
+                old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+                msg = f"Entfernt {old_time}"
+                self.event_log(rs, const.EventLogCodes.checkout_changed,
+                               reg['event_id'], reg['persona_id'], msg)
+            elif period.checkout_time != checkout_time:
+                old_time = datetime_filter(period.checkout_time, lang=rs.log_lang)
+                new_time = datetime_filter(checkout_time, lang=rs.log_lang)
+                msg = f"{old_time} -> {new_time}"
+                self.event_log(rs, const.EventLogCodes.checkout_changed,
+                               reg['event_id'], reg['persona_id'], msg)
+            period.checkout_time = checkout_time
+
+            return self.sql_update(
+                rs, models.CheckinPeriod.database_table, period.to_database())
+
+    @access("event")
+    def delete_checkin_period(self, rs: RequestState, registration_id: int,
+                              period_id: int) -> DefaultReturnCode:
+        """Delete a (pair of) checkpoint(s) where a participant entered/left."""
+        registration_id = affirm(vtypes.ID, registration_id)
+        period_id = affirm(vtypes.ID, period_id)
+
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 reg['event_id']):
+                raise PrivilegeError
+
+            id_to_period = {ct.id: ct for ct in reg['checkin_periods']}
+            period = id_to_period[period_id]
+            ret = self.sql_delete(
+                rs, models.CheckinPeriod.database_table, [period_id])
+            msg = (f"{datetime_filter(period.checkin_time, lang=rs.log_lang)}; "
+                   f"{datetime_filter(period.checkout_time, lang=rs.log_lang)}")
+            self.event_log(
+                rs, const.EventLogCodes.checkin_period_deleted,
+                reg['event_id'], reg['persona_id'], change_note=msg)
+        return ret
+
+    @internal
+    @access("event")
+    def replace_checkin_periods(self, rs: RequestState, registration_id: int,
+                                new_periods: list[ReducedCheckinPeriod],
+                                ) -> DefaultReturnCode:
+        """Specify a new list of checkin periods for a persona.
+
+        This treats the checkin time as a primary key, making changes to existing
+        periods where the checkin time did not change, inserting added periods and
+        deleting omitted periods.
+
+        :param new_periods: A list of new periods, without any id or registration id
+                        specified. This matches the partial export format.
+        """
+        # First check validity of new periods
+        new_periods = xsorted(new_periods, key=lambda x: x.checkin_time)
+        if any(not period.checkout_time for period in new_periods[:-1]):
+            raise ValueError(n_("Checkout date must be provided."))
+        old_periods: list[CheckinPeriod]
+        old_periods = self.get_registration(rs, registration_id)['checkin_periods']
+
+        # Set up iterators and a helper to safely iterate over both old and new periods.
+        nxt = lambda it: next(it, None)
+
+        old_it, new_it = iter(old_periods), iter(new_periods)
+        current_old, current_new = nxt(old_it), nxt(new_it)
+
+        ret = 1
+        to_be_inserted: list[ReducedCheckinPeriod] = []
+        drop_checkout: tuple[int, datetime.datetime] | None = None
+        while True:
+            if current_old is None and current_new is None:
+                # If both lists are exhausted return.
+                #  But first perform the postponed insertions and deletion.
+                for new_period in to_be_inserted:
+                    ret *= self.add_backdated_checkin_period(
+                        rs, registration_id, new_period.checkin_time,
+                        new_period.checkout_time,
+                    )
+                if drop_checkout:
+                    ret *= self.change_checkin_period(
+                        rs, registration_id, drop_checkout[0],
+                        drop_checkout[1], checkout_time=None,
+                    )
+                return ret
+            elif current_old is None:
+                # If only new entries are left, simply add them.
+                assert current_new is not None
+                ret *= self.add_backdated_checkin_period(
+                    rs, registration_id, current_new.checkin_time,
+                    current_new.checkout_time,
+                )
+                current_new = nxt(new_it)
+            elif current_new is None:
+                # If only old entries are left, simply delete them.
+                assert current_old is not None
+                ret *= self.delete_checkin_period(rs, registration_id, current_old.id)
+                current_old = nxt(old_it)
+            else:
+                # Compare the two current entries.
+                assert current_old is not None
+                assert current_new is not None
+                if current_new.checkin_time < current_old.checkin_time:
+                    # If the new one needs to be before the old one, insert it.
+                    #  (The actual insertion is postponed for technical reasons).
+                    to_be_inserted.append(current_new)
+                    current_new = nxt(new_it)
+                elif current_new.checkin_time > current_old.checkin_time:
+                    # If the new one needs to be after the old one, delete the old one.
+                    ret *= self.delete_checkin_period(rs, registration_id, current_old.id)
+                    current_old = nxt(old_it)
+                else:
+                    # If the new one has the same checkin as the old one, adjust the
+                    #  old one if necessary.
+                    if (current_old.checkout_time is not None
+                            and current_new.checkout_time is None):
+                        # Dropping a checkout might only be possible later.
+                        drop_checkout = (current_old.id, current_old.checkin_time)
+                    else:
+                        ret *= self.change_checkin_period(
+                            rs, registration_id, current_old.id,
+                            current_new.checkin_time, current_new.checkout_time,
+                        )
+
+                    current_old, current_new = nxt(old_it), nxt(new_it)

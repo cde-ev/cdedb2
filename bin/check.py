@@ -145,8 +145,11 @@ def run_application_tests(testpatterns: Optional[List[str]] = None, *,
     test_suite = _load_tests(testpatterns, test_modules)
 
     unittest.installHandler()
-    test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
-                                   resultclass=MyTextTestResult, descriptions=False)
+    test_runner = MyTextTestRunner(
+        verbosity=(2 if verbose else 1),
+        resultclass=MyTextTestResult,  # type: ignore[arg-type]
+        descriptions=False,
+    )
     ran_tests = test_runner.run(test_suite)
     return 0 if ran_tests.wasSuccessful() else 1
 
@@ -206,8 +209,11 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
     unittest.installHandler()
-    test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
-                                   resultclass=MyTextTestResult, descriptions=False)
+    test_runner = MyTextTestRunner(
+        verbosity=(2 if verbose else 1),
+        resultclass=MyTextTestResult,  # type: ignore[arg-type]
+        descriptions=False,
+    )
     ran_tests = test_runner.run(test_suite)
     stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1

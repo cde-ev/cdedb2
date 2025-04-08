@@ -9,6 +9,7 @@ from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import CdEDBObject, nearly_now
+from cdedb.common.sorting import xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
 
@@ -41,6 +42,7 @@ ignored_columns = {
 # mark some columns which shall not be filled with information extracted from the
 # database, because they can be filled by sql automatically.
 implicit_columns = {
+    "core.personas": {"searchable_legal_given_names"},
     "core.changelog": {"id"},
     "core.log": {"id"},
     "core.email_states": {"id"},
@@ -82,7 +84,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
     sql = SqlQueryBackend(logger)
 
     # extract the tables to be created from the database tables
-    with open("/cdedb2/cdedb/database/cdedb-tables.sql") as f:
+    with open("/cdedb2/cdedb/database/cdedb-tables.sql", encoding="utf-8") as f:
         tables = [
             table.group('name')
             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
@@ -105,9 +107,9 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
             entities = sql.query_all(rs, query, ())
             if not silent:
                 print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        # take care we obtain a stable order
         sorted_entities = list()
         for entity in entities:
-            # take care that the order is preserved
             sorted_entity: dict[str, Any] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
@@ -119,6 +121,8 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
                 elif isinstance(value, datetime.date) and datetime_from_date(
                         value) == reference_frame:
                     sorted_entity[field] = "---now---"
+                elif isinstance(value, dict):
+                    sorted_entity[field] = {k: value[k] for k in xsorted(value)}
                 else:
                     sorted_entity[field] = value
             sorted_entities.append(sorted_entity)

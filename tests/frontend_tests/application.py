@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import unittest.mock
 from typing import Any
@@ -27,7 +26,7 @@ class TestApplication(FrontendTest):
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(self.user["display_name"], div="displayname")
+        self.assertPresence(self.user["given_names"], div="displayname")
 
     @as_users("berta")
     def test_403(self) -> None:
@@ -51,9 +50,9 @@ class TestApplication(FrontendTest):
 
             # pretend we are not in testmode to create an error page
             def config_mock_getitem(key: str) -> Any:
-                if key in ["CDEDB_DEV", "CDEDB_TEST"]:
+                if key in {"CDEDB_DEV", "CDEDB_TEST"}:
                     return False
-                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
+                return self.app.app.conf._configchain[key]
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)
@@ -81,9 +80,9 @@ class TestApplication(FrontendTest):
 
             # pretend we are not in testmode to create an error page
             def config_mock_getitem(key: str) -> Any:
-                if key in ["CDEDB_DEV", "CDEDB_TEST"]:
+                if key in {"CDEDB_DEV", "CDEDB_TEST"}:
                     return False
-                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
+                return self.app.app.conf._configchain[key]
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)
@@ -95,7 +94,7 @@ class TestApplication(FrontendTest):
         self.assertPresence("Mitglieder", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(self.user["display_name"], div="displayname")
+        self.assertPresence(self.user["given_names"], div="displayname")
 
     def test_error_catching(self) -> None:
         """

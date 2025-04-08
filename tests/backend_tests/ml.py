@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=protected-access,missing-module-docstring
 
 from collections.abc import Collection
 from dataclasses import fields
@@ -32,10 +31,10 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_basics(self) -> None:
         data = self.core.get_ml_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['given_names'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'display_name', 'given_names', 'family_name'}}
+                  {'id', 'legal_given_names', 'given_names', 'family_name'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_ml_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
@@ -955,10 +954,10 @@ class TestMlBackend(BackendTest):
         # but explict unsubscribed from this list
         mailinglist_id = 2
 
-        for persona_id in {17, 27, 32}:
+        for persona_id in (17, 27, 32):
             self._change_sub(persona_id, mailinglist_id, SA.reset, state=SS.none)
         self.ml.write_subscription_states(self.key, (mailinglist_id,))
-        for persona_id in {17, 27, 32}:
+        for persona_id in (17, 27, 32):
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
                                                  mailinglist_id=mailinglist_id)
             self.assertEqual(new_state, SS.none)
@@ -969,7 +968,7 @@ class TestMlBackend(BackendTest):
             self._change_sub(persona_id, mailinglist_id,
                              SA.remove_subscription_override, state=SS.subscribed)
         self.ml.write_subscription_states(self.key, (mailinglist_id,))
-        for persona_id in {17, 27, 32}:
+        for persona_id in (17, 27, 32):
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
                                                  mailinglist_id=mailinglist_id)
             self.assertEqual(new_state, SS.none)
@@ -1222,7 +1221,7 @@ class TestMlBackend(BackendTest):
 
         # Make sure moderator functions do not tell you anything.
         # Garcia (7) is listed implicitly, explicitly or not at all on these
-        for ml_id in {1, 4, 5, 6, 8, 9}:
+        for ml_id in (1, 4, 5, 6, 8, 9):
             _try_everything(ml_id, USER_DICT['garcia']['id'])
 
         # Users have very diverse states on list 5.

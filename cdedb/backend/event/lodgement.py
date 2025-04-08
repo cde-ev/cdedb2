@@ -7,6 +7,7 @@ functionality for managing lodgements and lodgement groups belonging to an event
 import collections
 import dataclasses
 from collections.abc import Collection, Iterator
+from functools import cached_property
 from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
@@ -17,6 +18,7 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
     read_conditional_write_composer,
     singularize,
 )
@@ -34,6 +36,10 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -42,11 +48,11 @@ from cdedb.database.query import DatabaseValue_s
 @dataclasses.dataclass(frozen=True)
 class LodgementInhabitants:
     """Small helper class to store and add inhabitants of a lodgement."""
-    regular: tuple[int, ...] = dataclasses.field(default_factory=tuple)
-    camping_mat: tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    regular: list[CdEDBObject] = dataclasses.field(default_factory=list)
+    camping_mat: list[CdEDBObject] = dataclasses.field(default_factory=list)
 
-    @property
-    def all(self) -> tuple[int, ...]:
+    @cached_property
+    def all(self) -> list[CdEDBObject]:
         return self.regular + self.camping_mat
 
     def __add__(self, other: Any) -> "LodgementInhabitants":
@@ -55,12 +61,12 @@ class LodgementInhabitants:
         return self.__class__(self.regular + other.regular,
                               self.camping_mat + other.camping_mat)
 
-    def __iter__(self) -> Iterator[tuple[int, ...]]:
+    def __iter__(self) -> Iterator[list[CdEDBObject]]:
         """Enable tuple unpacking."""
         return iter((self.regular, self.camping_mat))
 
 
-class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventLodgementBackend(EventBaseBackend):
     @access("event")
     def list_lodgement_groups(self, rs: RequestState,
                               event_id: int) -> dict[int, str]:
@@ -69,7 +75,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "event.lodgement_groups", ("id", "title"),
                                (event_id,), entity_key="event_id")
@@ -106,7 +112,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgement groups from exactly one event allowed!"))
             event_id = unwrap(events)
-            if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
@@ -133,8 +140,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         with Atomizer(rs):
             current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
             event_id, title = current['event_id'], current['title']
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_write,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -189,7 +196,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -229,7 +236,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         if group_id:
             group_data = self.sql_select_one(
@@ -264,8 +271,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event_fields = models.EventField.many_from_database(
                 self._get_event_fields(rs, event_id).values())
@@ -293,7 +300,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             group_data = {
                 e['id']: e for e in self.query_all(
@@ -326,8 +334,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if current is None:
                 raise ValueError(n_("Lodgement does not exist."))
             event_id, title = current['event_id'], current['title']
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_write,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -371,8 +379,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             association=const.FieldAssociations.lodgement,
         )
         data['fields'] = PsycoJson(fdata)
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write,
+                             event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
@@ -418,8 +426,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         lodgement_id = affirm(vtypes.ID, lodgement_id)
         lodgement = self.get_lodgement(rs, lodgement_id)
         event_id = lodgement["event_id"]
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
@@ -427,7 +434,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
-        cascade = cascade & blockers.keys()
+        cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -460,13 +467,19 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     @access("event")
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
-            lodgement_ids: Optional[Collection[int]] = None,
-            only_involved: bool = False,
+            lodgement_ids: Collection[int] | None = None,
+            involved: bool | None = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id):
+        involved = affirm_optional(bool, involved)
+
+        if not is_privileged(
+                rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
+                event_id=event_id,
+        ):
             raise PrivilegeError
+
         params: list[DatabaseValue_s] = [event_id]
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
@@ -474,10 +487,26 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
-        if only_involved:
-            condition += " AND rp.status = ANY(%s)"
-            params.append([s.value
-                           for s in const.RegistrationPartStati.involved_states()])
+        if involved is not None:
+            params.append(const.RegistrationPartStati.involved_states())
+            if involved:
+                condition += " AND rp.status = ANY(%s)"
+            else:
+                condition += " AND NOT(rp.status = ANY(%s))"
+
+        # Retrieve all registrations.
+        query = f"""
+            SELECT registration_id
+            FROM event.registration_parts rp
+                JOIN event.event_parts ep ON rp.part_id = ep.id
+            WHERE ep.event_id = %s AND {condition}
+        """
+        registration_ids = {
+            e['registration_id'] for e in self.query_all(rs, query, params)
+        }
+        registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+
+        # Retrieve grouped registration ids.
         query = f"""
             SELECT
                 lodgement_id, part_id, is_camping_mat AS is_cm,
@@ -492,9 +521,13 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             lambda: collections.defaultdict(LodgementInhabitants))
         for e in self.query_all(rs, query, params):
             if e['is_cm']:
-                inhabitants = LodgementInhabitants(camping_mat=tuple(e['inhabitants']))
+                inhabitants = LodgementInhabitants(
+                    camping_mat=[registrations[reg_id] for reg_id in e['inhabitants']],
+                )
             else:
-                inhabitants = LodgementInhabitants(regular=tuple(e['inhabitants']))
+                inhabitants = LodgementInhabitants(
+                    regular=[registrations[reg_id] for reg_id in e['inhabitants']],
+                )
             ret[e['lodgement_id']][e['part_id']] += inhabitants
         return ret
 

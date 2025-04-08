@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long,missing-module-docstring
+
 
 import pyparsing as pp
 

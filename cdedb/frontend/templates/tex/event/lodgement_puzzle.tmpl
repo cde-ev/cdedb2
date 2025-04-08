@@ -46,7 +46,7 @@
     <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
         <<% for part in ambience['event']['parts'].values()|sort %>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %>>
-                \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
+                \participant{<<< personas[registration['persona_id']]|persona_name(include_nickname=True)|te >>>}%
                     {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part.id]['status'] == enums['RegistrationPartStati'].guest -%>>

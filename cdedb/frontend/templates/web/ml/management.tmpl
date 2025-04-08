@@ -152,7 +152,7 @@
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…", anid="input-add-subscriber",
-                               arialabel=gettext("ID of the new Subscriber")) }}
+                               arialabel=gettext("ID of the new subscribers")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}',

@@ -35,6 +35,10 @@ from cdedb.common.fields import (
     STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_privileged_event as is_privileged,
+)
 from cdedb.common.query import (
     Query,
     QueryOperators,
@@ -57,7 +61,7 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
     )
 
 
-class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
+class EventQueryBackend(EventBaseBackend):
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: Optional[int] = None, aggregate: bool = False,
@@ -73,11 +77,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            if not (self.is_orga(rs, event_id=event_id)
-                    or self.is_admin(rs)
-                    or "ml_admin" in rs.user.roles):
+            if not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -134,7 +135,17 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             EXISTS (
                                 SELECT * FROM event.orgas
                                 WHERE persona_id = registrations.persona_id AND event_id = {event_id}
-                            ) AS is_orga
+                            ) AS is_orga,
+                            EXISTS (
+                                SELECT * FROM event.checkin_periods
+                                WHERE
+                                    checkout_time IS NULL
+                                    AND registration_id = registrations.id
+                            ) AS is_checked_in,
+                            EXISTS (
+                                SELECT * FROM event.checkin_periods
+                                WHERE registration_id = registrations.id
+                            ) AS has_been_checked_in
                         FROM event.registrations
                         WHERE event_id = {event_id}
                     ) AS reg
@@ -149,6 +160,20 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     LEFT OUTER JOIN (
                         {timestamp_table(creation=False)}
                     ) AS mtime ON reg.persona_id = mtime.persona_id
+                    LEFT OUTER JOIN (
+                        SELECT
+                            registration_id,
+                            MIN(checkin_time) AS min_checkin_time,
+                            MIN(checkout_time) AS min_checkout_time,
+                            MAX(checkin_time) AS max_checkin_time,
+                            MAX(checkout_time) AS max_checkout_time
+                        FROM event.checkin_periods
+                        GROUP BY registration_id
+                    ) AS checkin_periods ON reg.id = checkin_periods.registration_id
+                    LEFT OUTER JOIN (
+                        SELECT registration_id, checkin_time, checkout_time
+                        FROM event.checkin_periods
+                    ) AS checkin_at ON reg.id = checkin_at.registration_id
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}
@@ -272,7 +297,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     WHERE event_id = {event_id}
                 """
 
-            # Step 6: Prepare template for timestamp information.
+            # Step 6: Prepare template for log timestamp information.
             def timestamp_table(creation: bool) -> str:
                 if creation:
                     param_name = 'creation_time'
@@ -291,8 +316,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
@@ -317,8 +342,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.courses_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -361,7 +386,11 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # rank and information on whether the course is offered and taking place.
 
             # A base table with all course ids we need in the following tables.
-            base = f"(SELECT id FROM event.courses WHERE event_id = {event_id}) AS c"
+            base = f"""(
+                SELECT id, max_size
+                FROM event.courses
+                WHERE event_id = {event_id}
+            ) AS c"""
 
             # Step 3.1: Template for combining all course track information.
             def course_track_table(track: models.CourseTrack) -> str:
@@ -447,7 +476,10 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
                 stati_str = ','.join(map(str, map(int, stati)))
                 return f"""
-                    SELECT id AS base_id, COUNT(registration_id) AS {param_name}
+                    SELECT
+                        id AS base_id, COUNT(registration_id) AS {param_name}
+                        {", max_size - COUNT(registration_id) AS remaining_capacity"
+                         if param_name == 'attendees' else ""}
                     FROM (
                         {base}
                         LEFT OUTER JOIN (
@@ -460,7 +492,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             AND track_id = {track.id} {constraint}
                         ) AS reg_track ON c.id = reg_track.{col}
                     )
-                    GROUP BY id
+                    GROUP BY id, max_size
                 """
 
             # Step 3.3: Prepare template for constructing table with course choices.
@@ -491,8 +523,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         elif query.scope == QueryScope.lodgement:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.lodgements_read,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -683,7 +715,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         event_id = affirm(vtypes.ID, event_id)
         scopes = affirm_set(QueryScope, scopes or set())
         query_ids = affirm_set(vtypes.ID, query_ids or set())
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:
             with Atomizer(rs):
@@ -739,7 +771,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 rs, "event.stored_queries", ("event_id", "query_name"), query_id)
             if q is None:
                 return 0
-            if not (self.is_admin(rs) or self.is_orga(rs, event_id=q['event_id'])):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=q['event_id']):
                 raise PrivilegeError(n_(
                     "Must be orga to delete queries for an event."))
 
@@ -756,7 +789,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         event_id = affirm(vtypes.ID, event_id)
         query = affirm(Query, query)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_(
                 "Must be orga to store queries for an event."))
         if not query.scope.supports_storing():
@@ -785,7 +818,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
              f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
@@ -799,7 +832,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                             ) -> int:
         """Delete invalid stored event queries."""
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
         self.logger.warning(f"Invalid stored queries were automatically deleted:"
@@ -841,7 +874,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             event = self.get_event(rs, event_id)
@@ -875,7 +909,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             ret = self.sql_delete_one(

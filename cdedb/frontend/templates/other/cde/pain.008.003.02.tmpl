@@ -73,7 +73,27 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                                         <MndtRltdInf>
                                                                 <MndtId>{{ transaction['mandate_reference'] }}</MndtId>
                                                                 <DtOfSgntr>{{ transaction['mandate_date'] }}</DtOfSgntr>
+                                                                {% if meta['sender']['original_glaeubigerid'] and meta['sender']['original_glaeubigerid'] != meta['sender']['glaeubigerid'] -%}
+                                                                <AmdmntInd>true</AmdmntInd>
+                                                                <AmdmntInfDtls>
+                                                                    <OrgnlCdtrSchmeId>
+                                                                        <Id>
+                                                                            <PrvtId>
+                                                                                <Othr>
+                                                                                    <Id>
+                                                                                        {{ meta['sender']['original_glaeubigerid'] }}
+                                                                                    </Id>
+                                                                                    <SchmeNm>
+                                                                                        <Prtry>SEPA</Prtry>
+                                                                                    </SchmeNm>
+                                                                                </Othr>
+                                                                            </PrvtId>
+                                                                        </Id>
+                                                                    </OrgnlCdtrSchmeId>
+                                                                </AmdmntInfDtls>
+                                                                {%- else -%}
                                                                 <AmdmntInd>false</AmdmntInd>
+                                                                {%- endif %}
                                                         </MndtRltdInf>
                                                 </DrctDbtTx>
                                                 <DbtrAgt>

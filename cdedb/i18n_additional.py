@@ -86,6 +86,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.event_changed"),
     n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.event_archived"),
+    n_("EventLogCodes.helper_added"),
+    n_("EventLogCodes.helper_removed"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),
@@ -144,6 +146,13 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_status_changed"),
     n_("EventLogCodes.personalized_fee_amount_set"),
     n_("EventLogCodes.personalized_fee_amount_deleted"),
+    n_("EventLogCodes.checkin_added"),
+    n_("EventLogCodes.checkout_added"),
+    n_("EventLogCodes.checkin_changed"),
+    n_("EventLogCodes.checkout_changed"),
+    n_("EventLogCodes.checkin_period_deleted"),
+    n_("EventLogCodes.event_balanced"),
+    n_("EventLogCodes.event_unbalanced"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -311,6 +320,12 @@ I18N_STRINGS = (
     n_("QueryOperators.outside"),
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
+    n_("QueryOperators.checkedin_at"),
+    n_("QueryOperators.checkedin_notat"),
+    n_("QueryOperators.checkedin_oneof"),
+    n_("QueryOperators.checkedin_noneof"),
+    n_("QueryOperators.checkedin_allof"),
+    n_("QueryOperators.checkedin_notallof"),
 
     n_("QueryScope.registration"),
     n_("QueryScope.event_course"),
@@ -368,6 +383,33 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
 
+    # Registration violations.
+    n_("MutuallyExclusiveParticipationCV"),
+    n_("CourseChoiceSyncCV"),
+    n_("NoCourseAssignedCV"),
+    n_("IncorrectCourseAssignedCV"),
+    n_("InconsistentPaymentCV"),
+    n_("NotPaidCV"),
+    n_("ZeroAmountOwedCV"),
+    n_("NegativeAmountOwedCV"),
+    n_("NegativeRemainingOwedCV"),
+    n_("RemainingOwedCV"),
+    n_("AbsentCheckedinCV"),
+    n_("PresentNeverCheckedinCV"),
+    n_("MissingMinorFormCV"),
+    n_("IllegalMixedLodgingCV"),
+    n_("IncorrectCampingMatAssignmentCV"),
+    n_("NoLodgementCV"),
+    # Course violations.
+    n_("HiddenCourseCV"),
+    n_("MutuallyExclusiveCoursesCV"),
+    n_("CancelledWithAttendeesCV"),
+    n_("IncorrectNumAttendeesCV"),
+    n_("LonelyAttendeesCV"),
+    # Lodgement violations.
+    n_("IncorrectNumInhabitantsCV"),
+    n_("IllegalMixedLodgementCV"),
+
     #
     # Query datatypes
     #
@@ -378,6 +420,23 @@ I18N_STRINGS = (
     n_("datetime"),
     n_("bool"),
     n_("id"),
+
+    # Meta info fields:
+    n_("Finanzvorstand_Name"),
+    n_("Finanzvorstand_Vorname"),
+    n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"),
+    n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"),
+    n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("Vorstand"),
+    n_("membership_fee_account"),
+    n_("lastschrift_account"),
+    n_("banner_before_login"),
+    n_("banner_after_login"),
+    n_("banner_genesis"),
+    n_("cde_misc"),
+    n_("lockdown_web"),
 
     #
     # Validation errors

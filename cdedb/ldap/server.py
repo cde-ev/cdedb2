@@ -16,6 +16,7 @@ from ldaptor.protocols.ldap.ldaperrors import (
     LDAPUnwillingToPerform,
 )
 from ldaptor.protocols.pureldap import (
+    LDAPAbandonRequest,
     LDAPCompareRequest,
     LDAPControls,
     LDAPMessage,
@@ -187,10 +188,10 @@ class LdapHandler:
         try:
             await handler(msg.value, msg.controls, reply)
         except LDAPException as e:
-            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
             reply(error_handler(e.resultCode, e.message))
         except Exception as e:
-            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
             reply(error_handler(LDAPProtocolError.resultCode, str(e)))
         return
 
@@ -213,8 +214,7 @@ class LdapHandler:
         """
         if request.version != 3:
             raise ldaperrors.LDAPProtocolError(
-                "Version %u not supported" % request.version,
-            )
+                f"Version {request.version} not supported")
 
         self.check_controls(controls)
 
@@ -231,7 +231,7 @@ class LdapHandler:
         try:
             entry = await self.root.lookup(dn)
         except ldaperrors.LDAPNoSuchObject:
-            raise ldaperrors.LDAPInvalidCredentials  # pylint: disable=raise-missing-from
+            raise ldaperrors.LDAPInvalidCredentials
 
         self.bound_user = entry.bind(request.auth)
 
@@ -286,7 +286,6 @@ class LdapHandler:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareTrue.resultCode))
         else:
             reply(pureldap.LDAPCompareResponse(ldaperrors.LDAPCompareFalse.resultCode))
-        return None
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
@@ -354,7 +353,7 @@ class LdapHandler:
         base = await self.root.lookup(base_dn)
         search_results = await base.search(
             filterObject=request.filter,
-            # attributes=request.attributes,
+            attributes=request.attributes,
             scope=request.scope,
             derefAliases=request.derefAliases,
             # sizeLimit=request.sizeLimit,
@@ -372,7 +371,7 @@ class LdapHandler:
             - which entries may access other entries
             - which attributes may be accessed by which entries
             """
-            attributes = {key: value for key, value in entry.items()}  # pylint: disable=unnecessary-comprehension
+            attributes = dict(entry)
             # never ever return an userPassword in a search result
             if b"userPassword" in attributes:
                 del attributes[b"userPassword"]
@@ -488,4 +487,17 @@ class LdapHandler:
         reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode),
               controls=controls)
 
+        return None
+
+    # see RFC 4511
+    # AbandonRequest ::= [APPLICATION 16] MessageID
+    async def handle_LDAPAbandonRequest(
+        self,
+        request: LDAPAbandonRequest,
+        controls: Optional[pureldap.LDAPControls],
+        reply: ReplyCallback,
+    ) -> None:
+        # according to specification, the operation which should be abandoned may or
+        # may not send a done notification. So, we just let the operation proceed.
+        # this request does not send a response
         return None

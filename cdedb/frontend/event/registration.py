@@ -12,7 +12,7 @@ import io
 import re
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
+from typing import Optional, cast
 
 import segno.helpers
 import werkzeug.exceptions
@@ -22,19 +22,23 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
+    ValidationWarning,
     build_msg,
     determine_age_class,
     diacritic_patterns,
     get_hash,
     json_serialize,
+    make_persona_name,
     merge_dicts,
     now,
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
@@ -412,13 +416,15 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_archived:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
+            if rs.ambience['event'].is_balanced:
+                rs.notify("error", n_("Event is balanced."))
+                return self.redirect(rs, "event/show_event")
             if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
-        else:
-            if event_id not in rs.user.orga and not self.is_admin(rs):
-                raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
+        elif not self.is_privileged(rs, EventPrivileges.basic_read):
+            raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
         if 'parts' not in rs.values:
@@ -444,6 +450,44 @@ class EventRegistrationMixin(EventBaseFrontend):
             'part_options': part_options, **course_choice_params,
         })
 
+    def _calculate_partial_fee(
+            self, rs: RequestState,
+            event_id: int,
+            reg: CdEDBObject,
+            persona_id: int | None = None,
+            current: CdEDBObject | None = None,
+    ) -> decimal.Decimal:
+        """Calculate the fee for one registration based on a (partial) registration.
+
+        For a new registration (current=None) the registration should be validated to
+        have the necessary data (parts and fields).
+        """
+        if current:
+            # Altering existing registration. 'parts' and 'fields' may be present in the
+            #  changed data. Default to existing values.
+            registration = {**current}
+            for part_id, reg_part in reg.get('parts', {}).items():
+                registration['parts'][part_id].update(reg_part)
+            registration['fields'].update(reg.get('fields', {}))
+            registration.update({
+                'persona_id': current['persona_id'],
+                'is_member': current['is_member'],
+                'personalized_fees': current['personalized_fees'],
+            })
+        else:
+            # Creating a new registration. 'parts' and 'fields' should be present.
+            if not persona_id:
+                raise ValueError
+            registration = {
+                **reg,
+                'persona_id': persona_id,
+                'is_member': self.coreproxy.get_persona(rs, persona_id)['is_member'],
+                'personalized_fees': {},
+            }
+        return self.eventproxy.calculate_fee_for_partial_registration(
+            rs, registration, event_id=event_id,
+        )
+
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
@@ -458,7 +502,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         :returns: A dict with localized text to be used in the preview.
         """
 
-        if self.is_orga(rs, event_id):
+        if self.is_privileged(rs, EventPrivileges.registrations_read):
+            pass
+        # Preview access for event helpers
+        elif not persona_id and self.is_privileged(rs, EventPrivileges.basic_read):
             pass
         elif persona_id == rs.user.persona_id and (
                 rs.ambience['event'].is_open
@@ -508,8 +555,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def new_process_registration_input(
             self, rs: RequestState, orga_input: bool,
-            parts: Optional[CdEDBObjectMap] = None,
-            skip: Collection[str] = (), check_enabled: bool = False,
+            parts: Optional[CdEDBObjectMap] = None, check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a
         registration dict that can be used for `create_registration` or
@@ -521,17 +567,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         :param parts: Only relevant for non-orga input. If None, the part information
             will be retrieved from the input (meaning this is a new registration
             being created). Otherwise the data from `get_registration()['parts']`.
-        :param skip: A list of field names to be excluded from retrieval and setting.
-            Can be used to avoid simulataneously opened tabs overwriting one another,
-            e.g. when editing a registration coming from the checkin page, the
-            `reg.checkin` field is skipped for that edit.
         :param check_enabled: If True, only retrieve data for fields where a
             corresponding enable checkbox is selected. Only relevant for the multiedit.
         """
 
         def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
-            params = {key: kind for key, kind in params.items() if key not in skip}
             if not check_enabled:
                 return params
             enable_params = {f"enable_{key}": bool for key in params}
@@ -555,7 +596,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         if orga_input:
             standard_params.update({
-                "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
                 "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
                 "reg.parental_agreement": bool,
             })
@@ -676,14 +716,14 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 # In which case we don't want to touch the course choices.
                 continue
-            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")  # pylint: disable=cell-var-from-loop
+            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")
             choice_key = lambda x: (
                 f"group{group_id}.course_choice_{x}"
-                if (group_id := track_group_map[track_id])  # pylint: disable=cell-var-from-loop
-                else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
+                if (group_id := track_group_map[track_id])
+                else f"track{track_id}.course_choice_{x}"
             )
             choices_list = [
-                c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
+                c_id for i in range(track.num_choices) if (c_id := choice(i))]
             instructed_course = reg_tracks[track_id].get("course_instructor")
             for rank, course_id in enumerate(choices_list):
                 # Check for choosing instructed course.
@@ -751,7 +791,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             fields_by_name = {
                 f"fields.{f.field_name}": f for f in event.fields.values()}
             for key, val in tmp_fields.items():
-                if val == "" and fields_by_name[key].entries:
+                if not val and fields_by_name[key].entries:
                     rs.append_validation_error(
                         (key, ValueError(n_("Must not be empty."))))
 
@@ -775,6 +815,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
         if rs.ambience['event'].is_archived:
             rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
+        if rs.ambience['event'].is_balanced:
+            rs.notify("error", n_("Event is balanced."))
             return self.redirect(rs, "event/show_event")
         if self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id):
             rs.notify("error", n_("Already registered."))
@@ -981,7 +1024,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         values: CdEDBObject = {
             f"reg.{key}": val
             for key, val in registration.items()
-            if key not in ("parts", "tracks", "fields")
+            if key not in {"parts", "tracks", "fields"}
         }
         for part_id, reg_part in registration['parts'].items():
             values |= {
@@ -1107,7 +1150,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def show_registration(self, rs: RequestState, event_id: int,
                           registration_id: int) -> Response:
         """Display all information pertaining to one registration."""
@@ -1120,20 +1163,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
-            rs, event_id, registration_id=registration_id, course_id=-1)
+            rs, rs.ambience['event'], registration_id=registration_id, course_id=-1)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'lodgements': lodgements,
             'waitlist_position': waitlist_position,
-            'mep_violations': constraint_violations['mep_violations'],
-            'ccs_violations': constraint_violations['ccs_violations'],
-            'violation_severity': constraint_violations['max_severity'],
+            'constraint_violations': constraint_violations,
             **payment_data,
             **course_choice_parameters,
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def show_registration_fee(self, rs: RequestState, event_id: int,
                               registration_id: int) -> Response:
         """Display detailed information about amount owed and individual fees."""
@@ -1143,7 +1184,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_new_personalized_fee_form(
             self, rs: RequestState, event_id: int, registration_id: int,
     ) -> Response:
@@ -1151,15 +1192,19 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         The personalized amount for that registration is created at the same time.
         """
+        if rs.ambience['event'].is_balanced:
+            rs.notify(
+                "error", n_("Event is balanced. May not change fee configuration."))
+            return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
         return self.render(rs, "event/fee/configure_fee",
                            {'persona': persona, 'personalized': True})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata('amount')
-    @REQUESTdatadict(*models.EventFee.requestdict_fields())
+    @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=True))
     def add_new_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int,
             data: CdEDBObject, amount: decimal.Decimal,
@@ -1184,7 +1229,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
     ) -> Response:
@@ -1206,7 +1251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def delete_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
     ) -> Response:
@@ -1223,7 +1268,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset_form(
             self, rs: RequestState, event_id: int, fee_id: int | None = None,
@@ -1297,7 +1342,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset(
             self, rs: RequestState, event_id: int, fee_id: int,
@@ -1358,21 +1403,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/fee_summary")
 
     @access("event")
-    @event_guard(check_offline=True)
-    @REQUESTdata("skip", "change_note")
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
-                                 registration_id: int, skip: Collection[str],
-                                 change_note: Optional[str], internal: bool = False,
+                                 registration_id: int, change_note: Optional[str],
+                                 internal: bool = False,
                                  ) -> Response:
         """Render form.
 
-        The skip parameter is meant to hide certain fields and skip them when
-        evaluating the submitted from in change_registration(). This can be
-        used in situations, where changing those fields could override
-        concurrent changes (e.g. the Check-in).
-
-
-        The internal flag is used if the call comes from another frontend
+        :param internal: used if the call comes from another frontend
         function to disable further redirection on validation errors.
         """
         if rs.has_validation_errors() and not internal:
@@ -1389,16 +1428,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         values['reg.real_persona_id'] = cdedbid_filter(registration['real_persona_id'])
         merge_dicts(rs.values, values)
         return self.render(rs, "registration/change_registration", {
-            'persona': persona, 'lodgements': lodgements,
-            'skip': skip or [], 'change_note': change_note,
+            'persona': persona, 'lodgements': lodgements, 'change_note': change_note,
             **course_choice_params,
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    @REQUESTdata("skip", "change_note")
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("change_note")
     def change_registration(self, rs: RequestState, event_id: int,
-                            registration_id: int, skip: Collection[str],
+                            registration_id: int,
                             change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to a
         registration.
@@ -1407,11 +1445,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         redundant (like managing the lodgement inhabitants), but it would be
         much more cumbersome to always use this interface.
         """
-        registration = self.new_process_registration_input(
-            rs, orga_input=True, skip=skip)
+        registration = self.new_process_registration_input(rs, orga_input=True)
+        if rs.ambience['event'].is_balanced:
+            new_amount_owed = self._calculate_partial_fee(
+                rs, event_id, registration, current=rs.ambience['registration'])
+            if new_amount_owed != rs.ambience['registration']['amount_owed']:
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.change_registration_form(
-                rs, event_id, registration_id, skip=(), internal=True,
+                rs, event_id, registration_id, internal=True,
                 change_note=change_note)
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration, change_note)
@@ -1419,7 +1464,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_registration_form(self, rs: RequestState, event_id: int,
                               ) -> Response:
         """Render form."""
@@ -1439,7 +1484,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_registration(self, rs: RequestState, event_id: int) -> Response:
         """Register a participant by an orga.
 
@@ -1457,15 +1502,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs.append_validation_error(
                     ("persona.persona_id", ValueError(n_(
                         "This user is not an event user."))))
-        if (not rs.has_validation_errors()
-                and self.eventproxy.list_registrations(rs, event_id, persona_id)):
+        if persona_id and self.eventproxy.list_registrations(rs, event_id, persona_id):
             rs.append_validation_error(("persona.persona_id",
                                         ValueError(n_("Already registered."))))
         registration = self.new_process_registration_input(rs, orga_input=True)
-        if (not rs.has_validation_errors()
-                and not self.eventproxy.check_orga_addition_limit(rs, event_id)):
+        if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
+        if rs.ambience['event'].is_balanced:
+            if persona_id and self._calculate_partial_fee(
+                    rs, event_id, registration, persona_id,
+            ):
+                msg = n_("Event is balanced. May not create registration which owes a fee.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
@@ -1477,7 +1528,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                              {'registration_id': new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("ack_delete")
     def delete_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, ack_delete: bool) -> Response:
@@ -1501,7 +1552,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/registration_query")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations_form(self, rs: RequestState, event_id: int,
                                   reg_ids: vtypes.IntCSVList,
@@ -1600,7 +1651,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations(self, rs: RequestState, event_id: int,
                              reg_ids: vtypes.IntCSVList,
@@ -1610,8 +1661,20 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         registration = self.new_process_registration_input(
             rs, orga_input=True, check_enabled=True)
+        if rs.ambience['event'].is_balanced:
+            current_registrations = self.eventproxy.get_registrations(rs, reg_ids)
+            if any(
+                self._calculate_partial_fee(
+                    rs, event_id, registration, current=current,
+                ) != current['amount_owed']
+                for current in current_registrations.values()
+            ):
+                msg = n_("Event is balanced. Amount owed may no longer change.")
+                # This is not an input so this error won't mark any input field.
+                rs.append_validation_error(("amount_owed", ValueError(msg)))
+                rs.notify("error", msg)
         if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id, reg_ids, change_note)
+            return self.change_registrations_form(rs, event_id)  # type: ignore[call-arg]
 
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
@@ -1640,10 +1703,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
-    @event_guard(check_offline=True)
-    @REQUESTdata("part_ids")
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("part_ids", "checkout")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[Collection[int]] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None,
+                     checkout: Optional[bool] = False) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event'].parts
@@ -1655,7 +1719,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             registration['parts'][part_id]['status']).is_present()
         registrations = {
             k: v for k, v in registrations.items()
-            if (not v['checkin'] and any(there(v, id) for id in parts))}
+            if (bool(not v['checkin_periods']
+                     or v['checkin_periods'][-1].checkout_time) != checkout
+                and any(there(v, id_) for id_ in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -1677,33 +1743,435 @@ class EventRegistrationMixin(EventBaseFrontend):
         camping_mat_field_names = self._get_camping_mat_field_names(
             rs.ambience['event'])
         return self.render(rs, "registration/checkin", {
-            'registrations': registrations, 'personas': personas,
+            'registrations': registrations, 'personas': personas, 'checkout': checkout,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
             'part_ids': part_ids, 'camping_mat_field_names': camping_mat_field_names,
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    @REQUESTdata("registration_id", "part_ids")
-    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Optional[Collection[int]] = None) -> Response:
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("from_checkin_page", "part_ids")
+    def add_checkin(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        from_checkin_page: Optional[bool] = False,
+        part_ids: Optional[Collection[int]] = None,
+    ) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
-            return self.checkin_form(rs, event_id)
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        if registration['event_id'] != event_id:
-            raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        if registration['checkin']:
-            rs.notify("warning", n_("Already checked in."))
-            return self.checkin_form(rs, event_id)
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
+            return self.show_registration(rs, event_id, registration_id)
 
-        new_reg = {
-            'id': registration_id,
-            'checkin': now(),
+        if (rs.ambience['registration']['checkin_periods']
+            and not rs.ambience['registration']['checkin_periods'][-1].checkout_time):
+            rs.notify("error", n_("Already checked in."))
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
+            return self.show_registration(rs, event_id, registration_id)
+
+        code = self.eventproxy.add_checkin(rs, registration_id)
+        rs.notify_return_code(code, error=n_("Action failed."))
+        if from_checkin_page:
+            return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids})
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("from_checkin_page", "part_ids")
+    def add_checkout(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        from_checkin_page: Optional[bool] = False,
+        part_ids: Optional[Collection[int]] = None,
+    ) -> Response:
+        """Check a participant out."""
+        if rs.has_validation_errors():
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
+            return self.show_registration(rs, event_id, registration_id)
+
+        if rs.ambience['registration']['checkin_periods'][-1].checkout_time:
+            rs.notify("error", n_("Already checked out."))
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
+            return self.show_registration(rs, event_id, registration_id)
+
+        code = self.eventproxy.add_checkout(rs, registration_id)
+        rs.notify_return_code(code, error=n_("Action failed."))
+        if from_checkin_page:
+            return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids, 'checkout': True})
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("checkin_time", "checkout_time")
+    def add_backdated_checkin_period(
+        self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        checkin_time: datetime.datetime, checkout_time: Optional[datetime.datetime],
+    ) -> Response:
+        """Insert a timespan where a participant was present."""
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        ref_time = now()
+        if checkin_time > ref_time:
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkout_time > ref_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be in the past."))))
+        if checkout_time and checkin_time >= checkout_time:
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Checkout must be after checkin."))))
+        reg = self.eventproxy.get_registration(rs, registration_id)
+        prev_period: Optional[models.CheckinPeriod] = None
+        for next_period in reg['checkin_periods']:
+            if next_period.checkin_time > checkin_time:
+                # period is to insert between prev_period and next_period
+                if (prev_period and prev_period.checkout_time
+                        and prev_period.checkout_time > checkin_time):
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Checkin must be after previous checkout."))))
+                if not checkout_time:
+                    rs.append_validation_error(
+                        ('checkout_time', ValueError(n_("Must not be empty."))))
+                elif checkout_time > next_period.checkin_time:
+                    rs.append_validation_error(
+                        ('checkout_time',
+                         ValueError(n_("Checkout must be before next checkin."))))
+                break
+            prev_period = next_period
+        else:  # period is appended to the end
+            if prev_period:
+                if (prev_period.checkout_time
+                    and prev_period.checkout_time > checkin_time):
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Checkin must be after previous checkout."))))
+                elif not prev_period.checkout_time:
+                    rs.append_validation_error(
+                        ('checkin_time',
+                         ValueError(n_("Cannot check in checked-in users."))))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        code = self.eventproxy.add_backdated_checkin_period(
+            rs, registration_id, checkin_time, checkout_time)
+        rs.notify_return_code(code, error=n_("Action failed."))
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("period_id")
+    def change_checkin_period(self, rs: RequestState, event_id: int,
+                              registration_id: vtypes.ID, period_id: vtypes.ID,
+                              ) -> Response:
+        """Change the time a participant was present."""
+        reg = rs.ambience['registration']
+        if period_id not in {period.id for period in reg['checkin_periods']}:
+            raise ValueError(n_("Inconsistent data."))
+        checkin_time: datetime.datetime = unwrap(request_extractor(
+            rs, {f'checkin_time_{period_id}': datetime.datetime}))
+        checkout_time: Optional[datetime.datetime] = unwrap(request_extractor(
+            rs, {f'checkout_time_{period_id}': Optional[datetime.datetime]}))  # type:ignore[dict-item]
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        # check positive timespan in past
+        ref_time = now()
+        if checkin_time > ref_time:
+            rs.append_validation_error(
+                (f'checkin_time_{period_id}', ValueError(n_("Must be in the past."))))
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
+            rs.append_validation_error(
+                (f'checkout_time_{period_id}', ValidationWarning(
+                    n_("Should be less than 6 hours in the future."))))
+        if checkout_time and not checkin_time < checkout_time:
+            rs.append_validation_error(
+                (f'checkout_time_{period_id}', ValueError(n_("Checkout must be after checkin."))))
+        by_id = {p.id: p for p in reg['checkin_periods']}
+        if (idx := reg['checkin_periods'].index(by_id[period_id])) > 0:
+            prev = reg['checkin_periods'][idx - 1]
+            if not prev.checkout_time <= checkin_time:
+                rs.append_validation_error((f'checkin_time_{period_id}', ValueError(
+                    n_("Checkin must be after previous checkout."),
+                )))
+        if idx < len(reg['checkin_periods']) - 1:
+            nxt = reg['checkin_periods'][idx + 1]
+            if not checkout_time or checkout_time > nxt.checkin_time:
+                rs.append_validation_error((f'checkout_time_{period_id}', ValueError(
+                    n_("Checkout must be before next checkin."),
+                )))
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+
+        ret = self.eventproxy.change_checkin_period(
+            rs, registration_id, period_id, checkin_time, checkout_time)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("period_id")
+    def delete_checkin_period(self, rs: RequestState, event_id: int,
+                              registration_id: vtypes.ID,
+                              period_id: vtypes.ID) -> Response:
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+        # no validation errors can be caused by the user. Errors are a bug in code,
+        # or due to racing. Let them be raised by the backend.
+        ret = self.eventproxy.delete_checkin_period(rs, registration_id, period_id)
+        rs.notify_return_code(ret, error=n_("Action failed."))
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
+    @access('event')
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("registration_ids", "field_id")
+    def checkin_multiset_form(self, rs: RequestState, event_id: int,
+                              registration_ids: Optional[vtypes.IntCSVList] = None,
+                              field_id: Optional[vtypes.ID] = None,
+                              internal: bool = False) -> Response:
+        """Form to check in or out multiple people at once,
+
+        :param field_id: if given, display a preview for setting timestamps from
+         this custom field.
+        :param internal: if called from another frontend method,
+         use to avoid further redirects on validation errors.
+        """
+        if rs.has_validation_errors() and not internal:
+            return self.redirect(rs, 'event/registration_query',
+                                 {'event_id': event_id})
+        if not registration_ids:
+            registration_ids = cast(
+                vtypes.IntCSVList,
+                list(self.eventproxy.list_registrations(rs, event_id)),
+            )
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(reg['persona_id'] for reg in registrations.values()))
+        registrations = {reg['id']: reg for reg in xsorted(
+            registrations.values(),
+            key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+        )}
+        names = {
+            reg_id: make_persona_name(personas[reg['persona_id']])
+            for reg_id, reg in registrations.items()
         }
-        code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
-        rs.notify_return_code(code)
-        return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
+        present = {
+            reg_id: reg['checkin_periods'] for reg_id, reg in registrations.items()
+            if reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+        }
+        absent = {
+            reg_id: reg['checkin_periods'] for reg_id, reg in registrations.items()
+            if reg_id not in present
+        }
+
+        datetime_registration_fields = {
+            field.id: field.title
+            for field in xsorted(rs.ambience['event'].fields.values())
+            if field.association == const.FieldAssociations.registration
+               and field.kind == const.FieldDatatypes.datetime
+        }
+        if field_id:
+            field_preview_values = {
+                reg_id: reg['fields'].get(rs.ambience['event'].fields[field_id].field_name)
+                for reg_id, reg in registrations.items()
+            }
+        else:
+            field_preview_values = {}
+        return self.render(
+            rs, 'registration/checkin_multiset',
+            {'names': names, 'present': present, 'absent': absent,
+             'datetime_registration_fields': datetime_registration_fields,
+             'field_preview_values': field_preview_values})
+
+    @access('event', modi={"POST"})
+    @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("registration_ids", "action", "field_id", "confirm_field_id",
+                 "ack_field", "checkin_time", "checkout_time")
+    def checkin_multiset(
+        self, rs: RequestState, event_id: int,
+        registration_ids: vtypes.IntCSVList, action: str, field_id: Optional[vtypes.ID],
+        confirm_field_id: Optional[vtypes.ID], ack_field: Optional[bool],
+        checkin_time: Optional[datetime.datetime],
+        checkout_time: Optional[datetime.datetime],
+    ) -> Response:
+        """Checkin/-out multiple people at once.
+
+        At most one of checkin_time, checkout_time and field_id may be provided.
+
+        :param action: One of 'checkout','modify_checkin', 'checkin', 'modify_checkout'.
+            The modify_ options mass-reset the latest respective timestamp and
+            the others add new ones.
+        :param checkin_time: set checkin time to this time.
+        :param checkout_time: set checkout time to this time.
+        :param field_id: if given, preview to set checkin/-out time from this field
+            (depending on action)
+        :param confirm_field_id: field id for that the preview was displayed
+        :param ack_field: confirm to save times from confirm_field_id
+        """
+        ref_time = now()
+        if checkin_time and checkin_time > ref_time:
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be in the past."))))
+        way_ahead_time = ref_time + datetime.timedelta(hours=6)
+        if checkout_time and checkout_time > way_ahead_time and not rs.ignore_warnings:
+            rs.append_validation_error(('checkout_time', ValidationWarning(n_(
+                "Should be less than 6 hours in the future."))))
+        if rs.has_validation_errors():
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+        if action not in {'checkin', 'modify_checkout', 'checkout', 'modify_checkin'}:
+            rs.notify("error", n_("Invalid action."))
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+
+        regs = self.eventproxy.get_registrations(rs, registration_ids)
+        # first, validate
+        consistent = True
+        if field_id:
+            field_name = rs.ambience['event'].fields[field_id].field_name
+            if not all(reg['fields'].get(field_name) for reg in regs.values()):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Field must not be empty."))))
+        if action in {'checkout', 'modify_checkin'}:
+            if any(
+                not reg['checkin_periods'] or reg['checkin_periods'][-1].checkout_time
+                for reg in regs.values()
+            ):
+                rs.notify('error', n_("People must be checked in."))
+                consistent = False
+        if action == 'checkout':
+            if bool(checkout_time) == bool(field_id):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must give exactly one."))))
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must give exactly one."))))
+            elif checkout_time and consistent and checkout_time < max(
+                reg['checkin_periods'][-1].checkin_time for reg in regs.values()
+            ):
+                rs.append_validation_error(
+                    ('checkout_time', ValueError(n_("Must be after last checkin."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkin_time >= reg['fields'][field_name]
+                for reg in regs.values() if reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkin."))))
+        if (action == 'modify_checkin'
+            and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
+            and checkin_time < max(
+                reg['checkin_periods'][-2].checkout_time
+                for reg in regs.values() if len(reg['checkin_periods']) >= 2)
+        ):
+            rs.append_validation_error(
+                ('checkin_time', ValueError(n_("Must be after last checkout."))))
+        if action in {'checkin', 'modify_checkout'}:
+            if any(
+                reg['checkin_periods'] and not reg['checkin_periods'][-1].checkout_time
+                for reg in regs.values()
+            ):
+                rs.notify('error', n_("People must not be checked in."))
+                consistent = False
+        if action == 'checkin':
+            if bool(checkin_time) == bool(field_id):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must give exactly one."))))
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must give exactly one."))))
+            elif (checkin_time and consistent
+                  and any(reg['checkin_periods'] for reg in regs.values())
+                  and checkin_time <= max(
+                    reg['checkin_periods'][-1].checkout_time
+                    for reg in regs.values() if reg['checkin_periods'])
+            ):
+                rs.append_validation_error(
+                    ('checkin_time', ValueError(n_("Must be after last checkout."))))
+            elif field_id and consistent and any(
+                reg['checkin_periods'][-1].checkout_time >= reg['fields'][field_name]
+                for reg in regs.values()
+                if reg['checkin_periods'] and reg['fields'].get(field_name)
+            ):
+                rs.append_validation_error(
+                    ('field_id', ValueError(n_("Must be after last checkout."))))
+        if (action == 'modify_checkout'
+            and any(reg['checkin_periods'] for reg in regs.values())
+            and checkout_time < max(reg['checkin_periods'][-1].checkin_time
+                                    for reg in regs.values() if reg['checkin_periods'])
+        ):
+            rs.append_validation_error(
+                ('checkout_time', ValueError(n_("Must be after last checkin."))))
+        # return form with preview of times from custom field
+        validate_from_field = (field_id != confirm_field_id
+                               or (field_id and not ack_field))
+        if validate_from_field:
+            rs.values['confirm_field_id'] = field_id
+        if rs.has_validation_errors() or not consistent or validate_from_field:
+            return self.checkin_multiset_form(rs, event_id, internal=True)
+
+        # then, process
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Checkin-Multiset.")
+        ret = 1
+        if action == 'checkin':
+            if checkin_time:
+                ret *= self.eventproxy.add_checkins(rs, registration_ids, checkin_time)
+            elif field_id:
+                self.eventproxy.add_checkins_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
+            else:
+                raise RuntimeError(n_("Impossible"))
+            sortkey = "checkin_periods.max_checkin_time"
+        elif action == 'checkout':
+            if checkout_time:
+                ret *= self.eventproxy.add_checkouts(rs, registration_ids, checkout_time)
+            elif field_id:
+                self.eventproxy.add_checkouts_multi(
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                )
+            else:
+                raise RuntimeError(n_("Impossible"))
+            sortkey = "checkin_periods.max_checkout_time"
+        elif action == 'modify_checkin':
+            if not checkin_time:  # delete latest checkins
+                for reg_id, reg in regs.items():
+                    ret *= self.eventproxy.delete_checkin_period(
+                        rs, reg_id, reg['checkin_periods'][-1].id)
+                sortkey = "checkin_periods.max_checkout_time"
+            else:
+                for reg_id, reg in regs.items():
+                    ret *= self.eventproxy.change_checkin_period(
+                        rs, reg_id, reg['checkin_periods'][-1].id, checkin_time, None)
+                sortkey = "checkin_periods.max_checkin_time"
+        elif action == 'modify_checkout':
+            for reg_id, reg in regs.items():
+                if reg['checkin_periods']:
+                    last_period = reg['checkin_periods'][-1]
+                    ret *= self.eventproxy.change_checkin_period(
+                        rs, reg_id, last_period.id, last_period.checkin_time,
+                        checkout_time)
+            sortkey = "checkin_periods.max_checkout_time"
+        else:
+            raise RuntimeError(n_("Impossible."))
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Nach Checkin-Multiset.", after_change=True)
+        rs.notify_return_code(ret)
+
+        # redirect to query of changed registrations
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
+            ("persona.given_names", "persona.family_name", "persona.username",
+             "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
+             "reg.is_checked_in"),
+            (("reg.id", QueryOperators.oneof, registration_ids),),
+            ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
+        )
+        return self.redirect(rs, 'event/registration_query', query.serialize_to_url())
 
     def _get_payment_data(self, rs: RequestState, event_id: int,
                           registration_id: Optional[int] = None) -> CdEDBObject:
@@ -1727,7 +2195,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return {
             'registration': registration, 'persona': persona,
             'meta_info': meta_info, 'reference': reference, 'to_pay': to_pay,
-            'iban': rs.ambience['event'].iban, 'fee': fee,
+            'account': rs.ambience['event'].iban, 'fee': fee,
             'complex_fee': complex_fee, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
         }
 
@@ -1747,16 +2215,17 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @staticmethod
     def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
-        if not payment_data['iban']:
+        if not payment_data['account']:
             return None
         # Ensure that the "free-"text parts are not too long. The exact size is limited
         # by third parties.
+        account: Accounts = payment_data['account']
         return {
-            'name': payment_data['meta_info']['CdE_Konto_Inhaber'][:70],
+            'name': account.get_account_holder()[:70],
             'text': payment_data['reference'][:140],
             'amount': payment_data['to_pay'],
-            'iban': payment_data['iban'],
-            'bic': payment_data['meta_info']['CdE_Konto_BIC'],
+            'iban': account.get_iban(),
+            'bic': account.get_bic(),
         }
 
     def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:

@@ -44,7 +44,7 @@
         {% endfor %}
 
         {{ util.form_input_select(name=instructor_name, entries=all_course_entries,
-                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
+                                  nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructed Course"),
                                   info=gettext("If you are instructing a course, please specify which one.")) }}
     </div>
 {% endmacro %}
@@ -155,7 +155,7 @@
         {% elif field['kind'] == datatypes.phone %}
             {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% elif field['kind'] == datatypes.iban %}
-            {{ entry|iban }}
+            {{ entry|iban or otherwise }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
@@ -351,73 +351,26 @@
         {% set icon = none %}
     {% endif %}
     {% call util.bootstrap_panel(
-            title=title, icon=icon, anid=anid,
-            aclass="panel-default" if severity <= 0 else ("panel-danger" if severity > 1 else "panel-warning")) %}
+            title=title, icon=icon, anid=anid, aclass=severity.panel_class()) %}
         {{ caller_content }}
     {% endcall %}
 {% endmacro %}
 
-
-{% macro list_mep_violations(violations, personas, link_registration=False) %}
-    <ul id="mep-violations-list">
-        {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
-            {% if link_registration %}
-                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
-            {% else %}
-                {% set reg_link = persona_name %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
-                    {{ reg_link }} is in violation of the {{ constraint_shortname }} mutually exclusive participation constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans parts = violation.parts_str %}
-                    (Present in {{ parts }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-    </ul>
+{% macro print_violation(violation, entity_page) %}
+    {% set msgs, params = violation.get_translation(entity_page=entity_page) %}
+    {% for key, (link_target, link_params) in violation.get_link_params().items() if key in params %}
+        {% do params.update({key: util.href(cdedblink(link_target, link_params), params[key])}) %}
+    {% endfor %}
+    {% for msg in msgs %}
+        {{ gettext(msg)|format(**params)|s }}
+    {% endfor %}
 {% endmacro %}
 
-{% macro list_mec_violations(violations, courses, link_course=False) %}
-    <ul id="mec-violations-list">
-        {% for violation in violations %}
-            {% set course_identifier = courses[violation.course_id]['nr'] + ". " + courses[violation.course_id]['shortname'] %}
-            {% if link_course %}
-                {% set course_link = util.href(cdedblink("event/show_course", {'course_id': violation.course_id}), course_identifier) %}
-            {% else %}
-                {% set course_link = course_identifier %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
-                    {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
-                {% endtrans -%}
-                {# These are presorted. #}
-                {% trans tracks = violation.tracks_str %}
-                    (Taking place in {{ tracks }}).
-                {% endtrans %}
-            </li>
-        {% endfor %}
-    </ul>
-{% endmacro %}
-
-{% macro list_ccs_violations(violations, personas, link_registration=False) %}
-    <ul id="ccs-violations-list">
-        {% for violation in violations %}
-            {% set persona_name = util.persona_name(personas[violation.persona_id]) %}
-            {% if link_registration %}
-                {% set reg_link = util.href(cdedblink("event/show_registration", {'registration_id': violation.registration_id}), persona_name) %}
-            {% else %}
-                {% set reg_link = persona_name %}
-            {% endif %}
-
-            <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans reg_link=reg_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
-                    {{ reg_link }} is in violation of the {{ constraint_shortname }} course choice sync.
-                {% endtrans -%}
+{% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO) %}
+    <ul id="{{ class_name }}-list">
+        {% for violation in violations if violation.severity >= min_severity %}
+            <li class="{{ violation.severity.html_class() }}">
+                {{ print_violation(violation, entity_page=entity_page) }}
             </li>
         {% endfor %}
     </ul>
@@ -443,7 +396,7 @@
     {% with query = query or get_query(registration_ids, fee_id) %}
         {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
-                     title=gettext("View Registrations"), anid=anid) }}
+                     title=gettext("View Registrations"), anid=anid, readonly=not is_privileged_for(query.scope.get_target())) }}
     {% endwith %}
 {% endmacro %}
 
@@ -559,7 +512,14 @@
                             <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
                                 {{ util.anti_csrf_token("event/delete_personalized_fee") }}
-                                {{ util.input_submit(icon='minus', label=None, aclass="btn btn-xs btn-danger") }}
+                                {{ util.input_submit(
+                                        icon='minus', label=None, aclass="btn btn-xs btn-danger",
+                                        readonly=not is_privileged_for('delete_personalized_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not set personalized fee amount.")
+                                            if ambience['event'].is_balanced else
+                                            ""
+                                        )) }}
                             </form>
                         </td>
                     {% else %}
@@ -574,7 +534,14 @@
                                 {% endcall %}
                             </td>
                             <td>
-                                {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
+                                {{ util.input_submit(
+                                        icon='plus', label=None, aclass="btn btn-xs btn-success",
+                                        readonly=not is_privileged_for('add_personalized_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not set personalized fee amount.")
+                                            if ambience['event'].is_balanced else
+                                            ""
+                                        )) }}
                             </td>
                         </form>
                     {% endif %}
@@ -603,10 +570,16 @@
                                 ({{ _print_fee_amount_range(fee) }})
                             {% endif %}
                         {% else %}
-                            {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
-                                         anid="personalized_fee{}_multiset".format(fee.id),
-                                         label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
-                                         title=gettext("Set personalized amount for multiple registrations.")) }}
+                            {{ util.href(
+                                    cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
+                                    anid="personalized_fee{}_multiset".format(fee.id),
+                                    label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
+                                    readonly=not is_privileged_for('personalized_fee_multiset') or ambience['event'].is_balanced,
+                                    title=(
+                                        gettext("Event is balanced. May not change fee configuration.")
+                                        if ambience['event'].is_balanced else
+                                        gettext("Set personalized amount for multiple registrations.")
+                                    )) }}
                         {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
@@ -622,16 +595,26 @@
                                          aclass="btn btn-xs btn-info") }}
                         {% else %}
                             {{ util.href(
-                                cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
-                                title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
-                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning") }}
+                                    cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
+                                    anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning",
+                                    readonly=not is_privileged_for('configure_fee_form') or ambience['event'].is_balanced,
+                                    title=(
+                                        gettext("Event is balanced. May not change fee configuration.")
+                                        if ambience['event'].is_balanced else
+                                        gettext("Change fee %(fee_title)s")|format(fee_title=fee['title'])
+                                    )) }}
                             <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
-                                    title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
-                                    icon='trash-alt' if fee.amount else 'dumpster-fire',
-                                    label=None, aclass="btn btn-sm btn-danger") }}
+                                        icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                        label=None, aclass="btn btn-sm btn-danger",
+                                        readonly=not is_privileged_for('delete_fee') or ambience['event'].is_balanced,
+                                        title=(
+                                            gettext("Event is balanced. May not change fee configuration.")
+                                            if ambience['event'].is_balanced else
+                                            gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title'])
+                                        )) }}
                             </form>
                         {% endif %}
                     </td>
@@ -706,3 +689,12 @@
         </tfoot>
     </table>
 {%- endmacro %}
+
+{% macro edit_free_text_button(key, label=gettext("Edit"), display=True, small=True, pull_right=True) %}
+    {% if is_privileged_for("change_free_text") %}
+        {{ util.href(
+            cdedblink("event/show_free_texts", {'edit': key}), label=label, icon="pen", anid=key + '-edit',
+            aclass="btn btn-warning" + (" btn-xs" if small else " btn-sm") + (" pull-right" if pull_right else ""),
+            attributes=('style="color: #fff;' + ('' if display else 'display: none;') + '"')|s) }}
+    {% endif %}
+{% endmacro %}

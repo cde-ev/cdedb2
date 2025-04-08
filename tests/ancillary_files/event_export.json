@@ -165,12 +165,12 @@
             "amount_owed": "553.99",
             "amount_paid": "200.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 1,
             "list_consent": true,
             "fields": {
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
+                "arrival_at": "2022-02-02T10:00:00+01:00",
                 "anzahl_GROSSBUCHSTABEN": 4
             },
             "orga_notes": null,
@@ -186,7 +186,6 @@
             "amount_owed": "466.49",
             "amount_paid": "0.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 5,
             "list_consent": true,
             "fields": {
@@ -209,7 +208,6 @@
             "amount_owed": "504.48",
             "amount_paid": "0.00",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 7,
             "list_consent": false,
             "fields": {
@@ -230,7 +228,6 @@
             "amount_owed": "431.99",
             "amount_paid": "548.48",
             "event_id": 1,
-            "checkin": null,
             "persona_id": 9,
             "list_consent": false,
             "fields": {
@@ -252,7 +249,6 @@
         "5": {
             "amount_owed": "584.48",
             "amount_paid": "0.00",
-            "checkin": null,
             "event_id": 1,
             "fields": {
                 "transportation": "pedes",
@@ -272,11 +268,11 @@
         "6": {
             "amount_owed": "10.50",
             "amount_paid": "10.50",
-            "checkin": null,
             "event_id": 1,
             "fields": {
-                "transportation": "pedes",
                 "is_child": false,
+                "arrival_at": "2022-02-22T15:00:00+01:00",
+                "transportation": "pedes",
                 "anzahl_GROSSBUCHSTABEN": 2
             },
             "id": 6,
@@ -424,11 +420,24 @@
             "id": 8,
             "kind": 3,
             "checkin": true
+        },
+        "9": {
+            "association": 1,
+            "entries": null,
+            "event_id": 1,
+            "field_name": "arrival_at",
+            "title": "Anreise um",
+            "sortkey": 0,
+            "sort_group": null,
+            "description": null,
+            "id": 9,
+            "kind": 6,
+            "checkin": false
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        17,
-        2
+        19,
+        1
     ],
     "event.registration_parts": {
         "2": {
@@ -696,6 +705,14 @@
             "id": 18,
             "registration_id": 6,
             "track_id": 3
+        }
+    },
+    "event.checkin_periods": {
+        "1": {
+            "id": 1,
+            "registration_id": 6,
+            "checkin_time": "2022-02-22T17:00:00+00:00",
+            "checkout_time": "2022-02-23T09:00:00+00:00"
         }
     },
     "event.courses": {
@@ -1177,7 +1194,6 @@
             "is_member": true,
             "is_event_realm": true,
             "family_name": "Generalis",
-            "display_name": "Garcia",
             "address": "Bei der W\u00fcste 39",
             "is_ml_realm": true,
             "is_cde_admin": false,
@@ -1191,7 +1207,10 @@
             "address_supplement": null,
             "is_assembly_realm": true,
             "postal_code": "88484",
-            "given_names": "Garcia G.",
+            "nickname": null,
+            "given_names": "Garcia",
+            "legal_given_names": "Garcia G.",
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1216,7 +1235,6 @@
             "is_member": true,
             "is_event_realm": true,
             "family_name": "Administrator",
-            "display_name": "Anton",
             "address": "Auf der D\u00fcne 42",
             "is_ml_realm": true,
             "is_cde_admin": true,
@@ -1230,7 +1248,10 @@
             "address_supplement": null,
             "is_assembly_realm": true,
             "postal_code": "03205",
-            "given_names": "Anton Armin A.",
+            "nickname": null,
+            "given_names": "Anton",
+            "legal_given_names": "Anton Armin A.",
+            "show_legal_given_names": false,
             "is_ml_admin": true,
             "is_cdelokal_admin": true,
             "is_auditor": true,
@@ -1255,7 +1276,6 @@
             "is_member": true,
             "is_event_realm": true,
             "family_name": "Iota",
-            "display_name": "Inga",
             "address": "Zwergstra\u00dfe 1",
             "is_ml_realm": true,
             "is_cde_admin": false,
@@ -1269,7 +1289,10 @@
             "address_supplement": null,
             "is_assembly_realm": true,
             "postal_code": "10999",
+            "nickname": null,
             "given_names": "Inga",
+            "legal_given_names": null,
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1294,7 +1317,6 @@
             "is_member": false,
             "is_event_realm": true,
             "family_name": "Eventis",
-            "display_name": "Emmy",
             "address": "Hohle Gasse 13",
             "is_ml_realm": true,
             "is_cde_admin": false,
@@ -1308,7 +1330,10 @@
             "address_supplement": null,
             "is_assembly_realm": false,
             "postal_code": "56767",
-            "given_names": "Emilia E.",
+            "nickname": "Emmy",
+            "given_names": "Emilia",
+            "legal_given_names": "Emilia E.",
+            "show_legal_given_names": false,
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
@@ -1321,13 +1346,15 @@
             "address_supplement": null,
             "birthday": "2019-12-28",
             "country": "JP",
-            "display_name": "Akira",
             "family_name": "Abukara",
             "gender": 10,
             "pronouns": null,
             "pronouns_nametag": false,
             "pronouns_profile": false,
+            "nickname": null,
             "given_names": "Akira",
+            "legal_given_names": null,
+            "show_legal_given_names": false,
             "id": 100,
             "is_active": true,
             "is_archived": false,
@@ -1360,13 +1387,15 @@
             "address_supplement": "bei Spielmanns",
             "birthday": "1981-02-11",
             "country": "DE",
-            "display_name": "Bertå",
             "family_name": "Beispiel",
             "gender": 1,
             "pronouns": "she/her",
             "pronouns_nametag": false,
             "pronouns_profile": true,
-            "given_names": "Bertålotta",
+            "nickname": "Bindi",
+            "given_names": "Bertå",
+            "legal_given_names": "Bertålotta",
+            "show_legal_given_names": false,
             "id": 2,
             "is_active": true,
             "is_archived": false,
@@ -1475,6 +1504,24 @@
             "submitted_by": 1,
             "change_note": "10,50 € am 06.06.2014 gezahlt.",
             "persona_id": 2
+        },
+        "10": {
+            "change_note": "22.02.2022, 18:00:00",
+            "code": 500,
+            "ctime": "2014-01-01T09:00:00+00:00",
+            "event_id": 1,
+            "id": 10,
+            "persona_id": 2,
+            "submitted_by": 1
+        },
+        "11": {
+            "change_note": "23.02.2022, 10:00:00",
+            "code": 505,
+            "ctime": "2014-01-01T09:00:00+00:00",
+            "event_id": 1,
+            "id": 11,
+            "persona_id": 2,
+            "submitted_by": 1
         }
     },
     "event.events": {
@@ -1504,6 +1551,7 @@
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_cancelled": false,
+            "is_balanced": false,
             "notes": "Todoliste ... just kidding ;)",
             "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
             "title": "Gro\u00dfe Testakademie 2222"

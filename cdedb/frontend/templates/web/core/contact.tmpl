@@ -39,7 +39,7 @@
         {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), nulloption="", small=True, wide=True,
                                   info=gettext("Descriptions and Membership of these teams can be found on the %(website)s.")|format(
                                       website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}
-        {{ util.form_input_select(name="anonymous", label=gettext("Anonymity"), nulloption="", small=True, wide=True,
+        {{ util.form_input_select(name="anonymous", label=gettext("Anonymity"), nulloption="", small=True, wide=True, anid="anon_switch",
                                   entries=[
                                       ("yes", gettext("Send message anonymously.")),
                                       ("no", gettext("Tell them it was me.")),
@@ -55,6 +55,14 @@
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#contactform').cdedbProtectChanges();
+            // fancy icon for anonymous message :)
+            $('#anon_switch').on('change', function() {
+                if ($(this).val() === "yes") {
+                    $("button[name='submitform'] .fa-paper-plane").removeClass('fa-paper-plane').addClass('fa-user-secret');
+                } else {
+                    $("button[name='submitform'] .fa-user-secret").removeClass('fa-user-secret').addClass('fa-paper-plane');
+                }
+            })
         });
     </script>
 {% endblock %}

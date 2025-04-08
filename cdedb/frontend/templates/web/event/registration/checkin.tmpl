@@ -4,28 +4,29 @@
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
+{% set pagename = gettext("Checkout") if checkout else gettext("Checkin") %}
 {% block title %}
-    {% trans title=ambience['event']['title'] %}
-        Checkin ({{ title }})
+    {% trans pagename=pagename, title=ambience['event']['title'] %}
+        {{ pagename }} ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Checkin"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(pagename, ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/checkin_form"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if ambience['event']['parts']|length == 1 %}
         <div class="panel panel-primary panel-condensed softhide" id="namesearch">
             <div class="panel-heading">
-                <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
+                <h3 class="panel-title">{{ util.make_icon("search") }}{{ nbsp }}{{ gettext("Filter") }}</h3>
             </div>
             <div class="panel-footer text-right">
-                <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}",
-                placeholder="{{ gettext("Search Name") }}"/>
+                <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}"
+                       placeholder="{{ gettext("Search Name") }}"/>
             </div>
         </div>
     {% else %}
@@ -34,11 +35,12 @@
                 <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('event/checkin') }}" method="GET" id="checkinfilterform"
+                <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
                         entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
+                    {{ util.input_hidden(name="checkout", value=checkout) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             </div>
@@ -49,6 +51,20 @@
         </div>
     {% endif %}
 
+
+    <nav>
+        <ul class="nav nav-tabs mosp">
+            <li role="presentation" {% if not checkout %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('event/checkin_form', {'part_ids': part_ids, 'checkout': false}), gettext("Checkin")) }}
+            </li>
+            <li role="presentation" {% if checkout %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('event/checkin_form', {'part_ids': part_ids, 'checkout': true}), gettext("Checkout")) }}
+            </li>
+        </ul>
+    </nav>
+
+
+    {% set target='event/add_checkout' if checkout else 'event/add_checkin' %}
     <div class="list-group list-group-hover" id="checkin-list">
         {% for registration_id, registration in registrations.items() %}
         <div class="selectee list-group-item">
@@ -57,7 +73,7 @@
                 <div class="row">
                     <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
-                            {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
+                            {{ util.persona_name(personas[registration['persona_id']], include_nickname=True) }}
                         </span>
                         {% if registration['age'].is_minor() %}
                             {{ gettext(registration['age']|string) }}
@@ -133,22 +149,27 @@
                 {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">
-                        {{ util.href(cdedblink('event/change_registration',
-                                               {'registration_id': registration_id, 'skip': 'reg.checkin'}),
+                        {{ util.href(cdedblink('event/change_registration', {'registration_id': registration_id}),
                                      label=none, icon='pen', title=gettext("Edit"), aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
                                      label=none, icon='user', title=gettext("Details"), aclass="btn btn-sm btn-info") }}
 
-                        <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
+                        <form action="{{ cdedblink(target,
+                                                   {'registration_id': registration_id}) }}"
+                              method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">
-                            {{ util.anti_csrf_token('event/checkin') }}
+                            {{ util.anti_csrf_token(target) }}
                             {{ util.input_hidden(name="registration_id", value=registration_id) }}
                             {% for part_id in part_ids %}
                                 {{ util.input_hidden(name="part_ids", value=part_id) }}
                             {% endfor %}
-                            {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
-                                                 readonly=is_locked) }}
+                            {{ util.input_hidden(name="checkout", value=checkout) }}
+                            {{ util.input_hidden(name="from_checkin_page", value="True") }}
+                            {{ util.input_submit(
+                                label=(gettext("Checkout") if checkout else gettext("Checkin")),
+                                aclass="btn btn-primary btn-sm",
+                                readonly=not is_privileged_for("add_checkout" if checkout else "add_checkin")) }}
                         </form>
                     </div>
             </div>
@@ -187,6 +208,7 @@
                 timer = setTimeout(filterCheckin, 0);  // asynchronous call for better performance
             })
             .trigger('input');
-        $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");
+        $('.checkinform').cdedbProtectAction("{{ gettext("The participant will be checked out")
+                                                 if checkout else gettext("The participant will be checked in.") }}");
     </script>
 {% endblock %}

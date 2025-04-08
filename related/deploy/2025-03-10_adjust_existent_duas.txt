@@ -1,0 +1,1 @@
+# Adjust LDAP_DUA_PW in config: remove all duas except 'admin' and 'apache', add new dua 'keycloak'.

@@ -3,11 +3,12 @@
 """Global utility functions."""
 import collections
 import collections.abc
+import dataclasses
 import datetime
 import decimal
 import enum
 import functools
-import gettext  # pylint: disable=unused-import
+import gettext
 import hashlib
 import hmac
 import itertools
@@ -20,6 +21,7 @@ import string
 import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -42,11 +44,12 @@ from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
-from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
@@ -94,12 +97,6 @@ Error = tuple[Optional[str], Exception]
 NotificationType = str
 Notification = tuple[NotificationType, str, CdEDBObject]
 
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
-
 # Admin views a user may activate/deactivate.
 AdminView = str
 
@@ -117,7 +114,8 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Optional[set[Role]] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None,
+                 realm_roles: Optional[dict[Realm, set[str]]] = None,
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
@@ -128,8 +126,8 @@ class User:
         if self.persona_id and (self.droid_class or self.droid_token_id):
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
+        self.realm_roles = realm_roles or {}
         self.username = username
-        self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
@@ -139,7 +137,7 @@ class User:
 
     @property
     def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.roles)
+        return roles_to_admin_views(self.roles | set(chain(*self.realm_roles.values())))
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
         enabled_views = enabled_views_cookie.split(',')
@@ -148,7 +146,6 @@ class User:
     def persona_name(self) -> str:
         return make_persona_name({
             'given_names': self.given_names,
-            'display_name': self.display_name,
             'family_name': self.family_name,
         })
 
@@ -189,7 +186,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -392,7 +389,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn  # pylint: disable=protected-access
+                    rs.conn = rs._conn
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -572,36 +569,30 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
 
 
 def make_persona_forename(persona: CdEDBObject,
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False) -> str:
+                          use_legal_name: bool = False,
+                          include_nickname: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
-    if only_display_name + only_given_names + given_and_display_names > 1:
+    if use_legal_name and include_nickname:
         raise RuntimeError(n_("Invalid use of keyword parameters."))
-    display_name: str = persona.get('display_name', "")
+    nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
-    if only_given_names:
-        return given_names
-    elif only_display_name:
-        return display_name
-    elif given_and_display_names:
-        if not display_name or display_name == given_names:
+    if use_legal_name:
+        return persona['legal_given_names'] or given_names
+    if include_nickname:
+        if not nickname:
             return given_names
         else:
-            return f"{given_names} ({display_name})"
-    elif display_name and display_name in given_names:
-        return display_name
+            return f"{given_names} ({nickname})"
     return given_names
 
 
 def make_persona_name(persona: CdEDBObject,
-                      only_given_names: bool = False,
-                      only_display_name: bool = False,
-                      given_and_display_names: bool = False,
+                      use_legal_name: bool = False,
+                      include_nickname: bool = False,
                       with_family_name: bool = True,
                       with_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
@@ -611,8 +602,7 @@ def make_persona_name(persona: CdEDBObject,
     the documentation page about "User Experience Conventions".
     """
     forename = make_persona_forename(
-        persona, only_given_names=only_given_names, only_display_name=only_display_name,
-        given_and_display_names=given_and_display_names)
+        persona, use_legal_name=use_legal_name, include_nickname=include_nickname)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
@@ -636,7 +626,7 @@ def compute_checkdigit(value: int) -> str:
     tmp = value
     while tmp > 0:
         digits.append(tmp % 10)
-        tmp = tmp // 10
+        tmp //= 10
     dsum = sum((i + 2) * d for i, d in enumerate(digits))
     return "0123456789X"[-dsum % 11]
 
@@ -704,7 +694,7 @@ def int_to_words(num: int, lang: str) -> str:
         tmp = num
         while tmp > 0:
             number_words.append(_small_int_to_words(tmp % 1000, lang))
-            tmp = tmp // 1000
+            tmp //= 1000
         ret = ""
         for number_word, multiplier in reversed(tuple(zip(number_words,
                                                           multipliers))):
@@ -717,7 +707,6 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
-    # pylint: disable=arguments-differ
 
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
@@ -727,7 +716,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
     def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
-        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
+        import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -736,6 +725,10 @@ class CustomJSONEncoder(json.JSONEncoder):
             return tuple(obj)
         elif isinstance(obj, models.CdEDataclass):
             return obj.as_dict()
+        elif dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            return dataclasses.asdict(obj)
+        elif isinstance(obj, CdEEnum):
+            return obj.value
         return super().default(obj)
 
 
@@ -833,12 +826,12 @@ class LodgementsSortkeys(enum.Enum):
     total_camping_mat = 21
 
     def is_used_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_camping_mat)
+        return self in {LodgementsSortkeys.used_regular,
+                        LodgementsSortkeys.used_camping_mat}
 
     def is_total_sorting(self) -> bool:
-        return self in (LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_camping_mat)
+        return self in {LodgementsSortkeys.total_regular,
+                        LodgementsSortkeys.total_camping_mat}
 
 
 @enum.unique
@@ -1050,10 +1043,10 @@ class CourseChoiceToolActions(CdEIntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(CdEEnum):
     """Store the existing CdE Accounts."""
-    Account0 = "DE26370205000008068900"
-    Account1 = "DE96370205000008068901"
+    Sozialbank = "DE26370205000008068900"
+    Sozialbank_Spenden = "DE96370205000008068901"
     Festgeld = "DE45370205000010042605"
     Festgeld2 = "DE05370205000010047205"
     Skatbank = "DE23830654080005374499"
@@ -1063,14 +1056,37 @@ class Accounts(enum.Enum):
 
     def display_str(self) -> str:
         return {
-            Accounts.Account0: "8068900",
-            Accounts.Account1: "8068901",
+            Accounts.Sozialbank: "8068900",
+            Accounts.Sozialbank_Spenden: "8068901",
             Accounts.Festgeld: "Festgeld",
             Accounts.Festgeld2: "Festgeld2",
             Accounts.Skatbank: "Skatbank",
             Accounts.Tagesgeld: "Tagesgeld",
             Accounts.Unknown: "Unknown",
         }[self]
+
+    def get_iban(self) -> str:
+        return self.value
+
+    def get_account_holder(self) -> str:
+        return "CdE e.V."
+
+    def get_bic(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "GENODEF1SLR"
+        return "BFSWDE33XXX"
+
+    def get_bank(self) -> str:
+        if self in {Accounts.Skatbank, Accounts.Tagesgeld}:
+            return "Skatbank"
+        return "Sozialbank"
+
+    @classmethod
+    def get_event_accounts(cls) -> list["Accounts"]:
+        return [
+            cls.Sozialbank,
+            cls.Skatbank,
+        ]
 
 
 @enum.unique
@@ -1230,7 +1246,7 @@ def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
     for char in s:
         if char in UMLAUT_MAP:
             ret += UMLAUT_MAP[char]
-        elif char in (  # pylint: disable=superfluous-parens
+        elif char in (
             string.ascii_letters + string.digits + " /-?:().,+"
         ):
             ret += char
@@ -1450,7 +1466,7 @@ def parse_date(val: str) -> datetime.date:
 
 def parse_datetime(
     val: str, default_date: Optional[datetime.date] = None,
-) -> datetime.date:
+) -> datetime.datetime:
     """Make a string into a datetime.
 
     We only support a limited set of formats to avoid any surprises
@@ -1544,7 +1560,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 2)
+EVENT_SCHEMA_VERSION = (19, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

@@ -192,7 +192,6 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
-    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend()
     secrets = SecretsConfig()
@@ -465,9 +464,9 @@ class BackendTest(CdEDBTest):
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
-        cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
+        cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -480,7 +479,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover  # noqa: E501
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -557,6 +556,38 @@ class BackendTest(CdEDBTest):
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
         self.assertEqual(log, tuple(log_expectation))
 
+    def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
+                        msg: str | None = None) -> None:
+        """Helper to get more readable diffs of long dicts.
+
+        This is useful since unittest by default outputs a text-based diff, while we
+        consider some technically different values as equal, especially enum members and
+        their numerical values or our NearlyNow() objects and datetimes. Thus, only
+        output elements that are considered semantically different by python.
+        """
+        super().assertDictEqual(*self._generate_diff_dicts(dict1, dict2), msg)
+
+    @staticmethod
+    def _generate_diff_dicts(dict1: Mapping[Any, object], dict2: Mapping[Any, object],
+                             ) -> tuple[CdEDBObject, CdEDBObject]:
+        """Helper to extract differences from longer dicts.
+
+        :return: two dicts containing only the differences between the input dicts.
+        """
+        res1: CdEDBObject = dict()
+        res2: CdEDBObject = dict()
+        for key in dict1.keys() - dict2.keys():
+            res1[key] = dict1[key]
+        for key in dict2.keys() - dict1.keys():
+            res2[key] = dict2[key]
+        for key in dict1.keys() & dict2.keys():
+            if (v1 := dict1[key]) != (v2 := dict2[key]):
+                if isinstance(v1, dict) and isinstance(v2, dict):
+                    res1[key], res2[key] = BackendTest._generate_diff_dicts(v1, v2)
+                else:
+                    res1[key], res2[key] = v1, v2
+        return res1, res2
+
     @classmethod
     def initialize_raw_backend(cls, backendcls: type[SessionBackend],
                                ) -> SessionBackend:
@@ -615,8 +646,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-1-9",
         'username': "anton@example.cde",
         'password': "secret",
-        'display_name': "Anton",
-        'given_names': "Anton Armin A.",
+        'given_names': "Anton",
+        'legal_given_names': "Anton Armin A.",
         'family_name': "Administrator",
         'default_name_format': "Anton Administrator",
     },
@@ -625,8 +656,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-2-7",
         'username': "berta@example.cde",
         'password': "secret",
-        'display_name': "Bertå",
-        'given_names': "Bertålotta",
+        'given_names': "Bertå",
+        'legal_given_names': "Bertålotta",
         'family_name': "Beispiel",
         'default_name_format': "Bertå Beispiel",
     },
@@ -635,8 +666,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-3-5",
         'username': "charly@example.cde",
         'password': "secret",
-        'display_name': "Charly",
-        'given_names': "Charly C.",
+        'given_names': "Charly",
+        'legal_given_names': "Charly C.",
         'family_name': "Clown",
         'default_name_format': "Charly Clown",
     },
@@ -645,8 +676,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-4-3",
         'username': "daniel@example.cde",
         'password': "secret",
-        'display_name': "Daniel",
-        'given_names': "Daniel D.",
+        'given_names': "Daniel",
+        'legal_given_names': "Daniel D.",
         'family_name': "Dino",
         'default_name_format': "Daniel Dino",
     },
@@ -655,18 +686,18 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emmy",
-        'given_names': "Emilia E.",
+        'given_names': "Emilia",
+        'legal_given_names': "Emilia E.",
         'family_name': "Eventis",
-        'default_name_format': "Emilia E. Eventis",
+        'default_name_format': "Emilia Eventis",
     },
     "ferdinand": {
         'id': 6,
         'DB-ID': "DB-6-X",
         'username': "ferdinand@example.cde",
         'password': "secret",
-        'display_name': "Ferdinand",
-        'given_names': "Ferdinand F.",
+        'given_names': "Ferdinand",
+        'legal_given_names': "Ferdinand F.",
         'family_name': "Findus",
         'default_name_format': "Ferdinand Findus",
     },
@@ -675,8 +706,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-7-8",
         'username': "garcia@example.cde",
         'password': "secret",
-        'display_name': "Garcia",
-        'given_names': "Garcia G.",
+        'given_names': "Garcia",
+        'legal_given_names': "Garcia G.",
         'family_name': "Generalis",
         'default_name_format': "Garcia Generalis",
     },
@@ -685,8 +716,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-8-6",
         'username': None,
         'password': "secret",
-        'display_name': None,
         'given_names': "Hades",
+        'legal_given_names': None,
         'family_name': "Hell",
         'default_name_format': "Hades Hell",
     },
@@ -695,8 +726,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-9-4",
         'username': "inga@example.cde",
         'password': "secret",
-        'display_name': "Inga",
         'given_names': "Inga",
+        'legal_given_names': None,
         'family_name': "Iota",
         'default_name_format': "Inga Iota",
     },
@@ -705,8 +736,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-10-8",
         'username': "janis@example.cde",
         'password': "secret",
-        'display_name': "Janis",
         'given_names': "Janis",
+        'legal_given_names': None,
         'family_name': "Jalapeño",
         'default_name_format': "Janis Jalapeño",
     },
@@ -715,8 +746,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-11-6",
         'username': "kalif@example.cde",
         'password': "secret",
-        'display_name': "Kalif",
-        'given_names': "Kalif ibn al-Ḥasan",
+        'given_names': "Kalif",
+        'legal_given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
         'default_name_format': "Kalif Karabatschi",
     },
@@ -725,8 +756,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-12-4",
         'username': None,
         'password': "secret",
-        'display_name': "Lisa",
         'given_names': "Lisa",
+        'legal_given_names': None,
         'family_name': "Lost",
         'default_name_format': "Lisa Lost",
     },
@@ -735,8 +766,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-13-2",
         'username': "martin@example.cde",
         'password': "secret",
-        'display_name': "Martin",
         'given_names': "Martin",
+        'legal_given_names': None,
         'family_name': "Meister",
         'default_name_format': "Martin Meister",
     },
@@ -745,8 +776,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-14-0",
         'username': 'nina@example.cde',
         'password': "secret",
-        'display_name': "Nina",
         'given_names': "Nina",
+        'legal_given_names': None,
         'family_name': "Neubauer",
         'default_name_format': "Nina Neubauer",
     },
@@ -755,8 +786,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-15-9",
         'username': "olaf@example.cde",
         'password': "secret",
-        'display_name': "Olaf",
         'given_names': "Olaf",
+        'legal_given_names': None,
         'family_name': "Olafson",
         'default_name_format': "Olaf Olafson",
     },
@@ -765,8 +796,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-16-7",
         'username': "paulchen@example.cde",
         'password': "secret",
-        'display_name': "Paul",
-        'given_names': "Paulchen",
+        'given_names': "Paul",
+        'legal_given_names': "Paulchen",
         'family_name': "Panther",
         'default_name_format': "Paul Panther",
     },
@@ -775,8 +806,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-17-5",
         'username': "quintus@example.cde",
         'password': "secret",
-        'display_name': "Quintus",
         'given_names': "Quintus",
+        'legal_given_names': None,
         'family_name': "da Quirm",
         'default_name_format': "Quintus da Quirm",
     },
@@ -785,8 +816,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-18-3",
         'username': "rowena@example.cde",
         'password': "secret",
-        'display_name': "Rowena",
         'given_names': "Rowena",
+        'legal_given_names': None,
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
     },
@@ -795,8 +826,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-22-1",
         'username': "vera@example.cde",
         'password': "secret",
-        'display_name': "Vera",
         'given_names': "Vera",
+        'legal_given_names': None,
         'family_name': "Verwaltung",
         'default_name_format': "Vera Verwaltung",
     },
@@ -805,8 +836,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-23-X",
         'username': "werner@example.cde",
         'password': "secret",
-        'display_name': "Werner",
         'given_names': "Werner",
+        'legal_given_names': None,
         'family_name': "Wahlleitung",
         'default_name_format': "Werner Wahlleitung",
     },
@@ -815,8 +846,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-27-2",
         'username': "annika@example.cde",
         'password': "secret",
-        'display_name': "Annika",
         'given_names': "Annika",
+        'legal_given_names': None,
         'family_name': "Akademieteam",
         'default_name_format': "Annika Akademieteam",
     },
@@ -825,8 +856,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-32-9",
         'username': "farin@example.cde",
         'password': "secret",
-        'display_name': "Farin",
         'given_names': "Farin",
+        'legal_given_names': None,
         'family_name': "Finanzvorstand",
         'default_name_format': "Farin Finanzvorstand",
     },
@@ -835,8 +866,7 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-37-X",
         'username': "katarina@example.cde",
         'password': "secret",
-        'diplay_name': "Katarina",
-        'given_names': "Katarina",
+        'legal_given_names': None,
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
     },
@@ -845,8 +875,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-38-8",
         'username': "ludwig@example.cde",
         'password': "secret",
-        'diplay_name': "Ludwig",
         'given_names': "Ludwig",
+        'legal_given_names': None,
         'family_name': "Lokus",
         'default_name_format': "Ludwig Lokus",
     },
@@ -855,8 +885,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-42-6",
         'username': "petra@example.cde",
         'password': "secret",
-        'display_name': "Petra",
         'given_names': "Petra",
+        'legal_given_names': None,
         'family_name': "Philanthrop",
         'default_name_format': "Petra Philanthrop",
     },
@@ -865,8 +895,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-48-5",
         'username': "viktor@example.cde",
         'password': "secret",
-        'display_name': "Viktor",
         'given_names': "Viktor",
+        'legal_given_names': None,
         'family_name': "Versammlungsadmin",
         'default_name_format': "Viktor Versammlungsadmin",
     },
@@ -875,8 +905,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-100-7",
         'username': "akira@example.cde",
         'password': "secret",
-        'display_name': "Akira",
         'given_names': "Akira",
+        'legal_given_names': None,
         'family_name': "Abukara",
         'default_name_format': "Akira Abukara",
     },
@@ -885,8 +915,8 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': None,
         'username': None,
         'password': None,
-        'display_name': None,
         'given_names': None,
+        'legal_given_names': None,
         'family_name': None,
     },
 }
@@ -1052,7 +1082,9 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(self.conf["LOG_DIR"] / "cdedb-timing.log", 'a') as f:
+        with open(
+                self.conf["LOG_DIR"] / "cdedb-timing.log", 'a', encoding="utf-8",
+        ) as f:
             output = "{} {} {} {}\n".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
@@ -1097,7 +1129,7 @@ class FrontendTest(BackendTest):
         if evade_anti_csrf:
             urlmap = CDEDB_PATHS
             urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
-            endpoint, _ = urls.match(url, method="POST")  # pylint: disable=unpacking-non-sequence
+            endpoint, _ = urls.match(url, method="POST")
             params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
                 endpoint, csrf_token_name, csrf_token_payload,
                 persona_id=self.user['id'])
@@ -1132,7 +1164,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")  # pragma: no cover  # noqa: E501
+                "Cannot specify button value without specifying button name.")  # pragma: no cover
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1174,7 +1206,7 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+    def login(self, user: UserIdentifier, *,
               ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
@@ -1193,7 +1225,7 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore[return-value]
 
-    def logout(self, verbose: bool = False, *, allow_anonymous: bool = False) -> None:  # pylint: disable=arguments-differ
+    def logout(self, verbose: bool = False, *, allow_anonymous: bool = False) -> None:
         """Log out.
 
         :param verbose: If True display additional debug information.
@@ -1279,9 +1311,9 @@ class FrontendTest(BackendTest):
         mails = list(filter(None, (map(_extract_path, elements))))
         ret = []
         for path in mails:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 raw = f.read()
-                parser = email.parser.Parser(policy=email.policy.default)
+                parser = email.parser.Parser(policy=email.policy.default)  # type: ignore[arg-type]
                 msg = cast(email.message.EmailMessage, parser.parsestr(raw))
                 ret.append(msg)
         return ret
@@ -1297,7 +1329,7 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover  # noqa: E501
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
 
     def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
@@ -1323,7 +1355,10 @@ class FrontendTest(BackendTest):
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             return self.response.text
         tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
@@ -1400,7 +1435,10 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if self.response.content_type == "text/plain":
+        if (
+            self.response.content_type.startswith("text/")
+            and self.response.content_type != "text/html"
+        ):
             self.assertNotIn(s.strip(), self.response.text)
         else:
             tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
@@ -1828,7 +1866,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
+        codes = [field._value for field in f.fields['codes']]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)
@@ -1853,8 +1891,7 @@ class FrontendTest(BackendTest):
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
 
-        if end > total:
-            end = total
+        end = min(end, total)
 
         # adapt slicing to our count of log entries
         logs = all_logs[start-1:end]
@@ -1871,6 +1908,7 @@ class FrontendTest(BackendTest):
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
+        :param traverse: whether to also traverse all links displayed
         :return: None
         """
         sidebar = self.response.html.find(id="sidebar-navigation")
@@ -1878,6 +1916,9 @@ class FrontendTest(BackendTest):
                    for nav_point in sidebar.find_all("a")}
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
+            saved_response = self.response
+            self.traverse(nav_point)
+            self.response = saved_response
             present -= {nav_point}
         for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')
@@ -1909,7 +1950,6 @@ class FrontendTest(BackendTest):
             "username": 'zelda@example.cde',
             "given_names": "Zelda",
             "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
             "notes": "some fancy talk",
         })
         f = self.response.forms['newuserform']
@@ -1982,7 +2022,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover  # noqa: E501
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -2069,7 +2109,7 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover  # noqa: E501
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
         self.current_app = i
 
 

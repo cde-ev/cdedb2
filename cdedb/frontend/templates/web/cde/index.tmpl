@@ -130,23 +130,23 @@
                         To replenish your Account Balance, transfer money to the following Account:
                     {% endtrans %}
                 </p>
-                <table class="table table-condensed">
+                <table class="table table-condensed" id="payment-info">
                     <tbody>
                         <tr>
                             <td>{% trans %}Account holder{% endtrans %}</td>
-                            <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
+                            <td>{{ meta_info.membership_fee_account.get_account_holder() }}</td>
                         </tr>
                         <tr>
                             <td>{% trans %}IBAN{% endtrans %}</td>
-                            <td>{{ meta_info['CdE_Konto_IBAN']|iban }}</td>
+                            <td>{{ meta_info.membership_fee_account.get_iban()|iban }}</td>
                         </tr>
                         <tr>
                             <td>{% trans %}BIC{% endtrans %}</td>
-                            <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
+                            <td>{{ meta_info.membership_fee_account.get_bic() }}</td>
                         </tr>
                         <tr>
                             <td>{% trans %}Bank{% endtrans %}</td>
-                            <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
+                            <td>{{ meta_info.membership_fee_account.get_bank() }}</td>
                         </tr>
                         <tr>
                             <td>{% trans %}Payment reference{% endtrans %}</td>

@@ -62,16 +62,21 @@
     {% endif %}
 
         {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
-                {{ ambience['event']['registration_text']|md }}
-            {% endcall %}
+        {% set button = None %}
+        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+            {% set button = generic_event.edit_free_text_button("registration_text") %}
+        {% endif %}
+        {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
+                                     icon="info-circle", aclass="panel-info") %}
+            {{ ambience['event']['registration_text']|md }}
+        {% endcall %}
         {% endif %}
 
         {{ util.h(n_("My Data"), underline=true) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
-                {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
+                {{ util.persona_name(persona, include_nickname=True, with_titles=True) }}
             </dd>
 
             <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
