@@ -590,7 +590,7 @@ class EventQueryMixin(EventBaseFrontend):
         search_additions: list[QueryConstraint] = []
         event = None
         # higher number of previews is more convenient for orgas
-        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
+        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
         if kind == "orga_registration":
             if aux is None:
                 return self.send_json(rs, {})
