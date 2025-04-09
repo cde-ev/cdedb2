@@ -3,40 +3,6 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% macro one_event_links(event) %}
-    {% if event['id'] in user.orga or 'event_orga' in user.admin_views %}
-    <div class="list-group tear-down hidden-xs hidden-sm">
-        <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
-            <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
-            <div class="input-group">
-                <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
-                       placeholder="{% trans %}Registration quick-access{% endtrans %}"
-                       aria-label="{% trans %}Registration quick-access{% endtrans %}"/>
-                <span class="input-group-btn">
-                    {{ util.input_submit("", icon='search', title=gettext("Search")) }}
-                </span>
-            </div>
-        </form>
-        <script nonce="{{ csp_nonce }}">
-            $(document).ready(function () {
-
-            const $i = $('#input-showregistration-id');
-            const $igroup = $i.closest('.input-group');
-            $igroup.children('.input-group-btn').remove();
-            $igroup.replaceWith($igroup.contents());
-            $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                           + ('?kind=orga_registration&aux='|s)
-                                           + (values['event_id']|e)
-                                           + ('&phrase=%s'|s) }}',
-                                       [], true, false, "{{ gettext("Registration quick-access") }}");
-            $i.change(function(){
-                if ($(this).val()) {
-                    $('#quickregistrationform').submit();
-                }
-            });
-            });
-        </script>
-    </div>
-    {% endif %}
     <div class="list-group tear-down">
         {% if event.is_visible_for(user, is_registered, privileged=False) or event['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
         {{ util.href(cdedblink("event/show_event", {"event_id": event['id']}), gettext("Overview"),
@@ -73,6 +39,42 @@
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
     </div>
+
+    {% if event['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {# on mobile screens, the quicksearch is accessible shown on show_event only #}
+        <div class="list-group tear-down hidden-xs hidden-sm">
+            <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
+                <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
+                <div class="input-group">
+                    <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
+                           placeholder="{% trans %}Registration Quick-Access{% endtrans %}"
+                           aria-label="{% trans %}Registration Quick-Access{% endtrans %}"/>
+                    <span class="input-group-btn">
+                        {{ util.input_submit("", icon='search', title=gettext("Search")) }}
+                    </span>
+                </div>
+            </form>
+            <script nonce="{{ csp_nonce }}">
+                $(document).ready(function () {
+
+                const $i = $('#input-showregistration-id');
+                const $igroup = $i.closest('.input-group');
+                $igroup.children('.input-group-btn').remove();
+                $igroup.replaceWith($igroup.contents());
+                $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
+                                               + ('?kind=orga_registration&aux='|s)
+                                               + (values['event_id']|e)
+                                               + ('&phrase=%s'|s) }}',
+                                           [], true, false, "{{ gettext("Registration Quick-Access") }}");
+                $i.change(function(){
+                    if ($(this).val()) {
+                        $('#quickregistrationform').submit();
+                    }
+                });
+                });
+            </script>
+        </div>
+    {% endif %}
 
     {% if is_privileged() or 'event_orga' in user.admin_views %}
         <div class="list-group tear-down">
