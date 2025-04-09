@@ -509,7 +509,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             ViolationAux(
                 event=event, registrations=registrations, personas=personas,
                 all_courses=all_courses, courses=courses,
-                all_lodgements=all_lodgements, lodgements=all_lodgements,
+                all_lodgements=all_lodgements, lodgements=lodgements,
                 attendee_data=attendee_stats, choices_data=choice_stats,
                 inhabitants_data=inhabitants,
             ),
