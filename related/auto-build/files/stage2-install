@@ -87,7 +87,7 @@ EOF
 
 for file in /var/cache/apt/archives/*.deb
 do
-  shred --iteration=0 --zero --remove $file
+  shred --iteration=0 --zero --remove "$file"
 done
 
 echo ""
@@ -115,7 +115,7 @@ groupadd --system www-cde
 useradd --system -g www-cde --create-home www-cde
 
 # dPROD allow empty passwords
-echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
+echo -e "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
 cat >> /home/cdedb/.bashrc << EOF
