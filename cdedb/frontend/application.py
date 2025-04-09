@@ -205,6 +205,13 @@ class Application(BaseApp):
         # note time for performance measurement
         begin = now()
         user = User()
+
+        # additional safeguard to apache blocking non-trusted hosts, see cdedb-site.conf
+        if request.host not in self.conf["HTTP_HOSTS"]:
+            return self.make_error_page(
+                werkzeug.exceptions.BadRequest(),
+                request, user,
+                n_("Used a non-trusted http host header. Refuse to proceed."))
         try:
             sessionkey = request.cookies.get("sessionkey")
             apitoken = request.headers.get(APIToken.request_header_key)
