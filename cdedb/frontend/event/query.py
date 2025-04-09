@@ -638,8 +638,7 @@ class EventQueryMixin(EventBaseFrontend):
                     ("persona_id", "registrations.id", "username", "family_name",
                      "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
-                data = list(self.eventproxy.submit_general_query(
-                    rs, query, event_id=aux))
+                data = list(self.eventproxy.submit_general_query(rs, query, event_id=aux))
                 # add 'id' to each object, to enable usage of EntitySorter.persona
                 for datum in data:
                     datum["id"] = datum["persona_id"]
@@ -649,16 +648,13 @@ class EventQueryMixin(EventBaseFrontend):
         if len(data) > num_preview_personas:
             data = data[:num_preview_personas]
 
-        def name(x: CdEDBObject) -> str:
-            return make_persona_name(x, include_nickname=True)
-
         # Generate return JSON list
         ret = []
         for entry in data:
             result = {
-                'id': entry['id'],
+                'id': entry['registrations.id'],
                 'email': entry['username'],
-                'name': name(entry),
+                'name': make_persona_name(entry, include_nickname=True),
             }
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})
