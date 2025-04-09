@@ -276,6 +276,21 @@ class ViolationAux:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class ViolationContext:
+    registration: CdEDBObject | None = None
+    course: CdEDBObject | None = None
+    lodgement: CdEDBObject | None = None
+
+    part: models.EventPart | None = None
+    track: models.CourseTrack | None = None
+    part_group: models.PartGroup | None = None
+    track_group: models.TrackGroup | None = None
+
+    def add(self, **kwargs: Any) -> Self:
+        return self.__class__(**{**vars(self), **kwargs})
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class ConstraintViolation(abc.ABC):
     event: models.Event
     severity: ViolationSeverity
@@ -299,10 +314,9 @@ class ConstraintViolation(abc.ABC):
     track_group: models.TrackGroup | None = None
 
     # Constructor interface.
-    # Inheritance does not work very nicely with typing, due to different signatures.
     @classmethod
     @abc.abstractmethod
-    def check(cls, aux: ViolationAux, **kwargs: Any) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
         Takes the event and some entites and determines whether there is a violation.
 
@@ -367,21 +381,20 @@ class ConstraintViolation(abc.ABC):
         return (-self.severity.value, self.__class__.__name__)
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [ViolationContext()]
+
+    @classmethod
+    def dispatch(cls, aux: ViolationAux, context: ViolationContext) -> ViolationList:
 
         ret = ViolationList()
 
-        for cv in cls.__subclasses__():
-            if inspect.isabstract(cv):
-                ret += cv.dispatch(aux)
-                continue
-            ret.append(cv.check(aux))
+        for new_context in cls.get_contexts(aux, context):
+            for cv in cls.__subclasses__():
+                if inspect.isabstract(cv):
+                    ret += cv.dispatch(aux, new_context)
+                    continue
+                ret.append(cv.check(aux, new_context))
 
         ret.sort()
         return ret
@@ -392,16 +405,7 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
     registration: CdEDBObject
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-
-        ret = ViolationList()
-
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
         for registration_ in aux.registrations.values():
 
             persona = aux.personas[registration_['persona_id']]
@@ -411,13 +415,14 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
             registration_['remaining_owed'] = \
                 registration_['amount_owed'] - registration_['amount_paid']
 
-            for cv in cls.__subclasses__():
-                if inspect.isabstract(cv):
-                    ret += cv.dispatch(aux, registration=registration_)
-                    continue
-                ret.append(cv.check(aux, registration=registration_))
+            for part in aux.event.parts.values():
+                registration_['parts'][part.id]['age'] = determine_age_class(
+                    persona['birthday'], part.part_begin)
 
-        return ret
+        return [
+            context.add(registration=registration)
+            for registration in aux.registrations.values()
+        ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -425,26 +430,8 @@ class RegistrationPartConstraintViolation(RegistrationConstraintViolation, abc.A
     part: models.EventPart
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert registration is not None
-
-        for part in aux.event.parts.values():
-            reg_part = registration['parts'][part.id]
-            reg_part['age'] = determine_age_class(
-                registration['persona']['birthday'], part.part_begin)
-
-        return ViolationList(
-            cv.check(aux, registration=registration, part=part)
-            for part in aux.event.parts.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [context.add(part=part) for part in aux.event.parts.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -452,21 +439,8 @@ class RegistrationTrackConstraintViolation(RegistrationConstraintViolation, abc.
     track: models.CourseTrack
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert registration is not None
-
-        return ViolationList(
-            cv.check(aux, registration=registration, track=track)
-            for track in aux.event.tracks.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [context.add(track=track) for track in aux.event.tracks.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -474,21 +448,11 @@ class RegistrationPartGroupConstraintViolation(RegistrationConstraintViolation, 
     part_group: models.PartGroup
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert registration is not None
-
-        return ViolationList(
-            cv.check(aux, registration=registration, part_group=part_group)
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [
+            context.add(part_group=part_group)
             for part_group in aux.event.part_groups.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+        ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -496,21 +460,11 @@ class RegistrationTrackGroupConstraintViolation(RegistrationConstraintViolation,
     track_group: models.TrackGroup
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert registration is not None
-
-        return ViolationList(
-            cv.check(aux, registration=registration, track_group=track_group)
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [
+            context.add(track_group=track_group)
             for track_group in aux.event.track_groups.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+        ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -518,24 +472,8 @@ class CourseConstraintViolation(ConstraintViolation, abc.ABC):
     course: CdEDBObject
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-
-        ret = ViolationList()
-
-        for course_ in aux.courses.values():
-            for cv in cls.__subclasses__():
-                if inspect.isabstract(cv):
-                    ret += cv.dispatch(aux, course=course_)
-                else:
-                    ret.append(cv.check(aux, course=course_))
-
-        return ret
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [context.add(course=course) for course in aux.courses.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -543,21 +481,8 @@ class CourseTrackConstraintViolation(CourseConstraintViolation, abc.ABC):
     track: models.CourseTrack
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert course is not None
-
-        return ViolationList(
-            cv.check(aux, course=course, track=track)
-            for track in aux.event.tracks.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [context.add(track=track) for track in aux.event.tracks.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -565,21 +490,11 @@ class CourseTrackGroupConstraintViolation(CourseConstraintViolation, abc.ABC):
     track_group: models.TrackGroup
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert course is not None
-
-        return ViolationList(
-            cv.check(aux, course=course, track_group=track_group)
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [
+            context.add(track_group=track_group)
             for track_group in aux.event.track_groups.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+        ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -587,24 +502,11 @@ class LodgementConstraintViolation(ConstraintViolation, abc.ABC):
     lodgement: CdEDBObject
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-
-        ret = ViolationList()
-
-        for lodgement_ in aux.lodgements.values():
-            for cv in cls.__subclasses__():
-                if inspect.isabstract(cv):
-                    ret += cv.dispatch(aux, lodgement=lodgement_)
-                    continue
-                ret.append(cv.check(aux, lodgement=lodgement_))
-
-        return ret
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [
+            context.add(lodgement=lodgement)
+            for lodgement in aux.lodgements.values()
+        ]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -612,37 +514,24 @@ class LodgementPartConstraintViolation(LodgementConstraintViolation, abc.ABC):
     part: models.EventPart
 
     @classmethod
-    def dispatch(
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject | None = None,
-            course: CdEDBObject | None = None,
-            lodgement: CdEDBObject | None = None,
-    ) -> ViolationList:
-        assert lodgement is not None
-
-        return ViolationList(
-            cv.check(aux, lodgement=lodgement, part=part)
-            for part in aux.event.parts.values()
-            for cv in cls.__subclasses__()
-            if not inspect.isabstract(cv)
-        )
+    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        return [context.add(part=part) for part in aux.event.parts.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-            part_group: models.PartGroup,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
         If the given registration is present at competing parts, return a violation.
 
         Depending on the exact status, the violation can have a different severity.
         """
+        assert context.registration is not None
+        assert context.part_group is not None
+        registration = context.registration
+        part_group = context.part_group
+
         ct = part_group.constraint_type
         if ct != const.EventPartGroupType.mutually_exclusive_participants:
             return None
@@ -713,18 +602,18 @@ class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation)
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CourseChoiceSyncCV(RegistrationTrackGroupConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-            track_group: models.TrackGroup,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
         If the registration has unyncen course choices, return a violation.
 
         The backend should always ensure, that this cannot occur, so such a
         violation has a critical severity if it does occur.
         """
+        assert context.registration is not None
+        assert context.track_group is not None
+        registration = context.registration
+        track_group = context.track_group
+
         ct = track_group.constraint_type
         if ct != const.CourseTrackGroupType.course_choice_sync:
             return None
@@ -767,16 +656,16 @@ class CourseChoiceSyncCV(RegistrationTrackGroupConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NoCourseAssignedCV(RegistrationTrackConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """Return a violation if the registration has no assigned course.
 
         Severity of DEBUG for registrations which are unlikely to need a course.
         """
+        assert context.registration is not None
+        assert context.track is not None
+        registration = context.registration
+        track = context.track
+
         reg_track = registration['tracks'][track.id]
         reg_part = registration['parts'][track.part_id]
         if not reg_part['status'].is_present():
@@ -814,18 +703,18 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
     instructed_course: CdEDBObject | None = None
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
         Return a violation if the registration is assigned to an unchosen course.
 
         Make the violation a warning if an instructor is not assigned to their
         instructed course event though it takes place.
         """
+        assert context.registration is not None
+        assert context.track is not None
+        registration = context.registration
+        track = context.track
+
         reg_track = registration['tracks'][track.id]
         reg_part = registration['parts'][track.part_id]
 
@@ -931,11 +820,10 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class InconsistentPaymentCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if registration['amount_paid'] < 0:
             return cls(
                 event=aux.event,
@@ -975,11 +863,10 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NotPaidCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if registration['amount_paid'] == 0 and registration['amount_owed'] > 0:
             if any(reg_part['status'] == const.RegistrationPartStati.participant
                    for reg_part in registration['parts'].values()):
@@ -1015,11 +902,10 @@ class NotPaidCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ZeroAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if not aux.event.fees:
             return None
         if registration['amount_owed'] == 0:
@@ -1053,11 +939,10 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NegativeAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if registration['amount_owed'] < 0:
             return cls(
                 event=aux.event,
@@ -1085,11 +970,10 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NegativeRemainingOwedCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if registration['remaining_owed'] < 0:
             return cls(
                 event=aux.event,
@@ -1120,11 +1004,10 @@ class RemainingOwedCV(RegistrationConstraintViolation):
     min_involved_part_begin: datetime.date
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         if registration['remaining_owed'] > 0 and registration['amount_paid'] > 0:
             if any(reg_part['status'].is_involved()
                    for reg_part in registration['parts'].values()):
@@ -1168,11 +1051,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
     shall_be_present_at_all: bool
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """Return a violation if a persona should not be checked in, but is.
 
         If they are checked in even though they are is not present in the relevant part,
@@ -1180,6 +1059,9 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
         If they have not been checked out even though they should have been, return an
         INFO as well.
         """
+        assert context.registration is not None
+        registration = context.registration
+
         # sorting this is relevant for checkout validity, thus sort by part end
         is_present_parts = {
             part_id: part for part_id, part in keydictsort_filter(
@@ -1250,18 +1132,18 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux,
-            registration: CdEDBObject,
-            part: models.EventPart,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """Return a violation if a persona should be checked in, but is not.
 
         If a registration is participant and not checked in after the first day of the
         part, return a WARNING. If at the end of the respective part, they still never
         checked in, return an ERROR.
         """
+        assert context.registration is not None
+        assert context.part is not None
+        registration = context.registration
+        part = context.part
+
         ref_time = now().date()
         if not (registration['parts'][part.id]['status'].is_present()
                 and ref_time > part.part_begin):
@@ -1309,11 +1191,10 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
     participant_begin: datetime.date
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         min_participating_part = min(
             (
                 ep for ep in aux.event.parts.values()
@@ -1360,11 +1241,10 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class IllegalMixedLodgingCV(RegistrationConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux,
-            registration: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        registration = context.registration
+
         min_participating_part = min(
             (
                 ep for ep in aux.event.parts.values()
@@ -1402,12 +1282,12 @@ class IllegalMixedLodgingCV(RegistrationConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux,
-            registration: CdEDBObject,
-            part: models.EventPart,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        assert context.part is not None
+        registration = context.registration
+        part = context.part
+
         if not part.camping_mat_field:
             return None
         if (
@@ -1465,12 +1345,12 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NoLodgementCV(RegistrationPartConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            registration: CdEDBObject,
-            part: models.EventPart,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.registration is not None
+        assert context.part is not None
+        registration = context.registration
+        part = context.part
+
         reg_part = registration['parts'][part.id]
         if not reg_part['status'].is_present() or not aux.lodgements:
             return None
@@ -1517,11 +1397,10 @@ class NoLodgementCV(RegistrationPartConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class HiddenCourseCV(CourseConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            course: CdEDBObject,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.course is not None
+        course = context.course
+
         ref_time = now()
         event = aux.event
         if course['is_visible']:
@@ -1574,12 +1453,12 @@ class HiddenCourseCV(CourseConstraintViolation):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class MutuallyExclusiveCoursesCV(CourseTrackGroupConstraintViolation):
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            course: CdEDBObject,
-            track_group: models.TrackGroup,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.course is not None
+        assert context.track_group is not None
+        course = context.course
+        track_group = context.track_group
+
         """If the given course takes place in competing tracks, return a violation."""
         ct = track_group.constraint_type
         if ct != const.CourseTrackGroupType.mutually_exclusive_courses:
@@ -1618,17 +1497,17 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
     num: int
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            course: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """Return a violation if the course is cancelled but has attendees.
 
         If the course was never offered but has attendees, someone misused the
         course segments toggle. In that case this is an error, otherwise a warning.
         """
+        assert context.course is not None
+        assert context.track is not None
+        course = context.course
+        track = context.track
+
         attendees = aux.attendee_data.involved.get(course['id'], track.id)
 
         if track.id not in course['segments']:
@@ -1697,17 +1576,17 @@ class IncorrectNumAttendeesCV(CourseTrackConstraintViolation):
     num: int
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            course: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
         Return a violation if the course has too few or too many attendees.
 
         Make the violation DEBUG if no attendees are assigned yet to avoid clutter.
         """
+        assert context.course is not None
+        assert context.track is not None
+        course = context.course
+        track = context.track
+
         attendees = aux.attendee_data.involved.get(course['id'], track.id)
         event_over = now().date() > aux.event.end
 
@@ -1800,13 +1679,13 @@ class LonelyAttendeesCV(CourseTrackConstraintViolation):
     num_instructors: int
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            course: CdEDBObject,
-            track: models.CourseTrack,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """Return a violation if the course has attendees but no instructors."""
+        assert context.course is not None
+        assert context.track is not None
+        course = context.course
+        track = context.track
+
         attendees = aux.attendee_data.involved.get(course['id'], track.id)
         if track.id in course['active_segments']:
             if bool(attendees.learners) != bool(attendees.instructors):  # pylint: disable=line-too-long
@@ -1855,12 +1734,12 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
     num_camping_mat: int
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            lodgement: CdEDBObject,
-            part: models.EventPart,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.lodgement is not None
+        assert context.part is not None
+        lodgement = context.lodgement
+        part = context.part
+
         inhabitants = aux.inhabitants_data[lodgement['id']][part.id]
         event_over = now().date() > aux.event.end
         severity = None
@@ -1981,12 +1860,12 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
     not_specified: bool
 
     @classmethod
-    def check(  # type: ignore[override]
-            cls,
-            aux: ViolationAux, *,
-            lodgement: CdEDBObject,
-            part: models.EventPart,
-    ) -> Self | None:
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.lodgement is not None
+        assert context.part is not None
+        lodgement = context.lodgement
+        part = context.part
+
         inhabitants = aux.inhabitants_data[lodgement['id']][part.id]
         non_mixing_regs = [
             reg for reg in inhabitants.all

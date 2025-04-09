@@ -58,6 +58,7 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.event_constraint_violations import (
     ConstraintViolation,
     ViolationAux,
+    ViolationContext,
 )
 
 if TYPE_CHECKING:
@@ -512,6 +513,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 attendee_data=attendee_stats, choices_data=choice_stats,
                 inhabitants_data=inhabitants,
             ),
+            ViolationContext(),
         )
 
         return {
