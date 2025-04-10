@@ -6926,7 +6926,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertEqual(track.min_choices, 9)
 
         # Check that change_registration works properly.
-        self.traverse("Anmeldungen", "Alle Teilnehmer", "Details")
+        self.get("/event/event/4/registration/10/show")
         self.assertTitle("Anmeldung von Emilia Eventis (TripelAkademie)")
 
         self.assertPresence("Kurs 2. Hälfte nachmittags", div="course-choices-group-2")
