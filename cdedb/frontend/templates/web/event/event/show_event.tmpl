@@ -151,13 +151,9 @@
     {% endif %}
 
     <div class="row">
-        {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
-            <div class="col-md-6">
+        {% if is_privileged_for('quick_show_registration') %}
+            <div class="col-md-6 hidden-md hidden-lg">
                 {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
-                    <i class="hidden-xs hidden-sm">
-                    {# TODO: remove this hint (and hide complete panel on wide screens) after some time (e.g. winter25) #}
-                    {% trans %}Moved to the menu on the left.{% endtrans %}
-                    </i>
                     <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET"
                           id="quickregistrationform-smallscreen"
                           class="hidden-md hidden-lg">
@@ -279,7 +275,9 @@
                     </form>
                 {% endcall %}
             </div>
+        </div>
 
+        <div class="row">
             {% set min_severity = enums['ViolationSeverity'].INFO %}
             {% set violations = constraint_violations['violations'] if constraint_violations else None %}
             {% if violations and violations.max_severity >= min_severity %}
