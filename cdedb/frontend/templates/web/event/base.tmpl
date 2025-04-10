@@ -26,7 +26,7 @@
         {% endif %}
         {% if event['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/register_form", {"event_id": event['id'], "preview": True}), gettext("Registration Preview"),
-                    aclass="list-group-item", icon="sign-in-alt") }}
+                    aclass="list-group-item", icon="sign-in-alt", active=(sidenav_active == 'event_register_preview')) }}
         {% endif %}
         {% if (is_participant and event['participant_info']) or event['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": event['id']}),
