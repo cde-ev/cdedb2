@@ -687,7 +687,6 @@ class LDAPsqlBackend:
             MlLogCodes.unsubscribed,
             MlLogCodes.marked_override,
             MlLogCodes.marked_blocked,
-            MlLogCodes.reset,
             MlLogCodes.automatically_removed,
         ]
 
