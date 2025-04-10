@@ -20,7 +20,7 @@
 {% endblock %}
 {% block content %}
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-12">
             <div class="p button-par">
                 {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
                              readonly=not is_privileged_for("add_registration"), icon='plus', aclass='btn btn-sm btn-success') }}
@@ -31,8 +31,10 @@
                 {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
             </div>
         </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries(enums['QueryScope'].registration, default_queries) }}
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            {{ generic.place_default_queries(enums['QueryScope'].registration, default_queries, num_columns=3) }}
         </div>
     </div>
 

@@ -184,7 +184,7 @@
         {% if "event_mgmt" in user.admin_views %}
             <div class="col-md-6" id="manage-orgas">
                 {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
-                <ul>
+                <ul class="slim" >
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
