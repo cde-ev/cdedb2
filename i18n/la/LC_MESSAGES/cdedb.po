@@ -14030,7 +14030,7 @@ msgstr "aliquando™ annuntiari poterit."
 #: cdedb/frontend/templates/web/event/event/index.tmpl:46
 #, python-format
 msgid "Registration starting %(start_time)s"
-msgstr "ab %(astart_time)s annuntiari potest."
+msgstr "ab %(start_time)s annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:50
 msgid "Registration is open."
