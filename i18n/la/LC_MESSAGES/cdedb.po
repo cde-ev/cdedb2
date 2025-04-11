@@ -15,6 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:392
@@ -8574,7 +8575,7 @@ msgid ""
 msgstr ""
 "donum minimum nunc sunt %(min_donation)s, sed mos est impetum pecuniae "
 "expensae lationis habendis donare %(typical_donation)s. CdEs circa 40 usque "
-"ad 50 per centum aut %(dsa)s data esse aut iis %(idea) iuvata esse curabit"
+"ad 50 per centum aut %(dsa)s data esse aut iis %(idea)s iuvata esse curabit"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:22
 msgid "Deutsche SchülerAkademie"
@@ -8583,7 +8584,7 @@ msgstr "Deutsche SchülerAkademiae"
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
 #, python-format
 msgid "You can find more information about %(donations)s at the CdE website."
-msgstr "plures notitia %(donations) in pagina electronica CdEi inveniuntur."
+msgstr "plures notitia %(donations)s in pagina electronica CdEi inveniuntur."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
 msgid "donations"
@@ -13121,10 +13122,9 @@ msgstr "exportatio"
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
 #, python-format
 msgid "The full export is on the %(overview)s."
-msgstr "exportatio tota in %(overview) invenitur."
+msgstr "exportatio tota in %(overview)s invenitur."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
-#, fuzzy
 msgid "event overview"
 msgstr "eventus conspectu"
 
