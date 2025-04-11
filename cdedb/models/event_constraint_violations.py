@@ -309,6 +309,27 @@ class ViolationContext:
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ConstraintViolation(abc.ABC):
+    """Abstract base class for all event violations.
+
+    Actual violations must be non-abstract subclasses implementing the constructor
+    and display interfaces.
+
+    - Constructor:
+        - `check(cls, aux, context) -> Self | None`
+            - Takes all potentially relevant data and returns an instance if something
+              is amiss, None otherwise.
+    - Display:
+        - `get_translation(self, *, enity_page) -> tuple[list[str], CdEDBobject]`
+            - Returns a list of messages to be displayed for this violation and page.
+              These are translated individually and then formatted with the parameters.
+
+    Abstract subclasses define different kinds of violations (e,g, violations
+    concerning registrations, courses, lodgements, etc.).
+
+    All violation subclasses are evaluated and constructed automatically via the
+    `dispatch` constructor. To make this work, an abstract subclass need only define
+    the additional context needed for the evaluation ob it's non-abstract children.
+    """
     event: models.Event
     severity: ViolationSeverity
 
@@ -335,9 +356,10 @@ class ConstraintViolation(abc.ABC):
     @abc.abstractmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
-        Takes the event and some entites and determines whether there is a violation.
+        Take event and entity data and decide if there is a violation for the given
+        context.
 
-        If so this constructor returns a new instance with the appropriate severity.
+        If so, returns a new violation instance, otherwise None.
         """
         raise NotImplementedError
 
@@ -347,19 +369,20 @@ class ConstraintViolation(abc.ABC):
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         """
-        Must return a list of strings for translation and a dict of translation params.
+        Return a list of messages to be translated individually and then displayed with
+        the translation params.
 
-        :param entity_page: If True, return translations for the specific entity page.
-            Otherwise, return translations for the violation overview page.
+        :param entity_page: If empty, return display messages for the overview page.
+            Otherwise, return display messages for the given entity page.
 
-        Translations for the overview page should contain parameters for primary
-        entities which should contain the link text for the links defined by
-        `get_link_params`, usually the name/moniker of the primary entity, e.g.
-        a persona name or a course moniker.
+        For the overview page, the message should contain a placeholder for primary
+        entities, while the parameters should contain the name/title/moniker of that
+        entity, e.g. a persona name or a course moniker.
+        These placeholders are automatically replaced with a link to that entities page.
 
-        Translations for the entity page typically leave out these link parameters, but
-        may also leave out secondary entities, depending on how and where they are
-        rendered on the entity page.
+        For an entity page, that entitys placeholder is left out, but secondary
+        entities might also be left out, depending on how and where the violation is
+        displayed on that page.
         """
         raise NotImplementedError
 
@@ -368,8 +391,10 @@ class ConstraintViolation(abc.ABC):
         Return link targets and necessary parameters for linking to primary entities.
 
         Link target will be something like "event/show_course", parameters will contain
-        the entity id, e.g. `{'course_id': self.course_id}`.
+        the entity id, e.g. `{'course_id': self.course['id']}`.
         The link text will be the corresponding parameter from `get_translations`.
+
+        Need only be overridden if a subclass has additional associated primary entities.
         """
         ret = {}
         if self.registration:
@@ -398,12 +423,43 @@ class ConstraintViolation(abc.ABC):
         return (-self.severity.value, self.__class__.__name__)
 
     @classmethod
-    def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
-        return [ViolationContext()]
+    def get_contexts(
+            cls, aux: ViolationAux, context: ViolationContext,
+    ) -> list[ViolationContext]:
+        """
+        Classmethod for adding additional context for subclasses.
+
+        Overriding this is the primary way an abstract subclass
+        defines what context is needed for its children.
+
+        The returned contexts should be derived from the received context.
+        """
+        return [context]
 
     @classmethod
     def dispatch(cls, aux: ViolationAux, context: ViolationContext) -> ViolationList:
+        """
+        Return a list of instances of this classes children, by automatically
+        delegationg the construction to those subclasses.
 
+        Abstract subclasses are responsible for defining what context is needed for
+        their children by overriding the `get_contexts` classmethod. This works
+        without needing to override the implementation of the `dispatch` classmethod.`
+
+
+        First create a list of derived contexts from the given context via
+        `get_contexts`, then iterate over all subclasses:
+
+        - For abstract subclasses, call that subclasses `dispatch` with each derived
+            context to further dispatch the evaluation of it's children.
+            This returns a list of violation instances each.
+        - For non-abstract subclasses, call that subclasses `check` to evaluate each
+            derived context.
+            This returns a single violation instance (or None) each.
+            (`ViolationList.append` automatically skips appending None).
+
+        Gather all of these violations and return the resulting list.
+        """
         ret = ViolationList()
 
         for new_context in cls.get_contexts(aux, context):
@@ -422,6 +478,11 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
 
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
+        """
+        Create a context for every registration. Add persona into registration.
+        Add some derived data (age, remaining owed).
+        """
+
         for registration_ in aux.registrations.values():
 
             persona = aux.personas[registration_['persona_id']]
@@ -539,7 +600,7 @@ class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation)
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
-        If the given registration is present at competing parts, return a violation.
+        Return a violation If the given registration is present at competing parts.
 
         Depending on the exact status, the violation can have a different severity.
         """
@@ -620,7 +681,7 @@ class CourseChoiceSyncCV(RegistrationTrackGroupConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
-        If the registration has unyncen course choices, return a violation.
+        Return a violation if the registration has unynced course choices.
 
         The backend should always ensure, that this cannot occur, so such a
         violation has a critical severity if it does occur.
@@ -673,7 +734,8 @@ class CourseChoiceSyncCV(RegistrationTrackGroupConstraintViolation):
 class NoCourseAssignedCV(RegistrationTrackConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
-        """Return a violation if the registration has no assigned course.
+        """
+        Return a violation if the registration has no assigned course.
 
         Severity of DEBUG for registrations which are unlikely to need a course.
         """
@@ -837,6 +899,12 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
 class InconsistentPaymentCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration has an inconsistent payment status.
+
+        Make the violation critical for a negative amount paid and an error for a
+        missing payment date.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -880,6 +948,11 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
 class NotPaidCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration owes money but hasn't paid.
+
+        Make the violation an info for orgas.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -919,6 +992,13 @@ class NotPaidCV(RegistrationConstraintViolation):
 class ZeroAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration is involved but owes no money.
+
+        Skip this if the event has no fees.
+
+        Severity of DEBUG for orgas.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -956,6 +1036,9 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
 class NegativeAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration owes a negative amount of money.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -987,6 +1070,12 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
 class NegativeRemainingOwedCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration has a negative remaining owed, i.e. has
+        paid too much and needs a reimbursement.
+
+        Make this a warning once the event has been archived.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -1021,6 +1110,11 @@ class RemainingOwedCV(RegistrationConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration has paid some but not all of their fee.
+
+        Make this an error once their participation has begun.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -1068,7 +1162,8 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
-        """Return a violation if a persona should not be checked in, but is.
+        """
+        Return a violation if a persona should not be checked in, but is.
 
         If they are checked in even though they are is not present in the relevant part,
         return an INFO. If they are not present at all, return an ERROR.
@@ -1149,7 +1244,8 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
 class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
-        """Return a violation if a persona should be checked in, but is not.
+        """
+        Return a violation if a persona should be checked in, but is not.
 
         If a registration is participant and not checked in after the first day of the
         part, return a WARNING. If at the end of the respective part, they still never
@@ -1208,6 +1304,12 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if a registration is a minor (while present) but
+        parental consent is missing.
+
+        Make this an error 30 days before they will be present.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -1258,6 +1360,10 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
 class IllegalMixedLodgingCV(RegistrationConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if a registration has consented to mixed lodging, even
+        though they are too young.
+        """
         assert context.registration is not None
         registration = context.registration
 
@@ -1299,6 +1405,12 @@ class IllegalMixedLodgingCV(RegistrationConstraintViolation):
 class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation of a registration is assigned to a camping mat, but
+        has not consented o that.
+
+        Skip this if no camping mat consent field is set (for the given part).
+        """
         assert context.registration is not None
         assert context.part is not None
         registration = context.registration
@@ -1362,13 +1474,20 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
 class NoLodgementCV(RegistrationPartConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the registration is present but not assigned to a lodgement.
+
+        Make this a warning for guests and an error for participants.
+
+        Ship this if the event has no lodgements.
+        """
         assert context.registration is not None
         assert context.part is not None
         registration = context.registration
         part = context.part
 
         reg_part = registration['parts'][part.id]
-        if not reg_part['status'].is_present() or not aux.lodgements:
+        if not reg_part['status'].is_present() or not aux.all_lodgements:
             return None
         if reg_part['lodgement_id'] is None:
             if part.part_begin <= now().date():
@@ -1414,6 +1533,14 @@ class NoLodgementCV(RegistrationPartConstraintViolation):
 class HiddenCourseCV(CourseConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the course is hidden.
+
+        Make the severity DEBUG if there is no registration start, if the start is more
+        than 7 days away or if the late registration is over.
+        Make it INFO if the registration is over, but late registration isn't.
+        Make it WARNING otherwise.
+        """
         assert context.course is not None
         course = context.course
 
@@ -1425,10 +1552,13 @@ class HiddenCourseCV(CourseConstraintViolation):
             # Registration starts in less than a week (or has already started).
             if (
                     event.registration_soft_limit
-                    and not event.registration_hard_limit
                     and event.registration_soft_limit < ref_time
+                    and (
+                        not event.registration_hard_limit
+                        or event.registration_hard_limit > ref_time
+                    )
             ):
-                # Registration already over, no late registration.
+                # Registration already over, late registration not over.
                 severity = ViolationSeverity.INFO
             elif (
                     event.registration_hard_limit
@@ -1470,12 +1600,14 @@ class HiddenCourseCV(CourseConstraintViolation):
 class MutuallyExclusiveCoursesCV(CourseTrackGroupConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation of the course is taking place in mutually exclusive tracks.
+        """
         assert context.course is not None
         assert context.track_group is not None
         course = context.course
         track_group = context.track_group
 
-        """If the given course takes place in competing tracks, return a violation."""
         ct = track_group.constraint_type
         if ct != const.CourseTrackGroupType.mutually_exclusive_courses:
             return None
@@ -1514,7 +1646,8 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
-        """Return a violation if the course is cancelled but has attendees.
+        """
+        Return a violation if the course is cancelled but has attendees.
 
         If the course was never offered but has attendees, someone misused the
         course segments toggle. In that case this is an error, otherwise a warning.
@@ -1596,7 +1729,8 @@ class IncorrectNumAttendeesCV(CourseTrackConstraintViolation):
         """
         Return a violation if the course has too few or too many attendees.
 
-        Make the violation DEBUG if no attendees are assigned yet to avoid clutter.
+        Make the severity DEBUG if no attendees are assigned yet (to this course)
+        to avoid clutter.
         """
         assert context.course is not None
         assert context.track is not None
@@ -1704,7 +1838,7 @@ class LonelyAttendeesCV(CourseTrackConstraintViolation):
 
         attendees = aux.attendee_data.involved.get(course['id'], track.id)
         if track.id in course['active_segments']:
-            if bool(attendees.learners) != bool(attendees.instructors):  # pylint: disable=line-too-long
+            if bool(attendees.learners) != bool(attendees.instructors):
                 return cls(
                     event=aux.event,
                     severity=ViolationSeverity.INFO,
@@ -1751,6 +1885,11 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the lodgement has too many or too few inhabitants.
+
+        Severity is complicated and depends on camping mat assignments and capacity too.
+        """
         assert context.lodgement is not None
         assert context.part is not None
         lodgement = context.lodgement
@@ -1877,6 +2016,9 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        """
+        Return a violation if the lodgement has concurrent inhabitants that may not mix.
+        """
         assert context.lodgement is not None
         assert context.part is not None
         lodgement = context.lodgement
