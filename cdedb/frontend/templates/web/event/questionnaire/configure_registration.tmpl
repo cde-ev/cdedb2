@@ -25,14 +25,14 @@
 
 {% block content %}
     <div class="p button-par">
-        {{ util.href(cdedblink('event/register', {"preview": True}), gettext("Registration Preview"),
-                     aclass="btn btn-default btn-sm", icon='eye') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].registration.value}),
                      gettext("Reorder Registration"), readonly=not is_privileged_for("reorder_questionnaire"),
                      aclass="btn btn-warning btn-sm", icon='sort') }}
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"),
                      readonly=not is_privileged_for("reorder_questionnaire"),
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
+        {{ util.href(cdedblink('event/register', {"preview": True}), gettext("Registration Preview"),
+                     aclass="btn btn-default btn-sm", icon='eye') }}
     </div>
     <form action="{{ cdedblink('event/configure_registration') }}" method="POST" id="configureregistrationform">
         {{ util.anti_csrf_token('event/configure_registration') }}

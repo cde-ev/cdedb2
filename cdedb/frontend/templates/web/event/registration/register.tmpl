@@ -20,14 +20,13 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{% if preview %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"), active=True) }}
-{% else %}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+{% if preview %}
+    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"), active=True) }}
+{% else %}
     {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
 {% endif %}
 {% endblock %}
