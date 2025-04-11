@@ -1,6 +1,7 @@
 """The ldaptor backend, mediating all queries to the database."""
 
 import asyncio
+import datetime
 import logging
 import pkgutil
 import re
@@ -27,8 +28,13 @@ from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
 
-from cdedb.config import SecretsConfig
-from cdedb.database.constants import SubscriptionState
+from cdedb.config import Config, SecretsConfig
+from cdedb.database.constants import (
+    AssemblyLogCodes,
+    EventLogCodes,
+    MlLogCodes,
+    SubscriptionState,
+)
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
 from cdedb.ldap.types import AttributeDescriptionList, FilterLike
@@ -104,6 +110,11 @@ def _to_bytes(
         raise NotImplementedError(data)
 
 
+def now() -> datetime.datetime:
+    """Mimic common.now"""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 class LdapLeaf(TypedDict):
     get_entities: Callable[[list[DN]], LDAPObjectMap]
     list_entities: Callable[[], list[DN]]
@@ -124,6 +135,7 @@ class LDAPsqlBackend:
         # encrypting dua passwords once at startup, to increase runtime performance
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
+        self.config = Config()
 
     @staticmethod
     async def execute_db_query(cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
@@ -254,6 +266,37 @@ class LDAPsqlBackend:
         # TODO move into common and use it here
         return sha512_crypt.hash(password)
 
+    # see RFC 4517
+    # GeneralizedTime = century year month day hour
+    #                      [ minute [ second / leap-second ] ]
+    #                      [ fraction ]
+    #                      g-time-zone
+    # century = 2(%x30-39) ; "00" to "99"
+    # year    = 2(%x30-39) ; "00" to "99"
+    # month   =   ( %x30 %x31-39 ) ; "01" (January) to "09"
+    #           / ( %x31 %x30-32 ) ; "10" to "12"
+    # day     =   ( %x30 %x31-39 )    ; "01" to "09"
+    #           / ( %x31-32 %x30-39 ) ; "10" to "29"
+    #           / ( %x33 %x30-31 )    ; "30" to "31"
+    # hour    = ( %x30-31 %x30-39 ) / ( %x32 %x30-33 ) ; "00" to "23"
+    # minute  = %x30-35 %x30-39                        ; "00" to "59"
+    # second      = ( %x30-35 %x30-39 ) ; "00" to "59"
+    # leap-second = ( %x36 %x30 )       ; "60"
+    # fraction        = ( DOT / COMMA ) 1*(%x30-39)
+    # g-time-zone     = %x5A  ; "Z"
+    #                   / g-differential
+    # g-differential  = ( MINUS / PLUS ) hour [ minute ]
+    # MINUS           = %x2D  ; minus sign ("-")
+    def format_timestamp(self, timestamp: Optional[datetime.datetime]) -> str:
+        """Create a string representation of a GeneralizedTime."""
+        if timestamp is None:
+            # this happens in the test suite due to insufficient sample data
+            if not self.config["CDEDB_TEST"]:
+                logger.error("Timestamp must not be None.")
+            timestamp = now()
+        # our timestamps are always in UTC
+        return timestamp.strftime("%Y%m%d%H%M%SZ")
+
     #######################
     # Access restrictions #
     #######################
@@ -371,6 +414,7 @@ class LDAPsqlBackend:
                 b"cn": [self.dua_cn(name)],
                 b"userPassword": [self._dua_pwds[name]],
                 b"ipaUniqueID": [f"duas/{name}"],
+                # TODO add modifyTimestamp?
             }
             ret[dn] = self._to_bytes(dua)
         return ret
@@ -626,13 +670,55 @@ class LDAPsqlBackend:
 
         return ret
 
+    @property
+    def _event_log_codes(self) -> list[int]:
+        """EventLogCodes affecting the modifyTimestamp LDAP property."""
+        return [
+            EventLogCodes.orga_added,
+            EventLogCodes.orga_removed,
+        ]
+
+    @property
+    def _assembly_log_codes(self) -> list[int]:
+        """AssemblyLogCodes affecting the modifyTimestamp LDAP property."""
+        return [
+            AssemblyLogCodes.assembly_presider_added,
+            AssemblyLogCodes.assembly_presider_removed,
+        ]
+
+    @property
+    def _ml_log_codes(self) -> list[int]:
+        """MlLogCodes affecting the modifyTimestamp LDAP property."""
+        return [
+            MlLogCodes.moderator_added,
+            MlLogCodes.moderator_removed,
+            MlLogCodes.subscribed,
+            MlLogCodes.unsubscribed,
+            MlLogCodes.marked_override,
+            MlLogCodes.marked_blocked,
+            MlLogCodes.automatically_removed,
+        ]
+
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
-        query = (
-            "SELECT id, username, given_names, family_name, password_hash"
-            " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
+        query = """
+            SELECT cp.id, cp.username, cp.given_names, cp.family_name, cp.password_hash,
+                GREATEST(MAX(clog.ctime), MAX(elog.ctime), MAX(alog.ctime), MAX(mlog.ctime)) AS ctime
+            FROM core.personas AS cp
+            LEFT JOIN core.changelog AS clog
+                ON cp.id = clog.persona_id
+            LEFT JOIN event.log AS elog
+                ON cp.id = elog.persona_id AND elog.code = ANY(%s)
+            LEFT JOIN assembly.log AS alog
+                ON cp.id = alog.persona_id AND alog.code = ANY(%s)
+            LEFT JOIN ml.log AS mlog
+                ON cp.id = mlog.persona_id AND mlog.code = ANY(%s)
+            WHERE cp.id = ANY(%s) AND NOT cp.is_archived
+            GROUP BY cp.id
+        """
+        params = (self._event_log_codes, self._assembly_log_codes, self._ml_log_codes, user_ids)
         return {
-            e["id"]: e async for e in self.query_all(query, (user_ids,))
+            e["id"]: e async for e in self.query_all(query, params)
         }
 
     async def get_users(
@@ -685,6 +771,7 @@ class LDAPsqlBackend:
                 b"userPassword": [user['password_hash']],
                 b"memberOf": groups.get(persona_id, []),
                 b"ipaUniqueID": [f"personas/{persona_id}"],
+                b"modifyTimestamp": [self.format_timestamp(user['ctime'])],
             }
             ret[dn] = self._to_bytes(ldap_user)
         return ret
@@ -758,6 +845,8 @@ class LDAPsqlBackend:
             condition = "is_member AND is_searchable"
         else:
             condition = name
+        query = "SELECT MAX(ctime) AS ctime FROM core.changelog"
+        ctime = (await self.query_one(query, []))["ctime"]  # type: ignore[index]
         query = f"SELECT id FROM core.personas WHERE {condition}"
         return dn, self._to_bytes({
             b"cn": [self.status_group_cn(name)],
@@ -767,6 +856,7 @@ class LDAPsqlBackend:
                 self.user_dn(e["id"]) async for e in self.query_all(query, ())
             ],
             b"ipaUniqueID": [f"status_groups/{name}"],
+            b"modifyTimestamp": [self.format_timestamp(ctime)],
         })
 
     async def get_status_groups(self, dns: list[DN]) -> LDAPObjectMap:
@@ -844,12 +934,16 @@ class LDAPsqlBackend:
 
     async def get_assemblies(self, assembly_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get some information about the given assemblies."""
-        query = ("SELECT id, title, shortname FROM assembly.assemblies"
-                 " WHERE id = ANY(%s)")
-        return {
-            e["id"]: e
-            async for e in self.query_all(query, (assembly_ids,))
-        }
+        query = """
+            SELECT assembly.id, assembly.title, assembly.shortname, MAX(log.ctime) AS ctime
+            FROM assembly.assemblies AS assembly
+            LEFT JOIN assembly.log AS log
+                ON assembly.id = log.assembly_id AND log.code = ANY(%s)
+            WHERE assembly.id = ANY(%s)
+            GROUP BY assembly.id
+        """
+        params = (self._assembly_log_codes, assembly_ids)
+        return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_assembly_presider_groups(self, dns: list[DN]) -> LDAPObjectMap:
         dn_to_assembly_id = dict()
@@ -870,13 +964,14 @@ class LDAPsqlBackend:
         for dn, assembly_id in dn_to_assembly_id.items():
             if assembly_id not in assemblies:
                 continue
+            assembly = assemblies[assembly_id]
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [self.presider_group_cn(assembly_id)],
-                b"description": [f"{assemblies[assembly_id]['title']}"
-                                 f" ({assemblies[assembly_id]['shortname']})"],
+                b"description": [f"{assembly['title']} ({assembly['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]],
                 b"ipaUniqueID": [f"assembly_presider_groups/{assembly_id}"],
+                b"modifyTimestamp": [self.format_timestamp(assembly['ctime'])],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -931,10 +1026,16 @@ class LDAPsqlBackend:
 
     async def get_events(self, event_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get some information about the given events."""
-        query = "SELECT id, title, shortname FROM event.events WHERE id = ANY(%s)"
-        return {
-            e["id"]: e async for e in self.query_all(query, (event_ids,))
-        }
+        query = """
+            SELECT event.id, event.title, event.shortname, MAX(log.ctime) AS ctime
+            FROM event.events AS event
+            LEFT JOIN event.log AS log
+                ON event.id = log.event_id AND log.code = ANY(%s)
+            WHERE event.id = ANY(%s)
+            GROUP BY event.id
+        """
+        params = (self._event_log_codes, event_ids)
+        return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_event_orga_groups(self, dns: list[DN]) -> LDAPObjectMap:
         dn_to_event_id = dict()
@@ -955,13 +1056,14 @@ class LDAPsqlBackend:
         for dn, event_id in dn_to_event_id.items():
             if event_id not in events:
                 continue
+            event = events[event_id]
             group = {
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [self.orga_group_cn(event_id)],
-                b"description": [f"{events[event_id]['title']}"
-                                 f" ({events[event_id]['shortname']})"],
+                b"description": [f"{event['title']} ({event['shortname']})"],
                 b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]],
                 b"ipaUniqueID": [f"event_orga_groups/{event_id}"],
+                b"modifyTimestamp": [self.format_timestamp(event['ctime'])],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -1028,11 +1130,16 @@ class LDAPsqlBackend:
     async def get_mailinglists(self, ml_ids: Collection[str],
                                ) -> dict[str, "CdEDBObject"]:
         """Helper function to get some information about the given mailinglists."""
-        query = "SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)"
-        return {
-            e["address"]: e
-            async for e in self.query_all(query, (ml_ids,))
-        }
+        query = """
+            SELECT ml.address, ml.title, MAX(log.ctime) AS ctime
+            FROM ml.mailinglists AS ml
+            LEFT JOIN ml.log AS log
+                ON ml.id = log.mailinglist_id AND log.code = ANY(%s)
+            WHERE ml.address = ANY(%s)
+            GROUP BY ml.id
+        """
+        params = (self._ml_log_codes, ml_ids)
+        return {e["address"]: e async for e in self.query_all(query, params)}
 
     async def get_ml_moderator_groups(self, dns: list[DN]) -> LDAPObjectMap:
         dn_to_address = dict()
@@ -1062,6 +1169,7 @@ class LDAPsqlBackend:
                 b"description": [f"{mls[address]['title']} <{cn}>"],
                 b"uniqueMember": [self.user_dn(e) for e in moderators[address]],
                 b"ipaUniqueID": [f"ml_moderator_groups/{address}"],
+                b"modifyTimestamp": [self.format_timestamp(mls[address]['ctime'])],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -1147,6 +1255,7 @@ class LDAPsqlBackend:
                 b"description": [f"{mls[address]['title']} <{cn}>"],
                 b"uniqueMember": [self.user_dn(e) for e in subscribers[address]],
                 b"ipaUniqueID": [f"mls/{address}"],
+                b"modifyTimestamp": [self.format_timestamp(mls[address]['ctime'])],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -1172,38 +1281,50 @@ class LDAPsqlBackend:
     async def get_any_presider_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are presider of any assembly."""
         scope = "presider"
-        query = "SELECT DISTINCT persona_id from assembly.presiders"
+        query = "SELECT DISTINCT persona_id FROM assembly.presiders"
         presiders = [e['persona_id'] async for e in self.query_all(query, [])]
+        query = "SELECT MAX(ctime) AS ctime FROM assembly.log WHERE code = ANY(%s)"
+        ctime = (await self.query_one(query, (self._assembly_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Presider of any assembly."],
             b"uniqueMember": [self.user_dn(e) for e in presiders],
             b"ipaUniqueID": ["any/presider"],
+            b"modifyTimestamp": [self.format_timestamp(ctime)],
         }
         return self.any_group_dn(scope), self._to_bytes(group)
 
     async def get_any_orga_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are orgas of any event."""
         scope = "orga"
-        query = "SELECT DISTINCT persona_id from event.orgas"
+        query = "SELECT DISTINCT persona_id FROM event.orgas"
         orgas = [e['persona_id'] async for e in self.query_all(query, [])]
+        query = "SELECT MAX(ctime) AS ctime FROM event.log WHERE code = ANY(%s)"
+        ctime = (await self.query_one(query, (self._event_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Orga of any event."],
             b"uniqueMember": [self.user_dn(e) for e in orgas],
             b"ipaUniqueID": ["any/orga"],
+            b"modifyTimestamp": [self.format_timestamp(ctime)],
         }
         return self.any_group_dn(scope), self._to_bytes(group)
 
     async def get_any_moderator_group(self) -> tuple[DN, LDAPObject]:
         """The group containing all users which are moderator of any mailinglist."""
         scope = "moderator"
-        query = "SELECT DISTINCT persona_id from ml.moderators"
+        query = "SELECT DISTINCT persona_id FROM ml.moderators"
         moderators = [e['persona_id'] async for e in self.query_all(query, [])]
+        query = "SELECT MAX(ctime) AS ctime FROM ml.log WHERE code = ANY(%s)"
+        ctime = (await self.query_one(query, (self._ml_log_codes,)))["ctime"]  # type: ignore[index]
         group = {
             b"objectClass": ["groupOfUniqueNames"],
             b"cn": [self.any_group_cn(scope)],
+            b"description": ["Moderator of any mailinglist."],
             b"uniqueMember": [self.user_dn(e) for e in moderators],
             b"ipaUniqueID": ["any/moderator"],
+            b"modifyTimestamp": [self.format_timestamp(ctime)],
         }
         return self.any_group_dn(scope), self._to_bytes(group)
