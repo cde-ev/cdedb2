@@ -99,7 +99,7 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries(scope, default_queries) }}
+            {{ place_default_queries(scope, default_queries, num_columns=2) }}
         </div>
     </div>
 
@@ -369,7 +369,7 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(scope, queries, num_columns=2) %}
+{% macro place_default_queries(scope, queries, num_columns) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
