@@ -15,6 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:392
@@ -110,9 +111,8 @@ msgstr ""
 #: cdedb/backend/assembly.py:395 cdedb/backend/assembly.py:419
 #: cdedb/backend/assembly.py:2218 cdedb/backend/event/base.py:118
 #: cdedb/backend/past_event.py:546 cdedb/frontend/common.py:681
-#, fuzzy
 msgid "No input specified."
-msgstr "non dictum"
+msgstr "nihil praeitum."
 
 #: cdedb/backend/assembly.py:397
 msgid "Can only retrieve id for exactly one assembly."
@@ -120,9 +120,8 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:421 cdedb/backend/assembly.py:2220
 #: cdedb/backend/event/base.py:107 cdedb/backend/past_event.py:538
-#, fuzzy
 msgid "Too many inputs specified."
-msgstr "non dictum"
+msgstr "nimia praeita."
 
 #: cdedb/backend/assembly.py:603
 msgid "Must have privileged access to change assembly."
@@ -133,9 +132,8 @@ msgstr ""
 #: cdedb/frontend/assembly/base.py:178 cdedb/frontend/assembly/base.py:201
 #: cdedb/frontend/assembly/base.py:219 cdedb/frontend/assembly/base.py:234
 #: cdedb/frontend/assembly/base.py:526
-#, fuzzy
 msgid "Assembly already concluded."
-msgstr "Coetus finitus"
+msgstr "Coetus iam finitus"
 
 #: cdedb/backend/assembly.py:627
 msgid "Cannot alter assembly presiders after assembly has been concluded."
@@ -970,9 +968,8 @@ msgid "More than one input provided."
 msgstr ""
 
 #: cdedb/backend/core/base.py:2704 cdedb/frontend/core/base.py:2328
-#, fuzzy
 msgid "Unknown email address."
-msgstr "inscriptio electronica nova"
+msgstr "hanc inscriptionem electronicam nescio."
 
 #: cdedb/backend/core/base.py:2769
 msgid "Inactive user."
@@ -1093,9 +1090,8 @@ msgid "Some of these personas are not event users."
 msgstr ""
 
 #: cdedb/backend/event/base.py:466
-#, fuzzy
 msgid "Only orga tokens from one event allowed."
-msgstr "epistula electronica ad verificandum mitte"
+msgstr ""
 
 #: cdedb/backend/event/base.py:494
 msgid "May not create new orga token in offline instance."
@@ -1212,9 +1208,8 @@ msgid "Unknown field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/backend/event/lowlevel.py:341 cdedb/backend/event/lowlevel.py:369
-#, fuzzy
 msgid "This should not happen."
-msgstr "haec videri non possit."
+msgstr "quae non fiant."
 
 #: cdedb/backend/event/lowlevel.py:582
 #, fuzzy
@@ -5172,9 +5167,8 @@ msgid "Orga mailinglist created."
 msgstr "tabellae epistularum electronicarum"
 
 #: cdedb/frontend/event/event.py:430 cdedb/frontend/event/event.py:1321
-#, fuzzy
 msgid "Participant mailinglist created."
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabella epistularum electronicarum participium creata est."
 
 #: cdedb/frontend/event/event.py:507
 #, fuzzy
@@ -7383,9 +7377,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:272
 #: cdedb/frontend/templates/web/ml/base.tmpl:8
 #: cdedb/frontend/templates/web/ml/base.tmpl:59
-#, fuzzy
 msgid "Overview"
-msgstr "administratoribus conspectus"
+msgstr "conspectus"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:26
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:26
@@ -7578,40 +7571,39 @@ msgid ""
 "CdE assemblies are provided on the CdE website. Hints how to participate in "
 "an assembly are provided on the “%(howtomgv)s” page of the CdE website."
 msgstr ""
+"Hic coetus consociorum CdEi invenitur. plures %(general_info)s de coetibus "
+"CdEi nosceas in pagina electronica CdEi. consilia, quomodo participas in "
+"coetu in pagina „%(howtomgv)s“ invenitur."
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:15
-#, fuzzy
 msgid "general information"
-msgstr "notitiae rationis"
+msgstr "notitias generales"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:16
 msgid "How to MGV"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:22
-#, fuzzy
 msgid "Active Assemblies"
-msgstr "coetus"
+msgstr "coetus in sessione"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:30
-#, fuzzy
 msgid "(already attending)"
-msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
+msgstr "(iam annuntiatus:a)"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:34
-#, fuzzy, python-format
+#, python-format
 msgid "(registration possible until %(date)s)"
-msgstr "(Ad %(date)s annuntiari potest)"
+msgstr "(ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:38
-#, fuzzy
 msgid "(registration no longer possible)"
-msgstr "(solum posterius annuntiari potest)"
+msgstr "(annuntiari non iam potest)"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:48
 #, fuzzy
 msgid "Presided Assemblies"
-msgstr "Coetus praesentes"
+msgstr "coetus quibus praesides"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:55
 #, python-format
@@ -7629,9 +7621,8 @@ msgid "Participantlist (%(title)s)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:11
-#, fuzzy
 msgid "Participantlist"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabella preasentum"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:22
 msgid "Add external participants"
@@ -7671,7 +7662,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:41
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:49
 msgid "CdEDB-ID, Name or E-Mail"
-msgstr ""
+msgstr "CdEDB-ID, nomen inscriptiove electronica"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:56
 #, python-format
@@ -8366,9 +8357,8 @@ msgid "Create New Member"
 msgstr "vestigium novum crea"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:4
-#, fuzzy
 msgid "CdE-Member Area"
-msgstr "quaesitio consociorum CdEi"
+msgstr "regio consociorum CdEi"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:13
 #: cdedb/frontend/templates/web/event/event/index.tmpl:21
@@ -8381,11 +8371,12 @@ msgid ""
 "Here you can find the CdE’s internal member area. If you have further "
 "questions, please consult the %(faq)s at the CdE website."
 msgstr ""
+"hic invenis regionem internam consociorum CdEi. Si plus quaerere volas, "
+"%(faq)s in pagina electronica CdEi consulas."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:20
-#, fuzzy
 msgid "CdE-Member Quick-Search"
-msgstr "quaesitio consociorum CdEi"
+msgstr "quaesitio consociorum CdEi celera"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:26
 #, fuzzy
@@ -8399,9 +8390,8 @@ msgstr "visibilitas"
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:163
 #: cdedb/frontend/templates/web/generic.tmpl:298
 #: cdedb/frontend/templates/web/generic.tmpl:300
-#, fuzzy
 msgid "Search"
-msgstr "visibilitas"
+msgstr "quaerere"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:35
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:15
@@ -8425,9 +8415,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:55
 #: cdedb/frontend/templates/web/cde/index.tmpl:81
-#, fuzzy
 msgid "More Information"
-msgstr "notitiae rationis"
+msgstr "plurae notitiae"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:55
 #, python-format
@@ -8482,43 +8471,46 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:92
 #, fuzzy
 msgid "Membership-Fee"
-msgstr "consocietanda"
+msgstr "debita ad consociandum"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:96
 msgid ""
 "You are an honorary member, therefore your membership will not automatically "
 "expire."
-msgstr ""
+msgstr "consocius:a ex honore es, itaque sine opera consociare non desistes."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:100
 #, python-format
 msgid "Regardless, your current balance is %(amount)s."
-msgstr ""
+msgstr "tamen comparsisti %(amount)s."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:105
 #, python-format
 msgid "Your current Balance is %(amount)s."
-msgstr ""
+msgstr "comparsisti %(amount)s."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:109
 msgid "Your Membership will end in a few days."
-msgstr ""
+msgstr "consocietatem relinques post paucos dies."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:113
 #, python-format
 msgid "This will presumably last until %(date)s."
-msgstr ""
+msgstr "id usque ad %(date)s suffecturum exspectatur."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:121
 msgid ""
 "You are currently <u>not a Member</u>. To become a Member again, You just "
 "have to replenish Your Account Balance."
 msgstr ""
+"nunc <u>non consocias</u>. ad consociandum tibi nihil nisi comparsum "
+"tuum supplendum tibi est."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:129
 msgid ""
 "To replenish your Account Balance, transfer money to the following Account:"
 msgstr ""
+"ad comparsum tuum supplendum in hoc thesaurum pecuniam mitte:"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:136
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:79
@@ -8526,7 +8518,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:126
 #, fuzzy
 msgid "Account holder"
-msgstr "vestigium novum crea"
+msgstr "possessor thesauri"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:140
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:39
@@ -8546,21 +8538,23 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:148
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:138
 msgid "Bank"
-msgstr ""
+msgstr "argentaria"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:152
 msgid "Payment reference"
-msgstr ""
+msgstr "finis solutionis"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:159
 msgid ""
 "Note: After your transfer incurred at the bank account, it may take some "
 "time (up to a few weeks) until the payment is registered here."
 msgstr ""
+"nosce: pecunia in thesauro adventa nonnullum temporis praeteribit (usque ad "
+"hebdomadas paucas), priusquam solutio hic videri potest."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:11
 msgid "Lastschriftinitiative – What’s that?"
-msgstr ""
+msgstr "pecuniae expensae lationis impetus – quid est?"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:14
 #, python-format
@@ -8568,6 +8562,8 @@ msgid ""
 "If you give the authorization, the CdE will withdraw the annual membership "
 "fee (currently %(annual_fee)s) and an additional donation via Direct Debit."
 msgstr ""
+"Si assentiris, CdE debita annua ad consociandum (nunc %(annual_fee)s) addito "
+"cum dono per pecuniae expensae latione."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:21
 #, python-format
@@ -8577,24 +8573,26 @@ msgid ""
 "sure that about 40 to 50 percent of the donation is given to %(dsa)s or "
 "otherwise used to support the “%(idea)s”."
 msgstr ""
+"donum minimum nunc sunt %(min_donation)s, sed mos est impetum pecuniae "
+"expensae lationis habendis donare %(typical_donation)s. CdEs circa 40 usque "
+"ad 50 per centum aut %(dsa)s data esse aut iis %(idea)s iuvata esse curabit"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:22
 msgid "Deutsche SchülerAkademie"
-msgstr ""
+msgstr "Deutsche SchülerAkademiae"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
 #, python-format
 msgid "You can find more information about %(donations)s at the CdE website."
-msgstr ""
+msgstr "plures notitia %(donations)s in pagina electronica CdEi inveniuntur."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
-#, fuzzy
 msgid "donations"
-msgstr "documentatio"
+msgstr "donorum"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:36
 msgid "For what does the CdE need donations?"
-msgstr ""
+msgstr "quam ad rem CdEi donis opus est"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:39
 msgid ""
@@ -8632,7 +8630,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:6
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:18
 msgid "Edit Direct Debit Authorization"
-msgstr ""
+msgstr "tractare mandatum pecuniae expensae lationis"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:19
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:20
@@ -8665,9 +8663,8 @@ msgstr "utens"
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:40
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:118
-#, fuzzy
 msgid "Member"
-msgstr "consocii"
+msgstr "consocius:a"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:34
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:40
@@ -8675,14 +8672,13 @@ msgstr "consocii"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:186
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:41
 msgid "Legal Name"
-msgstr ""
+msgstr "nomen legale"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:37
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:65
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:66
-#, fuzzy
 msgid "Donation"
-msgstr "documentatio"
+msgstr "donum"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:38
 msgid "Taken from the profile of the user."
@@ -10269,7 +10265,7 @@ msgstr "data mea"
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:5
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:11
 msgid "Admin Overview"
-msgstr "administratoribus conspectus"
+msgstr "administratorum conspectus"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:17
 #: cdedb/frontend/templates/web/core/contact.tmpl:13
@@ -11532,15 +11528,14 @@ msgstr "vestigium novum crea"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:270
 #, fuzzy
 msgid "Realms"
-msgstr "regnum"
+msgstr "regna"
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:219
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:26
 #: cdedb/frontend/templates/web/core/show_user.tmpl:300
 #: cdedb/frontend/templates/web/core/show_user.tmpl:301
-#, fuzzy
 msgid "Admin Privileges"
-msgstr "administratoribus conspectus"
+msgstr "administratoris aditus"
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:234
 #: cdedb/frontend/templates/web/core/show_user.tmpl:335
@@ -12216,14 +12211,12 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/base.tmpl:33
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:6
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:11
-#, fuzzy
 msgid "Participant info"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "notitiae pro participibus"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:38
-#, fuzzy
 msgid "Participant list"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabella participium"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:59
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:14
@@ -12271,9 +12264,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:31
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:17
-#, fuzzy
 msgid "Orga Tokens"
-msgstr "signum arcanum muta"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:91
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:106
@@ -12296,9 +12288,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:20
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:82
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:116
-#, fuzzy
 msgid "Event Parts"
-msgstr "eventus"
+msgstr "partes eventus"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:99
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:41
@@ -12421,9 +12412,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:12
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:15
-#, fuzzy
 msgid "Participant List"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabella participium"
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:44
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:50
@@ -13058,85 +13048,85 @@ msgid "PDF"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:28
-#, fuzzy
 msgid "Course Attendee Lists"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabella participium curriculi"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:35
 msgid "Lodgement Inhabitant Lists"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:43
-#, fuzzy
 msgid "Course Puzzle"
-msgstr "quaesitio curriculorum"
+msgstr "aenigma curriculorum"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:44
 msgid "cut out and sort into a course assignment"
-msgstr ""
+msgstr "seca paginas componeque tributionem curriculorum"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:53
 msgid "Lodgement Puzzle"
-msgstr ""
+msgstr "aenigma domiciliorum"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:54
 msgid "cut out and sort into a lodgement assignment"
-msgstr ""
+msgstr "seca paginas componeque tributionem domiciliorum"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:63
-#, fuzzy
 msgid "Participant Lists"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabellae participium"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:64
 msgid ""
 "The public lists only contain those who gave their consent to be on the "
 "list. Only these may be sent to the participants beforehand."
 msgstr ""
+"in tabellis publicis soli, qui in tabella esse assensi sunt, continentur. "
+"nullae nisi hae ad participes anterea nuntiandae sunt."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:67
 msgid ""
 "The orga lists contain all participants and are for orgas only. They may "
 "however be displayed publicly at the event iteself."
 msgstr ""
+"tabella pro orgis omnes participes dicit et est solo pro orgis. tamen "
+"in eventu publice edi potest."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:74
 msgid "Public List"
-msgstr ""
+msgstr "tabella publica"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:79
 msgid "Public List (Landscape)"
-msgstr ""
+msgstr "tabella publica (forma transversa)"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:84
 msgid "Orga List"
-msgstr ""
+msgstr "tabella pro orgis"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:89
 msgid "Orga List (Landscape)"
-msgstr ""
+msgstr "tabella pro orgis (forma transversa)"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:95
 msgid "Public Lists by part"
-msgstr ""
+msgstr "tabellae publicae ex parte"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:108
 msgid "Orga Lists by part"
-msgstr ""
+msgstr "tabellae pro orgis ex parte"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:124
 msgid "Export"
-msgstr ""
+msgstr "exportatio"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
 #, python-format
 msgid "The full export is on the %(overview)s."
-msgstr ""
+msgstr "exportatio tota in %(overview)s invenitur."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
-#, fuzzy
 msgid "event overview"
-msgstr "administratoribus conspectus"
+msgstr "eventus conspectu"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:137
 msgid "Partial Event Export"
@@ -13180,9 +13170,8 @@ msgid "Shell-Snippet"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:164
-#, fuzzy
 msgid "Dokuteam participant list"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:165
 msgid "ZIP-Archive"
@@ -13697,19 +13686,17 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:57
-#, fuzzy
 msgid "Create Orga Mailinglist"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabellam epistularum electronicarum orgarum creare"
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:58
-#, fuzzy
 msgid "Create Participant Mailinglist"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabellam epistularum electronicarum participium creare"
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:7
-#, fuzzy, python-format
+#, python-format
 msgid "Change Orga Token (%(event_title)s)"
-msgstr "signum arcanum muta"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:11
 #, fuzzy, python-format
@@ -13717,21 +13704,18 @@ msgid "Create Orga Token (%(event_title)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:19
-#, fuzzy
 msgid "Change Orga Token"
-msgstr "signum arcanum muta"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:20
-#, fuzzy
 msgid "Orga Token"
-msgstr "signum arcanum muta"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:23
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:36
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:31
-#, fuzzy
 msgid "Create Orga Token"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:46
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:35
@@ -13756,9 +13740,8 @@ msgid "Orga Tokens (%(title)s)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:22
-#, fuzzy
 msgid "Your New Orga Token"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:25
 msgid ""
@@ -14017,11 +14000,14 @@ msgid ""
 "a public %(faq)s regarding general information about CdE events on the CdE "
 "website."
 msgstr ""
+"hic eventus CdEi inveniuntur. si plus de %(different_kinds_of_events)s "
+"noscere vis, paginam electronicam CdEi visites. Illic quoque %(faq)s "
+"publicum est cum notitiis generalibus de eventibus CdEi."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:20
 #, fuzzy
 msgid "different kinds of events"
-msgstr "Eventus praesentes"
+msgstr "variis formis eventuum"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:29
 #, python-format
@@ -14029,76 +14015,69 @@ msgid ""
 "A list with public information about %(current_and_future_events)s is also "
 "available on the CdE website."
 msgstr ""
+"tabella quoque notitiarum publicarum de %(current_and_future_events)s in "
+"pagina electronica CdEi invenitur."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:29
 #, fuzzy
 msgid "current and future events"
-msgstr "Eventus praesentes"
+msgstr "eventibus praesentibus atque futuris"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:42
-#, fuzzy
 msgid "Registration in future™."
-msgstr "Annuntiationes"
+msgstr "aliquando™ annuntiari poterit."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:46
-#, fuzzy, python-format
+#, python-format
 msgid "Registration starting %(start_time)s"
-msgstr "(ab %(date)s annuntiari potest)"
+msgstr "ab %(start_time)s annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:50
-#, fuzzy
 msgid "Registration is open."
-msgstr "(annuntiari potest)"
+msgstr "annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:54
-#, fuzzy
 msgid "Late-Registration is open."
-msgstr "(annuntiari potest)"
+msgstr "posterius annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:58
-#, fuzzy
 msgid "Event is happening."
-msgstr "administrator eventuum"
+msgstr "eventus currit."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:62
-#, fuzzy
 msgid "Event is past."
-msgstr "eventus"
+msgstr "eventus praeteriit."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:71
 msgid "event hidden,"
-msgstr ""
+msgstr "eventus occultus,"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:96
 #: cdedb/frontend/templates/web/event/event/index.tmpl:109
-#, fuzzy, python-format
+#, python-format
 msgid "(until %(date)s)"
-msgstr "(ad %(date)s)"
+msgstr "(usque ad %(date)s)"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:100
-#, fuzzy, python-format
+#, python-format
 msgid "(late registrations until %(date)s)"
-msgstr "(posterius ad %(date)s annuntiari potest)"
+msgstr "(posterius usque ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:104
-#, fuzzy
 msgid "(only late registrations possible)"
 msgstr "(solum posterius annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:119
-#, fuzzy
 msgid "There are currently no event registrations open."
-msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
+msgstr "nullum ad eventum nunc annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:124
-#, fuzzy
 msgid "Organized Events"
-msgstr "eventus praeteriti"
+msgstr "eventus quos instituis"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:150
-#, fuzzy
 msgid "Other Events"
-msgstr "eventus praeteriti"
+msgstr "eventus alii"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:168
 #, python-format
@@ -14107,11 +14086,14 @@ msgid ""
 "at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
 "is a %(list)s of all events which have not been cleansed yet."
 msgstr ""
+"priores eventus CdEi cum curriculis et participibus sub %(link)s invenitur – "
+"etiam Junior- atque SchülerAkademiae. Tam %(list)s est omnium eventuum, qui "
+"purgati non iam sunt."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:169
 #: cdedb/frontend/templates/web/event/event/index.tmpl:174
 msgid "list"
-msgstr ""
+msgstr "tabella"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:174
 #, python-format
@@ -14129,20 +14111,23 @@ msgid ""
 "registration data. By contrast, like orgas, %(event_admins)s have full "
 "access to all event data."
 msgstr ""
+"adiutores eventuum notitiae eventuum legere possunt, quae non personis "
+"sensibiles sunt. distinctius dicto annuntiationes modo aggregatos videre "
+"possunt. %(event_admins)s autem – ut orgae – omnia data eventuum assequi "
+"possunt."
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
-#, fuzzy
 msgid "event admins"
-msgstr "administrator eventuum"
+msgstr "administratores eventuum"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:31
 msgid "ID of the new event helper"
-msgstr ""
+msgstr "ID novi adiutoris eventuum"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:63
 #, python-format
 msgid "Remove %(name)s as event helper"
-msgstr ""
+msgstr "removere %(name)s adiutorem eventuum"
 
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:23
 #, python-format
@@ -14158,8 +14143,8 @@ msgstr "Annuntiationes"
 #, python-format
 msgid "%(count)s Orga"
 msgid_plural "%(count)s Orgas"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(count)s orga"
+msgstr[1] "%(count)s orgae"
 
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:69
 #, fuzzy
@@ -14395,18 +14380,18 @@ msgid "There are %(count)s %(class_name)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:395
-#, fuzzy
 msgid "Create orga mailinglist"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabellam epistularum electronicarum orgarum creare"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:404
 msgid "Create an orga mailinglist for this event with a default configuration."
 msgstr ""
+"tabellam epistularum electronicarum orgarum huius eventus solite "
+"constitutam creas."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:420
-#, fuzzy
 msgid "Create participant mailinglist"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr "tabellam epistularum electronicarum participium creare"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:429
 msgid ""
@@ -14488,7 +14473,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:89
 #, fuzzy
 msgid "Participant Info"
-msgstr "tabellae epistularum electronicarum moderatae"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:89
 msgid "Shown on the \"Participant Info\" page only to participants."
@@ -15968,14 +15953,12 @@ msgid "The Participant will be checked in."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:193
-#, fuzzy
 msgid "The participant will be checked out"
-msgstr "vestigium novum crea"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:194
-#, fuzzy
 msgid "The participant will be checked in."
-msgstr "vestigium novum crea"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:11
 #, fuzzy, python-format
@@ -18744,9 +18727,8 @@ msgid "PastEventLogCodes.event_created"
 msgstr "Inscriptiones pro exPulso probatae"
 
 #: cdedb/i18n_additional.py:253
-#, fuzzy
 msgid "PastEventLogCodes.event_changed"
-msgstr "Inscriptiones pro exPulso probatae"
+msgstr ""
 
 #: cdedb/i18n_additional.py:254
 #, fuzzy
@@ -18754,14 +18736,12 @@ msgid "PastEventLogCodes.event_deleted"
 msgstr "Coetus deletus"
 
 #: cdedb/i18n_additional.py:255
-#, fuzzy
 msgid "PastEventLogCodes.course_created"
-msgstr "Inscriptiones pro exPulso probatae"
+msgstr ""
 
 #: cdedb/i18n_additional.py:256
-#, fuzzy
 msgid "PastEventLogCodes.course_changed"
-msgstr "Inscriptiones pro exPulso probatae"
+msgstr ""
 
 #: cdedb/i18n_additional.py:257
 #, fuzzy
@@ -18769,14 +18749,12 @@ msgid "PastEventLogCodes.course_deleted"
 msgstr "Coetus deletus"
 
 #: cdedb/i18n_additional.py:258
-#, fuzzy
 msgid "PastEventLogCodes.participant_added"
-msgstr "Inscriptiones pro exPulso probatae"
+msgstr ""
 
 #: cdedb/i18n_additional.py:259
-#, fuzzy
 msgid "PastEventLogCodes.participant_removed"
-msgstr "Inscriptiones pro exPulso probatae"
+msgstr ""
 
 #: cdedb/i18n_additional.py:261
 msgid "PrivilegeChangeStati.pending"
