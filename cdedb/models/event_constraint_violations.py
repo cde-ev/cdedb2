@@ -251,32 +251,49 @@ class ViolationList(list['ConstraintViolation']):
             return NotImplemented
         return self.get_sortkey() < other.get_sortkey()
 
+    def get_sortkey(self) -> Sortkey:
+        return (-self.max_severity.value,)
+
     def append(self, __object: 'ConstraintViolation | None') -> None:
         if __object is not None:
             super().append(__object)
 
-    def get_sortkey(self) -> Sortkey:
-        return (-self.max_severity.value,)
-
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ViolationAux:
+    """Container for passing event data through to Violations for instantiotion."""
     event: models.Event
     registrations: CdEDBObjectMap
     personas: CdEDBObjectMap
 
     all_courses: CdEDBObjectMap
-    courses: CdEDBObjectMap
+    courses: CdEDBObjectMap  # Violations are only checked for these courses.
     all_lodgements: CdEDBObjectMap
-    lodgements: CdEDBObjectMap
+    lodgements: CdEDBObjectMap  # Violations are only checked for these lodgements.
 
     attendee_data: "AttendeeStats"
     choices_data: "ChoiceStats"
     inhabitants_data: "dict[int, dict[int, LodgementInhabitants]]"
 
+    def evaluate_all(self) -> ViolationList:
+        ret = ConstraintViolation.dispatch(self, ViolationContext())
+        ret.sort()
+        return ret
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ViolationContext:
+    """Container for specifying the context under which to evaluate a violation.
+
+    E.g. when evualuating a violation for every registration, that violation will be
+    checked multiple times with different contexts.
+
+    A context can be added to to create a new context, e.g. when evaluating a violation
+    for every part of every registration, that violation will be checked multiple times
+    with the smae base context (containing only the registration) aufmented with the
+    different parts.
+    """
+
     registration: CdEDBObject | None = None
     course: CdEDBObject | None = None
     lodgement: CdEDBObject | None = None
@@ -396,7 +413,6 @@ class ConstraintViolation(abc.ABC):
                     continue
                 ret.append(cv.check(aux, new_context))
 
-        ret.sort()
         return ret
 
 
