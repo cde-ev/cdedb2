@@ -2,6 +2,42 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
+{% macro registration_quicksearch(mobile=false) %}
+    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% else %}hidden-xs hidden-sm{% endif %}">
+        <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET"
+              id="quickregistrationform{% if mobile %}-mobile{% endif %}">
+            <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
+            <div class="input-group">
+                <input type="search" name="phrase" class="form-control"
+                       id="input-showregistration{% if mobile %}-mobile{% endif %}"
+                       placeholder="{% trans %}Registration Quick-Access{% endtrans %}"
+                       aria-label="{% trans %}Registration Quick-Access{% endtrans %}"/>
+                <span class="input-group-btn">
+                    {{ util.input_submit("", icon='search', title=gettext("Search")) }}
+                </span>
+            </div>
+        </form>
+        <script nonce="{{ csp_nonce }}">
+            $(document).ready(function () {
+                const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
+                const $igroup = $i.closest('.input-group');
+                $igroup.children('.input-group-btn').remove();
+                $igroup.replaceWith($igroup.contents());
+                $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
+                                               + ('?kind=orga_registration&aux='|s)
+                                               + (values['event_id']|e)
+                                               + ('&phrase=%s'|s) }}',
+                                           [], true, false, "{{ gettext("Registration Quick-Access") }}");
+                $i.change(function(){
+                    if ($(this).val()) {
+                        $('#quickregistrationform{% if mobile %}-mobile{% endif %}').submit();
+                    }
+                });
+            });
+        </script>
+    </div>
+{% endmacro %}
+
 {% macro one_event_links(event) %}
     <div class="list-group tear-down">
         {% if event.is_visible_for(user, is_registered, privileged=False) or event['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
@@ -41,39 +77,7 @@
     </div>
 
     {% if is_privileged_for('quick_show_registration') %}
-        {# on mobile screens, the quicksearch is accessible shown on show_event only #}
-        <div class="list-group tear-down hidden-xs hidden-sm">
-            <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
-                <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
-                <div class="input-group">
-                    <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
-                           placeholder="{% trans %}Registration Quick-Access{% endtrans %}"
-                           aria-label="{% trans %}Registration Quick-Access{% endtrans %}"/>
-                    <span class="input-group-btn">
-                        {{ util.input_submit("", icon='search', title=gettext("Search")) }}
-                    </span>
-                </div>
-            </form>
-            <script nonce="{{ csp_nonce }}">
-                $(document).ready(function () {
-
-                const $i = $('#input-showregistration-id');
-                const $igroup = $i.closest('.input-group');
-                $igroup.children('.input-group-btn').remove();
-                $igroup.replaceWith($igroup.contents());
-                $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                               + ('?kind=orga_registration&aux='|s)
-                                               + (values['event_id']|e)
-                                               + ('&phrase=%s'|s) }}',
-                                           [], true, false, "{{ gettext("Registration Quick-Access") }}");
-                $i.change(function(){
-                    if ($(this).val()) {
-                        $('#quickregistrationform').submit();
-                    }
-                });
-                });
-            </script>
-        </div>
+        {{ registration_quicksearch() }}
     {% endif %}
 
     {% if is_privileged() or 'event_orga' in user.admin_views %}
@@ -164,6 +168,10 @@
                 {{ util.href(cdedblink("event/checkin_form", {"event_id": event['id']}), gettext("Checkin"),
                         aclass="list-group-item", icon="check-double", active=(sidenav_active == 'event_checkin')) }}
             </div>
+        {% endif %}
+
+        {% if is_privileged_for('quick_show_registration') %}
+            {{ registration_quicksearch(mobile=True) }}
         {% endif %}
     {% elif 'finance' in user.admin_views %}
         <div class="list-group tear-down">

@@ -151,38 +151,6 @@
     {% endif %}
 
     <div class="row">
-        {% if is_privileged_for('quick_show_registration') %}
-            <div class="col-md-6 hidden-md hidden-lg">
-                {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
-                    <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET"
-                          id="quickregistrationform-smallscreen"
-                          class="hidden-md hidden-lg">
-                        <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
-                        <div class="input-group">
-                            <input type="search" name="phrase" class="form-control" id="input-showregistration-small-id"
-                                   aria-label="{% trans %}ID, name or email{% endtrans %}"/>
-                            <span class="input-group-btn">
-                                {{ util.input_submit("", icon='search', title=gettext("Search")) }}
-                            </span>
-                        </div>
-                    </form>
-                    <script nonce="{{ csp_nonce }}">
-                        var $i = $('#input-showregistration-small-id');
-                        $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                                       + ('?kind=orga_registration&aux='|s)
-                                                       + (values['event_id']|e)
-                                                       + ('&phrase=%s'|s) }}',
-                                                   [], true, false, "{{ gettext("ID, name or email") }}");
-                        $i.change(function(){
-                            if ($(this).val()) {
-                                $('#quickregistrationform-smallscreen').submit();
-                            }
-                        });
-                    </script>
-                {% endcall %}
-            </div>
-        {% endif %}
-
         {% if "event_mgmt" in user.admin_views %}
             <div class="col-md-6" id="manage-orgas">
                 {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
