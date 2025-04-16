@@ -5727,12 +5727,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
             'registrations': [{'email': 'emilia@example.cde',
-                               'id': 5,
+                               'id': 2,
                                'name': 'Emilia (Emmy) Eventis'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=@exam&aux=1')
-        expectation = (100, 1, 2, 5, 7, 9)
+        expectation = (5, 1, 6, 2, 3, 4)
         reality = tuple(e['id'] for e in self.response.json['registrations'])
         self.assertEqual(expectation, reality)
 
