@@ -4992,11 +4992,43 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia", div="checkin-list")
         # TODO this check does not really make sense with the existing data.
         f = self.response.forms['checkinfilterform']
-        f['part_ids'] = [2, 3]
+        parts_wo_berta = [2, 3]
+        f['part_ids'] = parts_wo_berta
         self.submit(f)
         self.assertPresence("Anton", div="checkin-list")
         self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         self.assertPresence("Emilia", div="checkin-list")
+
+        # test checkout
+        delta = datetime.timedelta(seconds=2)
+        # we need a delta of at least one second between checkin and checkout
+        with freezegun.freeze_time(now() - delta) as frozen_time:
+            f = self.response.forms['checkinfilterform']
+            f['part_ids'] = []
+            self.submit(f)
+            self.submit(self.response.forms['checkinform1'])
+            self.submit(self.response.forms['checkinform6'])
+            f = self.response.forms['checkinfilterform']
+            f['part_ids'] = parts_wo_berta
+            self.submit(f)
+            self.traverse({'description': "Checkout"})
+            self.assertPresence("Anton", div="checkin-list")
+            self.assertNonPresence("Bertå", div="checkin-list")
+            f = self.response.forms['checkinfilterform']
+            f['part_ids'] = []
+            self.submit(f)
+            self.assertPresence("Anton", div="checkin-list")
+            self.assertPresence("Bertå", div="checkin-list")
+            frozen_time.tick(delta)
+            f = self.response.forms['checkinform6']
+            self.submit(f)
+            self.submit(f, check_notification=False)
+            self.assertNotification("Bereits ausgecheckt.", 'error')
+            self.assertPresence("Anton", div="checkin-list")
+            self.assertNonPresence("Bertå", div="checkin-list")
+            self.traverse({'description': "Checkin", 'index': 1})
+            self.assertNonPresence("Anton", div="checkin-list")
+            self.assertPresence("Bertå", div="checkin-list")
 
         f = self.response.forms['checkinform2']
         self.submit(f)
@@ -5005,16 +5037,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         self.assertNotification("Bereits eingecheckt.", "error")
         self.assertTitle("Checkin (Große Testakademie 2222)")
-        # Berta should still be hidden, because the `part_ids` parameter was preserved.
-        self.assertPresence("Anton", div="checkin-list")
-        self.assertNonPresence("Bertå (Bindi) Beispiel", div="checkin-list")
+        self.assertPresence("Bertå (Bindi) Beispiel", div="checkin-list")
         # Emilia is now checked in and thus no longer appears.
         self.assertNonPresence("Emilia", div="checkin-list")
         self.assertNotIn('checkinform2', self.response.forms)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
         self.assertPresence("Checkin",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
         # single-part
         self.traverse("Veranstaltungen", "CyberTestAkademie", "Checkin")
         self.assertTitle("Checkin (CyberTestAkademie)")
@@ -5030,8 +5060,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
-        self.assertPresence("Checkin", div="1-1003")
+        self.assertPresence("Checkin", div="1-1006")
 
+    @event_keeper
     @as_users("garcia")
     def test_checkin_periods(self) -> None:
         self.get('/event/event/1/registration/6/show')
@@ -5240,6 +5271,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f, button='action', value='checkout', check_notification=False)
             self.assertNotification("Personen müssen eingecheckt sein", "error")
 
+    @event_keeper
     @as_users("garcia")
     def test_checkin_multiset(self) -> None:
         # multiset from field is tested here, multiset from form input above
@@ -5713,10 +5745,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         expectation = {
             'registrations': [{'email': 'emilia@example.cde',
                                'id': 2,
-                               'name': 'Emilia Eventis'}]}
-        if not self.user_in("annika"):
-            del expectation['registrations'][0]['email']
+                               'name': 'Emilia (Emmy) Eventis'}]}
         self.assertEqual(expectation, self.response.json)
+        self.get('/event/registration'
+                 + '/select?kind=orga_registration&phrase=@exam&aux=1')
+        expectation = (5, 1, 6, 2, 3, 4)
+        reality = tuple(e['id'] for e in self.response.json['registrations'])
+        self.assertEqual(expectation, reality)
 
     @as_users("annika", "garcia")
     def test_quick_registration(self) -> None:
@@ -6671,6 +6706,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
         self.traverse("Akira")
         self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
+        self.traverse("Übersicht")
+        self.assertPresence("Es gibt 1 Anmeldungen ohne zu zahlendem Beitrag.",
+                            div="constraint-violations")
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:

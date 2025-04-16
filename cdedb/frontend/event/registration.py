@@ -1582,9 +1582,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("part_ids")
+    @REQUESTdata("part_ids", "checkout")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[Collection[int]] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None,
+                     checkout: Optional[bool] = False) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event'].parts
@@ -1596,7 +1597,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             registration['parts'][part_id]['status']).is_present()
         registrations = {
             k: v for k, v in registrations.items()
-            if ((not v['checkin_periods'] or v['checkin_periods'][-1].checkout_time)
+            if (bool(not v['checkin_periods']
+                     or v['checkin_periods'][-1].checkout_time) != checkout
                 and any(there(v, id_) for id_ in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -1619,7 +1621,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         camping_mat_field_names = self._get_camping_mat_field_names(
             rs.ambience['event'])
         return self.render(rs, "registration/checkin", {
-            'registrations': registrations, 'personas': personas,
+            'registrations': registrations, 'personas': personas, 'checkout': checkout,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
             'part_ids': part_ids, 'camping_mat_field_names': camping_mat_field_names,
         })
@@ -1654,19 +1656,28 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkout(
         self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        from_checkin_page: Optional[bool] = False,
+        part_ids: Optional[Collection[int]] = None,
     ) -> Response:
         """Check a participant out."""
         if rs.has_validation_errors():
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         if rs.ambience['registration']['checkin_periods'][-1].checkout_time:
             rs.notify("error", n_("Already checked out."))
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         code = self.eventproxy.add_checkout(rs, registration_id)
         rs.notify_return_code(code, error=n_("Action failed."))
+        if from_checkin_page:
+            return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids, 'checkout': True})
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
 
@@ -1981,6 +1992,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.checkin_multiset_form(rs, event_id, internal=True)
 
         # then, process
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Checkin-Multiset.")
         ret = 1
         if action == 'checkin':
             if checkin_time:
@@ -2021,15 +2033,19 @@ class EventRegistrationMixin(EventBaseFrontend):
                         rs, reg_id, last_period.id, last_period.checkin_time,
                         checkout_time)
             sortkey = "checkin_periods.max_checkout_time"
-
+        else:
+            raise RuntimeError(n_("Impossible."))
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Nach Checkin-Multiset.", after_change=True)
         rs.notify_return_code(ret)
+
         # redirect to query of changed registrations
         query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ("persona.given_names", "persona.family_name", "persona.username",
              "checkin_periods.max_checkin_time", "checkin_periods.max_checkout_time",
-             "checkin.current"),
+             "reg.is_checked_in"),
             (("reg.id", QueryOperators.oneof, registration_ids),),
             ((sortkey, True), ("persona.family_name", True), ("persona.given_names", True)),
         )

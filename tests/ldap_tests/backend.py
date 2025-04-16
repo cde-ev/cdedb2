@@ -322,6 +322,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             await list_and_filter("(|(foo=bar)(uid<=10))"),
             await self.ldap.list_users(),
         )
+        # check that arbitrary input is valid, especially text for non-text columns
+        self.assertEqual(await list_and_filter("(uid=asdf)"), [])
+        self.assertEqual(await list_and_filter("(sn=21234)"), [])
 
     async def test_get_status_groups(self) -> None:
         status_group_dns = await self.ldap.list_status_groups()
@@ -421,7 +424,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertEqual(
             await parse_and_lower("(&(s=1)(|(t=2)(t=3)))", {"s": "x", "t": "y"}),
             (
-                '("x" = %s) AND (("y" = %s) OR ("y" = %s))',
+                '("x"::text = %s) AND (("y"::text = %s) OR ("y"::text = %s))',
                 ["1", "2", "3"],
             ),
         )

@@ -755,20 +755,15 @@ class NotPaidCV(RegistrationConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class NegativeAmountOwedCV(RegistrationConstraintViolation):
+class ZeroAmountOwedCV(RegistrationConstraintViolation):
     @classmethod
     def check(  # type: ignore[override]
             cls, event: models.Event, *,
             registration: CdEDBObject,
             persona: CdEDBObject,
     ) -> Self | None:
-        if registration['amount_owed'] < 0:
-            return cls(
-                event=event,
-                severity=ViolationSeverity.ERROR,
-                registration=registration,
-                persona=persona,
-            )
+        if not event.fees:
+            return None
         if registration['amount_owed'] == 0:
             if any(reg_part['status'].is_involved()
                    for reg_part in registration['parts'].values()):
@@ -786,15 +781,42 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
     def get_translation(
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        if self.registration['amount_owed'] < 0:
-            if entity_page:
-                msg = n_("Owes a negative amount (%(amount_owed)s).")
-            else:
-                msg = n_("%(registration)s owes a negative amount (%(amount_owed)s).")
-        elif entity_page:
+        if entity_page:
             msg = n_("Is involved but owes no fee.")
         else:
             msg = n_("%(registration)s is involved but owes no fee.")
+
+        params = {
+            "registration": make_persona_name(self.persona, include_nickname=True),
+        }
+
+        return [msg], params
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NegativeAmountOwedCV(RegistrationConstraintViolation):
+    @classmethod
+    def check(  # type: ignore[override]
+            cls, event: models.Event, *,
+            registration: CdEDBObject,
+            persona: CdEDBObject,
+    ) -> Self | None:
+        if registration['amount_owed'] < 0:
+            return cls(
+                event=event,
+                severity=ViolationSeverity.ERROR,
+                registration=registration,
+                persona=persona,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        if entity_page:
+            msg = n_("Owes a negative amount (%(amount_owed)s).")
+        else:
+            msg = n_("%(registration)s owes a negative amount (%(amount_owed)s).")
 
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
@@ -1452,6 +1474,8 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
 
         Make the violation DEBUG if no attendees are assigned yet to avoid clutter.
         """
+        event_over = now().date() > event.end
+
         if track.id in course['active_segments']:
             if (
                     course['min_size'] is not None
@@ -1460,12 +1484,15 @@ class IncorrectNumAttendeesCV(CourseConstraintViolation):
                     course['max_size'] is not None
                     and attendees.num_learners > course['max_size']
             ):
+                if not attendees.num_learners:
+                    severity = ViolationSeverity.DEBUG
+                elif event_over:
+                    severity = ViolationSeverity.INFO
+                else:
+                    severity = ViolationSeverity.WARNING
                 return cls(
                     event=event,
-                    severity=(
-                        ViolationSeverity.WARNING if attendees.num_learners
-                        else ViolationSeverity.DEBUG
-                    ),
+                    severity=severity,
                     course=course,
                     track=track,
                     num=attendees.num_learners,
@@ -1603,6 +1630,9 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
             inhabitants: "LodgementInhabitants",
             part: models.EventPart,
     ) -> Self | None:
+        event_over = now().date() > event.end
+        severity = None
+
         if (
             lodgement['regular_capacity'] is not None
             and len(inhabitants.regular) > lodgement['regular_capacity']
@@ -1614,41 +1644,38 @@ class IncorrectNumInhabitantsCV(LodgementConstraintViolation):
                 [reg for reg in inhabitants.regular
                  if reg['parts'][part.id]['status'] == status.participant])
 
-            return cls(
-                event=event,
-                severity=ViolationSeverity.ERROR if error else ViolationSeverity.WARNING,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
+            if event_over:
+                severity = ViolationSeverity.INFO
+            elif error:
+                severity = ViolationSeverity.ERROR
+            else:
+                severity = ViolationSeverity.WARNING
         if (
             lodgement['camping_mat_capacity'] is not None
             and len(inhabitants.camping_mat) > lodgement['camping_mat_capacity']
         ):
-            return cls(
-                event=event,
-                severity=ViolationSeverity.WARNING,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
+            if event_over:
+                severity = ViolationSeverity.INFO
+            else:
+                severity = ViolationSeverity.WARNING
         if (
             lodgement['regular_capacity'] is not None
             and 0 < len(inhabitants.regular) < lodgement['regular_capacity']
             or lodgement['camping_mat_capacity'] is not None
             and 0 < len(inhabitants.camping_mat) < lodgement['camping_mat_capacity']
         ):
-            return cls(
-                event=event,
-                severity=ViolationSeverity.DEBUG,
-                lodgement=lodgement,
-                part=part,
-                num_regular=len(inhabitants.regular),
-                num_camping_mat=len(inhabitants.camping_mat),
-            )
-        return None
+            severity = ViolationSeverity.DEBUG
+
+        if severity is None:
+            return None
+        return cls(
+            event=event,
+            severity=severity,
+            lodgement=lodgement,
+            part=part,
+            num_regular=len(inhabitants.regular),
+            num_camping_mat=len(inhabitants.camping_mat),
+        )
 
     def get_translation(
             self, *, entity_page: str,

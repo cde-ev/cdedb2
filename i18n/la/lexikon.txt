@@ -9,7 +9,7 @@ Abbrechen (Knopf-Beschriftung)
 Desine (Philipp findet den Imperativ passend, es wird ja dem Computer eine Anweisung erteilt)
 
 Abmelden
-denutiare (analog zu "anmelden")
+denuntiare (analog zu "anmelden")
 
 Abstimmung
 suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung")
@@ -32,8 +32,14 @@ siehe "abmelden"
 Bearbeiten
 tractare (PONS)
 
+Beitrag (Mitglieds-, Teilnahme-)
+debita (n. Pl. – „das Geschuldete“)
+
 Benutzer
 siehe "Nutzer"
+
+Berechtigung
+aditus, -us, m. (wörtl. "Zugang")
 
 Bestätigen (Knopf-Beschriftung)
 Confirmo (Philipp findet die erste Person passend, weil der Nutzer ja etwas bestätigt.)
@@ -65,11 +71,17 @@ tabularium (PONS)
 Datenbank
 collectio datorum (PONS)
 
+eingeben (am Commputer)
+praeire (NLL, Stowasser so halb)
+
 einloggen
 (se) annuntiare (PONS)
 
 entfernen (Informatik)
 removere (Philipp findet das am passendsten. Siehe auch "löschen")
+
+Export
+exportatio, -onis, f. (NLL)
 
 exPuls
 exPulsus
@@ -92,6 +104,9 @@ formularium (PONS)
 Fragebogen (für eine Veranstaltung)
 interrogatio, -onis, f. ("Befragung, Verhör", aber kurz & knackig und daher besser als eine wörtliche Übersetzung, findet Philipp)
 
+Guthaben
+comparsum (PONS, Stowasser ("das Ersparte"))
+
 Information
 notitia (Philipps Favorit unter den Vorschlägen des NLL)
 
@@ -100,6 +115,15 @@ bulla (PONS)
 
 Kurs
 curriculum (PONS)
+
+Lastschrift
+pecuniae expensae latio (NLL)
+
+Lastschriftinitiative
+p.e. lationis impetus
+
+Lastschriftmandat
+p.e. lationis mandatum
 
 löschen (Informatik)
 delere (Philipp findet das am passendsten. Siehe auch "entfernen")
@@ -122,11 +146,20 @@ consocietare (Vorschlag Philipp, nötig für Konstruktionen wie "Mitgliedschaft"
 Nutzer
 utens (Vorschlag Philipp, NLL sagt für den Plural (die Gesamtheit der Nutzer): utentium corpus / universitas)
 
+Orga
+orga, -ae, m./f. (Vorschlag Philipp)
+
+organisieren (eine Akademie)
+instituere
+
 Passwort
 signum arcanum (PONS, wörtl. "geheimes Zeichen")
 
 Profil (eines Nutzers)
 vestigium (Vorschlag Philipp, Diskussionsbedarf)
+
+Querformat
+forma transversa (parallel zu "Querflöte" – "tibis transversa" (NLL))
 
 Schaltfläche
 siehe "Knopf"
@@ -134,8 +167,14 @@ siehe "Knopf"
 Stimme (bei einer Abstimmung)
 suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
 
+Teilnehmer
+particeps, -cipis (Stowasser)
+
 Übersicht
 conspectus (PONS)
+
+Unterkunft
+domicilium
 
 Veranstaltung
 eventus, -us, m. ("Ereignis", womöglich nur ein eher halb-richtiger Freund aus dem Englischen, Philipp findet's aber okay)
@@ -157,3 +196,6 @@ praeses elegendi (Diskuissionsergebnis Philipp & Kilian, praeses gemäß can. 17
 
 zurücksetzen (z.B. Passwort)
 reportare (Philipp ist nicht gänzlich überzeugt, aber findet nichts besseres)
+
+Zuteilung (z.B. Kurse, Zimmer)
+tributio, -onis, f. (Stowasser)

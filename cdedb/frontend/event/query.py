@@ -19,6 +19,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     determine_age_class,
+    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -589,9 +590,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         search_additions: list[QueryConstraint] = []
         event = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
-                                if {"core_admin", "meta_admin"} & rs.user.roles
-                                else self.conf["NUM_PREVIEW_PERSONAS"])
+        # higher number of previews is more convenient for orgas
+        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
         if kind == "orga_registration":
             if aux is None:
                 return self.send_json(rs, {})
@@ -635,43 +635,26 @@ class EventQueryMixin(EventBaseFrontend):
                 spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
-                    ("registrations.id", "username", "family_name",
+                    ("persona_id", "registrations.id", "username", "family_name",
                      "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
-                data = list(self.eventproxy.submit_general_query(
-                    rs, query, event_id=aux))
+                data = list(self.eventproxy.submit_general_query(rs, query, event_id=aux))
+                # add 'id' to each object, to enable usage of EntitySorter.persona
+                for datum in data:
+                    datum["id"] = datum["persona_id"]
+                data = xsorted(data, key=EntitySorter.persona)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            data = xsorted(data, key=lambda e: e['id'])[:num_preview_personas]
-
-        def name(x: CdEDBObject) -> str:
-            return "{} {}".format(x['given_names'], x['family_name'])
-
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(int)
-        for entry in data:
-            counter[name(entry)] += 1
-            if 'id' not in entry:
-                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
+            data = data[:num_preview_personas]
 
         # Generate return JSON list
         ret = []
-        for entry in xsorted(data, key=EntitySorter.persona):
+        for entry in data:
             result = {
-                'id': entry['id'],
-                'name': name(entry),
+                'id': entry['registrations.id'],
+                'email': entry['username'],
+                'name': make_persona_name(entry, include_nickname=True),
             }
-            # Email/username is only delivered if we have admins
-            # rights, a search term with an @ (and more) matches the
-            # mail address, or the mail address is required to
-            # distinguish equally named users
-            searched_email = any(
-                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
-                and entry['username'] and t in entry['username']
-                for t in terms)
-            if (counter[name(entry)] > 1 or searched_email or
-                    self.is_admin(rs)):
-                result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})

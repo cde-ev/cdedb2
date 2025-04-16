@@ -392,6 +392,7 @@ I18N_STRINGS = (
     n_("IncorrectCourseAssignedCV"),
     n_("InconsistentPaymentCV"),
     n_("NotPaidCV"),
+    n_("ZeroAmountOwedCV"),
     n_("NegativeAmountOwedCV"),
     n_("NegativeRemainingOwedCV"),
     n_("RemainingOwedCV"),

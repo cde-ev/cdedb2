@@ -177,8 +177,8 @@ _DEFAULTS = {
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
     # maximum length of personas presented via select persona API for selection
-    # in an intelligent input field for core admins
-    "NUM_PREVIEW_PERSONAS_CORE_ADMIN": 12,
+    # in an intelligent input field for privileged users (core admins and orgas)
+    "NUM_PREVIEW_PERSONAS_PRIVILEGED": 12,
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,
@@ -313,6 +313,8 @@ _DEFAULTS = {
         30_000: "30 km",
         80_000: "80 km",
     },
+    # id of the first semester for which relevant data exists.
+    "MIN_RELEVANT_SEMESTER": 42,
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2

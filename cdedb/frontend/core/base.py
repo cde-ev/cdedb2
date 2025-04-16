@@ -983,7 +983,7 @@ class CoreBaseFrontend(AbstractFrontend):
         search_additions = []
         scope = QueryScope.core_user
         mailinglist = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
@@ -1001,6 +1001,8 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            # adding archived users to past events is a common task
+            scope = QueryScope.all_core_users
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
@@ -1864,8 +1866,12 @@ class CoreBaseFrontend(AbstractFrontend):
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers: Headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
-            self.do_mail(rs, "privilege_change_finalized", headers, params)
+            if case_status == const.PrivilegeChangeStati.approved:
+                headers: Headers = {
+                    "To": {email},
+                    "Subject": "Admin-Privilegien geändert",
+                }
+                self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)

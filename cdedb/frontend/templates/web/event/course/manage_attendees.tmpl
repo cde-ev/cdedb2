@@ -1,7 +1,10 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_course_stats' %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_multiselect.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
+{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
     {% trans course=ambience['course']['title'], title=ambience['event']['title'] %}

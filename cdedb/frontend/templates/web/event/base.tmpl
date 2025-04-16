@@ -2,6 +2,42 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
+{% macro registration_quicksearch(mobile=false) %}
+    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% else %}hidden-xs hidden-sm{% endif %}">
+        <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET"
+              id="quickregistrationform{% if mobile %}-mobile{% endif %}">
+            <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
+            <div class="input-group">
+                <input type="search" name="phrase" class="form-control"
+                       id="input-showregistration{% if mobile %}-mobile{% endif %}"
+                       placeholder="{% trans %}Registration Quick-Access{% endtrans %}"
+                       aria-label="{% trans %}Registration Quick-Access{% endtrans %}"/>
+                <span class="input-group-btn">
+                    {{ util.input_submit("", icon='search', title=gettext("Search")) }}
+                </span>
+            </div>
+        </form>
+        <script nonce="{{ csp_nonce }}">
+            $(document).ready(function () {
+                const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
+                const $igroup = $i.closest('.input-group');
+                $igroup.children('.input-group-btn').remove();
+                $igroup.replaceWith($igroup.contents());
+                $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
+                                               + ('?kind=orga_registration&aux='|s)
+                                               + (values['event_id']|e)
+                                               + ('&phrase=%s'|s) }}',
+                                           [], true, false, "{{ gettext("Registration Quick-Access") }}");
+                $i.change(function(){
+                    if ($(this).val()) {
+                        $('#quickregistrationform{% if mobile %}-mobile{% endif %}').submit();
+                    }
+                });
+            });
+        </script>
+    </div>
+{% endmacro %}
+
 {% macro one_event_links(event) %}
     <div class="list-group tear-down">
         {% if event.is_visible_for(user, is_registered, privileged=False) or event['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
@@ -26,7 +62,7 @@
         {% endif %}
         {% if event['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/register_form", {"event_id": event['id'], "preview": True}), gettext("Registration Preview"),
-                    aclass="list-group-item", icon="sign-in-alt") }}
+                    aclass="list-group-item", icon="sign-in-alt", active=(sidenav_active == 'event_register_preview')) }}
         {% endif %}
         {% if (is_participant and event['participant_info']) or event['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": event['id']}),
@@ -39,6 +75,10 @@
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
     </div>
+
+    {% if is_privileged_for('quick_show_registration') %}
+        {{ registration_quicksearch() }}
+    {% endif %}
 
     {% if is_privileged() or 'event_orga' in user.admin_views %}
         <div class="list-group tear-down">
@@ -130,6 +170,10 @@
                         aclass="list-group-item", icon="check-double", active=(sidenav_active == 'event_checkin')) }}
             </div>
         {% endif %}
+
+        {% if is_privileged_for('quick_show_registration') %}
+            {{ registration_quicksearch(mobile=True) }}
+        {% endif %}
     {% elif 'finance' in user.admin_views %}
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": event['id']}), gettext("Enter Money Transfers"),
@@ -138,6 +182,10 @@
         </div>
     {% endif %}
 {% endmacro %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchregistration.js') }}
+{% endblock %}
 
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events")) }}

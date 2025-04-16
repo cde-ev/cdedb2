@@ -3,7 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
     	Registration by {{ name }} ({{ title }})
@@ -234,15 +237,13 @@
             </tr>
         </thead>
         <tbody>
-            {% set newperiod_errors = util.has_errors('checkin_time') or util.has_errors('checkout_time') %}
-            <tr id="addperiodrow" class="nojs-only drow-new {{ newperiod_errors }}">
+            <tr id="addperiodrow" class="nojs-only drow-new">
                 <td></td>
-                <td class="{{ newperiod_errors }}">
+                <td class="{{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
                     <form action="{{ cdedblink('event/add_backdated_checkin_period') }}" method="POST"
                           id="addperiodform">
                         {{ util.anti_csrf_token('event/add_backdated_checkin_period') }}
-                        {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
-                        <div class="input-group {{ newperiod_errors }}">
+                        <div class="input-group {{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
                             {{ util.input_text(name='checkin_time', type='datetime-local', arialabel=gettext('Checkin time')) }}
                             <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
                             {{ util.input_text(name='checkout_time', type='datetime-local', arialabel=gettext('Checkout time')) }}
@@ -266,12 +267,10 @@
                 {% set inputname1 = 'checkin_time_' + period.id|string %}
                 {% set inputname2 = 'checkout_time_' + period.id|string %}
                 <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
-                    <form action="{{ cdedblink('event/change_checkin_period',
-                                           {'registration_id': ambience['registration']['id']}) + '#checkin-periods'|s }}"
-                      method="POST"
-                      id="changeperiodform{{ period.id }}">
+                    <form action="{{ cdedblink('event/change_checkin_period') + '#checkin-periods'|s }}"
+                          method="POST" id="changeperiodform{{ period.id }}">
                         {{ util.anti_csrf_token('event/change_checkin_period') }}
-                        <div class="input-group {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
+                        <div class="input-group">
                             {{ util.input_hidden(name='period_id', value=period.id) }}
                             {{ util.input_text(name=inputname1, type='datetime-local', arialabel=gettext('Checkin time'),
                                                defaultvalue=period.checkin_time) }}
@@ -286,7 +285,7 @@
                 </td>
                 <td class="nojs-only period-form-{{ loop.index }} {{ util.has_errors(inputname1) }} {{ util.has_errors(inputname2) }}">
                     {{ util.input_submit(icon='pen', label="", title=gettext("Edit times"),
-                                         formid="changeperiodform" + loop.index|string, aclass="btn btn-primary btn-sm",
+                                         formid="changeperiodform" + period.id|string, aclass="btn btn-primary btn-sm",
                                          readonly=not is_privileged_for('change_checkin_period'),
                                          display_ignore_warnings=false) }}
                 </td>

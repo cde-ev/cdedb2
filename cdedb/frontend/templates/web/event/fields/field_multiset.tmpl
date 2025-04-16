@@ -11,6 +11,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_multiset.js') }}
 {% endblock %}
