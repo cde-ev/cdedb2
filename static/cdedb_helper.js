@@ -148,7 +148,7 @@
             $element.find('.'+settings.itemClass)
                 .on('click', function(e) {
                     if (!e.shiftKey) {
-                        if (!e.ctrlKey) {
+                        if (!e.ctrlKey && !e.metaKey) {
                             clearSelection();
                             selectSingle($(this));
                         } else {
@@ -156,7 +156,7 @@
                         }
                         setCursor($(this),true);
                     } else {
-                        if (!e.ctrlKey)
+                        if (!e.ctrlKey && !e.metaKey)
                             clearSelection();
                         setCursor($(this),false);
                         selectRange();
@@ -169,7 +169,7 @@
             $element.on('keydown', function(e) {
                 switch(e.keyCode) {
                     case 32: //Leertaste
-                        if (e.ctrlKey) {
+                        if (e.ctrlKey || e.metaKey) {
                             toggleSelection($(this).find('.'+settings.cursorClass));
                             setCursor($(this).find('.'+settings.cursorClass),true);
                             e.preventDefault();
@@ -188,7 +188,7 @@
                         var $next = $list.first();
 
                         if (!e.shiftKey) {
-                            if (!e.ctrlKey) {
+                            if (!e.ctrlKey && !e.metaKey) {
                                 clearSelection();
                                 selectSingle($next);
                                 setCursor($next,true);
@@ -196,7 +196,7 @@
                                 setCursor($next,false);
                             }
                         } else {
-                            if (!e.ctrlKey)
+                            if (!e.ctrlKey && !e.metaKey)
                                 clearSelection();
                             setCursor($next,false);
                             selectRange();
