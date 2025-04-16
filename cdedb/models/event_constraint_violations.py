@@ -261,7 +261,7 @@ class ViolationList(list['ConstraintViolation']):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ViolationAux:
-    """Container for passing event data through to Violations for instantiotion."""
+    """Container for passing event data through to Violations for instantiation."""
     event: models.Event
     registrations: CdEDBObjectMap
     personas: CdEDBObjectMap
@@ -290,8 +290,9 @@ class ViolationContext:
 
     A context can be added to to create a new context, e.g. when evaluating a violation
     for every part of every registration, that violation will be checked multiple times
-    with the smae base context (containing only the registration) aufmented with the
-    different parts.
+    with the same base context (containing only the registration) augmented with the
+    different parts. Adding to a context via the `.add()` method returns a new context,
+    usually with one or more fields being overwritten.
     """
 
     registration: CdEDBObject | None = None
@@ -304,6 +305,7 @@ class ViolationContext:
     track_group: models.TrackGroup | None = None
 
     def add(self, **kwargs: Any) -> Self:
+        """Create a new context by overwriting any field with the given kwarg."""
         return self.__class__(**{**vars(self), **kwargs})
 
 
@@ -328,7 +330,7 @@ class ConstraintViolation(abc.ABC):
 
     All violation subclasses are evaluated and constructed automatically via the
     `dispatch` constructor. To make this work, an abstract subclass need only define
-    the additional context needed for the evaluation ob it's non-abstract children.
+    the additional context needed for the evaluation ob its non-abstract children.
     """
     event: models.Event
     severity: ViolationSeverity
