@@ -55,11 +55,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import (
-    ConstraintViolation,
-    ViolationAux,
-    ViolationContext,
-)
+from cdedb.models.event_constraint_violations import ConstraintViolation, ViolationAux
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
