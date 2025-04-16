@@ -3,7 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
     	Registration by {{ name }} ({{ title }})
