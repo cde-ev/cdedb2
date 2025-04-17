@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}

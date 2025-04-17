@@ -2,6 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_multiset.js') }}
 {% endblock %}

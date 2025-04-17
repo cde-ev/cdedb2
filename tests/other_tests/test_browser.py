@@ -253,7 +253,8 @@ class TestBrowser(BrowserTest):
         page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
-        page.locator(".selectize-input").first.click()
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+                     ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").click()

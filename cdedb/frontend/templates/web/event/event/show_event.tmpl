@@ -3,10 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
+    {{ super() }}
     {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
-        {{ util.cdedb_script('cdedb_searchregistration.js') }}
     {% endif %}
 {% endblock %}
 {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
@@ -152,86 +152,25 @@
 
     <div class="row">
         {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
-            <div class="col-md-6">
-                {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
-                    <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
-                        <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
-                        <div class="input-group">
-                            <input type="search" name="phrase" class="form-control" id="input-showregistration-id"
-                                   aria-label="{% trans %}ID, name or email{% endtrans %}"/>
-                            <span class="input-group-btn">
-                                {{ util.input_submit("", icon='search', title=gettext("Search")) }}
-                            </span>
-                        </div>
-                    </form>
-                    <script nonce="{{ csp_nonce }}">
-                        var $i = $('#input-showregistration-id');
-                        $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                                       + ('?kind=orga_registration&aux='|s)
-                                                       + (values['event_id']|e)
-                                                       + ('&phrase=%s'|s) }}',
-                                                   [], true, false, "{{ gettext("ID, name or email") }}");
-                        $i.change(function(){
-                            if ($(this).val()) {
-                                $('#quickregistrationform').submit();
-                            }
-                        });
-                    </script>
-                {% endcall %}
-            </div>
-        {% endif %}
+            {% set min_severity = enums['ViolationSeverity'].INFO %}
+            {% set violations = constraint_violations['violations'] if constraint_violations else None %}
+            {% if violations and violations.max_severity >= min_severity %}
+                <div class="col-md-6" id="constraint-violations">
+                    {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
+                        <ul class="slim">
+                            {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
+                                <li><a class="{{ violations_.max_severity.html_class() }}" href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                    {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
+                                             class_name=gettext(class_name) %}
+                                        There are {{ count }} {{ class_name }}.
+                                    {% endtrans %}
+                                </a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
 
-        {% if "event_mgmt" in user.admin_views %}
-            <div class="col-md-6" id="manage-orgas">
-                {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
-                <ul class="slim" >
-                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                        <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
-                            <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
-                                    id="removeorgaform{{ anid }}" class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('event/remove_orga') }}
-                                {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(label="", readonly=is_locked, title=gettext("Remove Orga"),
-                                                     icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
-                            </form>
-                        </li>
-                    {% endfor %}
-                </ul>
-                <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
-                    {{ util.anti_csrf_token('event/add_orga') }}
-                    {% call util.output_errors('orga_id', wrapper=True) %}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
-                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
-                                           arialabel=gettext("ID of the new Orga")) }}
-                        <script nonce="{{ csp_nonce }}">
-                            $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') }}',
-                                {{ {'kind': 'event_user', 'aux': ambience['event']['id'] }|tojson }},
-                                {{ ambience['event']['orgas']|list|tojson }}, false, false,
-                                "{{ gettext("ID, name, email") }}"
-                            );
-                        </script>
-                        <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
-                        </div>
-                    </div>
-                    {% if ambience['event'].id in user.orga %}
-                        <p class="help-block no-color text-warning" style="margin-bottom:0">
-                            {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
-                            {% trans %}
-                                 You should not add/remove orgas for your own event.
-                            {% endtrans %}
-                        </p>
-                    {% endif %}
-                {% endcall %}
-                </form>
-                {% endcall %}
-            </div>
-        {% endif %}
-
-        {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
             <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
                     <div class="p">
@@ -273,7 +212,9 @@
                     </form>
                 {% endcall %}
             </div>
+        </div>
 
+        <div class="row">
             <div class="col-md-6" id="offline-use">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download-alt', aclass='panel-danger') %}
                     <p>
@@ -356,25 +297,55 @@
                     {% endif %}
                 {% endcall %}
             </div>
-
-            {% set min_severity = enums['ViolationSeverity'].INFO %}
-            {% set violations = constraint_violations['violations'] if constraint_violations else None %}
-            {% if violations and violations.max_severity >= min_severity %}
-                <div class="col-md-6" id="constraint-violations">
-                    {% call generic.constraint_violations_panel(violations.max_severity, link_title=True) %}
-                        <ul class="slim">
-                            {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-                                <li><a class="{{ violations_.max_severity.html_class() }}" href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
-                                    {% trans count=violations_|selectattr("severity", "ge", min_severity)|list|length,
-                                             class_name=gettext(class_name) %}
-                                        There are {{ count }} {{ class_name }}.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endfor %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
+        {% endif %}
+        {% if "event_mgmt" in user.admin_views %}
+            <div class="col-md-6" id="manage-orgas">
+                {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
+                <ul>
+                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
+                        <li class="hide-hover-container clearfix-after">
+                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
+                            <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
+                                    id="removeorgaform{{ anid }}" class="hide-hover display-inline">
+                                {{ util.anti_csrf_token('event/remove_orga') }}
+                                {{ util.input_hidden(name="orga_id", value=anid) }}
+                                {{ util.input_submit(label="", readonly=is_locked, title=gettext("Remove Orga"),
+                                                     icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
+                    {{ util.anti_csrf_token('event/add_orga') }}
+                    {% call util.output_errors('orga_id', wrapper=True) %}
+                    <div class="input-group has-success">
+                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
+                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
+                                           arialabel=gettext("ID of the new Orga")) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-add-orga').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') }}',
+                                {{ {'kind': 'event_user', 'aux': ambience['event']['id'] }|tojson }},
+                                {{ ambience['event']['orgas']|list|tojson }}, false, false,
+                                "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        <div class="input-group-btn">
+                            {{ util.input_submit(label=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
+                        </div>
+                    </div>
+                    {% if ambience['event'].id in user.orga %}
+                        <p class="help-block no-color text-warning" style="margin-bottom:0">
+                            {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
+                            {% trans %}
+                                 You should not add/remove orgas for your own event.
+                            {% endtrans %}
+                        </p>
+                    {% endif %}
+                {% endcall %}
+                </form>
+                {% endcall %}
+            </div>
         {% endif %}
     </div>
 
