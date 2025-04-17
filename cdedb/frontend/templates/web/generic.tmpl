@@ -375,7 +375,7 @@
             <div class="row">
                 {% for list in queries | sort | slice(num_columns) %}
                 <div class="col-sm-{{ 12 // num_columns }}">
-                    <ul class="slim">
+                    <ul class="slim {% if not loop.last %}nosp{% endif %}">
                         {% for query_name in list %}
                             {% with query = queries[query_name] -%}
                                 <li>

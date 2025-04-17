@@ -213,7 +213,7 @@
         <div class="row" id="attachments">
             {% for slice in definitive_versions|keydictsort(EntitySorter.attachment)|slice(2) if definitive_versions %}
                 <div class="col-sm-6">
-                    <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
+                    <ul class="slim {% if not loop.last %}nosp{% endif %}" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
                         {% for attachment_id, definitive_version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                                 <div class="p">
