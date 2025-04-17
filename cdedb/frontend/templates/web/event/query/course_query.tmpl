@@ -23,24 +23,16 @@
 {{ util.breadcrumb_link(cdedblink("event/course_query"), gettext("Course Query"), active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="p button-par">
-                {{ util.href(cdedblink("event/create_course"), gettext("Create Course"), icon='plus',
-                             readonly=not is_privileged_for('create_course'), aclass='btn btn-sm btn-success') }}
-                {% if ambience['event']['fields'] %}
-                    {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
-                                  readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
-                {% endif %}
-                {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].event_course}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
-            </div>
-        </div>
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/create_course"), gettext("Create Course"), icon='plus',
+                     readonly=not is_privileged_for('create_course'), aclass='btn btn-sm btn-success') }}
+        {% if ambience['event']['fields'] %}
+            {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
+                          readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
+        {% endif %}
+        {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].event_course}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            {{ generic.place_default_queries(enums['QueryScope'].event_course, default_queries, num_columns=3) }}
-        </div>
-    </div>
+    {{ generic.place_default_queries(enums['QueryScope'].event_course, default_queries, num_columns=3) }}
 
     {{ generic.format_query(enums['QueryScope'].event_course, spec, selection_default=selection_default) }}
 
