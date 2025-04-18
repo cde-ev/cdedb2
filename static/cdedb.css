@@ -341,7 +341,7 @@ ul.nosp, ol.nosp {
 .btn.mosp, img.mosp {
     margin-bottom: 5px
 }
-.panel-body>:last-child, .panel-body>:last-child.row>[class*="col-sm-4"]>:last-child {
+.panel-body>:last-child, .panel-body>:last-child.row>[class*="col-"]>:last-child {
     margin-bottom: 0;
 }
 .strip-inner-space>:first-child {
