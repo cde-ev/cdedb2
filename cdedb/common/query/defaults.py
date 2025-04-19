@@ -36,17 +36,11 @@ def generate_event_registration_default_queries(
     default_fields_of_interest = (
         "persona.family_name", "persona.given_names", "persona.username",
     )
-    payment_fields_of_interest = (
-        "reg.payment", "reg.amount_paid", "reg.amount_owed", "reg.remaining_owed",
-    )
 
     default_sort = (
         ("persona.family_name", True),
         ("persona.given_names", True),
         ("reg.id", True),
-    )
-    payment_sort = (
-        ("reg.payment", True),
     )
 
     all_part_stati_column = ",".join(
@@ -87,38 +81,6 @@ def generate_event_registration_default_queries(
             default_fields_of_interest,
             (
                 ("reg.is_orga", QueryOperators.equal, True),
-            ),
-            default_sort,
-        ),
-        n_("10_query_event_registration_not_paid"): Query(
-            scope, spec,
-            default_fields_of_interest + payment_fields_of_interest,
-            (
-                ("reg.remaining_owed", QueryOperators.greater, 0),
-            ),
-            payment_sort + default_sort,
-        ),
-        n_("12_query_event_registration_paid"): Query(
-            scope, spec,
-            default_fields_of_interest + payment_fields_of_interest,
-            (
-                ("reg.remaining_owed", QueryOperators.lessequal, 0),
-            ),
-            payment_sort + default_sort,
-        ),
-        n_("14_query_event_registration_participants"): Query(
-            scope, spec,
-            tuple(all_part_stati_column.split(",")) + default_fields_of_interest,
-            (
-                any_part_participant_constraint,
-            ),
-            default_sort,
-        ),
-        n_("20_query_event_registration_non_members"): Query(
-            scope, spec,
-            default_fields_of_interest + ("reg.is_member",),
-            (
-                ("reg.is_member", QueryOperators.equal, False),
             ),
             default_sort,
         ),
