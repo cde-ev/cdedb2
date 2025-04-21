@@ -11,6 +11,8 @@ from cdedb.models.event_constraint_violations import (
     AbsentCheckedinCV,
     ConstraintViolation,
     PresentNeverCheckedinCV,
+    ViolationAux,
+    ViolationContext,
     ViolationSeverity,
 )
 
@@ -56,7 +58,9 @@ class TestEventConstraintViolations(unittest.TestCase):
         def check(event: models.Event, registration: CdEDBObject,
                   ) -> ConstraintViolation | None:
             return AbsentCheckedinCV.check(
-                event, registration=registration, persona={})
+                Mock(spec=ViolationAux, event=event),
+                ViolationContext(registration=registration),
+            )
 
         def assert_info_violation(event: models.Event, registration: CdEDBObject,
                                   ) -> None:
@@ -177,8 +181,10 @@ class TestEventConstraintViolations(unittest.TestCase):
 
     def test_present_never_checked_in(self) -> None:
         def check(registration: CdEDBObject) -> ConstraintViolation | None:
-            return PresentNeverCheckedinCV.check(onePartAka, registration=registration,
-                                                 persona={}, part=single_part)
+            return PresentNeverCheckedinCV.check(
+                Mock(spec=ViolationAux, event=onePartAka),
+                ViolationContext(registration=registration, part=single_part),
+            )
 
         reg = copy.deepcopy(single_part_registration)
         self.assertIsNone(check(reg))

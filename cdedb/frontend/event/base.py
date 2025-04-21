@@ -31,7 +31,6 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
-    determine_age_class,
     merge_dicts,
     unwrap,
 )
@@ -56,33 +55,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import (
-    AbsentCheckedinCV,
-    CancelledWithAttendeesCV,
-    ConstraintViolation,
-    CourseChoiceSyncCV,
-    HiddenCourseCV,
-    IllegalMixedLodgementCV,
-    IllegalMixedLodgingCV,
-    InconsistentPaymentCV,
-    IncorrectCampingMatAssignmentCV,
-    IncorrectCourseAssignedCV,
-    IncorrectNumAttendeesCV,
-    IncorrectNumInhabitantsCV,
-    LonelyAttendeesCV,
-    MissingMinorFormCV,
-    MutuallyExclusiveCoursesCV,
-    MutuallyExclusiveParticipationCV,
-    NegativeAmountOwedCV,
-    NegativeRemainingOwedCV,
-    NoCourseAssignedCV,
-    NoLodgementCV,
-    NotPaidCV,
-    PresentNeverCheckedinCV,
-    RemainingOwedCV,
-    ViolationList,
-    ZeroAmountOwedCV,
-)
+from cdedb.models.event_constraint_violations import ConstraintViolation, ViolationAux
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
@@ -482,9 +455,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         violations: list[ConstraintViolation] = []
 
-        sorted_tracks = xsorted(event.tracks.values())
-        sorted_parts = xsorted(event.parts.values())
-
         # Retrieve registrations.
         all_registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event.id))
@@ -531,193 +501,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event.id, involved=True,
         )
 
-        _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
-        reg_violation_spec: _vs_type = {
-            'base': {
-                (
-                    InconsistentPaymentCV,
-                    NotPaidCV,
-                    ZeroAmountOwedCV,
-                    NegativeAmountOwedCV,
-                    NegativeRemainingOwedCV,
-                    RemainingOwedCV,
-                    AbsentCheckedinCV,
-                    MissingMinorFormCV,
-                    IllegalMixedLodgingCV,
-                ): [
-                    'registration', 'persona',
-                ],
-            },
-            'part': {
-                (
-                    PresentNeverCheckedinCV,
-                ): [
-                    'registration', 'persona', 'part',
-                ],
-                (
-                    IncorrectCampingMatAssignmentCV,
-                    NoLodgementCV,
-                ): [
-                    'registration', 'persona', 'part', 'lodgements',
-                ],
-            },
-            'track': {
-                (
-                    NoCourseAssignedCV,
-                ): [
-                    'registration', 'persona', 'track',
-                ],
-                (
-                    IncorrectCourseAssignedCV,
-                ): [
-                    'registration', 'persona', 'track', 'assigned_course',
-                    'instructed_course',
-                ],
-            },
-            'part_group': {
-                (
-                    MutuallyExclusiveParticipationCV,
-                ): [
-                    'registration', 'persona', 'part_group',
-                ],
-            },
-            'track_group': {
-                (
-                    CourseChoiceSyncCV,
-                ): [
-                    'registration', 'persona', 'track_group',
-                ],
-            },
-        }
-        course_violation_spec: _vs_type = {
-            'base': {
-                (
-                    HiddenCourseCV,
-                ): [
-                    'course',
-                ],
-            },
-            'track': {
-                (
-                    CancelledWithAttendeesCV,
-                    IncorrectNumAttendeesCV,
-                    LonelyAttendeesCV,
-                ): [
-                    'course', 'track', 'attendees',
-                ],
-            },
-            'track_group': {
-                (
-                    MutuallyExclusiveCoursesCV,
-                ): [
-                    'course', 'track_group',
-                ],
-            },
-        }
-        lodgement_violation_spec: _vs_type = {
-            'base': {},
-            'part': {
-                (
-                    IncorrectNumInhabitantsCV,
-                ): [
-                    'lodgement', 'part', 'inhabitants',
-                ],
-                (
-                    IllegalMixedLodgementCV,
-                ): [
-                    'lodgement', 'part', 'inhabitants', 'personas',
-                ],
-            },
-        }
-
-        def _check_violation(
-                violation_spec: dict[tuple[type[ConstraintViolation], ...], list[str]],
-                params: CdEDBObject,
-        ) -> None:
-            for violation_class_list, keys in violation_spec.items():
-                for violation_class in violation_class_list:
-                    kwargs = {k: params[k] for k in keys}
-                    if v := violation_class.check(event, **kwargs):
-                        violations.append(v)
-
-        for reg_id, reg in registrations.items():
-            for part in event.parts.values():
-                reg['parts'][part.id]['age'] = determine_age_class(
-                    personas[reg['persona_id']]['birthday'], part.part_begin)
-            reg['age'] = determine_age_class(
-                personas[reg['persona_id']]['birthday'], event.begin)
-            reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
-
-            parameters: CdEDBObject = {
-                'registration': reg,
-                'persona': personas[reg['persona_id']],
-                'lodgements': all_lodgements,
-            }
-            _check_violation(reg_violation_spec['base'], parameters)
-
-            for part in sorted_parts:
-                parameters.update({
-                    'part': part,
-                })
-                _check_violation(reg_violation_spec['part'], parameters)
-
-            for track in sorted_tracks:
-                parameters.update({
-                    'track': track,
-                    'assigned_course': all_courses.get(
-                        reg['tracks'][track.id]['course_id']),
-                    'instructed_course': all_courses.get(
-                        reg['tracks'][track.id]['course_instructor']),
-                })
-                _check_violation(reg_violation_spec['track'], parameters)
-
-            for part_group in xsorted(event.part_groups.values()):
-                parameters.update({
-                    'part_group': part_group,
-                })
-                _check_violation(reg_violation_spec['part_group'], parameters)
-
-            for track_group in xsorted(event.track_groups.values()):
-                parameters.update({
-                    'track_group': track_group,
-                })
-                _check_violation(reg_violation_spec['track_group'], parameters)
-
-        for course in xsorted(courses.values(), key=EntitySorter.course):
-            parameters = {
-                'course': course,
-            }
-            _check_violation(course_violation_spec['base'], parameters)
-
-            for track in sorted_tracks:
-                parameters.update({
-                    'track': track,
-                    'attendees': attendee_stats.involved[course['id'], track.id],
-                })
-                _check_violation(course_violation_spec['track'], parameters)
-
-            for track_group in xsorted(event.track_groups.values()):
-                parameters.update({
-                    'track_group': track_group,
-                })
-                _check_violation(course_violation_spec['track_group'], parameters)
-
-        for lodgement in xsorted(lodgements.values(), key=EntitySorter.lodgement):
-            parameters = {
-                'lodgement': lodgement,
-            }
-            _check_violation(lodgement_violation_spec['base'], parameters)
-
-            for part in sorted_parts:
-                parameters.update({
-                    'part': part,
-                    'inhabitants': inhabitants[lodgement['id']][part.id],
-                    'personas': personas,
-                })
-                _check_violation(lodgement_violation_spec['part'], parameters)
+        violations = ViolationAux(
+            event=event, registrations=registrations, personas=personas,
+            all_courses=all_courses, courses=courses,
+            all_lodgements=all_lodgements, lodgements=lodgements,
+            attendee_data=attendee_stats, choices_data=choice_stats,
+            inhabitants_data=inhabitants,
+        ).evaluate_all()
 
         return {
-            'violations': ViolationList(violations),
+            'violations': violations,
             'all_registrations': all_registrations,
             'registrations': registrations,
             'personas': personas,
