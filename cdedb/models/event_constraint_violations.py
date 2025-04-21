@@ -434,6 +434,10 @@ class ConstraintViolation(abc.ABC):
         Overriding this is the primary way an abstract subclass
         defines what context is needed for its children.
 
+        Overrides by subclasses should not call the parent implementation,
+        since this is called by the `dispatch` from the base class to the
+        subclasses automatically.
+
         The returned contexts should be derived from the received context.
         """
         return [context]
