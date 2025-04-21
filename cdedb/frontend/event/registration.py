@@ -177,10 +177,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         recipients = [event.orga_address, self.conf["EVENT_FINANCE_ADMIN_ADDRESS"]]
         with TransactionObserver(rs, self, "book_fees", recipients=recipients):
             if result := self.eventproxy.book_fees(rs, event_id, transfers):
-                if send_notifications:
-                    result.send_notifications(
-                        rs, by_orga=True, do_mail=self.do_mail, events={event.id: event},
-                    )
+                result.send_notifications(
+                    rs, send_individual_notifications=send_notifications, by_orga=True,
+                    do_mail=self.do_mail, events={event.id: event},
+                )
                 return self.redirect(rs, "event/show_event")
             elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))
