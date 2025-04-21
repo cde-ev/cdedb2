@@ -23,22 +23,16 @@
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-4">
-            <div class="p button-par">
-                {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
-                             readonly=not is_privileged_for("add_registration"), icon='plus', aclass='btn btn-sm btn-success') }}
-                {% if ambience['event']['fields'] and has_registrations %}
-                    {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
-                                  readonly=not is_privileged_for("field_multiset_select"), icon='edit', aclass='btn btn-sm btn-warning') }}
-                {% endif %}
-                {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
-            </div>
-        </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries(enums['QueryScope'].registration, default_queries) }}
-        </div>
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
+                     readonly=not is_privileged_for("add_registration"), icon='plus', aclass='btn btn-sm btn-success') }}
+        {% if ambience['event']['fields'] and has_registrations %}
+            {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
+                          readonly=not is_privileged_for("field_multiset_select"), icon='edit', aclass='btn btn-sm btn-warning') }}
+        {% endif %}
+        {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
     </div>
+    {{ generic.place_default_queries(enums['QueryScope'].registration, default_queries, num_columns=3) }}
 
     {{ generic.format_query(enums['QueryScope'].registration, spec,
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}

@@ -99,7 +99,7 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries(scope, default_queries) }}
+            {{ place_default_queries(scope, default_queries, num_columns=2) }}
         </div>
     </div>
 
@@ -369,13 +369,13 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(scope, queries) %}
+{% macro place_default_queries(scope, queries, num_columns) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
-                {% for list in queries | sort | slice(2) %}
-                <div class="col-sm-6">
-                    <ul>
+                {% for list in queries | sort | slice(num_columns) %}
+                <div class="col-sm-{{ 12 // num_columns }}">
+                    <ul class="slim {% if not loop.last %}nosp{% endif %}">
                         {% for query_name in list %}
                             {% with query = queries[query_name] -%}
                                 <li>

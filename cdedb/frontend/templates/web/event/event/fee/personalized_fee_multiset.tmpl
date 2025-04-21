@@ -109,7 +109,7 @@
                 {% set slices = 1 if registrations|length <= 5 else (2 if registrations|length <= 10 else 3) %}
                 {% for list in registrations|slice(slices) %}
                     <div class="col-sm-{{ 12 // slices }}">
-                        <ul>
+                        <ul {% if not loop.last %}class="nosp"{% endif %}>
                             {% for reg in list %}
                                 <li>{{ util.persona_name(personas[reg['persona_id']]) }}</li>
                             {% endfor %}
