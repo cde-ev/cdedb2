@@ -36,6 +36,7 @@ class EventPrivileges(Flag):
     registrations_read = (_registrations_read_dummy | courses_read | lodgements_read
                           | registrations_read_internal)
     registrations_write = auto()
+    payment_write = auto()
     log_read = auto()
     # send_email = auto()  #: api only? tool suggested recently
     # create = auto()
@@ -46,8 +47,8 @@ class EventPrivileges(Flag):
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = (basic_write | free_texts_write | entities_write | conclude | balance
-                 | delete)
+    all_write = (basic_write | entities_write | free_texts_write | payment_write
+                 | conclude | balance | delete)
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
@@ -71,7 +72,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
                                | EP.registrations_stats | EP.registrations_read_internal)
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
-                                | EP.balance)
+                                | EP.payment_write | EP.balance)
 
     return (
         # Special case for conclude which requires two admin privileges.

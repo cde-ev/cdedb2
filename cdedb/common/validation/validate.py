@@ -2177,12 +2177,14 @@ def _lastschrift(
 
 
 @_add_typed_validator
-def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
-                       **kwargs: Any) -> MoneyTransferEntry:
+def _money_transfer_entry(
+        val: Any, argname: str = "money_transfer_entry", *, event_only: bool = False,
+        **kwargs: Any,
+) -> MoneyTransferEntry:
     val = _mapping(val, argname, **kwargs)
     mandatory_fields: TypeMapping = {
         'persona_id': int,
-        'registration_id': Optional[int],  # type: ignore[dict-item]
+        'registration_id': int if event_only else Optional[int],  # type: ignore[dict-item]
         'amount': decimal.Decimal,
         'date': datetime.date,
     }
@@ -3234,20 +3236,6 @@ def _event_associated_fields(
         raise errs
 
     return EventAssociatedFields(val)
-
-
-@_add_typed_validator
-def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
-                       **kwargs: Any) -> FeeBookingEntry:
-    val = _mapping(val, argname, **kwargs)
-    mandatory_fields: dict[str, Any] = {
-        'registration_id': int,
-        'date': datetime.date,
-        'amount': decimal.Decimal,
-    }
-    optional_fields: TypeMapping = {}
-    return FeeBookingEntry(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
 
 
 LODGEMENT_GROUP_FIELDS: TypeMapping = {

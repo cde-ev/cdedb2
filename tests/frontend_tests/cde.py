@@ -2110,7 +2110,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence(
             "2 Mitgliedsbeiträge verbucht. 1 neue Mitglieder.", div="notifications")
         self.assertPresence(
-            "1 Überweisungen verbucht für Große Testakademie 2222",
+            "1 Teilnahmebeiträge verbucht für Große Testakademie 2222",
             div="notifications")
         self.assertPresence(
             "1 Erstattungen eingetragen für Große Testakademie 2222",

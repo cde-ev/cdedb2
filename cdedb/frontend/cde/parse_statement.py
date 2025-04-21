@@ -227,6 +227,15 @@ def parse_amount(amount: str) -> decimal.Decimal:
     return ret
 
 
+def check_amount(amount_str: str) -> tuple[Optional[decimal.Decimal], list[Error]]:
+    try:
+        amount = parse_amount(amount_str)
+    except ParseAmountError:
+        return None, [('amount', ValueError(n_("Invalid input for amount.")))]
+    else:
+        return amount, []
+
+
 def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert an input to a number in german format."""
     if isinstance(number, decimal.Decimal):

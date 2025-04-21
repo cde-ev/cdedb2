@@ -12,7 +12,7 @@ import itertools
 import pathlib
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Optional
+from typing import Callable, Optional
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -23,7 +23,6 @@ import cdedb.models.event as models_event
 from cdedb.common import (
     Accounts,
     CdEDBObject,
-    Error,
     RequestState,
     TransactionType,
     get_hash,
@@ -45,7 +44,6 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional,
     csv_output,
     inspect_validation as inspect,
-    make_postal_address,
     request_extractor,
 )
 
@@ -256,16 +254,13 @@ class CdEParseMixin(CdEBaseFrontend):
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")
-    def money_transfers_form(self, rs: RequestState,
-                             data: Optional[list[CdEDBObject]] = None,
-                             csvfields: Optional[tuple[str, ...]] = None,
-                             saldos: Optional[dict[int, decimal.Decimal]] = None,
-                             ) -> Response:
-        """Render form.
-
-        The ``data`` parameter contains all extra information assembled
-        during processing of a POST request.
-        """
+    def money_transfers_form(
+            self, rs: RequestState,
+            data: Optional[list[CdEDBObject]] = None,
+            csvfields: Optional[tuple[str, ...]] = None,
+            saldos: Optional[dict[int, decimal.Decimal]] = None,
+    ) -> Response:
+        # TODO: What if an event is offline locked?
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
         data = data or []
         csvfields = csvfields or tuple()
@@ -275,18 +270,15 @@ class CdEParseMixin(CdEBaseFrontend):
         })
 
     @staticmethod
-    def parse_amount(amount_str: str) -> tuple[Optional[decimal.Decimal], list[Error]]:
-        try:
-            amount = parse.parse_amount(amount_str)
-        except parse.ParseAmountError:
-            return None, [('amount', ValueError(n_("Invalid input for amount.")))]
-        else:
-            return amount, []
-
-    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject, *,
-                               events_by_shortname: dict[str, models_event.Event],
-                               amounts_paid: dict[int, decimal.Decimal],
-                               ) -> CdEDBObject:
+    def examine_money_transfer(
+            rs: RequestState, datum: CdEDBObject, *,
+            events_by_shortname: dict[str, models_event.Event],
+            amounts_paid: dict[int, decimal.Decimal],
+            get_persona: Callable[[RequestState, int], CdEDBObject],
+            list_registrations: Callable[[RequestState, int, int], dict[int, int]],
+            get_registration: Callable[[RequestState, int], CdEDBObject],
+            category: Optional[str] = None,
+    ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
         We test for fitness of the data itself.
@@ -296,9 +288,10 @@ class CdEParseMixin(CdEBaseFrontend):
         raw = datum['raw']
         problems, infos = [], []
 
-        category, p = inspect(
-            vtypes.Identifier, raw['category_old'], argname="category")
-        problems.extend(p)
+        if category is None:
+            category, p = inspect(
+                vtypes.Identifier, raw['category_old'], argname="category")
+            problems.extend(p)
         persona = None
         registration = None
         event = None
@@ -307,7 +300,7 @@ class CdEParseMixin(CdEBaseFrontend):
             datetime.date, raw['transaction_date'], argname="date")
         problems.extend(p)
 
-        amount, p = self.parse_amount(raw['amount_german'])
+        amount, p = parse.check_amount(raw['amount_german'])
         problems.extend(p)
 
         persona_id, p = inspect(
@@ -342,7 +335,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         if persona_id:
             try:
-                persona = self.coreproxy.get_persona(rs, persona_id)
+                persona = get_persona(rs, persona_id)
             except KeyError:
                 problems.append((
                     'persona_id',
@@ -366,15 +359,14 @@ class CdEParseMixin(CdEBaseFrontend):
                             ValueError(n_("Persona is not in event realm.")),
                         ))
                     assert event is not None
-                    registration_ids = self.eventproxy.list_registrations(
-                        rs, event.id, persona_id)
+                    registration_ids = list_registrations(rs, event.id, persona_id)
                     if not registration_ids:
                         problems.append((
                             'persona_id',
                             ValueError(n_("Persona is not registerd for this event.")),
                         ))
                     elif amount:
-                        registration = self.eventproxy.get_registration(
+                        registration = get_registration(
                             rs, unwrap(registration_ids.keys()))
                         if registration['id'] in amounts_paid:
                             amount_paid = amounts_paid[registration['id']]
@@ -461,8 +453,7 @@ class CdEParseMixin(CdEBaseFrontend):
             rs.notify("warning", n_("Only one input method allowed."))
             return self.money_transfers_form(rs)
         elif transfers_file:
-            rs.values["transfers"] = transfers_file
-            transfers = transfers_file
+            rs.values["transfers"] = transfers = transfers_file
             transferlines = transfers_file.splitlines()
         elif transfers:
             transferlines = transfers.splitlines()
@@ -482,7 +473,9 @@ class CdEParseMixin(CdEBaseFrontend):
             data.append(
                 self.examine_money_transfer(
                     rs, dataset, events_by_shortname=events_by_shortname,
-                    amounts_paid=amounts_paid,
+                    amounts_paid=amounts_paid, get_persona=self.coreproxy.get_persona,
+                    list_registrations=self.eventproxy.list_registrations,
+                    get_registration=self.eventproxy.get_registration,
                 ),
             )
         for ds1, ds2 in itertools.combinations(data, 2):
@@ -535,88 +528,15 @@ class CdEParseMixin(CdEBaseFrontend):
             }
             for datum in data
         ]
-        with TransactionObserver(rs, self, "money_transfers"):
+        recipients = [self.conf['FINANCE_ADMIN_ADDRESS']]
+        with TransactionObserver(rs, self, "money_transfers", recipients=recipients):
             if result := self.cdeproxy.book_money_transfers(rs, transfers):
                 if send_notifications:
-                    for transfer in result.membership_fees:
-                        p = transfer.persona
-                        headers: Headers = {
-                            'Subject':
-                                "Überweisung eingegangen – Guthaben zu gering!"
-                                if p['balance'] < self.conf["MEMBERSHIP_FEE"] else
-                                "Mitgliedsbeitrag eingegangen",
-                            'To': (transfer.persona['username'],),
-                        }
-                        self.do_mail(
-                            rs, 'parse/transfer_received', headers,
-                            {
-                                'persona': transfer.persona,
-                                'address': make_postal_address(rs, transfer.persona),
-                                'fee': self.conf['MEMBERSHIP_FEE'],
-                            },
-                        )
-                    if result.membership_fees:
-                        rs.notify(
-                            "success",
-                            n_("Booked %(num)s membership fees."
-                               " There were %(new_members)s new members."),
-                            {
-                                'num': len(result.membership_fees),
-                                'new_members': result.new_members,
-                            },
-                        )
-                        # TODO: Also send overview to finance admins?
-                    for event_id, booked_transfers in result.event_fees.items():
-                        event = events[event_id]
-                        rs.notify(
-                            "success",
-                            n_("Booked %(num)s event fees for %(event)s"),
-                            {'num': len(booked_transfers), 'event': event.title},
-                        )
-                        headers = {
-                            'Reply-To':
-                                event.orga_address
-                                or self.conf['FINANCE_ADMIN_ADDRESS'],
-                            'Subject': f"Überweisung für {event.title} eingetroffen",
-                        }
-                        for transfer in booked_transfers:
-                            headers['To'] = (transfer.persona['username'],)
-                            self.do_mail(
-                                rs, 'parse/event_transfer_received', headers,
-                                {'transfer': transfer, 'event': event})
-                        if event.orga_address:
-                            # TODO: Also send this to finance admins?
-                            headers = {
-                                'To': (event.orga_address,),
-                                'Reply-To': self.conf['FINANCE_ADMIN_ADDRESS'],
-                                'Subject': "Neue Überweisungen für Eure Veranstaltung",
-                                'Prefix': "",
-                            }
-                            self.do_mail(
-                                rs, "parse/event_transfers_booked", headers,
-                                {'num': len(booked_transfers)})
-                    for event_id, reimbursements in result.event_reimbursements.items():
-                        event = events[event_id]
-                        rs.notify(
-                            "success",
-                            n_("Booked %(num)s reimbursements for %(event)s"),
-                            {'num': len(reimbursements), 'event': event.title},
-                        )
-                        if event.orga_address:
-                            # TODO: Also send this to finance admins?
-                            headers = {
-                                'To': (event.orga_address,),
-                                'Reply-To': self.conf['FINANCE_ADMIN_ADDRESS'],
-                                'Subject':
-                                    "Erstattungen für Eure Veranstaltung durchgeführt.",
-                                'Prefix': "",
-                            }
-                            self.do_mail(
-                                rs, "parse/event_reimbursements_booked", headers,
-                                {'num': len(reimbursements)})
+                    result.send_notifications(
+                        rs, by_orga=False, do_mail=self.do_mail, events=events)
 
-                headers = {
-                    'To': (self.conf['FINANCE_ADMIN_ADDRESS'],),
+                headers: Headers = {
+                    'To': [self.conf['FINANCE_ADMIN_ADDRESS']],
                     'Subject': "Überweisungen eingetragen",
                     'Prefix': "",
                 }
