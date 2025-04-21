@@ -31,11 +31,22 @@
         {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_icon('info-circle') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {{ util.make_icon('info-circle') }}{{ nbsp }}{% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
-        <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("Transaction Date"), _("Amount"), _("CdEDB-ID"), _("Family Name"), _("Given Names"), _("Category"))|s }}</pre>
+        <pre>
+            {#- -#}
+            "{%- trans %}Transaction Date{% endtrans %}";"
+            {%- trans %}Amount{% endtrans %}";"
+            {%- trans %}CdEDB-ID{% endtrans %}";"
+            {%- trans %}Family Name{% endtrans %}";"
+            {%- trans %}Given Names{% endtrans -%}";"
+            {%- trans %}Category{% endtrans -%}"
+            {#- -#}
+        </pre>
+        <p class="help-block">
+            {% trans %}e.g.{% endtrans %} <code>01.04.2018;123.00;DB-9-4;Iota;Inga;TestAka</code>
+        </p>
 
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
@@ -73,7 +84,6 @@
                     $('.row-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
                     });
-                    /* protect form changes */
                     $('#transfersform').cdedbProtectChanges();
                 });
             </script>
@@ -115,7 +125,7 @@
         {% if values['checksum'] %}
             {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
             <p class="help-block">
-                {{ util.make_icon('info-circle') }}
+                {{ util.make_icon('info-circle') }}{{ nbsp }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
         {% else %}
