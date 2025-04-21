@@ -689,7 +689,7 @@ class TestCoreFrontend(FrontendTest):
                               ("Bertålotta Beispiel", USER_DICT['berta']),
                               ("berta@example.cde", USER_DICT['berta']),
                               ("anton@example.cde", USER_DICT['anton']),
-                              ("Spielmanns", USER_DICT['berta'])):
+                              ("Utopia", USER_DICT['berta'])):
             self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase

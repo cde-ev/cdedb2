@@ -1134,7 +1134,7 @@ class TestCoreBackend(BackendTest):
             'location2': 'Foreign City',
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
-            'show_address': True,
+            'show_address': False,
             'show_address2': True,
             'show_legal_given_names': False,
             'specialisation': 'Alles\nUnd noch mehr',
