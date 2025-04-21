@@ -837,13 +837,13 @@
      * This plugin must be applied on the box containing the result list. The 'triggers' parameters should contain all
      * buttons triggering the change. A click on one of these buttons will move the contents of the containing box into
      * a special wide container underneath the #maincontainer and add class 'active' to the trigger buttons.
-     * This plugin creates the wide container and applys event handlers to the trigger buttons.
+     * This plugin creates the wide container and applies event handlers to the trigger buttons.
      */
     $.fn.cdedbMoveToWidePage = function($triggers) {
         var $box = $(this);
 
         // Construct wide page container
-        var $widecontainer = $('<div></div>',{'class': 'wide-content-page'});
+        var $widecontainer = $('<div></div>',{'id': 'wide-content-page'});
         $widecontainer.css('display', 'none');
         $('#maincontainer').after($widecontainer);
 
@@ -853,6 +853,10 @@
                 $widecontainer.append($box.contents());
                 $widecontainer.css('display', '');
                 $triggers.addClass('active');
+                // Scroll to wide page container
+                // Unset first; otherwise if hash is set to an unchanged value, this will not trigger a scroll
+                location.hash = '';
+                location.hash = 'wide-content-page';
             } else {
                 $box.append($widecontainer.contents());
                 $widecontainer.css('display', 'none');

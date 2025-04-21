@@ -3,6 +3,13 @@
  * *********** */
 html, body {
     height: 100%;
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion) {
+    html, body {
+        scroll-behavior: auto;
+    }
 }
 
 body{
@@ -675,7 +682,7 @@ table {
     display: inline-block;
     min-width: 100%;
 }
-.wide-content-page {
+#wide-content-page {
     display: inline-block;
     background: #fff;
     border: solid 1px #ddd;
@@ -683,15 +690,16 @@ table {
     padding: 20px;
     margin: -30px 20px 0 20px;
     position: relative;
+    scroll-margin-top: 100px;
 }
 @media(max-width: 767px) {
-    .wide-content-page {
+    #wide-content-page {
         margin-left: 0;
         margin-right: 0;
     }
 }
 
-.wide-content-page table {
+#wide-content-page table {
     white-space: nowrap;
 }
 
