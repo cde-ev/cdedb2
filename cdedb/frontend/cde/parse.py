@@ -531,9 +531,10 @@ class CdEParseMixin(CdEBaseFrontend):
         recipients = [self.conf['FINANCE_ADMIN_ADDRESS']]
         with TransactionObserver(rs, self, "money_transfers", recipients=recipients):
             if result := self.cdeproxy.book_money_transfers(rs, transfers):
-                if send_notifications:
-                    result.send_notifications(
-                        rs, by_orga=False, do_mail=self.do_mail, events=events)
+                result.send_notifications(
+                    rs, send_individual_notifications=send_notifications, by_orga=False,
+                    do_mail=self.do_mail, events=events,
+                )
 
                 headers: Headers = {
                     'To': [self.conf['FINANCE_ADMIN_ADDRESS']],

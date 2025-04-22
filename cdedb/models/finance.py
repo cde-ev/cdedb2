@@ -37,7 +37,9 @@ class MoneyTransfersResult:
         return self.success
 
     def send_notifications(
-            self, rs: RequestState, *, by_orga: bool,
+            self, rs: RequestState, *,
+            send_individual_notifications: bool,
+            by_orga: bool,
             do_mail: Callable[..., Optional[str]],
             events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
@@ -45,23 +47,25 @@ class MoneyTransfersResult:
         # Import here to avoid cyclic imports.
         from cdedb.frontend.common import Headers, make_postal_address  # noqa: PLC0415
 
-        for transfer in self.membership_fees:
-            p = transfer.persona
-            headers: Headers = {
-                'Subject':
-                    "Überweisung eingegangen – Guthaben zu gering!"
-                    if p['balance'] < _CONF["MEMBERSHIP_FEE"] else
-                    "Mitgliedsbeitrag eingegangen",
-                'To': [transfer.persona['username']],
-            }
-            do_mail(
-                rs, 'parse/transfer_received', headers,
-                {
-                    'persona': transfer.persona,
-                    'address': make_postal_address(rs, transfer.persona),
-                    'fee': _CONF['MEMBERSHIP_FEE'],
-                },
-            )
+        if send_individual_notifications:
+            for transfer in self.membership_fees:
+                p = transfer.persona
+                headers: Headers = {
+                    'Subject':
+                        "Überweisung eingegangen – Guthaben zu gering!"
+                        if p['balance'] < _CONF["MEMBERSHIP_FEE"] else
+                        "Mitgliedsbeitrag eingegangen",
+                    'To': [transfer.persona['username']],
+                }
+                do_mail(
+                    rs, 'parse/transfer_received', headers,
+                    {
+                        'persona': transfer.persona,
+                        'address': make_postal_address(rs, transfer.persona),
+                        'fee': _CONF['MEMBERSHIP_FEE'],
+                    },
+                )
+
         if self.membership_fees:
             rs.notify(
                 "success",
@@ -92,12 +96,13 @@ class MoneyTransfersResult:
                 'Reply-To': reply_to,
                 'Subject': f"Überweisung für {event.title} eingetroffen",
             }
-            for transfer in booked_transfers:
-                headers['To'] = [transfer.persona['username']]
-                do_mail(
-                    rs, 'parse/event_transfer_received', headers,
-                    {'transfer': transfer, 'event': event},
-                )
+            if send_individual_notifications:
+                for transfer in booked_transfers:
+                    headers['To'] = [transfer.persona['username']]
+                    do_mail(
+                        rs, 'parse/event_transfer_received', headers,
+                        {'transfer': transfer, 'event': event},
+                    )
             if any(to):
                 headers = {
                     'To': to,

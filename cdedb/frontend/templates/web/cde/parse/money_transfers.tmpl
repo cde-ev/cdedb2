@@ -24,8 +24,8 @@
     <form action="{{ cdedblink('cde/money_transfers') }}" method="POST" id="transfersform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/money_transfers') }}
         {{ util.input_hidden("checksum") }}
-        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications"), defaultvalue="True",
-                info=gettext("If checked, all affected users will be notified and orgateams will receive a summary of their fees.")) }}
+        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Individual Notifications"), defaultvalue="True",
+                info=gettext("If checked, all affected users will be notified. Regardless of this orgateams will receive a summary of their fees.")) }}
         {{ util.form_input_file(name="transfers_file", horizontal=False, label=gettext("Transfers"),
                 accept="text/csv,.csv") }}
         {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
