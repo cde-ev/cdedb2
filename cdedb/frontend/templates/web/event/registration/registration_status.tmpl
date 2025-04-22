@@ -229,6 +229,7 @@
         {% endfor %}
     </dl>
 
+    {{ util.h(n_("Courses"), underline=true) }}
     {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}
@@ -239,8 +240,10 @@
         {% set reg_track = registration['tracks'][track['id']] %}
 
         <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
-            {{ util.h(gettext("Course") + (" {} {}".format(gettext("for"), cco['title']) if (filtered_choice_objects|length > 1) else ""),
-                      anchor="cco-" + cco['id']|string, translate=False, underline=True) }}
+            {% if filtered_choice_objects|length > 1 %}
+                {{ util.h(gettext("Course for {}").format(cco['title']),
+                          anchor="cco-" + cco['id']|string, translate=False, level=4) }}
+            {% endif %}
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
