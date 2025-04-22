@@ -12,7 +12,6 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
-    Accounts,
     CdEDBObject,
     GenesisDecision,
     PrivilegeError,
@@ -21,6 +20,7 @@ from cdedb.common import (
     now,
 )
 from cdedb.common.exceptions import CryptographyError
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME

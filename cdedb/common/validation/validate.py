@@ -107,7 +107,6 @@ from cdedb.common import (
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     Error,
@@ -122,6 +121,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
     MAX_QUERY_ORDERS,
     MULTI_VALUE_OPERATORS,

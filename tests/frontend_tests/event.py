@@ -23,11 +23,11 @@ import cdedb.models.event as models
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,
-    Accounts,
     CdEDBObject,
     now,
     unwrap,
 )
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME

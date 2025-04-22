@@ -23,7 +23,6 @@ import cdedb.database.constants as const
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
@@ -38,12 +37,12 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import date_filter, money_filter
-from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
     REQUESTdata,
@@ -125,11 +124,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(
-                CdEFrontend.examine_money_transfer(
+                self.examine_money_transfer(
                     rs, dataset, events_by_shortname=events_by_shortname,
-                    amounts_paid=amounts_paid, get_persona=self.coreproxy.get_persona,
-                    list_registrations=self.eventproxy.list_registrations,
-                    get_registration=self.eventproxy.get_registration,
+                    amounts_paid=amounts_paid,
                     category=rs.ambience['event'].shortname,
                 ),
             )

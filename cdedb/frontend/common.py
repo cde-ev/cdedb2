@@ -11,6 +11,7 @@ import collections.abc
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -71,6 +72,7 @@ import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
 
+import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -118,6 +120,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import TransactionType
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
@@ -140,6 +143,7 @@ from cdedb.filter import (
     JINJA_FILTERS,
     cdedbid_filter,
     enum_entries_filter,
+    money_filter,
     safe_filter,
     sanitize_None,
 )
@@ -1370,6 +1374,166 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'personas': personas, 'loglinks': loglinks,
                 **(template_kwargs or {}),
             })
+
+    def examine_money_transfer(
+            self, rs: RequestState,
+            datum: CdEDBObject, *,
+            events_by_shortname: dict[str, models_event.Event],
+            amounts_paid: dict[int, decimal.Decimal],
+            category: Optional[str] = None,
+    ) -> CdEDBObject:
+        """Check one line specifying a money transfer.
+
+        We test for fitness of the data itself.
+
+        :returns: The processed input datum.
+        """
+        raw = datum['raw']
+        problems, infos = [], []
+
+        if category is None:
+            category, p = inspect_validation(
+                vtypes.Identifier, raw['category_old'], argname="category")
+            problems.extend(p)
+        persona = None
+        registration = None
+        event = None
+
+        date, p = inspect_validation(
+            datetime.date, raw['transaction_date'], argname="date")
+        problems.extend(p)
+
+        amount, p = parse_util.check_amount(raw['amount_german'])
+        problems.extend(p)
+
+        persona_id, p = inspect_validation(
+            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+        problems.extend(p)
+
+        family_name, p = inspect_validation(
+            str, datum['raw']['family_name'], argname="family_name")
+        problems.extend(p)
+
+        given_names, p = inspect_validation(
+            str, datum['raw']['given_names'], argname="given_names")
+        problems.extend(p)
+
+        if category is None:
+            problems.append(('category', ValueError(n_("Invalid category."))))
+            type_ = TransactionType.Unknown
+        elif category == TransactionType.MembershipFee.old():
+            type_ = TransactionType.MembershipFee
+            if amount is not None and amount <= 0:
+                problems.append((
+                    'amount',
+                    ValueError(n_("Must be greater than zero.")),
+                ))
+        elif event := events_by_shortname.get(category):
+            type_ = TransactionType.EventFee
+            if amount is not None and amount == 0:
+                problems.append(('amount', ValueError(n_("Must not be zero."))))
+        else:
+            problems.append(('category', ValueError(n_("Unknown event."))))
+            type_ = TransactionType.Unknown
+
+        if persona_id:
+            try:
+                persona = self.coreproxy.get_persona(rs, persona_id)
+            except KeyError:
+                problems.append((
+                    'persona_id',
+                    ValueError(n_("No Member with ID %(p_id)s found."),
+                               {'p_id': persona_id}),
+                ))
+            else:
+                if persona['is_archived']:
+                    problems.append(
+                        ('persona_id', ValueError(n_("Persona is archived."))))
+                if type_ == TransactionType.MembershipFee:
+                    if not persona['is_cde_realm']:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not in CdE realm.")),
+                        ))
+                elif type_ == TransactionType.EventFee:
+                    if not persona['is_event_realm']:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not in event realm.")),
+                        ))
+                    assert event is not None
+                    registration_ids = self.eventproxy.list_registrations(
+                        rs, event.id, persona_id,
+                    )
+                    if not registration_ids:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not registerd for this event.")),
+                        ))
+                    elif amount:
+                        registration = self.eventproxy.get_registration(
+                            rs, unwrap(registration_ids.keys()),
+                        )
+                        if registration['id'] in amounts_paid:
+                            amount_paid = amounts_paid[registration['id']]
+                        else:
+                            amount_paid = registration['amount_paid']
+                        total = amount_paid + amount
+                        fee = registration['amount_owed']
+
+                        if (registration['ctime']
+                                and date < registration['ctime'].date()):
+                            infos.append((
+                                'date',
+                                ValueError(n_(
+                                    "Payment date before registration.")),
+                            ))
+
+                        params = {
+                            'total': money_filter(total, lang=rs.lang),
+                            'expected': money_filter(fee, lang=rs.lang),
+                        }
+                        if total < fee:
+                            infos.append((
+                                'amount',
+                                ValueError(
+                                    n_("Not enough money. %(total)s < %(expected)s"),
+                                    params,
+                                ),
+                            ))
+                        elif total > fee:
+                            infos.append((
+                                'amount',
+                                ValueError(
+                                    n_("Too much money. %(total)s > %(expected)s"),
+                                    params,
+                                ),
+                            ))
+                        amounts_paid[registration['id']] = total
+
+                if family_name != persona['family_name']:
+                    problems.append((
+                        'family_name', ValueError(n_("Family name doesn’t match.")),
+                    ))
+
+                if given_names != persona['given_names']:
+                    problems.append((
+                        'given_names', ValueError(n_("Given names don’t match.")),
+                    ))
+
+        datum.update({
+            'category': category,
+            'persona': persona,
+            'persona_id': persona['id'] if persona else None,
+            'event': event,
+            'event_id': event.id if event else None,
+            'registration_id': registration['id'] if registration else None,
+            'amount': amount,
+            'date': date,
+            'problems': problems,
+            'infos': infos,
+        })
+        return datum
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
