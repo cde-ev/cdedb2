@@ -286,7 +286,8 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("inga")
     def test_vcard(self) -> None:
-        # we test here only if the presented vcard is kind of correct. *When* a vcard
+        # we test here only if the presented vcard is kind of correct and whether
+        # hidden address details are excluded. *When* a vcard
         # should be present is tested in the privacy tests.
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
@@ -298,8 +299,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 ("ADR;TYPE=intl,home,postal,pref:;bei Spielmanns;"
-                  "Im Garten 77;Utopia;;34576;Deutschland"),
+                 "ADR;TYPE=intl,home,postal,pref:;;;Utopia;;34576;Deutschland",
                  ("ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
                   "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
                  "BDAY:1981-02-11",
@@ -689,7 +689,7 @@ class TestCoreFrontend(FrontendTest):
                               ("Bertålotta Beispiel", USER_DICT['berta']),
                               ("berta@example.cde", USER_DICT['berta']),
                               ("anton@example.cde", USER_DICT['anton']),
-                              ("Spielmanns", USER_DICT['berta'])):
+                              ("Utopia", USER_DICT['berta'])):
             self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase

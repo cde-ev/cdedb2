@@ -460,9 +460,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona['nickname']:
             data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
-            address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
-                       persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
-                       rs.gettext(format_country_code(persona[f'country{sub}']))]
+            if persona[f'show_address{sub}']:
+                address = [persona[f'address_supplement{sub}'], persona[f'address{sub}']]
+            else:
+                address = ["", ""]
+            address += [persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
+                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
                 if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
