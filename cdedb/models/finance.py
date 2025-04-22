@@ -38,7 +38,7 @@ class MoneyTransfersResult:
 
     def send_notifications(
             self, rs: RequestState, *,
-            send_individual_nofications: bool,
+            send_individual_notifications: bool,
             by_orga: bool,
             do_mail: Callable[..., Optional[str]],
             events: models_event.CdEDataclassMap[models_event.Event],
@@ -47,7 +47,7 @@ class MoneyTransfersResult:
         # Import here to avoid cyclic imports.
         from cdedb.frontend.common import Headers, make_postal_address  # noqa: PLC0415
 
-        if send_individual_nofications:
+        if send_individual_notifications:
             for transfer in self.membership_fees:
                 p = transfer.persona
                 headers: Headers = {
@@ -96,7 +96,7 @@ class MoneyTransfersResult:
                 'Reply-To': reply_to,
                 'Subject': f"Überweisung für {event.title} eingetroffen",
             }
-            if send_individual_nofications:
+            if send_individual_notifications:
                 for transfer in booked_transfers:
                     headers['To'] = [transfer.persona['username']]
                     do_mail(
