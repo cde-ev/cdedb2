@@ -5,24 +5,30 @@ import datetime
 import decimal
 import json
 import re
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable
 
 import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT,
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
-    ConfidenceLevel,
     Error,
     RequestState,
-    TransactionType,
     asciificator,
     diacritic_patterns,
     now,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import (
+    Accounts,
+    ConfidenceLevel,
+    ParseAmountError,
+    TransactionType,
+    number_to_german,
+    parse_amount,
+    simplify_amount,
+)
 from cdedb.config import LazyConfig
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
@@ -208,61 +214,10 @@ def date_from_filename(filename: str) -> datetime.date:
     return now().date()
 
 
-class ParseAmountError(Exception):
-    """Thrown if the amount string for a transaction could not be parsed."""
-
-
-def parse_amount(amount: str) -> decimal.Decimal:
-    """Safely determine how to interpret a string as Decimal."""
-    if not amount:
-        raise ParseAmountError
-    try:
-        ret = decimal.Decimal(amount)
-    except decimal.InvalidOperation:
-        amount = number_from_german(amount)
-        try:
-            ret = decimal.Decimal(amount)
-        except decimal.InvalidOperation as e:
-            raise ParseAmountError from e
-    return ret
-
-
-def check_amount(amount_str: str) -> tuple[Optional[decimal.Decimal], list[Error]]:
-    try:
-        amount = parse_amount(amount_str)
-    except ParseAmountError:
-        return None, [('amount', ValueError(n_("Invalid input for amount.")))]
-    else:
-        return amount, []
-
-
-def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
-    """Helper to convert an input to a number in german format."""
-    if isinstance(number, decimal.Decimal):
-        ret = f"{number:,.2f}"
-    else:
-        ret = str(number)
-    ret = ret.replace(",", "").replace(".", ",")
-    return ret
-
-
-def number_from_german(number: str) -> str:
-    """Helper to convert a number in german format to english format."""
-    if not isinstance(number, str):
-        raise ValueError
-    ret = number.replace(".", "_").replace(",", ".")
-    return ret
-
-
-def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
-    """Helper to convert a number to german and strip decimal zeros."""
-    return str(number_to_german(amt)).rstrip("0").rstrip(",")
-
-
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data: CdEDBObject, index: Optional[int] = None) -> None:
+    def __init__(self, data: CdEDBObject, index: int | None = None) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
         # Fix parameter suffix.
         if index is not None:
@@ -282,11 +237,11 @@ class Transaction:
         # We need the following fields, but we actually set them later.
         self.errors = data.get("errors", [])
         self.warnings = data.get("warnings", [])
-        self.type: Optional[TransactionType] = data.get("type")
+        self.type: TransactionType | None = data.get("type")
         self._event_id = data.get("event_id")
-        self.event: Optional[models_event.Event] = None
+        self.event: models_event.Event | None = None
         self._persona_id = data.get("cdedbid")
-        self.persona: Optional[CdEDBObject] = None
+        self.persona: CdEDBObject | None = None
 
         # We can be confident in our data if it was manually confirmed.
         cl = ConfidenceLevel
@@ -378,7 +333,7 @@ class Transaction:
         return Transaction(data)
 
     @staticmethod
-    def get_request_params(index: Optional[int] = None, *, hidden_only: bool = False,
+    def get_request_params(index: int | None = None, *, hidden_only: bool = False,
                            ) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.
@@ -395,10 +350,10 @@ class Transaction:
             f"account{suffix}": Accounts,
             f"transaction_date{suffix}": datetime.date,
             f"amount{suffix}": decimal.Decimal,
-            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
-            f"bic{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"reference{suffix}": str | None,  # type: ignore[dict-item]
+            f"account_holder{suffix}": str | None,  # type: ignore[dict-item]
+            f"iban{suffix}": vtypes.IBAN | None,  # type: ignore[dict-item]
+            f"bic{suffix}": str | None,  # type: ignore[dict-item]
             f"posting{suffix}": str,
             f"type_confidence{suffix}": ConfidenceLevel,
             f"persona_confidence{suffix}": ConfidenceLevel,
@@ -408,9 +363,9 @@ class Transaction:
             ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+                f"cdedbid{suffix}": vtypes.CdedbID | None,  # type: ignore[dict-item]
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"event_id{suffix}": vtypes.ID | None,  # type: ignore[dict-item]
                 f"event_confirm{suffix}": bool,
             })
         return ret
@@ -595,8 +550,8 @@ class Transaction:
         return re.compile(s, flags=re.I)
 
     def _match_one_event(self, event: models_event.Event,
-                         amount_owed: Optional[decimal.Decimal] = None,
-                         ) -> Optional[EventMatch]:
+                         amount_owed: decimal.Decimal | None = None,
+                         ) -> EventMatch | None:
         if self.compile_pattern(event.shortname, strict=True).search(self.reference):
             ret = EventMatch(event, ConfidenceLevel.Full)
         elif self.compile_pattern(event.title, strict=True).search(self.reference):

@@ -12,7 +12,8 @@ import webtest
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models_event
 from cdedb.backend.event import EventBackend
-from cdedb.common import Accounts, CdEDBObject, now
+from cdedb.common import CdEDBObject, now
+from cdedb.common.parse.util import Accounts
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
 

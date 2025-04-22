@@ -9,14 +9,16 @@ one list instead of two.
 import enum
 
 from cdedb.common import (  # noqa: F401
-    Accounts,
     AgeClasses,
-    ConfidenceLevel,
     CourseChoiceToolActions,
     CourseFilterPositions,
     GenesisDecision,
     LineResolutions,
     LodgementsSortkeys,
+)
+from cdedb.common.parse.util import (  # noqa: F401
+    Accounts,
+    ConfidenceLevel,
     TransactionType,
 )
 from cdedb.common.privileges import EventPrivileges  # noqa: F401

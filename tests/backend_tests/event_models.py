@@ -6,7 +6,8 @@ import decimal
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import Accounts, NearlyNow, nearly_now
+from cdedb.common import NearlyNow, nearly_now
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
 

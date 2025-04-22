@@ -22,7 +22,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES,
-    Accounts,
     CdEDBObject,
     RequestState,
     merge_dicts,
@@ -31,6 +30,7 @@ from cdedb.common import (
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import (
     Query,

@@ -9,7 +9,6 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     GenesisDecision,
     RequestState,
@@ -24,6 +23,7 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
     PERSONA_ML_FIELDS,
 )
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (

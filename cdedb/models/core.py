@@ -11,8 +11,9 @@ from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import Accounts, CdEDBObject, now
+from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
+from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
 
