@@ -2811,10 +2811,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             if i == 1:
                 self.assertIn("455,99", text)
             if i == 3:
-                self.assertIn(
-                    "Für Eure Veranstaltung in der CdE-Datenbank wurden"
-                    " 3 neue Überweisungen eingetragen.",
+                self.assertRegex(
                     text,
+                    r"Für Eure Veranstaltung\s* Große Testakademie 2222\s*"
+                    r"in der CdE-Datenbank wurden 3 neue Überweisungen eingetragen.",
                 )
             elif i == 4:
                 self.assertIn(
