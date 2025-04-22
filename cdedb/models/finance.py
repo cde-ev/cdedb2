@@ -112,7 +112,7 @@ class MoneyTransfersResult:
                 }
                 do_mail(
                     rs, "parse/event_transfers_booked", headers,
-                    {'num': len(booked_transfers)},
+                    {'num': len(booked_transfers), 'event': event},
                 )
 
         for event_id, reimbursements in self.event_reimbursements.items():
