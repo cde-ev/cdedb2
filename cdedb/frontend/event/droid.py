@@ -15,9 +15,8 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
 )
-from cdedb.frontend.event import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.droid import OrgaToken
 
 

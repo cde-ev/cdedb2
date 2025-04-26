@@ -6,7 +6,6 @@ variant for external participants.
 
 import collections
 import copy
-import decimal
 from collections.abc import Collection, Mapping
 from typing import Any, Optional
 
@@ -340,117 +339,13 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         return ret
 
     @access("event")
-    def unlock_import_event(self, rs: RequestState,
-                            data: CdEDBObject) -> DefaultReturnCode:
-        """Unlock an event after offline usage and import changes.
-
-        This is a combined action so that we stay consistent.
-        """
-        data = affirm(vtypes.SerializedEvent, data)
-        required_priv = (EventPrivileges.basic_write | EventPrivileges.free_texts_write
-                         | EventPrivileges.entities_write)
-        if not is_privileged(rs, required_priv, event_id=data['id']):
-            raise PrivilegeError(n_("Not privileged."))
-        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            raise RuntimeError(n_("Imports into an offline instance must"
-                                  " happen via shell scripts."))
-        if not self.is_offline_locked(rs, event_id=data['id']):
-            raise RuntimeError(n_("Not locked."))
-        if data["EVENT_SCHEMA_VERSION"] != EVENT_SCHEMA_VERSION:
-            raise ValueError(n_("Version mismatch – aborting."))
-
-        with Atomizer(rs):
-            current = self.export_event(rs, data['id'])
-            # First check that all newly created personas have been
-            # transferred to the online DB
-            claimed = {e['persona_id']
-                       for e in data['event.registrations'].values()
-                       if not e['real_persona_id']}
-            if claimed - set(current['core.personas']):
-                raise ValueError(n_("Non-transferred persona found"))
-
-            ret = 1
-            # Second synchronize the data sets
-            translations: dict[str, dict[int, int]]
-            translations = collections.defaultdict(dict)
-            for reg in data['event.registrations'].values():
-                if reg['real_persona_id']:
-                    translations['persona_id'][reg['persona_id']] = \
-                        reg['real_persona_id']
-            for field in data['event.field_definitions'].values():
-                if field.get('entries'):
-                    field['entries'] = list(field['entries'].items())
-            extra_translations = {'course_instructor': 'course_id'}
-            # Table name; name of foreign keys referencing this table
-            tables = (('event.events', None),
-                      ('event.event_parts', 'part_id'),
-                      ('event.course_tracks', 'track_id'),
-                      ('event.part_groups', 'part_group_id'),
-                      ('event.part_group_parts', None),
-                      ('event.track_groups', 'track_group_id'),
-                      ('event.track_group_tracks', None),
-                      ('event.courses', 'course_id'),
-                      ('event.course_segments', None),
-                      ('event.orgas', None),
-                      ('event.field_definitions', 'field_id'),
-                      ('event.event_fees', None),
-                      ('event.lodgement_groups', 'group_id'),
-                      ('event.lodgements', 'lodgement_id'),
-                      ('event.registrations', 'registration_id'),
-                      ('event.checkin_periods', None),
-                      ('event.registration_parts', None),
-                      ('event.registration_tracks', None),
-                      ('event.course_choices', None),
-                      ('event.questionnaire_rows', None),
-                      ('event.log', None))
-            for table, entity in tables:
-                ret *= self._synchronize_table(
-                    rs, table, data[table], current[table], translations,
-                    entity=entity, extra_translations=extra_translations)
-
-            # Third fix the amounts owed for all registrations and check that
-            # amount paid and payment were not changed.
-            self._update_registrations_amount_owed(rs, data['id'])
-            reg_ids = self.list_registrations(rs, data['id'])
-            regs = self.get_registrations(rs, reg_ids)
-            old_regs = current['event.registrations']
-            if any(reg['amount_paid'] != old_regs[reg['id']]['amount_paid']
-                   for reg in regs.values() if reg['id'] in old_regs):
-                raise ValueError(n_("Change of amount_paid detected."))
-            if any(reg['payment'] != old_regs[reg['id']]['payment']
-                   for reg in regs.values() if reg['id'] in old_regs):
-                raise ValueError(n_("Change of payment detected."))
-            # check that amount_paid and payment of new registrations are default vals
-            if any(reg['amount_paid'] != decimal.Decimal("0.00")
-                   for reg in regs.values() if reg['id'] not in old_regs):
-                raise ValueError(n_("Change of amount_paid detected."))
-            if any(reg['payment'] is not None
-                   for reg in regs.values() if reg['id'] not in old_regs):
-                raise ValueError(n_("Change of payment detected."))
-
-            # Forth unlock the event
-            update = {
-                'id': data['id'],
-                'offline_lock': False,
-            }
-            ret *= self.sql_update(rs, "event.events", update)
-            # TODO: Find a way to do this before everything is saved into the database
-            self.delete_invalid_stored_event_queries(rs, data['id'])
-            self._track_groups_sanity_check(rs, data['id'])
-            self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
-            self.event_keeper_commit(
-                rs, data['id'], "Entsperre Veranstaltung", after_change=True)
-        return ret
-
-    @access("event")
     def partial_import_event(
             self, rs: RequestState, event_id: int, data: CdEDBObject,
             dryrun: bool, token: Optional[str] = None,
     ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
-        In contrast to the full import in this case the data describes a
-        delta to be applied to the current online state.
+        The given data describes a delta to be applied to the current online state.
 
         :param dryrun: If True we do not modify any state.
         :param token: Expected transaction token. If the transaction would
@@ -484,7 +379,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             event_id = affirm(vtypes.ID, event_id)
             dryrun = affirm(bool, dryrun)
 
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
 
             event = self.get_event(rs, event_id)
             data = affirm(vtypes.SerializedPartialEvent, data, fields=event.fields)

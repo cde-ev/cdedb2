@@ -14,11 +14,12 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
+import functools
 import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -51,7 +52,6 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
-    event_guard,
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
@@ -59,6 +59,38 @@ from cdedb.models.event_constraint_violations import ConstraintViolation, Violat
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
+    """This decorator checks the access with respect to a specific event. The
+    event is specified by id which has either to be a keyword
+    parameter or the first positional parameter after the request state.
+
+    The event has to be organized via the DB. Only orgas and privileged
+    users are admitted. Additionally this can check for the offline
+    lock, so that no modifications happen to locked events.
+    """
+
+    def wrap(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(obj: "EventBaseFrontend", rs: RequestState, *args: Any,
+                    **kwargs: Any) -> Any:
+            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
+                raise werkzeug.exceptions.Forbidden(
+                    n_("This page can only be accessed by orgas."))
+            if required_privilege & EventPrivileges.all_write:
+                if obj.is_locked(rs.ambience['event']):
+                    raise werkzeug.exceptions.Forbidden(
+                        n_("This event is locked."))
+            return fun(obj, rs, *args, **kwargs)
+
+        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
+
+        return cast(F, new_fun)
+
+    return wrap
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -125,7 +157,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""
-        return event.offline_lock != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+        return event.is_locked and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
     @access("core_admin", "event_admin")
     def create_user_form(self, rs: RequestState) -> Response:

@@ -746,8 +746,6 @@ class PastEventBackend(AbstractBackend):
             if not event.is_cancelled and any(now().date() < part.part_end
                                                  for part in event.parts.values()):
                 return None, "Event not concluded."
-            if event.offline_lock:
-                return None, "Event locked."
             self.event.set_event_archived(rs, event_id)
             new_ids = None
             if create_past_event:

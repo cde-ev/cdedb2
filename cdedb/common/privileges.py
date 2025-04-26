@@ -42,6 +42,7 @@ class EventPrivileges(Flag):
     # create = auto()
     conclude = auto()
     balance = auto()
+    lock = auto()
     delete = auto()
 
     # Shorthands for import / export

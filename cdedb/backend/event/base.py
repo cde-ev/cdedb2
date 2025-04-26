@@ -48,7 +48,6 @@ from cdedb.common import (
     DeletionBlockers,
     RequestState,
     cast_fields,
-    glue,
     json_serialize,
     make_persona_name,
     now,
@@ -96,43 +95,21 @@ class EventBaseBackend(EventLowLevelBackend):
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
     @access("event")
-    def is_offline_locked(self, rs: RequestState, *, event_id: Optional[int] = None,
-                          course_id: Optional[int] = None) -> bool:
-        """Helper to determine if an event or course is locked for offline
-        usage.
-
-        Exactly one of the inputs has to be provided.
-        """
-        if event_id is not None and course_id is not None:
-            raise ValueError(n_("Too many inputs specified."))
-        elif event_id is not None:
-            anid = affirm(vtypes.ID, event_id)
-            query = "SELECT offline_lock FROM event.events WHERE id = %s"
-        elif course_id is not None:
-            anid = affirm(vtypes.ID, course_id)
-            query = glue(
-                "SELECT offline_lock FROM event.events AS e",
-                "LEFT OUTER JOIN event.courses AS c ON c.event_id = e.id",
-                "WHERE c.id = %s")
-        else:  # event_id is None and course_id is None:
-            raise ValueError(n_("No input specified."))
-
-        data = self.query_one(rs, query, (anid,))
+    def is_locked(self, rs: RequestState, *, event_id: int) -> bool:
+        """Helper to determine if an event is locked."""
+        event_id = affirm(vtypes.ID, event_id)
+        query = "SELECT is_locked FROM event.events WHERE id = %s"
+        data = self.query_one(rs, query, (event_id,))
         if data is None:
             raise ValueError(n_("Event does not exist"))
-        return data['offline_lock']
+        return data['is_locked'] and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
-    def assert_offline_lock(self, rs: RequestState, *, event_id: Optional[int] = None,
-                            course_id: Optional[int] = None) -> None:
-        """Helper to check locking state of an event or course.
+    def assert_lock(self, rs: RequestState, *, event_id: int) -> None:
+        """Helper to check locking state of an event.
 
-        This raises an exception in case of the wrong locking state. Exactly
-        one of the inputs has to be provided.
+        This raises an exception in case of the wrong locking state.
         """
-        # the following does the argument checking
-        is_locked = self.is_offline_locked(rs, event_id=event_id,
-                                           course_id=course_id)
-        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+        if self.is_locked(rs, event_id=event_id):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
@@ -388,7 +365,7 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             self.validate_persona_ids(rs, persona_ids)
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
 
             for anid in xsorted(persona_ids):
                 new_orga = {
@@ -417,7 +394,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
 
         query = ("DELETE FROM event.orgas"
                  " WHERE persona_id = %s AND event_id = %s")
@@ -701,7 +678,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     event_id=event_id,
             ):
                 raise PrivilegeError(n_("Not privileged."))
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
 
             edata = {k: v for k, v in data.items() if k in models.Event.database_fields()}
             # Set top-level event fields.
@@ -802,7 +779,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if not is_privileged(rs, EventPrivileges.lodgements_write,
                              event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
+        self.assert_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "event.lodgement_groups", data)
             self.event_log(
@@ -1181,7 +1158,7 @@ class EventBaseBackend(EventLowLevelBackend):
                           fees_by_field=fees_by_field)
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
             ret = 1
             # Allow deletion of enitre questionnaire by specifying None.
@@ -1211,7 +1188,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
         update = {
             'id': event_id,
             'is_balanced': True,
@@ -1228,7 +1205,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
         update = {
             'id': event_id,
             'is_balanced': False,
@@ -1242,21 +1219,38 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
-        """Lock an event for offline usage."""
+        """Lock an event."""
         event_id = affirm(vtypes.ID, event_id)
-        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+        if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=event_id)
-        # An event in the main instance is considered as locked if offline_lock
-        # is true, in the offline instance it is the other way around
+        self.assert_lock(rs, event_id=event_id)
         update = {
             'id': event_id,
-            'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'is_locked': True,
         }
         with Atomizer(rs):
-            self.event_keeper_commit(rs, event_id, "Snapshot vor Offline-Lock.")
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Lock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        return ret
+
+    @access("event")
+    def unlock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        """Unlock an event."""
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
+        if not self.is_locked(rs, event_id=event_id):
+            raise RuntimeError(n_("Event isn't locked."))
+        update = {
+            'id': event_id,
+            'is_locked': False,
+        }
+        with Atomizer(rs):
+            self.event_keeper_commit(
+                rs, event_id, "Snapshot vor Unlock.")
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_unlocked, event_id)
         return ret
 
     @access("event")
@@ -1611,7 +1605,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 "Cannot use questionnaire import to delete questionnaire."))
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
             ret = self.set_event(rs, event_id, {'fields': fields})
