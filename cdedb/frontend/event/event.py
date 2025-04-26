@@ -358,7 +358,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/list_event_helpers")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
     def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
                  ) -> Response:
@@ -384,7 +383,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ) -> Response:

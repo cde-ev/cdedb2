@@ -257,8 +257,8 @@
                                     id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('event/remove_orga') }}
                                 {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(label="", readonly=is_locked, title=gettext("Remove Orga"),
-                                                     icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
+                                {{ util.input_submit(title=gettext("Remove Orga"), icon='minus', label="",
+                                                     aclass='btn btn-xs btn-danger list-button-float') }}
                             </form>
                         </li>
                     {% endfor %}
@@ -279,7 +279,7 @@
                             );
                         </script>
                         <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
+                            {{ util.input_submit(label=gettext("Add"), aclass='btn btn-success') }}
                         </div>
                     </div>
                     {% if ambience['event'].id in user.orga %}

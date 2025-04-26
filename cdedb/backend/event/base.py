@@ -365,7 +365,6 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             self.validate_persona_ids(rs, persona_ids)
-            self.assert_lock(rs, event_id=event_id)
 
             for anid in xsorted(persona_ids):
                 new_orga = {
@@ -394,7 +393,6 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        self.assert_lock(rs, event_id=event_id)
 
         query = ("DELETE FROM event.orgas"
                  " WHERE persona_id = %s AND event_id = %s")
