@@ -37,6 +37,7 @@ class EventPrivileges(Flag):
                           | registrations_read_internal)
     registrations_write = auto()
     payment_write = auto()
+    token = auto()
     log_read = auto()
     # send_email = auto()  #: api only? tool suggested recently
     # create = auto()
@@ -48,8 +49,19 @@ class EventPrivileges(Flag):
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = (basic_write | entities_write | free_texts_write | payment_write
-                 | conclude | balance | delete)
+
+    # Used to determine which actions are blocked by event being locked.
+    all_write = (
+            basic_write
+            | entities_write
+            | free_texts_write
+            | payment_write  # Notably does not include writing of payments via cde realm.
+            # token  # Do not block token management via event lock, so tokens can still be revoked.
+            | conclude
+            | balance
+            # lock  # Do not block (un)locking via event lock, so event can be unlocked.
+            | delete
+    )
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,

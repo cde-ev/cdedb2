@@ -461,7 +461,7 @@ class EventBaseBackend(EventLowLevelBackend):
         data = affirm_dataclass(OrgaToken, data, creation=True)
 
         with Atomizer(rs):
-            if not is_privileged(rs, EventPrivileges.basic_write,
+            if not is_privileged(rs, EventPrivileges.token,
                                  event_id=data.event_id):
                 raise PrivilegeError
 
@@ -493,7 +493,7 @@ class EventBaseBackend(EventLowLevelBackend):
             current = self.get_orga_token(rs, data['id'])
             current_data = current.to_database()
 
-            if not is_privileged(rs, EventPrivileges.basic_write,
+            if not is_privileged(rs, EventPrivileges.token,
                                  event_id=current.event_id):
                 raise PrivilegeError
 
@@ -523,7 +523,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             current = self.get_orga_token(rs, orga_token_id)
 
-            if not is_privileged(rs, EventPrivileges.basic_write,
+            if not is_privileged(rs, EventPrivileges.token,
                                  event_id=current.event_id):
                 raise PrivilegeError
 
@@ -603,7 +603,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             orga_token = self.get_orga_token(rs, orga_token_id)
 
-            if not is_privileged(rs, EventPrivileges.basic_write,
+            if not is_privileged(rs, EventPrivileges.token,
                                  event_id=orga_token.event_id):
                 raise PrivilegeError
 
