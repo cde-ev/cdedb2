@@ -284,6 +284,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Mailinglisten-Daten")
         self.assertNonPresence("vCard")
 
+    @storage
     @as_users("inga")
     def test_vcard(self) -> None:
         # we test here only if the presented vcard is kind of correct and whether
@@ -309,6 +310,7 @@ class TestCoreFrontend(FrontendTest):
                  "NICKNAME:Bindi",
                  "TEL;TYPE=HOME:+495432987654321",
                  "TEL;TYPE=CELL:+4916312345678",
+                 "PHOTO;ENCODING=b;TYPE=PNG:iVBOR",  # truncated base64 encoded image
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
