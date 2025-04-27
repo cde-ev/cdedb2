@@ -47,6 +47,26 @@
 {% endmacro %}
 
 {% block content %}
+{% if ambience['event']['registration_soft_limit'] is none or
+            ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
+        <p class="button-par">
+            {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
+                         icon='pen') }}
+            {% if not ambience['event']['registration_soft_limit'] is none %}
+                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
+                    Changes can be made until the registration end ({{ date }}).
+                {% endtrans %}
+            {% endif %}
+        </p>
+    {% else %}
+        <p>
+            {% trans %}
+                Registration has ended, therefore no more changes are possible.
+                Please contact the Orgas per E-Mail, if you need to change something about your registration.
+            {% endtrans %}
+        </p>
+    {% endif %}
+
     {% if ambience['event']['registration_text'] %}
         {% set button = None %}
         {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
@@ -102,7 +122,7 @@
         {% endif %}
         {% if ambience['event']['iban'] and to_pay > 0 %}
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
-                         aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
+                         aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
             {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
             <script nonce="{{ csp_nonce }}">
@@ -209,6 +229,7 @@
         {% endfor %}
     </dl>
 
+    {{ util.h(n_("Courses"), underline=true) }}
     {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}
@@ -219,8 +240,10 @@
         {% set reg_track = registration['tracks'][track['id']] %}
 
         <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
-            {{ util.h(gettext("Course") + (" {} {}".format(gettext("for"), cco['title']) if (filtered_choice_objects|length > 1) else ""),
-                      anchor="cco-" + cco['id']|string, translate=False) }}
+            {% if filtered_choice_objects|length > 1 %}
+                {{ util.h(gettext("Course for {}").format(cco['title']),
+                          anchor="cco-" + cco['id']|string, translate=False, level=4) }}
+            {% endif %}
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
@@ -270,26 +293,6 @@
     {% endfor %}
 
     {{ util.h(n_("Registration Data"), underline=true) }}
-    {% if ambience['event']['registration_soft_limit'] is none or
-            ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
-        <p>
-            {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
-                         icon='pen') }}
-            {% if not ambience['event']['registration_soft_limit'] is none %}
-                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
-                    Changes can be made until the registration end ({{ date }}).
-                {% endtrans %}
-            {% endif %}
-        </p>
-    {% else %}
-        <p>
-            {% trans %}
-                Registration has ended, therefore no more changes are possible.
-                Please contact the Orgas per E-Mail, if you need to change something about your registration.
-            {% endtrans %}
-        </p>
-    {% endif %}
-
     <dl class="dl-horizontal">
         <dt title="{% trans %}Mixed Lodging{% endtrans %}">
             {% trans %}Mixed Lodging{% endtrans %}
