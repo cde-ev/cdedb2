@@ -703,18 +703,32 @@ class LDAPsqlBackend:
         """Helper function to get basic data about users from core.personas."""
         query = """
             SELECT cp.id, cp.username, cp.given_names, cp.family_name, cp.password_hash,
-                GREATEST(MAX(clog.ctime), MAX(elog.ctime), MAX(alog.ctime), MAX(mlog.ctime)) AS ctime
+                GREATEST(clog.ctime, elog.ctime, alog.ctime, mlog.ctime) AS ctime
             FROM core.personas AS cp
-            LEFT JOIN core.changelog AS clog
-                ON cp.id = clog.persona_id
-            LEFT JOIN event.log AS elog
-                ON cp.id = elog.persona_id AND elog.code = ANY(%s)
-            LEFT JOIN assembly.log AS alog
-                ON cp.id = alog.persona_id AND alog.code = ANY(%s)
-            LEFT JOIN ml.log AS mlog
-                ON cp.id = mlog.persona_id AND mlog.code = ANY(%s)
+            LEFT JOIN (
+                SELECT MAX(ctime) AS ctime, persona_id
+                FROM core.changelog
+                GROUP BY persona_id
+            ) AS clog ON cp.id = clog.persona_id
+            LEFT JOIN (
+                SELECT MAX(ctime) AS ctime, persona_id
+                FROM event.log
+                WHERE code = ANY(%s)
+                GROUP BY persona_id
+            ) AS elog ON cp.id = elog.persona_id
+            LEFT JOIN (
+                SELECT MAX(ctime) AS ctime, persona_id
+                FROM assembly.log
+                WHERE code = ANY(%s)
+                GROUP BY persona_id
+            ) AS alog ON cp.id = alog.persona_id
+            LEFT JOIN (
+                SELECT MAX(ctime) AS ctime, persona_id
+                FROM ml.log
+                WHERE code = ANY(%s)
+                GROUP BY persona_id
+            ) AS mlog ON cp.id = mlog.persona_id
             WHERE cp.id = ANY(%s) AND NOT cp.is_archived
-            GROUP BY cp.id
         """
         params = (self._event_log_codes, self._assembly_log_codes, self._ml_log_codes, user_ids)
         return {
