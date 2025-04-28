@@ -110,7 +110,7 @@ class EventBaseBackend(EventLowLevelBackend):
         This raises an exception in case of the wrong locking state.
         """
         if self.is_locked(rs, event_id=event_id):
-            raise RuntimeError(n_("Event offline lock error."))
+            raise RuntimeError(n_("This event is locked."))
 
     @access("persona")
     def orga_infos(self, rs: RequestState, persona_ids: Collection[int],
