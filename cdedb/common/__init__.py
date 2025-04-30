@@ -826,6 +826,18 @@ def is_optional_type(type_: Any) -> bool:
     ) and NoneType in get_args(type_)
 
 
+def is_list_type(type_: type[Any]) -> bool:
+    """Whether this is a custom list type.
+
+    Our validation accepts empty lists by default,
+    so we don't want to mark such inputs as mandatory.
+    """
+    return (
+        hasattr(type_, "__supertype__")
+        and get_origin(type_.__supertype__) is list or isinstance(type_, Sequence)
+    )
+
+
 # TODO: unite these two helpers and overload?
 def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
     """Extract types which input fields are mandatory from a validation type dict.
@@ -833,7 +845,8 @@ def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
     :param fields: Mapping of field names to types, usually imported from validation.
     :return: Names of the fields which are not Optional[something].
     """
-    return {key for key, type_ in fields.items() if not is_optional_type(type_)}
+    return {key for key, type_ in fields.items()
+            if not (is_optional_type(type_) or is_list_type(type_))}
 
 
 def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> set[str]:
