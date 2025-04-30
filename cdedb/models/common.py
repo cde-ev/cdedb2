@@ -4,7 +4,6 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
-from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,14 +11,13 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject
+from cdedb.common import CdEDBObject, is_optional_type
 from cdedb.common.sorting import Sortkey, collate
 from cdedb.common.validation.types import TypeMapping
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -31,17 +29,9 @@ if TYPE_CHECKING:
         DatabaseValue_s,
     )
 
-NoneType = type(None)
 T = TypeVar("T")
 # Should actually be a vtypes.ProtoID instead of an int
 CdEDataclassMap = dict[int, T]
-
-
-def is_optional_type(type_: Any) -> bool:
-    return (
-            get_origin(type_) is Union
-            or get_origin(type_) is UnionType
-    ) and NoneType in get_args(type_)
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:

@@ -80,8 +80,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
     overload,
 )
@@ -346,10 +344,6 @@ def validate_check_optional(
 ) -> tuple[Optional[T], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
-
-
-def is_optional(type_: type[T]) -> bool:
-    return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
 def get_errors(errors: list[Error]) -> list[Error]:

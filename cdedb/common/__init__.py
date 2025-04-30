@@ -22,6 +22,7 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from itertools import chain
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -816,21 +817,20 @@ def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
 NoneType = type(None)
 
 
+def is_optional_type(type_: Any) -> bool:
+    return (
+        get_origin(type_) is Union
+        or get_origin(type_) is UnionType
+    ) and NoneType in get_args(type_)
+
+
 def extract_mandatory_fields(fields: CdEDBObject) -> list[str]:
     """Determine from validation types which input fields are mandatory.
 
     :param fields: Mapping of field names to types, usually imported from validation.
     :return: Names of the fields which are not Optional[something].
     """
-    ret = []
-    for key, type_ in fields.items():
-        if get_origin(type_) is Union:
-            _, none_type = get_args(type_)
-            if none_type is not NoneType:
-                raise KeyError("Complex unions not supported")
-        else:
-            ret.append(key)
-    return ret
+    return [key for key, type_ in fields.items() if not is_optional_type(type_)]
 
 
 @enum.unique
