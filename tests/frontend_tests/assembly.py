@@ -428,7 +428,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['shortname'] = "konzil3"  # same as before, to test ml address conflict
         f['create_attendee_list'].checked = True
         f['create_presider_list'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('signup_end',
                                    "Muss ein valides Datum mit Uhrzeit sein.")
         f['signup_end'] = "2222-9-1 00:00"
@@ -1264,7 +1264,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(f['title'].value, "Vorläufige Beschlussvorlage")
         f['title'] = ""
         f['filename'] = "//"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
         self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
@@ -2106,13 +2106,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # Now try rescheduling
         self.traverse("Abstimmungen", "Abstimmungen umplanen")
         f = self.response.forms["rescheduleballotsform"]
-        self.submit(f, check_notification=False)
-        self.assertNotification("wenigstens eine Abstimmung auswählen", 'error')
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError('vote_begin', "Muss ein valides Datum mit Uhrzeit sein.")
+        self.assertValidationError('vote_end', "Muss ein valides Datum mit Uhrzeit sein.")
         f = self.response.forms["rescheduleballotsform"]
-        f['ballot_ids'] = [16, 1001]
         f['vote_begin'] = datetime.datetime(2100, 1, 1)
         f['vote_end'] = datetime.datetime(2100, 1, 2)
         f['vote_extension_end'] = datetime.datetime(2100, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertNotification("wenigstens eine Abstimmung auswählen", 'error')
+        f['ballot_ids'] = [16, 1001]
         self.submit(f, check_notification=False)
         self.assertValidationError('vote_extension_end')
         f = self.response.forms["rescheduleballotsform"]

@@ -717,7 +717,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
             vote_begin: datetime.datetime,
             vote_end: datetime.datetime,
-            vote_extension_end: datetime.datetime) -> Response:
+            vote_extension_end: datetime.datetime | None) -> Response:
         """Change the voting dates for all selected ballots."""
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
