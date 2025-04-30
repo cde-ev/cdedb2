@@ -1212,14 +1212,17 @@ class CoreBaseFrontend(AbstractFrontend):
             and not min_donation <= data["donation"] <= max_donation)
 
         merge_dicts(rs.values, data)
-        # TODO: Should address be marked as mandatory, though we do not enforce it?
+        mandatory_fields = (
+            get_mandatory_from_typedict(PERSONA_COMMON_FIELDS)
+            | {'address', 'location'}  # we enforce this by hand in change_user
+        )
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
             'min_donation': min_donation,
             'max_donation': max_donation,
             'has_special_donation': has_special_donation,
-        }, get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
+        }, mandatory_fields)
 
     @access("persona", modi={"POST"})
     @REQUESTdata("generation")
