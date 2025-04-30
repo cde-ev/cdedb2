@@ -17,7 +17,7 @@ from typing import (
 )
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, is_optional_type
+from cdedb.common import CdEDBObject, get_mandatory_from_typedict, is_optional_type
 from cdedb.common.sorting import Sortkey, collate
 from cdedb.common.validation.types import TypeMapping
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -192,6 +192,15 @@ class CdEDataclass:
                 else:
                     optional[field.name] = field.type
         return mandatory, optional
+
+    @classmethod
+    def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
+        """Determine fields where user needs to enter something.
+
+        The `validation_fields` attribute has slightly different semantics,
+        namely it is about validation, not user input."""
+        mand, opt = cls.validation_fields(creation=creation)
+        return get_mandatory_from_typedict(mand) | get_mandatory_from_typedict(opt)
 
     @classmethod
     def requestdict_fields(

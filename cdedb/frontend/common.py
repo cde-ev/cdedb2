@@ -106,8 +106,8 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
+    get_mandatory_from_typedict,
     glue,
-    is_optional_type,
     json_serialize,
     make_persona_name,
     make_proxy,
@@ -2559,25 +2559,6 @@ def inspect_validation_optional(
     """
     return validate.validate_check_optional(
         type_, value, ignore_warnings=ignore_warnings, **kwargs)
-
-
-# TODO: unite these two helpers and overload?
-def get_mandatory_from_typedict(fields: CdEDBObject) -> AbstractSet[str]:
-    """Extract types which input fields are mandatory from a validation type dict.
-
-    :param fields: Mapping of field names to types, usually imported from validation.
-    :return: Names of the fields which are not Optional[something].
-    """
-    return {key for key, type_ in fields.items() if not is_optional_type(type_)}
-
-
-def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> AbstractSet[str]:
-    """Extract which parameters are mandatory from function annotations.
-
-    The actual work is done by the @REQUESTdata decoorator,
-    this is just a wrapper to silence mypy.
-    """
-    return fun.mandatory_fields  # type: ignore[attr-defined]
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
