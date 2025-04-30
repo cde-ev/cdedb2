@@ -418,6 +418,7 @@
         placeholder=placeholder,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
+        required="required" if name in mandatory_fields,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
@@ -467,6 +468,7 @@
         class=aclass,
         accept=accept,
         disabled="disabled" if readonly,
+        required="required" if name in mandatory_fields,
         **{ 'aria-label': arialabel }
     )|xmlattr }}/>
 {%- endmacro %}
@@ -504,6 +506,7 @@
         maxlength=maxlength,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
+        required="required" if name in mandatory_fields,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -616,6 +619,7 @@
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
+        required="required" if name in mandatory_fields,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -663,6 +667,7 @@
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
+        required="required" if name in mandatory_fields,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
