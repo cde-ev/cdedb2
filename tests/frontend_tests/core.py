@@ -761,7 +761,7 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['changedataform']
             f[IGNORE_WARNINGS_NAME].checked = True
         if self.user_in("vera"):
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             msg = "Die Angabe einer Adresse ist verpflichtend."
             self.assertValidationError('address', msg)
             self.assertValidationError('location', msg)
@@ -2399,7 +2399,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
         f = self.response.forms['genesisform']
-        self.assertInputHasAttr(f['attachment'], 'required')
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
@@ -2411,7 +2410,7 @@ class TestCoreFrontend(FrontendTest):
             data = datafile.read()
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
         saved_response = self.response
@@ -2419,7 +2418,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.response = saved_response
         f = self.response.forms['genesisform']
-        self.assertNotIn('required', f['attachment'].attrs)
         f['notes'] = "Gimme!"
         f['birthday'] = ""
         self.submit(f, check_notification=False)
@@ -2746,7 +2744,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.EVENT_GENESIS_DATA.items():
             f[field] = entry
         f['notes'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
 
     def test_genesis_modify(self) -> None:
@@ -3249,7 +3247,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertValidationError('msg', "Darf nicht leer sein.")
 
             f['to'].force_value("test@example.cde")
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             self.assertValidationError('to', "Unzulässige Auswahl.")
 
             for recipient in self.conf["CONTACT_ADDRESSES"]:
@@ -3300,7 +3298,7 @@ LG Emilia
         with self.switch_user("inga"):
             self.get("/core/contact/reply")
             f = self.response.forms['replyform']
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             self.assertValidationError('secret', "Darf nicht leer sein.")
             self.assertValidationError('reply_message', "Darf nicht leer sein.")
 

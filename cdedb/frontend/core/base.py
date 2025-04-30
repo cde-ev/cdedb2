@@ -1352,11 +1352,10 @@ class CoreBaseFrontend(AbstractFrontend):
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         user = User(persona_id=persona_id, roles=roles)
         shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
-        # TODO: Should address be marked as mandatory, though we do not enforce it?
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
-        }, get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
+        }, get_mandatory_from_typedict(PERSONA_COMMON_FIELDS) - {'birthday'})
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note")
@@ -1956,9 +1955,10 @@ class CoreBaseFrontend(AbstractFrontend):
         if pevent_id := rs.values.get('pevent_id'):
             past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
 
-        mandatory_fields = (get_mandatory_from_typedict(CDE_TRANSITION_FIELDS)
-                            | get_mandatory_from_func(self.promote_user))
-        # TODO: mark address as mandatory?
+        mandatory_fields = (
+            get_mandatory_from_typedict(CDE_TRANSITION_FIELDS)
+            | get_mandatory_from_func(self.promote_user)
+        ) - {'birthday'}
         return self.render(rs, "promote_user", {
             "past_events": past_events, "past_courses": past_courses,
         }, mandatory_fields)
