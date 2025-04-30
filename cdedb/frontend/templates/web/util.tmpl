@@ -384,10 +384,10 @@
             )|xmlattr }}>
                 {{ label -}}
                 {%- if name in mandatory_fields -%}
+                    <span class="sr-only"> {% trans %}(mandatory input){% endtrans %}</span>
                     <span class="required-marker"
                           title="{% trans %}(mandatory input){% endtrans %}"
-                          aria-hidden="true"> *</span>
-                    <span class="sr-only"> {% trans %}(mandatory input){% endtrans %}</span>
+                          aria-hidden="true">{# asterisk is added by CSS ::after for nice alignment #}</span>
                 {% endif -%}
             </label>
         {%- endif %}

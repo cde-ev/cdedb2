@@ -1258,8 +1258,10 @@ ul.styleless {
 }
 
 /* mark mandatory form fields */
-label .required-marker {
+label .required-marker::after {
+    content: " *";
     color: #a94442;
+    position: absolute;
 }
 
 /* Display icons in light gray. */
