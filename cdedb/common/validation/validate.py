@@ -70,7 +70,7 @@ import re
 import string
 import typing
 import urllib.parse
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
@@ -1425,7 +1425,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'donation': NoneType,
 }
 
-PERSONA_CDE_CREATION: Mapping[str, Any] = {
+PERSONA_CDE_CREATION: MutableMapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'show_legal_given_names': bool,

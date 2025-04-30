@@ -2399,6 +2399,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Account anfordern")
         self.assertPresence("Die maximale Dateigröße ist 8 MB.")
         f = self.response.forms['genesisform']
+        self.assertInputHasAttr(f['attachment'], 'required')
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
@@ -2418,6 +2419,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.response = saved_response
         f = self.response.forms['genesisform']
+        self.assertNotIn('required', f['attachment'].attrs)
         f['notes'] = "Gimme!"
         f['birthday'] = ""
         self.submit(f, check_notification=False)
