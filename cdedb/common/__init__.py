@@ -824,15 +824,6 @@ def is_optional_type(type_: Any) -> bool:
     ) and NoneType in get_args(type_)
 
 
-def extract_mandatory_fields(fields: CdEDBObject) -> list[str]:
-    """Determine from validation types which input fields are mandatory.
-
-    :param fields: Mapping of field names to types, usually imported from validation.
-    :return: Names of the fields which are not Optional[something].
-    """
-    return [key for key, type_ in fields.items() if not is_optional_type(type_)]
-
-
 @enum.unique
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
