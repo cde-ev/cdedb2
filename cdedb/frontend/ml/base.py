@@ -17,6 +17,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     DefaultReturnCode,
     RequestState,
+    get_mandatory_from_func,
     merge_dicts,
     now,
     unwrap,
@@ -221,7 +222,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs, "configure_mailinglist", {
                     'available_types': available_types,
                     'ml_type': None,
-                })
+                }, mandatory_fields=['ml_type'])
         else:
             atype = get_ml_type(ml_type)
             if not atype.is_relevant_admin(rs.user):
@@ -238,6 +239,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             sorted_assemblies = keydictsort_filter(
                 assemblies, EntitySorter.assembly)
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+            mandatory_fields = atype.mandatory_form_fields(creation=True)
             return self.render(rs, "configure_mailinglist", {
                 'events': events,
                 'part_groups': [],  # Can be configured later if necessary.
@@ -246,7 +248,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
                 'maxsize_default': atype.maxsize_default,
-            })
+            }, mandatory_fields)
 
     @access("ml", modi={"POST"})
     @REQUESTdatadict(*Mailinglist.requestdict_fields(creation=True),
@@ -314,7 +316,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml_admin")
     def merge_accounts_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "merge_accounts")
+        return self.render(rs, "merge_accounts", {},
+                           get_mandatory_from_func(self.merge_accounts))
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
@@ -459,6 +462,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             and bool(ml.full_moderator_fields)
         )
         readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
+        mandatory_fields = ml.mandatory_form_fields(creation=True)
         return self.render(rs, "configure_mailinglist", {
             'events': events,
             'event_parts_by_event': {
@@ -471,7 +475,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'restricted': restricted,
             'readonly': readonly,
             'available_domains': ml.available_domains,
-        })
+        }, mandatory_fields)
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
@@ -545,7 +549,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'available_types': available_types,
             'events': events,
             'assemblies': assemblies,
-        })
+        }, get_mandatory_from_func(self.change_ml_type))
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)

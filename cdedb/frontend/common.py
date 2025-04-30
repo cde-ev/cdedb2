@@ -135,6 +135,7 @@ from cdedb.common.roles import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
+from cdedb.common.validation.validate import PERSONA_COMMON_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -1557,7 +1558,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
-        return self.render(rs, "create_user")
+        return self.render(rs, "create_user", {},
+                           get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
