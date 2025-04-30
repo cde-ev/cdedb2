@@ -1139,7 +1139,8 @@ class FrontendTest(BackendTest):
 
     def submit(self, form: webtest.Form, button: str = "", *,
                check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: Optional[str] = None) -> None:
+               verbose: bool = False, value: Optional[str] = None,
+               check_mandatory_filled: bool = True) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1149,10 +1150,23 @@ class FrontendTest(BackendTest):
             that the submission produces a notification indicating success.
         :param check_button_attrs: If True and button is given, check whether the
             button specifies a different form action and/or method.
+        :param check_mandatory_filled: If True, check that all fields with a `required`
+            attribute are non-empty. Most browers do this.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        if check_mandatory_filled:
+            # check that all required inputs are filled
+            for fieldname, field_list in form.fields.items():
+                if len(field_list) > 1:  # these are checkboxes or submit buttons
+                    # TODO: handle checkboxes when required-attr implemented there
+                    continue
+                field: webtest.forms.Field = unwrap(field_list)
+                if "required" in field.attrs:
+                    print(f"Checking for field {fieldname}...")
+                    self.assertNotEqual(field.value, "", f"Required field {fieldname}"
+                                                         f" left empty!")
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
@@ -1219,7 +1233,8 @@ class FrontendTest(BackendTest):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
@@ -1237,7 +1252,8 @@ class FrontendTest(BackendTest):
                 raise self.failureException("Already logged out.")
         else:
             f = self.response.forms['logoutform']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -1766,7 +1782,7 @@ class FrontendTest(BackendTest):
             if v := kwargs.get(field_name):
                 f[field_name] = v
         f['length'] = len(log_expectation)
-        self.submit(f)
+        self.submit(f, check_mandatory_filled=False)
 
         # Check frontend log.
         for i, entry in enumerate(log_expectation, start=1):
@@ -1811,7 +1827,7 @@ class FrontendTest(BackendTest):
 
         f['length'] = length
         f['offset'] = offset
-        self.submit(f)
+        self.submit(f, check_mandatory_filled=False)
 
         # starting at the 0th page, ...
         self.traverse({'linkid': 'pagination-0'})
@@ -1860,7 +1876,7 @@ class FrontendTest(BackendTest):
         # tidy up the form
         f["offset"] = None
         f["length"] = None
-        self.submit(f)
+        self.submit(f, check_mandatory_filled=False)
 
         # check multi-checkbox selections
         f = self.response.forms['logshowform']
@@ -1869,7 +1885,7 @@ class FrontendTest(BackendTest):
         codes = [field._value for field in f.fields['codes']]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
-        self.submit(f)
+        self.submit(f, check_mandatory_filled=False)
         self.traverse({'linkid': 'pagination-first'})
         f = self.response.forms['logshowform']
         for field in f.fields['codes']:
@@ -2030,7 +2046,7 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn("active", button['class'])
         self.submit(f, button='view_specifier', check_button_attrs=False,
-                    value=button['value'])
+                    value=button['value'], check_mandatory_filled=False)
         return button
 
     def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
