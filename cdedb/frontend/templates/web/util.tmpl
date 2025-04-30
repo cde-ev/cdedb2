@@ -408,7 +408,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='') %}
+        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -418,7 +418,7 @@
         placeholder=placeholder,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
-        required="required" if name in mandatory_fields,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
@@ -460,7 +460,8 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_file(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', accept=none, arialabel=none) %}
+{% macro input_file(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', accept=none,
+        arialabel=none, enforce_required=True) %}
     <input{{ dict(
         type="file",
         name=name,
@@ -468,7 +469,7 @@
         class=aclass,
         accept=accept,
         disabled="disabled" if readonly,
-        required="required" if name in mandatory_fields,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }}/>
 {%- endmacro %}
@@ -497,7 +498,7 @@
 
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
-                        arialabel=none, attributes='', actualreadonly=False) %}
+                        arialabel=none, attributes='', actualreadonly=False, enforce_required=True) %}
     <textarea{{ dict(
         name=name,
         id=anid,
@@ -506,7 +507,7 @@
         maxlength=maxlength,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
-        required="required" if name in mandatory_fields,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -613,13 +614,13 @@
 
 
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
     <select{{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
-        required="required" if name in mandatory_fields,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -661,13 +662,13 @@
 {%- endmacro%}
 
 {% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
-        required="required" if name in mandatory_fields,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
