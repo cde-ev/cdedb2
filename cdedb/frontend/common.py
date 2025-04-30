@@ -765,9 +765,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
+
+        :param mandatory_fields: specifies which input fields should be marked
+            as mandatory
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
@@ -803,6 +807,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['defect_username'], params['mls_with_defect_explicits'] = (
             self.transform_defect_addresses(rs, defect_addresses))
 
+        params.setdefault('mandatory_fields', mandatory_fields or [])
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce

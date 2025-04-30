@@ -31,6 +31,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
 
@@ -809,6 +811,26 @@ def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     else:
         raise NotImplementedError
     return value
+
+
+NoneType = type(None)
+
+
+def extract_mandatory_fields(fields: CdEDBObject) -> list[str]:
+    """Determine from validation types which input fields are mandatory.
+
+    :param fields: Mapping of field names to types, usually imported from validation.
+    :return: Names of the fields which are not Optional[something].
+    """
+    ret = []
+    for key, type_ in fields.items():
+        if get_origin(type_) is Union:
+            _, none_type = get_args(type_)
+            if none_type is not NoneType:
+                raise KeyError("Complex unions not supported")
+        else:
+            ret.append(key)
+    return ret
 
 
 @enum.unique

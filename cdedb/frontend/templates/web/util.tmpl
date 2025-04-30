@@ -381,7 +381,15 @@
                 id=labelid,
                 for=anid,
                 class=(("col-sm-2" if small else "col-sm-4") if horizontal else "") + " control-label",
-            )|xmlattr }}>{{ label }}</label>
+            )|xmlattr }}>
+                {{ label -}}
+                {%- if name in mandatory_fields -%}
+                    <span class="required-marker"
+                          title="{% trans %}(mandatory input){% endtrans %}"
+                          aria-hidden="true"> *</span>
+                    <span class="sr-only"> {% trans %}(mandatory input){% endtrans %}</span>
+                {% endif -%}
+            </label>
         {%- endif %}
         {%- if horizontal %}
             <div class="
@@ -518,6 +526,7 @@
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
+    {# TODO How to handle mandatory-marker here? At every checkbox?  #}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",

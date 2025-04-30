@@ -54,13 +54,15 @@ class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
                 rs, rs.ambience['mailinglist'])
 
-        return super().render(rs, templatename, params=params)
+        return super().render(rs, templatename, params=params,
+                              mandatory_fields=mandatory_fields)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
