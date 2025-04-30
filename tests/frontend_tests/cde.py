@@ -292,7 +292,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse("Bearbeiten")
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f['donation'] = "0"
@@ -1481,7 +1481,7 @@ class TestCdEFrontend(FrontendTest):
         # invalid/uncommon input for donation
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f = self.response.forms['changedataform']

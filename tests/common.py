@@ -2007,7 +2007,7 @@ class FrontendTest(BackendTest):
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('new_username', "Darf nicht leer sein.")
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "zeruda@example.cde"
