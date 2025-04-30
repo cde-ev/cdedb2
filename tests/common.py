@@ -1164,7 +1164,6 @@ class FrontendTest(BackendTest):
                     continue
                 field: webtest.forms.Field = unwrap(field_list)
                 if "required" in field.attrs:
-                    print(f"Checking for field {fieldname}...")
                     self.assertNotEqual(field.value, "", f"Required field {fieldname}"
                                                          f" left empty!")
         # This is a workaround for the fact, that webtest does not care about the
