@@ -1259,7 +1259,7 @@ ul.styleless {
 
 /* mark mandatory form fields */
 label .required-marker {
-    color: red;
+    color: #a94442;
 }
 
 /* Display icons in light gray. */
