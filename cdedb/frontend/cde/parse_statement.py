@@ -102,7 +102,7 @@ class StatementCSVKeys:
         return {v for k, v in vars(cls).items()}
 
 
-STATEMENT_DATE_FIELD = StatementCSVKeys.transaction_date
+STATEMENT_DATE_FIELD = StatementCSVKeys.valuta
 
 
 class ExportFields:
