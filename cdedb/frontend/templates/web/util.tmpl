@@ -366,6 +366,11 @@
     )|xmlattr }}/>
 {% endmacro %}
 
+{% macro required_marker() -%}
+    <span class="required-marker" title="{% trans %}(mandatory input){% endtrans %}"
+          aria-hidden="true">{# asterisk is added by CSS ::after for nice alignment #}</span>
+{%- endmacro %}
+
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
         horizontal=True, labelid=none, addon='', markdown=False, wide=False, errorname=none, aclass='') %}
     <div class="form-group {{ aclass }}
@@ -385,9 +390,7 @@
                 {{ label -}}
                 {%- if name in mandatory_fields -%}
                     <span class="sr-only"> {% trans %}(mandatory input){% endtrans %}</span>
-                    <span class="required-marker"
-                          title="{% trans %}(mandatory input){% endtrans %}"
-                          aria-hidden="true">{# asterisk is added by CSS ::after for nice alignment #}</span>
+                    {{ required_marker() }}
                 {% endif -%}
             </label>
         {%- endif %}
