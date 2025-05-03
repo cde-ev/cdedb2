@@ -26,6 +26,8 @@ from cdedb.common import (
     RequestState,
     asciificator,
     determine_age_class,
+    get_mandatory_from_func,
+    get_mandatory_from_typedict,
     lastschrift_reference,
     make_persona_name,
     merge_dicts,
@@ -158,7 +160,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         merge_dicts(rs.values, rs.ambience['lastschrift'])
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
-        return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona})
+        return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona},
+                           get_mandatory_from_typedict(LASTSCHRIFT_COMMON_FIELDS))
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
@@ -184,9 +187,13 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
             current_donation = persona["donation"] or None
-        return self.render(rs, "lastschrift/lastschrift_create", {
-            "min_donation": min_donation, "current_donation": current_donation,
-        })
+        mandatory_fields = (get_mandatory_from_typedict(LASTSCHRIFT_COMMON_FIELDS)
+                            | get_mandatory_from_func(self.lastschrift_create))
+        return self.render(
+            rs, "lastschrift/lastschrift_create",
+            {"min_donation": min_donation, "current_donation": current_donation},
+            mandatory_fields,
+        )
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
@@ -594,10 +601,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
         return self.render(
-            rs, "lastschrift/lastschrift_subscription_form_fill", {
+            rs, "lastschrift/lastschrift_subscription_form_fill",
+            {
                 "persona": persona, "not_minor": not_minor,
                 "min_donation": min_donation, "typical_donation": typical_donation,
             },
+            get_mandatory_from_func(self.lastschrift_subscription_form),
         )
 
     @access("anonymous")

@@ -77,7 +77,8 @@ class CdEParseMixin(CdEBaseFrontend):
             'event_entries': event_entries, 'event_options': event_options,
             'events': events,
         }
-        return self.render(rs, "parse/parse_statement", params)
+        return self.render(rs, "parse/parse_statement", params,
+                           {'statement_file'})
 
     def organize_transaction_data(
         self, rs: RequestState, transactions: list[parse.Transaction],

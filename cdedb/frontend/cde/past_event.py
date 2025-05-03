@@ -17,7 +17,14 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
+from cdedb.common import (
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    get_mandatory_from_func,
+    get_mandatory_from_typedict,
+    merge_dicts,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
@@ -247,7 +254,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
-        return self.render(rs, "past_event/change_past_event")
+        return self.render(rs, "past_event/change_past_event", {},
+                           get_mandatory_from_typedict(PAST_EVENT_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -266,7 +274,10 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "past_event/create_past_event")
+        mandatory_fields = (get_mandatory_from_typedict(PAST_EVENT_FIELDS)
+                            | get_mandatory_from_func(self.create_past_event))
+        return self.render(rs, "past_event/create_past_event", {},
+                           mandatory_fields)
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -327,7 +338,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                 pcourse_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
-        return self.render(rs, "past_event/change_past_course")
+        return self.render(rs, "past_event/change_past_course", {},
+                           get_mandatory_from_typedict(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -347,7 +359,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def create_past_course_form(self, rs: RequestState, pevent_id: int,
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "past_event/create_past_course")
+        return self.render(rs, "past_event/create_past_course", {},
+                           get_mandatory_from_typedict(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
