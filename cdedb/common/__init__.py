@@ -855,7 +855,7 @@ def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> set[str]:
     The actual work is done by the @REQUESTdata decoorator,
     this is just a wrapper to silence mypy.
     """
-    return fun.mandatory_fields  # type: ignore[attr-defined]
+    return fun.mandatory_form_fields  # type: ignore[attr-defined]
 
 
 @enum.unique

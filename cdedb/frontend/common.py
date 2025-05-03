@@ -2260,7 +2260,7 @@ def REQUESTdata(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.mandatory_fields = get_mandatory_from_typedict(  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields = get_mandatory_from_typedict(  # type: ignore[attr-defined]
             {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)
