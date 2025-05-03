@@ -46,3 +46,6 @@ i18n-output/
 
 # bin processing data
 bin/**/*.json
+
+# internal wiki - separate git repository
+/wiki/
