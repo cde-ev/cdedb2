@@ -56,15 +56,28 @@
                                   "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
 
         <h3 class="mosp heading-underline clear-both">{% trans %}Coursetracks{% endtrans %}</h3>
+        {{ mandatory_fields }}
         <table class="table table-condensed" id="track-drow-table">
             <thead>
                 <tr>
-                    <th class="col-sm-4">{% trans %}Coursetrack{% endtrans %}</th>
-                    <th class="col-sm-2">{% trans %}Shortname{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Course Choices{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Req. Choices{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Sortkey{% endtrans %}</th>
-                    <th class="col-sm-3">{% trans %}Course Room Field{% endtrans %}</th>
+                    <th class="col-sm-4{% if 'title' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Coursetrack{% endtrans %}
+                    </th>
+                    <th class="col-sm-2{% if 'shortname' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Shortname{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'num_choices' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Course Choices{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'min_choices' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Req. Choices{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'sortkey' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Sortkey{% endtrans %}
+                    </th>
+                    <th class="col-sm-3{% if 'course_room_field_id' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Course Room Field{% endtrans %}
+                    </th>
                     <th></th>
                 </tr>
             </thead>

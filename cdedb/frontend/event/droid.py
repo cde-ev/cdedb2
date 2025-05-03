@@ -41,7 +41,8 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def create_orga_token_form(self, rs: RequestState, event_id: int) -> Response:
         """Display the form for creating a new orga token."""
-        return self.render(rs, "event/droid/configure", {})
+        return self.render(rs, "event/droid/configure", {},
+                           OrgaToken.mandatory_form_fields(creation=True))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -68,7 +69,8 @@ class EventDroidMixin(EventBaseFrontend):
                                orga_token_id: int) -> Response:
         """Display the form for changing an existing orga token."""
         merge_dicts(rs.values, rs.ambience['orga_token'].to_database())
-        return self.render(rs, "event/droid/configure", {})
+        return self.render(rs, "event/droid/configure", {},
+                           OrgaToken.mandatory_form_fields(creation=False))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)

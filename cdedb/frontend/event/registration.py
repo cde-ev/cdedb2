@@ -30,6 +30,7 @@ from cdedb.common import (
     build_msg,
     determine_age_class,
     get_hash,
+    get_mandatory_from_func,
     json_serialize,
     make_persona_name,
     merge_dicts,
@@ -78,9 +79,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
-        return self.render(rs, "registration/batch_fees", {
-            'data': data, 'csvfields': csv_position, 'saldo': saldo,
-        })
+        return self.render(
+            rs, "registration/batch_fees",
+            {'data': data, 'csvfields': csv_position, 'saldo': saldo},
+            get_mandatory_from_func(self.batch_fees),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.payment_write)
@@ -1073,8 +1076,13 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
-        return self.render(rs, "event/fee/configure_fee",
-                           {'persona': persona, 'personalized': True})
+        mandatory_fields = (models.EventFee.mandatory_form_fields(creation=True)
+                            | get_mandatory_from_func(self.add_new_personalized_fee))
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {'persona': persona, 'personalized': True},
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)

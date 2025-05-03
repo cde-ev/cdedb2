@@ -38,7 +38,7 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
-        return self.render(rs, "import/questionnaire_import")
+        return self.render(rs, "import/questionnaire_import", {}, {'json_file'})
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)

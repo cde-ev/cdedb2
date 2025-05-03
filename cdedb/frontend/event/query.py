@@ -340,9 +340,11 @@ class EventQueryMixin(EventBaseFrontend):
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
 
-        return self.render(rs, "query/configure_custom_filter", {
-            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
-        })
+        return self.render(
+            rs, "query/configure_custom_filter",
+            {'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind},
+            models.CustomQueryFilter.mandatory_form_fields(creation=False),
+        )
 
     @staticmethod
     def _validate_custom_filter_uniqueness(rs: RequestState, data: CdEDBObject,
