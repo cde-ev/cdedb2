@@ -7304,21 +7304,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Test and compare exports.
         orga_token = self.event.get_orga_token(self.key, new_token_id)
 
-        with self.switch_user("anonymous"):
-            self.get(
-                f'/event/event/{event_id}/droid/partial',
-                headers={
-                    orga_token.request_header_key:
-                        orga_token.get_token_string(secret),
-                },
-            )
-            droid_export = self.response.json
-
         self.get(f"/event/event/{event_id}/download/partial")
         orga_export = self.response.json
+        self.get("/")
 
-        droid_export['timestamp'] = orga_export['timestamp']
-        self.assertEqual(orga_export, droid_export)
+        headers = {orga_token.request_header_key: orga_token.get_token_string(secret)}
+        with self.switch_user("anonymous"):
+            for url in ["/event/event/droid/export",
+                        f'/event/event/{event_id}/droid/partial']:
+                with self.subTest(url=url):
+                    self.get(url, headers=headers)
+                    droid_export = self.response.json
+                    droid_export['timestamp'] = orga_export['timestamp']
+                    droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] \
+                        = None
+                    self.assertEqual(orga_export, droid_export)
 
         # Revoke the used token.
         self.get(f"/event/event/{event_id}/droid/summary")
