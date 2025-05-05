@@ -1,9 +1,9 @@
 
 import dataclasses
 from collections.abc import Set as AbstractSet
+from datetime import date
 from functools import partial
 from typing import Callable
-from datetime import date
 
 import pyparsing as pp
 
@@ -55,33 +55,9 @@ def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values
         'true': lambda x_: True,
         'false': lambda x_: False,
         'field': lambda x: field_values[x[0]],
-        'age': lambda x: (reference_date - birthday).days // 365 < int(x[0].removeprefix('U')), 
+        'age': lambda x: (reference_date - birthday).days // 365 < int(x[0]), 
         'part': lambda x: part_values[x[0]],
         'bool': lambda x: other_values[x[0]],
     }
     # print(result.get_name())
     return functions[result.get_name()](result)
-
-
-#: Tuple (evaluator, evaluate_args) for each result Group name.
-_EVALUATOR_FUNCTIONS: dict[str, tuple[Callable[..., bool], bool]] = {
-    'and': (lambda x, y, f, p, o: x(f, p, o) and y(f, p, o), True),
-    'or': (lambda x, y, f, p, o: x(f, p, o) or y(f, p, o), True),
-    'xor': (lambda x, y, f, p, o: x(f, p, o) != y(f, p, o), True),
-    'not': (lambda x, f, p, o: not x(f, p, o), True),
-    'true': (lambda f, p, o: True, False),
-    'false': (lambda f, p, o: False, False),
-    'field': (lambda t, f, p, o: f[t], False),
-    'part': (lambda t, f, p, o: p[t], False),
-    'bool': (lambda t, f, p, o: o[t], False),
-}
-
-
-# TODO: Do we need this? We don't use it?
-def create_evaluator(result: pp.ParseResults) -> Callable[[dict[str, bool], dict[str, bool]], bool]:
-    # num_bound_args = _EVALUATOR_NARY[result.get_name()]
-    evaluator, evaluate_args = _EVALUATOR_FUNCTIONS[result.get_name()]
-    if evaluate_args:
-        return partial(evaluator, *(create_evaluator(token) for token in result))
-    else:
-        return partial(evaluator, *result)

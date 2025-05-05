@@ -1,4 +1,4 @@
-
+from datetime import date
 from typing import Callable, Optional
 
 import pyparsing as pp
@@ -32,6 +32,7 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
         'field': lambda x: f"field.{x[0]}",
         'part': lambda x: f"part.{ps.get(x[0], x[0])}",
         'bool': lambda x: f"{x[0]}",
+        'age': lambda x: f"U{x[0]}",
     }
     name = result.get_name()
     if name in {'and', 'or', 'xor'} and outer_operator is not None and name != outer_operator:
@@ -41,7 +42,7 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
 
 
 def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-                 other_values: dict[str, bool], *,
+                 other_values: dict[str, bool], reference_date: date, birthday: date, *,
                  outer_operator: Optional[str] = None, top_level: bool = True, condition_only: bool = False,
                  ) -> tuple[Optional[bool], str]:
     functions: dict[str, Callable[[list[tuple[Optional[bool], str]]], tuple[Optional[bool], str]]] = {
@@ -60,6 +61,9 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
         value, text = None if condition_only else field_values[result[0]], f"field.{result[0]}"
     elif name == "part":
         value, text = None if condition_only else part_values[result[0]], f"part.{result[0]}"
+    elif name == "age":
+        # TODO not really sure  if this is whats supposed to be here
+        value, text = None if condition_only else ((reference_date - birthday).days // 365 < int(result[0])), f"U{result[0]}"
     elif name == "bool":
         value, text = None if condition_only else other_values[result[0]], f"{result[0]}"
     else:
@@ -83,7 +87,7 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
             return value, f'<span class="block {status}">{text}</span>'
         else:
             return value, text
-    elif name in {'true', 'false', 'field', 'part', 'bool'}:
+    elif name in {'true', 'false', 'field', 'part', 'bool', 'age'}:
         if value is None:
             return value, f'<span class="">{text}</span>'
         return value, f'<span class="atom {status}">{text}</span>'

@@ -11,6 +11,8 @@ def rename(result: pp.ParseResults, field_name_updates: dict[str, str], part_sho
     elif name == 'part':
         if result[0] in part_shortname_updates:
             result[0] = part_shortname_updates[result[0]]
+    elif name == "age":
+        pass # do not recurse into age
     else:
         for token in result:
             rename(token, field_name_updates, part_shortname_updates)
