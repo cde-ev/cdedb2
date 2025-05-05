@@ -1,11 +1,7 @@
-import sys
 import unittest
 from datetime import date
-from pathlib import Path
 
 import pyparsing as pp
-
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent / "cdedb"))
 
 from fee_condition_parser.evaluation import check, evaluate
 from fee_condition_parser.modifying import rename
@@ -132,7 +128,7 @@ class ConditionParserTest(unittest.TestCase):
             birthday=date(2007, 10, 10),
         ),
     ]
-    
+
     def test_parse_evaluate_check(self):
         for expectedResult, formula in self.CASES:
             with self.subTest(formula=formula):
