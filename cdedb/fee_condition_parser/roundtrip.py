@@ -5,6 +5,7 @@ import pyparsing as pp
 
 from .evaluation import is_below_age
 
+
 def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
     """Public serialization interface, to get a normalized condition string.
 

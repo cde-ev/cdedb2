@@ -1,13 +1,13 @@
-from datetime import date
-import unittest
 import sys
+import unittest
+from datetime import date
 from pathlib import Path
 
 import pyparsing as pp
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent / "cdedb"))
 
-from fee_condition_parser.evaluation import evaluate, check
+from fee_condition_parser.evaluation import check, evaluate
 from fee_condition_parser.modifying import rename
 from fee_condition_parser.parsing import create_parser
 from fee_condition_parser.roundtrip import serialize

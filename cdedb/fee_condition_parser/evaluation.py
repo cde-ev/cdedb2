@@ -2,8 +2,6 @@
 import dataclasses
 from collections.abc import Set as AbstractSet
 from datetime import date
-from functools import partial
-from typing import Callable
 
 import pyparsing as pp
 
@@ -44,13 +42,15 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
         referenced_names.update(get_referenced_names(result[0]))
     return referenced_names
 
+
 def is_below_age(reference_date: date, birthday: date, age: int) -> bool:
     years = reference_date.year - birthday.year
 
     if (reference_date.month, reference_date.day) < (birthday.month, birthday.day):
         years -= 1
-    
+
     return years < age
+
 
 def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
              other_values: dict[str, bool], reference_date: date, birthday: date) -> bool:
@@ -62,7 +62,7 @@ def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values
         'true': lambda x_: True,
         'false': lambda x_: False,
         'field': lambda x: field_values[x[0]],
-        'age': lambda x: is_below_age(reference_date, birthday, int(x[0])), 
+        'age': lambda x: is_below_age(reference_date, birthday, int(x[0])),
         'part': lambda x: part_values[x[0]],
         'bool': lambda x: other_values[x[0]],
     }
