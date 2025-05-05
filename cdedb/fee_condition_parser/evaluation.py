@@ -44,18 +44,25 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
         referenced_names.update(get_referenced_names(result[0]))
     return referenced_names
 
+def is_below_age(reference_date: date, birthday: date, age: int) -> bool:
+    years = reference_date.year - birthday.year
+
+    if (reference_date.month, reference_date.day) < (birthday.month, birthday.day):
+        years -= 1
+    
+    return years < age
 
 def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
              other_values: dict[str, bool], reference_date: date, birthday: date) -> bool:
     functions = {
-        'and': lambda x: evaluate(x[0], field_values, part_values, other_values) and evaluate(x[1], field_values, part_values, other_values),
-        'or': lambda x: evaluate(x[0], field_values, part_values, other_values) or evaluate(x[1], field_values, part_values, other_values),
-        'xor': lambda x: evaluate(x[0], field_values, part_values, other_values) != evaluate(x[1], field_values, part_values, other_values),
-        'not': lambda x: not evaluate(x[0], field_values, part_values, other_values),
+        'and': lambda x: evaluate(x[0], field_values, part_values, other_values, reference_date, birthday) and evaluate(x[1], field_values, part_values, other_values, reference_date, birthday),
+        'or': lambda x: evaluate(x[0], field_values, part_values, other_values, reference_date, birthday) or evaluate(x[1], field_values, part_values, other_values, reference_date, birthday),
+        'xor': lambda x: evaluate(x[0], field_values, part_values, other_values, reference_date, birthday) != evaluate(x[1], field_values, part_values, other_values, reference_date, birthday),
+        'not': lambda x: not evaluate(x[0], field_values, part_values, other_values, reference_date, birthday),
         'true': lambda x_: True,
         'false': lambda x_: False,
         'field': lambda x: field_values[x[0]],
-        'age': lambda x: (reference_date - birthday).days // 365 < int(x[0]), 
+        'age': lambda x: is_below_age(reference_date, birthday, int(x[0])), 
         'part': lambda x: part_values[x[0]],
         'bool': lambda x: other_values[x[0]],
     }

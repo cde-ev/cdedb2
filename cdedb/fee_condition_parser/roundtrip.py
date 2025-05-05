@@ -3,6 +3,7 @@ from typing import Callable, Optional
 
 import pyparsing as pp
 
+from .evaluation import is_below_age
 
 def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
     """Public serialization interface, to get a normalized condition string.
@@ -63,7 +64,7 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
         value, text = None if condition_only else part_values[result[0]], f"part.{result[0]}"
     elif name == "age":
         # TODO not really sure  if this is whats supposed to be here
-        value, text = None if condition_only else ((reference_date - birthday).days // 365 < int(result[0])), f"U{result[0]}"
+        value, text = None if condition_only else is_below_age(reference_date, birthday, int(result[0])), f"U{result[0]}"
     elif name == "bool":
         value, text = None if condition_only else other_values[result[0]], f"{result[0]}"
     else:
