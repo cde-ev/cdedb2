@@ -14,18 +14,18 @@
          */
         form = $(this);
 
-        part_checkboxes = form.find('[type="checkbox"][name="parts"]');
-        containers = form.find('.course_choice_container');
+        let part_checkboxes = form.find('[type="checkbox"][name="parts"]');
+        let containers = form.find('.course_choice_container');
 
         /**
          * Map part to part selection checkbox ($-encapsulated)
          */
-        part_checkbox_map = {};
+        let part_checkbox_map = {};
         part_checkboxes.each(function(){
             part_checkbox_map[$(this).val()] = $(this);
         });
 
-        updateCourseChoiceContainers = function() {
+        let updateCourseChoiceContainers = function() {
             /**
              * Hide everything, then for every active part show all ccos implied by the part..
              */
@@ -40,25 +40,25 @@
             });
         };
 
-        var updateCourseChoiceOptions = function() {
+        let updateCourseChoiceOptions = function() {
             $('.choice_group_select > option').each(function() {
                 /**
                  * For every option in a select in a ccs group:
                  *     If the not at least one of the implying parts for this course
                  *     and this ccs group is active, hide that choice and deselect it.
                  */
-                course_id = $(this).val();
-                track_group_id = $(this).parent().attr('track_group_id');
+                let course_id = $(this).val();
+                let track_group_id = $(this).parent().attr('track_group_id');
                 if (!course_id || part_map[course_id][track_group_id].some(
                         (part_id) => part_checkbox_map[part_id].prop('checked'))
                 ) {
                     $(this).show();
                 } else {
                     $(this).hide();
-                    if ($(this).parent().val() == course_id) {
+                    if ($(this).parent().val() === course_id) {
                         $(this).parent().val("");
                     }
-                };
+                }
             });
         }
 
@@ -79,11 +79,11 @@
         form = $(this);
 
         // Find input elements.
-        part_checkboxes = form.find('[type="checkbox"][name="parts"]');
+        let part_checkboxes = form.find('[type="checkbox"][name="parts"]');
         // either this or the former is present, depending on the page
-        part_selects = form.find('select[id^="input-select-part"][id$=".status"]')
-        field_checkboxes = form.find('[type="checkbox"][id^="event-input-fields"]');
-        field_selects = form.find('select[id^="event-input-fields"]');
+        let part_selects = form.find('select[id^="input-select-part"][id$=".status"]')
+        let field_checkboxes = form.find('[type="checkbox"][id^="event-input-fields"]');
+        let field_selects = form.find('select[id^="event-input-fields"]');
 
         // Find input elements for orga preview mode.
         is_orga_checkbox = form.find('#fee-precompute-is-orga');
@@ -91,15 +91,15 @@
         age_input = form.find('#fee-precompute-age');
 
         // Find the elements that will be replaced by this function.
-        fee_preview = form.find('[id="fee-preview"]');
-        nonmember_surcharge = form.find('[id="nonmember-surcharge"]');
-        eventfee_rows = form.find('[class="eventfee"]');
+        let fee_preview = form.find('[id="fee-preview"]');
+        let nonmember_surcharge = form.find('[id="nonmember-surcharge"]');
+        let eventfee_rows = form.find('[class="eventfee"]');
 
-        updateFeePreview = function() {
+        let updateFeePreview = function() {
             /**
              *  Gather values of checked part checkboxes.
              */
-            var part_ids = [];
+            let part_ids = [];
             if (constants['part_ids']) {
                 part_ids = constants['part_ids']
             } else {
@@ -112,7 +112,7 @@
                 }
                 if (part_selects.length) {
                     part_selects.each(function () {
-                        value = $(this).get()[0].value;
+                        let value = $(this).get()[0].value;
                         if (
                             value === "RegistrationPartStati.participant"
                             || value === "RegistrationPartStati.applied"
@@ -129,7 +129,7 @@
              * Only send `is_orga` and `is_member` if the checkboxes exist.
              */
 
-            params = {
+            let params = {
                 persona_id: constants['persona_id'],
                 part_ids: part_ids.join(","),
                 is_orga: constants['is_orga'],
@@ -145,12 +145,12 @@
              */
 
             field_checkboxes.each(function() {
-                field_id = $(this).parents('[id^="field"]').data('field_id');
+                let field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).prop('checked');
             });
             field_selects.each(function() {
-                field_id = $(this).parents('[id^="field"]').data('field_id');
-                params[`field.${field_id}`] = $(this).val() == 'True';
+                let field_id = $(this).parents('[id^="field"]').data('field_id');
+                params[`field.${field_id}`] = $(this).val() === 'True';
             });
 
             if (is_orga_checkbox.length) {
@@ -187,9 +187,9 @@
                     if (eventfee_rows) {
                         eventfee_rows.each(function() {
                             $(this).find('.active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
-                            title = $(this).find('.active-fee-title');
-                            active_checkbox = $(this).find('#checkbox-active');
-                            inactive_checkbox = $(this).find('#checkbox-inactive');
+                            let title = $(this).find('.active-fee-title');
+                            let active_checkbox = $(this).find('#checkbox-active');
+                            let inactive_checkbox = $(this).find('#checkbox-inactive');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
                                 active_checkbox.show();
                                 inactive_checkbox.hide();
