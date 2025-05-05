@@ -1177,11 +1177,8 @@ class EventRegistrationBackend(EventBaseBackend):
             data['fields'] = fdata
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
-            data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
-            if event.is_balanced and data['amount_owed']:
-                raise ValueError(n_(
-                    "Event is balanced. May not create registration which owes a fee."))
-            data['fields'] = PsycoJson(fdata)
+            # Calulate amount owed at the end due to privilege issues.
+            data['amount_owed'] = 0
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
@@ -1192,6 +1189,7 @@ class EventRegistrationBackend(EventBaseBackend):
             if track_ids != set(data['tracks'].keys()):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
+            rdata['fields'] = PsycoJson(fdata)
             new_id = self.sql_insert(rs, "event.registrations", rdata)
 
             # Uninlined code from set_registration to make this more
@@ -1215,6 +1213,17 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
             self._track_groups_sanity_check(rs, data['event_id'])
+
+            # Now set amount owed.
+            update = {
+                'id': new_id,
+                'amount_owed': self._calculate_single_fee(rs, data, event=event),
+            }
+            if event.is_balanced and data['amount_owed']:
+                raise ValueError(n_(
+                    "Event is balanced. May not create registration which owes a fee."))
+            self.sql_update(rs, models.Registration.database_table, update)
+
             self.event_log(
                 rs, const.EventLogCodes.registration_created, data['event_id'],
                 persona_id=data['persona_id'])
