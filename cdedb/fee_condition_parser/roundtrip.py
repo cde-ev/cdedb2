@@ -1,11 +1,9 @@
-from typing import Callable, Optional
-
 import pyparsing as pp
 
 from .evaluation import EvaluationData, evaluate
 
 
-def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
+def serialize(result: pp.ParseResults, *, part_substitutions: dict[str, str] | None = None) -> str:
     """Public serialization interface, to get a normalized condition string.
 
     :param part_substitutions: Replace each part name in the dict with it's value.
@@ -13,7 +11,7 @@ def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str,
     return _serialize(result, outer_operator=None, ps=part_substitutions or {})
 
 
-def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[str, str]) -> str:
+def _serialize(result: pp.ParseResults, outer_operator: str | str, ps: dict[str, str]) -> str:
     """Internal recursive normalizer.
 
     :param outer_operator: If given, put parentheses around current operation, if
@@ -50,13 +48,6 @@ def visual_debug(
         top_level: bool = True,
         condition_only: bool = False,
 ) -> str:
-    functions: dict[str, Callable[[list[tuple[Optional[bool], str]]], tuple[Optional[bool], str]]] = {
-        'and': lambda sr: f"{sub_results[0]} <b>and</b> {sub_results[1]}",
-        'or': lambda sr: f"{sub_results[0]} <b>or</b> {sub_results[1]}",
-        'xor': lambda sr: f"{sub_results[0]} <b>xor</b> {sub_results[1]}",
-        'not': lambda sr: f"<b>not</b> {sub_results[0]}",
-    }
-
     name = result.get_name()
     operator = name if name in {'and', 'or', 'xor'} else ('' if name == 'not' else None)
 
@@ -78,7 +69,12 @@ def visual_debug(
             )
             for token in result
         ]
-        text = functions[name](sub_results)
+        if name in {"and", "or", "xor"}:
+            text = f"{sub_results[0]} <b>{name}</b> {sub_results[1]}"
+        elif name == "not":
+            text = f"<b>not</b> {sub_results[0]}"
+        else:
+            raise RuntimeError()  # pragma: no cover
 
     value = None if condition_only else evaluate(result, data)
 
@@ -91,10 +87,10 @@ def visual_debug(
             return f'<span class="block {status}">{text}</span>'
         else:
             return text
+    elif name == 'not':
+        return f'<span class="block {status}">{text}</span>'
     elif name in {'true', 'false', 'field', 'part', 'bool', 'age'}:
         class_ = f"atom {status}" if value is not None else ""
         return f'<span class="{class_}">{text}</span>'
-    elif name == 'not':
-        return f'<span class="block {status}">{text}</span>'
     else:
         raise RuntimeError()  # pragma: no cover
