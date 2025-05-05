@@ -22,7 +22,6 @@ def create_parser() -> pp.ParserElement:
                                    | pp.CaselessKeyword("any_part") | pp.CaselessKeyword("all_parts"))\
         .setResultsName("bool")
 
-    # TODO unsure if this is supposed to be + or - when concatenating
     operator_age = pp.Group(pp.Combine(pp.CaselessLiteral("U").suppress() + pp.Word(pp.nums))).setResultsName("age")
 
     operator_bool_atom = (operator_field | operator_part | operator_true | operator_false | operator_other_bool | operator_age)\
