@@ -112,8 +112,7 @@ class User:
     """Container for a persona."""
 
     def __init__(self, *, persona_id: Optional[int] = None,
-                 droid_class: Optional[type["APIToken"]] = None,
-                 droid_token_id: Optional[int] = None,
+                 droid: "APIToken | None" = None,
                  roles: Optional[set[Role]] = None,
                  realm_roles: Optional[dict[Realm, set[str]]] = None,
                  given_names: str = "", family_name: str = "",
@@ -121,9 +120,8 @@ class User:
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
-        self.droid_class = droid_class
-        self.droid_token_id = droid_token_id
-        if self.persona_id and (self.droid_class or self.droid_token_id):
+        self.droid = droid
+        if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.realm_roles = realm_roles or {}
