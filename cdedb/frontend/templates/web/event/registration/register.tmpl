@@ -141,7 +141,7 @@
         {% endif %}
 
         {{ util.h(n_("Additional Information"), underline=true) }}
-        {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
+        {{ generic_event.additional_registration_choices(age_class, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_additional_questionnaire'] %}
@@ -167,6 +167,8 @@
                 {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
                 {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
                                             defaultvalue="True") }}
+                {{ util.form_input_text("age", gettext("Age"), type="number", anid="fee-precompute-age",
+                                        defaultvalue=persona_age) }}
             {% endif %}
         {% endcall %}
 
@@ -197,6 +199,7 @@
             'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'age': {{ persona_age }},
             'part_ids': {{ (ambience['event'].parts|list if ambience['event'].parts|length <= 1 else None)|tojson }},
         }
 

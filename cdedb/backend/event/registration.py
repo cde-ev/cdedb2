@@ -47,6 +47,7 @@ from cdedb.common import (
     PsycoJson,
     RequestState,
     cast_fields,
+    deduct_years,
     now,
     unwrap,
 )
@@ -1538,10 +1539,11 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
-                       part_ids: Collection[int], is_member: Optional[bool],
-                       is_orga: Optional[bool], field_values: dict[str, bool],
-                       ) -> ComplexRegistrationFee:
+    def precompute_fee(
+            self, rs: RequestState, event_id: int, *, persona_id: int | None,
+            part_ids: Collection[int], field_values: dict[str, bool],
+            is_member: bool | None, is_orga: bool | None, age: int | None,
+    ) -> ComplexRegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
@@ -1555,6 +1557,8 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
+        age = affirm_optional(int, age) or 0
+
         field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
@@ -1578,6 +1582,11 @@ class EventRegistrationBackend(EventBaseBackend):
         if registration_id:
             reg = self.get_registration(rs, registration_id)
 
+        if persona_id:
+            persona = self.core.get_event_user(rs, persona_id, event_id=event_id)
+        else:
+            persona = {'birthday': deduct_years(event.begin, age)}
+
         fields = {}
         for field_id, field in event.fields.items():
             fn = field.field_name
@@ -1587,6 +1596,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         fake_registration = {
             'persona_id': persona_id,
+            'persona': persona,
             'parts': {
                 part_id: {
                     'status':

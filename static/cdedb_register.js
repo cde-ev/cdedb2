@@ -88,6 +88,7 @@
         // Find input elements for orga preview mode.
         is_orga_checkbox = form.find('#fee-precompute-is-orga');
         is_member_checkbox = form.find('#fee-precompute-is-member');
+        age_input = form.find('#fee-precompute-age');
 
         // Find the elements that will be replaced by this function.
         fee_preview = form.find('[id="fee-preview"]');
@@ -133,6 +134,7 @@
                 part_ids: part_ids.join(","),
                 is_orga: constants['is_orga'],
                 is_member: constants['is_member'],
+                age: constants['age'],
             }
 
             /**
@@ -156,6 +158,9 @@
             }
             if (is_member_checkbox.length) {
                 params['is_member'] = is_member_checkbox.prop('checked');
+            }
+            if (age_input.length) {
+                params['age'] = age_input.val();
             }
 
             $.get(constants['endpoint'], params,
@@ -217,6 +222,10 @@
         }
         if (is_member_checkbox.length) {
             is_member_checkbox.change(updateFeePreview);
+        }
+        if (age_input.length) {
+            age_input.on("input", updateFeePreview);
+            age_input.keydown((event) => {return event.key !== 'Enter';});
         }
         if (eventfee_rows.length) {
             form.find("#fee-summary").show();
