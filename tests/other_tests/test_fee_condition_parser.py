@@ -241,7 +241,7 @@ class ErrorTest(unittest.TestCase):
         for formula, expected_exception in self.CASES:
             with self.subTest(formula=formula):
                 with self.assertRaises(pp.ParseBaseException) as ctx:
-                    parse_result = self.parser.parse_string(formula, parse_all=True)[0]
+                    self.parser.parse_string(formula, parse_all=True)
                 self.assertIn(expected_exception, str(ctx.exception))
 
 
