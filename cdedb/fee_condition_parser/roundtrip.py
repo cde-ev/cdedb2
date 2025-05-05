@@ -1,9 +1,8 @@
-from datetime import date
 from typing import Callable, Optional
 
 import pyparsing as pp
 
-from .evaluation import is_below_age
+from .evaluation import EvaluationData, is_below_age
 
 
 def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
@@ -43,10 +42,14 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
         return functions[name](result)
 
 
-def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-                 other_values: dict[str, bool], reference_date: date, birthday: date, *,
-                 outer_operator: Optional[str] = None, top_level: bool = True, condition_only: bool = False,
-                 ) -> tuple[Optional[bool], str]:
+def visual_debug(
+        result: pp.ParseResults,
+        *,
+        data: EvaluationData,
+        outer_operator: str | None = None,
+        top_level: bool = True,
+        condition_only: bool = False,
+) -> tuple[Optional[bool], str]:
     functions: dict[str, Callable[[list[tuple[Optional[bool], str]]], tuple[Optional[bool], str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
         'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),
@@ -60,19 +63,19 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
     operator = name if name in {'and', 'or', 'xor'} else ('' if name == 'not' else None)
 
     if name == "field":
-        value, text = None if condition_only else field_values[result[0]], f"field.{result[0]}"
+        value, text = None if condition_only else data['field_values'][result[0]], f"field.{result[0]}"
     elif name == "part":
-        value, text = None if condition_only else part_values[result[0]], f"part.{result[0]}"
+        value, text = None if condition_only else data['part_values'][result[0]], f"part.{result[0]}"
     elif name == "age":
         # TODO not really sure  if this is whats supposed to be here
-        value, text = None if condition_only else is_below_age(reference_date, birthday, int(result[0])), f"U{result[0]}"
+        value, text = None if condition_only else is_below_age(data, int(result[0])), f"U{result[0]}"
     elif name == "bool":
-        value, text = None if condition_only else other_values[result[0]], f"{result[0]}"
+        value, text = None if condition_only else data['other_values'][result[0]], f"{result[0]}"
     else:
         sub_results = [
             visual_debug(
-                token, field_values, part_values, other_values,
-                outer_operator=operator, top_level=False, condition_only=condition_only,
+                token, data=data, outer_operator=operator, top_level=False,
+                condition_only=condition_only,
             )
             for token in result
         ]

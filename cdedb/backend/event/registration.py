@@ -1498,16 +1498,20 @@ class EventRegistrationBackend(EventBaseBackend):
             if fee.is_conditional():
                 assert fee.amount is not None
                 parse_result = fcp_parsing.parse(fee.condition)
-                if fcp_evaluation.evaluate(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools):
+                data: fcp_evaluation.EvaluationData = {
+                    'field_values': reg_bool_fields,
+                    'part_values': reg_part_involvement,
+                    'other_values': other_bools,
+                    'reference_date': event.begin,
+                    'birthday': reg['persona']['birthday'],
+                }
+                if fcp_evaluation.evaluate(parse_result, data=data):
                     amount += fee.amount
                     active_fees.add(fee.id)
                     fees_by_kind[fee.kind] += fee.amount
                 if visual_debug:
                     visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools,
+                        parse_result, data=data,
                     )[1]
             else:
                 personalized_amount = reg['personalized_fees'].get(fee.id)

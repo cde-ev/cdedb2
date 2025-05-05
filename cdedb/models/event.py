@@ -503,7 +503,10 @@ class EventFee(EventDataclass):
             return ""
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
-            parse_result, {}, {}, {}, condition_only=True)[1]
+            parse_result,
+            data={},  # type: ignore[typeddict-item]
+            condition_only=True,
+        )[1]
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)

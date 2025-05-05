@@ -134,7 +134,16 @@ class ConditionParserTest(unittest.TestCase):
             with self.subTest(formula=formula):
                 parse_result = self.parser.parse_string(formula, parse_all=True)[0]
                 check(parse_result, self.FIELDS.keys(), self.PARTS.keys())
-                evaluation_result = evaluate(parse_result, self.FIELDS, self.PARTS, self.OTHER_VALUES, self.DATE, self.BIRTHDAY)
+                evaluation_result = evaluate(
+                    parse_result,
+                    data=dict(
+                        field_values=self.FIELDS,
+                        part_values=self.PARTS,
+                        other_values=self.OTHER_VALUES,
+                        reference_date=self.DATE,
+                        birthday=self.BIRTHDAY,
+                    ),
+                )
                 self.assertIs(evaluation_result, expectedResult)
 
     def test_age_special_cases(self):
@@ -144,11 +153,13 @@ class ConditionParserTest(unittest.TestCase):
                 check(parse_result, self.FIELDS.keys(), self.PARTS.keys())
                 evaluation_result = evaluate(
                     parse_result,
-                    self.FIELDS,
-                    self.PARTS,
-                    self.OTHER_VALUES,
-                    case['date'],
-                    case['birthday'],
+                    data=dict(
+                        field_values=self.FIELDS,
+                        part_values=self.PARTS,
+                        other_values=self.OTHER_VALUES,
+                        reference_date=case['date'],
+                        birthday=case['birthday'],
+                    ),
                 )
                 self.assertIs(evaluation_result, case['expectedResult'])
 
@@ -163,7 +174,16 @@ class ConditionParserTest(unittest.TestCase):
                 self.assertEqual(serialized, serialized2)
 
                 # Test that re-parsed formula still gives expected result
-                evaluation_result = evaluate(parse_result2, self.FIELDS, self.PARTS, self.OTHER_VALUES, self.DATE, self.BIRTHDAY)
+                evaluation_result = evaluate(
+                    parse_result2,
+                    data=dict(
+                        field_values=self.FIELDS,
+                        part_values=self.PARTS,
+                        other_values=self.OTHER_VALUES,
+                        reference_date=self.DATE,
+                        birthday=self.BIRTHDAY,
+                    ),
+                )
                 self.assertIs(evaluation_result, expectedResult)
 
     def test_roundtrip2(self):
