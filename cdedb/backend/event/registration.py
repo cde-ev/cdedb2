@@ -1455,8 +1455,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """Helper to only calculate return the fee amount for a single registration."""
         return self._calculate_complex_fee(rs, reg, event=event).amount
 
-    @staticmethod
-    def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
+    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, visual_debug: bool = False,
                                ) -> ComplexRegistrationFee:
         """Helper function to calculate the fee for one registration.
@@ -1472,6 +1471,10 @@ class EventRegistrationBackend(EventBaseBackend):
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
+        if not reg.get('persona'):
+            reg['persona'] = self.core.get_event_user(
+                rs, reg['persona_id'], event_id=event.id,
+            )
         reg_part_involvement = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
@@ -1624,10 +1627,13 @@ class EventRegistrationBackend(EventBaseBackend):
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
+            personas = self.core.get_event_users(rs, persona_ids, event_id=event_id)
+
             event = self.get_event(rs, event_id)
 
             ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
+                reg['persona'] = personas[reg['persona_id']]
                 ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
         return ret
 
@@ -1660,7 +1666,9 @@ class EventRegistrationBackend(EventBaseBackend):
             # Create an entry in the defaultdict.
             kind_stats = stats[fee.kind]  # noqa: F841
 
-        for reg in self.get_registrations(rs, reg_ids).values():
+        personas = self.core.get_event_users(rs, reg_ids.values(), event_id=event_id)
+        for reg in self.get_registrations(rs, reg_ids.keys()).values():
+            reg['persona'] = personas[reg['persona_id']]
             complex_fee = self._calculate_complex_fee(rs, reg, event=event)
 
             if reg['amount_owed'] > reg['amount_paid']:
