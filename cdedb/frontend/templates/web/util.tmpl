@@ -696,7 +696,7 @@
 {% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
         name=none, outerclass='', displayerrors=False, errorname=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
+    {%- call form_input_general(name, label, none, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}
