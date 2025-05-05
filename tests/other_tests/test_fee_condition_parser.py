@@ -1,12 +1,13 @@
 import unittest
 from datetime import date
+from typing import Any
 
 import pyparsing as pp
 
-from fee_condition_parser.evaluation import check, evaluate
-from fee_condition_parser.modifying import rename
-from fee_condition_parser.parsing import create_parser
-from fee_condition_parser.roundtrip import serialize
+from cdedb.fee_condition_parser.evaluation import check, evaluate
+from cdedb.fee_condition_parser.modifying import rename
+from cdedb.fee_condition_parser.parsing import create_parser
+from cdedb.fee_condition_parser.roundtrip import serialize
 
 
 class ConditionParserTest(unittest.TestCase):
@@ -114,7 +115,7 @@ class ConditionParserTest(unittest.TestCase):
         (False, "field.1 and U33"),
     ]
 
-    AGE_SPECIAL_CASES = [
+    AGE_SPECIAL_CASES: list[dict[str, Any]] = [
         dict(
             formula="U18",
             expectedResult=True,
@@ -129,7 +130,7 @@ class ConditionParserTest(unittest.TestCase):
         ),
     ]
 
-    def test_parse_evaluate_check(self):
+    def test_parse_evaluate_check(self) -> None:
         for expectedResult, formula in self.CASES:
             with self.subTest(formula=formula):
                 parse_result = self.parser.parse_string(formula, parse_all=True)[0]
@@ -146,7 +147,7 @@ class ConditionParserTest(unittest.TestCase):
                 )
                 self.assertIs(evaluation_result, expectedResult)
 
-    def test_age_special_cases(self):
+    def test_age_special_cases(self) -> None:
         for case in self.AGE_SPECIAL_CASES:
             with self.subTest(formula=case['formula']):
                 parse_result = self.parser.parse_string(case['formula'], parse_all=True)[0]
@@ -163,7 +164,7 @@ class ConditionParserTest(unittest.TestCase):
                 )
                 self.assertIs(evaluation_result, case['expectedResult'])
 
-    def test_roundtrip(self):
+    def test_roundtrip(self) -> None:
         for expectedResult, formula in self.CASES:
             with self.subTest(formula=formula):
                 parse_result = self.parser.parse_string(formula, parse_all=True)[0]
@@ -186,7 +187,7 @@ class ConditionParserTest(unittest.TestCase):
                 )
                 self.assertIs(evaluation_result, expectedResult)
 
-    def test_roundtrip2(self):
+    def test_roundtrip2(self) -> None:
         CASES2 = [
             ("PART.x and Part.y and       part.z", "part.x and part.y and part.z"),
             ("PART.x or (Part.y or part.z)", "part.x or part.y or part.z"),
@@ -200,7 +201,7 @@ class ConditionParserTest(unittest.TestCase):
                 serialized = serialize(parse_result)
                 self.assertEqual(expectedSerialized, serialized)
 
-    def test_check_errors(self):
+    def test_check_errors(self) -> None:
         CASES3 = [
             ("part.part{-} and true", "Unknown part shortname(s): 'part{-}'"),
             ("part.not xor not part.{}", "Unknown part shortname(s): '{}'"),
@@ -236,7 +237,7 @@ class ErrorTest(unittest.TestCase):
         ("(part.x and (True)", "Expected ')', found end of text"),
     ]
 
-    def test_parse_errors(self):
+    def test_parse_errors(self) -> None:
         for formula, expected_exception in self.CASES:
             with self.subTest(formula=formula):
                 with self.assertRaises(pp.ParseBaseException) as ctx:
@@ -248,7 +249,7 @@ class ModificationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.parser = create_parser()
 
-    def test_rename(self):
+    def test_rename(self) -> None:
         formula = "(field.x and part.🗷) or not (field.___ xor true)"
         rename_fields = {'x': '___', '___': 'x'}
         rename_parts = {'🗷': 'foo'}
