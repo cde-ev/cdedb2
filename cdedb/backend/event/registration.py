@@ -1525,7 +1525,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 if visual_debug:
                     visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
                         parse_result, data=data,
-                    )[1]
+                    )
             else:
                 personalized_amount = reg['personalized_fees'].get(fee.id)
                 if personalized_amount is not None:

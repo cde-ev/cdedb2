@@ -506,7 +506,7 @@ class EventFee(EventDataclass):
             parse_result,
             data={},  # type: ignore[typeddict-item]
             condition_only=True,
-        )[1]
+        )
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
