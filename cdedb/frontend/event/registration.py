@@ -1395,14 +1395,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
-        if rs.ambience['event'].is_balanced:
-            if persona_id and self._calculate_partial_fee(
-                    rs, event_id, registration, persona_id,
-            ):
-                msg = n_("Event is balanced. May not create registration which owes a fee.")
-                # This is not an input so this error won't mark any input field.
-                rs.append_validation_error(("amount_owed", ValueError(msg)))
-                rs.notify("error", msg)
+        # TODO: This check causes a privilege error and is therefor temporarily disabled.
+        # if rs.ambience['event'].is_balanced:
+        #     if persona_id and self._calculate_partial_fee(
+        #             rs, event_id, registration, persona_id,
+        #     ):
+        #         msg = n_("Event is balanced. May not create registration which owes a fee.")
+        #         # This is not an input so this error won't mark any input field.
+        #         rs.append_validation_error(("amount_owed", ValueError(msg)))
+        #         rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
