@@ -30,7 +30,7 @@
         {% endtrans %}
     </p>
     <ul>
-        {% for event in events.values()|sort %}
+        {% for event in events.values()|sort(reverse=True) %}
             <li>
                 {% if 'event_admin' in user.roles %}
                     {{ util.href(cdedblink("event/show_registration",
