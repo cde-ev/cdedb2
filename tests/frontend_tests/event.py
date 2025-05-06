@@ -1331,6 +1331,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('minor_form', "Darf nicht leer sein.")
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")

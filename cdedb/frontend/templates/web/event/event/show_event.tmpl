@@ -188,8 +188,9 @@
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
                             <script nonce="{{ csp_nonce }}">
-                                $('#removeminorformform').cdedbProtectAction("{{ gettext("The minor form will be permanently deleted.") }}");
-                                $('#removeminorformform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                                $('#removeminorformform')
+                                    .cdedbProtectAction("{{ gettext("The minor form will be permanently deleted.") }}")
+                                    .find('[name="ack_delete"]').prop('checked', true).parent().hide();
                             </script>
                         {% else %}
                             <strong>{{ util.make_icon('exclamation-triangle') }}
@@ -200,7 +201,7 @@
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         {{ util.anti_csrf_token('event/change_minor_form') }}
-                        {{ util.input_hidden(name="delete", value=True) }}
+                        {{ util.input_hidden(name="delete", value=False) }}
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}

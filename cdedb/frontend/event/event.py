@@ -14,6 +14,7 @@ from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
 
+import werkzeug.datastructures
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -311,6 +312,7 @@ class EventEventMixin(EventBaseFrontend):
         if not minor_form and not delete:
             rs.append_validation_error(
                 ("minor_form", ValueError(n_("Must not be empty."))))
+        self.logger.debug((minor_form[:100] if minor_form else None, delete))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
