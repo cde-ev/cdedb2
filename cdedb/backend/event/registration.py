@@ -1220,7 +1220,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 'id': new_id,
                 'amount_owed': self._calculate_single_fee(rs, data, event=event),
             }
-            if event.is_balanced and data['amount_owed']:
+            if event.is_balanced and update['amount_owed']:
                 raise ValueError(n_(
                     "Event is balanced. May not create registration which owes a fee."))
             self.sql_update(rs, models.Registration.database_table, update)

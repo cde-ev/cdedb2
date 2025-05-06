@@ -5614,6 +5614,9 @@ class TestEventBackend(BackendTest):
                 },
             },
             'tracks': {
+                1: {},
+                2: {},
+                3: {},
             },
             'notes': None,
             'mixed_lodging': False,
