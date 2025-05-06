@@ -11,7 +11,7 @@ def serialize(result: pp.ParseResults, *, part_substitutions: dict[str, str] | N
     return _serialize(result, outer_operator=None, ps=part_substitutions or {})
 
 
-def _serialize(result: pp.ParseResults, outer_operator: str | str, ps: dict[str, str]) -> str:
+def _serialize(result: pp.ParseResults, outer_operator: str | None, ps: dict[str, str]) -> str:
     """Internal recursive normalizer.
 
     :param outer_operator: If given, put parentheses around current operation, if
