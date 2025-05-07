@@ -326,6 +326,14 @@
         {% else %}
             {{ input_checkbox(name=name, aclass="ack-delete", label=gettext("Are you sure?")) }}
         {% endif %}
+        {% if not jshint %}
+            <noscript>
+                <div class="text-warning">
+                    {{ util.make_icon('exclamation-triangle') }}
+                    {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
+                </div>
+            </noscript>
+        {% endif %}
     {% endcall %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
