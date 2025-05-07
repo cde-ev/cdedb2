@@ -735,7 +735,19 @@ class EventBaseBackend(EventLowLevelBackend):
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
+                # Event begin can have an effect on fees.
+                registration_ids = self.list_registrations(rs, event_id)  # type: ignore[attr-defined]
+                current_fees = self.calculate_fees(rs, registration_ids)  # type: ignore[attr-defined]
+
                 ret *= self._set_event_parts(rs, event_id, data['parts'])
+                self._update_registrations_amount_owed(rs, event_id)
+
+                new_fees = self.calculate_fees(rs, registration_ids)  # type: ignore[attr-defined]
+
+                if current.is_balanced and (current_fees != new_fees):
+                    raise ValueError(n_(
+                        "Event is balanced. Amount owed may no longer change."))
+
 
         return ret
 
