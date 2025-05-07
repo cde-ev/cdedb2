@@ -1216,14 +1216,13 @@ class EventRegistrationBackend(EventBaseBackend):
             self._track_groups_sanity_check(rs, data['event_id'])
 
             # Now set amount owed.
-            update = {
-                'id': new_id,
-                'amount_owed': self._calculate_single_fee(rs, data, event=event),
-            }
-            if event.is_balanced and update['amount_owed']:
+            self._update_registration_amount_owed(rs, new_id)
+            amount_owed = self.sql_select_one(
+                rs, models.Registration.database_table, ["amount_owed"], new_id,
+            )
+            if event.is_balanced and unwrap(amount_owed):
                 raise ValueError(n_(
                     "Event is balanced. May not create registration which owes a fee."))
-            self.sql_update(rs, models.Registration.database_table, update)
 
             self.event_log(
                 rs, const.EventLogCodes.registration_created, data['event_id'],
