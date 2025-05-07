@@ -31,7 +31,7 @@ def _serialize(result: pp.ParseResults, outer_operator: str | None, ps: dict[str
         'field': lambda x: f"field.{x[0]}",
         'part': lambda x: f"part.{ps.get(x[0], x[0])}",
         'bool': lambda x: f"{x[0]}",
-        'age': lambda x: f"U{x[0]}",
+        'age': lambda x: f"age.U{x[0]}",
     }
     name = result.get_name()
     if name in {'and', 'or', 'xor'} and outer_operator is not None and name != outer_operator:
@@ -56,7 +56,7 @@ def visual_debug(
     elif name == "part":
         text = f"part.{result[0]}"
     elif name == "age":
-        text = f"U{result[0]}"
+        text = f"age.U{result[0]}"
     elif name in {"bool"}:
         text = str(result[0])
     elif name in {"false", "true"}:
