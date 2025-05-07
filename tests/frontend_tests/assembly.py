@@ -461,7 +461,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # delete one assembly
         f = self.response.forms['deleteassemblyform']
         self.submit(f, check_notification=False)
-        self.assertValidationError("ack_delete", "Muss markiert sein.")
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
 
