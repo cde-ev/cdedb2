@@ -461,8 +461,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # delete one assembly
         f = self.response.forms['deleteassemblyform']
         self.submit(f, check_notification=False)
-        # TODO: there is no validation error near the checkbox
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("ack_delete", "Muss markiert sein.")
         f['ack_delete'].checked = True
         self.submit(f)
 
@@ -784,8 +783,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Drittes CdE-Konzil")
             f = self.response.forms['concludeassemblyform']
             self.submit(f, check_notification=False)
-            # TODO: there is no validation error near the checkbox
-            self.assertNotification("Validierung fehlgeschlagen.", 'error')
+            self.assertValidationError("ack_conclude", "Muss markiert sein.")
             f['ack_conclude'].checked = True
             self.submit(f)
             self.assertNotIn('concludeassemblyform', self.response.forms)
@@ -1043,8 +1041,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     # deletion
                     f = self.response.forms['deleteballotform']
                     self.submit(f, check_notification=False)
-                    # TODO: there is no validation error near the checkbox
-                    self.assertNotification("Validierung fehlgeschlagen.", 'error')
+                    self.assertValidationError("ack_delete", "Muss markiert sein.")
                     f['ack_delete'].checked = True
                     self.submit(f)
                     self.assertTitle("Abstimmungen (Internationaler Kongress)")
@@ -1188,8 +1185,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         f = self.response.forms["removeattachmentversionform2_3"]
         self.submit(f, check_notification=False)
-        # TODO: there is no validation error near the checkbox
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.")
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertPresence("Version 3 wurde gelöscht", div="attachment2_version3")

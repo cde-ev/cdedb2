@@ -206,7 +206,7 @@
                             {{ util.anti_csrf_token('ml/delete_mailinglist') }}
                             {{ util.input_submit(label=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="trash-alt") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            {{ util.ack_delete(gettext("The mailinglist will be permanently deleted.")) }}
                         </form>
                     </div>
                 </div>
@@ -220,9 +220,5 @@
                 </div>
             </div>
         {% endcall %}
-        <script nonce="{{ csp_nonce }}">
-            $('#deletemlform').cdedbProtectAction("{{ gettext("The mailinglist will be permanently deleted.") }}");
-            $('#deletemlform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-        </script>
     {% endif %}
 {% endblock %}

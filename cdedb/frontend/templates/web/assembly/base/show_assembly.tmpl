@@ -207,7 +207,7 @@
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(label=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
                                             icon="folder", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
-                                    {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
+                                    {{ util.ack_delete(gettext("The assembly will be permanently archived."), "ack_conclude") }}
                                 </form>
                             </div>
                         </div>
@@ -230,7 +230,7 @@
                                 <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
                                     {{ util.input_submit(label=gettext("Delete"), aclass="btn btn-danger", icon="trash-alt") }}
-                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                    {{ util.ack_delete(gettext("The assembly will be permanently deleted.")) }}
                                 </form>
                             </div>
                         </div>
@@ -245,14 +245,6 @@
                     </div>
                 {% endif %}
             {% endcall %}
-            <script nonce="{{ csp_nonce }}">
-                $(function() {
-                    $('#concludeassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently archived.") }}");
-                    $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
-                    $('#deleteassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently deleted.") }}");
-                    $('#deleteassemblyform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                });
-            </script>
         {% endif %}
     {% endif %}
 

@@ -91,7 +91,7 @@
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-                            {{ util.input_hidden(name="course_page", value=True) }}
+                            {{ util.ack_delete(gettext("The Participant will be removed from this Course.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus",
                                     aclass="btn btn-xs btn-danger list-button-float",
                                     label="") }}
@@ -135,7 +135,7 @@
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
                             {{ util.input_submit(label=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                            {{ util.ack_delete(gettext("The Course will be permanently deleted.")) }}
                         </form>
                     </div>
                 </div>
@@ -146,11 +146,6 @@
                 </div>
             </div>
         {% endcall %}
-        <script nonce="{{ csp_nonce }}">
-            $('#deletecourseform').cdedbProtectAction("{{ gettext("The Course will be permanently deleted.") }}");
-            $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from this Course.") }}");
-        </script>
     {% endif %}
 
 {% endblock %}

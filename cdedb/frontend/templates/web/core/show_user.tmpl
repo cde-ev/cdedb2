@@ -736,16 +736,10 @@ Mitglied.</pre>
                                         {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
                                                 aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
                                                 title=gettext("Cannot archive meta admins.") if data['is_meta_admin'] else "") }}
-                                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                        {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
-                                <script nonce="{{ csp_nonce }}">
-                                    $('#archivepersonaform').cdedbProtectAction(
-                                        "{{ gettext("The Account will be archived.") }}");
-                                    $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
-                                        .parent().hide();
-                                </script>
                             </div>
                         </div>
                         <div class="col-sm-8">
@@ -804,14 +798,8 @@ Mitglied.</pre>
                                     {{ util.anti_csrf_token('core/purge_persona') }}
                                     {{ util.input_submit(label=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
-                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                    {{ util.ack_delete(gettext("The Account will be deleted.")) }}
                                 </form>
-                                <script nonce="{{ csp_nonce }}">
-                                    $('#purgepersonaform').cdedbProtectAction(
-                                        "{{ gettext("The Account will be deleted.") }}");
-                                    $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)
-                                        .parent().hide();
-                                </script>
                             </div>
                         </div>
                         <div class="col-sm-8">

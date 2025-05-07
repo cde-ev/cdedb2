@@ -175,7 +175,7 @@
                               class="delete-participant-form hide-hover display-inline">
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="course_page", value=False) }}
+                            {{ util.ack_delete(gettext("The Participant will be removed from the Event.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                     label="") }}
                         </form>
@@ -216,7 +216,7 @@
                                 id="deletepasteventform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_event') }}
                             {{ util.input_submit(label=gettext("Delete Event"), icon="trash-alt", aclass="btn btn-danger") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                            {{ util.ack_delete(gettext("The event will be permanently deleted.")) }}
                         </form>
                     </div>
                 </div>
@@ -227,10 +227,5 @@
                 </div>
             </div>
         {% endcall %}
-        <script nonce="{{ csp_nonce }}">
-            $('#deletepasteventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-            $('#deletepasteventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from the Event.") }}");
-        </script>
     {% endif %}
 {% endblock %}

@@ -318,6 +318,15 @@
     {%- endif %}
 {%- endmacro %}
 
+{% macro ack_delete(protect_text, name="ack_delete") %}
+    {% call output_errors(name, wrapper=True) %}
+        {{ input_checkbox(name=name, aclass="ack-delete", label=gettext("Are you sure?")) }}
+    {% endcall %}
+    <script nonce="{{ csp_nonce }}">
+        $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
+    </script>
+{% endmacro %}
+
 {% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
