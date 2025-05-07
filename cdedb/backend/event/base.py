@@ -748,7 +748,6 @@ class EventBaseBackend(EventLowLevelBackend):
                     raise ValueError(n_(
                         "Event is balanced. Amount owed may no longer change."))
 
-
         return ret
 
     @access("event_admin")

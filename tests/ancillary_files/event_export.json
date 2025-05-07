@@ -1591,7 +1591,7 @@
             "kind": 1,
             "title": "Kinderpreis Warmup",
             "amount": "-5.00",
-            "condition": "part.Wu and field.is_child",
+            "condition": "part.Wu and age.U13",
             "notes": null
         },
         "5": {
@@ -1600,7 +1600,7 @@
             "kind": 1,
             "title": "Kinderpreis 1. Hälfte",
             "amount": "-12.00",
-            "condition": "part.1.H. and field.is_child",
+            "condition": "part.1.H. and age.U16",
             "notes": null
         },
         "6": {
@@ -1609,7 +1609,7 @@
             "kind": 1,
             "title": "Kinderpreis 2. Hälfte",
             "amount": "-19.00",
-            "condition": "part.2.H. and field.is_child",
+            "condition": "part.2.H. and age.U18",
             "notes": null
         },
         "7": {

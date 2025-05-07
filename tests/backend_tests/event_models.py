@@ -342,7 +342,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
-                    condition='part.Wu and field.is_child',  # type: ignore[arg-type]
+                    condition='part.Wu and age.U13',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 5: models.EventFee(
@@ -351,7 +351,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
-                    condition='part.1.H. and field.is_child',  # type: ignore[arg-type]
+                    condition='part.1.H. and age.U16',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 6: models.EventFee(
@@ -360,7 +360,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
-                    condition='part.2.H. and field.is_child',  # type: ignore[arg-type]
+                    condition='part.2.H. and age.U18',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 7: models.EventFee(

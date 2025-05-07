@@ -5592,12 +5592,33 @@ class TestEventBackend(BackendTest):
             self.event.set_event_fees(self.key, event_id, {})
 
         with self.assertRaisesRegex(ValueError, "Event is balanced."):
-            self.event.set_registration(self.key, {'id': 1, 'fields': {'is_child': True}})
+            self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})
 
         self.event.set_registration(self.key, {'id': 1, 'fields': {'brings_balls': False}})
 
         with self.assertRaisesRegex(ValueError, "Event is balanced."):
             self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
+
+        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+            self.event.set_event(self.key, event_id, {
+                'parts': {
+                    part_id: {
+                        'part_begin': "2322-01-01",
+                        'part_end': "2322-01-01",
+                    }
+                    for part_id in [1, 2, 3]
+                },
+            })
+
+        self.event.set_event(self.key, event_id, {
+            'parts': {
+                part_id: {
+                    'part_begin': "2223-01-01",
+                    'part_end': "2223-01-01",
+                }
+                for part_id in [1, 2, 3]
+            },
+        })
 
         new_reg = {
             'event_id': event_id,
