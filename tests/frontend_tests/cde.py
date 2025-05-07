@@ -2921,14 +2921,18 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Hades Hell", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.")
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
         f = self.response.forms['removeparticipantform3']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Hades")
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
@@ -2943,6 +2947,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Garcia Generalis (Orga) ")
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
@@ -3019,6 +3024,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1006, const.PastEventLogCodes.participant_removed))
 
@@ -3036,6 +3042,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1009, const.PastEventLogCodes.participant_removed))
 
