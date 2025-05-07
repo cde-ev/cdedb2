@@ -412,7 +412,7 @@
                                 {{ util.input_submit(label=gettext("Archive"),
                                                      readonly=(is_locked or (ambience['event']['end'] >= now().date()
                                                                              and not ambience['event']['is_cancelled'])),
-                                                     aclass="btn btn-danger mosp", icon="folder",
+                                                     aclass="btn btn-danger btn-wrap mosp", icon="folder",
                                                      title=(gettext("Event is not concluded yet.")
                                                             if (ambience['event']['end'] >= now().date()
                                                                 and not ambience['event']['is_cancelled']) else "")) }}
@@ -466,14 +466,14 @@
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/balance_event') }}
                                     {{ util.input_submit(label=gettext("Balance Event"), readonly=is_locked,
-                                                         aclass="btn btn-primary", icon="balance-scale") }}
+                                                         aclass="btn btn-primary btn-wrap", icon="balance-scale") }}
                                 </form>
                             {% else %}
                                 <form action="{{ cdedblink('event/unbalance_event') }}" method="POST" id="unbalanceeventform"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/unbalance_event') }}
                                     {{ util.input_submit(label=gettext("Unbalance Event"), readonly=is_locked,
-                                                         aclass="btn btn-danger", icon="balance-scale") }}
+                                                         aclass="btn btn-danger btn-wrap", icon="balance-scale") }}
                                 </form>
                             {% endif %}
                         </div>
