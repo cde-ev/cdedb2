@@ -298,9 +298,10 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("minor_form")
-    @REQUESTdata("delete")
+    @REQUESTdata("delete", "ack_delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
-                          minor_form: werkzeug.datastructures.FileStorage, delete: bool,
+                          minor_form: werkzeug.datastructures.FileStorage,
+                          delete: bool, ack_delete: bool,
                           ) -> Response:
         """Replace the form for parental agreement for minors.
 
@@ -312,7 +313,9 @@ class EventEventMixin(EventBaseFrontend):
         if not minor_form and not delete:
             rs.append_validation_error(
                 ("minor_form", ValueError(n_("Must not be empty."))))
-        self.logger.debug((minor_form[:100] if minor_form else None, delete))
+        if not minor_form and delete and not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.change_minor_form(rs, event_id, minor_form)

@@ -1345,8 +1345,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertNonPresence("Kein Formular vorhanden")
         f = self.response.forms['removeminorformform']
-        f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Must be checked.")
+        f['ack_delete'].checked = True
+        self.submit(f)
         self.assertPresence("Minderjährigenformular wurde entfernt.",
                             div="notifications")
         self.assertTitle("Große Testakademie 2222")
