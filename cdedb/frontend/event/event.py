@@ -391,13 +391,16 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("orga_id")
+    @REQUESTdata("orga_id", "ack_delete")
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
-                    ) -> Response:
+                    ack_delete: bool) -> Response:
         """Remove a persona as orga of an event.
 
         This is only available for admins. This can drop your own orga role.
         """
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)

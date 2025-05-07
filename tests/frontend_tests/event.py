@@ -415,6 +415,9 @@ class TestEventFrontend(FrontendTest):
 
         self.assertNotIn('createorgalistform', self.response.forms)
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.")
+        f['ack_delete'].checked = True
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
@@ -669,6 +672,7 @@ class TestEventFrontend(FrontendTest):
             text = self.fetch_mail_content()
             self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
+            f['ack_delete'].checked = True
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
