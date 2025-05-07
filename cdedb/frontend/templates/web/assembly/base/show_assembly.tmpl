@@ -79,6 +79,7 @@
                                 id="removepresiderform{{ anid }}" class="hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_presider') }}
                             {{ util.input_hidden(name="presider_id", value=anid) }}
+                            {{ util.ack_delete(gettext("The presider will be removed from the assembly.")) }}
                             {{ util.input_submit(label="", title=gettext("Remove Presider"), icon='minus',
                                                  aclass='btn btn-xs btn-danger list-button-float') }}
                         </form>

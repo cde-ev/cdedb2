@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-05-07 20:04+0200\n"
+"POT-Creation-Date: 2025-05-07 18:20+0000\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -76,7 +76,7 @@ msgstr ""
 #: cdedb/frontend/assembly/ballot.py:97 cdedb/frontend/assembly/ballot.py:257
 #: cdedb/frontend/assembly/ballot.py:341 cdedb/frontend/assembly/ballot.py:626
 #: cdedb/frontend/assembly/ballot.py:840 cdedb/frontend/assembly/ballot.py:898
-#: cdedb/frontend/assembly/base.py:136 cdedb/frontend/assembly/base.py:488
+#: cdedb/frontend/assembly/base.py:136 cdedb/frontend/assembly/base.py:491
 #: cdedb/frontend/core/base.py:747 cdedb/frontend/core/base.py:772
 #: cdedb/frontend/core/base.py:994 cdedb/frontend/core/base.py:997
 #: cdedb/frontend/core/base.py:1001 cdedb/frontend/core/base.py:1006
@@ -119,8 +119,8 @@ msgstr ""
 #: cdedb/backend/assembly.py:608 cdedb/backend/assembly.py:1091
 #: cdedb/frontend/assembly/ballot.py:162 cdedb/frontend/assembly/ballot.py:208
 #: cdedb/frontend/assembly/base.py:178 cdedb/frontend/assembly/base.py:201
-#: cdedb/frontend/assembly/base.py:219 cdedb/frontend/assembly/base.py:234
-#: cdedb/frontend/assembly/base.py:526
+#: cdedb/frontend/assembly/base.py:222 cdedb/frontend/assembly/base.py:237
+#: cdedb/frontend/assembly/base.py:529
 msgid "Assembly already concluded."
 msgstr ""
 
@@ -129,14 +129,14 @@ msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""
 
 #: cdedb/backend/assembly.py:630 cdedb/backend/ml.py:426
-#: cdedb/frontend/assembly/base.py:183 cdedb/frontend/assembly/base.py:354
+#: cdedb/frontend/assembly/base.py:183 cdedb/frontend/assembly/base.py:357
 #: cdedb/frontend/event/event.py:1288 cdedb/frontend/ml/base.py:289
 #: cdedb/frontend/ml/base.py:757 cdedb/frontend/ml/base.py:849
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
 #: cdedb/backend/assembly.py:633 cdedb/frontend/assembly/base.py:186
-#: cdedb/frontend/assembly/base.py:358
+#: cdedb/frontend/assembly/base.py:361
 msgid "Some of these users are not assembly users."
 msgstr ""
 
@@ -224,8 +224,8 @@ msgstr ""
 msgid "Normal voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1309 cdedb/frontend/assembly/base.py:452
-#: cdedb/frontend/assembly/base.py:467
+#: cdedb/backend/assembly.py:1309 cdedb/frontend/assembly/base.py:455
+#: cdedb/frontend/assembly/base.py:470
 msgid "Signup already ended."
 msgstr ""
 
@@ -1258,7 +1258,7 @@ msgstr ""
 msgid "Event is balanced. Amount owed may no longer change."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1170 cdedb/frontend/assembly/base.py:472
+#: cdedb/backend/event/registration.py:1170 cdedb/frontend/assembly/base.py:475
 #: cdedb/frontend/event/registration.py:1374
 msgid "This user does not exist or is archived."
 msgstr ""
@@ -1747,7 +1747,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:195
 #: cdedb/frontend/templates/web/assembly/ballot/configure_ballot.tmpl:71
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:53
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:115
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:116
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:79
 #: cdedb/frontend/templates/web/core/show_history.tmpl:265
 #: cdedb/frontend/templates/web/core/show_user.tmpl:316
@@ -3597,14 +3597,15 @@ msgstr ""
 #: cdedb/frontend/assembly/attachment.py:158
 #: cdedb/frontend/assembly/attachment.py:242
 #: cdedb/frontend/assembly/attachment.py:337
-#: cdedb/frontend/assembly/ballot.py:815 cdedb/frontend/assembly/base.py:403
-#: cdedb/frontend/assembly/base.py:530 cdedb/frontend/cde/past_event.py:316
-#: cdedb/frontend/cde/past_event.py:376 cdedb/frontend/cde/past_event.py:434
-#: cdedb/frontend/core/base.py:2569 cdedb/frontend/core/base.py:2621
-#: cdedb/frontend/event/course.py:414 cdedb/frontend/event/event.py:318
-#: cdedb/frontend/event/event.py:403 cdedb/frontend/event/event.py:511
-#: cdedb/frontend/event/event.py:1077 cdedb/frontend/event/event.py:1398
-#: cdedb/frontend/event/event.py:1455 cdedb/frontend/event/lodgement.py:466
+#: cdedb/frontend/assembly/ballot.py:815 cdedb/frontend/assembly/base.py:205
+#: cdedb/frontend/assembly/base.py:406 cdedb/frontend/assembly/base.py:533
+#: cdedb/frontend/cde/past_event.py:316 cdedb/frontend/cde/past_event.py:376
+#: cdedb/frontend/cde/past_event.py:434 cdedb/frontend/core/base.py:2569
+#: cdedb/frontend/core/base.py:2621 cdedb/frontend/event/course.py:414
+#: cdedb/frontend/event/event.py:318 cdedb/frontend/event/event.py:403
+#: cdedb/frontend/event/event.py:511 cdedb/frontend/event/event.py:1077
+#: cdedb/frontend/event/event.py:1398 cdedb/frontend/event/event.py:1455
+#: cdedb/frontend/event/lodgement.py:466
 #: cdedb/frontend/event/registration.py:1413 cdedb/frontend/ml/base.py:577
 msgid "Must be checked."
 msgstr ""
@@ -3704,7 +3705,7 @@ msgstr ""
 msgid "Duplicate shortname."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:192 cdedb/frontend/assembly/base.py:210
+#: cdedb/frontend/assembly/base.py:192 cdedb/frontend/assembly/base.py:213
 #: cdedb/frontend/event/event.py:349 cdedb/frontend/event/event.py:363
 #: cdedb/frontend/event/event.py:382 cdedb/frontend/event/event.py:407
 #: cdedb/frontend/ml/base.py:767 cdedb/frontend/ml/base.py:805
@@ -3712,64 +3713,64 @@ msgstr ""
 msgid "Action had no effect."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:206
+#: cdedb/frontend/assembly/base.py:209
 msgid "This user is not a presider for this assembly."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:313
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:162
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:189
+#: cdedb/frontend/assembly/base.py:316
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:163
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:190
 msgid "Must have presiders in order to create a mailinglist."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:320 cdedb/frontend/assembly/base.py:381
+#: cdedb/frontend/assembly/base.py:323 cdedb/frontend/assembly/base.py:384
 msgid "Presider mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:321 cdedb/frontend/assembly/base.py:390
+#: cdedb/frontend/assembly/base.py:324 cdedb/frontend/assembly/base.py:393
 msgid "Attendee mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:327 cdedb/frontend/assembly/base.py:377
-#: cdedb/frontend/assembly/base.py:392 cdedb/frontend/event/event.py:444
+#: cdedb/frontend/assembly/base.py:330 cdedb/frontend/assembly/base.py:380
+#: cdedb/frontend/assembly/base.py:395 cdedb/frontend/event/event.py:444
 #: cdedb/frontend/event/event.py:1315 cdedb/frontend/event/event.py:1331
 #, python-format
 msgid "Mailinglist %(address)s already exists."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:362 cdedb/frontend/event/event.py:1301
+#: cdedb/frontend/assembly/base.py:365 cdedb/frontend/event/event.py:1301
 msgid "Must not be empty in order to create a mailinglist."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:373
+#: cdedb/frontend/assembly/base.py:376
 msgid "Given presider address ignored in favor of newly created mailinglist."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:394
+#: cdedb/frontend/assembly/base.py:397
 msgid "Assembly created."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:408
+#: cdedb/frontend/assembly/base.py:411
 msgid "Assemblies with active ballots cannot be deleted."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:431
+#: cdedb/frontend/assembly/base.py:434
 msgid "Signed up."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:444
+#: cdedb/frontend/assembly/base.py:447
 msgid "Already signed up."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:475
+#: cdedb/frontend/assembly/base.py:478
 msgid "This user is not an assembly user."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:478
+#: cdedb/frontend/assembly/base.py:481
 msgid "Members must sign up themselves."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:507 cdedb/frontend/event/download.py:370
+#: cdedb/frontend/assembly/base.py:510 cdedb/frontend/event/download.py:370
 #: cdedb/frontend/event/download.py:447 cdedb/frontend/event/download.py:469
 #: cdedb/frontend/event/download.py:495 cdedb/frontend/event/download.py:518
 #: cdedb/frontend/event/download.py:532 cdedb/frontend/event/download.py:545
@@ -3777,7 +3778,7 @@ msgstr ""
 msgid "Empty File."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:537
+#: cdedb/frontend/assembly/base.py:540
 msgid "Unable to conclude assembly with open ballot."
 msgstr ""
 
@@ -5794,7 +5795,7 @@ msgid "Add Attachment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:4
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:147
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:148
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:130
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:211
 #: cdedb/frontend/templates/web/core/show_user.tmpl:663
@@ -5808,7 +5809,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:11
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:354
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:232
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:233
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:64
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:210
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:129
@@ -5955,7 +5956,7 @@ msgid "Until now, %(count)s attendees had given their vote for this ballot."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:204
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:123
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:124
 msgid "Files"
 msgstr ""
 
@@ -6309,7 +6310,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:351
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:40
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:103
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:104
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:68
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:134
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
@@ -6944,7 +6945,7 @@ msgid "Presiders"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:67
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:99
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:100
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:327
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:67
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:126
@@ -7135,50 +7136,54 @@ msgid "Participate"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:82
+msgid "The presider will be removed from the assembly."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:83
 msgid "Remove Presider"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:92
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:93
 msgid "Add Presiders"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:94
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:95
 msgid "IDs of the new Presiders."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:158
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:159
 msgid "Create presider mailinglist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:169
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:170
 msgid ""
 "Create a presider mailinglist for this assembly with a default configuration."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:185
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:186
 msgid "Create attendee mailinglist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:196
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:197
 msgid ""
 "Create an attendee mailinglist for this assembly with a default "
 "configuration."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:208
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:209
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:412
 msgid "Archive"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:209
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:210
 msgid "Assembly still has open ballots."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:210
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:211
 msgid "The assembly will be permanently archived."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:216
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:217
 msgid ""
 "Archives the assembly. The configuration and attachments cannot be changed "
 "after this. The private keys used to sign the votes will be deleted from the "
@@ -7186,11 +7191,11 @@ msgid ""
 "concluded and all files regarding the assembly have been uploaded correctly."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:233
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:234
 msgid "The assembly will be permanently deleted."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:239
+#: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:240
 msgid ""
 "Permanently deletes the assembly including all ballots and attendee "
 "information. This is only possible while no ballots have begun voting."

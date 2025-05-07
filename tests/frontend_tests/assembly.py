@@ -527,8 +527,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse("Versammlungen", "Archiv-Sammlung")
         self.assertTitle("Archiv-Sammlung")
 
-        self.submit(
-            self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
+        f = self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"]
+        f['ack_delete'].checked = True
+        self.submit(f)
         f = self.response.forms['createpresiderlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
         f[ANTI_CSRF_TOKEN_NAME] = "evil"
@@ -2243,21 +2244,24 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Werner war hier!", div='notes')
-        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
-                         self.response.forms)
+        form_id = f"removepresiderform{USER_DICT['werner']['id']}"
+        self.assertNotIn(form_id, self.response.forms)
         self.traverse("Log")
 
         self.switch_app(0)
         self.traverse(r"\sÜbersicht")
         self.assertPresence("Werner war hier!", div='notes')
-        f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
+        f = self.response.forms[form_id]
         f['presider_id'] = "ThisIsNoID"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
         self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
         self.submit(f)
-        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
-                         self.response.forms)
+        f['ack_delete'].checked = True
+        self.assertNotIn(form_id, self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
             "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung.")
