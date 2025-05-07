@@ -2898,6 +2898,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
@@ -2918,11 +2919,11 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Garcia Generalis", div='list-participants')
-        self.assertPresence("Hades Hell", div='list-participants')
+        self.assertPresence("Charly", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
         self.submit(f, check_notification=False)
-        self.assertValidationError("ack_delete", "Muss markiert sein.")
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
@@ -2932,7 +2933,7 @@ class TestCdEFrontend(FrontendTest):
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Hades")
+        self.assertNonPresence("Charly")
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},

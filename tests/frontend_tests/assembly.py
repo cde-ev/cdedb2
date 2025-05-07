@@ -1185,7 +1185,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         f = self.response.forms["removeattachmentversionform2_3"]
         self.submit(f, check_notification=False)
-        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.")
+        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.", index=0)
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertPresence("Version 3 wurde gelöscht", div="attachment2_version3")
@@ -1201,7 +1201,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # ... since the button links to deletion of the whole attachment:
         f = self.response.forms["deleteattachmentform2"]
         self.submit(f, check_notification=False)
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.", index=0)
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertNonPresence("Kassenprüferbericht")
