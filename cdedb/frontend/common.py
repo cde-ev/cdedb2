@@ -642,6 +642,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        if attachment_hash is None:
+            rs.append_validation_error(
+                ("attachment", ValueError(n_("Must not be empty."))),
+            )
         return attachment_hash, attachment_filename
 
     @staticmethod
