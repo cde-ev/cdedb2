@@ -319,8 +319,13 @@
 {%- endmacro %}
 
 {% macro ack_delete(protect_text, name="ack_delete") %}
+    {% set caller_ = caller %}
     {% call output_errors(name, wrapper=True) %}
-        {{ input_checkbox(name=name, aclass="ack-delete", label=gettext("Are you sure?")) }}
+        {% if caller_ %}
+            {{ caller_() }}
+        {% else %}
+            {{ input_checkbox(name=name, aclass="ack-delete", label=gettext("Are you sure?")) }}
+        {% endif %}
     {% endcall %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
