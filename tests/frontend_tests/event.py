@@ -7809,8 +7809,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.assertRaises(webtest.app.AppError):
             self.submit(f)
 
+    @event_keeper
     @as_users("anton")
-    def test_event_dearchive(self) -> None:
+    def test_event_dearchive_unbalance(self) -> None:
         self.traverse("Veranstaltungen", "CyberTestAkademie")
         f = self.response.forms['archiveeventform']
         f['ack_archive'] = True
@@ -7818,11 +7819,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        f = self.response.forms['balanceeventform']
+        self.submit(f)
         self.traverse("Konfiguration")
         f = self.response.forms['changeeventform']
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        self.assertIn('unbalanceeventform', self.response.forms)
 
     @event_keeper
     @as_users("garcia")
