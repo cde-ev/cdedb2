@@ -26,7 +26,6 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    Silencer,
     access,
     affirm_dataclass,
     affirm_set_validation as affirm_set,
@@ -283,19 +282,6 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
                            atomized=False)
             return 1
-
-    @internal
-    @access("event")
-    def set_event_archived(self, rs: RequestState, event_id: int) -> None:
-        """Wrapper around ``set_event()`` for archiving an event.
-
-        This exists to emit the correct log message. It delegates
-        everything else (like validation) to the wrapped method.
-        """
-        with Atomizer(rs):
-            with Silencer(rs):
-                self.set_event(rs, event_id, {'is_archived': True})
-            self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
     def validate_persona_ids(self, rs: RequestState, persona_ids: Collection[int],
@@ -1186,12 +1172,15 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
-        self.assert_lock(rs, event_id=event_id)
-        update = {
-            'id': event_id,
-            'is_balanced': True,
-        }
         with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            event = self.get_event(rs, event_id)
+            if event.is_balanced:
+                raise ValueError(n_("Event already balanced."))
+            update = {
+                'id': event_id,
+                'is_balanced': True,
+            }
             self.event_keeper_commit(
                 rs, event_id, "Snapshot vor finanziellem Abschluss.")
             ret = self.sql_update(rs, models.Event.database_table, update)
@@ -1203,12 +1192,15 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
-        self.assert_lock(rs, event_id=event_id)
-        update = {
-            'id': event_id,
-            'is_balanced': False,
-        }
         with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            event = self.get_event(rs, event_id)
+            if not event.is_balanced:
+                raise ValueError(n_("Event isn't balanced."))
+            update = {
+                'id': event_id,
+                'is_balanced': False,
+            }
             self.event_keeper_commit(
                 rs, event_id, "Snapshot vor Aufhebung von finanziellem Abschluss.")
             ret = self.sql_update(rs, models.Event.database_table, update)
@@ -1220,13 +1212,13 @@ class EventBaseBackend(EventLowLevelBackend):
         """Lock an event."""
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_lock(rs, event_id=event_id)
-        update = {
-            'id': event_id,
-            'is_locked': True,
-        }
+            raise PrivilegeError
         with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            update = {
+                'id': event_id,
+                'is_locked': True,
+            }
             self.event_keeper_commit(rs, event_id, "Snapshot vor Lock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
@@ -1237,18 +1229,37 @@ class EventBaseBackend(EventLowLevelBackend):
         """Unlock an event."""
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-        if not self.is_locked(rs, event_id=event_id):
-            raise RuntimeError(n_("Event isn't locked."))
-        update = {
-            'id': event_id,
-            'is_locked': False,
-        }
+            raise PrivilegeError
         with Atomizer(rs):
-            self.event_keeper_commit(
-                rs, event_id, "Snapshot vor Unlock.")
+            if not self.is_locked(rs, event_id=event_id):
+                raise RuntimeError(n_("Event isn't locked."))
+            update = {
+                'id': event_id,
+                'is_locked': False,
+            }
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Unlock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, event_id)
+        return ret
+
+    @internal
+    @access("event")
+    def set_event_archived(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(rs, EventPrivileges.conclude, event_id=event_id):
+            raise PrivilegeError
+        with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            event = self.get_event(rs, event_id)
+            if event.is_archived:
+                raise ValueError(n_("Event isn't balanced."))
+            update = {
+                'id': event_id,
+                'is_archived': True,
+            }
+            self.event_keeper_commit(rs, event_id, "Snapshot vor Archivierung.")
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_archived, event_id)
         return ret
 
     @access("event")
