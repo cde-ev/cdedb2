@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% set jshint='strong' %}
 {% block scripts %}
     {% if "past_event" in user.admin_views %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
