@@ -1390,12 +1390,8 @@ class EventEventMixin(EventBaseFrontend):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
-        new_ids, message = self.pasteventproxy.archive_event(
+        new_ids = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
-
-        if message:
-            rs.notify("error", message)
-            return self.redirect(rs, "event/show_event")
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional

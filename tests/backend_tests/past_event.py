@@ -323,7 +323,7 @@ class TestPastEventBackend(BackendTest):
         self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
-        new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+        new_ids = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
@@ -349,7 +349,7 @@ class TestPastEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
+        new_ids = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
