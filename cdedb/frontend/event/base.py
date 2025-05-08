@@ -69,7 +69,7 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
     parameter or the first positional parameter after the request state.
 
     The event has to be organized via the DB. Only orgas and privileged
-    users are admitted. Additionally this can check for the offline
+    users are admitted. Additionally this can check for the event
     lock, so that no modifications happen to locked events.
     """
 
