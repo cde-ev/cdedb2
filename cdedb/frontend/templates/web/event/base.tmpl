@@ -183,9 +183,14 @@
     {% endif %}
 {% endmacro %}
 
-{% block scripts %}
-    {{ util.cdedb_script('cdedb_searchregistration.js') }}
-{% endblock %}
+{% if ambience['event'] %}
+    {% if not jshint %}
+        {% set jshint='weak' %}
+    {% endif %}
+    {% block scripts %}
+        {{ util.cdedb_script('cdedb_searchregistration.js') }}
+    {% endblock %}
+{% endif %}
 
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events")) }}
