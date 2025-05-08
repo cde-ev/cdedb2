@@ -5,7 +5,7 @@ import datetime
 import cdedb.database.constants as const
 from cdedb.common import nearly_now
 from cdedb.common.sorting import xsorted
-from tests.common import BackendTest, as_users
+from tests.common import BackendTest, as_users, event_keeper
 
 
 class TestPastEventBackend(BackendTest):
@@ -317,6 +317,7 @@ class TestPastEventBackend(BackendTest):
              'submitted_by': self.user['id']})
         self.assertLogEqual(expectation, 'past_event')
 
+    @event_keeper
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants

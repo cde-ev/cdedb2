@@ -5824,6 +5824,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         del second['timestamp']
         self.assertEqual(first, second)
 
+    @event_keeper
     @as_users("ferdinand")
     def test_archive(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -5899,6 +5900,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_without_past_event(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party 2050")
@@ -5933,6 +5935,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Mitglieder", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_event_purge_persona(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -6107,6 +6110,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 f[field].checked = True
         self.submit(f)
 
+    @event_keeper
     @as_users("anton")
     def test_archived_participant(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldungen",
