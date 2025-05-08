@@ -2493,9 +2493,6 @@ EVENT_EXPOSED_FIELDS = {
 EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_EXPOSED_OPTIONAL_FIELDS,
     **EVENT_FREETEXT_FIELDS,
-    'is_locked': bool,
-    'is_archived': bool,
-    'is_balanced': bool,
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
