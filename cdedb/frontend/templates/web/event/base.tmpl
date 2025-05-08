@@ -17,6 +17,9 @@
                 </span>
             </div>
         </form>
+        {% if not jshint %}
+            {{ util.raise_for_test("jshint not set for quick registration search.") }}
+        {% endif %}
         <script nonce="{{ csp_nonce }}">
             $(document).ready(function () {
                 const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
