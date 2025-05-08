@@ -66,14 +66,9 @@
                               id="deletepartform{{ part.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token('event/delete_part') }}
-                            {{ util.output_errors("ack_delete", wrapper=True) }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-sm btn-danger", icon="trash") }}
+                            {{ util.ack_delete(gettext("The event part will be permanently deleted.")) }}
                         </form>
-                        <script nonce="{{ csp_nonce }}">
-                            $('#deletepartform{{ part.id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
-                            $('#deletepartform{{ part.id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
                     {% endif %}
                     {% if is_privileged_for('change_part') %}
                         {{ util.href(cdedblink('event/change_part_form', {'part_id' : part.id}), gettext("Change Part"),

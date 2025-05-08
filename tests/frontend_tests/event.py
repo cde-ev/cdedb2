@@ -415,6 +415,9 @@ class TestEventFrontend(FrontendTest):
 
         self.assertNotIn('createorgalistform', self.response.forms)
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
@@ -669,6 +672,7 @@ class TestEventFrontend(FrontendTest):
             text = self.fetch_mail_content()
             self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
+            f['ack_delete'].checked = True
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
@@ -1345,10 +1349,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertNonPresence("Kein Formular vorhanden")
         f = self.response.forms['removeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Minderjährigenformular wurde entfernt.",
-                            div="notifications")
+        self.assertNotification("Minderjährigenformular wurde entfernt.", "info")
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Formular vorhanden", div='minor-form')
 
