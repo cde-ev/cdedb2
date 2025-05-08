@@ -533,6 +533,13 @@ class EventDownloadMixin(EventBaseFrontend):
         return self.send_file(
             rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
 
+    @access("droid_orga")
+    def droid_partial_export_dispatch(self, rs: RequestState) -> Response:
+        event_id = unwrap(rs.user.orga)
+        if not event_id:
+            raise werkzeug.exceptions.Forbidden(n_("User is not a valid orga droid."))
+        return self.redirect(rs, "event/droid_partial_export", {'event_id': event_id})
+
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:
         """Retrieve data for third-party applications in offline mode.

@@ -157,14 +157,8 @@
                         {{ util.anti_csrf_token('event/delete_lodgement') }}
                         {{ util.input_submit(gettext("Delete"), readonly=not is_privileged_for("delete_lodgement"),
                                 aclass="btn btn-sm btn-danger", icon='trash-alt') }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
-                                               readonly=not is_privileged_for("delete_lodgement")) }}
+                         {{ util.ack_delete(gettext("The Lodgement will be permanently deleted.")) }}
                     </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#deletelodgementform').cdedbProtectAction(
-                            "{{ gettext("The Lodgement will be permanently deleted.") }}");
-                        $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 </div>
             </div>
             <div class="col-sm-8">
