@@ -3579,6 +3579,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Kalte Kammer")
         # Use the pager to navigate to Einzelzelle and test proper sorting
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
+
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
@@ -3602,6 +3603,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
+
+        self.traverse("Unterkünfte", "Kalte Kammer")
+        self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
+        self.assertPresence("Inga Iota (U10)")
+
         self.traverse("Unterkünfte", "Kellerverlies")
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         f = self.response.forms['deletelodgementform']
