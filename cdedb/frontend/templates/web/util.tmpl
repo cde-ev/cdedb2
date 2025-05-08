@@ -327,17 +327,20 @@
             {{ input_checkbox(name=name, aclass="ack-delete", label=gettext("Are you sure?")) }}
         {% endif %}
         {% if not jshint %}
-            <noscript>
-                <div class="text-warning">
-                    {{ util.make_icon('exclamation-triangle') }}
-                    {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
-                </div>
-            </noscript>
+            {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
         {% endif %}
     {% endcall %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
     </script>
+{% endmacro %}
+
+{% macro raise_for_test(msg) %}
+    {% if CDEDB_TEST %}
+        {{ raise(msg) }}
+    {% elif CDEDB_DEV %}
+        <div class="text-danger">{{ make_icon('exclamation-triangle') }}{{ nbsp }}{{ msg }}</div>
+    {% endif %}
 {% endmacro %}
 
 {% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}

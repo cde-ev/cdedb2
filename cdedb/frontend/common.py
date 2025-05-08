@@ -402,6 +402,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
