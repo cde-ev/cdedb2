@@ -526,11 +526,10 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
             parts.append(', '.join(event.parts[p].title
                                    for p in _sort_parts(waitlist_parts, event)))
         parts_string = "".join(parts)
-    else:
-        if _parts_with_status(registration, {RegistrationPartStati.guest}):
-            parts_string = "\n" + rs.gettext("Guest")
-        elif _parts_with_status(registration, {RegistrationPartStati.waitlist}):
-            parts_string = "\n" + rs.gettext("Waitlist")
+    elif _parts_with_status(registration, {RegistrationPartStati.guest}):
+        parts_string = "\n" + rs.gettext("Guest")
+    elif _parts_with_status(registration, {RegistrationPartStati.waitlist}):
+        parts_string = "\n" + rs.gettext("Waitlist")
 
     persona = personas[registration['persona_id']]
     lodge_field_name = event.fields[event.lodge_field.id].field_name  # type: ignore[union-attr]
