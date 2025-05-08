@@ -480,7 +480,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona['foto'] and include_foto:
             mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
             foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
-            data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
+            if mime_type and foto_data:
+                data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
         data.append('END:VCARD')
         data.append('')
         return '\r\n'.join(data)
