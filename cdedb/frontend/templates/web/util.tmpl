@@ -48,7 +48,11 @@
     id=anid,
     **{ "aria-current": "page" if active }
 )|xmlattr }} {{ attributes }}{# We use the `active` attribute for navigation only #}>
-{{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
+{%- if caller -%}
+    {{- caller() -}}
+{%- else -%}
+    {{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label -}}
+{%- endif %}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
