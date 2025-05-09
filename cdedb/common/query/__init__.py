@@ -1011,7 +1011,7 @@ def make_registration_query_spec(event: "models.Event",
         },
         **{
             f"amount_owed.{kind.name}": QuerySpecEntry(
-                "money", n_("Amount Owed: {kind}"), title_params={'kind': kind.name})
+                "money", title_base=str(kind), title_prefix=n_("Amount Owed"))
             for kind in const.EventFeeType
         },
     }
