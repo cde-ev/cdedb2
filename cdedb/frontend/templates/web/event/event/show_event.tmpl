@@ -185,12 +185,8 @@
                                 {{ util.input_hidden(name="delete", value=True) }}
                                 {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=not is_privileged_for("change_minor_form"),
                                                      icon="trash-alt", aclass='btn btn-danger') }}
-                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                {{ util.ack_delete(gettext("The minor form will be permanently deleted.")) }}
                             </form>
-                            <script nonce="{{ csp_nonce }}">
-                                $('#removeminorformform').cdedbProtectAction("{{ gettext("The minor form will be permanently deleted.") }}");
-                                $('#removeminorformform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                            </script>
                         {% else %}
                             <strong>{{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}No Form present – Minors cannot register{% endtrans %}
@@ -200,7 +196,7 @@
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         {{ util.anti_csrf_token('event/change_minor_form') }}
-                        {{ util.input_hidden(name="delete", value=True) }}
+                        {{ util.input_hidden(name="delete", value=False) }}
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
@@ -309,6 +305,7 @@
                                     id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('event/remove_orga') }}
                                 {{ util.input_hidden(name="orga_id", value=anid) }}
+                                {{ util.ack_delete(gettext("The orga will be removed from the event.")) }}
                                 {{ util.input_submit(label="", readonly=is_locked, title=gettext("Remove Orga"),
                                                      icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
                             </form>
@@ -415,7 +412,7 @@
                                 {{ util.input_submit(label=gettext("Archive"),
                                                      readonly=(is_locked or (ambience['event']['end'] >= now().date()
                                                                              and not ambience['event']['is_cancelled'])),
-                                                     aclass="btn btn-danger mosp", icon="folder",
+                                                     aclass="btn btn-danger btn-wrap mosp", icon="folder",
                                                      title=(gettext("Event is not concluded yet.")
                                                             if (ambience['event']['end'] >= now().date()
                                                                 and not ambience['event']['is_cancelled']) else "")) }}
@@ -423,7 +420,7 @@
                                     readonly=(is_locked or (ambience['event']['end'] >= now().date()
                                                             and not ambience['event']['is_cancelled'])),
                                         label=gettext("Create past event after archiving."), defaultvalue='True') }}
-                                {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
+                                {{ util.ack_delete(gettext("The event will be permanently archived."), "ack_archive") }}
                             </form>
                         </div>
                     </div>
@@ -436,10 +433,6 @@
                         </p>
                     </div>
                 </div>
-                <script nonce="{{ csp_nonce }}">
-                    $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
-                    $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
-                </script>
                 {% endif %}
                 <div class="row" id="delete-event">
                     <div class="col-sm-4">
@@ -450,12 +443,8 @@
                                 {{ util.input_submit(label=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
                                                      aclass="btn btn-danger", icon="trash-alt",
                                                      title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                {{ util.ack_delete(gettext("The event will be permanently deleted.")) }}
                             </form>
-                            <script nonce="{{ csp_nonce }}">
-                                $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-                                $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                            </script>
                         </div>
                     </div>
                     <div class="col-sm-8">
@@ -477,14 +466,14 @@
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/balance_event') }}
                                     {{ util.input_submit(label=gettext("Balance Event"), readonly=is_locked,
-                                                         aclass="btn btn-primary", icon="balance-scale") }}
+                                                         aclass="btn btn-primary btn-wrap", icon="balance-scale") }}
                                 </form>
                             {% else %}
                                 <form action="{{ cdedblink('event/unbalance_event') }}" method="POST" id="unbalanceeventform"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('event/unbalance_event') }}
                                     {{ util.input_submit(label=gettext("Unbalance Event"), readonly=is_locked,
-                                                         aclass="btn btn-danger", icon="balance-scale") }}
+                                                         aclass="btn btn-danger btn-wrap", icon="balance-scale") }}
                                 </form>
                             {% endif %}
                         </div>

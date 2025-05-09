@@ -436,13 +436,20 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "pcourse_id")
+    @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
     def remove_participant(self, rs: RequestState, pevent_id: int,
                            persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID],
+                           ack_delete: bool,
                            ) -> Response:
         """Remove participant."""
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.show_past_event(rs, pevent_id)
+            if pcourse_id:
+                return self.show_past_course(rs, pevent_id, pcourse_id)
+            else:
+                return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)
         rs.notify_return_code(code)
