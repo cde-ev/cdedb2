@@ -55,7 +55,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import ConstraintViolation, ViolationAux
+from cdedb.models.event_constraint_violations import ViolationAux, ViolationList
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
@@ -489,8 +489,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         :param course_id: Same as `registration_id`.
         :return: A collection of data pertaining to the constraint violations.
         """
-        violations: list[ConstraintViolation] = []
-
         # Retrieve registrations.
         all_registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event.id))
@@ -568,6 +566,51 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_id=None, course_id=None, lodgement_id=None,
         )
         return self.render(rs, "base/constraint_violations", params)
+
+    @access("event.event_helper", "event_admin", "finance_admin")
+    @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
+                "is_concluded", _omit_missing=True)
+    def constraint_violations_summary(
+            self, rs: RequestState,
+            event_ids: vtypes.IntCSVList | None = None,
+            violation_classes: list[str] | None = None,
+            is_archived: int = -1,
+            is_balanced: int = -1,
+            is_concluded: int = -1,
+    ) -> Response:
+        rs.ignore_validation_errors()
+
+        is_archived = bool(is_archived) if is_archived != -1 else None
+        is_balanced = bool(is_balanced) if is_balanced != -1 else None
+        is_concluded = bool(is_concluded) if is_concluded != -1 else None
+        event_ids = set(event_ids or [])
+
+        all_event_ids = self.eventproxy.list_events(rs)
+        all_events = self.eventproxy.get_events(rs, all_event_ids)
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(all_events.values(), reverse=True)
+        ]
+
+        violations = ViolationList()
+        for event in all_events.values():
+            violations.extend(
+                self.get_constraint_violations(
+                    rs, event, registration_id=None, course_id=None, lodgement_id=None,
+                )['violations'],
+            )
+        violations.sort()
+
+        return self.render(rs, "base/constraint_violations_summary", {
+            'violations': violations, 'all_events': all_events,
+            'event_options': event_options, 'event_ids': event_ids,
+            'is_archived': is_archived, 'is_balanced': is_balanced,
+            'is_concluded': is_concluded,
+        })
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")

@@ -1,0 +1,246 @@
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
+{% block title %}
+    {% trans %}Constraint Violations Summary{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Constraint Violations")) }}
+{% endblock %}
+
+{% set jshint = 'weak' %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_search_event.js') }}
+    <style>
+        .maybehide {
+            display: none;
+        }
+        .maybenothide {
+            display: block;
+        }
+        .maybehide:has( .event:not(.softhide)) {
+            display: block;
+
+            & ~.maybenothide {
+                display: none;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% macro print_violation_summary_item(violations, class_name, event, min_severity, include_title=True) %}
+    <li>
+        {% set link = cdedblink("event/constraint_violations", {'event_id': event.id}) + "#" + class_name %}
+        {% call util.href(link, label=none, aclass=violations.max_severity.html_class(), readonly=not is_privileged_for("event/constraint_violations", event_id=event.id)) %}
+            {% if include_title %}
+                {% trans count=violations|selectattr("severity", "ge", min_severity)|list|length,
+                         class_name=gettext(class_name),
+                         event_title=event.title %}
+                    There are {{ count }} {{ class_name }} for {{ event_title }}.
+                {% endtrans %}
+            {% else %}
+                {% trans count=violations|selectattr("severity", "ge", min_severity)|list|length,
+                         class_name=gettext(class_name) %}
+                    There are {{ count }} {{ class_name }}.
+                {% endtrans %}
+            {% endif %}
+        {% endcall %}
+    </li>
+{% endmacro %}
+
+{% macro event_wrapper(event) %}
+    <div id="event_{{ event.id }}" data-event_id="{{ event.id }}"
+         class="event {# The existence of this comment is important! #}
+            {%- if event.is_archived %} event-is-archived {% endif %}
+            {%- if event.is_balanced %} event-is-balanced {% endif %}
+            {%- if event.is_cancelled or now().date() >= event.end %} event-is-concluded {% endif -%}
+            {%- if (event_ids and event.id not in event_ids
+                    or is_archived is not none and (event.is_archived != is_archived)
+                    or is_balanced is not none and (event.is_balanced != is_balanced)
+                    or is_concluded is not none and ((event.is_cancelled or now().date() >= event.end)) != is_concluded) -%}
+                softhide
+            {%- endif -%}
+        ">
+        {{ caller() }}
+    </div>
+{% endmacro %}
+
+{% macro fancy_button_group(name, label, entries, type="radio", innerlabelclass="", defaultvalue="") %}
+    <label>
+        {{ label }}
+        <div class="btn-group" data-toggle="buttons">
+            {% for value, label in entries %}
+            {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
+            <label class="{{ innerlabelclass }} {% if selected %}active{% endif %}">
+                {{ label }}
+                <input type="{{ type }}" name="{{ name }}" value="{{ value }}"
+                       {% if selected %}checked{% endif %}>
+            </label>
+            {% endfor %}
+        </div>
+    </label>
+{% endmacro %}
+
+{% block content %}
+
+    {% call util.bootstrap_panel(gettext("Filter"), aclass="panel-primary", icon="filter") %}
+        <form action="{{ cdedblink("event/constraint_violations_summary") }}" method="GET" id="filterconstraintsform">
+            <label for="filter-event-ids">
+                {% trans %}Only show these events:{% endtrans %}
+            </label>
+            {{ util.input_text(name="event_ids", anid="filter-event-ids", placeholder=gettext("<id>,<id>,…")) }}
+            <div class="row">
+                <div class="col-sm-3">
+                    {{ fancy_button_group("is_archived", gettext("Is Archived"), type="radio",
+                                          innerlabelclass="", defaultvalue="-1",
+                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
+                </div>
+                <div class="col-sm-3">
+                    {{ fancy_button_group("is_balanced", gettext("Is Balanced"), type="radio",
+                                          innerlabelclass="", defaultvalue="-1",
+                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
+                </div>
+                <div class="col-sm-3">
+                    {{ fancy_button_group("is_concluded", gettext("Is Concluded"), type="radio",
+                                          innerlabelclass="text-right", defaultvalue="-1",
+                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
+                </div>
+                <div class="col-sm-3">
+                    <div style="margin-top: 18px">
+                        {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-right") }}
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endcall %}
+
+    {% set min_severity = enums['ViolationSeverity'].INFO %}
+    <div class="tab-container">
+        <ul class="nav nav-tabs mosp softhide" role="tablist" id="violations_tablist">
+            <li role="presentation" class="">
+                <a data-toggle="tab" data-target="#tab_group_by_event" role="tab">
+                    {{ util.make_icon('chalkboard-teacher') }}{{ nbsp -}}
+                    {% trans %}Group by Event{% endtrans %}
+                </a>
+            </li>
+            <li role="presentation">
+                <a data-toggle="tab" data-target="#tab_group_by_violation" role="tab">
+                    {{ util.make_icon('exclamation-circle') }}{{ nbsp -}}
+                    {% trans %}Group by Violation Class{% endtrans %}
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content" id="violations_tabcontent">
+            <div class="tab-pane active" role="tabpanel" id="tab_group_by_event" aria-labelledby="event-tab">
+                {{ util.h(gettext("Group by Event"), underline=False) }}
+                <div class="maybehide">
+                {% for event in all_events.values()|sort %}
+                    {% call event_wrapper(event) %}
+                        {% set event_violations = violations.get(event_id=event.id) %}
+                        {{ util.href(cdedblink("event/show_event", {'event_id': event.id}),
+                                     label=util.h(util.make_icon("chalkboard-teacher") + nbsp + event.title, level=4)) }}
+                        {% if event_violations and event_violations.max_severity >= min_severity %}
+                            <ul>
+                            {% for class_name, violations_ in event_violations.by_class.items() if violations_.max_severity >= min_severity %}
+                                {{ print_violation_summary_item(violations_, class_name, event, min_severity, include_title=False) }}
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            {% trans %}
+                                There are currently no violations.
+                            {% endtrans %}
+                        {% endif %}
+                    {% endcall %}
+                {% endfor %}
+                </div>
+                <p class="maybenothide">
+                    {% trans %}Filter matched no events.{% endtrans %}
+                </p>
+            </div>
+            <div class="tab-pane active" role="tabpanel" id="tab_group_by_violation" aria-labelledby="group-tab">
+
+                {{ util.h(gettext("Group by Violation Class"), underline=False) }}
+                {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
+                    <div class="maybehide">
+                    {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                    {{ util.h(class_name, level=4) }}
+                    <ul>
+                    {% for event in all_events.values()|sort %}
+                        {% set event_violations = violations_.get(event_id=event.id) %}
+                        {% if event_violations and event_violations.max_severity >= min_severity %}
+                            {% call event_wrapper(event) %}
+                                {{ print_violation_summary_item(event_violations, class_name, event, min_severity, include_title=True) }}
+                            {% endcall %}
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                    </div>
+                {% endfor %}
+                <p class="maybenothide">
+                    {% trans %}There are currently no violations.{% endtrans %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <script nonce="{{ csp_nonce }}">
+        let nav_tabs = $('.nav-tabs').show().find('a');
+        nav_tabs.first().tab('show');
+        {#let tab_container = nav_tabs.each(function() {#}
+        {#    if (window.location.hash === $(this).attr('href')) {#}
+        {#        $(this).tab('show');#}
+        {#        return false;#}
+        {#    }#}
+        {# }).on('shown.bs.tab', function (event) {#}
+        {#    window.location.hash = $(event.target).attr('href');#}
+        {#    // history.pushState(null, null, $(event.target).attr('href'));#}
+        {# }).closest('.tab-container');#}
+        let tab_container = nav_tabs.closest('.tab-container');
+        tab_container.find('h3').hide();
+
+
+        let filter = $('#filterconstraintsform');
+
+        filter.find('input[name="event_ids"]').cdedbSearchEvent(
+            '{{ cdedblink('event/select_event') }}',
+            {{ event_options|tojson }},
+            true,
+        );
+        filter.find('.btn-group').children('label').addClass('btn btn-primary');
+
+        let update_event_selection = function () {
+            let event_ids_list = filter.find('input[name="event_ids"]').val().split(',').filter(Boolean);
+            let is_archived_val = parseInt(filter.find('input[name="is_archived"]:checked').val());
+            let is_balanced_val = parseInt(filter.find('input[name="is_balanced"]:checked').val());
+            let is_concluded_val = parseInt(filter.find('input[name="is_concluded"]:checked').val());
+            console.log(event_ids_list, event_ids_list.length, is_archived_val, is_balanced_val, is_concluded_val)
+            $(tab_container).find('div.event').each(function() {
+                $(this).removeClass('softhide');
+                if (event_ids_list.length && !event_ids_list.includes(String($(this).data("event_id")))) {
+                    console.log("Hiding ", $(this).data("event_id"), " due to event_ids.")
+                    $(this).addClass('softhide');
+                }
+                if (is_archived_val !== -1 && $(this).hasClass('event-is-archived') !== Boolean(is_archived_val)) {
+                    console.log("Hiding ", $(this).data("event_id"), " due to is-archived.")
+                    $(this).addClass('softhide');
+                }
+
+                if (is_balanced_val !== -1 && $(this).hasClass('event-is-balanced') !== Boolean(is_balanced_val)) {
+                    console.log("Hiding ", $(this).data("event_id"), " due to is-balanced.")
+                    $(this).addClass('softhide');
+                }
+
+                if (is_concluded_val !== -1 && $(this).hasClass('event-is-concluded') !== Boolean(is_concluded_val)) {
+                    console.log("Hiding ", $(this).data("event_id"), " due to is-concluded.")
+                    $(this).addClass('softhide');
+                }
+            })
+        }
+        filter.find('input').on('change', update_event_selection);
+        update_event_selection();
+    </script>
+
+{% endblock %}
