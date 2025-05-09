@@ -836,6 +836,23 @@ def is_list_type(type_: type[Any]) -> bool:
     )
 
 
+def get_mandatory_form_fields(
+    *args: TypeMapping | Callable[..., werkzeug.Response],
+) -> set[str]:
+    """Extract which input fields are mandatory from a type dict or function.
+
+    Each parameter can be a frontend method or a mapping of field names to types.
+    """
+    ret: set[str] = set()
+    for arg in args:
+        if isinstance(arg, MutableMapping):
+            ret |= {key for key, type_ in arg.items()
+                    if not (is_optional_type(type_) or is_list_type(type_))}
+        else:
+            ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
+    return ret
+
+
 # TODO: unite these two helpers and overload?
 def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
     """Extract types which input fields are mandatory from a validation type dict.

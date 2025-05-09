@@ -106,7 +106,7 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     glue,
     json_serialize,
     make_persona_name,
@@ -2265,7 +2265,7 @@ def REQUESTdata(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.mandatory_form_fields = get_mandatory_from_typedict(  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields = get_mandatory_form_fields(  # type: ignore[attr-defined]
             {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)

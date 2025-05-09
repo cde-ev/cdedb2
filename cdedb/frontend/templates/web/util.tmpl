@@ -564,7 +564,6 @@
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
-    {# TODO How to handle mandatory-marker here? At every checkbox?  #}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
