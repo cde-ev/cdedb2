@@ -7440,10 +7440,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Solidarische Reduktion -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen")
         self.assertNonPresence("Solidarische Erhöhung")
-        self.assertPresence("Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
+        self.assertPresence(
+            "Solidarische Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
         self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen")
 
         save = self.response
+        self.traverse({'linkid': '^solidary_donation_owed_query$'})
+        self.assertPresence("Ergebnis [3]", div="query-results")
+        f = self.response.forms['queryform']
+        self.submit(f, button="download", value="json")
+        result = json.loads(self.response.text)
+        key = "amount_owed.solidary_donation"
+        for entry in result:
+            self.assertIn(key, entry.keys())
+            self.assertEqual("420.00", entry[key])
+        self.response = save
+
         self.traverse({'linkid': 'surplus_query'})
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.response = save
