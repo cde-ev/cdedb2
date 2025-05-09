@@ -853,26 +853,6 @@ def get_mandatory_form_fields(
     return ret
 
 
-# TODO: unite these two helpers and overload?
-def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
-    """Extract types which input fields are mandatory from a validation type dict.
-
-    :param fields: Mapping of field names to types, usually imported from validation.
-    :return: Names of the fields which are not Optional[something].
-    """
-    return {key for key, type_ in fields.items()
-            if not (is_optional_type(type_) or is_list_type(type_))}
-
-
-def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> set[str]:
-    """Extract which parameters are mandatory from function annotations.
-
-    The actual work is done by the @REQUESTdata decoorator,
-    this is just a wrapper to silence mypy.
-    """
-    return fun.mandatory_form_fields  # type: ignore[attr-defined]
-
-
 @enum.unique
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
