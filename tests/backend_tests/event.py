@@ -3453,7 +3453,7 @@ class TestEventBackend(BackendTest):
                 6: decimal.Decimal("10.50"),
             }
             reality = {
-                reg_id: self.event.calculate_fee(self.key, reg_id)
+                reg_id: self.event.calculate_complex_fee(self.key, reg_id).amount
                 for reg_id in reg_ids
             }
             self.assertEqual(expectation, reality)
@@ -3605,7 +3605,7 @@ class TestEventBackend(BackendTest):
             "notes": None,
         }
         reg_id = self.event.create_registration(self.key, reg_data)
-        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+        self.assertEqual(self.event.calculate_complex_fee(self.key, reg_id).amount,
                          decimal.Decimal("15"))
         reg_data = {
             'id': reg_id,
@@ -3614,7 +3614,7 @@ class TestEventBackend(BackendTest):
             },
         }
         self.assertTrue(self.event.set_registration(self.key, reg_data))
-        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+        self.assertEqual(self.event.calculate_complex_fee(self.key, reg_id).amount,
                          decimal.Decimal("2.50"))
 
     @as_users("garcia")
@@ -4967,7 +4967,7 @@ class TestEventBackend(BackendTest):
             }
             self.event.set_registration(self.key, r_data)
             combination = ", ".join(str(int(x == p)) for x in stati)
-            fee = self.event.calculate_fee(self.key, reg_id)
+            fee = self.event.calculate_complex_fee(self.key, reg_id).amount
             with self.subTest(combination=combination):
                 self.assertEqual(fee, decimal.Decimal(expected_fee))
 
@@ -5189,12 +5189,12 @@ class TestEventBackend(BackendTest):
         }
         reg_id = self.event.create_registration(self.key, rdata)
         self.assertEqual(
-            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+            external_fee_amount, self.event.calculate_complex_fee(self.key, reg_id).amount)
 
         # 2.2 Now grant them membership and check that the external fee still holds.
         self.cde.change_membership(self.key, persona_id, True)
         self.assertEqual(
-            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+            external_fee_amount, self.event.calculate_complex_fee(self.key, reg_id).amount)
 
         # 3.1 Delete and recreate the registration.
         #  Check that external fee does not apply.
@@ -5202,12 +5202,12 @@ class TestEventBackend(BackendTest):
             self.key, reg_id, ('registration_parts',))
         new_reg_id = self.event.create_registration(self.key, rdata)
         self.assertEqual(
-            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+            decimal.Decimal(0), self.event.calculate_complex_fee(self.key, new_reg_id).amount)
 
         # 3.2 Revoke membership and check that external fee still does not apply.
         self.cde.change_membership(self.key, persona_id, False)
         self.assertEqual(
-            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+            decimal.Decimal(0), self.event.calculate_complex_fee(self.key, new_reg_id).amount)
 
     @event_keeper
     @as_users("anton")

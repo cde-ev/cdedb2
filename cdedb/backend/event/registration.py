@@ -1455,10 +1455,6 @@ class EventRegistrationBackend(EventBaseBackend):
         return fees
 
     @access("event")
-    def calculate_fee(self, rs: RequestState, registration_id: int) -> decimal.Decimal:
-        return self.calculate_complex_fee(rs, registration_id).amount
-
-    @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
                               visual_debug: bool = False) -> ComplexRegistrationFee:
         """Public access point for retrieving complex fee data."""
