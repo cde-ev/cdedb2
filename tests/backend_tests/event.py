@@ -3452,17 +3452,17 @@ class TestEventBackend(BackendTest):
                 5: decimal.Decimal("584.48"),
                 6: decimal.Decimal("10.50"),
             }
-            self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+            reality = {
+                reg_id: self.event.calculate_fee(self.key, reg_id)
+                for reg_id in reg_ids
+            }
+            self.assertEqual(expectation, reality)
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
-        self.assertEqual(
-            const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
-        self.assertEqual(
-            const.RegistrationPartStati.guest, reg['parts'][2]['status'])
-        self.assertEqual(
-            const.RegistrationPartStati.participant,
-            reg['parts'][3]['status'])
+        self.assertEqual(const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
+        self.assertEqual(const.RegistrationPartStati.guest, reg['parts'][2]['status'])
+        self.assertEqual(const.RegistrationPartStati.participant, reg['parts'][3]['status'])
         update = {
             'id': reg_id,
             'parts': {
@@ -3480,12 +3480,9 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.set_registration(self.key, update))
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("128.00"))
-        self.assertEqual(reg['parts'][1]['status'],
-                         const.RegistrationPartStati.cancelled)
-        self.assertEqual(reg['parts'][2]['status'],
-                         const.RegistrationPartStati.participant)
-        self.assertEqual(reg['parts'][3]['status'],
-                         const.RegistrationPartStati.rejected)
+        self.assertEqual(reg['parts'][1]['status'], const.RegistrationPartStati.cancelled)
+        self.assertEqual(reg['parts'][2]['status'], const.RegistrationPartStati.participant)
+        self.assertEqual(reg['parts'][3]['status'], const.RegistrationPartStati.rejected)
 
     @as_users("berta")
     def test_uniqueness(self) -> None:
