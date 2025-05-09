@@ -20,7 +20,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -81,6 +81,9 @@ from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
+
+if TYPE_CHECKING:
+    from cdedb.backend.event.registration import ComplexRegistrationFee
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
@@ -1101,7 +1104,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @abc.abstractmethod
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
-                                          ) -> DefaultReturnCode: ...
+                                          ) -> dict[int, "ComplexRegistrationFee"]: ...
 
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,

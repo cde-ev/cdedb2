@@ -32,7 +32,7 @@ with s:
         print("getting fee stats...", end="", flush=True)
         fee_stats_pre = event_backend.get_fee_stats(rs, event.id)
         print("done. Proceeding...", end="", flush=True)
-        rowcount = event_backend._update_registrations_amount_owed(rs, event.id)
+        rowcount = len(event_backend._update_registrations_amount_owed(rs, event.id))
         registrations_updated += rowcount
         print(f"updated {rowcount} registrations.")
         print("Comparing fee stats...", end="", flush=True)

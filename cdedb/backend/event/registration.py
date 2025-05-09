@@ -1148,10 +1148,7 @@ class EventRegistrationBackend(EventBaseBackend):
             current_amount_owed = self.sql_select_one(
                 rs, models.Registration.database_table, ["amount_owed"], data['id'],
             )
-            self._update_registration_amount_owed(rs, data['id'])
-            new_amount_owed = self.sql_select_one(
-                rs, models.Registration.database_table, ["amount_owed"], data['id'],
-            )
+            new_amount_owed = self._update_registration_amount_owed(rs, data['id']).amount
 
             if event.is_balanced and current_amount_owed != new_amount_owed:
                 raise ValueError(n_(
@@ -1196,10 +1193,6 @@ class EventRegistrationBackend(EventBaseBackend):
             data['fields'] = fdata
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
-            data['amount_owed'] = self._calculate_complex_fee(rs, data, event=event).amount
-            if event.is_balanced and data['amount_owed']:
-                raise ValueError(n_(
-                    "Event is balanced. May not create registration which owes a fee."))
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
@@ -1234,6 +1227,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
             self._track_groups_sanity_check(rs, data['event_id'])
+
+            amount_owed = self._update_registration_amount_owed(rs, new_id).amount
+
+            if event.is_balanced and amount_owed:
+                raise ValueError(n_(
+                    "Event is balanced. May not create registration which owes a fee."))
+
             self.event_log(
                 rs, const.EventLogCodes.registration_created, data['event_id'],
                 persona_id=data['persona_id'])
@@ -1404,15 +1404,17 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _update_registration_amount_owed(
             self, rs: RequestState, registration_id: int,
-    ) -> DefaultReturnCode:
+    ) -> ComplexRegistrationFee:
         """
         Update the amount owed for one registration.
         """
         self.affirm_atomized_context(rs)
-        return self._update_registrations_amount_owed_inner(rs, (registration_id,))
+        return self._update_registrations_amount_owed_inner(
+            rs, (registration_id,),
+        )[registration_id]
 
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
-                                          ) -> DefaultReturnCode:
+                                          ) -> dict[int, ComplexRegistrationFee]:
         """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
@@ -1420,11 +1422,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _update_registrations_amount_owed_inner(
             self, rs: RequestState, registration_ids: Collection[int],
-    ) -> DefaultReturnCode:
+    ) -> dict[int, ComplexRegistrationFee]:
         self.affirm_atomized_context(rs)
         registrations = self.get_registrations(rs, registration_ids)
         if not registrations:
-            return 0
+            return {}
 
         event = self.get_event(rs, next(iter(registrations.values()))['event_id'])
 
@@ -1448,7 +1450,9 @@ class EventRegistrationBackend(EventBaseBackend):
             ),
         )
 
-        return self.query_exec(rs, query, params)
+        self.query_exec(rs, query, params)
+
+        return fees
 
     @access("event")
     def calculate_fee(self, rs: RequestState, registration_id: int) -> decimal.Decimal:
