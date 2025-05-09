@@ -15,7 +15,7 @@ from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
     RequestState,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
 )
@@ -57,7 +57,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
         meta_info = self.coreproxy.get_meta_info(rs)
-        mandatory_fields = get_mandatory_from_typedict(GENESIS_CASE_EXPOSED_FIELDS)
+        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
         if not rs.values.get('attachment_hash'):
             mandatory_fields.add('attachment')
         return self.render(rs, "genesis/genesis_request", {
@@ -345,7 +345,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # TODO: find out what's wrong with validating a date in a dict
         #  birthday is not mandatory in contrast to all other fields marked here.
         # TODO: distinct mandatory fields based on realm... (probably adjust JS)
-        mandatory_fields = get_mandatory_from_typedict(GENESIS_CASE_EXPOSED_FIELDS)
+        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
 
         courses: dict[int, str] = {}
         if case['pevent_id']:
