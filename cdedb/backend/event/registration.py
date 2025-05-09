@@ -1424,7 +1424,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self.affirm_atomized_context(rs)
         registrations = self.get_registrations(rs, registration_ids)
         if not registrations:
-            return 1
+            return 0
 
         event = self.get_event(rs, next(iter(registrations.values()))['event_id'])
 
@@ -1435,15 +1435,15 @@ class EventRegistrationBackend(EventBaseBackend):
 
         query = f"""
             UPDATE {models.Registration.database_table} AS r
-            SET amount_owed = u.amount_owed
+            SET amount_owed = u.amount_owed, amount_owed_by_kind = u.by_kind::jsonb
             FROM (
-                VALUES {",".join(["(%s, %s)"] * len(fees))}
-            ) AS u (id, amount_owed)
+                VALUES {",".join(["(%s, %s, %s)"] * len(fees))}
+            ) AS u (id, amount_owed, by_kind)
             WHERE r.id = u.id
         """
         params: list[int | decimal.Decimal | PsycoJson] = list(
             itertools.chain.from_iterable(
-                (registration_id, fee.amount)
+                (registration_id, fee.amount, PsycoJson(fee.by_kind))
                 for registration_id, fee in fees.items()
             ),
         )

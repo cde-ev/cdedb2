@@ -986,8 +986,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid")),
-        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed")),
+        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
@@ -1008,6 +1008,11 @@ def make_registration_query_spec(event: "models.Event",
             f"fee{fee.id}.amount": QuerySpecEntry(
                 "money", n_("Personalized Amount"), fee.title)
             for fee in event.fees.values() if fee.is_personalized()
+        },
+        **{
+            f"amount_owed.{kind.name}": QuerySpecEntry(
+                "money", n_("Amount Owed: {kind}"), title_params={'kind': kind.name})
+            for kind in const.EventFeeType
         },
     }
 
