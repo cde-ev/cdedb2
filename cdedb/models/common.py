@@ -198,9 +198,9 @@ class CdEDataclass:
         """Determine fields where user needs to enter something.
 
         The `validation_fields` attribute has slightly different semantics,
-        namely it is about validation, not user input."""
-        mand, opt = cls.validation_fields(creation=creation)
-        return get_mandatory_form_fields(mand) | get_mandatory_form_fields(opt)
+        namely it is about validation, not user input.
+        """
+        return get_mandatory_form_fields(*cls.validation_fields(creation=creation))
 
     @classmethod
     def requestdict_fields(
