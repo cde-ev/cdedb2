@@ -11,7 +11,7 @@ HTTP-Header of every request under the key ``X-CdEDB-API-token``.
 Example::
 
     requests.get(
-        f"https://db.cde-ev.de/db/event/event/{event_id}/droid/partial",
+        f"https://db.cde-ev.de/db/event/event/droid/export",
         headers={"X-CdEDB-API-Token": secret},
     )
 
@@ -33,3 +33,8 @@ This is a read-only operation.
 
 The partial export is a JSON file of the same format one may download via the
 regular frontend.
+
+Since every orga droid is specific to one event, there is another endpoint for
+the export that does not require you to specify the event id:
+
+``/event/event/droid/export``.

@@ -415,6 +415,9 @@ class TestEventFrontend(FrontendTest):
 
         self.assertNotIn('createorgalistform', self.response.forms)
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
@@ -669,6 +672,7 @@ class TestEventFrontend(FrontendTest):
             text = self.fetch_mail_content()
             self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
+            f['ack_delete'].checked = True
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
@@ -1331,6 +1335,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('minor_form', "Darf nicht leer sein.")
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")
@@ -1343,10 +1349,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertNonPresence("Kein Formular vorhanden")
         f = self.response.forms['removeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Minderjährigenformular wurde entfernt.",
-                            div="notifications")
+        self.assertNotification("Minderjährigenformular wurde entfernt.", "info")
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Formular vorhanden", div='minor-form')
 
@@ -7304,21 +7311,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Test and compare exports.
         orga_token = self.event.get_orga_token(self.key, new_token_id)
 
-        with self.switch_user("anonymous"):
-            self.get(
-                f'/event/event/{event_id}/droid/partial',
-                headers={
-                    orga_token.request_header_key:
-                        orga_token.get_token_string(secret),
-                },
-            )
-            droid_export = self.response.json
-
         self.get(f"/event/event/{event_id}/download/partial")
         orga_export = self.response.json
+        self.get("/")
 
-        droid_export['timestamp'] = orga_export['timestamp']
-        self.assertEqual(orga_export, droid_export)
+        headers = {orga_token.request_header_key: orga_token.get_token_string(secret)}
+        with self.switch_user("anonymous"):
+            for url in ["/event/event/droid/export",
+                        f'/event/event/{event_id}/droid/partial']:
+                with self.subTest(url=url):
+                    self.get(url, headers=headers)
+                    droid_export = self.response.json
+                    droid_export['timestamp'] = orga_export['timestamp']
+                    droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] \
+                        = None
+                    self.assertEqual(orga_export, droid_export)
 
         # Revoke the used token.
         self.get(f"/event/event/{event_id}/droid/summary")
@@ -7807,8 +7814,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.assertRaises(webtest.app.AppError):
             self.submit(f)
 
+    @event_keeper
     @as_users("anton")
-    def test_event_dearchive(self) -> None:
+    def test_event_dearchive_unbalance(self) -> None:
         self.traverse("Veranstaltungen", "CyberTestAkademie")
         f = self.response.forms['archiveeventform']
         f['ack_archive'] = True
@@ -7816,11 +7824,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        f = self.response.forms['balanceeventform']
+        self.submit(f)
         self.traverse("Konfiguration")
         f = self.response.forms['changeeventform']
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        self.assertIn('unbalanceeventform', self.response.forms)
 
     @event_keeper
     @as_users("garcia")
