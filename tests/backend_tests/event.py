@@ -3457,6 +3457,25 @@ class TestEventBackend(BackendTest):
                 for reg_id in reg_ids
             }
             self.assertEqual(expectation, reality)
+
+        if self.user_in("annika"):
+            for event_id in self.event.list_events(self.key):
+                for reg_id in self.event.list_registrations(self.key, event_id=event_id):
+                    data = self._raw_backend.sql_select_one(
+                        self.key, models.Registration.database_table,
+                        ["amount_owed", "amount_owed_by_kind"],
+                        entity=reg_id,
+                    )
+                    assert data is not None
+                    expectation_amount = data["amount_owed"]
+                    expectation_by_kind = {
+                        const.EventFeeType(int(key)): decimal.Decimal(val)
+                        for key, val in data["amount_owed_by_kind"].items()
+                    }
+                    complex_reality = self.event.calculate_complex_fee(self.key, reg_id)
+                    self.assertEqual(expectation_amount, complex_reality.amount)
+                    self.assertEqual(expectation_by_kind, dict(complex_reality.by_kind))
+
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
