@@ -117,8 +117,7 @@ class User:
     """Container for a persona."""
 
     def __init__(self, *, persona_id: Optional[int] = None,
-                 droid_class: Optional[type["APIToken"]] = None,
-                 droid_token_id: Optional[int] = None,
+                 droid: "APIToken | None" = None,
                  roles: Optional[set[Role]] = None,
                  realm_roles: Optional[dict[Realm, set[str]]] = None,
                  given_names: str = "", family_name: str = "",
@@ -126,9 +125,8 @@ class User:
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
-        self.droid_class = droid_class
-        self.droid_token_id = droid_token_id
-        if self.persona_id and (self.droid_class or self.droid_token_id):
+        self.droid = droid
+        if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.realm_roles = realm_roles or {}
@@ -838,6 +836,23 @@ def is_list_type(type_: type[Any]) -> bool:
     )
 
 
+def get_mandatory_form_fields(
+    *args: TypeMapping | Callable[..., werkzeug.Response],
+) -> set[str]:
+    """Extract which input fields are mandatory from a type dict or function.
+
+    Each parameter can be a frontend method or a mapping of field names to types.
+    """
+    ret: set[str] = set()
+    for arg in args:
+        if isinstance(arg, MutableMapping):
+            ret |= {key for key, type_ in arg.items()
+                    if not (is_optional_type(type_) or is_list_type(type_))}
+        else:
+            ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
+    return ret
+
+
 # TODO: unite these two helpers and overload?
 def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
     """Extract types which input fields are mandatory from a validation type dict.
@@ -855,7 +870,7 @@ def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> set[str]:
     The actual work is done by the @REQUESTdata decoorator,
     this is just a wrapper to silence mypy.
     """
-    return fun.mandatory_fields  # type: ignore[attr-defined]
+    return fun.mandatory_form_fields  # type: ignore[attr-defined]
 
 
 @enum.unique

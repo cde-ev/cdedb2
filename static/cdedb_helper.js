@@ -74,8 +74,12 @@
         message = message || "This action is not revertable.";
         is_safe_callback = is_safe_callback || function(){ return false; };
 
+        let ack_delete = this.find('input.ack-delete[type="checkbox"]');
+        ack_delete.parent().hide();
+
         // Submit handler
         $(this).submit(function() {
+            ack_delete.prop('checked', true);
             return ((is_safe_callback.bind(this))() || confirm(message));
         });
         return this;
