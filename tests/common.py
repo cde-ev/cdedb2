@@ -180,7 +180,9 @@ _SAMPLE_DATA = _read_sample_data()
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def _make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(
+        backend: B, internal: bool = False, allow_private: bool = False,
+) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -261,7 +263,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if name == "_event_keeper":
                 return attr
             if any([
-                not getattr(attr, "access", False),
+                not getattr(attr, "access", False) and not allow_private,
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
@@ -443,6 +445,7 @@ class BackendTest(CdEDBTest):
     """
     maxDiff = None
     session: ClassVar[SessionBackend]
+    _raw_backend: ClassVar[CoreBackend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
     event: ClassVar[EventBackend]
@@ -457,6 +460,7 @@ class BackendTest(CdEDBTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls._raw_backend = cls.initialze_private_backend(CoreBackend)
         cls.core = cls.initialize_backend(CoreBackend)
         cls.cde = cls.initialize_backend(CdEBackend)
         cls.event = cls.initialize_backend(EventBackend)
@@ -595,7 +599,11 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+
+    @classmethod
+    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
