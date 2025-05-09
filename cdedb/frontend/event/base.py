@@ -99,6 +99,29 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def render(self, rs: RequestState, templatename: str,
                params: Optional[CdEDBObject] = None) -> Response:
+        def is_privileged(
+                required_privilege: EventPrivileges = EventPrivileges.basic_read,
+                *, event_id: int | None = None,
+        ) -> bool:
+            return self.is_privileged(rs, required_privilege, event_id=event_id)
+
+        def is_privileged_for(endpoint: str, *, event_id: int | None = None) -> bool:
+            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            privilege = getattr(
+                getattr(self, endpoint), "event_required_privilege",
+            )
+
+            if event_id is None:
+                event_id = rs.ambience['event'].id
+
+            is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
+            if (
+                event_id in rs.user.orga
+                or 'event_orga' not in rs.user.available_admin_views
+            ):
+                return is_privileged
+            return is_privileged and 'event_orga' in rs.user.admin_views
+
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -115,27 +138,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
 
-            def is_privileged(
-                    required_privilege: EventPrivileges = EventPrivileges.basic_read,
-            ) -> bool:
-                return self.is_privileged(rs, required_privilege)
-
-            def is_privileged_for(endpoint: str) -> bool:
-                endpoint = endpoint.removeprefix(f"{self.realm}/")
-                privilege = getattr(
-                    getattr(self, endpoint), "event_required_privilege",
-                )
-
-                is_privileged = self.is_privileged(rs, privilege)
-                if (
-                    rs.user.persona_id in rs.ambience['event'].orgas
-                    or 'event_orga' not in rs.user.available_admin_views
-                ):
-                    return is_privileged
-                return is_privileged and 'event_orga' in rs.user.admin_views
-
-            params['is_privileged'] = is_privileged
-            params['is_privileged_for'] = is_privileged_for
+        params['is_privileged'] = is_privileged
+        params['is_privileged_for'] = is_privileged_for
 
         return super().render(rs, templatename, params=params)
 
@@ -150,7 +154,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.is_locked(rs.ambience['event']) and
+        if (self.eventproxy.is_locked(rs, event_id=event_id) and
                 required_privilege & EventPrivileges.all_write):
             return False
         return is_privileged_event(rs, required_privilege, event_id)
