@@ -35,7 +35,7 @@
      * @param params Object specifying GET-parameters to be appended to the url.
      *               The search phrase will be added with `phrase` as key.
      * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
-     * @param freeform' If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
+     * @param freeform If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
      *                  added as option.
      * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
      * @param placeholder If given, this string is used as placeholder in the selectize.js control
