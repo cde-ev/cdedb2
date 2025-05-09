@@ -20,7 +20,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     RequestState,
     build_msg,
-    get_mandatory_from_func,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
 )
@@ -268,7 +268,7 @@ class EventFieldMixin(EventBaseFrontend):
                 'kind': kind.value, 'change_note': change_note,
                 'cancellink': self.FIELD_REDIRECT[kind],
             },
-            get_mandatory_from_func(self.field_multiset),
+            get_mandatory_form_fields(self.field_multiset),
         )
 
     @access("event", modi={"POST"})

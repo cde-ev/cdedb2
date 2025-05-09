@@ -30,7 +30,7 @@ from cdedb.common import (
     build_msg,
     determine_age_class,
     get_hash,
-    get_mandatory_from_func,
+    get_mandatory_form_fields,
     json_serialize,
     make_persona_name,
     merge_dicts,
@@ -82,7 +82,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(
             rs, "registration/batch_fees",
             {'data': data, 'csvfields': csv_position, 'saldo': saldo},
-            get_mandatory_from_func(self.batch_fees),
+            get_mandatory_form_fields(self.batch_fees),
         )
 
     @access("event", modi={"POST"})
@@ -1077,7 +1077,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
         mandatory_fields = (models.EventFee.mandatory_form_fields(creation=True)
-                            | get_mandatory_from_func(self.add_new_personalized_fee))
+                            | get_mandatory_form_fields(self.add_new_personalized_fee))
         return self.render(
             rs, "event/fee/configure_fee",
             {'persona': persona, 'personalized': True},

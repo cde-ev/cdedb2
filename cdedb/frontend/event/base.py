@@ -31,7 +31,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     merge_dicts,
     unwrap,
 )
@@ -139,7 +139,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return self.render(
             rs, "user/create_user", {},
-            get_mandatory_from_typedict(filter_none(PERSONA_FULL_CREATION['event'])))
+            get_mandatory_form_fields(filter_none(PERSONA_FULL_CREATION['event'])))
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))

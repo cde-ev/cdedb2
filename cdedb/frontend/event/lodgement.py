@@ -18,8 +18,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     LodgementsSortkeys,
     RequestState,
-    get_mandatory_from_func,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     unwrap,
@@ -303,7 +302,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(
             rs, "lodgement/lodgement_wishes_graph_form",
             {'problems': problems, 'lodgement_groups': lodgement_groups},
-            get_mandatory_from_func(self.lodgement_wishes_graph),
+            get_mandatory_form_fields(self.lodgement_wishes_graph),
         )
 
     @access("event")
@@ -373,10 +372,8 @@ class EventLodgementMixin(EventBaseFrontend):
             group_id = unwrap(groups.keys())
         if group_id:
             rs.values['group_id'] = group_id
-        mandatory_fields = (
-            get_mandatory_from_func(self.create_lodgement)
-            | get_mandatory_from_typedict(LODGEMENT_COMMON_FIELDS) - {'group_id'}
-        )
+        mandatory_fields = get_mandatory_form_fields(
+            self.create_lodgement, LODGEMENT_COMMON_FIELDS) - {'group_id'}
         return self.render(rs, "lodgement/create_lodgement", {'groups': groups},
                            mandatory_fields)
 
@@ -436,7 +433,7 @@ class EventLodgementMixin(EventBaseFrontend):
             for field_name, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups},
-                           get_mandatory_from_typedict(LODGEMENT_COMMON_FIELDS))
+                           get_mandatory_form_fields(LODGEMENT_COMMON_FIELDS))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
@@ -697,7 +694,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(
             rs, "lodgement/move_lodgements",
             {'groups': groups, 'lodgements_in_group': lodgements_in_group},
-            get_mandatory_from_func(self.move_lodgements),
+            get_mandatory_form_fields(self.move_lodgements),
         )
 
     @access("event", modi={"POST"})

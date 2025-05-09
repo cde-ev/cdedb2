@@ -25,8 +25,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES,
     CdEDBObject,
     RequestState,
-    get_mandatory_from_func,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
     unwrap,
@@ -555,11 +554,9 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        mandatory_fields = (
-            get_mandatory_from_func(self.add_part)
-            | get_mandatory_from_typedict(EVENT_PART_CREATION_MANDATORY_FIELDS)
-            | get_mandatory_from_typedict(EVENT_PART_CREATION_OPTIONAL_FIELDS)
-        )
+        mandatory_fields = get_mandatory_form_fields(
+            self.add_part, EVENT_PART_CREATION_MANDATORY_FIELDS,
+            EVENT_PART_CREATION_OPTIONAL_FIELDS)
         return self.render(
             rs, "event/add_part",
             {'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES},
@@ -646,8 +643,8 @@ class EventEventMixin(EventBaseFrontend):
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        mandatory_fields = (get_mandatory_from_typedict(EVENT_PART_COMMON_FIELDS)
-                            | get_mandatory_from_typedict(EVENT_TRACK_COMMON_FIELDS))
+        mandatory_fields = get_mandatory_form_fields(
+            EVENT_PART_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS)
         return self.render(
             rs, "event/change_part",
             {
@@ -917,7 +914,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
         return self.render(rs, "event/configure_part_group", {},
-                           get_mandatory_from_func(self.add_part_group))
+                           get_mandatory_form_fields(self.add_part_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -958,7 +955,7 @@ class EventEventMixin(EventBaseFrontend):
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"part_ids": rs.ambience['part_group'].parts.keys()})
         return self.render(rs, "event/configure_part_group", {},
-                           get_mandatory_from_func(self.change_part_group))
+                           get_mandatory_form_fields(self.change_part_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1000,7 +997,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
         return self.render(rs, "event/configure_track_group", {},
-                           get_mandatory_from_func(self.add_track_group))
+                           get_mandatory_form_fields(self.add_track_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1066,7 +1063,7 @@ class EventEventMixin(EventBaseFrontend):
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"track_ids": rs.ambience['track_group'].tracks.keys()})
         return self.render(rs, "event/configure_track_group", {},
-                           get_mandatory_from_func(self.change_track_group))
+                           get_mandatory_form_fields(self.change_track_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1243,7 +1240,7 @@ class EventEventMixin(EventBaseFrontend):
             for account in Accounts.get_event_accounts()
         ]
         mandatory_fields = (models.Event.mandatory_form_fields(creation=True)
-                            | get_mandatory_from_func(self.create_event))
+                            | get_mandatory_form_fields(self.create_event))
         return self.render(
             rs, "event/create_event", {'accounts': accounts},
             mandatory_fields=mandatory_fields,
