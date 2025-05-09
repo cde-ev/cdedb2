@@ -318,6 +318,32 @@
     {%- endif %}
 {%- endmacro %}
 
+{% macro ack_delete(protect_text, name="ack_delete") %}
+    {% set caller_ = caller %}
+    {% call output_errors(name, wrapper=True) %}
+        {% if caller_ %}
+            {{ caller_() }}
+        {% else %}
+            {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text,
+                              label=gettext("Are you sure?")) }}
+        {% endif %}
+        {% if not jshint %}
+            {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
+        {% endif %}
+    {% endcall %}
+    <script nonce="{{ csp_nonce }}">
+        $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
+    </script>
+{% endmacro %}
+
+{% macro raise_for_test(msg) %}
+    {% if CDEDB_TEST %}
+        {{ raise(msg) }}
+    {% elif CDEDB_DEV %}
+        <div class="text-danger">{{ make_icon('exclamation-triangle') }}{{ nbsp }}{{ msg }}</div>
+    {% endif %}
+{% endmacro %}
+
 {% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
@@ -538,7 +564,6 @@
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
     {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
-    {# TODO How to handle mandatory-marker here? At every checkbox?  #}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",

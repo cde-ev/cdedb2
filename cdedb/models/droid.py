@@ -93,7 +93,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from re import Pattern
 from secrets import token_hex
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, cast
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import User, n_, now
@@ -103,6 +103,7 @@ from cdedb.models.common import CdEDataclass
 from cdedb.models.event import EventDataclass
 
 
+@dataclass(kw_only=True)
 class APIToken(abc.ABC):
     """
     Base class for all API Tokens.
@@ -119,6 +120,7 @@ class APIToken(abc.ABC):
 
     Needs to be overridden by subclasses.
     """
+    id: vtypes.ProtoID
 
     @classmethod
     @lru_cache
@@ -169,8 +171,10 @@ class APIToken(abc.ABC):
         return self._get_token_string(self.get_droid_name(), secret)
 
     def get_user(self) -> User:
-        """Return a `User` object for API requests."""
-        raise NotImplementedError
+        return User(
+            droid=self,
+            roles=droid_roles(self.name),
+        )
 
     #: The key of the token string in the request header.
     request_header_key = "X-CdEDB-API-token"
@@ -194,6 +198,10 @@ class APIToken(abc.ABC):
         raise ValueError(n_("Wrong format for api token."))
 
 
+STATIC_TOKEN_ID = cast(vtypes.ProtoID, None)
+
+
+@dataclass(kw_only=True)
 class StaticAPIToken(APIToken):
     """
     Base class for static droids. These tokens need not be instantiated.
@@ -206,6 +214,8 @@ class StaticAPIToken(APIToken):
     """
     #: Name of the static droid.
     name: ClassVar[str]
+
+    id: vtypes.ProtoID = STATIC_TOKEN_ID
 
     @classmethod
     @lru_cache
@@ -220,14 +230,6 @@ class StaticAPIToken(APIToken):
     def get_token_string(cls, secret: str) -> str:
         return cls._get_token_string(cls.get_droid_name(), secret)
 
-    @classmethod
-    def get_user(cls) -> User:
-        return User(
-            droid_class=cls,
-            droid_token_id=None,
-            roles=droid_roles(cls.name),
-        )
-
 
 class ResolveToken(StaticAPIToken):
     name = "resolve"  #:
@@ -237,7 +239,7 @@ class QuickPartialExportToken(StaticAPIToken):
     name = "quick_partial_export"  #:
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DynamicAPIToken(CdEDataclass, APIToken):
     """
     Base class for dynamic droids.
@@ -254,7 +256,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Regular fields.
 
     title: str  #: Configurable title.
-    notes: Optional[str]  #: Configurable notes field.
+    notes: str | None  #: Configurable notes field.
     #: Expiration time. Set once during creation.
     etime: datetime.datetime = field(metadata={'update_exclude': True})
 
@@ -267,13 +269,13 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         },
     )
     #: Revocation time. Automatically set by event backend on revocation.
-    rtime: Optional[datetime.datetime] = field(
+    rtime: datetime.datetime | None = field(
         default=None, kw_only=True, metadata={
             'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
         },
     )
     #: Last access time. Automatically updated by session backend on every request.
-    atime: Optional[datetime.datetime] = field(
+    atime: datetime.datetime | None = field(
         default=None, kw_only=True, metadata={
             'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
         },
@@ -297,14 +299,6 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     def get_token_string(self, secret: str) -> str:
         return self._get_token_string(self.get_droid_name(), secret)
 
-    def get_user(self) -> User:
-        """Return the corresponding user object for this API."""
-        return User(
-            droid_class=self.__class__,
-            droid_token_id=self.id,
-            roles=droid_roles(self.name),
-        )
-
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.id=}, {self.title=})"
 
@@ -312,13 +306,14 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         return (self.name, self.title, self.ctime, self.id)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OrgaToken(DynamicAPIToken, EventDataclass):
     """
     OrgaToken(
-        id: vtypes.ID, title: str, notes: Optional[str], etime: datetime.datetime,
-        ctime: datetime.datetime, rtime: Optional[datetime.datetime],
-        atime: Optional[datetime.datetime], event_id: vtypes.ID)
+        id: vtypes.ID, title: str, notes: str | None, etime: datetime.datetime,
+        ctime: datetime.datetime, rtime: datetime.datetime | None,
+        atime: datetime.datetime | None, event_id: vtypes.ID,
+    )
 
     """
     name = "orga"
@@ -339,13 +334,10 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
         return f"{self.__class__.__name__}({self.id=}, {self.title=}, {self.event_id=})"
 
 
-def resolve_droid_name(
-        droid_name: str,
-) -> Union[
-    tuple[type[StaticAPIToken], None],
-    tuple[type[DynamicAPIToken], int],
-    tuple[None, None],
-]:
+ResolvedDroid = tuple[type[StaticAPIToken], None] | tuple[type[DynamicAPIToken], int] | tuple[None, None]
+
+
+def resolve_droid_name(droid_name: str) -> ResolvedDroid:
     """Determine the class of token from the given droid name.
 
 
@@ -370,10 +362,17 @@ def resolve_droid_name(
         For a matching static droid return `(<static droid class>, None).
         For a matching dynamic droid return `(<dynamic droid class>, <token_id>)`.
     """
+    matches: list[ResolvedDroid] = []
+
     for static_droid in StaticAPIToken.__subclasses__():
         if static_droid.get_droid_name_pattern().fullmatch(droid_name):
-            return static_droid, None
+            matches.append((static_droid, None))
     for dynamic_droid in DynamicAPIToken.__subclasses__():
         if m := dynamic_droid.get_droid_name_pattern().fullmatch(droid_name):
-            return dynamic_droid, int(m.group(1))
+            matches.append((dynamic_droid, int(m.group(1))))
+
+    if len(matches) == 1:
+        return matches[0]
+    elif len(matches) > 1:
+        raise ValueError(f"Ambiguous droid name {droid_name!r} matched: {matches!r}.")
     return None, None

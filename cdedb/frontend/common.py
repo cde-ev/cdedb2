@@ -106,7 +106,7 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     glue,
     json_serialize,
     make_persona_name,
@@ -403,6 +403,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
@@ -643,6 +644,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        if attachment_hash is None:
+            rs.append_validation_error(
+                ("attachment", ValueError(n_("Must not be empty."))),
+            )
         return attachment_hash, attachment_filename
 
     @staticmethod
@@ -2260,7 +2265,7 @@ def REQUESTdata(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.mandatory_fields = get_mandatory_from_typedict(  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields = get_mandatory_form_fields(  # type: ignore[attr-defined]
             {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)

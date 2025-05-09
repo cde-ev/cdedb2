@@ -36,16 +36,10 @@
                           method="POST" id="deleteattachmentform{{ version["attachment_id"] }}"
                           class="hide-hover display-inline">
                         {{ util.anti_csrf_token("assembly/delete_attachment") }}
-                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                         {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="fire",
                                 title=gettext("Delete Attachment")) }}
+                        {{ util.ack_delete(gettext("The attachment will be permanently deleted."), "attachment_ack_delete") }}
                     </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#deleteattachmentform{{ version["attachment_id"] }}').cdedbProtectAction(
-                            "{{ gettext("The attachment will be permanently deleted.") }}");
-                        $('#deleteattachmentform{{ version["attachment_id"] }}').find(
-                            '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 {% elif delete %}
                     {{ util.href(cdedblink("assembly/change_attachment_version_form",
                                            {'attachment_id': version['attachment_id'], 'version_nr': version['version_nr']}),
@@ -58,16 +52,10 @@
                             id="removeattachmentversionform{{ version["attachment_id"] }}_{{ version["version_nr"] }}"
                             class="hide-hover display-inline">
                         {{ util.anti_csrf_token('assembly/delete_attachment_version') }}
-                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                         {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="trash-alt",
                                 title=(gettext("Delete Version %(version)s")|format(version=version['version_nr']))) }}
+                        {{ util.ack_delete(gettext("The version of the attachment will be permanently deleted."), "attachment_ack_delete") }}
                     </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version_nr"] }}').cdedbProtectAction(
-                            "{{ gettext("The version of the attachment will be permanently deleted.") }}");
-                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version_nr"] }}').find(
-                            '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 {% endif %}
             </div>
         {% endif %}

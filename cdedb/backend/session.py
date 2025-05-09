@@ -23,7 +23,11 @@ from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.models.droid import DynamicAPIToken, StaticAPIToken, resolve_droid_name
+from cdedb.models.droid import (
+    DynamicAPIToken,
+    StaticAPIToken,
+    resolve_droid_name,
+)
 
 
 class SessionBackend:
@@ -169,18 +173,17 @@ class SessionBackend:
 
         try:
             droid_class, token_id = resolve_droid_name(droid_name)
-
             if droid_class is None:
                 # Droid name did not match any known droid.
                 self.logger.warning(
                     f"API token did not match any known droid: {droid_name!r}.")
                 raise APITokenError(n_("Unknown droid name."))
-            elif issubclass(droid_class, StaticAPIToken):
+            elif issubclass(droid_class, StaticAPIToken) and token_id is None:
                 if self._validate_static_droid_secret(droid_class.name, secret):
-                    ret = droid_class.get_user()
+                    ret = droid_class().get_user()
                 else:
                     raise APITokenError
-            elif issubclass(droid_class, DynamicAPIToken) and token_id:
+            elif issubclass(droid_class, DynamicAPIToken) and token_id is not None:
                 ret = self._validate_dynamic_droid_secret(droid_class, token_id, secret)
             else:
                 raise APITokenError

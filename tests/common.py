@@ -1094,7 +1094,7 @@ class FrontendTest(BackendTest):
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        self.follow()
+        self.follow(**kwargs)
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs: Any) -> None:

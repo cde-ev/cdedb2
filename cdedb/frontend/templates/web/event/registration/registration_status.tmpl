@@ -49,8 +49,8 @@
 {% block content %}
 {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
-        <p class="button-par">
-            {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
+        <p>
+            {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning mosp",
                          icon='pen') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
                 {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
