@@ -6687,6 +6687,133 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Es gibt 1 Anmeldungen ohne zu zahlendem Beitrag.",
                             div="constraint-violations")
 
+    @event_keeper
+    @as_users("annika", "petra")
+    def test_constraint_violations_summary(self) -> None:
+        self.traverse("Veranstaltungen", "Verstöße gegen Beschränkungen")
+        self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+
+        all_event_ids = set(self.event.list_events(self.key))
+
+        def test_events_shown(*event_ids: int) -> None:
+            self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+            for event_id in event_ids:
+                self.assertHasNotClass(
+                    div=f"event_{event_id}", html_class="softhide",
+                )
+            for event_id in all_event_ids - set(event_ids):
+                self.assertHasClass(
+                    div=f"event_{event_id}", html_class="softhide",
+                )
+
+        def test_violations_shown(event_id: int, violations: list[str]) -> None:
+            for violation in violations:
+                self.assertPresence(violation, div=f"event_{event_id}")
+
+        test_events_shown(1, 2, 3, 4)
+
+        self.assertPresence("CyberTestAkademie", div="event_3")
+        test_violations_shown(3, [
+            "Uneingecheckte Teilnehmende",
+            "2 Fehlende Kurseinteilungen",
+        ])
+
+        self.assertPresence("CdE-Party 2050", div="event_2")
+        test_violations_shown(2, ["Zur Zeit gibt es keine Verstöße."])
+
+        self.assertPresence("Große Testakademie 2222", div="event_1")
+        test_violations_shown(1, [
+        "1 Ausfallende Kurse mit Teilnehmenden",
+        "3 Anmeldungen mit nicht bezahltem Beitrag",
+        "2 Unzulässige gemischte Unterkünfte",
+        "1 Unterkünfte mit inkorrekter Bewohnerzahl",
+        "2 Fehlende Kurseinteilungen",
+        "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
+        "1 Eingecheckte Abwesende",
+        "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
+        ])
+
+        self.assertPresence("TripelAkademie", div="event_4")
+        test_violations_shown(4, [
+        "5 Verstöße gegen Kursausschließlichkeit",
+        "1 Verstöße gegen Teilnahmeausschließlichkeit",
+        "1 Anmeldungen mit nicht bezahltem Beitrag",
+        ])
+
+        f = self.response.forms['filterconstraintsform']
+        self.assertEqual(f['event_ids'].value, "")
+        self.assertEqual(f['is_archived'].value, "-1")
+        self.assertEqual(f['is_balanced'].value, "-1")
+        self.assertEqual(f['is_archived'].value, "-1")
+
+        f['event_ids'] = "1,3"
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 3)
+
+        f['event_ids'] = "1,3,2"
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 3)
+
+        f['is_concluded'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_concluded'] = 0
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2)
+
+        f['event_ids'] = ""
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 4)
+
+        f['is_balanced'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("farin"):
+            self.event.balance_event(self.key, 2)
+        self.submit(f, check_notification=False)
+        test_events_shown(2)
+
+        f['is_balanced'] = 0
+        self.submit(f)
+        test_events_shown(1, 4)
+
+        with self.switch_user("farin"):
+            self.event.unbalance_event(self.key, 2)
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 4)
+
+        f['is_balanced'] = -1
+        f['is_concluded'] = -1
+        f['event_ids'] = ""
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 3, 4)
+
+        f['is_archived'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("annika"):
+            self.event.set_event_archived(self.key, 3)
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_balanced'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("farin"):
+            self.event.balance_event(self.key, 1)
+            self.event.balance_event(self.key, 3)
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_archived'] = -1
+        f['is_concluded'] = 0
+        self.submit(f, check_notification=False)
+        test_events_shown(1)
+
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party", "Veranstaltungsteile",
