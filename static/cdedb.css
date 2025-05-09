@@ -1179,9 +1179,12 @@ tr.eventfee .money-positive {
 .nowrap {
     white-space: nowrap;
 }
-.link-disabled {
+.link-disabled:not(.text-muted,.text-info,.text-warning,.text-danger) {
     /* Make text look like a disabled link */
     color: #777;
+}
+.link-disabled {
+    /* Make text look like a disabled link */
     cursor: not-allowed;
 }
 .link-hidden {
