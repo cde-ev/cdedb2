@@ -13,7 +13,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     ValidationWarning,
-    get_mandatory_from_func,
+    get_mandatory_form_fields,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -110,7 +110,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.notify('error',
                       n_("Cannot add attachment once the assembly has been locked."))
             return self.redirect(rs, 'assembly/list_attachments')
-        mandatory_fields = get_mandatory_from_func(self.add_attachment)
+        mandatory_fields = get_mandatory_form_fields(self.add_attachment)
         if not rs.values.get('attachment_hash'):
             mandatory_fields.add('attachment')
         elif 'attachment' in mandatory_fields:
@@ -209,7 +209,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             if metadatum not in rs.values:
                 rs.values[metadatum] = latest_version[metadatum]
 
-        mandatory_fields = get_mandatory_from_func(self.add_attachment_version)
+        mandatory_fields = get_mandatory_form_fields(self.add_attachment_version)
         if not rs.values.get('attachment_hash'):
             mandatory_fields.add('attachment')
         elif 'attachment' in mandatory_fields:
@@ -312,7 +312,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': True,
-            }, get_mandatory_from_func(self.change_attachment_version))
+            }, get_mandatory_form_fields(self.change_attachment_version))
 
     @access("assembly", modi={"POST"})
     @assembly_guard

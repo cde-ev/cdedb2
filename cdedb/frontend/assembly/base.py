@@ -20,8 +20,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject,
     RequestState,
-    get_mandatory_from_func,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
 )
@@ -86,7 +85,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         }
         merge_dicts(rs.values, defaults)
         return self.render(rs, "base/create_user", {},
-                           get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
@@ -231,8 +230,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        mandatory_fields = (get_mandatory_from_func(self.change_assembly) |
-                            get_mandatory_from_typedict(ASSEMBLY_COMMON_FIELDS))
+        mandatory_fields = get_mandatory_form_fields(
+            self.change_assembly, ASSEMBLY_COMMON_FIELDS)
         return self.render(rs, "base/configure_assembly",
                            mandatory_fields=mandatory_fields)
 
@@ -261,8 +260,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        mandatory_fields = (get_mandatory_from_func(self.create_assembly)
-                            | get_mandatory_from_typedict(ASSEMBLY_COMMON_FIELDS))
+        mandatory_fields = get_mandatory_form_fields(
+            self.create_assembly, ASSEMBLY_COMMON_FIELDS)
         return self.render(rs, "base/configure_assembly",
                            mandatory_fields=mandatory_fields)
 
