@@ -127,7 +127,11 @@
             <tr>
                 <td>
                     {% trans %}Full Event Export{% endtrans %}<br />
-                    <small>({% trans %}for setting up an offline instance{% endtrans %})</small>
+                    <small>
+                        ({% trans link=util.href(docurl("Handbuch_Orga_Mitnahmeversion"), gettext("offline instance"), icon="book") %}
+                            for setting up an {{ link }}
+                        {% endtrans %})
+                    </small>
                 </td>
                 <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download') }}</td>
             </tr>
