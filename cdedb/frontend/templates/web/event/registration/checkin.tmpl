@@ -35,7 +35,7 @@
     {% else %}
         <div class="panel panel-primary panel-condensed">
             <div class="panel-heading">
-                <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
+                <h3 class="panel-title">{{ util.make_icon("search") }}{{ nbsp }}{{ gettext("Filter") }}</h3>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"

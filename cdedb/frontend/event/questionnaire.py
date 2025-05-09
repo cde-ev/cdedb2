@@ -33,10 +33,9 @@ from cdedb.frontend.common import (
     REQUESTdata,
     access,
     check_validation_optional as check_optional,
-    event_guard,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):

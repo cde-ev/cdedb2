@@ -4,6 +4,7 @@
 The `EventQueryBackend` subclasses the `EventBaseBackend` and provides functionality
 for querying information about an event aswell as storing and retrieving such queries.
 """
+import abc
 from collections.abc import Collection
 from typing import Optional
 
@@ -61,7 +62,7 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
     )
 
 
-class EventQueryBackend(EventBaseBackend):
+class EventQueryBackend(EventBaseBackend, abc.ABC):
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
                              event_id: Optional[int] = None, aggregate: bool = False,
