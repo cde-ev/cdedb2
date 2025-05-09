@@ -128,8 +128,8 @@
                 <td>
                     {% trans %}Full Event Export{% endtrans %}<br />
                     <small>
-                        ({% trans link=util.href(docurl("Handbuch_Orga_Mitnahmeversion"), gettext("offline instance"), icon="book") %}
-                            for setting up an {{ link }}
+                        ({% trans offline_instance=util.href(docurl("Handbuch_Orga_Mitnahmeversion"), gettext("offline instance"), icon="book") %}
+                            for setting up an {{ offline_instance }}
                         {% endtrans %})
                     </small>
                 </td>
