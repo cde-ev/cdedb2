@@ -121,7 +121,6 @@ from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import TransactionType
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -402,6 +401,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
@@ -642,6 +642,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        if attachment_hash is None:
+            rs.append_validation_error(
+                ("attachment", ValueError(n_("Must not be empty."))),
+            )
         return attachment_hash, attachment_filename
 
     @staticmethod
@@ -2379,38 +2383,6 @@ def REQUESTfile(*args: str) -> Callable[[F], F]:
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
-
-        return cast(F, new_fun)
-
-    return wrap
-
-
-def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
-    """This decorator checks the access with respect to a specific event. The
-    event is specified by id which has either to be a keyword
-    parameter or the first positional parameter after the request state.
-
-    The event has to be organized via the DB. Only orgas and privileged
-    users are admitted. Additionally this can check for the offline
-    lock, so that no modifications happen to locked events.
-    """
-
-    def wrap(fun: F) -> F:
-        @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
-            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
-                raise werkzeug.exceptions.Forbidden(
-                    n_("This page can only be accessed by orgas."))
-            if required_privilege & EventPrivileges.all_write:
-                is_locked = obj.eventproxy.is_offline_locked(
-                    rs, event_id=rs.ambience['event'].id)
-                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                    raise werkzeug.exceptions.Forbidden(
-                        n_("This event is locked for offline usage."))
-            return fun(obj, rs, *args, **kwargs)
-
-        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
 
         return cast(F, new_fun)
 

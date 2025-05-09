@@ -772,7 +772,7 @@ CREATE TABLE event.events (
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
-        offline_lock                 boolean NOT NULL DEFAULT False,
+        is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         -- show cancelled courses in course list and restrict registration to active courses

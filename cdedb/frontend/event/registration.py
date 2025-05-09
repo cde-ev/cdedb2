@@ -53,12 +53,11 @@ from cdedb.frontend.common import (
     cdedbid_filter,
     check_validation as check,
     check_validation_optional as check_optional,
-    event_guard,
     make_event_fee_reference,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 
 class EventRegistrationMixin(EventBaseFrontend):

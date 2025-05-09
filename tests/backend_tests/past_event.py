@@ -5,7 +5,7 @@ import datetime
 import cdedb.database.constants as const
 from cdedb.common import nearly_now
 from cdedb.common.sorting import xsorted
-from tests.common import BackendTest, as_users
+from tests.common import BackendTest, as_users, event_keeper
 
 
 class TestPastEventBackend(BackendTest):
@@ -317,13 +317,14 @@ class TestPastEventBackend(BackendTest):
              'submitted_by': self.user['id']})
         self.assertLogEqual(expectation, 'past_event')
 
+    @event_keeper
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
         self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
-        new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+        new_ids = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
@@ -349,7 +350,7 @@ class TestPastEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
+        new_ids = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
