@@ -169,7 +169,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.append_validation_error(
                 ("attachment_ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/list_attachments")
+            return self.list_attachments(rs, assembly_id)
 
         if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
             rs.notify("error", n_("Attachment can not be deleted."))
@@ -355,7 +355,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`
         if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/list_attachments")
+            return self.list_attachments(rs, assembly_id)
 
         if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
             rs.notify("error", n_("Attachment version can not be deleted."))

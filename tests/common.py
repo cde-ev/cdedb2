@@ -1094,7 +1094,7 @@ class FrontendTest(BackendTest):
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        self.follow()
+        self.follow(**kwargs)
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs: Any) -> None:
@@ -1164,7 +1164,6 @@ class FrontendTest(BackendTest):
                     continue
                 field: webtest.forms.Field = unwrap(field_list)
                 if "required" in field.attrs:
-                    print(f"Checking for field {fieldname}...")
                     self.assertNotEqual(field.value, "", f"Required field {fieldname}"
                                                          f" left empty!")
         # This is a workaround for the fact, that webtest does not care about the
