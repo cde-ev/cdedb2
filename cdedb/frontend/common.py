@@ -1564,7 +1564,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
         return self.render(rs, "create_user", {},
-                           get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)

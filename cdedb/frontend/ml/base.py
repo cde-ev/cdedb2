@@ -17,7 +17,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     DefaultReturnCode,
     RequestState,
-    get_mandatory_from_func,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
     unwrap,
@@ -317,7 +317,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def merge_accounts_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(rs, "merge_accounts", {},
-                           get_mandatory_from_func(self.merge_accounts))
+                           get_mandatory_form_fields(self.merge_accounts))
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
@@ -549,7 +549,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'available_types': available_types,
             'events': events,
             'assemblies': assemblies,
-        }, get_mandatory_from_func(self.change_ml_type))
+        }, get_mandatory_form_fields(self.change_ml_type))
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
