@@ -6249,6 +6249,10 @@
             "payment": "2014-01-01",
             "amount_paid": "200.00",
             "amount_owed": "553.99",
+            "amount_owed_by_kind": {
+                "1": "573.99",
+                "5": "-20.00"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6257,10 +6261,6 @@
                 "arrival_at": "2022-02-02T10:00:00+01:00",
                 "is_child": false,
                 "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)"
-            },
-            "amount_owed_by_kind": {
-                "1": "573.99",
-                "5": "-20.00"
             }
         },
         {
@@ -6274,6 +6274,10 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "466.49",
+            "amount_owed_by_kind": {
+                "1": "461.49",
+                "3": "5.00"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6283,10 +6287,6 @@
                 "is_child": false,
                 "lodge": "015112345678",
                 "transportation": "pedes"
-            },
-            "amount_owed_by_kind": {
-                "1": "461.49",
-                "3": "5.00"
             }
         },
         {
@@ -6300,6 +6300,11 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "504.48",
+            "amount_owed_by_kind": {
+                "1": "534.49",
+                "5": "-30.00",
+                "10": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": false,
@@ -6307,11 +6312,6 @@
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
                 "transportation": "car"
-            },
-            "amount_owed_by_kind": {
-                "1": "534.49",
-                "5": "-30.00",
-                "10": "-0.01"
             }
         },
         {
@@ -6325,6 +6325,9 @@
             "payment": "2014-04-04",
             "amount_paid": "548.48",
             "amount_owed": "431.99",
+            "amount_owed_by_kind": {
+                "1": "431.99"
+            },
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6334,9 +6337,6 @@
                 "is_child": true,
                 "may_reserve": true,
                 "transportation": "etc"
-            },
-            "amount_owed_by_kind": {
-                "1": "431.99"
             }
         },
         {
@@ -6350,6 +6350,10 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "584.48",
+            "amount_owed_by_kind": {
+                "1": "584.49",
+                "10": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": false,
             "list_consent": true,
@@ -6357,10 +6361,6 @@
                 "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
                 "transportation": "pedes"
-            },
-            "amount_owed_by_kind": {
-                "1": "584.49",
-                "10": "-0.01"
             }
         },
         {
@@ -6374,6 +6374,9 @@
             "payment": "2014-06-06",
             "amount_paid": "10.50",
             "amount_owed": "10.50",
+            "amount_owed_by_kind": {
+                "1": "10.50"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6382,9 +6385,6 @@
                 "arrival_at": "2022-02-22T15:00:00+01:00",
                 "is_child": false,
                 "transportation": "pedes"
-            },
-            "amount_owed_by_kind": {
-                "1": "10.50"
             }
         },
         {
@@ -6398,11 +6398,11 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
-            "fields": {},
-            "amount_owed_by_kind": {}
+            "fields": {}
         },
         {
             "id": 8,
@@ -6415,11 +6415,11 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
-            "fields": {},
-            "amount_owed_by_kind": {}
+            "fields": {}
         },
         {
             "id": 9,
@@ -6432,11 +6432,11 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
-            "fields": {},
-            "amount_owed_by_kind": {}
+            "fields": {}
         },
         {
             "id": 10,
@@ -6449,13 +6449,13 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "4.20",
+            "amount_owed_by_kind": {
+                "1": "4.20"
+            },
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
-            "fields": {},
-            "amount_owed_by_kind": {
-                "1": "4.20"
-            }
+            "fields": {}
         }
     ],
     "event.registration_parts": [
