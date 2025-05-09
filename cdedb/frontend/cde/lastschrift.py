@@ -26,8 +26,7 @@ from cdedb.common import (
     RequestState,
     asciificator,
     determine_age_class,
-    get_mandatory_from_func,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     lastschrift_reference,
     make_persona_name,
     merge_dicts,
@@ -161,7 +160,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
         return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona},
-                           get_mandatory_from_typedict(LASTSCHRIFT_COMMON_FIELDS))
+                           get_mandatory_form_fields(LASTSCHRIFT_COMMON_FIELDS))
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
@@ -187,8 +186,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
             current_donation = persona["donation"] or None
-        mandatory_fields = (get_mandatory_from_typedict(LASTSCHRIFT_COMMON_FIELDS)
-                            | get_mandatory_from_func(self.lastschrift_create))
+        mandatory_fields = get_mandatory_form_fields(
+            LASTSCHRIFT_COMMON_FIELDS, self.lastschrift_create)
         return self.render(
             rs, "lastschrift/lastschrift_create",
             {"min_donation": min_donation, "current_donation": current_donation},
@@ -606,7 +605,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 "persona": persona, "not_minor": not_minor,
                 "min_donation": min_donation, "typical_donation": typical_donation,
             },
-            get_mandatory_from_func(self.lastschrift_subscription_form),
+            get_mandatory_form_fields(self.lastschrift_subscription_form),
         )
 
     @access("anonymous")

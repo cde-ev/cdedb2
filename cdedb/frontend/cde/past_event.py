@@ -21,8 +21,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
-    get_mandatory_from_func,
-    get_mandatory_from_typedict,
+    get_mandatory_form_fields,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -255,7 +254,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
         return self.render(rs, "past_event/change_past_event", {},
-                           get_mandatory_from_typedict(PAST_EVENT_FIELDS))
+                           get_mandatory_form_fields(PAST_EVENT_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -274,8 +273,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        mandatory_fields = (get_mandatory_from_typedict(PAST_EVENT_FIELDS)
-                            | get_mandatory_from_func(self.create_past_event))
+        mandatory_fields = get_mandatory_form_fields(
+            PAST_EVENT_FIELDS, self.create_past_event)
         return self.render(rs, "past_event/create_past_event", {},
                            mandatory_fields)
 
@@ -339,7 +338,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
         return self.render(rs, "past_event/change_past_course", {},
-                           get_mandatory_from_typedict(PAST_COURSE_COMMON_FIELDS))
+                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -360,7 +359,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "past_event/create_past_course", {},
-                           get_mandatory_from_typedict(PAST_COURSE_COMMON_FIELDS))
+                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
