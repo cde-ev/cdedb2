@@ -2265,7 +2265,9 @@ def REQUESTdata(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.mandatory_form_fields = get_mandatory_form_fields(  # type: ignore[attr-defined]
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
             {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)
@@ -2379,21 +2381,27 @@ def request_dict_extractor(
 
 
 # noinspection PyPep8Naming
-def REQUESTfile(*args: str) -> Callable[[F], F]:
+def REQUESTfile(*spec: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
-    :param args: Names of file parameters.
+    :param spec: Names of file parameters.
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args2: Any,
+        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            for name in args:
+            for name in spec:
                 if name not in kwargs:
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
-            return fun(obj, rs, *args2, **kwargs)
+            return fun(obj, rs, *args, **kwargs)
+
+        hints = typing.get_type_hints(fun)
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name] for name in spec})
 
         return cast(F, new_fun)
 
