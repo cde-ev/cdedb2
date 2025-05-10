@@ -69,7 +69,7 @@ import re
 import string
 import typing
 import urllib.parse
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
@@ -2969,7 +2969,7 @@ def _past_course(
     return PastCourse(val)
 
 
-COURSE_COMMON_FIELDS: MutableMapping[str, Any] = {
+COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
@@ -3261,7 +3261,7 @@ def _lodgement_group(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-LODGEMENT_COMMON_FIELDS: MutableMapping[str, Any] = {
+LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,

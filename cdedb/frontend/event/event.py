@@ -833,14 +833,16 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify(
                 "error", n_("Event is balanced. May not change fee configuration."))
             return self.redirect(rs, "event/fee_summary")
+        creation = True
         if fee_id:
+            creation = False
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'].as_dict())
                 personalized = rs.ambience['fee'].is_personalized()
-        mandatory_fields = models.EventFee.mandatory_form_fields(creation=False)
+        mandatory_fields = models.EventFee.mandatory_form_fields(creation=creation)
         if not personalized:
             mandatory_fields |= {'amount', 'condition'}
         return self.render(
