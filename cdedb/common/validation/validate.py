@@ -69,7 +69,7 @@ import re
 import string
 import typing
 import urllib.parse
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
@@ -2134,7 +2134,7 @@ def _expuls(
         val, {'id': ID}, optional_fields, **kwargs))
 
 
-LASTSCHRIFT_COMMON_FIELDS: MutableMapping[str, Any] = {
+LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
     'iban': IBAN,
     'account_owner': Optional[str],
     'account_address': Optional[str],
@@ -2936,7 +2936,7 @@ def _event_fee_condition(
     return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
 
 
-PAST_COURSE_COMMON_FIELDS: MutableMapping[str, Any] = {
+PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'nr': str,
     'title': str,
     'description': Optional[str],

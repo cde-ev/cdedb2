@@ -273,10 +273,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        mandatory_fields = get_mandatory_form_fields(
-            PAST_EVENT_FIELDS, self.create_past_event)
-        return self.render(rs, "past_event/create_past_event", {},
-                           mandatory_fields)
+        return self.render(
+            rs, "past_event/create_past_event", {},
+            get_mandatory_form_fields(PAST_EVENT_FIELDS, self.create_past_event))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
