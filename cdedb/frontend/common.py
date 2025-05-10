@@ -562,6 +562,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise AttributeError(n_("Given method is not callable."))
 
         # here come the always accessible things promised above
+        begin = now()
         data = {
             'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
@@ -569,7 +570,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'doclink': _doclink,
             'staticlink': _staticlink,
             'errors': rs.get_validation_errors_dict(),
-            'generation_time': lambda: (now() - rs.begin),
+            'request_time': lambda: (now() - rs.begin),
+            'generation_time': lambda: (now() - begin),
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
