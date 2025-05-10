@@ -122,11 +122,13 @@
                         {% endwith %}
                     </td>
                     <td class="text-right text-nowrap">
-                        {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning", title="") }}
+                        {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}),
+                                     label="", icon="pen", aclass="btn btn-sm btn-warning", title="", readonly=is_locked) }}
                         <form action="{{ cdedblink('event/delete_custom_filter', {'custom_filter_id': custom_filter.id}) }}"
                               method="POST" class="display-inline" id="deletecustomfilterform{{ custom_filter.id }}">
                             {{ util.anti_csrf_token('event/delete_custom_filter') }}
-                            {{ util.input_submit(label="", aclass='btn btn-sm btn-danger', icon="trash-alt", title=gettext('Delete custom filter')) }}
+                            {{ util.input_submit(label="", aclass='btn btn-sm btn-danger', icon="trash-alt",
+                                                 title=gettext('Delete custom filter'), readonly=is_locked) }}
                         </form>
                     </td>
                 </tr>

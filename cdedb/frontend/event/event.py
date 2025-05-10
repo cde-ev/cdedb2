@@ -32,7 +32,7 @@ from cdedb.common import (
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import (
     Query,
     QueryConstraint,
@@ -61,12 +61,11 @@ from cdedb.frontend.common import (
     check_validation as check,
     check_validation_optional as check_optional,
     drow_name,
-    event_guard,
     inspect_validation as inspect,
     periodic,
     process_dynamic_input,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,
@@ -364,7 +363,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/list_event_helpers")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
     def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
                  ) -> Response:
@@ -390,7 +388,6 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id", "ack_delete")
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ack_delete: bool) -> Response:
@@ -1334,49 +1331,29 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
+    @event_guard(EventPrivileges.lock)
     def lock_event(self, rs: RequestState, event_id: int) -> Response:
-        """Lock an event for offline usage."""
-        if not rs.has_validation_errors():
+        """Lock an event."""
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            rs.notify("error", n_("Cannot lock offline instance."))
+        elif rs.ambience['event'].is_locked:
+            rs.notify("warning", n_("Event already locked."))
+        else:
             code = self.eventproxy.lock_event(rs, event_id)
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.all_read)
-    @REQUESTfile("json")
-    def unlock_event(self, rs: RequestState, event_id: int,
-                     json: werkzeug.datastructures.FileStorage) -> Response:
-        """Unlock an event after offline usage and incorporate the offline
-        changes."""
-        # This check is postponed to trick the event guard into allowing access here
-        required_priv = (EventPrivileges.basic_write | EventPrivileges.free_texts_write
-                         | EventPrivileges.entities_write)
-        if not is_privileged_event(rs, required_priv, event_id):
-            raise werkzeug.exceptions.Forbidden(
-                n_("This page can only be accessed by orgas."))
-        # for the sake of simplicity, we ignore all ValidationWarnings here.
-        # Since the data is incorporated from an offline instance, they were already
-        # considered to be reasonable.
-        rs.ignore_warnings = True
-
-        data = check(rs, vtypes.SerializedEventUpload, json)
-        if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
-        assert data is not None
-        if event_id != data['id']:
-            rs.notify("error", n_("Data from wrong event."))
-            return self.show_event(rs, event_id)
-        # Check for unmigrated personas
-        current = self.eventproxy.export_event(rs, event_id)
-        claimed = {e['persona_id'] for e in data['event.registrations'].values()
-                   if not e['real_persona_id']}
-        if claimed - set(current['core.personas']):
-            rs.notify("error", n_("There exist unmigrated personas."))
-            return self.show_event(rs, event_id)
-
-        code = self.eventproxy.unlock_import_event(rs, data)
-        rs.notify_return_code(code)
+    @event_guard(EventPrivileges.lock)
+    def unlock_event(self, rs: RequestState, event_id: int) -> Response:
+        """Unlock an event."""
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            rs.notify("error", n_("Cannot unlock offline instance."))
+        elif not rs.ambience['event'].is_locked:
+            rs.notify("warning", n_("Event isn't locked."))
+        else:
+            code = self.eventproxy.unlock_event(rs, event_id)
+            rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -1413,12 +1390,8 @@ class EventEventMixin(EventBaseFrontend):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
-        new_ids, message = self.pasteventproxy.archive_event(
+        new_ids = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
-
-        if message:
-            rs.notify("error", message)
-            return self.redirect(rs, "event/show_event")
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
@@ -1481,10 +1454,9 @@ class EventEventMixin(EventBaseFrontend):
         """Balance an event."""
         if rs.ambience['event'].is_balanced:
             rs.notify("warning", n_("Event already balanced."))
-            return self.redirect(rs, "event/show_event")
-
-        code = self.eventproxy.balance_event(rs, event_id)
-        rs.notify_return_code(code)
+        else:
+            code = self.eventproxy.balance_event(rs, event_id)
+            rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("finance_admin", modi={"POST"})
@@ -1493,10 +1465,9 @@ class EventEventMixin(EventBaseFrontend):
         """Unbalance an event."""
         if not rs.ambience['event'].is_balanced:
             rs.notify("warning", n_("Event isn't balanced."))
-            return self.redirect(rs, "event/show_event")
-
-        code = self.eventproxy.unbalance_event(rs, event_id)
-        rs.notify_return_code(code)
+        else:
+            code = self.eventproxy.unbalance_event(rs, event_id)
+            rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event")
