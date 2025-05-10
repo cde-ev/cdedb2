@@ -1354,6 +1354,8 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
+            # We have users with unknown birthday, and this shouldn't
+            # be a blocker for admins to edit those users at all.
         }, get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'})
 
     @access(*REALM_ADMINS, modi={"POST"})
@@ -1955,7 +1957,7 @@ class CoreBaseFrontend(AbstractFrontend):
             past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
 
         mandatory_fields = get_mandatory_form_fields(
-            CDE_TRANSITION_FIELDS, self.promote_user) - {'birthday'}
+            CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
             "past_events": past_events, "past_courses": past_courses,
         }, mandatory_fields)

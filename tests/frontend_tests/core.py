@@ -2135,6 +2135,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         f['pevent_id'] = 1
         f['trial_member'].checked = True
+        f['birthday'] = "2000-01-01"
         f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
         self.submit(f, check_notification=False)
         f = self.response.forms['promotionform']
