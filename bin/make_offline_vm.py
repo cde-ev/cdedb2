@@ -176,23 +176,6 @@ def work(
     print("Found data for event '{}' exported {}.".format(
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
-    if (
-            not data['event.events'][str(data['id'])]['offline_lock']
-            and (not dev_mode or offline_mode)
-    ):
-        print("Event not locked in online instance at time of export."
-              "\nIn case of simultaneous changes in offline and online"
-              " instance there will be data loss."
-              "\nIf this is just a test run and you intend to scrap this"
-              " offline instance you can ignore this warning.")
-        if is_interactive:
-            if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
-                    != "USE ANYWAY"):
-                print("Aborting.")
-                sys.exit()
-        print("Fixing for offline use.")
-        data['event.events'][str(data['id'])]['offline_lock'] = True
-
     if dev_mode and sample_data:
         print("Clean current instance (deleting all data)")
         if is_interactive:

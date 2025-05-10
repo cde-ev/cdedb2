@@ -45,12 +45,11 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
     inspect_validation as inspect,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.query_stats import (
     EventCourseStatistic,
     EventRegistrationInXChoiceGrouper,

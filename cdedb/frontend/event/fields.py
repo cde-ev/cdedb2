@@ -34,11 +34,10 @@ from cdedb.frontend.common import (
     REQUESTdata,
     access,
     drow_name,
-    event_guard,
     process_dynamic_input,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 

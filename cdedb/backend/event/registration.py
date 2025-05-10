@@ -1029,7 +1029,7 @@ class EventRegistrationBackend(EventBaseBackend):
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not is_privileged(rs, EventPrivileges.registrations_write,
                                           event_id=event_id)):
@@ -1172,7 +1172,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_("This user is not an event user."))
             if self.list_registrations(rs, data['event_id'], data['persona_id']):
                 raise ValueError(n_("Already registered."))
-            self.assert_offline_lock(rs, event_id=data['event_id'])
+            self.assert_lock(rs, event_id=data['event_id'])
             persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
             data['is_member'] = persona['is_member']
@@ -1278,7 +1278,7 @@ class EventRegistrationBackend(EventBaseBackend):
                              event_id=reg['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         event = self.get_event(rs, reg['event_id'])
-        self.assert_offline_lock(rs, event_id=reg['event_id'])
+        self.assert_lock(rs, event_id=reg['event_id'])
 
         blockers = self.delete_registration_blockers(rs, registration_id)
         if not cascade:
@@ -1822,7 +1822,7 @@ class EventRegistrationBackend(EventBaseBackend):
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers, event_only=True)
         index = 0
 
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
         event = self.get_event(rs, event_id)
 
         if not is_privileged(rs, EventPrivileges.payment_write, event_id):

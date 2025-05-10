@@ -43,10 +43,9 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.event_constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(
