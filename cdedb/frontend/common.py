@@ -53,6 +53,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    NotRequired,
     Optional,
     Protocol,
     TypeVar,
@@ -1797,28 +1798,28 @@ class Worker(threading.Thread):
 
 
 class AmbienceDict(typing.TypedDict):
-    persona: CdEDBObject
-    privilege_change: CdEDBObject
-    genesis_case: CdEDBObject
-    lastschrift: CdEDBObject
-    transaction: CdEDBObject
-    event: models_event.Event
-    pevent: CdEDBObject
-    course: CdEDBObject
-    pcourse: CdEDBObject
-    registration: CdEDBObject
-    group: CdEDBObject
-    lodgement: CdEDBObject
-    part_group: models_event.PartGroup
-    track_group: models_event.TrackGroup
-    fee: models_event.EventFee
-    orga_token: models_droid.OrgaToken
-    custom_filter: CustomQueryFilter
-    attachment: CdEDBObject
-    attachment_version: CdEDBObject
-    assembly: CdEDBObject
-    ballot: CdEDBObject
-    mailinglist: models_ml.Mailinglist
+    persona: NotRequired[CdEDBObject]
+    privilege_change: NotRequired[CdEDBObject]
+    genesis_case: NotRequired[CdEDBObject]
+    lastschrift: NotRequired[CdEDBObject]
+    transaction: NotRequired[CdEDBObject]
+    event: NotRequired[models_event.Event]
+    pevent: NotRequired[CdEDBObject]
+    course: NotRequired[CdEDBObject]
+    pcourse: NotRequired[CdEDBObject]
+    registration: NotRequired[CdEDBObject]
+    group: NotRequired[CdEDBObject]
+    lodgement: NotRequired[CdEDBObject]
+    part_group: NotRequired[models_event.PartGroup]
+    track_group: NotRequired[models_event.TrackGroup]
+    fee: NotRequired[models_event.EventFee]
+    orga_token: NotRequired[models_droid.OrgaToken]
+    custom_filter: NotRequired[CustomQueryFilter]
+    attachment: NotRequired[CdEDBObject]
+    attachment_version: NotRequired[CdEDBObject]
+    assembly: NotRequired[CdEDBObject]
+    ballot: NotRequired[CdEDBObject]
+    mailinglist: NotRequired[models_ml.Mailinglist]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
