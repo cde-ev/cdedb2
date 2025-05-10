@@ -131,7 +131,7 @@ class Event(EventDataclass):
         metadata={'update_request_exclude': True})
 
     # Disallow setting via request altogether.
-    offline_lock: bool = dataclasses.field(metadata={'request_exclude': True})
+    is_locked: bool = dataclasses.field(metadata={'request_exclude': True})
     is_archived: bool = dataclasses.field(metadata={'request_exclude': True})
     is_balanced: bool = dataclasses.field(metadata={'request_exclude': True})
 

@@ -2,7 +2,7 @@
 
 import datetime as _datetime
 import decimal as _decimal
-from collections.abc import MutableMapping as _MutableMapping
+from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
@@ -19,7 +19,8 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _MutableMapping[str, type[_Any]]
+TypeMapping = _Mapping[str, type[_Any]]
+MutableTypeMapping = _MutableMapping[_Any, type[_Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 

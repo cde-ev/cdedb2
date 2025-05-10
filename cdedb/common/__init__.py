@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
-    TypeMapping = MutableMapping
+    TypeMapping = Mapping
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -189,7 +189,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]
+        self.ambience: AmbienceDict = {}
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -841,36 +841,22 @@ def get_mandatory_form_fields(
 ) -> set[str]:
     """Extract which input fields are mandatory from a type dict or function.
 
-    Each parameter can be a frontend method or a mapping of field names to types.
+    :param args: Each parameter can be a frontend method or a mapping of
+        field names to types.
+
+    Care has be taken with `date` fields, as those will be marked as mandatory
+    but our validation accepts empty/None values, which will be converted
+    to `date.min`. If a date input is really not mandatory, remove its key
+    from the returned set by hand.
     """
     ret: set[str] = set()
     for arg in args:
-        if isinstance(arg, MutableMapping):
+        if isinstance(arg, Mapping):
             ret |= {key for key, type_ in arg.items()
                     if not (is_optional_type(type_) or is_list_type(type_))}
         else:
             ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
     return ret
-
-
-# TODO: unite these two helpers and overload?
-def get_mandatory_from_typedict(fields: TypeMapping) -> set[str]:
-    """Extract types which input fields are mandatory from a validation type dict.
-
-    :param fields: Mapping of field names to types, usually imported from validation.
-    :return: Names of the fields which are not Optional[something].
-    """
-    return {key for key, type_ in fields.items()
-            if not (is_optional_type(type_) or is_list_type(type_))}
-
-
-def get_mandatory_from_func(fun: Callable[..., werkzeug.Response]) -> set[str]:
-    """Extract which parameters are mandatory from function annotations.
-
-    The actual work is done by the @REQUESTdata decoorator,
-    this is just a wrapper to silence mypy.
-    """
-    return fun.mandatory_form_fields  # type: ignore[attr-defined]
 
 
 @enum.unique
