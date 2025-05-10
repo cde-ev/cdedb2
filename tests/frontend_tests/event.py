@@ -302,7 +302,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/2/show'})
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
         self.assertNoLink("Orga-Schaltflächen")
 
         self.traverse({'href': '/event/'},
@@ -318,7 +318,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'})
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
 
     @as_users("annika")
     def test_list_events(self) -> None:
@@ -393,7 +393,7 @@ class TestEventFrontend(FrontendTest):
 
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
         self.assertIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
@@ -4740,20 +4740,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @storage
     @as_users("garcia")
     def test_download_export(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
-
-        # test mechanism to reduce unwanted exports of unlocked events
-        f = self.response.forms['fullexportform']
-        f['agree_unlocked_download'].checked = False
-        self.submit(f, check_notification=False)
-        info_msg = ("Bestätige, das du einen Export herunterladen willst, "
-                    "obwohl die Veranstaltung nicht gesperrt ist.")
-        self.assertPresence(info_msg, div='notifications')
-
-        f['agree_unlocked_download'].checked = True
-        self.submit(f)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Downloads",
+                      {'href': '/event/1/export'})
         with open(
                 self.testfile_dir / "event_export.json", encoding="utf-8",
         ) as datafile:
@@ -5539,38 +5527,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @event_keeper
     @as_users("annika", "garcia")
-    def test_lock_event(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
+    def test_lock_unlock_event(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
-        f = self.response.forms["lockform"]
+        self.assertPresence("Sperrt die Veranstaltung vorübergehend")
+        f = self.response.forms["lockeventform"]
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence(
-            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
-
-    @event_keeper
-    @as_users("annika", "garcia")
-    def test_unlock_event(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
-        f = self.response.forms["lockform"]
+        self.assertPresence("Die Veranstaltung ist vorübergehend gesperrt")
+        f = self.response.forms['unlockeventform']
         self.submit(f)
-        saved = self.response
-        data = saved.click(href='/event/event/1/export$').body
-        data = data.replace(b"Gro\\u00dfe Testakademie 2222",
-                            b"Mittelgro\\u00dfe Testakademie 2222")
-        self.response = saved
-        self.assertPresence(
-            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
-        f = self.response.forms['unlockform']
-        f['json'] = webtest.Upload("event_export.json", data,
-                                   "application/octet-stream")
-        self.submit(f)
-        self.assertTitle("Mittelgroße Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
+        self.assertPresence("Sperrt die Veranstaltung vorübergehend")
 
     @storage
     @event_keeper
@@ -5858,6 +5824,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         del second['timestamp']
         self.assertEqual(first, second)
 
+    @event_keeper
     @as_users("ferdinand")
     def test_archive(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -5933,6 +5900,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_without_past_event(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party 2050")
@@ -5967,6 +5935,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Mitglieder", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_event_purge_persona(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -6141,6 +6110,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 f[field].checked = True
         self.submit(f)
 
+    @event_keeper
     @as_users("anton")
     def test_archived_participant(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldungen",

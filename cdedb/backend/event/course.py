@@ -4,6 +4,7 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
+import abc
 from collections.abc import Collection
 from typing import Optional, Protocol
 
@@ -38,7 +39,7 @@ from cdedb.common.privileges import (
 from cdedb.database.connection import Atomizer
 
 
-class EventCourseBackend(EventBaseBackend):
+class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
     def list_courses(self, rs: RequestState,
                         event_id: int) -> dict[int, str]:
@@ -129,7 +130,6 @@ class EventCourseBackend(EventBaseBackend):
         the course.
         """
         data = affirm(vtypes.Course, data)
-        self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
@@ -138,6 +138,7 @@ class EventCourseBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.courses_write,
                                  current['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
+            self.assert_lock(rs, event_id=current['event_id'])
 
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS and k != "fields"}
@@ -237,7 +238,7 @@ class EventCourseBackend(EventBaseBackend):
         data = affirm(vtypes.Course, data, creation=True)
         # direct validation since we already have an event_id
         with Atomizer(rs):
-            self.assert_offline_lock(rs, event_id=data['event_id'])
+            self.assert_lock(rs, event_id=data['event_id'])
             event = self.get_event(rs, data['event_id'])
             # Check for existence of course tracks
             if not event.tracks:
@@ -319,17 +320,15 @@ class EventCourseBackend(EventBaseBackend):
             or ignore. If None or empty, cascade none.
         """
         course_id = affirm(vtypes.ID, course_id)
-        event_id: int = unwrap(self.sql_select_one(
-            rs, "event.courses", ("event_id",), course_id))  # type: ignore[assignment]
-        if not is_privileged(rs, EventPrivileges.courses_write, event_id):
+        current = self.sql_select_one(
+            rs, "event.courses", ("title", "event_id"), course_id)
+        assert current is not None
+        if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, course_id=course_id)
+        self.assert_lock(rs, event_id=current['event_id'])
 
         blockers = self.delete_course_blockers(rs, course_id)
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set(str, cascade)
-        cascade &= blockers.keys()
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -339,7 +338,6 @@ class EventCourseBackend(EventBaseBackend):
 
         ret = 1
         with Atomizer(rs):
-            course = self.get_course(rs, course_id)
             # cascade specified blockers
             if cascade:
                 if "attendees" in cascade:
@@ -411,8 +409,7 @@ class EventCourseBackend(EventBaseBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.courses", course_id)
                 self.event_log(rs, const.EventLogCodes.course_deleted,
-                               course['event_id'],
-                               change_note=course['title'])
+                               current['event_id'], change_note=current['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),

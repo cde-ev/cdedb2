@@ -16,7 +16,6 @@ from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import Sortkey, xsorted
-from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain,
     MailinglistRosterVisibility,
@@ -151,7 +150,9 @@ class Mailinglist(CdEDataclass):
                 if field.name not in {"moderators", "whitelist"}]
 
     @classmethod
-    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(
+            cls, *, creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
         # make whitelist optional during Mailinglist creation
         if "whitelist" in mandatory:

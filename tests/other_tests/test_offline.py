@@ -68,13 +68,8 @@ class TestOffline(FrontendTest):
             self.login(user)
 
             # Basic event functionality
-            self.traverse({'href': '/event/'},
-                          {'href': '/event/1/show'})
-            self.assertTitle("Große Testakademie 2222")
-            self.assertPresence(
-                'Die Veranstaltung befindet sich im Offline-Modus.')
-            self.traverse({'href': 'event/event/1/registration/query'},
-                          {'description': 'Alle Anmeldungen'})
+            self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                          "Anmeldungen", "Alle Anmeldungen")
             self.assertPresence('6', div='query-results')
             self.assertPresence('Inga')
 
