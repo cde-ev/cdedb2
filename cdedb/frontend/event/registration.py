@@ -464,7 +464,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = course_choice_params['track_group_map']
 
         # Top-level registration data.
-        standard_params: vtypes.TypeMapping = {
+        standard_params: vtypes.MutableTypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
             "reg.notes": Optional[str],  # type: ignore[dict-item]
@@ -486,7 +486,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Part specific data:
         if orga_input:
-            part_params: vtypes.TypeMapping = {}
+            part_params: vtypes.MutableTypeMapping = {}
             for part_id in event.parts:
                 part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
@@ -527,7 +527,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Track specific data:
         # First for simple tracks.
-        track_params: vtypes.TypeMapping = {}
+        track_params: vtypes.MutableTypeMapping = {}
         if orga_input:
             track_params.update({
                 f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
@@ -546,7 +546,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, track_params)
 
         # Now for synced tracks.
-        synced_params: vtypes.TypeMapping = {
+        synced_params: vtypes.MutableTypeMapping = {
             f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for group in sync_track_groups.values() for i in range(group.num_choices)
         }

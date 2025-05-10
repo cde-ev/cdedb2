@@ -19,7 +19,6 @@ from typing import (
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, get_mandatory_form_fields, is_optional_type
 from cdedb.common.sorting import Sortkey, collate
-from cdedb.common.validation.types import TypeMapping
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
@@ -153,14 +152,16 @@ class CdEDataclass:
         return self.id < 0
 
     @classmethod
-    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(
+            cls, *, creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Map the field names to the type of the fields to validate this entity.
 
         This returns two TypeMapping tuples, for mandatory and optional validation
         fields, respectively. Each TypeMapping maps the name of the field to its type.
         """
-        mandatory: TypeMapping = {}
-        optional: TypeMapping = {}
+        mandatory: vtypes.MutableTypeMapping = {}
+        optional: vtypes.MutableTypeMapping = {}
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
             if field.metadata.get('validation_exclude'):

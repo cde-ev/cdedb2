@@ -69,7 +69,7 @@ if TYPE_CHECKING:
     from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
-    TypeMapping = MutableMapping
+    TypeMapping = Mapping
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -845,7 +845,7 @@ def get_mandatory_form_fields(
     """
     ret: set[str] = set()
     for arg in args:
-        if isinstance(arg, MutableMapping):
+        if isinstance(arg, Mapping):
             ret |= {key for key, type_ in arg.items()
                     if not (is_optional_type(type_) or is_list_type(type_))}
         else:

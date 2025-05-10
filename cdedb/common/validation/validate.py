@@ -580,7 +580,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
     return ret
 
 
-def filter_none(data: dict[str, Any]) -> dict[str, Any]:
+def filter_none(data: Mapping[str, Any]) -> dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
 
@@ -1380,12 +1380,12 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_active': bool,
 }
 
-PERSONA_BASE_CREATION: Mapping[str, Any] = {
+PERSONA_BASE_CREATION: TypeMapping = {
     'username': Email,
-    'notes': Optional[str],
+    'notes': Optional[str],  # type: ignore[dict-item]
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': Optional[str],
+    'legal_given_names': Optional[str],  # type: ignore[dict-item]
     'show_legal_given_names': bool,
     'family_name': str,
     'title': NoneType,
@@ -1481,7 +1481,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
+PERSONA_FULL_CREATION: Mapping[str, Mapping[str, Any]] = {
     'ml': {**PERSONA_BASE_CREATION},
     'assembly': {**PERSONA_BASE_CREATION},
     'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
@@ -1489,7 +1489,7 @@ PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
             'is_member': bool, 'is_searchable': bool},
 }
 
-PERSONA_COMMON_FIELDS: dict[str, Any] = {
+PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1609,7 +1609,7 @@ def _persona(
         # promoting to cde realm may be used to grant a trial membership.
         #  since trial member implies is_member, we need to allow the latter here
         if val.get("is_cde_realm"):
-            optional_fields["is_member"] = bool
+            optional_fields |= {"is_member": bool}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -3529,13 +3529,13 @@ def _serialized_event(
         raise ValidationSummary(
             KeyError(argname, n_("Only full exports are supported.")))
 
-    mandatory_fields: TypeMapping = {
+    mandatory_fields: MutableTypeMapping = {
         'EVENT_SCHEMA_VERSION': tuple[int, int],
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
     }
-    mandatory_tables: TypeMapping = {
+    mandatory_tables: MutableTypeMapping = {
         'event.events': Mapping,
         'event.event_parts': Mapping,
         'event.course_tracks': Mapping,
