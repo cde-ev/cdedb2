@@ -462,7 +462,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             and bool(ml.full_moderator_fields)
         )
         readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
-        mandatory_fields = ml.mandatory_form_fields(creation=True)
+        mandatory_fields = ml.mandatory_form_fields(creation=False)
         return self.render(rs, "configure_mailinglist", {
             'events': events,
             'event_parts_by_event': {
