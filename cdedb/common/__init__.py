@@ -843,11 +843,6 @@ def get_mandatory_form_fields(
 
     :param args: Each parameter can be a frontend method or a mapping of
         field names to types.
-
-    Care has be taken with `date` fields, as those will be marked as mandatory
-    but our validation accepts empty/None values, which will be converted
-    to `date.min`. If a date input is really not mandatory, remove its key
-    from the returned set by hand.
     """
     ret: set[str] = set()
     for arg in args:
