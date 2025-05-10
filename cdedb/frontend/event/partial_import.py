@@ -27,9 +27,8 @@ from cdedb.frontend.common import (
     REQUESTfile,
     access,
     check_validation as check,
-    event_guard,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.event import ReducedCheckinPeriod
 
 

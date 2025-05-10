@@ -37,11 +37,10 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     drow_name,
-    event_guard,
     process_dynamic_input,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph,
     detect_lodgement_wishes,

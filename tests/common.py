@@ -1781,7 +1781,7 @@ class FrontendTest(BackendTest):
             if v := kwargs.get(field_name):
                 f[field_name] = v
         f['length'] = len(log_expectation)
-        self.submit(f, check_mandatory_filled=False)
+        self.submit(f)
 
         # Check frontend log.
         for i, entry in enumerate(log_expectation, start=1):
@@ -1826,7 +1826,7 @@ class FrontendTest(BackendTest):
 
         f['length'] = length
         f['offset'] = offset
-        self.submit(f, check_mandatory_filled=False)
+        self.submit(f)
 
         # starting at the 0th page, ...
         self.traverse({'linkid': 'pagination-0'})
@@ -1875,7 +1875,7 @@ class FrontendTest(BackendTest):
         # tidy up the form
         f["offset"] = None
         f["length"] = None
-        self.submit(f, check_mandatory_filled=False)
+        self.submit(f)
 
         # check multi-checkbox selections
         f = self.response.forms['logshowform']
@@ -1884,7 +1884,7 @@ class FrontendTest(BackendTest):
         codes = [field._value for field in f.fields['codes']]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
-        self.submit(f, check_mandatory_filled=False)
+        self.submit(f)
         self.traverse({'linkid': 'pagination-first'})
         f = self.response.forms['logshowform']
         for field in f.fields['codes']:
@@ -2045,7 +2045,7 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn("active", button['class'])
         self.submit(f, button='view_specifier', check_button_attrs=False,
-                    value=button['value'], check_mandatory_filled=False)
+                    value=button['value'])
         return button
 
     def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
