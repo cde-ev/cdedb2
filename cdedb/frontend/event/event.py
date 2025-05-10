@@ -43,9 +43,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS,
-    EVENT_PART_CREATION_OPTIONAL_FIELDS,
     EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
@@ -551,9 +548,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        mandatory_fields = get_mandatory_form_fields(
-            self.add_part, EVENT_PART_CREATION_MANDATORY_FIELDS,
-            EVENT_PART_CREATION_OPTIONAL_FIELDS)
+        mandatory_fields = models.EventPart.mandatory_form_fields(creation=True)
         return self.render(
             rs, "event/add_part",
             {'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES},
@@ -563,8 +558,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("fee")
-    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
-                     *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
+    @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=True))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
         if rs.ambience['event'].is_balanced:
@@ -640,8 +634,8 @@ class EventEventMixin(EventBaseFrontend):
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        mandatory_fields = get_mandatory_form_fields(
-            EVENT_PART_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS)
+        mandatory_fields = (models.EventPart.mandatory_form_fields(creation=False)
+                            | models.CourseTrack.mandatory_form_fields(creation=False))
         return self.render(
             rs, "event/change_part",
             {
@@ -658,13 +652,10 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
+    @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=False))
     def change_part(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        # this will be added at the end after processing the dynamic input and will only
-        # yield false validation errors
-        del data['tracks']
         data = check(rs, vtypes.EventPart, data)
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
