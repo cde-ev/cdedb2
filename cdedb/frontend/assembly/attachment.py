@@ -111,9 +111,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                       n_("Cannot add attachment once the assembly has been locked."))
             return self.redirect(rs, 'assembly/list_attachments')
         mandatory_fields = get_mandatory_form_fields(self.add_attachment)
-        if not rs.values.get('attachment_hash'):
-            mandatory_fields.add('attachment')
-        elif 'attachment' in mandatory_fields:
+        if rs.values.get('attachment_hash'):
             mandatory_fields.remove('attachment')
         return self.render(rs, "attachment/add_attachment",
                            mandatory_fields=mandatory_fields)
@@ -210,9 +208,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                 rs.values[metadatum] = latest_version[metadatum]
 
         mandatory_fields = get_mandatory_form_fields(self.add_attachment_version)
-        if not rs.values.get('attachment_hash'):
-            mandatory_fields.add('attachment')
-        elif 'attachment' in mandatory_fields:
+        if rs.values.get('attachment_hash'):
             mandatory_fields.remove('attachment')
         return self.render(
             rs, "attachment/configure_attachment_version", {
