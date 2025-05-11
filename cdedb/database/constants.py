@@ -463,6 +463,16 @@ class PastInstitutions(CdEIntEnum):
 
 
 @enum.unique
+class ComplaintInvolvementType(CdEIntEnum):
+    """Types of involvements in a complaint case."""
+    affected = 1
+    appellant = 11  #: presumed not to be primarily affected. Always informed
+    target = 21  #: whom a complaint is "against"
+    other = 51  #: especially for cases which are no actual complaints
+    withheld = 100  #: hides complaint even if otherwise visible to user
+
+
+@enum.unique
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:

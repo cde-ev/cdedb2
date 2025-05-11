@@ -511,6 +511,92 @@ CREATE TABLE core.postal_code_locations (
 GRANT SELECT ON core.postal_code_locations TO cdb_persona;
 
 ---
+--- SCHEMA complaint
+---
+DROP SCHEMA IF EXISTS complaint CASCADE;
+CREATE SCHEMA complaint;
+GRANT USAGE ON SCHEMA complaint TO cdb_persona;
+
+CREATE TABLE complaint.cases (
+    id         serial PRIMARY KEY,
+    kind       integer NOT NULL, -- database.constants.ComplaintKind
+    summary    varchar,
+    start_date date,
+    end_date   date
+);
+GRANT SELECT ON complaint.cases TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON complaint.cases TO cdb_admin;
+
+CREATE TABLE complaint.entries (
+    id            serial PRIMARY KEY,
+    case_id       integer NOT NULL REFERENCES complaint.cases(id),
+    submitted_by  integer NOT NULL REFERENCES core.personas(id),
+    type          integer NOT NULL, -- database.constants.ComplaintEntryType
+    description   varchar, -- encrypted
+    length        integer NOT NULL,
+    ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
+    is_obsolete   boolean NOT NULL DEFAULT FALSE
+);
+GRANT SELECT, INSERT, UPDATE (is_obsolete) ON complaint.entries TO cdb_persona;
+
+CREATE TABLE complaint.authors (
+    id            serial PRIMARY KEY,
+    entry_id      integer NOT NULL REFERENCES complaint.entries(id),
+    author_id     integer NOT NULL REFERENCES core.personas(id),
+    UNIQUE(entry_id, author_id)
+);
+GRANT SELECT, INSERT ON complaint.authors TO cdb_persona;
+
+CREATE TABLE complaint.involved (
+    id            serial PRIMARY KEY,
+    case_id       int NOT NULL REFERENCES complaint.cases(id),
+    persona_id    int NOT NULL REFERENCES core.personas(id),
+    involved_type integer NOT NULL, -- database.constants.ComplaintInvolvementType
+    is_informed   boolean NOT NULL DEFAULT FALSE
+);
+GRANT SELECT ON complaint.involved TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON complaint.involved TO cdb_admin;
+
+-- very limited access per case and persona
+CREATE TABLE complaint.companions (
+    id            serial PRIMARY KEY,
+    involved_id   int NOT NULL REFERENCES complaint.involved(id),
+    companion_id  int NOT NULL REFERENCES complaint.companions(id),
+    UNIQUE(involved_id, companion_id),
+    is_obsolete   boolean NOT NULL DEFAULT FALSE
+);
+GRANT SELECT ON complaint.companions TO cdb_persona;
+GRANT INSERT, UPDATE (is_obsolete), DELETE ON complaint.companions TO cdb_admin;
+
+-- like event helpers, may access limited information
+CREATE TABLE complaint.enforcers (
+    id                      serial PRIMARY KEY,
+    persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+);
+GRANT SELECT ON complaint.enforcers TO cdb_persona;
+GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
+
+-- logs changes and decryption
+CREATE TABLE complaint.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.ComplaintLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer REFERENCES core.personas(id),
+        case_id                 integer REFERENCES complaint.cases(id),
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
+        change_note             varchar
+);
+CREATE INDEX event_log_code_idx ON complaint.log(code);
+CREATE INDEX event_log_event_id_idx ON complaint.log(case_id);
+GRANT SELECT, INSERT ON complaint.log TO cdb_persona;
+GRANT SELECT, UPDATE ON complaint.log_id_seq TO cdb_persona;
+GRANT UPDATE (change_note), DELETE ON complaint.log TO cdb_admin;
+
+---
 --- SCHEMA cde
 ---
 DROP SCHEMA IF EXISTS cde CASCADE;
