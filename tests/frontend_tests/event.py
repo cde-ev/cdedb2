@@ -3095,6 +3095,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["qord_0"] = 'course1.id'
         self.submit(f)
 
+        # Test for https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/3937.
+        self.event.set_registration(self.key, {'id': 1, 'parts': {3: {'lodgement_id': 3}}})
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qsel_part3.lodgement_id"] = True
+        f["qsel_lodgement3.id"] = True
+        f["qord_0"] = "part3.lodgement_id"
+        self.submit(f, button="download", value="json")
+        data = json.loads(self.response.text)
+        self.assertEqual(
+            ["Einzelzelle", "Kalte Kammer", "Kalte Kammer", "Kellerverlies", "Warme Stube", None],
+            [entry["part3.lodgement_id"] for entry in data],
+        )
+        self.assertEqual(
+            [4, 2, 2, 3, 1, 0],
+            [int(entry["lodgement3.id"] or 0) for entry in data],
+        )
+
     @as_users("annika")
     def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
