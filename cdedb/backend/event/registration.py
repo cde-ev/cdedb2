@@ -149,7 +149,7 @@ class ComplexRegistrationFee:
 
     @cached_property
     def by_kind(self) -> dict[const.EventFeeType, decimal.Decimal]:
-        ret = defaultdict(decimal.Decimal)
+        ret = {}
         for fee, amount in self.fees:
             if fee.kind not in ret:
                 ret[fee.kind] = decimal.Decimal(0)
@@ -175,7 +175,7 @@ class ComplexRegistrationFee:
 
     @property
     def nonmember_surcharge(self) -> decimal.Decimal:
-        return self.by_kind[const.EventFeeType.external]
+        return self.by_kind.get(const.EventFeeType.external, decimal.Decimal(0))
 
 
 class EventRegistrationBackend(EventBaseBackend):
