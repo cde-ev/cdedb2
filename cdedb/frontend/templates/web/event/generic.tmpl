@@ -466,7 +466,7 @@
                         {% trans %}Total{% endtrans %}
                     </th>
                 {% endif %}
-                <th>{% trans %}Condition{% endtrans %}</th>
+                <th style="width: 100%">{% trans %}Condition{% endtrans %}</th>
                 {% if not js_preview %}<th></th>{% endif %}
             </tr>
         </thead>
@@ -565,7 +565,7 @@
                                     fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id,
                                     anid="eventfee_paid_" + fee.id|string) }}:
                     </td>
-                    <td class="nowrap" style="margin-left: 0">
+                    <td class="nowrap pw-md-0" style="padding-left: 0">
                         <span class="float-right" id="eventfee_total_owed_{{ fee.id }}">
                             {{ _print_fee_amount(fee_stats[fee.kind][fee.id].total_owed) }}
                         </span>
