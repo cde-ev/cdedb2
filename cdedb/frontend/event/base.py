@@ -111,7 +111,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 getattr(self, endpoint), "event_required_privilege",
             )
 
-            if event_id is None:
+            if event_id is None and 'event' in rs.ambience:
                 event_id = rs.ambience['event'].id
 
             is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
