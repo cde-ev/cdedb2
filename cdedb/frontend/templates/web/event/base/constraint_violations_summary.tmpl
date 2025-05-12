@@ -151,9 +151,11 @@
                             {% endfor %}
                             </ul>
                         {% else %}
-                            {% trans %}
-                                There are currently no violations.
-                            {% endtrans %}
+                            <div class="text-muted">
+                                {% trans %}
+                                    There are currently no violations.
+                                {% endtrans %}
+                            </div>
                         {% endif %}
                     {% endcall %}
                 {% endfor %}
@@ -181,7 +183,7 @@
                     </ul>
                     </div>
                 {% endfor %}
-                <p class="maybenothide">
+                <p class="maybenothide text-muted">
                     {% trans %}There are currently no violations.{% endtrans %}
                 </p>
             </div>
