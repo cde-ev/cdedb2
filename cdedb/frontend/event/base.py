@@ -27,6 +27,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
+import cdedb.models.event_constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
@@ -55,7 +56,6 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import ViolationAux, ViolationList
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
@@ -535,7 +535,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event.id, involved=True,
         )
 
-        violations = ViolationAux(
+        violations = models_cv.ViolationAux(
             event=event, registrations=registrations, personas=personas,
             all_courses=all_courses, courses=courses,
             all_lodgements=all_lodgements, lodgements=lodgements,
@@ -569,7 +569,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @access("event.event_helper", "event_admin", "finance_admin")
     @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
-                "is_concluded", _omit_missing=True)
+                "is_concluded", "min_severity", _omit_missing=True)
     def constraint_violations_summary(
             self, rs: RequestState,
             event_ids: vtypes.IntCSVList | None = None,
@@ -577,6 +577,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_archived: int = -1,
             is_balanced: int = -1,
             is_concluded: int = -1,
+            min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
     ) -> Response:
         rs.ignore_validation_errors()
 
@@ -584,6 +585,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         is_balanced = bool(is_balanced) if is_balanced != -1 else None
         is_concluded = bool(is_concluded) if is_concluded != -1 else None
         event_ids = set(event_ids or [])
+        min_severity = min_severity or models_cv.ViolationSeverity.INFO
 
         all_event_ids = self.eventproxy.list_events(rs)
         all_events = self.eventproxy.get_events(rs, all_event_ids)
@@ -596,7 +598,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for event in xsorted(all_events.values(), reverse=True)
         ]
 
-        violations = ViolationList()
+        violations = models_cv.ViolationList()
         for event in all_events.values():
             violations.extend(
                 self.get_constraint_violations(
@@ -609,7 +611,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'violations': violations, 'all_events': all_events,
             'event_options': event_options, 'event_ids': event_ids,
             'is_archived': is_archived, 'is_balanced': is_balanced,
-            'is_concluded': is_concluded,
+            'is_concluded': is_concluded, 'min_severity': min_severity,
         })
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())

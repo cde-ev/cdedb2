@@ -78,6 +78,13 @@ class ViolationSeverity(enum.Enum):
             ViolationSeverity.DEBUG: 'panel-default',
         }[self]
 
+    @classmethod
+    def map(cls) -> dict[str, int]:
+        return {
+            entry.name: entry.value
+            for entry in cls
+        }
+
     def __lt__(self, other: 'ViolationSeverity') -> bool:
         return self.value < other.value
 
