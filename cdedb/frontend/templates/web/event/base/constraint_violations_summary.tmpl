@@ -6,7 +6,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/constraint_violations_summary"), gettext("Constraint Violations"), icon="exclamation-circle") }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations_summary"), gettext("Constraint Violations")) }}
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Constraint Violations")) }}
