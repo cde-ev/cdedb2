@@ -563,8 +563,8 @@ GRANT INSERT, UPDATE, DELETE ON complaint.involved TO cdb_admin;
 CREATE TABLE complaint.companions (
     id            serial PRIMARY KEY,
     involved_id   int NOT NULL REFERENCES complaint.involved(id),
-    companion_id  int NOT NULL REFERENCES complaint.companions(id),
-    UNIQUE(involved_id, companion_id),
+    persona_id    int NOT NULL REFERENCES core.personas(id),
+    UNIQUE(involved_id, persona_id),
     is_obsolete   boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;
