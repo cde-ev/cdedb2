@@ -537,9 +537,9 @@ CREATE TABLE complaint.entries (
     ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
-    is_obsolete   boolean NOT NULL DEFAULT FALSE
+    dtime         timestamp WITH TIME ZONE DEFAULT NULL
 );
-GRANT SELECT, INSERT, UPDATE (is_obsolete) ON complaint.entries TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE (dtime) ON complaint.entries TO cdb_persona;
 
 CREATE TABLE complaint.authors (
     id            serial PRIMARY KEY,
