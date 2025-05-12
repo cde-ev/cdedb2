@@ -1354,8 +1354,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
-            # We have users with unknown birthday, and this shouldn't
-            # be a blocker for admins to edit those users at all.
+            # We have users with an unknown birthday (this shouldn't
+            # be a blocker for admins to edit those users at all) and want to
+            # be able to correct wrong birthdays into missing ones.
         }, get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'})
 
     @access(*REALM_ADMINS, modi={"POST"})

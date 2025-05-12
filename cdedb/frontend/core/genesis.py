@@ -342,9 +342,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
-        # TODO: find out what's wrong with validating a date in a dict
-        #  birthday is not mandatory in contrast to all other fields marked here.
-        # TODO: distinct mandatory fields based on realm... (probably adjust JS)
         mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
 
         courses: dict[int, str] = {}

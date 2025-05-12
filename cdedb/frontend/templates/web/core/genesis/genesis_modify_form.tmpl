@@ -92,7 +92,7 @@
                     $realmSpecificFields.each(function() {
                         if (fieldsPerRealm[$select.val()].indexOf($(this).prop('name')) >= 0) {
                             $(this).closest('.form-group').show();
-                            if ($(this).closest('.form-group').find('span.required-marker')) {
+                            if ($(this).closest('.form-group').find('span.required-marker').length) {
                                 $(this).attr('required', 'required');
                             }
                         } else {
