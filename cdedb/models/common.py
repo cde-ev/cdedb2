@@ -198,8 +198,11 @@ class CdEDataclass:
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
         """Determine fields where user needs to enter something.
 
-        The `validation_fields` attribute has slightly different semantics,
-        namely it is about validation, not user input.
+        We cannot use `validation_fields` for this - that also has a distinction of
+        mandatory and optional fields, but with different semantics. Mandatory there
+        means that the value needs to be given for validating this object, but it may be
+        `None`. `None` (or the empty string) is not considered a valid input for the
+        fields returned by this function.
         """
         return get_mandatory_form_fields(*cls.validation_fields(creation=creation))
 

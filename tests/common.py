@@ -1164,8 +1164,8 @@ class FrontendTest(BackendTest):
                     continue
                 field: webtest.forms.Field = unwrap(field_list)
                 if "required" in field.attrs:
-                    self.assertNotEqual(field.value, "", f"Required field {fieldname}"
-                                                         f" left empty!")
+                    self.assertNotEqual(
+                        field.value, "", f"Required field {fieldname} left empty!")
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
