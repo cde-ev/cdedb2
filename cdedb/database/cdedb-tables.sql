@@ -553,6 +553,7 @@ CREATE TABLE complaint.involved (
     id            serial PRIMARY KEY,
     case_id       int NOT NULL REFERENCES complaint.cases(id),
     persona_id    int NOT NULL REFERENCES core.personas(id),
+    UNIQUE(case_id, persona_id),
     involved_type integer NOT NULL, -- database.constants.ComplaintInvolvementType
     is_informed   boolean NOT NULL DEFAULT FALSE
 );
