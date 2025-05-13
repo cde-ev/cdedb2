@@ -412,6 +412,12 @@ I18N_STRINGS = (
     n_("IncorrectNumInhabitantsCV"),
     n_("IllegalMixedLodgementCV"),
 
+    n_("ViolationSeverity.DEBUG"),
+    n_("ViolationSeverity.INFO"),
+    n_("ViolationSeverity.WARNING"),
+    n_("ViolationSeverity.ERROR"),
+    n_("ViolationSeverity.CRITICAL"),
+
     #
     # Query datatypes
     #
