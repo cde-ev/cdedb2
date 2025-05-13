@@ -494,7 +494,7 @@ def _make_node_label(rs: RequestState, registration: CdEDBObject,
             f"{event.parts[p].shortname}{icons[p]}"
             for p in _sort_parts(presence_parts, event))
     elif p := _parts_with_status(registration, {RegistrationPartStati.guest}):
-        parts = f"{rs.gettext('Guest')}{icons[p.pop()]}"
+        parts = f"{rs.gettext(str(RegistrationPartStati.guest))}{icons[p.pop()]}"
     persona = personas[registration['persona_id']]
     linebreak = "\n" if parts else ""
     return f"{make_persona_name(persona)}{linebreak}{parts}"
@@ -514,7 +514,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
         if guest_parts:
             if participant_parts:
                 parts.append("  |  ")
-            parts.append(rs.gettext("Guest") + ": ")
+            parts.append(rs.gettext(str(RegistrationPartStati.guest)) + ": ")
             parts.append(', '.join(event.parts[p].title
                                    for p in _sort_parts(guest_parts, event)))
         waitlist_parts = _parts_with_status(
@@ -522,14 +522,14 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
         if waitlist_parts:
             if participant_parts or guest_parts:
                 parts.append("  |  ")
-            parts.append(rs.gettext("Waitlist") + ": ")
+            parts.append(rs.gettext(str(RegistrationPartStati.waitlist)) + ": ")
             parts.append(', '.join(event.parts[p].title
                                    for p in _sort_parts(waitlist_parts, event)))
         parts_string = "".join(parts)
     elif _parts_with_status(registration, {RegistrationPartStati.guest}):
-        parts_string = "\n" + rs.gettext("Guest")
+        parts_string = "\n" + rs.gettext(str(RegistrationPartStati.guest))
     elif _parts_with_status(registration, {RegistrationPartStati.waitlist}):
-        parts_string = "\n" + rs.gettext("Waitlist")
+        parts_string = "\n" + rs.gettext(str(RegistrationPartStati.waitlist))
 
     persona = personas[registration['persona_id']]
     lodge_field_name = event.fields[event.lodge_field.id].field_name  # type: ignore[union-attr]
