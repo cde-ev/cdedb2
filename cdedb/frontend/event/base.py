@@ -585,7 +585,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         is_balanced = bool(is_balanced) if is_balanced != -1 else None
         is_concluded = bool(is_concluded) if is_concluded != -1 else None
         event_ids = set(event_ids or [])
-        min_severity = min_severity or models_cv.ViolationSeverity.INFO
+        min_severity = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
 
         all_event_ids = self.eventproxy.list_events(rs)
         all_events = self.eventproxy.get_events(rs, all_event_ids)

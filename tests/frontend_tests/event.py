@@ -6712,7 +6712,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.assertPresence(violation, div=f"event_{event_id}")
 
         def test_not_hidden(
-                nodes: list[lxml.etree.Element],
+                nodes: list["lxml.etree._HTMLElement"],
         ) -> None:
             for node in nodes:
                 self.assertNotIn("softhide", node.classes)
