@@ -3581,7 +3581,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
 
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
-        self.assertPresence("Emilia")
+        self.assertPresence("Emilia (Emmy) Eventis (Gast)")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
         self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
