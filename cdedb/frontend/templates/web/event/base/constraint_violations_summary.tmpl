@@ -41,7 +41,8 @@
     <li class="violations violations-{{ violations.max_severity.name }} {{ "softhide" if violations.max_severity < min_severity }}"
         data-max_severity="{{ violations.max_severity.value }}" id="event_{{ event.id }}_violations_{{ class_name }}">
         {% set link = cdedblink("event/constraint_violations", {'event_id': event.id}) + "#" + class_name %}
-        {% call util.href(link, label=none, aclass=violations.max_severity.html_class(), readonly=not is_privileged_for("event/constraint_violations", event_id=event.id)) %}
+        {% call util.href(link, label=none, aclass=violations.max_severity.html_class(),
+                          readonly=not is_privileged_for("event/constraint_violations", event_id=event.id, consider_admin_view=False)) %}
             {% for severity in enums['ViolationSeverity'] %}
                 {% set filtered_violations = violations|selectattr("severity", "ge", severity)|list %}
                 {% if filtered_violations %}

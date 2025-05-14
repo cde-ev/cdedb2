@@ -105,7 +105,12 @@ class EventBaseFrontend(AbstractUserFrontend):
         ) -> bool:
             return self.is_privileged(rs, required_privilege, event_id=event_id)
 
-        def is_privileged_for(endpoint: str, *, event_id: int | None = None) -> bool:
+        def is_privileged_for(
+                endpoint: str,
+                *,
+                event_id: int | None = None,
+                consider_admin_view: bool = True
+        ) -> bool:
             endpoint = endpoint.removeprefix(f"{self.realm}/")
             privilege = getattr(
                 getattr(self, endpoint), "event_required_privilege",
@@ -118,6 +123,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             if (
                 event_id in rs.user.orga
                 or 'event_orga' not in rs.user.available_admin_views
+                or not consider_admin_view
             ):
                 return is_privileged
             return is_privileged and 'event_orga' in rs.user.admin_views
