@@ -2372,6 +2372,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertPresence("Teilnahmebeitrag Warmup 10,50 € 4 Zu Zahlen:"
+                            " 1 Bezahlt: 42,00 € 10,50 €", div="eventfee_1")
+
         self.traverse({'linkid': "eventfee1001_change"})
         f = self.response.forms['configureeventfeeform']
         f['notes'] = "Some more information."
@@ -7462,14 +7466,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Teilnahmebeitrag CdE-Party 2050")
 
         self.traverse("Teilnahmebeiträge")
-        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen 2 Bezahlt")
-        self.assertPresence(
-            "Absager TODO: add real condition once implemented."
-            " 7,50 € 0 Zu Zahlen 0 Bezahlt")
-        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen: 1 Bezahlt: -20,00 € -10,00 €")
+        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen: 2 Bezahlt: 60,00 € 30,00 €")
+        self.assertPresence("Absager TODO: add real condition once implemented."
+                            " 7,50 € 0 Zu Zahlen: 0 Bezahlt: 0,00 € 0,00 €")
+        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen: 1 Bezahlt: 2,00 € 2,00 €")
+        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen: 1 Bezahlt: -4,99 € -4,99 €")
+        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen: 1 Bezahlt: 1.260,00 € 420,00 €")
 
     @as_users("garcia")
     def test_personalized_event_fees(self) -> None:
