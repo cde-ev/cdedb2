@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-05-13 21:04+0200\n"
+"POT-Creation-Date: 2025-05-15 00:46+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -416,7 +416,7 @@ msgstr ""
 #: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:753
 #: cdedb/frontend/cde/lastschrift.py:543
 #: cdedb/frontend/cde/parse_statement.py:704 cdedb/frontend/common.py:710
-#: cdedb/frontend/event/base.py:462 cdedb/frontend/event/query_stats.py:443
+#: cdedb/frontend/event/base.py:468 cdedb/frontend/event/query_stats.py:443
 #: cdedb/frontend/event/query_stats.py:634
 #: cdedb/frontend/event/query_stats.py:677
 #: cdedb/frontend/event/query_stats.py:708
@@ -1260,8 +1260,8 @@ msgstr "Nicht für diese Veranstaltung angemeldet."
 msgid "Only registrations from exactly one event allowed."
 msgstr "Nur Anmeldungen einer Veranstaltung werden unterstützt."
 
-#: cdedb/backend/event/registration.py:884 cdedb/frontend/event/base.py:221
-#: cdedb/frontend/event/base.py:377
+#: cdedb/backend/event/registration.py:884 cdedb/frontend/event/base.py:227
+#: cdedb/frontend/event/base.py:383
 msgid "No participant of event."
 msgstr "Kein Teilnehmer der Veranstaltung."
 
@@ -4738,23 +4738,23 @@ msgstr "Anfrage abgewiesen."
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
-#: cdedb/frontend/event/base.py:155
+#: cdedb/frontend/event/base.py:161
 msgid "No event context given"
 msgstr "Kein Veranstaltungs-Kontext gegeben"
 
-#: cdedb/frontend/event/base.py:224
+#: cdedb/frontend/event/base.py:230
 msgid "Participant list not published yet."
 msgstr "Die Teilnehmerliste ist noch nicht veröffentlicht."
 
-#: cdedb/frontend/event/base.py:271 cdedb/frontend/event/lodgement.py:117
+#: cdedb/frontend/event/base.py:277 cdedb/frontend/event/lodgement.py:117
 msgid "Invalid part id."
 msgstr "Nicht-existenter Veranstaltungsteil."
 
-#: cdedb/frontend/event/base.py:306
+#: cdedb/frontend/event/base.py:312
 msgid "Only one part id allowed."
 msgstr "Lediglich die Id eines Teils ist zulässig."
 
-#: cdedb/frontend/event/base.py:363
+#: cdedb/frontend/event/base.py:369
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:199
 msgid ""
 "You can not access the Participant List as you have not agreed to have your "
@@ -4763,7 +4763,7 @@ msgstr ""
 "Du kannst die Teilnehmerliste nicht sehen, da du nicht zugestimmt hast, "
 "deine Daten auf der Teilnehmerliste zur Verfügung zu stellen."
 
-#: cdedb/frontend/event/base.py:430
+#: cdedb/frontend/event/base.py:436
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
 msgstr ""
 "Ungültiger Schlüssel. Mögliche Werte sind 'course_id' und 'lodgement_id'."
@@ -12168,8 +12168,8 @@ msgstr "Fragebogen konfigurieren"
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:6
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:11
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:14
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:9
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:12
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:10
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:13
 #: cdedb/frontend/templates/web/event/generic.tmpl:347
 msgid "Constraint Violations"
 msgstr "Verstöße gegen Beschränkungen"
@@ -12225,23 +12225,23 @@ msgstr "Veranstaltungs-Administration"
 msgid "There are currently no constraints being violated."
 msgstr "Es gibt derzeit keine Verstöße gegen Beschränkungen."
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:5
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:6
 msgid "Constraint Violations Summary"
 msgstr "Übersicht über Verstöße gegen Beschränkungen"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:51
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:53
 #, python-format
 msgid "There are %(count)s %(class_name)s for %(event_title)s."
 msgstr "Es gibt %(count)s %(class_name)s für %(event_title)s."
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:55
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:57
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:163
 #, python-format
 msgid "There are %(count)s %(class_name)s."
 msgstr "Es gibt %(count)s %(class_name)s."
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:101
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:130
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:87
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:112
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:61
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:63
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
@@ -12256,65 +12256,59 @@ msgstr "Es gibt %(count)s %(class_name)s."
 msgid "Filter"
 msgstr "Filter"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:104
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:90
 msgid "Only show these events:"
 msgstr "Nur diese Veranstaltungen anzeigen:"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:106
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:91
 #: cdedb/frontend/templates/web/generic.tmpl:347
 msgid "<id>,<id>,…"
 msgstr "<id>,<id>,…"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:108
-msgid "Only show violations of this severity or higher:"
-msgstr "Nur Verstöße von dieser Schwere oder höher anzeigen:"
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:92
+msgid "Minimum Violation Severity:"
+msgstr "Minimale Schwere der Verstöße:"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:114
-msgid "Is Archived"
-msgstr "archiviert"
-
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:116
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:121
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:126
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:95
 msgid "any"
 msgstr "egal"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:116
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:121
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:126
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:95
 msgid "no"
 msgstr "nein"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:116
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:121
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:126
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:95
 msgid "yes"
 msgstr "ja"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:119
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:98
+msgid "Is Archived"
+msgstr "archiviert"
+
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:103
 msgid "Is Balanced"
 msgstr "abgeschlossen"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:124
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:108
 msgid "Is Concluded"
 msgstr "beendet"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:142
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:154
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:122
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:134
 msgid "Group by Event"
 msgstr "Nach Veranstaltung"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:148
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:182
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:128
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:162
 msgid "Group by Violation Class"
 msgstr "Nach Art des Verstoßes"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:170
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:200
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:150
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:180
 msgid "There are currently no violations."
 msgstr "Zur Zeit gibt es keine Verstöße."
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:177
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:157
 msgid "Filter matched no events."
 msgstr "Keine zum Filter passenden Veranstaltungen gefunden."
 

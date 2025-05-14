@@ -89,7 +89,7 @@
             class="form-horizontal">
             {{ util.form_input_text(label=gettext("Only show these events:"), name="event_ids", anid="filter-event-ids",
                                     placeholder=gettext("<id>,<id>,…")) }}
-            {{ util.form_input_select(name="min_severity", label=gettext("Only show violations of this severity or higher:"),
+            {{ util.form_input_select(name="min_severity", label=gettext("Minimum Violation Severity:"),
                                  anid="filter-min-severity", defaultvalue=min_severity,
                                  entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
             {% set tristate_entries = [(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))] %}
