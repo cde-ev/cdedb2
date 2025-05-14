@@ -831,7 +831,7 @@ def is_list_type(type_: type[Any]) -> bool:
     so we don't want to mark such inputs as mandatory.
     """
     return (
-        hasattr(type_, "__supertype__") and get_origin(type_.__supertype__) is list
+        hasattr(type_, "__supertype__") and is_list_type(type_.__supertype__)
         or get_origin(type_) is list  # get_origin(list[something]) is list
     )
 
