@@ -1,3 +1,4 @@
+{% set sidenav_active="violations_summary" %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic with context %}
@@ -81,57 +82,24 @@
     </div>
 {% endmacro %}
 
-{% macro fancy_button_group(name, label, entries, type="radio", innerlabelclass="", defaultvalue="") %}
-    <label>
-        {{ label }}
-        <div class="btn-group" data-toggle="buttons">
-            {% for value, label in entries %}
-            {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
-            <label class="{{ innerlabelclass }} {% if selected %}active{% endif %}">
-                {{ label }}
-                <input type="{{ type }}" name="{{ name }}" value="{{ value }}"
-                       {% if selected %}checked{% endif %}>
-            </label>
-            {% endfor %}
-        </div>
-    </label>
-{% endmacro %}
-
 {% block content %}
 
     {% call util.bootstrap_panel(gettext("Filter"), aclass="panel-primary", icon="filter") %}
-        <form action="{{ cdedblink("event/constraint_violations_summary") }}" method="GET" id="filterconstraintsform">
-            <label for="filter-event-ids">
-                {% trans %}Only show these events:{% endtrans %}
-            </label>
-            {{ util.input_text(name="event_ids", anid="filter-event-ids", placeholder=gettext("<id>,<id>,…")) }}
-            <label for="filter-min-severity">
-                {% trans %}Only show violations of this severity or higher:{% endtrans %}
-            </label>
-            {{ util.input_select(name="min_severity", anid="filter-min-severity", defaultvalue=min_severity,
+        <form action="{{ cdedblink("event/constraint_violations_summary") }}" method="GET" id="filterconstraintsform"
+            class="form-horizontal">
+            {{ util.form_input_text(label=gettext("Only show these events:"), name="event_ids", anid="filter-event-ids",
+                                    placeholder=gettext("<id>,<id>,…")) }}
+            {{ util.form_input_select(name="min_severity", label=gettext("Only show violations of this severity or higher:"),
+                                 anid="filter-min-severity", defaultvalue=min_severity,
                                  entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
-            <div class="row">
-                <div class="col-sm-3">
-                    {{ fancy_button_group("is_archived", gettext("Is Archived"), type="radio",
-                                          innerlabelclass="", defaultvalue="-1",
-                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
-                </div>
-                <div class="col-sm-3">
-                    {{ fancy_button_group("is_balanced", gettext("Is Balanced"), type="radio",
-                                          innerlabelclass="", defaultvalue="-1",
-                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
-                </div>
-                <div class="col-sm-3">
-                    {{ fancy_button_group("is_concluded", gettext("Is Concluded"), type="radio",
-                                          innerlabelclass="text-right", defaultvalue="-1",
-                                          entries=[(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))]) }}
-                </div>
-                <div class="col-sm-3">
-                    <div style="margin-top: 18px">
-                        {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-right") }}
-                    </div>
-                </div>
-            </div>
+            {% set tristate_entries = [(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))] %}
+            {{ util.form_input_checkboxes("is_archived", tristate_entries, gettext("Is Archived"), radio=true, slice=6,
+                                          defaultvalue="-1") }}
+            {{ util.form_input_checkboxes("is_balanced", tristate_entries, gettext("Is Balanced"), radio=true, slice=6,
+                                          defaultvalue="-1") }}
+            {{ util.form_input_checkboxes("is_concluded", tristate_entries, gettext("Is Concluded"), radio=true, slice=6,
+                                          defaultvalue="-1") }}
+            {{ util.form_input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-right") }}
         </form>
     {% endcall %}
 
@@ -220,12 +188,15 @@
 
 
         let filter = $('#filterconstraintsform');
-        filter.find('input[name="event_ids"]').cdedbSearchEvent(
+        filter.find('input[name="event_ids"]').removeAttr('placeholder').cdedbSearchEvent(
             '{{ cdedblink('event/select_event') }}',
             {{ event_options|tojson }},
             true,
         );
-        filter.find('.btn-group').children('label').addClass('btn btn-primary');
+        filter.find('.row[role=radiogroup]').children('.col-sm-2').each(function() {
+            $(this).replaceWith($(this).find('label'));
+        });
+        filter.find('.row[role=radiogroup]').attr('data-toggle', 'buttons').addClass('btn-group col-sm-12').children('label').addClass('btn btn-primary');
         let violation_severity_to_int = {{ enums['ViolationSeverity'].map()|tojson }};
 
         let update_event_selection = function () {
