@@ -6707,10 +6707,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     div=f"event_{event_id}", html_class="softhide",
                 )
 
-        def test_violations_shown(event_id: int, violations: list[str]) -> None:
-            for violation in violations:
-                self.assertPresence(violation, div=f"event_{event_id}")
-
         def test_not_hidden(
                 nodes: list["lxml.etree._HTMLElement"],
         ) -> None:
@@ -6893,6 +6889,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "5 Verstöße gegen Kursausschließlichkeit",
             ],
         )
+
+        f['min_severity'] = models_cv.ViolationSeverity.CRITICAL
+        self.submit(f, check_notification=False)
+        test_shown(event_id=1, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=2, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=3, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=4, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
 
         f['min_severity'] = models_cv.ViolationSeverity.WARNING
         self.submit(f, check_notification=False)

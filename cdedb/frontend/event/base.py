@@ -109,7 +109,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 endpoint: str,
                 *,
                 event_id: int | None = None,
-                consider_admin_view: bool = True
+                consider_admin_view: bool = True,
         ) -> bool:
             endpoint = endpoint.removeprefix(f"{self.realm}/")
             privilege = getattr(
