@@ -93,13 +93,24 @@
                                  anid="filter-min-severity", defaultvalue=min_severity,
                                  entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
             {% set tristate_entries = [(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))] %}
-            {{ util.form_input_checkboxes("is_archived", tristate_entries, gettext("Is Archived"), radio=true, slice=6,
-                                          defaultvalue="-1") }}
-            {{ util.form_input_checkboxes("is_balanced", tristate_entries, gettext("Is Balanced"), radio=true, slice=6,
-                                          defaultvalue="-1") }}
-            {{ util.form_input_checkboxes("is_concluded", tristate_entries, gettext("Is Concluded"), radio=true, slice=6,
-                                          defaultvalue="-1") }}
-            {{ util.form_input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-right") }}
+            <div class="row">
+                <div class="col-sm-3">
+                    <label>{% trans %}Is Archived{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_archived", tristate_entries, radio=true,
+                                                  defaultvalue="-1") }}
+                </div>
+                <div class="col-sm-3">
+                    <label>{% trans %}Is Balanced{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true,
+                                                  defaultvalue="-1") }}
+                </div>
+                <div class="col-sm-3">
+                    <label>{% trans %}Is Concluded{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true,
+                                                  defaultvalue="-1") }}
+                </div>
+                {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-bottomright") }}
+            </div>
         </form>
     {% endcall %}
 
@@ -193,7 +204,7 @@
             {{ event_options|tojson }},
             true,
         );
-        filter.find('.row[role=radiogroup]').children('.col-sm-2').each(function() {
+        filter.find('.row[role=radiogroup]').children('.col-sm-12').each(function() {
             $(this).replaceWith($(this).find('label'));
         });
         filter.find('.row[role=radiogroup]').attr('data-toggle', 'buttons').addClass('btn-group col-sm-12').children('label').addClass('btn btn-primary');
