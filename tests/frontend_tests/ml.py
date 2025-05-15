@@ -840,7 +840,7 @@ class TestMlFrontend(FrontendTest):
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("moderators", errormsg)
         # Check that invalid DB-IDs are catched (regression test #2632)
         errormsg = "Falsches Format."

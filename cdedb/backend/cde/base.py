@@ -37,6 +37,7 @@ from cdedb.common import (
     DefaultReturnCode,
     LineResolutions,
     RequestState,
+    is_optional_type,
     make_proxy,
     unwrap,
 )
@@ -47,7 +48,6 @@ from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    is_optional,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
@@ -436,7 +436,7 @@ class CdEBaseBackend(AbstractBackend):
                 # transition. The remaining data will be updated later.
                 mandatory_fields = {
                     field for field, validator in CDE_TRANSITION_FIELDS.items()
-                    if field not in upgrades and not is_optional(validator)
+                    if field not in upgrades and not is_optional_type(validator)
                 }
                 assert mandatory_fields <= set(batch_fields)
                 # It is pure incident that only event users have additional (optional)

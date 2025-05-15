@@ -1448,7 +1448,7 @@ etc;anything else""", f['entries_2'].value)
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
         f['create_participant_list'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         # The following submissions with invalid shortnames also check for the
         # mailignlist creation bug in #1487.
         self.assertValidationError("shortname", "Darf nicht leer sein.")
@@ -2373,6 +2373,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertPresence("Teilnahmebeitrag Warmup 10,50 € 4 Zu Zahlen:"
+                            " 1 Bezahlt: 42,00 € 10,50 €", div="eventfee_1")
+
         self.traverse({'linkid': "eventfee1001_change"})
         f = self.response.forms['configureeventfeeform']
         f['notes'] = "Some more information."
@@ -3116,6 +3120,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["qord_0"] = 'course1.id'
         self.submit(f)
 
+        # Test for https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/3937.
+        self.event.set_registration(self.key, {'id': 1, 'parts': {3: {'lodgement_id': 3}}})
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qsel_part3.lodgement_id"] = True
+        f["qsel_lodgement3.id"] = True
+        f["qord_0"] = "part3.lodgement_id"
+        self.submit(f, button="download", value="json")
+        data = json.loads(self.response.text)
+        self.assertEqual(
+            ["Einzelzelle", "Kalte Kammer", "Kalte Kammer", "Kellerverlies", "Warme Stube", None],
+            [entry["part3.lodgement_id"] for entry in data],
+        )
+        self.assertEqual(
+            [4, 2, 2, 3, 1, 0],
+            [int(entry["lodgement3.id"] or 0) for entry in data],
+        )
+
     @as_users("annika")
     def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -3605,8 +3627,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Kalte Kammer")
         # Use the pager to navigate to Einzelzelle and test proper sorting
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
+
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
-        self.assertPresence("Emilia")
+        self.assertPresence("Emilia (Emmy) Eventis (Gast)")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
         self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
@@ -3628,6 +3651,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
+
+        self.traverse("Unterkünfte", "Kalte Kammer")
+        self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
+        self.assertPresence("Inga Iota (U10)")
+
         self.traverse("Unterkünfte", "Kellerverlies")
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         f = self.response.forms['deletelodgementform']
@@ -6299,7 +6327,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['constraint_type'] = const.EventPartGroupType.Statistic
         f['part_ids'] = []
         f['part_ids'] = list(event.parts)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = new_title = "Everything"
@@ -6356,7 +6384,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Submit garbage.
         f['title'] = ""
         f['shortname'] = list(event.part_groups.values())[0].shortname
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError(
             'shortname',
@@ -6752,7 +6780,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Try to submit some invalid forms:
         f['title'] = ""
         f['shortname'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
@@ -7282,7 +7310,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "New Token!"
         self.submit(f)
@@ -7293,7 +7321,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configureorgatokenform']
         f['title'] = ""
         f['notes'] = "Spam"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "Changed title"
         self.submit(f)
@@ -7459,14 +7487,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Teilnahmebeitrag CdE-Party 2050")
 
         self.traverse("Teilnahmebeiträge")
-        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen 2 Bezahlt")
-        self.assertPresence(
-            "Absager TODO: add real condition once implemented."
-            " 7,50 € 0 Zu Zahlen 0 Bezahlt")
-        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen: 1 Bezahlt: -20,00 € -10,00 €")
+        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen: 2 Bezahlt: 60,00 € 30,00 €")
+        self.assertPresence("Absager TODO: add real condition once implemented."
+                            " 7,50 € 0 Zu Zahlen: 0 Bezahlt: 0,00 € 0,00 €")
+        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen: 1 Bezahlt: 2,00 € 2,00 €")
+        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen: 1 Bezahlt: -4,99 € -4,99 €")
+        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen: 1 Bezahlt: 1.260,00 € 420,00 €")
 
     @as_users("garcia")
     def test_personalized_event_fees(self) -> None:

@@ -9,7 +9,13 @@ from schulze_condorcet.types import Candidate
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, RequestState, ValidationWarning, merge_dicts
+from cdedb.common import (
+    CdEDBObject,
+    RequestState,
+    ValidationWarning,
+    get_mandatory_form_fields,
+    merge_dicts,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
@@ -104,7 +110,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.notify('error',
                       n_("Cannot add attachment once the assembly has been locked."))
             return self.redirect(rs, 'assembly/list_attachments')
-        return self.render(rs, "attachment/add_attachment")
+        mandatory_fields = get_mandatory_form_fields(self.add_attachment)
+        if rs.values.get('attachment_hash'):
+            mandatory_fields.remove('attachment')
+        return self.render(rs, "attachment/add_attachment",
+                           mandatory_fields=mandatory_fields)
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -197,11 +207,14 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             if metadatum not in rs.values:
                 rs.values[metadatum] = latest_version[metadatum]
 
+        mandatory_fields = get_mandatory_form_fields(self.add_attachment_version)
+        if rs.values.get('attachment_hash'):
+            mandatory_fields.remove('attachment')
         return self.render(
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': is_deletable,
-            })
+            }, mandatory_fields)
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -295,14 +308,14 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': True,
-            })
+            }, get_mandatory_form_fields(self.change_attachment_version))
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename")
     def change_attachment_version(self, rs: RequestState, assembly_id: int,
                                attachment_id: int, version_nr: int,
-                               title: str, filename: Optional[vtypes.Identifier],
+                               title: str, filename: vtypes.Identifier,
                                authors: Optional[str]) -> Response:
         """Change the metadata of a new version of an existing attachment."""
         # the check that the attachment belongs to the assembly is already done in
