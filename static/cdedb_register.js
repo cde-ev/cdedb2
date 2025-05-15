@@ -48,7 +48,7 @@
                  *     and this ccs group is active, hide that choice and deselect it.
                  */
                 let course_id = $(this).val();
-                let track_group_id = $(this).parent().attr('track_group_id');
+                let track_group_id = $(this).parent().attr('data-track_group_id');
                 if (!course_id || part_map[course_id][track_group_id].some(
                         (part_id) => part_checkbox_map[part_id].prop('checked'))
                 ) {
@@ -86,9 +86,9 @@
         let field_selects = form.find('select[id^="event-input-fields"]');
 
         // Find input elements for orga preview mode.
-        is_orga_checkbox = form.find('#fee-precompute-is-orga');
-        is_member_checkbox = form.find('#fee-precompute-is-member');
-        age_input = form.find('#fee-precompute-age');
+        let is_orga_checkbox = form.find('#fee-precompute-is-orga');
+        let is_member_checkbox = form.find('#fee-precompute-is-member');
+        let age_input = form.find('#fee-precompute-age');
 
         // Find the elements that will be replaced by this function.
         let fee_preview = form.find('[id="fee-preview"]');

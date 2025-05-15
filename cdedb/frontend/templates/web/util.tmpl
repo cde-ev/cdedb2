@@ -45,7 +45,7 @@
         ("disabled" if 'btn' in aclass else "link-disabled") if readonly else "",
     ]),
     title=title,
-    id=anid,
+    id=anid if anid else none,
     **{ "aria-current": "page" if active }
 )|xmlattr }} {{ attributes }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) if icon }}{{ nbsp if icon and label }}{{ label }}
@@ -130,18 +130,17 @@
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid=none, titles=[]) %}
-    {% if checked is false %}
-        {% set title = titles[0] if titles else "" %}
-        <span class="far fa-times-circle" id="{{ anid }}" title="{{ title }}" data-checked="False" aria-hidden="true"></span>
+{% if checked is false %}
+        {% set title = titles[0] if titles else none %}
+        <span class="far fa-times-circle" {{ dict(id=anid, title=title)|xmlattr }} data-checked="False" aria-hidden="true"></span>
     {% elif checked is true %}
-        {% set title = titles[1] if titles else "" %}
-        <span class="fas fa-check-circle" id="{{ anid }}" title="{{ title }}" data-checked="True" aria-hidden="true"></span>
+        {% set title = titles[1] if titles else none %}
+        <span class="fas fa-check-circle" {{ dict(id=anid, title=title)|xmlattr }} data-checked="True" aria-hidden="true"></span>
     {% else %}
-        {% set title = titles[2] if titles else "" %}
-        <span class="far fa-circle" id="{{ anid }}" title="{{ title }}" aria-hidden="true"></span>
+        {% set title = titles[2] if titles else none %}
+        <span class="far fa-circle" {{ dict(id=anid, title=title)|xmlattr }} aria-hidden="true"></span>
     {% endif %}
-    {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}
-{%- endmacro %}
+    {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}{%- endmacro %}
 
 {# Special tri-state macro to represent subscription states
 
@@ -586,7 +585,7 @@
 
 {% macro input_checkboxes(name, entries, readonly=False, actualreadonly=False, defaultvalue='', inline=False,
         radio=False, aclass=none, arialabeledby='', sort=False, slice=1, checkboxclass='', readonly_map=none,
-        title_map=none) %}
+        title_map=none, anid=none) %}
     <div{{ dict(
         class="row",
         role="radiogroup" if radio else "group",
@@ -601,7 +600,7 @@
                         <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly or actualreadonly }}
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
-                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
+                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue, anid=(anid + "-" + loop.index|string) if anid else none,
                                           readonly=(readonly_map or {}).get(entry_value, readonly), actualreadonly=actualreadonly,
                                           inline=inline, radio=radio, aclass=aclass, title=title_map[entry_value]) }}
                     {%- if not inline %}</div>{% endif %}
@@ -639,9 +638,9 @@
         defaultvalue='', small=False, wide=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False, slice=1,
         checkboxclass='', outerclass='') %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, wide=wide, aclass=outerclass) %}
+    {%- call form_input_general(name, label, "inputgroup-{}-1".format(name) if entries else none, small, info, displayerrors, horizontal, labelid, wide=wide, aclass=outerclass) %}
         {{- input_checkboxes(name, entries, readonly=readonly, actualreadonly=actualreadonly, defaultvalue=defaultvalue,
-                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort, slice=slice, checkboxclass='') }}
+                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort, slice=slice, checkboxclass='', anid="inputgroup-{}".format(name)) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -744,7 +743,7 @@
 {% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
         name=none, outerclass='', displayerrors=False, errorname=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
+    {%- call form_input_general(name, label, none, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}
