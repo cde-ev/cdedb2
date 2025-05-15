@@ -94,20 +94,23 @@
                                  entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
             {% set tristate_entries = [(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))] %}
             <div class="row">
-                <div class="col-sm-3">
-                    <label>{% trans %}Is Archived{% endtrans %}</label>
-                    {{ util.input_checkboxes("is_archived", tristate_entries, radio=true,
-                                                  defaultvalue="-1") }}
+                <div class="col-xs-3">
+                    <label>
+                        {% trans %}Is Archived{% endtrans %}
+                        {{ util.input_checkboxes("is_archived", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </label>
                 </div>
-                <div class="col-sm-3">
-                    <label>{% trans %}Is Balanced{% endtrans %}</label>
-                    {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true,
-                                                  defaultvalue="-1") }}
+                <div class="col-xs-3">
+                    <label>
+                        {% trans %}Is Balanced{% endtrans %}
+                        {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </label>
                 </div>
-                <div class="col-sm-3">
-                    <label>{% trans %}Is Concluded{% endtrans %}</label>
-                    {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true,
-                                                  defaultvalue="-1") }}
+                <div class="col-xs-3">
+                    <label>
+                        {% trans %}Is Concluded{% endtrans %}
+                        {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </label>
                 </div>
                 {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-bottomright") }}
             </div>
@@ -186,7 +189,7 @@
         $(window).scrollTop(0);
 
         // Show navbar and activate first tab.
-        let nav_tabs = $(".tab-container").find('.nav-tabs').show().find('a');
+        let nav_tabs = $('.nav-tabs').show().find('a');
         nav_tabs.first().tab('show');
 
         // Retrieve active tab from URL hash or GET parameter.
@@ -205,7 +208,8 @@
             // Update current URL with new target.
             .on('shown.bs.tab', function (event) {
                 history.replaceState(null, "", $(event.target).data('target'));
-            });
+            })
+            .closest(".tab-container");
 
         // Hide alternate tab headings.
         tab_container.find('.tab-heading-alt').hide();
