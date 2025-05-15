@@ -332,16 +332,19 @@ class EventQueryMixin(EventBaseFrontend):
     def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
 
-    def configure_custom_filter_form(self, rs: RequestState, event_id: int,
-                                     scope: QueryScope) -> Response:
+    def configure_custom_filter_form(
+        self, rs: RequestState, event_id: int, scope: QueryScope, creation: bool = True,
+    ) -> Response:
         spec = scope.get_spec(event=rs.ambience['event'])
         fields_by_kind = collections.defaultdict(list)
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
 
-        return self.render(rs, "query/configure_custom_filter", {
-            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
-        })
+        return self.render(
+            rs, "query/configure_custom_filter",
+            {'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind},
+            models.CustomQueryFilter.mandatory_form_fields(creation=creation),
+        )
 
     @staticmethod
     def _validate_custom_filter_uniqueness(rs: RequestState, data: CdEDBObject,
@@ -396,7 +399,8 @@ class EventQueryMixin(EventBaseFrontend):
         })
         merge_dicts(rs.values, values)
 
-        return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
+        return self.configure_custom_filter_form(
+            rs, event_id, custom_filter.scope, creation=False)
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)

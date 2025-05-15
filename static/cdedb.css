@@ -1271,6 +1271,13 @@ ul.styleless {
     width: fit-content;
 }
 
+/* mark mandatory form fields */
+label .required-marker::after, th.required-col::after {
+    content: " *";
+    color: #a94442;
+    position: absolute;
+}
+
 /* Display icons in light gray. */
 span.fag {
     color: #aaaaaa;

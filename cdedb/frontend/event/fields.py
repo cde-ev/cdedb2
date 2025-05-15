@@ -20,6 +20,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     RequestState,
     build_msg,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
 )
@@ -259,11 +260,15 @@ class EventFieldMixin(EventBaseFrontend):
         values = {f"input{anid}": entity['fields'].get(field.field_name)
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
-        return self.render(rs, "fields/field_multiset", {
-            'ids': (','.join(str(i) for i in ids) if ids else None),
-            'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-            'kind': kind.value, 'change_note': change_note,
-            'cancellink': self.FIELD_REDIRECT[kind]})
+        return self.render(
+            rs, "fields/field_multiset", {
+                'ids': (','.join(str(i) for i in ids) if ids else None),
+                'entities': entities, 'labels': labels, 'ordered': ordered_ids,
+                'kind': kind.value, 'change_note': change_note,
+                'cancellink': self.FIELD_REDIRECT[kind],
+            },
+            get_mandatory_form_fields(self.field_multiset),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)

@@ -396,6 +396,11 @@
     )|xmlattr }}/>
 {% endmacro %}
 
+{% macro required_marker() -%}
+    <span class="required-marker" title="{% trans %}(mandatory input){% endtrans %}"
+          aria-hidden="true">{# asterisk is added by CSS ::after for nice alignment #}</span>
+{%- endmacro %}
+
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
         horizontal=True, labelid=none, addon='', markdown=False, wide=False, errorname=none, aclass='') %}
     <div class="form-group {{ aclass }}
@@ -411,7 +416,13 @@
                 id=labelid,
                 for=anid,
                 class=(("col-sm-2" if small else "col-sm-4") if horizontal else "") + " control-label",
-            )|xmlattr }}>{{ label }}</label>
+            )|xmlattr }}>
+                {{ label -}}
+                {%- if name in mandatory_fields -%}
+                    <span class="sr-only"> {% trans %}(mandatory input){% endtrans %}</span>
+                    {{ required_marker() }}
+                {% endif -%}
+            </label>
         {%- endif %}
         {%- if horizontal %}
             <div class="
@@ -430,7 +441,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='') %}
+        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -440,6 +451,7 @@
         placeholder=placeholder,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
@@ -472,16 +484,19 @@
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
-        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='') %}
+        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
+        enforce_required=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
-                placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
+                placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes,
+                enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_file(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', accept=none, arialabel=none) %}
+{% macro input_file(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', accept=none,
+        arialabel=none, enforce_required=True) %}
     <input{{ dict(
         type="file",
         name=name,
@@ -489,20 +504,22 @@
         class=aclass,
         accept=accept,
         disabled="disabled" if readonly,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }}/>
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept=none, anid=none,
-        aclass=none, small=False, horizontal=True, outerclass='') %}
+        aclass=none, small=False, horizontal=True, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-file-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
-        {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + (aclass or '')) }}
+        {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + (aclass or ''),
+                enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro %}
 
 {% macro form_input_attachment(link, info='', displayerrors=True, readonly=False, accept=none, anid=none, aclass=none,
-        small=False, horizontal=True) %}
+        small=False, horizontal=True, enforce_required=True) %}
     {% set label = gettext("Attachment") %}
     {% if values.get('attachment_hash') %}
         {% set label = gettext("New Attachment") %}
@@ -512,12 +529,13 @@
                                   value=util.href(link, values['attachment_filename'], icon="download"), small=small, displayerrors=True, errorname="cached_attachment",
                                   info=gettext("We already saved your uploaded file, but you can provide a different file below.")) }}
     {% endif %}
-    {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal) }}
+    {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal,
+                       enforce_required=enforce_required) }}
 {%- endmacro %}
 
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
-                        arialabel=none, attributes='', actualreadonly=False) %}
+                        arialabel=none, attributes='', actualreadonly=False, enforce_required=True) %}
     <textarea{{ dict(
         name=name,
         id=anid,
@@ -526,6 +544,7 @@
         maxlength=maxlength,
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
     {#- TODO sort if this is a list -#}
@@ -535,12 +554,13 @@
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
         aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
-        wide=False, outerclass='') %}
+        wide=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide,
                                 aclass=outerclass) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
-                           actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
+                           actualreadonly=actualreadonly, aclass='form-control ' + (aclass or ''),
+                           enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -631,12 +651,13 @@
 
 
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
     <select{{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -669,21 +690,22 @@
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
-        wide=False, outerclass='') %}
+        wide=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide, aclass=outerclass) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro%}
 
 {% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
         disabled="disabled" if readonly or actualreadonly,
+        required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
@@ -711,11 +733,11 @@
 
 {% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False,
        actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
-       attributes="", sort=False, outerclass='') %}
+       attributes="", sort=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
         {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro%}
 

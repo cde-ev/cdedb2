@@ -1139,7 +1139,8 @@ class FrontendTest(BackendTest):
 
     def submit(self, form: webtest.Form, button: str = "", *,
                check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: Optional[str] = None) -> None:
+               verbose: bool = False, value: Optional[str] = None,
+               check_mandatory_filled: bool = True) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1149,10 +1150,22 @@ class FrontendTest(BackendTest):
             that the submission produces a notification indicating success.
         :param check_button_attrs: If True and button is given, check whether the
             button specifies a different form action and/or method.
+        :param check_mandatory_filled: If True, check that all fields with a `required`
+            attribute are non-empty. Most browers do this.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        if check_mandatory_filled:
+            # check that all required inputs are filled
+            for fieldname, field_list in form.fields.items():
+                if len(field_list) > 1:  # these are checkboxes or submit buttons
+                    # TODO: handle checkboxes when required-attr implemented there
+                    continue
+                field: webtest.forms.Field = unwrap(field_list)
+                if "required" in field.attrs:
+                    self.assertNotEqual(
+                        field.value, "", f"Required field {fieldname} left empty!")
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
@@ -1219,7 +1232,8 @@ class FrontendTest(BackendTest):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
@@ -1237,7 +1251,8 @@ class FrontendTest(BackendTest):
                 raise self.failureException("Already logged out.")
         else:
             f = self.response.forms['logoutform']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -2004,7 +2019,7 @@ class FrontendTest(BackendTest):
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('new_username', "Darf nicht leer sein.")
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "zeruda@example.cde"

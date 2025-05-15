@@ -104,7 +104,7 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken(invalid_qpe_token, "127.0.1.3")
 
         # event specific orga droid.
-        orga_token_secret = "0123456789abcdeffedcba9876543210" * 2
+        orga_token_secret = "secret"
         orgatoken = model_droid.OrgaToken._get_token_string(
             model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
 
