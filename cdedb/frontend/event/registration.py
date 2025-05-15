@@ -36,6 +36,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
+from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
@@ -1394,21 +1395,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
-        # TODO: This check causes a privilege error and is therefor temporarily disabled.
-        # if rs.ambience['event'].is_balanced:
-        #     if persona_id and self._calculate_partial_fee(
-        #             rs, event_id, registration, persona_id,
-        #     ):
-        #         msg = n_("Event is balanced. May not create registration which owes a fee.")
-        #         # This is not an input so this error won't mark any input field.
-        #         rs.append_validation_error(("amount_owed", ValueError(msg)))
-        #         rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
         registration['persona_id'] = persona_id
         registration['event_id'] = event_id
-        new_id = self.eventproxy.create_registration(rs, registration)
+
+        try:
+            new_id = self.eventproxy.create_registration(rs, registration)
+        except EventIsBalancedError as e:
+            rs.notify("error", *e.args)
+            return self.add_registration_form(rs, event_id)
+
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
