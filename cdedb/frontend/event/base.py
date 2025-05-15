@@ -581,7 +581,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @access("event.event_helper", "event_admin", "finance_admin")
     @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
-                "is_concluded", "min_severity", _omit_missing=True)
+                 "is_concluded", "min_severity", _omit_missing=True)
     def constraint_violations_summary(
             self, rs: RequestState,
             event_ids: vtypes.IntCSVList | None = None,
