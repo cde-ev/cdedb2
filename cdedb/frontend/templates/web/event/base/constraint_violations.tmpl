@@ -1,7 +1,12 @@
 {% set sidenav_active = 'event_constraint_violations' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% set jshint = 'weak' %}
 {% import "web/event/generic.tmpl" as generic with context %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_filter_violations.js') }}
+{% endblock %}
 {% block title %}
     {{ ambience['event']['title'] }} – {% trans %}Constraint Violations{% endtrans %}
 {% endblock %}
@@ -14,17 +19,16 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% if violations.max_severity < min_severity %}
-        {% trans %}
-            There are currently no constraints being violated.
-        {% endtrans %}
-    {% endif %}
+    {{ generic.filter_violations("event/constraint_violations", "violations", filter_event=False) }}
 
-    {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-        {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
-        {{ util.h(class_name, underline=true) }}
-        {{ generic.list_violations(class_name, violations_, entity_page="") }}
-    {% endfor %}
+    <div id="violations" class="event">
+        {% for class_name, violation_list in violations.by_class.items() %}
+            <div class="violation-list maybehide">
+                {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                {{ util.h(class_name, underline=true) }}
+                {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity) }}
+            </div>
+        {% endfor %}
+    </div>
 
 {% endblock %}

@@ -78,6 +78,10 @@
                     $(this).find('.violations-only').addClass('softhide').each(function () {
                         if ($(this).data('severity') === min_severity_val) {
                             $(this).removeClass('softhide');
+                            let enclosing_link = $(this).closest('a');
+                            let new_url = new URL(enclosing_link.attr('href'), window.location.origin);
+                            new_url.searchParams.set('min_severity', min_severity_text);
+                            enclosing_link.attr('href', new_url.toString());
                         }
                     })
                 });

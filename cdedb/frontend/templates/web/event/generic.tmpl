@@ -368,8 +368,10 @@
 
 {% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO) %}
     <ul id="{{ class_name }}-list" {% if entity_page %} class="slim" {% endif %}>
-        {% for violation in violations if violation.severity >= min_severity %}
-            <li class="{{ violation.severity.html_class() }}">
+        {% for violation in violations %}
+            <li class="{{ violation.severity.html_class() }} violations {{ "softhide" if violation.severity < min_severity }}"
+                data-max_severity="{{ violation.severity.value }}"
+            >
                 {{ print_violation(violation, entity_page=entity_page) }}
             </li>
         {% endfor %}
