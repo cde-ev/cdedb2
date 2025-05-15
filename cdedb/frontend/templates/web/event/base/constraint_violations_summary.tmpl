@@ -237,8 +237,9 @@
             .addClass('btn-group')
             .removeClass('row')
             .children().each(function () {
-                $(this).find('label:has(input:checked)').addClass('active');
-                $(this).replaceWith($(this).find('label').addClass('btn btn-primary'));
+                $(this)
+                    .replaceWith($(this).find('label').addClass('btn btn-primary'))
+                    .filter(':has(:input:checked)').addClass('active');
             });
 
         let violation_severity_to_int = {{ enums['ViolationSeverity'].map()|tojson }};
