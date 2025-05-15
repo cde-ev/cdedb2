@@ -30,8 +30,10 @@ from cdedb.common import (
     parse_datetime,
 )
 from cdedb.common.exceptions import (
-    APITokenError, EventIsBalancedError,
-    PartialImportError, PrivilegeError,
+    APITokenError,
+    EventIsBalancedError,
+    PartialImportError,
+    PrivilegeError,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
@@ -5165,7 +5167,7 @@ class TestEventBackend(BackendTest):
             },
         })
 
-        new_reg = {
+        new_reg: CdEDBObject = {
             'event_id': event_id,
             'persona_id': 4,
             'parts': {
