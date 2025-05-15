@@ -761,7 +761,7 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['changedataform']
             f[IGNORE_WARNINGS_NAME].checked = True
         if self.user_in("vera"):
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             msg = "Die Angabe einer Adresse ist verpflichtend."
             self.assertValidationError('address', msg)
             self.assertValidationError('location', msg)
@@ -1640,17 +1640,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("note", "Darf nicht leer sein")
         self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = False
+        f['note'] = "Archived for testing."
         self.submit(f, check_notification=False)
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
-        f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Charly Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
@@ -1704,7 +1704,7 @@ class TestCoreFrontend(FrontendTest):
         # Test missing change note entry warning
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertTitle("Guthaben anpassen für Ferdinand Findus")
         self.assertValidationError("change_note", "Darf nicht leer sein.")
         # Test changing balance
@@ -2097,7 +2097,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         f = self.response.forms['promotionform']
         f['pevent_id'] = 2
         self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
@@ -2135,6 +2135,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         f['pevent_id'] = 1
         f['trial_member'].checked = True
+        f['birthday'] = "2000-01-01"
         f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
         self.submit(f, check_notification=False)
         f = self.response.forms['promotionform']
@@ -2167,7 +2168,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         # First check error handling by entering an invalid birthday
         f['birthday'] = "foobar"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         self.assertValidationError('change_note', "Darf nicht leer sein.")
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
@@ -2410,7 +2411,7 @@ class TestCoreFrontend(FrontendTest):
             data = datafile.read()
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
         saved_response = self.response
@@ -2744,7 +2745,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.EVENT_GENESIS_DATA.items():
             f[field] = entry
         f['notes'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
 
     def test_genesis_modify(self) -> None:
@@ -3240,14 +3241,14 @@ class TestCoreFrontend(FrontendTest):
 
             self.traverse("Kontakt")
             f = self.response.forms['contactform']
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             self.assertValidationError('to', "Darf nicht leer sein.")
             self.assertValidationError('anonymous', "Darf nicht leer sein.")
             self.assertValidationError('subject', "Darf nicht leer sein.")
             self.assertValidationError('msg', "Darf nicht leer sein.")
 
             f['to'].force_value("test@example.cde")
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             self.assertValidationError('to', "Unzulässige Auswahl.")
 
             for recipient in self.conf["CONTACT_ADDRESSES"]:
@@ -3298,7 +3299,7 @@ LG Emilia
         with self.switch_user("inga"):
             self.get("/core/contact/reply")
             f = self.response.forms['replyform']
-            self.submit(f, check_notification=False)
+            self.submit(f, check_notification=False, check_mandatory_filled=False)
             self.assertValidationError('secret', "Darf nicht leer sein.")
             self.assertValidationError('reply_message', "Darf nicht leer sein.")
 
