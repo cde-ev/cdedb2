@@ -75,7 +75,7 @@
 
 {% macro event_wrapper(event) %}
     <div id="event_{{ event.id }}" data-event_id="{{ event.id }}"
-         class="event maybehide {# The existence of this comment is important! #}
+         class="event maybehide {# This comment used to be important for spacing, but it no longer needs to exist :) #}
             {%- if event.is_archived %} event-is-archived {% endif %}
             {%- if event.is_balanced %} event-is-balanced {% endif %}
             {%- if event.is_cancelled or now().date() >= event.end %} event-is-concluded {% endif -%}
