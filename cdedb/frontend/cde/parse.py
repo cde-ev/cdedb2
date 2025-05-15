@@ -23,6 +23,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     get_hash,
+    get_mandatory_form_fields,
     merge_dicts,
     unwrap,
 )
@@ -77,7 +78,8 @@ class CdEParseMixin(CdEBaseFrontend):
             'event_entries': event_entries, 'event_options': event_options,
             'events': events,
         }
-        return self.render(rs, "parse/parse_statement", params)
+        return self.render(rs, "parse/parse_statement", params,
+                           get_mandatory_form_fields(self.parse_statement))
 
     def organize_transaction_data(
         self, rs: RequestState, transactions: list[parse.Transaction],
@@ -262,9 +264,14 @@ class CdEParseMixin(CdEBaseFrontend):
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
-        return self.render(rs, "parse/money_transfers", {
-            'data': data, 'csvfields': csv_position, 'saldos': saldos, 'events': events,
-        })
+        return self.render(
+            rs, "parse/money_transfers",
+            {
+                'data': data, 'csvfields': csv_position, 'saldos': saldos,
+                'events': events,
+            },
+            get_mandatory_form_fields(self.money_transfers),
+        )
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("transfers_file")

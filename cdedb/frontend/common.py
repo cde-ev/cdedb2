@@ -107,6 +107,7 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
+    get_mandatory_form_fields,
     glue,
     json_serialize,
     make_persona_name,
@@ -134,6 +135,7 @@ from cdedb.common.roles import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
+from cdedb.common.validation.validate import PERSONA_COMMON_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -770,9 +772,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
+
+        :param mandatory_fields: specifies which input fields should be marked
+            as mandatory
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
@@ -808,6 +814,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['defect_username'], params['mls_with_defect_explicits'] = (
             self.transform_defect_addresses(rs, defect_addresses))
 
+        params.setdefault('mandatory_fields', mandatory_fields or [])
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -1556,7 +1563,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
-        return self.render(rs, "create_user")
+        return self.render(rs, "create_user", {},
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
@@ -2184,10 +2192,11 @@ def REQUESTdata(
     """
 
     def wrap(fun: F) -> F:
+        hints = _hints or typing.get_type_hints(fun)
+
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            hints = _hints or typing.get_type_hints(fun)
             for item in spec:
                 if item.startswith('#'):
                     name = item[1:]
@@ -2257,6 +2266,11 @@ def REQUESTdata(
                             kwargs[name] = check_validation(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
+
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)
 
@@ -2369,21 +2383,27 @@ def request_dict_extractor(
 
 
 # noinspection PyPep8Naming
-def REQUESTfile(*args: str) -> Callable[[F], F]:
+def REQUESTfile(*spec: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
-    :param args: Names of file parameters.
+    :param spec: Names of file parameters.
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args2: Any,
+        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            for name in args:
+            for name in spec:
                 if name not in kwargs:
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
-            return fun(obj, rs, *args2, **kwargs)
+            return fun(obj, rs, *args, **kwargs)
+
+        hints = typing.get_type_hints(fun)
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name] for name in spec})
 
         return cast(F, new_fun)
 

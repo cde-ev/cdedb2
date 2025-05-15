@@ -22,6 +22,7 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from itertools import chain
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,6 +32,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
 
@@ -62,9 +65,11 @@ _CONFIG = LazyConfig()
 CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.common.validation.types import TypeMapping
     from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
+    TypeMapping = Mapping
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -807,6 +812,46 @@ def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     else:
         raise NotImplementedError
     return value
+
+
+NoneType = type(None)
+
+
+def is_optional_type(type_: Any) -> bool:
+    return (
+        get_origin(type_) is Union
+        or get_origin(type_) is UnionType
+    ) and NoneType in get_args(type_)
+
+
+def is_list_type(type_: type[Any]) -> bool:
+    """Whether this is a custom list type.
+
+    Our validation accepts empty lists by default,
+    so we don't want to mark such inputs as mandatory.
+    """
+    return (
+        hasattr(type_, "__supertype__") and is_list_type(type_.__supertype__)
+        or get_origin(type_) is list  # get_origin(list[something]) is list
+    )
+
+
+def get_mandatory_form_fields(
+    *args: TypeMapping | Callable[..., werkzeug.Response],
+) -> set[str]:
+    """Extract which input fields are mandatory from a type dict or function.
+
+    :param args: Each parameter can be a frontend method or a mapping of
+        field names to types.
+    """
+    ret: set[str] = set()
+    for arg in args:
+        if isinstance(arg, Mapping):
+            ret |= {key for key, type_ in arg.items()
+                    if not (is_optional_type(type_) or is_list_type(type_))}
+        else:
+            ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
+    return ret
 
 
 @enum.unique

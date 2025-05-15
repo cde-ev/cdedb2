@@ -1448,7 +1448,7 @@ etc;anything else""", f['entries_2'].value)
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
         f['create_participant_list'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         # The following submissions with invalid shortnames also check for the
         # mailignlist creation bug in #1487.
         self.assertValidationError("shortname", "Darf nicht leer sein.")
@@ -6306,7 +6306,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['constraint_type'] = const.EventPartGroupType.Statistic
         f['part_ids'] = []
         f['part_ids'] = list(event.parts)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = new_title = "Everything"
@@ -6363,7 +6363,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Submit garbage.
         f['title'] = ""
         f['shortname'] = list(event.part_groups.values())[0].shortname
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError(
             'shortname',
@@ -6759,7 +6759,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Try to submit some invalid forms:
         f['title'] = ""
         f['shortname'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
@@ -7289,7 +7289,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "New Token!"
         self.submit(f)
@@ -7300,7 +7300,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configureorgatokenform']
         f['title'] = ""
         f['notes'] = "Spam"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "Changed title"
         self.submit(f)
