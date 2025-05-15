@@ -48,7 +48,7 @@
                  *     and this ccs group is active, hide that choice and deselect it.
                  */
                 course_id = $(this).val();
-                track_group_id = $(this).parent().attr('track_group_id');
+                track_group_id = $(this).parent().attr('data-track_group_id');
                 if (!course_id || part_map[course_id][track_group_id].some(
                         (part_id) => part_checkbox_map[part_id].prop('checked'))
                 ) {
