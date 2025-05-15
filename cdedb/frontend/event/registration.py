@@ -1412,7 +1412,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         try:
             new_id = self.eventproxy.create_registration(rs, registration)
         except EventIsBalancedError as e:
-            rs.notify("error", *e.args)
+            rs.notify("error", *e.args[:2])
             return self.add_registration_form(rs, event_id)
 
         rs.notify_return_code(new_id)
