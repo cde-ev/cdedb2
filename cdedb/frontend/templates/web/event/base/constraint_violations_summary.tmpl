@@ -228,6 +228,7 @@
             .addClass('btn-group')
             .removeClass('row')
             .children().each(function () {
+                $(this).find('label:has(input:checked)').addClass('active');
                 $(this).replaceWith($(this).find('label').addClass('btn btn-primary'));
             });
 
