@@ -117,20 +117,20 @@
     <div class="tab-container">
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="violations_tablist">
             <li role="presentation" class="">
-                <a data-toggle="tab" data-target="#tab_group_by_event" role="tab">
+                <a data-toggle="tab" role="tab" data-target="#tab_group_by_event" id="event_tab">
                     {{ util.make_icon('chalkboard-teacher') }}{{ nbsp -}}
                     {% trans %}Group by Event{% endtrans %}
                 </a>
             </li>
             <li role="presentation">
-                <a data-toggle="tab" data-target="#tab_group_by_violation" role="tab">
+                <a data-toggle="tab" role="tab" data-target="#tab_group_by_violation" id="violation_tab">
                     {{ util.make_icon('exclamation-circle') }}{{ nbsp -}}
                     {% trans %}Group by Violation Class{% endtrans %}
                 </a>
             </li>
         </ul>
         <div class="tab-content" id="violations_tabcontent">
-            <div class="tab-pane active" role="tabpanel" id="tab_group_by_event" aria-labelledby="event-tab">
+            <div class="tab-pane active" role="tabpanel" id="tab_group_by_event" aria-labelledby="event_tab">
                 {{ util.h(gettext("Group by Event"), underline=False) }}
                 {% for event in all_events.values()|sort %}
                     {% call event_wrapper(event) %}
@@ -157,8 +157,7 @@
                     {% trans %}Filter matched no events.{% endtrans %}
                 </p>
             </div>
-            <div class="tab-pane active" role="tabpanel" id="tab_group_by_violation" aria-labelledby="group-tab">
-
+            <div class="tab-pane active" role="tabpanel" id="tab_group_by_violation" aria-labelledby="violation_tab">
                 {{ util.h(gettext("Group by Violation Class"), underline=False) }}
                 {% for class_name, violations_ in violations.by_class.items() %}
                     <div class="violation-list maybehide">
@@ -183,19 +182,33 @@
         </div>
     </div>
     <script nonce="{{ csp_nonce }}">
-        let nav_tabs = $('.nav-tabs').show().find('a');
+        // Prevent scroll to tab container.
+        $(window).scrollTop(0);
+
+        // Show navbar and activate first tab.
+        let nav_tabs = $(".tab-container").find('.nav-tabs').show().find('a');
         nav_tabs.first().tab('show');
-        {#let tab_container = nav_tabs.each(function() {#}
-        {#    if (window.location.hash === $(this).attr('href')) {#}
-        {#        $(this).tab('show');#}
-        {#        return false;#}
-        {#    }#}
-        {# }).on('shown.bs.tab', function (event) {#}
-        {#    window.location.hash = $(event.target).attr('href');#}
-        {#    // history.pushState(null, null, $(event.target).attr('href'));#}
-        {# }).closest('.tab-container');#}
-        let tab_container = nav_tabs.closest('.tab-container');
-        tab_container.find('h3').hide();
+
+        // Retrieve active tab from URL hash or GET parameter.
+        let get_active_tab = function () {
+            return window.location.hash || new URLSearchParams(window.location.search).get('nav_tab_active');
+        }
+
+        let tab_container = nav_tabs
+            // Activate the specified tab.
+            .each(function() {
+                if (get_active_tab() === $(this).data('target')) {
+                    $(this).tab('show');
+                    return false;
+                }
+            })
+            // Update current URL with new target.
+            .on('shown.bs.tab', function (event) {
+                history.replaceState(null, "", $(event.target).data('target'));
+            });
+
+        // Hide alternate tab headings.
+        tab_container.find('.tab-heading-alt').hide();
 
 
         let filter = $('#filterconstraintsform');
@@ -250,7 +263,16 @@
             });
         }
         filter.find('input,select').on('change', update_event_selection);
-        // update_event_selection();
+        // Submit currently active tab to keep it active.
+        filter.on("submit", function (event) {
+            event.preventDefault();
+            filter.append($('<input />', {
+                "type": "hidden",
+                "name": "nav_tab_active",
+                "value": get_active_tab(),
+            }));
+            this.submit();
+        })
     </script>
 
 {% endblock %}
