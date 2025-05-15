@@ -53,6 +53,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    NotRequired,
     Optional,
     Protocol,
     TypeVar,
@@ -106,6 +107,7 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
+    get_mandatory_form_fields,
     glue,
     json_serialize,
     make_persona_name,
@@ -121,7 +123,6 @@ from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import TransactionType
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -134,6 +135,7 @@ from cdedb.common.roles import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
+from cdedb.common.validation.validate import PERSONA_COMMON_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -402,6 +404,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
@@ -642,6 +645,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        if attachment_hash is None:
+            rs.append_validation_error(
+                ("attachment", ValueError(n_("Must not be empty."))),
+            )
         return attachment_hash, attachment_filename
 
     @staticmethod
@@ -765,9 +772,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
+
+        :param mandatory_fields: specifies which input fields should be marked
+            as mandatory
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
@@ -803,6 +814,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['defect_username'], params['mls_with_defect_explicits'] = (
             self.transform_defect_addresses(rs, defect_addresses))
 
+        params.setdefault('mandatory_fields', mandatory_fields or [])
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -1551,7 +1563,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
-        return self.render(rs, "create_user")
+        return self.render(rs, "create_user", {},
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
@@ -1793,28 +1806,28 @@ class Worker(threading.Thread):
 
 
 class AmbienceDict(typing.TypedDict):
-    persona: CdEDBObject
-    privilege_change: CdEDBObject
-    genesis_case: CdEDBObject
-    lastschrift: CdEDBObject
-    transaction: CdEDBObject
-    event: models_event.Event
-    pevent: CdEDBObject
-    course: CdEDBObject
-    pcourse: CdEDBObject
-    registration: CdEDBObject
-    group: CdEDBObject
-    lodgement: CdEDBObject
-    part_group: models_event.PartGroup
-    track_group: models_event.TrackGroup
-    fee: models_event.EventFee
-    orga_token: models_droid.OrgaToken
-    custom_filter: CustomQueryFilter
-    attachment: CdEDBObject
-    attachment_version: CdEDBObject
-    assembly: CdEDBObject
-    ballot: CdEDBObject
-    mailinglist: models_ml.Mailinglist
+    persona: NotRequired[CdEDBObject]
+    privilege_change: NotRequired[CdEDBObject]
+    genesis_case: NotRequired[CdEDBObject]
+    lastschrift: NotRequired[CdEDBObject]
+    transaction: NotRequired[CdEDBObject]
+    event: NotRequired[models_event.Event]
+    pevent: NotRequired[CdEDBObject]
+    course: NotRequired[CdEDBObject]
+    pcourse: NotRequired[CdEDBObject]
+    registration: NotRequired[CdEDBObject]
+    group: NotRequired[CdEDBObject]
+    lodgement: NotRequired[CdEDBObject]
+    part_group: NotRequired[models_event.PartGroup]
+    track_group: NotRequired[models_event.TrackGroup]
+    fee: NotRequired[models_event.EventFee]
+    orga_token: NotRequired[models_droid.OrgaToken]
+    custom_filter: NotRequired[CustomQueryFilter]
+    attachment: NotRequired[CdEDBObject]
+    attachment_version: NotRequired[CdEDBObject]
+    assembly: NotRequired[CdEDBObject]
+    ballot: NotRequired[CdEDBObject]
+    mailinglist: NotRequired[models_ml.Mailinglist]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -2179,10 +2192,11 @@ def REQUESTdata(
     """
 
     def wrap(fun: F) -> F:
+        hints = _hints or typing.get_type_hints(fun)
+
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            hints = _hints or typing.get_type_hints(fun)
             for item in spec:
                 if item.startswith('#'):
                     name = item[1:]
@@ -2252,6 +2266,11 @@ def REQUESTdata(
                             kwargs[name] = check_validation(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
+
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)
 
@@ -2364,53 +2383,27 @@ def request_dict_extractor(
 
 
 # noinspection PyPep8Naming
-def REQUESTfile(*args: str) -> Callable[[F], F]:
+def REQUESTfile(*spec: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
-    :param args: Names of file parameters.
-    """
-
-    def wrap(fun: F) -> F:
-        @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args2: Any,
-                    **kwargs: Any) -> Any:
-            for name in args:
-                if name not in kwargs:
-                    kwargs[name] = rs.request.files.get(name, None)
-                rs.values[name] = kwargs[name]
-            return fun(obj, rs, *args2, **kwargs)
-
-        return cast(F, new_fun)
-
-    return wrap
-
-
-def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
-    """This decorator checks the access with respect to a specific event. The
-    event is specified by id which has either to be a keyword
-    parameter or the first positional parameter after the request state.
-
-    The event has to be organized via the DB. Only orgas and privileged
-    users are admitted. Additionally this can check for the offline
-    lock, so that no modifications happen to locked events.
+    :param spec: Names of file parameters.
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
-                raise werkzeug.exceptions.Forbidden(
-                    n_("This page can only be accessed by orgas."))
-            if required_privilege & EventPrivileges.all_write:
-                is_locked = obj.eventproxy.is_offline_locked(
-                    rs, event_id=rs.ambience['event'].id)
-                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                    raise werkzeug.exceptions.Forbidden(
-                        n_("This event is locked for offline usage."))
+            for name in spec:
+                if name not in kwargs:
+                    kwargs[name] = rs.request.files.get(name, None)
+                rs.values[name] = kwargs[name]
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
+        hints = typing.get_type_hints(fun)
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name] for name in spec})
 
         return cast(F, new_fun)
 

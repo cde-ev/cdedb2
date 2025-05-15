@@ -501,18 +501,13 @@ Verwendungszweck:   {{ reference }}
                     <form action="{{ cdedblink('event/delete_registration') }}" method="POST"
                           id="deleteregistrationform" style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_registration') }}
-                        {{ util.input_submit(gettext("Delete"), readonly=(is_locked or ambience['registration']['amount_paid']),
-                                             aclass="btn btn-sm btn-danger", icon='trash-alt',
+                        {{ util.input_submit(gettext("Delete"), aclass="btn btn-sm btn-danger", icon='trash-alt',
+                                             readonly=(is_locked or ambience['registration']['amount_paid']
+                                                       or not is_privileged_for("delete_registration")),
                                              title=(gettext("Registration has paid non-zero amount.")
                                                 if ambience['registration']['amount_paid'] else "")) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
-                                               readonly=not is_privileged_for("delete_registration")) }}
+                        {{ util.ack_delete(gettext("The registration will be permanently deleted.")) }}
                     </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#deleteregistrationform').cdedbProtectAction(
-                            "{{ gettext("The registration will be permanently deleted.") }}");
-                        $('#deleteregistrationform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 </div>
             </div>
             <div class="col-sm-8">

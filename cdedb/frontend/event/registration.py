@@ -30,6 +30,7 @@ from cdedb.common import (
     build_msg,
     determine_age_class,
     get_hash,
+    get_mandatory_form_fields,
     json_serialize,
     make_persona_name,
     merge_dicts,
@@ -53,12 +54,11 @@ from cdedb.frontend.common import (
     cdedbid_filter,
     check_validation as check,
     check_validation_optional as check_optional,
-    event_guard,
     make_event_fee_reference,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -78,9 +78,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
-        return self.render(rs, "registration/batch_fees", {
-            'data': data, 'csvfields': csv_position, 'saldo': saldo,
-        })
+        return self.render(
+            rs, "registration/batch_fees",
+            {'data': data, 'csvfields': csv_position, 'saldo': saldo},
+            get_mandatory_form_fields(self.batch_fees),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.payment_write)
@@ -464,7 +466,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = course_choice_params['track_group_map']
 
         # Top-level registration data.
-        standard_params: vtypes.TypeMapping = {
+        standard_params: vtypes.MutableTypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
             "reg.notes": Optional[str],  # type: ignore[dict-item]
@@ -486,7 +488,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Part specific data:
         if orga_input:
-            part_params: vtypes.TypeMapping = {}
+            part_params: vtypes.MutableTypeMapping = {}
             for part_id in event.parts:
                 part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
@@ -527,7 +529,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Track specific data:
         # First for simple tracks.
-        track_params: vtypes.TypeMapping = {}
+        track_params: vtypes.MutableTypeMapping = {}
         if orga_input:
             track_params.update({
                 f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
@@ -546,7 +548,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, track_params)
 
         # Now for synced tracks.
-        synced_params: vtypes.TypeMapping = {
+        synced_params: vtypes.MutableTypeMapping = {
             f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for group in sync_track_groups.values() for i in range(group.num_choices)
         }
@@ -1073,8 +1075,13 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
-        return self.render(rs, "event/fee/configure_fee",
-                           {'persona': persona, 'personalized': True})
+        mandatory_fields = (models.EventFee.mandatory_form_fields(creation=True)
+                            | get_mandatory_form_fields(self.add_new_personalized_fee))
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {'persona': persona, 'personalized': True},
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)

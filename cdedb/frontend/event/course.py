@@ -24,6 +24,7 @@ from cdedb.common import (
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     unwrap,
@@ -42,10 +43,9 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.event_constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(
@@ -321,12 +321,17 @@ class EventCourseMixin(EventBaseFrontend):
             f"fields.{key}": value
             for key, value in rs.ambience['course']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['course'], field_values)
-        return self.render(rs, "course/configure_course", {
-            'has_course_fields': any(
-                field.association == const.FieldAssociations.course
-                for field in rs.ambience['event'].fields.values()
-            ),
-        })
+        mandatory_fields = get_mandatory_form_fields(
+            self.change_course, COURSE_COMMON_FIELDS)
+        return self.render(
+            rs, "course/configure_course",
+            {
+                'has_course_fields': any(
+                    field.association == const.FieldAssociations.course
+                    for field in rs.ambience['event'].fields.values()),
+            },
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
@@ -368,12 +373,16 @@ class EventCourseMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/course_stats')
         if 'segments' not in rs.values:
             rs.values.setlist('segments', tracks)
-        return self.render(rs, "course/configure_course", {
-            'has_course_fields': any(
-                field.association == const.FieldAssociations.course
-                for field in rs.ambience['event'].fields.values()
-            ),
-        })
+        mandatory_fields = get_mandatory_form_fields(self.create_course, COURSE_COMMON_FIELDS)
+        return self.render(
+            rs, "course/configure_course",
+            {
+                'has_course_fields': any(
+                    field.association == const.FieldAssociations.course
+                    for field in rs.ambience['event'].fields.values()),
+            },
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)

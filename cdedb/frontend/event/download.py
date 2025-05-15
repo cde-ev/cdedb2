@@ -11,7 +11,6 @@ import shutil
 import tempfile
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -32,8 +31,8 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.frontend.common import REQUESTdata, access, event_guard
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.common import REQUESTdata, access
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
@@ -500,26 +499,15 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event", modi={"GET"})
     @event_guard(EventPrivileges.all_read)
-    @REQUESTdata("agree_unlocked_download")
-    def download_export(self, rs: RequestState, event_id: int,
-                        agree_unlocked_download: Optional[bool]) -> Response:
-        """Retrieve all data for this event to initialize an offline
-        instance."""
-        if rs.has_validation_errors():
-            return self.redirect(rs, "event/show_event")
-
-        if not (agree_unlocked_download
-                or rs.ambience['event'].offline_lock):
-            rs.notify("info", n_("Please confirm to download a full export of "
-                                 "an unlocked event."))
-            return self.redirect(rs, "event/show_event")
+    def download_export(self, rs: RequestState, event_id: int) -> Response:
+        """Retrieve all data for this event to initialize an offline instance."""
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/show_event")
         json = json_serialize(data)
         return self.send_file(
-            rs, data=json, inline=False,
+            rs, mimetype="application/json", data=json, inline=False,
             filename=f"{rs.ambience['event'].shortname}_export_event.json")
 
     @access("event")
@@ -534,8 +522,7 @@ class EventDownloadMixin(EventBaseFrontend):
         json = json_serialize(data, sort_keys=True)
         return self.send_file(
             rs, mimetype="application/json", data=json, inline=False,
-            filename="{}_partial_export_event.json".format(
-                rs.ambience['event'].shortname))
+            filename=f"{rs.ambience['event'].shortname}_partial_export_event.json")
 
     @access("droid_orga")
     @event_guard(EventPrivileges.all_read)

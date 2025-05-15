@@ -302,7 +302,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/2/show'})
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
         self.assertNoLink("Orga-Schaltflächen")
 
         self.traverse({'href': '/event/'},
@@ -318,7 +318,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'})
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
 
     @as_users("annika")
     def test_list_events(self) -> None:
@@ -393,7 +393,7 @@ class TestEventFrontend(FrontendTest):
 
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockform', self.response.forms)
+        self.assertIn('lockeventform', self.response.forms)
         self.assertIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
@@ -415,6 +415,9 @@ class TestEventFrontend(FrontendTest):
 
         self.assertNotIn('createorgalistform', self.response.forms)
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
@@ -669,6 +672,7 @@ class TestEventFrontend(FrontendTest):
             text = self.fetch_mail_content()
             self.assertIn("als Orga hinzugefügt.", text)
             f = self.response.forms['removeorgaform2']
+            f['ack_delete'].checked = True
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertNonPresence("Beispiel")
@@ -1331,6 +1335,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('minor_form', "Darf nicht leer sein.")
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")
@@ -1343,10 +1349,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertNonPresence("Kein Formular vorhanden")
         f = self.response.forms['removeminorformform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Minderjährigenformular wurde entfernt.",
-                            div="notifications")
+        self.assertNotification("Minderjährigenformular wurde entfernt.", "info")
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Formular vorhanden", div='minor-form')
 
@@ -1441,7 +1448,7 @@ etc;anything else""", f['entries_2'].value)
         f['create_track'].checked = True
         f['create_orga_list'].checked = True
         f['create_participant_list'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         # The following submissions with invalid shortnames also check for the
         # mailignlist creation bug in #1487.
         self.assertValidationError("shortname", "Darf nicht leer sein.")
@@ -2365,6 +2372,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.assertPresence("Teilnahmebeitrag Warmup 10,50 € 4 Zu Zahlen:"
+                            " 1 Bezahlt: 42,00 € 10,50 €", div="eventfee_1")
+
         self.traverse({'linkid': "eventfee1001_change"})
         f = self.response.forms['configureeventfeeform']
         f['notes'] = "Some more information."
@@ -3088,6 +3099,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["qord_0"] = 'course1.id'
         self.submit(f)
 
+        # Test for https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/3937.
+        self.event.set_registration(self.key, {'id': 1, 'parts': {3: {'lodgement_id': 3}}})
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qsel_part3.lodgement_id"] = True
+        f["qsel_lodgement3.id"] = True
+        f["qord_0"] = "part3.lodgement_id"
+        self.submit(f, button="download", value="json")
+        data = json.loads(self.response.text)
+        self.assertEqual(
+            ["Einzelzelle", "Kalte Kammer", "Kalte Kammer", "Kellerverlies", "Warme Stube", None],
+            [entry["part3.lodgement_id"] for entry in data],
+        )
+        self.assertEqual(
+            [4, 2, 2, 3, 1, 0],
+            [int(entry["lodgement3.id"] or 0) for entry in data],
+        )
+
     @as_users("annika")
     def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -3577,8 +3606,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Kalte Kammer")
         # Use the pager to navigate to Einzelzelle and test proper sorting
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
+
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
-        self.assertPresence("Emilia")
+        self.assertPresence("Emilia (Emmy) Eventis (Gast)")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
         self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
@@ -3600,6 +3630,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("3", f['regular_capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
         self.assertEqual("medium", f['fields.contamination'].value)
+
+        self.traverse("Unterkünfte", "Kalte Kammer")
+        self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
+        self.assertPresence("Inga Iota (U10)")
+
         self.traverse("Unterkünfte", "Kellerverlies")
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
         f = self.response.forms['deletelodgementform']
@@ -4733,20 +4768,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @storage
     @as_users("garcia")
     def test_download_export(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
-
-        # test mechanism to reduce unwanted exports of unlocked events
-        f = self.response.forms['fullexportform']
-        f['agree_unlocked_download'].checked = False
-        self.submit(f, check_notification=False)
-        info_msg = ("Bestätige, das du einen Export herunterladen willst, "
-                    "obwohl die Veranstaltung nicht gesperrt ist.")
-        self.assertPresence(info_msg, div='notifications')
-
-        f['agree_unlocked_download'].checked = True
-        self.submit(f)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Downloads",
+                      {'href': '/event/1/export'})
         with open(
                 self.testfile_dir / "event_export.json", encoding="utf-8",
         ) as datafile:
@@ -5532,38 +5555,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @event_keeper
     @as_users("annika", "garcia")
-    def test_lock_event(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
+    def test_lock_unlock_event(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
-        f = self.response.forms["lockform"]
+        self.assertPresence("Sperrt die Veranstaltung vorübergehend")
+        f = self.response.forms["lockeventform"]
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence(
-            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
-
-    @event_keeper
-    @as_users("annika", "garcia")
-    def test_unlock_event(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
-        f = self.response.forms["lockform"]
+        self.assertPresence("Die Veranstaltung ist vorübergehend gesperrt")
+        f = self.response.forms['unlockeventform']
         self.submit(f)
-        saved = self.response
-        data = saved.click(href='/event/event/1/export$').body
-        data = data.replace(b"Gro\\u00dfe Testakademie 2222",
-                            b"Mittelgro\\u00dfe Testakademie 2222")
-        self.response = saved
-        self.assertPresence(
-            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
-        f = self.response.forms['unlockform']
-        f['json'] = webtest.Upload("event_export.json", data,
-                                   "application/octet-stream")
-        self.submit(f)
-        self.assertTitle("Mittelgroße Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
+        self.assertPresence("Sperrt die Veranstaltung vorübergehend")
 
     @storage
     @event_keeper
@@ -5851,6 +5852,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         del second['timestamp']
         self.assertEqual(first, second)
 
+    @event_keeper
     @as_users("ferdinand")
     def test_archive(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -5926,6 +5928,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Veranstaltung ist bereits archiviert.",
                             div="notifications")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_without_past_event(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party 2050")
@@ -5960,6 +5963,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Mitglieder", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
+    @event_keeper
     @as_users("anton")
     def test_archive_event_purge_persona(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -6134,6 +6138,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 f[field].checked = True
         self.submit(f)
 
+    @event_keeper
     @as_users("anton")
     def test_archived_participant(self) -> None:
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldungen",
@@ -6301,7 +6306,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['constraint_type'] = const.EventPartGroupType.Statistic
         f['part_ids'] = []
         f['part_ids'] = list(event.parts)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = new_title = "Everything"
@@ -6358,7 +6363,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Submit garbage.
         f['title'] = ""
         f['shortname'] = list(event.part_groups.values())[0].shortname
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError(
             'shortname',
@@ -6754,7 +6759,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Try to submit some invalid forms:
         f['title'] = ""
         f['shortname'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
         f['title'] = f['shortname'] = "abc"
@@ -7284,7 +7289,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "New Token!"
         self.submit(f)
@@ -7295,7 +7300,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configureorgatokenform']
         f['title'] = ""
         f['notes'] = "Spam"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein")
         f['title'] = "Changed title"
         self.submit(f)
@@ -7461,14 +7466,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Teilnahmebeitrag CdE-Party 2050")
 
         self.traverse("Teilnahmebeiträge")
-        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen 2 Bezahlt")
-        self.assertPresence(
-            "Absager TODO: add real condition once implemented."
-            " 7,50 € 0 Zu Zahlen 0 Bezahlt")
-        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
-        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen: 1 Bezahlt: -20,00 € -10,00 €")
+        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen: 2 Bezahlt: 60,00 € 30,00 €")
+        self.assertPresence("Absager TODO: add real condition once implemented."
+                            " 7,50 € 0 Zu Zahlen: 0 Bezahlt: 0,00 € 0,00 €")
+        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen: 1 Bezahlt: 2,00 € 2,00 €")
+        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen: 1 Bezahlt: -4,99 € -4,99 €")
+        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen: 1 Bezahlt: 1.260,00 € 420,00 €")
 
     @as_users("garcia")
     def test_personalized_event_fees(self) -> None:
@@ -7807,8 +7811,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.assertRaises(webtest.app.AppError):
             self.submit(f)
 
+    @event_keeper
     @as_users("anton")
-    def test_event_dearchive(self) -> None:
+    def test_event_dearchive_unbalance(self) -> None:
         self.traverse("Veranstaltungen", "CyberTestAkademie")
         f = self.response.forms['archiveeventform']
         f['ack_archive'] = True
@@ -7816,11 +7821,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        f = self.response.forms['balanceeventform']
+        self.submit(f)
         self.traverse("Konfiguration")
         f = self.response.forms['changeeventform']
         self.submit(f)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
+        self.assertIn('unbalanceeventform', self.response.forms)
 
     @event_keeper
     @as_users("garcia")

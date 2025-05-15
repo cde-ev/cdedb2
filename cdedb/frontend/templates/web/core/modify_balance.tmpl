@@ -27,9 +27,9 @@
         {{ util.anti_csrf_token('core/modify_balance') }}
         <div>
             {{ util.form_input_text(name="new_balance", label=gettext("New Balance"), type="number",
-                    attributes='min="0" step="0.01"'|s, small=True, defaultvalue=old_balance, addon="€") }}
-            {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"), small=True) }}
-            {{ util.form_input_submit(label=gettext("Save"), small=True,
+                    attributes='min="0" step="0.01"'|s, defaultvalue=old_balance, addon="€") }}
+            {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
+            {{ util.form_input_submit(label=gettext("Save"),
                     cancellink=show_user_link(user, ambience['persona']['id'])) }}
         </div>
     </form>

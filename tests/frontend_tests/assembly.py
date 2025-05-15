@@ -428,7 +428,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['shortname'] = "konzil3"  # same as before, to test ml address conflict
         f['create_attendee_list'].checked = True
         f['create_presider_list'].checked = True
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('signup_end',
                                    "Muss ein valides Datum mit Uhrzeit sein.")
         f['signup_end'] = "2222-9-1 00:00"
@@ -461,8 +461,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # delete one assembly
         f = self.response.forms['deleteassemblyform']
         self.submit(f, check_notification=False)
-        # TODO: there is no validation error near the checkbox
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
 
@@ -528,8 +527,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse("Versammlungen", "Archiv-Sammlung")
         self.assertTitle("Archiv-Sammlung")
 
-        self.submit(
-            self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
+        f = self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"]
+        f['ack_delete'].checked = True
+        self.submit(f)
         f = self.response.forms['createpresiderlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
         f[ANTI_CSRF_TOKEN_NAME] = "evil"
@@ -784,8 +784,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Drittes CdE-Konzil")
             f = self.response.forms['concludeassemblyform']
             self.submit(f, check_notification=False)
-            # TODO: there is no validation error near the checkbox
-            self.assertNotification("Validierung fehlgeschlagen.", 'error')
+            self.assertValidationError("ack_conclude", "Muss markiert sein.")
             f['ack_conclude'].checked = True
             self.submit(f)
             self.assertNotIn('concludeassemblyform', self.response.forms)
@@ -1043,8 +1042,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     # deletion
                     f = self.response.forms['deleteballotform']
                     self.submit(f, check_notification=False)
-                    # TODO: there is no validation error near the checkbox
-                    self.assertNotification("Validierung fehlgeschlagen.", 'error')
+                    self.assertValidationError("ack_delete", "Muss markiert sein.")
                     f['ack_delete'].checked = True
                     self.submit(f)
                     self.assertTitle("Abstimmungen (Internationaler Kongress)")
@@ -1188,8 +1186,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         f = self.response.forms["removeattachmentversionform2_3"]
         self.submit(f, check_notification=False)
-        # TODO: there is no validation error near the checkbox
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.", index=0)
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertPresence("Version 3 wurde gelöscht", div="attachment2_version3")
@@ -1205,7 +1202,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # ... since the button links to deletion of the whole attachment:
         f = self.response.forms["deleteattachmentform2"]
         self.submit(f, check_notification=False)
-        self.assertNotification("Validierung fehlgeschlagen.", 'error')
+        self.assertValidationError("attachment_ack_delete", "Muss markiert sein.", index=0)
         f["attachment_ack_delete"] = True
         self.submit(f)
         self.assertNonPresence("Kassenprüferbericht")
@@ -1264,7 +1261,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(f['title'].value, "Vorläufige Beschlussvorlage")
         f['title'] = ""
         f['filename'] = "//"
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
         self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
@@ -2106,13 +2103,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # Now try rescheduling
         self.traverse("Abstimmungen", "Abstimmungen umplanen")
         f = self.response.forms["rescheduleballotsform"]
-        self.submit(f, check_notification=False)
-        self.assertNotification("wenigstens eine Abstimmung auswählen", 'error')
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError('vote_begin', "Muss ein valides Datum mit Uhrzeit sein.")
+        self.assertValidationError('vote_end', "Muss ein valides Datum mit Uhrzeit sein.")
         f = self.response.forms["rescheduleballotsform"]
-        f['ballot_ids'] = [16, 1001]
         f['vote_begin'] = datetime.datetime(2100, 1, 1)
         f['vote_end'] = datetime.datetime(2100, 1, 2)
         f['vote_extension_end'] = datetime.datetime(2100, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertNotification("wenigstens eine Abstimmung auswählen", 'error')
+        f['ballot_ids'] = [16, 1001]
         self.submit(f, check_notification=False)
         self.assertValidationError('vote_extension_end')
         f = self.response.forms["rescheduleballotsform"]
@@ -2247,21 +2247,24 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Werner war hier!", div='notes')
-        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
-                         self.response.forms)
+        form_id = f"removepresiderform{USER_DICT['werner']['id']}"
+        self.assertNotIn(form_id, self.response.forms)
         self.traverse("Log")
 
         self.switch_app(0)
         self.traverse(r"\sÜbersicht")
         self.assertPresence("Werner war hier!", div='notes')
-        f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
+        f = self.response.forms[form_id]
         f['presider_id'] = "ThisIsNoID"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
         self.assertNotification("Validierung fehlgeschlagen.", 'error')
         f = self.response.forms[f"removepresiderform{USER_DICT['werner']['id']}"]
         self.submit(f)
-        self.assertNotIn(f"removepresiderform{USER_DICT['werner']['id']}",
-                         self.response.forms)
+        f['ack_delete'].checked = True
+        self.assertNotIn(form_id, self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
             "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung.")

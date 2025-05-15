@@ -292,7 +292,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse("Bearbeiten")
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f['donation'] = "0"
@@ -1481,7 +1481,7 @@ class TestCdEFrontend(FrontendTest):
         # invalid/uncommon input for donation
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f = self.response.forms['changedataform']
@@ -2898,6 +2898,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
@@ -2918,17 +2919,21 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Garcia Generalis", div='list-participants')
-        self.assertPresence("Hades Hell", div='list-participants')
+        self.assertPresence("Charly", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
         f = self.response.forms['removeparticipantform3']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
@@ -2943,6 +2948,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Garcia Generalis (Orga) ")
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
@@ -3019,6 +3025,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1006, const.PastEventLogCodes.participant_removed))
 
@@ -3036,6 +3043,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1009, const.PastEventLogCodes.participant_removed))
 
