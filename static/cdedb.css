@@ -1283,6 +1283,24 @@ span.fag {
     color: #aaaaaa;
 }
 
+
+.maybehide {
+    display: none;
+}
+.maybenothide {
+    display: block;
+}
+/* 1 */.event .violation-list.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 2 */.violation-list .event.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 3 */.event.maybehide:not(.softhide):has( .violation-list:not( .softhide)),
+/* 4 */.violation-list.maybehide:not(.softhide):has( .event:not( .softhide)):has( .violations:not(.softhide)) {
+    display: block;
+
+    & ~.maybenothide {
+        display: none;
+    }
+}
+
 /*
  * the following should be replaced with
  * display: inline-flex; width: auto;
