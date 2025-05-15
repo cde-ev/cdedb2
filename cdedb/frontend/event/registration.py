@@ -71,7 +71,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             saldo: Optional[decimal.Decimal] = None,
     ) -> Response:
         if rs.ambience['event'].is_balanced:
-            rs.notify("error", "Event is balanced. May not book payments.")
+            rs.notify("error", n_("Event is balanced. May not book payments."))
             return self.redirect(rs, "event/show_event")
 
         data = data or []
@@ -93,7 +93,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         event = rs.ambience['event']
         if event.is_balanced:
-            rs.notify("error", "Event is balanced. May not book payments.")
+            rs.notify("error", n_("Event is balanced. May not book payments."))
             return self.redirect(rs, "event/show_event")
 
         transfers_file = check_optional(
