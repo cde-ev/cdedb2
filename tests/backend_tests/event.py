@@ -29,7 +29,10 @@ from cdedb.common import (
     now,
     parse_datetime,
 )
-from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
+from cdedb.common.exceptions import (
+    APITokenError, EventIsBalancedError,
+    PartialImportError, PrivilegeError,
+)
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.filter import datetime_filter
@@ -5130,18 +5133,18 @@ class TestEventBackend(BackendTest):
     def test_event_is_balanced(self) -> None:
         event_id = 1
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_event_fees(self.key, event_id, {})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})
 
         self.event.set_registration(self.key, {'id': 1, 'fields': {'brings_balls': False}})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_event(self.key, event_id, {
                 'parts': {
                     part_id: {
@@ -5185,5 +5188,5 @@ class TestEventBackend(BackendTest):
             'mixed_lodging': False,
             'list_consent': True,
         }
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.create_registration(self.key, new_reg)

@@ -52,7 +52,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS,
     COURSE_SEGMENT_FIELDS,
@@ -706,7 +706,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 new_fees = self.calculate_fees(rs, registration_ids)  # type: ignore[attr-defined]
 
                 if current.is_balanced and (current_fees != new_fees):
-                    raise ValueError(n_(
+                    raise EventIsBalancedError(n_(
                         "Event is balanced. Amount owed may no longer change."))
 
         return ret
@@ -991,7 +991,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self.get_event(rs, event_id)
 
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not change fee configuration."))
             if not fees:
                 return ret

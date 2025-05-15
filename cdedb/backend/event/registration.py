@@ -51,7 +51,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
@@ -1136,7 +1136,7 @@ class EventRegistrationBackend(EventBaseBackend):
             )
 
             if event.is_balanced and current_amount_owed != new_amount_owed:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. Amount owed may no longer change."))
 
             self.event_log(
@@ -1221,7 +1221,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, models.Registration.database_table, ["amount_owed"], new_id,
             )
             if event.is_balanced and unwrap(amount_owed):
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not create registration which owes a fee."))
 
             self.event_log(
@@ -1735,7 +1735,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not set personalized fee amount."))
             if fee_id not in event.fees:
                 raise KeyError
@@ -1859,7 +1859,7 @@ class EventRegistrationBackend(EventBaseBackend):
             raise PrivilegeError
 
         if event.is_balanced:
-            raise ValueError(n_("Event is balanced."))
+            raise EventIsBalancedError(n_("Event is balanced. May not book payments."))
 
         # noinspection PyBroadException
         try:
