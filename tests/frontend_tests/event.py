@@ -2010,6 +2010,34 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
+    @as_users("anton", "berta")
+    @prepsql(
+        "DELETE FROM event.course_choices;"
+        "DELETE FROM event.registration_tracks;"
+        "DELETE FROM event.registration_parts;"
+        "DELETE FROM event.registrations;"
+        "UPDATE event.event_fees SET condition = 'part.Wu and field.is_child' WHERE id = 4;",
+    )
+    def test_register_conditional_fee_with_event_field(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertPresence("Ich bin unter 13 Jahre alt.")
+        f = self.response.forms["registerform"]
+        self.assertFalse(f['fields.is_child'].checked)
+        f['fields.is_child'].checked = True
+        f['parts'] = [1]
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Betrag 5,50 €")
+        self.traverse("Ändern")
+        self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
+        f = self.response.forms["amendregistrationform"]
+        self.assertTrue(f['fields.is_child'].checked is True)
+        f['fields.is_child'].checked = False
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Betrag 10,50 €")
+
     @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:

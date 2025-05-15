@@ -693,8 +693,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, event_id, data['fields'])
-            # This also includes taking care of course tracks and fee modifiers, since
-            # they are each linked to a single event part.
+            # This also includes taking care of course tracks, since
+            # they are linked to a single event part.
             if 'parts' in data:
                 # Event begin can have an effect on fees.
                 registration_ids = self.list_registrations(rs, event_id)  # type: ignore[attr-defined]
