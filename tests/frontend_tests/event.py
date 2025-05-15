@@ -7872,9 +7872,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "warning", static=True)
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-4-3"
-        # TODO: This check causes a privilege error and is therefor temporarily disabled.
-        # self.submit(f, check_notification=False)
-        # self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
+        self.submit(f, check_notification=False)
+        self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
         f['part1.status'] = f['part2.status'] = f['part3.status'] = const.RegistrationPartStati.not_applied
         self.submit(f)
 

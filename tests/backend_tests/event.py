@@ -5190,3 +5190,6 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(EventIsBalancedError):
             self.event.create_registration(self.key, new_reg)
+
+        new_reg['parts'][1]['status'] = const.RegistrationPartStati.cancelled
+        self.event.create_registration(self.key, new_reg)
