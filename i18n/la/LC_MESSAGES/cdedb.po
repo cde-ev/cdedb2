@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-05-15 00:46+0200\n"
+"POT-Creation-Date: 2025-05-15 19:37+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -12114,7 +12114,7 @@ msgid "There are %(count)s %(class_name)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:87
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:112
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:115
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:61
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:63
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:66
@@ -12154,37 +12154,37 @@ msgstr ""
 msgid "yes"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:98
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:99
 #, fuzzy
 msgid "Is Archived"
 msgstr "vestigium novum crea"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:103
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:105
 #, fuzzy
 msgid "Is Balanced"
 msgstr "mensura pecuniae"
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:108
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:111
 msgid "Is Concluded"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:122
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:134
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:125
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:137
 msgid "Group by Event"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:128
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:162
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:131
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:164
 msgid "Group by Violation Class"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:150
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:180
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:153
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:182
 #, fuzzy
 msgid "There are currently no violations."
 msgstr "nullum ad eventum nunc annuntiari potest."
 
-#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:157
+#: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:160
 #, fuzzy
 msgid "Filter matched no events."
 msgstr "annuntiatus:a (TODO: gender specific string)"
