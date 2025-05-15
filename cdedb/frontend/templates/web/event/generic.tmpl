@@ -393,12 +393,12 @@
 {%- endmacro %}
 
 {% macro active_fee_registration_query_link(registration_ids, label=None, anid="", query=None, fee_id=None, kind=None) %}
-    {% with query = query or get_query(registration_ids, fee_id, kind) %}
+    {%- with query = query or get_query(registration_ids, fee_id, kind) %}
         {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
                      title=gettext("View Registrations"), anid=anid, readonly=not is_privileged_for(query.scope.get_target())) }}
-    {% endwith %}
-{% endmacro %}
+    {%- endwith -%}
+{%- endmacro %}
 
 {% macro _fee_amount_td(amount, fee_id) %}
     <td class="text-right" id="eventfee_amount_{{ fee_id }}">
@@ -457,9 +457,16 @@
                 <th>{% trans %}Type{% endtrans %}</th>
                 <th>{% trans %}Title{% endtrans %}</th>
                 <th class="text-right">{% trans %}Amount{% endtrans %}</th>
-                {% if not js_preview and complex_fee %}<th></th>{% endif %}
-                {% if not js_preview and not complex_fee %}<th>{% trans %}Registrations{% endtrans %}</th>{% endif %}
-                <th>{% trans %}Condition{% endtrans %}</th>
+                {% if not js_preview and complex_fee %}
+                    <th></th>
+                {% endif %}
+                {% if not js_preview and not complex_fee %}
+                    <th colspan="2">
+                        {% trans %}Registrations{% endtrans %}{{ nbsp }}&amp;
+                        {% trans %}Total{% endtrans %}
+                    </th>
+                {% endif %}
+                <th style="width: 100%">{% trans %}Condition{% endtrans %}</th>
                 {% if not js_preview %}<th></th>{% endif %}
             </tr>
         </thead>
@@ -550,13 +557,22 @@
                 {% endif %}
                 {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
-                        {{ active_fee_registration_query_link(
+                            {{ active_fee_registration_query_link(
                                 fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id,
-                                anid="eventfee_owed_" + fee.id|string) }}
+                                anid="eventfee_owed_" + fee.id|string) }}:
                         <br />
-                        {{ active_fee_registration_query_link(
-                                fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id,
-                                anid="eventfee_paid_" + fee.id|string) }}
+                            {{ active_fee_registration_query_link(
+                                    fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id,
+                                    anid="eventfee_paid_" + fee.id|string) }}:
+                    </td>
+                    <td class="nowrap" style="padding-left: 0">
+                        <span class="float-right" id="eventfee_total_owed_{{ fee.id }}">
+                            {{ _print_fee_amount(fee_stats[fee.kind][fee.id].total_owed) }}
+                        </span>
+                        <br />
+                        <span class="float-right" id="eventfee_total_paid_{{ fee.id }}">
+                            {{ _print_fee_amount(fee_stats[fee.kind][fee.id].total_paid) }}
+                        </span>
                     </td>
                 {% endif %}
                 <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}"

@@ -6144,7 +6144,7 @@
         {
             "id": 1,
             "event_id": 1,
-            "secret_hash": "$6$rounds=656000$QsRRW/SF0E/XS5cw$1eB.sENB2Rj2YfiorDgsvEYetMneDhUHQlHOZK0j.wBDwB2obAi8e2HOV/3tIpwsa3I9rKFhed4ayxnJLMQgM1",
+            "secret_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
             "ctime": "---now---",
             "etime": "2222-12-31T23:59:59+00:00",
             "rtime": null,

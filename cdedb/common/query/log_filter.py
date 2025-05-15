@@ -9,7 +9,6 @@ from typing import Any, ClassVar, Optional, cast
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, diacritic_patterns
-from cdedb.common.validation.types import TypeMapping
 from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
 from cdedb.filter import cdedbid_filter
@@ -144,14 +143,16 @@ class GenericLogFilter:
         return ret
 
     @classmethod
-    def validation_fields(cls) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(
+            cls,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Create a specification for validating the dataclass.
 
         Returns two dicts, with mandatory and optional keys respectively.
         Some type annotations differ slightly from the validation type.
         """
-        mandatory: TypeMapping = {'length': int}
-        optional: TypeMapping = {
+        mandatory: vtypes.MutableTypeMapping = {'length': int}
+        optional: vtypes.MutableTypeMapping = {
             field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
         del optional['length']

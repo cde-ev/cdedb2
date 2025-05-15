@@ -156,7 +156,9 @@ class QuerySpecEntry:
     title_prefix: str = ""
     title_params: dict[str, str] = dataclasses.field(default_factory=dict)
     choices: QueryChoices = dataclasses.field(default_factory=dict)
-    translate_prefix: bool = True
+    translate_prefix: bool = False
+    order_by: str = ""
+    order_type: str = ""
 
     # Mask gettext so pybabel doesn't try to extract the f-string.
     def get_title(self, g: Callable[[str], str]) -> str:
@@ -746,7 +748,11 @@ class Query:
     def _order_entries(self) -> list[QueryOrderEntry]:
         """Convert the order entries into the dataclass helper."""
         return [
-            QueryOrderEntry(entry.split(",")[0], ascending, self.spec[entry].type)
+            QueryOrderEntry(
+                column=self.spec[entry].order_by or entry.split(",")[0],
+                ascending=ascending,
+                type=self.spec[entry].order_type or self.spec[entry].type,
+            )
             for entry, ascending in self.order
         ]
 
@@ -1025,11 +1031,15 @@ def make_registration_query_spec(event: "models.Event",
             f"part{part.id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
             f"part{part.id}.lodgement_id": QuerySpecEntry(
-                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices),
+                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices,
+                order_by=f"lodgement{part.id}.title", order_type="str",
+            ),
             f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
             f"lodgement{part.id}.group_id": QuerySpecEntry(
                 "enum_int", n_("lodgement group"), prefix,
-                choices=lodgement_group_choices),
+                choices=lodgement_group_choices,
+                order_by=f"lodgement_group{part.id}.title", order_type="str",
+            ),
             f"lodgement{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement title"), prefix),
             f"lodgement{part.id}.notes": QuerySpecEntry(
@@ -1053,9 +1063,13 @@ def make_registration_query_spec(event: "models.Event",
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
             f"track{track_id}.course_id": QuerySpecEntry(
-                "enum_int", n_("course"), prefix, choices=course_choices),
+                "enum_int", n_("course"), prefix, choices=course_choices,
+                order_by=f"course{track_id}.nr_shortname", order_type="str",
+            ),
             f"track{track_id}.course_instructor": QuerySpecEntry(
-                "enum_int", n_("instructed course"), prefix, choices=course_choices),
+                "enum_int", n_("instructed course"), prefix, choices=course_choices,
+                order_by=f"course_instructor{track_id}.nr_shortname", order_type="str",
+            ),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
             f"course{track_id}.nr_shortname": QuerySpecEntry(
@@ -1214,7 +1228,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     spec = {
         "course.id": QuerySpecEntry("id", n_("course id")),
         "course.course_id": QuerySpecEntry(
-            "enum_int", n_("course"), choices=course_choices),
+            "enum_int", n_("course"), choices=course_choices,
+            order_by="course.nr_shortname", order_type="str",
+        ),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
         "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),

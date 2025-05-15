@@ -32,6 +32,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
+    get_mandatory_form_fields,
     merge_dicts,
     unwrap,
 )
@@ -98,7 +99,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     realm = "event"
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> Response:
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -137,7 +139,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             params['is_privileged'] = is_privileged
             params['is_privileged_for'] = is_privileged_for
 
-        return super().render(rs, templatename, params=params)
+        return super().render(rs, templatename, params=params,
+                              mandatory_fields=mandatory_fields)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -166,7 +169,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return self.render(rs, "user/create_user")
+        return self.render(
+            rs, "user/create_user", {},
+            get_mandatory_form_fields(filter_none(PERSONA_FULL_CREATION['event'])))
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
