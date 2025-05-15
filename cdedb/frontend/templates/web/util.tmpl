@@ -130,21 +130,17 @@
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid=none, titles=[]) %}
-    {% if checked is false %}
-        <span class="far fa-times-circle"
-              {{ dict(id=anid if anid else none, title = titles[0] if titles else none)|xmlattr }}
-              data-checked="False" aria-hidden="true"></span>
+{% if checked is false %}
+        {% set title = titles[0] if titles else none %}
+        <span class="far fa-times-circle" {{ dict(id=anid, title=title)|xmlattr }} data-checked="False" aria-hidden="true"></span>
     {% elif checked is true %}
-        <span class="fas fa-check-circle"
-              {{ dict(id=anid if anid else none, title = titles[1] if titles else none)|xmlattr }}
-              data-checked="True" aria-hidden="true"></span>
+        {% set title = titles[1] if titles else none %}
+        <span class="fas fa-check-circle" {{ dict(id=anid, title=title)|xmlattr }} data-checked="True" aria-hidden="true"></span>
     {% else %}
-        <span class="far fa-circle"
-              {{ dict(id=anid if anid else none, title = titles[2] if titles else none)|xmlattr }}
-              aria-hidden="true"></span>
+        {% set title = titles[2] if titles else none %}
+        <span class="far fa-circle" {{ dict(id=anid, title=title)|xmlattr }} aria-hidden="true"></span>
     {% endif %}
-    {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}
-{%- endmacro %}
+    {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}{%- endmacro %}
 
 {# Special tri-state macro to represent subscription states
 
