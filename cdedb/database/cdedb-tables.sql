@@ -538,14 +538,15 @@ CREATE TABLE complaint.entries (
     length        integer NOT NULL,
     ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
+    -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
     relative_to   integer REFERENCES complaint.entries(id) DEFAULT NULL,  -- only for some types
     dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
     dreason       varchar DEFAULT NULL,
+    deleted_by    integer REFERENCES core.personas(id) DEFAULT NULL,
     CONSTRAINT complaint_entry_deletion
-        CHECK ((dtime IS NULL) = (dreason IS NULL))
+        CHECK ((dtime IS NULL) = (dreason IS NULL) = (deleted_by IS NULL))
 );
-GRANT SELECT, INSERT, UPDATE (dtime, dreason) ON complaint.entries TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entries TO cdb_persona;
 
 CREATE TABLE complaint.authors (
     id            serial PRIMARY KEY,

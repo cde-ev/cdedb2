@@ -573,6 +573,9 @@ class ComplaintLogCode(CdEIntEnum):
     enforcer_added = 101  #:
     enforcer_removed = 102  #:
 
+    case_unlocked = 201  #:
+    concealed_case_detected = 202  #:
+
 
 @enum.unique
 class CdeLogCodes(CdEIntEnum):
