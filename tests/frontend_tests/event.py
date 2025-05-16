@@ -3352,7 +3352,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
-        self.assertPresence("Insgesamt zu zahlender Betrag 466,49 €")
+        self.assertPresence("Teilnahme\xadbeitrag 466,49 €")
 
     @event_keeper
     @as_users("garcia")
