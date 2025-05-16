@@ -463,6 +463,19 @@ class PastInstitutions(CdEIntEnum):
 
 
 @enum.unique
+class ComplaintKind(CdEIntEnum):
+    """Rough kinds a complaint may have"""
+    physical_sexual_transgression = 1
+    physical_nonsexual_violence = 2
+    nonphysical_sexual_transgression = 3
+    verbal_abuse = 4
+    volunteer_harassment = 11
+    other_harassment = 15
+    mobbing = 21
+    bad_administration = 31
+
+
+@enum.unique
 class ComplaintInvolvementType(CdEIntEnum):
     """Types of involvements in a complaint case."""
     affected = 1
@@ -470,6 +483,37 @@ class ComplaintInvolvementType(CdEIntEnum):
     target = 21  #: whom a complaint is "against"
     other = 51  #: especially for cases which are no actual complaints
     withheld = 100  #: hides complaint even if otherwise visible to user
+
+
+@enum.unique
+class ComplaintEntryTye(CdEIntEnum):
+    """Type of entries in the history of a complaint.
+
+    Some things are shown in the entries, even though they are pulled in
+    from the logs instead. Those can not be replaced later on.
+    """
+    # Initial
+    initial_information = 101  #:
+
+    # Statements
+    provisional_statement_given = 201  #:
+    statement_signed = 211  #:
+    statement_withdrawn = 221  #:
+    statement_cleared = 231  #:
+    statement_archived = 241  #:
+
+    # Agreements and Arbitration
+    agreement = 300  #:
+    provisional_to_arbcom = 401  #:
+    provisional_measure = 411  #:
+    provisional_measure_expired = 421  #:
+    definite_to_arbcom = 501  #:
+    definite_measure = 511  #:
+    definite_measure_expired = 521  #:
+
+    # Conclusion
+    faction_summary = 1001  #: of some companions for a faction
+    synthesis = 1011  #:
 
 
 @enum.unique
@@ -502,6 +546,32 @@ class CoreLogCodes(CdEIntEnum):
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:
+
+
+@enum.unique
+class ComplaintLogCode(CdEIntEnum):
+    case_created = 1  #:
+    case_changed_kind = 2  #:
+    case_changed_grave = 3  #:
+    case_changed_start_date = 4  #:
+    case_changed_end_date = 5  #:
+
+    case_deleted = 11  #:
+    case_concluded = 12  #:
+    case_aborted = 13  #:
+
+    involvee_added = 31  #:
+    involvee_removed = 32  #:
+    involvee_informed = 36  #:
+    involvee_uninformed = 37  #:
+
+    companion_added = 41  #:
+    companion_withdrawn = 42  #:
+    companion_reinstated = 43  #:
+    companion_removed = 44  #:
+
+    enforcer_added = 101  #:
+    enforcer_removed = 102  #:
 
 
 @enum.unique

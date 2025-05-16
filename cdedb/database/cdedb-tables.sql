@@ -520,6 +520,7 @@ GRANT USAGE ON SCHEMA complaint TO cdb_persona;
 CREATE TABLE complaint.cases (
     id         serial PRIMARY KEY,
     kind       integer NOT NULL, -- database.constants.ComplaintKind
+    is_grave   boolean DEFAULT FALSE,
     summary    varchar,
     start_date date,
     end_date   date
@@ -527,19 +528,24 @@ CREATE TABLE complaint.cases (
 GRANT SELECT ON complaint.cases TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON complaint.cases TO cdb_admin;
 
+-- Maybe explicitly model entry versions after all?
 CREATE TABLE complaint.entries (
     id            serial PRIMARY KEY,
     case_id       integer NOT NULL REFERENCES complaint.cases(id),
     submitted_by  integer NOT NULL REFERENCES core.personas(id),
-    type          integer NOT NULL, -- database.constants.ComplaintEntryType
+    type          integer DEFAULT NULL, -- database.constants.ComplaintEntryType
     description   varchar, -- encrypted
     length        integer NOT NULL,
     ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
-    dtime         timestamp WITH TIME ZONE DEFAULT NULL
+    relative_to   integer REFERENCES complaint.entries(id) DEFAULT NULL,  -- only for some types
+    dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
+    dreason       varchar DEFAULT NULL,
+    CONSTRAINT complaint_entry_deletion
+        CHECK ((dtime IS NULL) = (dreason IS NULL))
 );
-GRANT SELECT, INSERT, UPDATE (dtime) ON complaint.entries TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE (dtime, dreason) ON complaint.entries TO cdb_persona;
 
 CREATE TABLE complaint.authors (
     id            serial PRIMARY KEY,
@@ -566,10 +572,10 @@ CREATE TABLE complaint.companions (
     involved_id   int NOT NULL REFERENCES complaint.involved(id),
     persona_id    int NOT NULL REFERENCES core.personas(id),
     UNIQUE(involved_id, persona_id),
-    is_obsolete   boolean NOT NULL DEFAULT FALSE
+    is_withdrawn   boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;
-GRANT INSERT, UPDATE (is_obsolete), DELETE ON complaint.companions TO cdb_admin;
+GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
 
 -- like event helpers, may access limited information
 CREATE TABLE complaint.enforcers (
