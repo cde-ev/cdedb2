@@ -104,22 +104,16 @@
             {% set col_class = "col-sm-3" %}
             <div class="row">
                 <div class="{{ col_class }}">
-                    <label>
-                        {% trans %}Is Archived{% endtrans %}
-                        {{ util.input_checkboxes("is_archived", tristate_entries, radio=true, defaultvalue="-1") }}
-                    </label>
+                    <label>{% trans %}Is Archived{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_archived", tristate_entries, radio=true, defaultvalue="-1") }}
                 </div>
                 <div class="{{ col_class }}">
-                    <label>
-                        {% trans %}Is Balanced{% endtrans %}
-                        {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true, defaultvalue="-1") }}
-                    </label>
+                    <label>{% trans %}Is Balanced{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true, defaultvalue="-1") }}
                 </div>
                 <div class="{{ col_class }}">
-                    <label>
-                        {% trans %}Is Concluded{% endtrans %}
-                        {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true, defaultvalue="-1") }}
-                    </label>
+                    <label>{% trans %}Is Concluded{% endtrans %}</label>
+                    {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true, defaultvalue="-1") }}
                 </div>
                 {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-bottomright") }}
             </div>
