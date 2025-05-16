@@ -546,18 +546,14 @@ class EventDownloadMixin(EventBaseFrontend):
 
         This is a zero-config variant of download_partial_export.
         """
-        ret = {
-            'message': "",
-            'export': {},
-        }
         if not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            ret['message'] = "Not in offline mode."
-            return self.send_json(rs, ret)
+            raise werkzeug.exceptions.ImATeapot("Not in offline mode.")
         events = self.eventproxy.list_events(rs)
         if len(events) != 1:
-            ret['message'] = "Exactly one event must exist."
-            return self.send_json(rs, ret)
+            raise werkzeug.exceptions.ImATeapot("Exactly one event must exist.")
         event_id = unwrap(events.keys())
-        ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
-        ret['message'] = "success"
-        return self.send_json(rs, ret, sort_keys=True)
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
+        return self.send_file(
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
