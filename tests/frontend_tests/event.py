@@ -6679,25 +6679,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
             div="constraint-violations")
 
+        texts = [
+            "Akira Abukara hat noch keinen Teilnahmebeitrag bezahlt (584,48 €).",
+            "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt (466,49 €).",
+            "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt (504,48 €). (Als Orga).",
+            "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 353,99 €).",
+            "Inga Iota muss eine Erstattung erhalten (116,49 €).",
+        ]
         self.traverse("Verstöße gegen Beschränkungen")
-        self.assertPresence(
-            "Akira Abukara hat noch keinen Teilnahmebeitrag bezahlt (584,48 €).")
-        self.assertPresence(
-            "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt"
-            " (466,49 €).")
-        self.assertPresence(
-            "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt"
-            " (504,48 €). (Als Orga).")
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
+            texts=texts, check_complete=False, only_severity=False,
+        )
 
-        self.assertPresence(
-            "Inga Iota muss eine Erstattung erhalten (116,49 €).")
         self.traverse("Inga")
         self.assertPresence("Muss eine Erstattung erhalten (116,49 €).")
-        self.traverse("Verstöße gegen Beschränkungen")
-
-        self.assertPresence(
-            "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag"
-            " bezahlt (übrig: 353,99 €).")
 
         # Manipulate amount paid without setting payment date:
         execsql("""
@@ -6709,33 +6705,105 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 5")
 
         self.traverse("Verstöße gegen Beschränkungen")
-        self.assertPresence(
-            "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).")
-        self.assertPresence(
-            "Anton Administrator muss insgesamt einen negativen Betrag bezahlen"
-            " (-5,00 €).")
+        texts = [
+            "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).",
+            "Anton Administrator muss insgesamt einen negativen Betrag bezahlen (-5,00 €).",
+            "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.",
+            "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 461,49 €).",
+            "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.",
+        ]
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
+            texts=texts, check_complete=False, only_severity=False,
+        )
+        f = self.response.forms['filterconstraintsform']
+        f['min_severity'] = models_cv.ViolationSeverity.DEBUG
+        self.submit(f, check_notification=False)
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.DEBUG,
+            check_complete=False, only_severity=True, texts=[
+                "Garcia Generalis ist involviert, muss aber keinen Beitrag bezahlen.",
+            ],
+        )
+        f['min_severity'] = models_cv.ViolationSeverity.DEBUG
+        self.submit(f, check_notification=False)
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.ERROR,
+            check_complete=False, only_severity=False, texts=[
+                "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).",
+                "Anton Administrator muss insgesamt einen negativen Betrag bezahlen (-5,00 €).",
+                "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.",
+            ],
+        )
         self.traverse("Anton Administrator")
         self.assertPresence("Hat einen negativen Betrag bezahlt (-5,00 €).")
         self.assertPresence("Muss insgesamt einen negativen Betrag bezahlen (-5,00 €).")
         self.traverse("Verstöße gegen Beschränkungen")
-        self.assertPresence(
-            "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.")
-        self.assertPresence(
-            "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag"
-            " bezahlt (übrig: 461,49 €).")
         self.traverse("Emilia")
         self.assertPresence("Hat bezahlt, aber kein Bezahlungsdatum.")
         self.traverse("Verstöße gegen Beschränkungen")
         # Garcia is orga.
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "Garcia"
+        self.submit(f, check_notification=False)
+        self.assertTitle("Anmeldung von Garcia Generalis (Große Testakademie 2222)")
         self.assertNonPresence(
-            "Garcia Generalis ist involviert, muss aber keinen Beitrag bezahlen.")
-        self.assertPresence(
-            "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.")
+            "Ist involviert, muss aber keinen Beitrag bezahlen.",
+            div="constraint-violations", check_div=False,
+        )
+        self.traverse("Verstöße gegen Beschränkungen")
         self.traverse("Akira")
         self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
         self.traverse("Übersicht")
         self.assertPresence("Es gibt 1 Anmeldungen ohne zu zahlendem Beitrag.",
                             div="constraint-violations")
+
+    def _check_shown_violations(
+            self, event_id: int, filtered_severity: models_cv.ViolationSeverity,
+            texts: list[str], *, check_complete: bool = True, only_severity: bool = True,
+    ) -> None:
+
+        def test_not_hidden(
+                nodes: list["lxml.etree._HTMLElement"],
+        ) -> None:
+            for node in nodes:
+                self.assertNotIn("softhide", node.classes)
+
+        def test_hidden(
+                nodes: list["lxml.etree._HTMLElement"],
+        ) -> None:
+            for node in nodes:
+                self.assertIn("softhide", node.classes)
+
+        id_ = f"event_{event_id}"
+        parents = self.response.lxml.xpath(f"//*[@id='{id_}']")
+        if not parents:
+            self.fail(f"Did not find event {event_id}.")
+        test_not_hidden(parents)
+        if texts:
+            selector = ".//*[@data-severity='{}']"
+            nodes = parents[0].xpath(selector.format(filtered_severity.value))
+            if not only_severity:
+                for severity in models_cv.ViolationSeverity:
+                    if severity > filtered_severity:
+                        nodes.extend(parents[0].xpath(selector.format(severity.value)))
+            if not nodes:
+                self.fail(f"Did not find violations for severity {filtered_severity.name}"
+                          f" for event {event_id}.")
+            test_not_hidden(nodes)
+            node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
+            for text in texts:
+                if not any(text in node_text for node_text in node_texts):
+                    self.fail(f"{text!r} not found for event {event_id}"
+                              f" at severity {filtered_severity.name}.")
+            if check_complete and len(nodes) > len(texts):
+                self.fail(
+                    f"Found more violations for {event_id} at severity {filtered_severity.name}"
+                    f" than were checked ({len(nodes)} > {len(texts)}).",
+                )
+        if not texts:
+            nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
+            test_hidden(nodes)
 
     @event_keeper
     @as_users("annika", "petra")
@@ -6756,45 +6824,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     div=f"event_{event_id}", html_class="softhide",
                 )
 
-        def test_not_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
-            for node in nodes:
-                self.assertNotIn("softhide", node.classes)
-
-        def test_shown(
-                event_id: int, severity: models_cv.ViolationSeverity,
-                texts: list[str],
-        ) -> None:
-            id_ = f"event_{event_id}"
-            parents = self.response.lxml.xpath(f"//*[@id='{id_}']")
-            if not parents:
-                self.fail(f"Did not find event {event_id}.")
-            test_not_hidden(parents)
-            if texts:
-                nodes = parents[0].xpath(f".//*[@data-severity='{severity.value}']")
-                if not nodes:
-                    self.fail(f"Did not find violations with severity {severity.value}"
-                              f" for event {event_id}.")
-                test_not_hidden(nodes)
-                for text in texts:
-                    if not any(text in node.text_content() for node in nodes):
-                        self.fail(f"{text!r} not found for event {event_id}"
-                                  f" at severity {severity.value}.")
-                if len(nodes) > len(texts):
-                    self.fail(
-                        f"Found more violations for {event_id} at severity {severity.value}"
-                        f" than were checked ({len(nodes)} > {len(texts)}).",
-                    )
-            if not texts:
-                nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
-                for node in nodes:
-                    self.assertIn("softhide", node.classes)
         test_events_shown(1, 2, 3, 4)
 
         self.assertPresence("CyberTestAkademie", div="event_3")
-        test_shown(
-            event_id=3, severity=models_cv.ViolationSeverity.INFO,
+        self._check_shown_violations(
+            event_id=3, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
                 "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
@@ -6802,15 +6836,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         self.assertPresence("CdE-Party 2050", div="event_2")
-        test_shown(
-            event_id=2, severity=models_cv.ViolationSeverity.INFO,
+        self._check_shown_violations(
+            event_id=2, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
             ],
         )
 
         self.assertPresence("Große Testakademie 2222", div="event_1")
-        test_shown(
-            event_id=1, severity=models_cv.ViolationSeverity.INFO,
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
                 "1 Ausfallende Kurse mit Teilnehmenden",
                 "3 Anmeldungen mit nicht bezahltem Beitrag",
@@ -6824,8 +6858,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         self.assertPresence("TripelAkademie", div="event_4")
-        test_shown(
-            event_id=4, severity=models_cv.ViolationSeverity.INFO,
+        self._check_shown_violations(
+            event_id=4, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
                 "5 Verstöße gegen Kursausschließlichkeit",
                 "1 Verstöße gegen Teilnahmeausschließlichkeit",
@@ -6914,26 +6948,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['min_severity'] = models_cv.ViolationSeverity.ERROR
         self.submit(f, check_notification=False)
-        test_shown(
-            event_id=3, severity=models_cv.ViolationSeverity.ERROR,
+        self._check_shown_violations(
+            event_id=3, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
                 "3 Uneingecheckte Teilnehmende",
             ],
         )
-        test_shown(
-            event_id=2, severity=models_cv.ViolationSeverity.ERROR,
+        self._check_shown_violations(
+            event_id=2, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
             ],
         )
-        test_shown(
-            event_id=1, severity=models_cv.ViolationSeverity.ERROR,
+        self._check_shown_violations(
+            event_id=1, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
                 "1 Ausfallende Kurse mit Teilnehmenden",
                 "2 Anmeldungen mit nicht bezahltem Beitrag",
             ],
         )
-        test_shown(
-            event_id=4, severity=models_cv.ViolationSeverity.ERROR,
+        self._check_shown_violations(
+            event_id=4, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
                 "5 Verstöße gegen Kursausschließlichkeit",
             ],
@@ -6941,15 +6975,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['min_severity'] = models_cv.ViolationSeverity.CRITICAL
         self.submit(f, check_notification=False)
-        test_shown(event_id=1, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
-        test_shown(event_id=2, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
-        test_shown(event_id=3, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
-        test_shown(event_id=4, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        self._check_shown_violations(event_id=1, filtered_severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        self._check_shown_violations(event_id=2, filtered_severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        self._check_shown_violations(event_id=3, filtered_severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        self._check_shown_violations(event_id=4, filtered_severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
 
         f['min_severity'] = models_cv.ViolationSeverity.WARNING
         self.submit(f, check_notification=False)
-        test_shown(
-            event_id=3, severity=models_cv.ViolationSeverity.WARNING,
+        self._check_shown_violations(
+            event_id=3, filtered_severity=models_cv.ViolationSeverity.WARNING,
             texts=[
                 "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
@@ -6958,8 +6992,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['min_severity'] = models_cv.ViolationSeverity.DEBUG
         self.submit(f, check_notification=False)
-        test_shown(
-            event_id=3, severity=models_cv.ViolationSeverity.DEBUG,
+        self._check_shown_violations(
+            event_id=3, filtered_severity=models_cv.ViolationSeverity.DEBUG,
             texts=[
                 "3 Uneingecheckte Teilnehmende",
                 "3 Fehlende Kurseinteilungen",
