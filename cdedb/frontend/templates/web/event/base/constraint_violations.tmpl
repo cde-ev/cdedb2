@@ -19,16 +19,28 @@
     {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {{ generic.filter_violations("event/constraint_violations", "violations", filter_event=False) }}
+    {% if violations %}
+        {{ generic.filter_violations("event/constraint_violations", "violations", filter_event=False) }}
 
-    <div id="violations" class="event">
-        {% for class_name, violation_list in violations.by_class.items() %}
-            <div class="violation-list maybehide">
-                {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
-                {{ util.h(class_name, underline=true) }}
-                {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity) }}
+        <div id="violations" class="event">
+            {% for class_name, violation_list in violations.by_class.items() %}
+                <div class="violation-list maybehide">
+                    {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                    {{ util.h(class_name, underline=true) }}
+                    {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity) }}
+                </div>
+            {% endfor %}
+            <div class="maybenothide text-muted">
+                {% trans %}
+                    There are currently no violations matching the filter.
+                {% endtrans %}
             </div>
-        {% endfor %}
-    </div>
-
+        </div>
+    {% else %}
+        <div class="text-muted">
+            {% trans %}
+                There are currently no violations.
+            {% endtrans %}
+        </div>
+    {% endif %}
 {% endblock %}
