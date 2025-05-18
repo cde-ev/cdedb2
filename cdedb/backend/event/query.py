@@ -156,6 +156,9 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                         {registration_fields_table()}
                     ) AS reg_fields on reg.id = reg_fields.id
                     LEFT OUTER JOIN (
+                        {complex_amount_owed_table()}
+                    ) AS amount_owed ON reg.id = amount_owed.id
+                    LEFT OUTER JOIN (
                         {timestamp_table(creation=True)}
                     ) AS ctime ON reg.persona_id = ctime.persona_id
                     LEFT OUTER JOIN (
@@ -193,7 +196,19 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                     WHERE event_id = {event_id}
                 """
 
-            # Step 2.2: Construct table for personalized fee amounts.
+            # Step 2.2: Construct table for complex amount_owed.
+            def complex_amount_owed_table() -> str:
+                fee_kind_columns = [
+                    f'''(amount_owed_by_kind->>'{kind.value}')::numeric AS "{kind.name}"'''
+                    for kind in const.EventFeeType
+                ]
+                return f"""
+                    SELECT {', '.join(fee_kind_columns + ['id'])}
+                    FROM event.registrations
+                    WHERE event_id = {event_id}
+                """
+
+            # Step 2.3: Construct table for personalized fee amounts.
             def personalized_fee_table(fee_id: int) -> str:
                 return f"""
                     SELECT amount, registration_id

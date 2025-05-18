@@ -141,10 +141,29 @@ class FeeStatsTotal:
 @dataclasses.dataclass
 class ComplexRegistrationFee:
     """Contaings all information relevant to the total fee of one registration."""
-    amount: decimal.Decimal
-    active_fees: set[vtypes.ProtoID]
+    fees: list[tuple[models.EventFee, decimal.Decimal]]
     visual_debug: dict[int, str]
-    by_kind: dict[const.EventFeeType, decimal.Decimal]
+
+    @cached_property
+    def by_fee(self) -> dict[int, decimal.Decimal]:
+        return dict((fee.id, amount) for fee, amount in self.fees)
+
+    @cached_property
+    def by_kind(self) -> dict[const.EventFeeType, decimal.Decimal]:
+        ret = {}
+        for fee, amount in self.fees:
+            if fee.kind not in ret:
+                ret[fee.kind] = decimal.Decimal(0)
+            ret[fee.kind] += amount
+        return ret
+
+    @cached_property
+    def active_fees(self) -> set[int]:
+        return set(self.by_fee.keys())
+
+    @cached_property
+    def amount(self) -> decimal.Decimal:
+        return sum(self.by_fee.values(), start=decimal.Decimal(0))
 
     def __iter__(self) -> Iterator[tuple[const.EventFeeType, decimal.Decimal]]:
         return iter(xsorted(self.by_kind.items()))
@@ -157,7 +176,7 @@ class ComplexRegistrationFee:
 
     @property
     def nonmember_surcharge(self) -> decimal.Decimal:
-        return self.by_kind[const.EventFeeType.external]
+        return self.by_kind.get(const.EventFeeType.external, decimal.Decimal(0))
 
 
 class EventRegistrationBackend(EventBaseBackend):
@@ -1127,13 +1146,10 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
-            current_amount_owed = self.sql_select_one(
+            current_amount_owed = unwrap(self.sql_select_one(
                 rs, models.Registration.database_table, ["amount_owed"], data['id'],
-            )
-            self._update_registration_amount_owed(rs, data['id'])
-            new_amount_owed = self.sql_select_one(
-                rs, models.Registration.database_table, ["amount_owed"], data['id'],
-            )
+            ))
+            new_amount_owed = self._update_registration_amount_owed(rs, data['id']).amount
 
             if event.is_balanced and current_amount_owed != new_amount_owed:
                 raise EventIsBalancedError(n_(
@@ -1179,7 +1195,7 @@ class EventRegistrationBackend(EventBaseBackend):
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
             # Calulate amount owed at the end due to privilege issues.
-            data['amount_owed'] = 0
+            data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
@@ -1216,11 +1232,8 @@ class EventRegistrationBackend(EventBaseBackend):
             self._track_groups_sanity_check(rs, data['event_id'])
 
             # Now set amount owed.
-            self._update_registration_amount_owed(rs, new_id)
-            amount_owed = self.sql_select_one(
-                rs, models.Registration.database_table, ["amount_owed"], new_id,
-            )
-            if event.is_balanced and unwrap(amount_owed):
+            amount_owed = self._update_registration_amount_owed(rs, new_id).amount
+            if event.is_balanced and amount_owed:
                 raise EventIsBalancedError(n_(
                     "Event is balanced. May not create registration which owes a fee."))
 
@@ -1350,46 +1363,6 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
-    def _update_registration_amount_owed(
-            self, rs: RequestState, registration_id: int,
-    ) -> DefaultReturnCode:
-        """
-        Update the amount owed for one registration.
-
-        If not given, the amount will be calculated beforehand.
-        """
-        self.affirm_atomized_context(rs)
-        amount = self.calculate_fee(rs, registration_id)
-
-        update = {
-            'id': registration_id,
-            'amount_owed': amount,
-        }
-        return self.sql_update(rs, models.Registration.database_table, update)
-
-    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
-                                          ) -> DefaultReturnCode:
-        """Update the amount owed for all registrations of one event."""
-        self.affirm_atomized_context(rs)
-        registration_ids = self.list_registrations(rs, event_id)
-        fees = self.calculate_fees(rs, registration_ids)
-
-        if not fees:
-            return 1
-
-        query = f"""
-            UPDATE {models.Registration.database_table} AS r
-            SET amount_owed = u.amount_owed
-            FROM (
-                VALUES {",".join(["(%s, %s)"] * len(fees))}
-            ) AS u (id, amount_owed)
-            WHERE r.id = u.id
-        """
-        params: list[int | decimal.Decimal] = list(
-            itertools.chain.from_iterable(fees.items()))
-
-        return self.query_exec(rs, query, params)
-
     @access("finance_admin")
     def list_amounts_owed(self, rs: RequestState, persona_id: int,
                           ) -> dict[int, decimal.Decimal]:
@@ -1432,6 +1405,64 @@ class EventRegistrationBackend(EventBaseBackend):
             return None
         return unwrap(registration_ids.keys())
 
+    def _update_registration_amount_owed(
+            self, rs: RequestState, registration_id: int,
+    ) -> ComplexRegistrationFee:
+        """
+        Update the amount owed for one registration.
+        """
+        self.affirm_atomized_context(rs)
+        return self._update_registrations_amount_owed_inner(
+            rs, (registration_id,),
+        )[registration_id]
+
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
+                                          ) -> dict[int, ComplexRegistrationFee]:
+        """Update the amount owed for all registrations of one event."""
+        self.affirm_atomized_context(rs)
+        registration_ids = self.list_registrations(rs, event_id)
+        return self._update_registrations_amount_owed_inner(rs, registration_ids)
+
+    def _update_registrations_amount_owed_inner(
+            self, rs: RequestState, registration_ids: Collection[int],
+    ) -> dict[int, ComplexRegistrationFee]:
+        self.affirm_atomized_context(rs)
+        registrations = self.get_registrations(rs, registration_ids)
+        if not registrations:
+            return {}
+
+        event = self.get_event(rs, next(iter(registrations.values()))['event_id'])
+        personas = self.core.get_event_users(
+            rs, [reg['persona_id'] for reg in registrations.values()],
+            event_id=event.id,
+        )
+        for reg in registrations.values():
+            reg['persona'] = personas[reg['persona_id']]
+
+        fees = {
+            registration_id: self._calculate_complex_fee(rs, registration, event=event)
+            for registration_id, registration in registrations.items()
+        }
+
+        query = f"""
+            UPDATE {models.Registration.database_table} AS r
+            SET amount_owed = u.amount_owed, amount_owed_by_kind = u.by_kind::jsonb
+            FROM (
+                VALUES {",".join(["(%s, %s, %s)"] * len(fees))}
+            ) AS u (id, amount_owed, by_kind)
+            WHERE r.id = u.id
+        """
+        params: list[int | decimal.Decimal | PsycoJson] = list(
+            itertools.chain.from_iterable(
+                (registration_id, fee.amount, PsycoJson(fee.by_kind))
+                for registration_id, fee in fees.items()
+            ),
+        )
+
+        self.query_exec(rs, query, params)
+
+        return fees
+
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
                               visual_debug: bool = False) -> ComplexRegistrationFee:
@@ -1441,28 +1472,6 @@ class EventRegistrationBackend(EventBaseBackend):
         event = self.get_event(rs, registration['event_id'])
         return self._calculate_complex_fee(
             rs, registration, event=event, visual_debug=visual_debug)
-
-    @access("event")
-    def calculate_fee_for_partial_registration(
-            self, rs: RequestState, reg: CdEDBObject, *, event_id: int,
-    ) -> decimal.Decimal:
-        """Public helper to calculate a fee for a non-stored (partial) registration.
-
-        Should only be used when needing to calculate the fee for a changed or new
-        registration before storing it to the database.
-
-        This does some validation but currently cannot guarantee that the registration
-        object is sufficient to calculate the fee without raising an error.
-        """
-        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
-        event_id = affirm(vtypes.ID, event_id)
-        event = self.get_event(rs, event_id)
-        return self._calculate_single_fee(rs, reg, event=event)
-
-    def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: models.Event) -> decimal.Decimal:
-        """Helper to only calculate return the fee amount for a single registration."""
-        return self._calculate_complex_fee(rs, reg, event=event).amount
 
     def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, visual_debug: bool = False,
@@ -1501,10 +1510,7 @@ class EventRegistrationBackend(EventBaseBackend):
             'any_part': any(reg_part_involvement.values()),
             'all_parts': all(reg_part_involvement.values()),
         }
-        amount = decimal.Decimal(0)
-        active_fees = set()
-        fees_by_kind: dict[const.EventFeeType, decimal.Decimal] = defaultdict(
-            decimal.Decimal)
+        fee_amounts = []
         visual_debug_data: dict[int, str] = {}
         for fee in event.fees.values():
             if fee.is_conditional():
@@ -1518,9 +1524,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     'birthday': reg['persona']['birthday'],
                 }
                 if fcp_evaluation.evaluate(parse_result, data=data):
-                    amount += fee.amount
-                    active_fees.add(fee.id)
-                    fees_by_kind[fee.kind] += fee.amount
+                    fee_amounts.append((fee, fee.amount))
                 if visual_debug:
                     visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
                         parse_result, data=data,
@@ -1528,14 +1532,28 @@ class EventRegistrationBackend(EventBaseBackend):
             else:
                 personalized_amount = reg['personalized_fees'].get(fee.id)
                 if personalized_amount is not None:
-                    amount += personalized_amount
-                    active_fees.add(fee.id)
-                    fees_by_kind[fee.kind] += personalized_amount
+                    fee_amounts.append((fee, personalized_amount))
 
         return ComplexRegistrationFee(
-            amount=amount, active_fees=active_fees,
-            visual_debug=visual_debug_data, by_kind=fees_by_kind,
+            fees=fee_amounts, visual_debug=visual_debug_data,
         )
+
+    @access("event")
+    def calculate_fee_for_partial_registration(
+            self, rs: RequestState, reg: CdEDBObject, *, event_id: int,
+    ) -> decimal.Decimal:
+        """Public helper to calculate a fee for a non-stored (partial) registration.
+
+        Should only be used when needing to calculate the fee for a changed or new
+        registration before storing it to the database.
+
+        This does some validation but currently cannot guarantee that the registration
+        object is sufficient to calculate the fee without raising an error.
+        """
+        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
+        return self._calculate_complex_fee(rs, reg, event=event).amount
 
     @access("event")
     def precompute_fee(
@@ -1612,54 +1630,6 @@ class EventRegistrationBackend(EventBaseBackend):
         }
         return self._calculate_complex_fee(
             rs, fake_registration, event=event, visual_debug=True)
-
-    @access("event")
-    def calculate_fees(self, rs: RequestState, registration_ids: Collection[int],
-                       ) -> dict[int, decimal.Decimal]:
-        """Calculate the total fees for some registrations.
-
-        This should be called once for multiple registrations, as it would be
-        somewhat expensive if called per registration.
-
-        All registrations need to belong to the same event.
-
-        The caller must have priviliged acces to that event.
-        """
-        registration_ids = affirm_set(vtypes.ID, registration_ids)
-
-        with Atomizer(rs):
-            associated = self.sql_select(rs, "event.registrations",
-                                         ("event_id",), registration_ids)
-            if not associated:
-                return {}
-            events = {e['event_id'] for e in associated}
-            if len(events) > 1:
-                raise ValueError(n_(
-                    "Only registrations from exactly one event allowed."))
-
-            event_id = unwrap(events)
-            regs = self.get_registrations(rs, registration_ids)
-            persona_ids = {e['persona_id'] for e in regs.values()}
-            if (not is_privileged(rs, EventPrivileges.registrations_read_internal,
-                                  event_id=event_id)
-                    and persona_ids != {rs.user.persona_id}):
-                raise PrivilegeError(n_("Not privileged."))
-
-            personas = self.core.get_event_users(rs, persona_ids, event_id=event_id)
-
-            event = self.get_event(rs, event_id)
-
-            ret: dict[int, decimal.Decimal] = {}
-            for reg_id, reg in regs.items():
-                reg['persona'] = personas[reg['persona_id']]
-                ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
-        return ret
-
-    class _CalculateFeeProtocol(Protocol):
-        def __call__(self, rs: RequestState, registration_id: int,
-                     ) -> decimal.Decimal: ...
-    calculate_fee: _CalculateFeeProtocol = singularize(
-        calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
     def get_fee_stats(self, rs: RequestState, event_id: int,
