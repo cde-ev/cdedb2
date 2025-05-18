@@ -572,11 +572,20 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
-    def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("min_severity", _omit_missing=True)
+    def constraint_violations(
+            self, rs: RequestState, event_id: int,
+            min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+    ) -> Response:
+        rs.ignore_validation_errors()
+
         params = self.get_constraint_violations(
             rs, rs.ambience['event'],
             registration_id=None, course_id=None, lodgement_id=None,
         )
+
+        params['min_severity'] = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
+
         return self.render(rs, "base/constraint_violations", params)
 
     @access("event.event_helper", "event_admin", "finance_admin")

@@ -368,8 +368,10 @@
 
 {% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO) %}
     <ul id="{{ class_name }}-list" {% if entity_page %} class="slim" {% endif %}>
-        {% for violation in violations if violation.severity >= min_severity %}
-            <li class="{{ violation.severity.html_class() }}">
+        {% for violation in violations %}
+            <li class="{{ violation.severity.html_class() }} violations {{ "softhide" if violation.severity < min_severity }}"
+                data-max_severity="{{ violation.severity.value }}" data-severity="{{ violation.severity.value }}"
+            >
                 {{ print_violation(violation, entity_page=entity_page) }}
             </li>
         {% endfor %}
@@ -713,4 +715,54 @@
             aclass="btn btn-warning" + (" btn-xs" if small else " btn-sm") + (" pull-right" if pull_right else ""),
             attributes=('style="color: #fff;' + ('' if display else 'display: none;') + '"')|s) }}
     {% endif %}
+{% endmacro %}
+
+
+{% macro filter_violations(endpoint, resultsid, filter_severity=True, filter_event=True, event_options=[]) %}
+
+    {% call util.bootstrap_panel(gettext("Filter"), aclass="panel-primary", icon="filter") %}
+        <form action="{{ cdedblink(endpoint) }}" method="GET" id="filterconstraintsform" class="form-horizontal">
+            {% if filter_severity %}
+                {{ util.form_input_select(name="min_severity", label=gettext("Minimum Violation Severity:"),
+                                     anid="filter-min-severity", defaultvalue=min_severity,
+                                     entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
+            {% endif %}
+            {% if filter_event %}
+                {{ util.form_input_text(label=gettext("Only show these events:"), name="event_ids", anid="filter-event-ids",
+                                        placeholder=gettext("<id>,<id>,…")) }}
+                {% set tristate_entries = [(-1, gettext("any")), (0, gettext("no")), (1, gettext("yes"))] %}
+                {% set col_class = "col-sm-3 mosp" %}
+                <div class="row">
+                    <div class="col-sm-1"></div>
+                    <div class="{{ col_class }}">
+                        <label>{% trans %}Is Archived{% endtrans %}</label>
+                        {{ util.input_checkboxes("is_archived", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </div>
+                    <div class="{{ col_class }}">
+                        <label>{% trans %}Is Balanced{% endtrans %}</label>
+                        {{ util.input_checkboxes("is_balanced", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </div>
+                    <div class="{{ col_class }}">
+                        <label>{% trans %}Is Concluded{% endtrans %}</label>
+                        {{ util.input_checkboxes("is_concluded", tristate_entries, radio=true, defaultvalue="-1") }}
+                    </div>
+                    {{ util.input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-bottomright") }}
+                </div>
+            {% else %}
+                {{ util.form_input_submit(label=gettext("Filter"), icon="search", aclass="btn btn-primary float-right") }}
+            {% endif %}
+        </form>
+
+        {% if not jshint %}
+            {{ util.raise_for_test("jshint not set for 'util.filter_violations'.") }}
+        {% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#filterconstraintsform").cdedbFilterViolations(
+                "#{{ resultsid }}",
+                "{{ cdedblink("event/select_event") }}",
+                {{ event_options|tojson }},
+                {{ enums['ViolationSeverity'].map()|tojson }},
+            );
+        </script>
+    {% endcall %}
 {% endmacro %}

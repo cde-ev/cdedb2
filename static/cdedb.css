@@ -1283,6 +1283,59 @@ span.fag {
     color: #aaaaaa;
 }
 
+/* Classes for dynamically hiding results of the constraint violation filter.
+ *
+ * Elements with `.maybehide` are hidden by default, but will be displayed
+ *  depending on their contents.
+ *
+ * Elements with `.maybenothide` are shown by default, but are hidden if they are
+ *  preceded by a `.maybehide` that is not hidden.
+ * In other words they are shown iff all preceding `.maybehide` elements are hidden.
+ * They serve as dynamically shown/hidden alt texts to the `.maybehide` elements.
+ */
+
+.maybehide {
+    display: none;
+}
+.maybenothide {
+    display: block;
+}
+
+/* On the global violation summary there are two sections with three layers each.
+ *
+ * 1. The view by event. This has a list of events with a list of violations each.
+ *    The classes are nested like so: .event .violations-list .violations
+ *
+ * 2. The view by violation class. Each violation class has a list of events.
+ *    The outer classes are reversed: .violations-list .event .violations
+ *
+ * Selector 1 is responsible for showing the violation list inside an event in view 1.
+ * Selector 2 is responsible for showing one event for one violation class in view 2.
+ * Selector 3 is responsible for showing the outer event in view 1.
+ * Selector 4 is repsonsible for showing the outer violation class in view 2.
+ *
+ * Selectors 1 and 2 are symmetrical, but 3 and 4 are not. This is because the heading
+ *  for the violation class in view 2 should become hidden if there are no not-hidden
+ *  violations listed for it. On the other hand the event heading in view 1 will stay
+ *  visible and an alt-text (.maybenothide) is displayed instead.
+ *
+ * On the violation pages for individual events a variation of view 1 is used, where
+ *  everything is wrapped in an '.event' element without '.maybehide'. This activates
+ *  selector 1, because selector 4 would break the view, since the '.violation-list'
+ *  elements do not have '.event' descendants. Selector 3 is not needed here.
+ */
+
+/* 1 */.event .violation-list.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 2 */.violation-list .event.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 3 */.event.maybehide:not(.softhide):has( .violation-list:not( .softhide)),
+/* 4 */.violation-list.maybehide:not(.softhide):has( .event:not( .softhide)):has( .violations:not(.softhide)) {
+    display: block;
+
+    & ~.maybenothide {
+        display: none;
+    }
+}
+
 /*
  * the following should be replaced with
  * display: inline-flex; width: auto;
