@@ -1065,6 +1065,7 @@ CREATE TABLE event.registrations (
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
+        amount_owed_by_kind     jsonb NOT NULL DEFAULT '{}'::jsonb,
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,

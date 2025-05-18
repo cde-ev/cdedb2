@@ -131,19 +131,19 @@
             },
             "Kinderpreis 1. H\u00e4lfte": {
                 "amount": "-12.00",
-                "condition": "part.1.H. and field.is_child",
+                "condition": "part.1.H. and age.U16",
                 "kind": 1,
                 "notes": null
             },
             "Kinderpreis 2. H\u00e4lfte": {
                 "amount": "-19.00",
-                "condition": "part.2.H. and field.is_child",
+                "condition": "part.2.H. and age.U18",
                 "kind": 1,
                 "notes": null
             },
             "Kinderpreis Warmup": {
                 "amount": "-5.00",
-                "condition": "part.Wu and field.is_child",
+                "condition": "part.Wu and age.U13",
                 "kind": 1,
                 "notes": null
             },

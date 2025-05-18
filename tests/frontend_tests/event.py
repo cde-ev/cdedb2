@@ -1749,7 +1749,7 @@ etc;anything else""", f['entries_2'].value)
         elif self.user_in('daniel'):
             self.assertIn(mail_surcharge, text)
             self.assertIn(complex_fee, text)
-            self.assertIn("466,49", text)
+            self.assertIn("442,49", text)
         elif self.user_in('rowena'):
             self.assertIn(mail_surcharge, text)
             self.assertIn(complex_fee, text)
@@ -2016,9 +2016,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         "DELETE FROM event.course_choices;"
         "DELETE FROM event.registration_tracks;"
         "DELETE FROM event.registration_parts;"
-        "DELETE FROM event.registrations;",
+        "DELETE FROM event.registrations;"
+        "UPDATE event.event_fees SET condition = 'part.Wu and field.is_child' WHERE id = 4;",
     )
-    def test_register_with_fee_modifier(self) -> None:
+    def test_register_conditional_fee_with_event_field(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertPresence("Ich bin unter 13 Jahre alt.")
@@ -2394,6 +2395,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertHasClass("eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
+
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "Inga"
+        self.submit(f)
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("431,99 €", div="amount-owed")
+
+        self.event.set_event(self.key, 1, {
+            'parts': {
+                part_id: {
+                    'part_begin': "2322-01-01",
+                    'part_end': "2322-01-01",
+                }
+                for part_id in [1, 2, 3]
+            },
+        })
+
+        self.submit(f)
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("450,99 €", div="amount-owed")
 
     @event_keeper
     @as_users("garcia")
@@ -3353,7 +3374,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
-        self.assertPresence("Insgesamt zu zahlender Betrag 466,49 €")
+        self.assertPresence("Teilnahme\xadbeitrag 466,49 €")
 
     @event_keeper
     @as_users("garcia")
@@ -7669,10 +7690,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Solidarische Reduktion -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen")
         self.assertNonPresence("Solidarische Erhöhung")
-        self.assertPresence("Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
+        self.assertPresence(
+            "Solidarische Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
         self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen")
 
         save = self.response
+        self.traverse({'linkid': '^solidary_donation_owed_query$'})
+        self.assertPresence("Ergebnis [3]", div="query-results")
+        f = self.response.forms['queryform']
+        self.submit(f, button="download", value="json")
+        result = json.loads(self.response.text)
+        key = "amount_owed.solidary_donation"
+        for entry in result:
+            self.assertIn(key, entry.keys())
+            self.assertEqual("420.00", entry[key])
+        self.response = save
+
         self.traverse({'linkid': 'surplus_query'})
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.response = save
