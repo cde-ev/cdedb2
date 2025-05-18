@@ -78,6 +78,13 @@ class ViolationSeverity(enum.Enum):
             ViolationSeverity.DEBUG: 'panel-default',
         }[self]
 
+    @classmethod
+    def map(cls) -> dict[str, int]:
+        return {
+            entry.name: entry.value
+            for entry in cls
+        }
+
     def __lt__(self, other: 'ViolationSeverity') -> bool:
         return self.value < other.value
 
@@ -156,6 +163,7 @@ class ViolationList(list['ConstraintViolation']):
 
     def get(
             self, *,
+            event_id: int = cast(int, _MISSING),
             course_id: int | None = cast(int, _MISSING),
             lodgement_id: int | None = cast(int, _MISSING),
             registration_id: int | None = cast(int, _MISSING),
@@ -176,7 +184,8 @@ class ViolationList(list['ConstraintViolation']):
         """
         return ViolationList([
             v for v in self
-            if (course_id is _MISSING
+            if (event_id is _MISSING or v.event.id == event_id)
+            and (course_id is _MISSING
                     or v.course is None and course_id is None
                     or v.course is not None and v.course['id'] == course_id
                     or (assigned_course := getattr(v, 'assigned_course', None)) is not None and assigned_course['id'] == course_id
@@ -398,21 +407,35 @@ class ConstraintViolation(abc.ABC):
 
         Need only be overridden if a subclass has additional associated primary entities.
         """
-        ret = {}
+        ret = {
+            'event': (
+                "event/show_event",
+                {'event_id': self.event.id},
+            ),
+        }
         if self.registration:
             ret['registration'] = (
                 "event/show_registration",
-                {'registration_id': self.registration['id']},
+                {
+                    'event_id': self.event.id,
+                    'registration_id': self.registration['id'],
+                },
             )
         if self.course:
             ret['course'] = (
                 "event/show_course",
-                {'course_id': self.course['id']},
+                {
+                    'event_id': self.event.id,
+                    'course_id': self.course['id'],
+                },
             )
         if self.lodgement:
             ret['lodgement'] = (
                 "event/show_lodgement",
-                {'lodgement_id': self.lodgement['id']},
+                {
+                    'event_id': self.event.id,
+                    'lodgement_id': self.lodgement['id'],
+                },
             )
         return ret
 
@@ -422,7 +445,7 @@ class ConstraintViolation(abc.ABC):
         return self.get_sortkey() < other.get_sortkey()
 
     def get_sortkey(self) -> Sortkey:
-        return (-self.severity.value, self.__class__.__name__)
+        return (-self.severity.value, self.__class__.__name__) + self.event.get_sortkey()
 
     @classmethod
     def get_contexts(

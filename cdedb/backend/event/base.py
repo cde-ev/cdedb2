@@ -96,7 +96,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self._event_keeper = EntityKeeper(
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
-    @access("event")
+    @access("anonymous")
     def is_locked(self, rs: RequestState, *, event_id: int) -> bool:
         """Helper to determine if an event is locked."""
         event_id = affirm(vtypes.ID, event_id)

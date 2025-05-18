@@ -20,6 +20,7 @@ from subman import SubscriptionError
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
+import cdedb.models.event_constraint_violations as models_cv
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,
@@ -127,7 +128,7 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
-        admin = {"Alle Veranstaltungen", "Log"}
+        admin = {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
@@ -143,7 +144,7 @@ class TestEventFrontend(FrontendTest):
             out = set()
         # event helpers
         elif self.user_in('petra'):
-            ins = everyone | {"Alle Veranstaltungen"}
+            ins = everyone | {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen"}
             out = {"Log"}
         # auditors
         elif self.user_in('katarina'):
@@ -6735,6 +6736,236 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Übersicht")
         self.assertPresence("Es gibt 1 Anmeldungen ohne zu zahlendem Beitrag.",
                             div="constraint-violations")
+
+    @event_keeper
+    @as_users("annika", "petra")
+    def test_constraint_violations_summary(self) -> None:
+        self.traverse("Veranstaltungen", "Verstöße gegen Beschränkungen")
+        self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+
+        all_event_ids = set(self.event.list_events(self.key))
+
+        def test_events_shown(*event_ids: int) -> None:
+            self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+            for event_id in event_ids:
+                self.assertHasNotClass(
+                    div=f"event_{event_id}", html_class="softhide",
+                )
+            for event_id in all_event_ids - set(event_ids):
+                self.assertHasClass(
+                    div=f"event_{event_id}", html_class="softhide",
+                )
+
+        def test_not_hidden(
+                nodes: list["lxml.etree._HTMLElement"],
+        ) -> None:
+            for node in nodes:
+                self.assertNotIn("softhide", node.classes)
+
+        def test_shown(
+                event_id: int, severity: models_cv.ViolationSeverity,
+                texts: list[str],
+        ) -> None:
+            id_ = f"event_{event_id}"
+            parents = self.response.lxml.xpath(f"//*[@id='{id_}']")
+            if not parents:
+                self.fail(f"Did not find event {event_id}.")
+            test_not_hidden(parents)
+            if texts:
+                nodes = parents[0].xpath(f".//*[@data-severity='{severity.value}']")
+                if not nodes:
+                    self.fail(f"Did not find violations with severity {severity.value}"
+                              f" for event {event_id}.")
+                test_not_hidden(nodes)
+                for text in texts:
+                    if not any(text in node.text_content() for node in nodes):
+                        self.fail(f"{text!r} not found for event {event_id}"
+                                  f" at severity {severity.value}.")
+                if len(nodes) > len(texts):
+                    self.fail(
+                        f"Found more violations for {event_id} at severity {severity.value}"
+                        f" than were checked ({len(nodes)} > {len(texts)}).",
+                    )
+            if not texts:
+                nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
+                for node in nodes:
+                    self.assertIn("softhide", node.classes)
+        test_events_shown(1, 2, 3, 4)
+
+        self.assertPresence("CyberTestAkademie", div="event_3")
+        test_shown(
+            event_id=3, severity=models_cv.ViolationSeverity.INFO,
+            texts=[
+                "3 Uneingecheckte Teilnehmende",
+                "2 Fehlende Kurseinteilungen",
+            ],
+        )
+
+        self.assertPresence("CdE-Party 2050", div="event_2")
+        test_shown(
+            event_id=2, severity=models_cv.ViolationSeverity.INFO,
+            texts=[
+            ],
+        )
+
+        self.assertPresence("Große Testakademie 2222", div="event_1")
+        test_shown(
+            event_id=1, severity=models_cv.ViolationSeverity.INFO,
+            texts=[
+                "1 Ausfallende Kurse mit Teilnehmenden",
+                "3 Anmeldungen mit nicht bezahltem Beitrag",
+                "2 Unzulässige gemischte Unterkünfte",
+                "1 Unterkünfte mit inkorrekter Bewohnerzahl",
+                "2 Fehlende Kurseinteilungen",
+                "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
+                "1 Eingecheckte Abwesende",
+                "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
+            ],
+        )
+
+        self.assertPresence("TripelAkademie", div="event_4")
+        test_shown(
+            event_id=4, severity=models_cv.ViolationSeverity.INFO,
+            texts=[
+                "5 Verstöße gegen Kursausschließlichkeit",
+                "1 Verstöße gegen Teilnahmeausschließlichkeit",
+                "1 Anmeldungen mit nicht bezahltem Beitrag",
+            ],
+        )
+
+        f = self.response.forms['filterconstraintsform']
+        self.assertEqual(f['event_ids'].value, "")
+        self.assertEqual(f['is_archived'].value, "-1")
+        self.assertEqual(f['is_balanced'].value, "-1")
+        self.assertEqual(f['is_archived'].value, "-1")
+
+        f['event_ids'] = "1,3"
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 3)
+
+        f['event_ids'] = "1,3,2"
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 3)
+
+        f['is_concluded'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_concluded'] = 0
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2)
+
+        f['event_ids'] = ""
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 4)
+
+        f['is_balanced'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("farin"):
+            self.event.balance_event(self.key, 2)
+        self.submit(f, check_notification=False)
+        test_events_shown(2)
+
+        f['is_balanced'] = 0
+        self.submit(f)
+        test_events_shown(1, 4)
+
+        with self.switch_user("farin"):
+            self.event.unbalance_event(self.key, 2)
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 4)
+
+        f['is_balanced'] = -1
+        f['is_concluded'] = -1
+        f['event_ids'] = ""
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 3, 4)
+
+        f['is_archived'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("anton"):
+            self.event.set_event_archived(self.key, 3)
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_balanced'] = 1
+        self.submit(f, check_notification=False)
+        test_events_shown()
+
+        with self.switch_user("farin"):
+            self.event.balance_event(self.key, 1)
+            self.event.balance_event(self.key, 3)
+        self.submit(f, check_notification=False)
+        test_events_shown(3)
+
+        f['is_archived'] = -1
+        f['is_concluded'] = 0
+        self.submit(f, check_notification=False)
+        test_events_shown(1)
+
+        f['is_balanced'] = -1
+        f['is_concluded'] = -1
+        self.submit(f, check_notification=False)
+        test_events_shown(1, 2, 3, 4)
+
+        f['min_severity'] = models_cv.ViolationSeverity.ERROR
+        self.submit(f, check_notification=False)
+        test_shown(
+            event_id=3, severity=models_cv.ViolationSeverity.ERROR,
+            texts=[
+                "3 Uneingecheckte Teilnehmende",
+            ],
+        )
+        test_shown(
+            event_id=2, severity=models_cv.ViolationSeverity.ERROR,
+            texts=[
+            ],
+        )
+        test_shown(
+            event_id=1, severity=models_cv.ViolationSeverity.ERROR,
+            texts=[
+                "1 Ausfallende Kurse mit Teilnehmenden",
+                "2 Anmeldungen mit nicht bezahltem Beitrag",
+            ],
+        )
+        test_shown(
+            event_id=4, severity=models_cv.ViolationSeverity.ERROR,
+            texts=[
+                "5 Verstöße gegen Kursausschließlichkeit",
+            ],
+        )
+
+        f['min_severity'] = models_cv.ViolationSeverity.CRITICAL
+        self.submit(f, check_notification=False)
+        test_shown(event_id=1, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=2, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=3, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+        test_shown(event_id=4, severity=models_cv.ViolationSeverity.CRITICAL, texts=[])
+
+        f['min_severity'] = models_cv.ViolationSeverity.WARNING
+        self.submit(f, check_notification=False)
+        test_shown(
+            event_id=3, severity=models_cv.ViolationSeverity.WARNING,
+            texts=[
+                "3 Uneingecheckte Teilnehmende",
+                "2 Fehlende Kurseinteilungen",
+            ],
+        )
+
+        f['min_severity'] = models_cv.ViolationSeverity.DEBUG
+        self.submit(f, check_notification=False)
+        test_shown(
+            event_id=3, severity=models_cv.ViolationSeverity.DEBUG,
+            texts=[
+                "3 Uneingecheckte Teilnehmende",
+                "3 Fehlende Kurseinteilungen",
+                "2 Kurse mit inkorrekter Teilnehmendenzahl",
+            ],
+        )
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:

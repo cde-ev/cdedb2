@@ -27,6 +27,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
+import cdedb.models.event_constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
@@ -56,7 +57,6 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import ConstraintViolation, ViolationAux
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
@@ -101,6 +101,36 @@ class EventBaseFrontend(AbstractUserFrontend):
     def render(self, rs: RequestState, templatename: str,
                params: Optional[CdEDBObject] = None,
                mandatory_fields: Optional[Collection[str]] = None) -> Response:
+
+        def is_privileged(
+                required_privilege: EventPrivileges = EventPrivileges.basic_read,
+                *, event_id: int | None = None,
+        ) -> bool:
+            return self.is_privileged(rs, required_privilege, event_id=event_id)
+
+        def is_privileged_for(
+                endpoint: str,
+                *,
+                event_id: int | None = None,
+                consider_admin_view: bool = True,
+        ) -> bool:
+            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            privilege = getattr(
+                getattr(self, endpoint), "event_required_privilege",
+            )
+
+            if event_id is None and 'event' in rs.ambience:
+                event_id = rs.ambience['event'].id
+
+            is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
+            if (
+                event_id in rs.user.orga
+                or 'event_orga' not in rs.user.available_admin_views
+                or not consider_admin_view
+            ):
+                return is_privileged
+            return is_privileged and 'event_orga' in rs.user.admin_views
+
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -117,27 +147,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
 
-            def is_privileged(
-                    required_privilege: EventPrivileges = EventPrivileges.basic_read,
-            ) -> bool:
-                return self.is_privileged(rs, required_privilege)
-
-            def is_privileged_for(endpoint: str) -> bool:
-                endpoint = endpoint.removeprefix(f"{self.realm}/")
-                privilege = getattr(
-                    getattr(self, endpoint), "event_required_privilege",
-                )
-
-                is_privileged = self.is_privileged(rs, privilege)
-                if (
-                    rs.user.persona_id in rs.ambience['event'].orgas
-                    or 'event_orga' not in rs.user.available_admin_views
-                ):
-                    return is_privileged
-                return is_privileged and 'event_orga' in rs.user.admin_views
-
-            params['is_privileged'] = is_privileged
-            params['is_privileged_for'] = is_privileged_for
+        params['is_privileged'] = is_privileged
+        params['is_privileged_for'] = is_privileged_for
 
         return super().render(rs, templatename, params=params,
                               mandatory_fields=mandatory_fields)
@@ -153,7 +164,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.is_locked(rs.ambience['event']) and
+        if (self.eventproxy.is_locked(rs, event_id=event_id) and
                 required_privilege & EventPrivileges.all_write):
             return False
         return is_privileged_event(rs, required_privilege, event_id)
@@ -490,8 +501,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         :param course_id: Same as `registration_id`.
         :return: A collection of data pertaining to the constraint violations.
         """
-        violations: list[ConstraintViolation] = []
-
         # Retrieve registrations.
         all_registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event.id))
@@ -538,7 +547,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event.id, involved=True,
         )
 
-        violations = ViolationAux(
+        violations = models_cv.ViolationAux(
             event=event, registrations=registrations, personas=personas,
             all_courses=all_courses, courses=courses,
             all_lodgements=all_lodgements, lodgements=lodgements,
@@ -569,6 +578,53 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_id=None, course_id=None, lodgement_id=None,
         )
         return self.render(rs, "base/constraint_violations", params)
+
+    @access("event.event_helper", "event_admin", "finance_admin")
+    @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
+                 "is_concluded", "min_severity", _omit_missing=True)
+    def constraint_violations_summary(
+            self, rs: RequestState,
+            event_ids: vtypes.IntCSVList | None = None,
+            violation_classes: list[str] | None = None,
+            is_archived: int = -1,
+            is_balanced: int = -1,
+            is_concluded: int = -1,
+            min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+    ) -> Response:
+        rs.ignore_validation_errors()
+
+        is_archived = bool(is_archived) if is_archived != -1 else None
+        is_balanced = bool(is_balanced) if is_balanced != -1 else None
+        is_concluded = bool(is_concluded) if is_concluded != -1 else None
+        event_ids = set(event_ids or [])
+        min_severity = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
+
+        all_event_ids = self.eventproxy.list_events(rs)
+        all_events = self.eventproxy.get_events(rs, all_event_ids)
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(all_events.values(), reverse=True)
+        ]
+
+        violations = models_cv.ViolationList()
+        for event in all_events.values():
+            violations.extend(
+                self.get_constraint_violations(
+                    rs, event, registration_id=None, course_id=None, lodgement_id=None,
+                )['violations'],
+            )
+        violations.sort()
+
+        return self.render(rs, "base/constraint_violations_summary", {
+            'violations': violations, 'all_events': all_events,
+            'event_options': event_options, 'event_ids': event_ids,
+            'is_archived': is_archived, 'is_balanced': is_balanced,
+            'is_concluded': is_concluded, 'min_severity': min_severity,
+        })
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")

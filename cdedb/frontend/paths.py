@@ -381,6 +381,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="create_event"),
                 rule("/select", methods=_GET,
                      endpoint="select_event"),
+                rule("/violations", methods=_GET,
+                     endpoint="constraint_violations_summary"),
                 sub('/droid', (
                     rule('/export', methods=_GET,
                          endpoint="droid_partial_export_dispatch"),

@@ -1412,7 +1412,20 @@ class FrontendTest(BackendTest):
         if not tmp:
             self.fail(f"Div '{div}' not found.")
         classes = tmp[0].classes
-        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
+        self.assertIn(
+            html_class, classes,
+            f"{html_class} not in {list(classes)} of div {div!r}.",
+        )
+
+    def assertHasNotClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertNotIn(
+            html_class, classes,
+            f"{html_class} unexpectedly in {list(classes)} of div {div!r}.",
+        )
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""

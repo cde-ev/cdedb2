@@ -1984,13 +1984,18 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> werkzeug.Response:
-            if rs.user.roles & access_list:
+            roles = rs.user.roles.union(
+                f"{realm}.{realm_role}"
+                for realm, realm_roles in rs.user.realm_roles.items()
+                for realm_role in realm_roles
+            )
+            if roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 expects_persona = any('droid' not in role
                                       for role in access_list)
-                if rs.user.roles == {"anonymous"} and expects_persona:
+                if roles == {"anonymous"} and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2013,7 +2018,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                log_msg = msg.format(**params) + f" Roles: {roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
