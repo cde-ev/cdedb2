@@ -1292,7 +1292,7 @@ class EventEventMixin(EventBaseFrontend):
                     'title': "Externenzusatzbeitrag",
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
-                    'condition': "any_part and not is_member",
+                    'condition': "any_part and not is_member and not age.U12",
                 },
             },
         })

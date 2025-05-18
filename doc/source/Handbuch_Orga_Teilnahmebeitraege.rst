@@ -172,7 +172,7 @@ Beispiel 2 (mehrteilige Veranstaltung)
 Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
 kostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
 
-* ``part.A1 OR part.A2 OR part.A3`` => 215 Euro (Regulärer Beitrag)
+* ``any_part`` => 215 Euro (Regulärer Beitrag)
 * ``part.A2`` => 15 Euro (Regulärer Beitrag)
 
 Darüber hinaus wird für die Erstellung einer Anmeldung eine Bearbeitungsgebühr
@@ -210,7 +210,7 @@ Nicht-Mitglieder müssen einen Zusatzbeitrag in Höhe des Mitgliedsbeitrags
 errichten, wenn sie teilnehmen möchten.
 Wer eine Doku möchte, muss 10 Euro extra zahlen.
 
-* ``any_part AND NOT is_member`` => 8 Euro (Externenbeitrag)
+* ``any_part AND NOT is_member AND NOT age.U12`` => 8 Euro (Externenbeitrag)
 * ``any_part AND field.doku`` => 10 Euro (Regulärer Beitrag)
 
 Gäste, oder Personen, welche früher ab- oder später angereist sind, zahlen einen
@@ -269,20 +269,14 @@ geht unter "Anmeldung konfigurieren":
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-3. * Titel: "Ich bin unter 13 Jahre alt."
-   * Abfrage: "is_child"
-   * Text: "Kinder zahlen pro Teil 15 Euro weniger"
-   * Vorgabewert: *(Feld leer lassen)*
-   * Schreibgeschützt: Nein
-
-4. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
+3. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
    * Abfrage: "solidarity"
    * Text: "Du kannst freiwillig 9 Euro pro Teil mehr zahlen um zukünftige Veranstaltungen zu unterstützen."
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
 Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmenden nun die
-entsprechenden vier Checkboxen angezeigt.
+entsprechenden drei Checkboxen angezeigt.
 
 Für Gäste und "Anti-Gäste" können die entstehenden, bzw. gesparten Kosten als
 individuelle Beträge für den personalisierten Beitrag "Zusatzübernachtungen"
