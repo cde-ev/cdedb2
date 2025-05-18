@@ -91,6 +91,7 @@ Folgende Tokens stehen zur Verfügung, die in den Formeln verknüpft werden kön
 
 * ``field.<Kurzname>``: Ist der Wert des entsprechenden Feldes wahr oder falsch?
 * ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
+* ``age.U<Zahl>``: Ist die Person *zu Beginn der Veranstaltung* jünger als der angegebene Wert?
 * ``any_part``: Gilt ein entsprechender Status für mindestens einen Teil der Veranstaltung?
 * ``all_parts``: Gilt ein entsprechender Status für alle Teile der Veranstaltung?
 * ``is_member``: Ist die Person derzeit CdE-Mitglied?
@@ -183,7 +184,7 @@ Die Teilnehmenden sollen angeben können, dass sie nur zu einem der Teile oder
 nicht zu allen Teilen, für die sie sich angemeldet haben, kommen.
 
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro (Regulärer Beitrag)
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro (Regulärer Beitrag)
+* ``all_parts AND NOT field.not_all_parts``  => 215 Euro (Regulärer Beitrag)
 
 Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch
 dann richtig aus, wenn die Person sowieso nur für die entsprechende Zahl an
@@ -192,10 +193,10 @@ Teilen angemeldet ist.
 Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 15 Euro weniger bezahlen.
 
-* ``(part.A1 OR part.A2 OR part.A3) AND field.is_child`` => -15 Euro (Regulärer Beitrag)
+* ``any_part AND age.U13`` => -15 Euro (Regulärer Beitrag)
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1))``
-  ``AND NOT field.one_part AND field.is_child`` => -15 Euro (Regulärer Beitrag)
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro (Regulärer Beitrag)
+  ``AND NOT field.one_part AND age.U13`` => -15 Euro (Regulärer Beitrag)
+* ``all_parts AND NOT field.not_all_parts AND age.U13`` => -15 Euro (Regulärer Beitrag)
 
 Finanziell besser situierte Teilnehmende sollen die Möglichkeit bekommen,
 mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den Verein und
