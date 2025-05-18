@@ -729,7 +729,8 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _get_payment_query_base(
             event: models.Event, constraints: Collection[QueryConstraint],
-            fee: Optional[models.EventFee] = None,
+            fee: models.EventFee | None = None,
+            kind: const.EventFeeType | None = None,
     ) -> Query:
         return Query(
             QueryScope.registration,
@@ -742,6 +743,8 @@ class EventEventMixin(EventBaseFrontend):
             ] + (
                 [f"fee{fee.id}.amount"] if fee else []
             ) + (
+                [f"amount_owed.{kind.name}"] if kind else []
+            ) + (
                 [f"reg_fields.xfield_{event.reimbursement_iban_field.field_name}"]
                 if event.reimbursement_iban_field else []
             ),
@@ -753,7 +756,8 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     def _get_payment_query(
-            self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
+            self, event: models.Event, ids: Collection[int], fee_id: int | None,
+            kind: const.EventFeeType | None,
     ) -> Query:
         fee = event.fees.get(fee_id or 0)
         if fee and fee.is_personalized():
@@ -769,7 +773,7 @@ class EventEventMixin(EventBaseFrontend):
             constraints = [
                 ("reg.id", QueryOperators.empty, None),
             ]
-        return self._get_payment_query_base(event, constraints, fee)
+        return self._get_payment_query_base(event, constraints, fee, kind)
 
     @access("event")
     # TODO Be more lenient here (for finance_admins and auditors)
@@ -781,8 +785,8 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/fee/fee_summary", {
             'fee_stats': fee_stats,
             'get_query':
-                lambda ids, fee_id: self._get_payment_query(
-                    rs.ambience['event'], ids, fee_id,
+                lambda ids, fee_id, kind: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id, kind,
                 ),
         })
 
@@ -808,8 +812,8 @@ class EventEventMixin(EventBaseFrontend):
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
             'get_query':
-                lambda ids, fee_id: self._get_payment_query(
-                    rs.ambience['event'], ids, fee_id,
+                lambda ids, fee_id, kind: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id, kind,
                 ),
         })
 

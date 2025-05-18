@@ -265,10 +265,8 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag",
-                                               ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit",
-                                               ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bezahlter Betrag").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit").nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()
         page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"

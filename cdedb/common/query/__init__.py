@@ -435,18 +435,23 @@ _QUERY_SPECS = {
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
+            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_event_realm": QuerySpecEntry("bool", n_("Events"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"),
+                                          n_("Realm"), translate_prefix=True),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
@@ -494,10 +499,11 @@ _QUERY_SPECS = {
             "donation": QuerySpecEntry("money", n_("Annual Donation")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "weblink": QuerySpecEntry("str", n_("WWW")),
             "specialisation": QuerySpecEntry("str", n_("Specialisation")),
             "affiliation": QuerySpecEntry("str", n_("School, University, …")),
@@ -540,10 +546,11 @@ _QUERY_SPECS = {
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
@@ -588,9 +595,11 @@ _QUERY_SPECS = {
             "courses.title": QuerySpecEntry("str", n_("course title")),
             "courses.description": QuerySpecEntry("str", n_("course description")),
             "events.title": QuerySpecEntry(
-                "str", n_("Title_[[name of an entity]]"), n_("Past Event")),
+                "str", n_("Title_[[name of an entity]]"),
+                n_("Past Event"), translate_prefix=True,
+            ),
             "events.tempus": QuerySpecEntry(
-                "date", n_("Cutoff date"), n_("Past Event")),
+                "date", n_("Cutoff date"), n_("Past Event"), translate_prefix=True),
         },
 }
 
@@ -992,8 +1001,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid")),
-        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed")),
+        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
@@ -1014,6 +1023,13 @@ def make_registration_query_spec(event: "models.Event",
             f"fee{fee.id}.amount": QuerySpecEntry(
                 "money", n_("Personalized Amount"), fee.title)
             for fee in event.fees.values() if fee.is_personalized()
+        },
+        **{
+            f"amount_owed.{kind.name}": QuerySpecEntry(
+                "money", title_base=str(kind), title_prefix=n_("Amount Owed"),
+                translate_prefix=True,
+            )
+            for kind in const.EventFeeType
         },
     }
 
