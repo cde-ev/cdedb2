@@ -697,7 +697,7 @@
         this.queryFromURL = function(url) {
             // First get the parameters in an indexed object
             var parameters = {};
-            for (const entry of (new URLSearchParams(url.split('#')[0])).entries()) {
+            for (const entry of (new URLSearchParams(url.split('?').pop().split('#')[0])).entries()) {
                 parameters[entry[0]] = decodeURIComponent(entry[1]);
             }
 
