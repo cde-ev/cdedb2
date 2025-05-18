@@ -92,8 +92,9 @@ class StatementCSVKeys:
     amount = "Betrag"
     currency = "Waehrung"
     notes = "Bemerkung"
-    category = "Kategorie"
-    tax_relevant = "Steuerrelevant"
+    marked = "Gekennzeichneter Umsatz"
+    # category = "Kategorie"
+    # tax_relevant = "Steuerrelevant"
 
     # Information about the other party.
     account_holder = "Name Zahlungsbeteiligter"
