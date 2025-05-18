@@ -366,11 +366,18 @@
     {% endfor %}
 {% endmacro %}
 
-{% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO) %}
+{% macro list_violations(class_name, violations, entity_page, min_severity=enums['ViolationSeverity'].INFO, violation_kind=None) %}
     <ul id="{{ class_name }}-list" {% if entity_page %} class="slim" {% endif %}>
         {% for violation in violations %}
-            <li class="{{ violation.severity.html_class() }} violations {{ "softhide" if violation.severity < min_severity }}"
-                data-max_severity="{{ violation.severity.value }}" data-severity="{{ violation.severity.value }}"
+            <li class="{{ violation.severity.html_class() }} violations
+                    {%- if (violation.severity < min_severity
+                            or violation_kind and violation_kind != violation.kind) -%}
+                        {{ " softhide " }}
+                    {%- endif -%}
+                "
+                data-max_severity="{{ violation.severity.value }}"  {# For toggling visibility by the filter JS. #}
+                data-violation_kind="{{ violation.kind.value }}"  {# For toggling visibility by the filter JS. #}
+                data-severity="{{ violation.severity.value }}"  {# For finding the shown violations during the tests. #}
             >
                 {{ print_violation(violation, entity_page=entity_page) }}
             </li>
@@ -724,8 +731,12 @@
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="filterconstraintsform" class="form-horizontal">
             {% if filter_severity %}
                 {{ util.form_input_select(name="min_severity", label=gettext("Minimum Violation Severity:"),
-                                     anid="filter-min-severity", defaultvalue=min_severity,
-                                     entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
+                                          anid="filter-min-severity", defaultvalue=min_severity,
+                                          entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
+                {{ util.form_input_select(name="violation_kind", label=gettext("Violation Kind"),
+                                          anid="filter-violation-kind", defaultvalue=violation_kind,
+                                          nulloption=gettext(gettext("All")),
+                                          entries=enums['ViolationKind']|enum_entries(gettext)) }}
             {% endif %}
             {% if filter_event %}
                 {{ util.form_input_text(label=gettext("Only show these events:"), name="event_ids", anid="filter-event-ids",
@@ -762,6 +773,7 @@
                 "{{ cdedblink("event/select_event") }}",
                 {{ event_options|tojson }},
                 {{ enums['ViolationSeverity'].map()|tojson }},
+                {{ enums['ViolationKind'].map()|tojson }},
             );
         </script>
     {% endcall %}

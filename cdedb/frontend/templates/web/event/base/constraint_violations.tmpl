@@ -28,7 +28,7 @@
                     <div class="violation-list maybehide">
                         {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
                         {{ util.h(class_name, underline=true) }}
-                        {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity) }}
+                        {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity, violation_kind=violation_list[0].kind) }}
                     </div>
                 {% endfor %}
                 <div class="maybenothide text-muted">
