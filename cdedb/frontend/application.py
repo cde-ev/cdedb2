@@ -14,6 +14,7 @@ import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
+import werkzeug.wsgi
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.core import CoreBackend
@@ -205,6 +206,13 @@ class Application(BaseApp):
         # note time for performance measurement
         begin = now()
         user = User()
+
+        # additional safeguard to apache blocking non-trusted hosts, see cdedb-site.conf
+        if not werkzeug.wsgi.host_is_trusted(request.host, self.conf["HTTP_HOSTS"]):
+            return self.make_error_page(
+                werkzeug.exceptions.SecurityError(),
+                request, user,
+                n_("Used a non-trusted http host header. Refuse to proceed."))
         try:
             sessionkey = request.cookies.get("sessionkey")
             apitoken = request.headers.get(APIToken.request_header_key)
