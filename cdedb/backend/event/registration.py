@@ -47,10 +47,11 @@ from cdedb.common import (
     PsycoJson,
     RequestState,
     cast_fields,
+    deduct_years,
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
@@ -1151,7 +1152,7 @@ class EventRegistrationBackend(EventBaseBackend):
             new_amount_owed = self._update_registration_amount_owed(rs, data['id']).amount
 
             if event.is_balanced and current_amount_owed != new_amount_owed:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. Amount owed may no longer change."))
 
             self.event_log(
@@ -1193,6 +1194,7 @@ class EventRegistrationBackend(EventBaseBackend):
             data['fields'] = fdata
             data['is_member'] = persona['is_member']
             data['personalized_fees'] = {}
+            # Calulate amount owed at the end due to privilege issues.
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
@@ -1204,6 +1206,7 @@ class EventRegistrationBackend(EventBaseBackend):
             if track_ids != set(data['tracks'].keys()):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
+            rdata['fields'] = PsycoJson(fdata)
             new_id = self.sql_insert(rs, "event.registrations", rdata)
 
             # Uninlined code from set_registration to make this more
@@ -1228,10 +1231,10 @@ class EventRegistrationBackend(EventBaseBackend):
                 self.sql_insert(rs, "event.registration_tracks", new_track)
             self._track_groups_sanity_check(rs, data['event_id'])
 
+            # Now set amount owed.
             amount_owed = self._update_registration_amount_owed(rs, new_id).amount
-
             if event.is_balanced and amount_owed:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not create registration which owes a fee."))
 
             self.event_log(
@@ -1429,6 +1432,12 @@ class EventRegistrationBackend(EventBaseBackend):
             return {}
 
         event = self.get_event(rs, next(iter(registrations.values()))['event_id'])
+        personas = self.core.get_event_users(
+            rs, [reg['persona_id'] for reg in registrations.values()],
+            event_id=event.id,
+        )
+        for reg in registrations.values():
+            reg['persona'] = personas[reg['persona_id']]
 
         fees = {
             registration_id: self._calculate_complex_fee(rs, registration, event=event)
@@ -1464,8 +1473,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(
             rs, registration, event=event, visual_debug=visual_debug)
 
-    @staticmethod
-    def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
+    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, visual_debug: bool = False,
                                ) -> ComplexRegistrationFee:
         """Helper function to calculate the fee for one registration.
@@ -1481,6 +1489,10 @@ class EventRegistrationBackend(EventBaseBackend):
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
+        if not reg.get('persona'):
+            reg['persona'] = self.core.get_event_user(
+                rs, reg['persona_id'], event_id=event.id,
+            )
         reg_part_involvement = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
@@ -1504,15 +1516,19 @@ class EventRegistrationBackend(EventBaseBackend):
             if fee.is_conditional():
                 assert fee.amount is not None
                 parse_result = fcp_parsing.parse(fee.condition)
-                if fcp_evaluation.evaluate(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools):
+                data: fcp_evaluation.EvaluationData = {
+                    'field_values': reg_bool_fields,
+                    'part_values': reg_part_involvement,
+                    'other_values': other_bools,
+                    'reference_date': event.begin,
+                    'birthday': reg['persona']['birthday'],
+                }
+                if fcp_evaluation.evaluate(parse_result, data=data):
                     fee_amounts.append((fee, fee.amount))
                 if visual_debug:
                     visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools,
-                    )[1]
+                        parse_result, data=data,
+                    )
             else:
                 personalized_amount = reg['personalized_fees'].get(fee.id)
                 if personalized_amount is not None:
@@ -1540,10 +1556,11 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(rs, reg, event=event).amount
 
     @access("event")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
-                       part_ids: Collection[int], is_member: Optional[bool],
-                       is_orga: Optional[bool], field_values: dict[str, bool],
-                       ) -> ComplexRegistrationFee:
+    def precompute_fee(
+            self, rs: RequestState, event_id: int, *, persona_id: int | None,
+            part_ids: Collection[int], field_values: dict[str, bool],
+            is_member: bool | None, is_orga: bool | None, age: int | None,
+    ) -> ComplexRegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
@@ -1557,6 +1574,8 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
+        age = affirm_optional(int, age) or 0
+
         field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
@@ -1580,6 +1599,11 @@ class EventRegistrationBackend(EventBaseBackend):
         if registration_id:
             reg = self.get_registration(rs, registration_id)
 
+        if persona_id:
+            persona = self.core.get_event_user(rs, persona_id, event_id=event_id)
+        else:
+            persona = {'birthday': deduct_years(event.begin, age)}
+
         fields = {}
         for field_id, field in event.fields.items():
             fn = field.field_name
@@ -1589,6 +1613,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         fake_registration = {
             'persona_id': persona_id,
+            'persona': persona,
             'parts': {
                 part_id: {
                     'status':
@@ -1629,7 +1654,9 @@ class EventRegistrationBackend(EventBaseBackend):
             # Create an entry in the defaultdict.
             kind_stats = stats[fee.kind]  # noqa: F841
 
-        for reg in self.get_registrations(rs, reg_ids).values():
+        personas = self.core.get_event_users(rs, reg_ids.values(), event_id=event_id)
+        for reg in self.get_registrations(rs, reg_ids.keys()).values():
+            reg['persona'] = personas[reg['persona_id']]
             complex_fee = self._calculate_complex_fee(rs, reg, event=event)
 
             if reg['amount_owed'] > reg['amount_paid']:
@@ -1678,7 +1705,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not set personalized fee amount."))
             if fee_id not in event.fees:
                 raise KeyError
@@ -1802,7 +1829,7 @@ class EventRegistrationBackend(EventBaseBackend):
             raise PrivilegeError
 
         if event.is_balanced:
-            raise ValueError(n_("Event is balanced."))
+            raise EventIsBalancedError(n_("Event is balanced. May not book payments."))
 
         # noinspection PyBroadException
         try:

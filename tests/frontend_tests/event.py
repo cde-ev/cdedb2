@@ -1748,7 +1748,7 @@ etc;anything else""", f['entries_2'].value)
         elif self.user_in('daniel'):
             self.assertIn(mail_surcharge, text)
             self.assertIn(complex_fee, text)
-            self.assertIn("466,49", text)
+            self.assertIn("442,49", text)
         elif self.user_in('rowena'):
             self.assertIn(mail_surcharge, text)
             self.assertIn(complex_fee, text)
@@ -2015,9 +2015,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         "DELETE FROM event.course_choices;"
         "DELETE FROM event.registration_tracks;"
         "DELETE FROM event.registration_parts;"
-        "DELETE FROM event.registrations;",
+        "DELETE FROM event.registrations;"
+        "UPDATE event.event_fees SET condition = 'part.Wu and field.is_child' WHERE id = 4;",
     )
-    def test_register_with_fee_modifier(self) -> None:
+    def test_register_conditional_fee_with_event_field(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         self.assertPresence("Ich bin unter 13 Jahre alt.")
@@ -2393,6 +2394,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertHasClass("eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
+
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "Inga"
+        self.submit(f)
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("431,99 €", div="amount-owed")
+
+        self.event.set_event(self.key, 1, {
+            'parts': {
+                part_id: {
+                    'part_begin': "2322-01-01",
+                    'part_end': "2322-01-01",
+                }
+                for part_id in [1, 2, 3]
+            },
+        })
+
+        self.submit(f)
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("450,99 €", div="amount-owed")
 
     @event_keeper
     @as_users("garcia")

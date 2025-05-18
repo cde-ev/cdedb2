@@ -37,6 +37,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
+from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
@@ -71,7 +72,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             saldo: Optional[decimal.Decimal] = None,
     ) -> Response:
         if rs.ambience['event'].is_balanced:
-            rs.notify("error", "Event is balanced. May not book payments.")
+            rs.notify("error", n_("Event is balanced. May not book payments."))
             return self.redirect(rs, "event/show_event")
 
         data = data or []
@@ -95,7 +96,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         event = rs.ambience['event']
         if event.is_balanced:
-            rs.notify("error", "Event is balanced. May not book payments.")
+            rs.notify("error", n_("Event is balanced. May not book payments."))
             return self.redirect(rs, "event/show_event")
 
         transfers_file = check_optional(
@@ -278,7 +279,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona['birthday'], event.begin)
+
+        birthday: datetime.date = persona['birthday']
+        begin = rs.ambience['event'].begin
+        age_class = determine_age_class(persona['birthday'], begin)
+        persona_age = begin.year - birthday.year - \
+                      ((begin.month, begin.day) < (birthday.month, birthday.day))
+
         rs.ignore_validation_errors()
         if not preview:
             if rs.user.persona_id in registrations.values():
@@ -296,7 +303,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_balanced:
                 rs.notify("error", n_("Event is balanced."))
                 return self.redirect(rs, "event/show_event")
-            if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
+            if not self.eventproxy.has_minor_form(rs, event_id) and age_class.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
@@ -322,7 +329,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "registration/register", {
-            'persona': persona, 'age': age, 'semester_fee': semester_fee,
+            'persona': persona, 'age_class': age_class, 'persona_age': persona_age,
+            'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
             'part_options': part_options, **course_choice_params,
         })
@@ -366,10 +374,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event")
-    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
+    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga", "age")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
                        is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
+                       age: Optional[int] = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -398,7 +407,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         field_values = request_extractor(rs, field_params, omit_missing=True)
 
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, is_member, is_orga, field_values)
+            rs, event_id, persona_id=persona_id,
+            part_ids=part_ids, field_values=field_values,
+            is_member=is_member, is_orga=is_orga, age=age,
+        )
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"
@@ -1391,20 +1403,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
-        if rs.ambience['event'].is_balanced:
-            if persona_id and self._calculate_partial_fee(
-                    rs, event_id, registration, persona_id,
-            ):
-                msg = n_("Event is balanced. May not create registration which owes a fee.")
-                # This is not an input so this error won't mark any input field.
-                rs.append_validation_error(("amount_owed", ValueError(msg)))
-                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
         registration['persona_id'] = persona_id
         registration['event_id'] = event_id
-        new_id = self.eventproxy.create_registration(rs, registration)
+
+        try:
+            new_id = self.eventproxy.create_registration(rs, registration)
+        except EventIsBalancedError as e:
+            rs.notify("error", *e.args[:2])
+            return self.add_registration_form(rs, event_id)
+
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})

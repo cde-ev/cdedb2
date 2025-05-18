@@ -29,7 +29,12 @@ from cdedb.common import (
     now,
     parse_datetime,
 )
-from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
+from cdedb.common.exceptions import (
+    APITokenError,
+    EventIsBalancedError,
+    PartialImportError,
+    PrivilegeError,
+)
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.filter import datetime_filter
@@ -5146,18 +5151,39 @@ class TestEventBackend(BackendTest):
     def test_event_is_balanced(self) -> None:
         event_id = 1
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_event_fees(self.key, event_id, {})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
-            self.event.set_registration(self.key, {'id': 1, 'fields': {'is_child': True}})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})
 
         self.event.set_registration(self.key, {'id': 1, 'fields': {'brings_balls': False}})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
 
-        new_reg = {
+        with self.assertRaises(EventIsBalancedError):
+            self.event.set_event(self.key, event_id, {
+                'parts': {
+                    part_id: {
+                        'part_begin': "2322-01-01",
+                        'part_end': "2322-01-01",
+                    }
+                    for part_id in [1, 2, 3]
+                },
+            })
+
+        self.event.set_event(self.key, event_id, {
+            'parts': {
+                part_id: {
+                    'part_begin': "2223-01-01",
+                    'part_end': "2223-01-01",
+                }
+                for part_id in [1, 2, 3]
+            },
+        })
+
+        new_reg: CdEDBObject = {
             'event_id': event_id,
             'persona_id': 4,
             'parts': {
@@ -5180,5 +5206,8 @@ class TestEventBackend(BackendTest):
             'mixed_lodging': False,
             'list_consent': True,
         }
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.create_registration(self.key, new_reg)
+
+        new_reg['parts'][1]['status'] = const.RegistrationPartStati.cancelled
+        self.event.create_registration(self.key, new_reg)

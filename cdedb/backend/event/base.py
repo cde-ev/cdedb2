@@ -52,7 +52,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS,
     COURSE_SEGMENT_FIELDS,
@@ -696,10 +696,22 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, event_id, data['fields'])
-            # This also includes taking care of course tracks and fee modifiers, since
-            # they are each linked to a single event part.
+            # This also includes taking care of course tracks, since
+            # they are linked to a single event part.
             if 'parts' in data:
+                # Event begin can have an effect on fees.
+
+                current_fees = None
+                if current.is_balanced:
+                    current_fees = self._update_registrations_amount_owed(rs, event_id)
+
                 ret *= self._set_event_parts(rs, event_id, data['parts'])
+
+                new_fees = self._update_registrations_amount_owed(rs, event_id)
+
+                if current.is_balanced and (current_fees != new_fees):
+                    raise EventIsBalancedError(n_(
+                        "Event is balanced. Amount owed may no longer change."))
 
         return ret
 
@@ -983,7 +995,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self.get_event(rs, event_id)
 
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not change fee configuration."))
             if not fees:
                 return ret
