@@ -18,7 +18,7 @@ from typing import Collection
 from psycopg2.extras import Json, RealDictCursor
 
 import cdedb.models.event as models
-from cdedb.common import CdEDBObject
+from cdedb.common import EVENT_SCHEMA_VERSION, CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH,
     Config,
@@ -169,7 +169,7 @@ def work(
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [19, 1]:
+    if data.get("EVENT_SCHEMA_VERSION") != list(EVENT_SCHEMA_VERSION):
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
