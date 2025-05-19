@@ -131,7 +131,7 @@ class CdEDataclass:
     def many_from_database(cls, list_of_data: Collection[CdEDBObject],
                            ) -> CdEDataclassMap["Self"]:
         return {
-            obj.id: obj for obj in map(cls.from_database, list_of_data)
+            obj.id: obj for obj in sorted(map(cls.from_database, list_of_data))
         }
 
     @classmethod
