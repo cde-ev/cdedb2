@@ -6809,10 +6809,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                               f" at severity {filtered_severity.name}.")
             if check_complete and len(nodes) > len(texts):
                 # print("\n".join(lxml.etree.tostring(node, encoding="unicode") for node in nodes))
-                print("\n".join(node_texts))
                 self.fail(
                     f"Found more violations for {event_id} at severity {filtered_severity.name}"
-                    f" than were checked ({len(nodes)} > {len(texts)}).",
+                    f" than were checked ({len(nodes)} > {len(texts)})."
+                    f" I found these texts:\n" + "\n".join(node_texts),
                 )
         if not texts:
             nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
