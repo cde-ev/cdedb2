@@ -18,6 +18,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
     CdEDBOptionalMap,
@@ -2527,6 +2528,10 @@ class TestEventBackend(BackendTest):
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
             data = json.load(datafile)
+        self.assertEqual(
+            (EVENT_SCHEMA_VERSION[0], 0), tuple(data["EVENT_SCHEMA_VERSION"]),
+            "Partial Import should be tested with a minor version of 0.",
+        )
 
         # first a test run
         token1, delta = self.event.partial_import_event(
@@ -2649,8 +2654,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
-        expectation['EVENT_SCHEMA_VERSION'] = tuple(
-            expectation['EVENT_SCHEMA_VERSION'])
+        expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)
 
         # Test logging
