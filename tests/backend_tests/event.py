@@ -4196,7 +4196,7 @@ class TestEventBackend(BackendTest):
             },
             4: None,
             1006: {
-                'part_ids': set(list(event.parts)[:len(event.parts) // 2]),
+                'part_ids': set(sorted(event.parts.keys())[:len(event.parts) // 2]),
             },
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
