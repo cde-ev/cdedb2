@@ -129,8 +129,8 @@
             {% for event in all_events.values()|sort %}
                 {% call event_wrapper(event) %}
                     {% set event_violations = violations.get(event_id=event.id) %}
-                    {{ util.href(cdedblink("event/show_event", {'event_id': event.id}),
-                                 label=util.h(util.make_icon("chalkboard-teacher") + nbsp + event.title, level=4)) }}
+                    {{ util.h(title=util.href(cdedblink("event/show_event", {'event_id': event.id}), event.title, icon="chalkboard-teacher"),
+                              anchor="event" + event.id|string, level=4) }}
                     <div class="violation-list maybehide">
                         {% if event_violations %}
                             <ul>
