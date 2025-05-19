@@ -37,6 +37,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
@@ -4196,7 +4197,7 @@ class TestEventBackend(BackendTest):
             },
             4: None,
             1006: {
-                'part_ids': set(sorted(event.parts.keys())[:len(event.parts) // 2]),
+                'part_ids': set(xsorted(event.parts.keys())[:len(event.parts) // 2]),
             },
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
