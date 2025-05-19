@@ -2,7 +2,13 @@
     /**
      *
      */
-    $.fn.cdedbFilterViolations = function(results_selector, select_event_url='', event_options=[], violation_severity_to_int={}) {
+    $.fn.cdedbFilterViolations = function(
+            results_selector,
+            select_event_url='',
+            event_options=[],
+            violation_severity_to_int={},
+            violation_kind_to_int={},
+    ) {
         // Turn radio groups into buttongroups.
         $(this).find('.row[role=radiogroup]')
             .attr('data-toggle', 'buttons')
@@ -15,6 +21,7 @@
 
         // Find severity filter inputs.
         let min_severity_input = $(this).find(':input[name="min_severity"]');
+        let violation_kind_input = $(this).find(':input[name="violation_kind"]');
         // Find event filter inputs.
         let event_ids_input = $(this).find(':input[name="event_ids"]');
         let is_archived_input = $(this).find(':input[name="is_archived"]');
@@ -34,6 +41,8 @@
             // Extract severity $(this) values if possible.
             let min_severity_text = min_severity_input.length ? min_severity_input.val() : "";
             let min_severity_val = min_severity_text ? violation_severity_to_int[min_severity_text.split('.', 2)[1]] ?? -1 : -1;
+            let violation_kind_text = violation_kind_input.length ? violation_kind_input.val() : "";
+            let violation_kind_val = violation_kind_text ? violation_kind_to_int[violation_kind_text.split('.', 2)[1]] ?? -1 : -1;
             // Extract event $(this) values if possible.
             let event_ids_list = event_ids_input.length ? event_ids_input.val().split(',').filter(Boolean) : [];
             let is_archived_val = is_archived_input.length ? parseInt(is_archived_input.filter(':checked').val()) : -1;
@@ -66,15 +75,15 @@
                 }
             })
 
-            // If min_severity is given, ...
-            if (min_severity_val !== -1) {
-                // ... unhide all violations, then ...
-                $(results_selector).find('.violations').removeClass('softhide').each(function () {
+            // Unhide all violations, then ...
+            $(results_selector).find('.violations').removeClass('softhide').each(function () {
+                // ... if min_severity is given ...
+                if (min_severity_val !== -1) {
                     // ... hide those that don't match the min, ...
                     if ($(this).data('max_severity') < min_severity_val) {
                         $(this).addClass('softhide');
                     }
-                    // ... then show the correct version of the label, depending on min_severity.
+                    // ... then show the correct version of the label, depending on min_severity, ...
                     $(this).find('.violations-only').addClass('softhide').each(function () {
                         if ($(this).data('severity') === min_severity_val) {
                             $(this).removeClass('softhide');
@@ -84,8 +93,12 @@
                             enclosing_link.attr('href', new_url.toString());
                         }
                     })
-                });
-            }
+                }
+                // ... hide those that match the given kind (if given).
+                if (violation_kind_val !== -1 && $(this).data('violation_kind') !== violation_kind_val) {
+                    $(this).addClass('softhide');
+                }
+            });
 
             // Replace the current url in the history with the new filter.
             history.replaceState(null, "", window.location.pathname + "?" + $(this).serialize() + window.location.hash);

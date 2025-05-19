@@ -6679,6 +6679,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
             div="constraint-violations")
 
+        self.traverse("Verstöße gegen Beschränkungen")
+        f = self.response.forms['filterconstraintsform']
+        f['violation_kind'] = models_cv.ViolationKind.financial
+        self.submit(f, check_notification=False)
         texts = [
             "Akira Abukara hat noch keinen Teilnahmebeitrag bezahlt (584,48 €).",
             "Emilia (Emmy) Eventis hat noch keinen Teilnahmebeitrag bezahlt (466,49 €).",
@@ -6686,10 +6690,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 353,99 €).",
             "Inga Iota muss eine Erstattung erhalten (116,49 €).",
         ]
-        self.traverse("Verstöße gegen Beschränkungen")
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
-            texts=texts, check_complete=False, only_severity=False,
+            filtered_kind=models_cv.ViolationKind.financial, texts=texts,
+            check_complete=True, only_severity=False,
         )
 
         self.traverse("Inga")
@@ -6711,10 +6715,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.",
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 461,49 €).",
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.",
+            "Inga Iota muss eine Erstattung erhalten",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
-            texts=texts, check_complete=False, only_severity=False,
+            filtered_kind=models_cv.ViolationKind.financial, texts=texts,
+            check_complete=True, only_severity=False,
         )
         f = self.response.forms['filterconstraintsform']
         f['min_severity'] = models_cv.ViolationSeverity.DEBUG
@@ -6729,7 +6735,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.ERROR,
-            check_complete=False, only_severity=False, texts=[
+            filtered_kind=models_cv.ViolationKind.financial,
+            check_complete=True, only_severity=False, texts=[
                 "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).",
                 "Anton Administrator muss insgesamt einen negativen Betrag bezahlen (-5,00 €).",
                 "Emilia (Emmy) Eventis hat bezahlt, aber kein Bezahlungsdatum.",
@@ -6760,7 +6767,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     def _check_shown_violations(
             self, event_id: int, filtered_severity: models_cv.ViolationSeverity,
-            texts: list[str], *, check_complete: bool = True, only_severity: bool = True,
+            filtered_kind: models_cv.ViolationKind | None = None, *,
+            texts: list[str], check_complete: bool = True, only_severity: bool = True,
     ) -> None:
 
         def test_not_hidden(
@@ -6776,17 +6784,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 self.assertIn("softhide", node.classes)
 
         id_ = f"event_{event_id}"
-        parents = self.response.lxml.xpath(f"//*[@id='{id_}']")
+        parents = self.response.lxml.cssselect(f"#{id_}")
         if not parents:
             self.fail(f"Did not find event {event_id}.")
         test_not_hidden(parents)
         if texts:
-            selector = ".//*[@data-severity='{}']"
-            nodes = parents[0].xpath(selector.format(filtered_severity.value))
+            select = lambda node, severity: node.cssselect(
+                f"[data-severity='{severity.value}']"
+                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else ""),
+            )
+            nodes = select(parents[0], filtered_severity)
             if not only_severity:
                 for severity in models_cv.ViolationSeverity:
                     if severity > filtered_severity:
-                        nodes.extend(parents[0].xpath(selector.format(severity.value)))
+                        nodes.extend(select(parents[0], severity))
             if not nodes:
                 self.fail(f"Did not find violations for severity {filtered_severity.name}"
                           f" for event {event_id}.")
@@ -6797,9 +6808,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     self.fail(f"{text!r} not found for event {event_id}"
                               f" at severity {filtered_severity.name}.")
             if check_complete and len(nodes) > len(texts):
+                # print("\n".join(lxml.etree.tostring(node, encoding="unicode") for node in nodes))
                 self.fail(
                     f"Found more violations for {event_id} at severity {filtered_severity.name}"
-                    f" than were checked ({len(nodes)} > {len(texts)}).",
+                    f" than were checked ({len(nodes)} > {len(texts)})."
+                    f" I found these texts:\n" + "\n".join(node_texts),
                 )
         if not texts:
             nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")

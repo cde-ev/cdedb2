@@ -31,8 +31,15 @@
 {% endblock %}
 
 {% macro print_violation_summary_item(violations, class_name, event, min_severity, include_title=True) %}
-    <li class="violations violations-{{ violations.max_severity.name }} {{ "softhide" if violations.max_severity < min_severity }}"
-        data-max_severity="{{ violations.max_severity.value }}" id="event_{{ event.id }}_violations_{{ class_name }}">
+    <li class="violations violations-severity-{{ violations.max_severity.name }} violations-kind-{{ violations[0].kind.name }}
+            {%- if (violations.max_severity < min_severity
+                    or violation_kind and violation_kind != violations[0].kind) %}
+                softhide
+            {%- endif -%}
+        "
+        data-max_severity="{{ violations.max_severity.value }}"  {# For toggling visibility by the filter JS. #}
+        data-violation_kind="{{ violations[0].kind.value }}"  {# For toggling visibility by the filter JS. -#}
+        id="event_{{ event.id }}_violations_{{ class_name }}">
         {% set link = cdedblink("event/constraint_violations", {'event_id': event.id, 'min_severity': min_severity}) + "#" + class_name %}
         {% call util.href(link, label=none, aclass=violations.max_severity.html_class(),
                           readonly=not is_privileged_for("event/constraint_violations", event_id=event.id, consider_admin_view=False)) %}
@@ -40,7 +47,8 @@
                 {% set filtered_violations = violations|selectattr("severity", "ge", severity)|list %}
                 {% if filtered_violations %}
                     <span class="violations-only violations-only-{{ severity.name }} {{ "softhide" if severity != min_severity }}"
-                          data-severity="{{ severity.value }}">
+                          data-severity="{{ severity.value }}"  {# For toggling visibility by the filter JS and finding visible text in the tests. -#}
+                    >
                         {% if include_title %}
                             {% trans count=filtered_violations|length, class_name=gettext(class_name), event_title=event.title %}
                                 There are {{ count }} {{ class_name }} for {{ event_title }}.

@@ -572,10 +572,11 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
-    @REQUESTdata("min_severity", _omit_missing=True)
+    @REQUESTdata("min_severity", "violation_kind", _omit_missing=True)
     def constraint_violations(
             self, rs: RequestState, event_id: int,
             min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+            violation_kind: models_cv.ViolationKind | None = None,
     ) -> Response:
         rs.ignore_validation_errors()
 
@@ -585,12 +586,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
         params['min_severity'] = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
+        params['violation_kind'] = violation_kind
 
         return self.render(rs, "base/constraint_violations", params)
 
     @access("event.event_helper", "event_admin", "finance_admin")
     @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
-                 "is_concluded", "min_severity", _omit_missing=True)
+                 "is_concluded", "min_severity", "violation_kind", _omit_missing=True)
     def constraint_violations_summary(
             self, rs: RequestState,
             event_ids: vtypes.IntCSVList | None = None,
@@ -599,6 +601,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_balanced: int = -1,
             is_concluded: int = -1,
             min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+            violation_kind: models_cv.ViolationKind | None = None,
     ) -> Response:
         rs.ignore_validation_errors()
 
@@ -633,6 +636,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'event_options': event_options, 'event_ids': event_ids,
             'is_archived': is_archived, 'is_balanced': is_balanced,
             'is_concluded': is_concluded, 'min_severity': min_severity,
+            'violation_kind': violation_kind,
         })
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())

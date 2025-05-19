@@ -418,6 +418,12 @@ I18N_STRINGS = (
     n_("ViolationSeverity.ERROR"),
     n_("ViolationSeverity.CRITICAL"),
 
+    n_("ViolationKind.financial"),
+    n_("ViolationKind.minors_and_mixed_lodging"),
+    n_("ViolationKind.courses"),
+    n_("ViolationKind.lodgements"),
+    n_("ViolationKind.other"),
+
     #
     # Query datatypes
     #
