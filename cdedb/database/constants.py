@@ -474,6 +474,7 @@ class CoreLogCodes(CdEIntEnum):
     password_reset_cookie = 11  #:
     password_reset = 12  #:
     password_invalidated = 13  #:
+    genesis_upgrade_requested = 19  #:
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:

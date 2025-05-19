@@ -244,6 +244,9 @@ CREATE TABLE core.genesis_cases (
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,
+        -- indicate if the genesis request was supplied by an existing user to request
+        -- a realm upgrade
+        is_upgrade              boolean NOT NULL DEFAULT FALSE,
         -- For some realms an attachment may be included. This column contains the filename,
         -- which is the hash of the file.
         attachment_hash         varchar,

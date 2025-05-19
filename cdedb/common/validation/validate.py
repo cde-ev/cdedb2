@@ -1842,6 +1842,7 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
 
 GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
+    'is_upgrade': bool,
     'reviewer': ID,
     'persona_id': Optional[ID],
     'pevent_id': Optional[ID],
@@ -1871,11 +1872,13 @@ GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
 @_add_typed_validator
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
+    creation: bool = False, ignore_warnings: bool = False,
+    is_upgrade: bool = False, **kwargs: Any,
 ) -> GenesisCase:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
+    :param is_upgrade: State if the genesis_case was requested by an existing user.
     """
     val = _mapping(val, argname, **kwargs)
 
@@ -1898,11 +1901,20 @@ def _genesis_case(
         if 'birth_name' in mandatory_fields:
             del mandatory_fields['birth_name']
         optional_fields: TypeMapping = {}
+        if is_upgrade:
+            del mandatory_fields['notes']
+        if is_upgrade and val['realm'] == 'cde':
+            optional_fields['attachment_hash'] = mandatory_fields['attachment_hash']
+            del mandatory_fields['attachment_hash']
+            optional_fields['pevent_id'] = GENESIS_CASE_OPTIONAL_FIELDS['pevent_id']
+            optional_fields['pcourse_id'] = GENESIS_CASE_OPTIONAL_FIELDS['pcourse_id']
     else:
         mandatory_fields = {'id': ID}
         optional_fields = dict(GENESIS_CASE_COMMON_FIELDS,
                                **GENESIS_CASE_OPTIONAL_FIELDS,
                                **additional_fields)
+        # must not be changed after creating a genesis case
+        del optional_fields['is_upgrade']
 
     # allow_superflous=True will result in superfluous keys being removed.
     val = _examine_dictionary_fields(
@@ -1925,6 +1937,12 @@ def _genesis_case(
                         n_("Birthday was less than a year ago."
                            " Please check the birth year."),
                     ))
+
+        if is_upgrade and val['realm'] == 'cde':
+            if not val.get('attachment_hash') and not val.get('pevent_id'):
+                msg = n_("Either attachement or past event must be provided.")
+                errs.append(ValueError('attachment', msg))
+                errs.append(ValueError('pevent_id', msg))
 
     if errs:
         raise errs

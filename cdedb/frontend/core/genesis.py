@@ -21,6 +21,7 @@ from cdedb.common import (
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     GENESIS_CASE_EXPOSED_FIELDS,
     PERSONA_COMMON_FIELDS,
@@ -153,6 +154,69 @@ class CoreGenesisMixin(CoreBaseFrontend):
             "success",
             n_("We just sent you an email. To complete your account request, please"
                " follow the link contained in the email."))
+        return self.redirect(rs, "core/index")
+
+    @access("event")
+    def genesis_upgrade_form(self, rs: RequestState) -> Response:
+        """Render form."""
+        rs.ignore_validation_errors()
+        past_events = self.pasteventproxy.participation_info(rs, rs.user.persona_id)
+        past_event_entries = [
+            (pevent["id"], pevent["title"])
+            for pevent in xsorted(past_events.values(), key=EntitySorter.past_event)
+        ]
+        selectize_data = [
+            {'id': pevent['id'], 'name': pevent['title']}
+            for pevent in xsorted(past_events.values(), key=EntitySorter.past_event)
+        ]
+        return self.render(rs, "genesis/genesis_upgrade", {
+                "past_event_entries": past_event_entries,
+                "selectize_data": selectize_data,
+            }, mandatory_fields={})
+
+    @access("event", modi={"POST"})
+    @REQUESTdata("attachment_hash", "pevent_id", "attachment_filename")
+    @REQUESTfile("attachment")
+    def genesis_upgrade(self, rs: RequestState,
+                        attachment: Optional[werkzeug.datastructures.FileStorage],
+                        attachment_hash: Optional[vtypes.Identifier] = None,
+                        pevent_id: Optional[int] = None,
+                        attachment_filename: Optional[str] = None) -> Response:
+        """Request an upgrade to an higher realm with an existing account.
+
+        Currently, only upgrades form event to cde realm are supported.
+        """
+        rs.values['attachment_hash'], rs.values['attachment_filename'] =\
+            self.locate_or_store_attachment(
+                rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
+                attachment_hash, attachment_filename, is_mandatory=False)
+        attachment_hash = rs.values['attachment_hash']
+
+        # mock data for the genesis case
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        data = {"realm": "cde"}
+        for field in ["username", "given_names", "family_name",
+                      *REALM_SPECIFIC_GENESIS_FIELDS["cde"]]:
+            if field in persona:
+                data[field] = persona[field]
+        if attachment_hash:
+            data["attachment_hash"] = attachment_hash
+        if pevent_id:
+            past_events = self.pasteventproxy.participation_info(rs, rs.user.persona_id)
+            if past_events.get(pevent_id) is None:
+                e = ("pevent_id", ValueError(n_("You didn't participate at this event.")))
+                rs.append_validation_error(e)
+                return self.genesis_upgrade_form(rs)
+            data["pevent_id"] = pevent_id
+            if courses := past_events[pevent_id]["courses"]:
+                data["pcourse_id"] = list(courses)[0]
+
+        data = check(rs, vtypes.GenesisCase, data, creation=True, is_upgrade=True)
+        if rs.has_validation_errors():
+            return self.genesis_upgrade_form(rs)
+
+        ret = self.coreproxy.genesis_upgrade(rs, data)
+        rs.notify_return_code(ret)
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
@@ -335,6 +399,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if case['is_upgrade']:
+            rs.notify("error", n_("Modification of upgrade request is not possible."))
+            return self.genesis_list_cases(rs)
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
@@ -442,8 +509,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
+        # internal upgrade requests use the existing data, do not reapply it
         if ((decision.is_create() or decision.is_update()) and case['pevent_id']
-                and case['realm'] == 'cde'):
+                and case['realm'] == 'cde' and not case['is_upgrade']):
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)
@@ -456,6 +524,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
             persona = self.coreproxy.get_persona(rs, persona_id)
             self.send_welcome_mail(rs, persona)
             rs.notify("success", n_("Case approved."))
+        elif case['is_upgrade']:
+            # TODO send email notification?
+            pass
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
             _, cookie = self.coreproxy.make_reset_cookie(

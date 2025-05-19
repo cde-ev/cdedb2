@@ -1,0 +1,43 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script("cdedb_multiselect.js") }}
+{% endblock %}
+{% set jshint = "weak" %}
+{% block title %}
+    {% trans %}
+    Request Account Upgrade
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/genesis_upgrade") , gettext("Request Account Upgrade"), active="True") }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal">
+        {{ util.anti_csrf_token("core/genesis_upgrade") }}
+        <div>
+            {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
+            {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
+            {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash') }),
+                                          small=True, accept="text/*,application/pdf",
+                                          info=attachment_info + attachment_restrictions, enforce_required=false) }}
+            {{ util.form_input_select("pevent_id", past_event_entries, label=gettext("Event"), small=True,
+                                      nulloption=gettext("– none –"), anid="input-pastevents",
+                                      info=gettext("Select one of your past events which entitles you to become a CdE member."
+                                                   " This could be a DSA, DJA, etc., or a longer CdE event.")) }}
+            <script nonce="{{ csp_nonce }}">
+                $("#input-pastevents").selectize({
+                    'valueField' : 'id',
+                    'labelField' : 'name',
+                    searchField: ['name'],
+                    create: false,
+                    options: {{ selectize_data|tojson }},
+                    maxItems: 1,
+                    copyClassesToDropdown: false,
+                });
+            </script>
+            {{ util.form_input_submit(label=gettext("Confirm Request") , small=True) }}
+        </div>
+    </form>
+{% endblock %}

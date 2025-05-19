@@ -618,6 +618,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         attachment: Optional[werkzeug.datastructures.FileStorage],
         attachment_hash: Optional[vtypes.Identifier],
         attachment_filename: Optional[str] = None,
+        is_mandatory: bool = True,
     ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
         """Locate an attachment by hash and store it, if necessary
 
@@ -625,6 +626,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             (cached) data, if present.
         :param attachment_hash: Hash to locate file uploaded within earlier request
         :param attachment_filename: Filename of file uploaded in earlier request
+        :param is_mandatory: Uploading an attachment is required in this form.
         """
         attachment_data = new_filename = None
         if attachment:
@@ -645,7 +647,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
-        if attachment_hash is None:
+        if attachment_hash is None and is_mandatory:
             rs.append_validation_error(
                 ("attachment", ValueError(n_("Must not be empty."))),
             )

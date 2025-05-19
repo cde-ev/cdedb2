@@ -78,6 +78,27 @@ class CoreGenesisBackend(CoreBaseBackend):
                           change_note=data['username'])
         return ret
 
+    @access("persona")
+    def genesis_upgrade(self, rs: RequestState, data: CdEDBObject,
+                        ) -> Optional[DefaultReturnCode]:
+        """Log a request to upgrade an existing account."""
+        data = affirm(vtypes.GenesisCase, data, creation=True, is_upgrade=True)
+
+        data['case_status'] = const.GenesisStati.to_review
+        data['persona_id'] = rs.user.persona_id
+        data['is_upgrade'] = True
+        if self.is_locked_down(rs) and not self.is_admin(rs):
+            return None
+        if (data.get('attachment_hash') and not self.get_genesis_attachment_store(
+                rs).is_available(data['attachment_hash'])):
+            raise RuntimeError(n_("File has been lost."))
+
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "core.genesis_cases", data)
+            self.core_log(rs, const.CoreLogCodes.genesis_upgrade_requested,
+                          persona_id=rs.user.persona_id)
+        return ret
+
     @access(*REALM_ADMINS)
     def delete_genesis_case_blockers(self, rs: RequestState,
                                      case_id: int) -> DeletionBlockers:
@@ -326,6 +347,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = self.genesis_get_case(rs, case_id)
             if case['case_status'] != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
+            if case['is_upgrade'] and not decision.is_update():
+                raise ValueError(n_("Decision must be 'update'."))
             if decision.is_create():
                 case_status = const.GenesisStati.approved
                 persona_id = None
@@ -344,7 +367,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
-            elif decision.is_update():
+            # internal upgrade requests use the existing data, do not reapply it
+            elif decision.is_update() and not case['is_upgrade']:
                 assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
                 if not self._is_relative_admin(rs, persona):
