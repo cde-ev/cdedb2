@@ -101,7 +101,7 @@
             });
 
             // Replace the current url in the history with the new filter.
-            history.replaceState(null, "", window.location.pathname + "?" + $(this).serialize() + window.location.hash);
+            history.replaceState(null, "", window.location.pathname + "?" + $(this).closest('form').serialize() + window.location.hash);
         }
         $(this).find(':input').on('change', update_results);
         // Submit currently active tab to keep it active.

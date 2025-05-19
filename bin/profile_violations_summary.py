@@ -6,8 +6,6 @@ from cdedb.frontend.common import reconnoitre_ambience, setup_translations
 from cdedb.frontend.event import EventFrontend
 from cdedb.script import Script
 
-event_id = int(sys.argv[1])
-
 # Prepare stuff
 script = Script(dbuser="cdb_member")
 user_rs = script.rs()
@@ -23,9 +21,8 @@ class Mock:
 # Execution
 
 with script:
-    user_rs.requestargs = {'event_id': event_id}
     user_rs.request = Mock()  # type: ignore[assignment]
     user_rs.translations = setup_translations(script.config)
     user_rs.ambience = reconnoitre_ambience(event, user_rs)
 
-    cProfile.run("event.stats(user_rs, event_id)", sys.argv[2])
+    cProfile.run("event.constraint_violations_summary(user_rs)", sys.argv[1])
