@@ -6,14 +6,10 @@ from cdedb.frontend.common import reconnoitre_ambience, setup_translations
 from cdedb.frontend.event import EventFrontend
 from cdedb.script import Script
 
-# Configuration
-
-# The admin id will need to be replaces before use.
-executing_admin_id = int(sys.argv[1])
-event_id = int(sys.argv[2])
+event_id = int(sys.argv[1])
 
 # Prepare stuff
-script = Script(persona_id=executing_admin_id, dbuser="cdb_admin")
+script = Script(dbuser="cdb_member")
 user_rs = script.rs()
 
 event: EventFrontend = script.make_frontend(realm="event")
@@ -32,4 +28,4 @@ with script:
     user_rs.translations = setup_translations(script.config)
     user_rs.ambience = reconnoitre_ambience(event, user_rs)
 
-    cProfile.run("event.stats(user_rs, event_id)", sys.argv[3])
+    cProfile.run("event.stats(user_rs, event_id)", sys.argv[2])
