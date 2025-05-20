@@ -37,6 +37,8 @@
             );
         }
 
+        let results_elements = {};
+
         let update_results = function () {
             // Extract severity $(this) values if possible.
             let min_severity_text = min_severity_input.length ? min_severity_input.val() : "";
@@ -50,7 +52,11 @@
             let is_concluded_val = is_concluded_input.length ? parseInt(is_concluded_input.filter(':checked').val()) : -1;
 
             // Unhide all events, then...
-            $(results_selector).find('div.event').each(function () {
+            if (results_elements["events"] === undefined) {
+                results_elements["events"] = $(results_selector).find('div.event');
+            }
+
+            results_elements["events"].each(function () {
                 $(this).removeClass('softhide');
 
                 // ... hide those not in the list, if the list isn't empty, ...
@@ -76,29 +82,37 @@
             })
 
             // Unhide all violations, then ...
-            $(results_selector).find('.violations').removeClass('softhide').each(function () {
+            if (results_elements["violations"] === undefined) {
+                results_elements["violations"] = $(results_selector).find('.violations');
+            }
+            results_elements["violations"].removeClass('softhide').each(function () {
                 // ... if min_severity is given ...
                 if (min_severity_val !== -1) {
                     // ... hide those that don't match the min, ...
                     if ($(this).data('max_severity') < min_severity_val) {
                         $(this).addClass('softhide');
                     }
-                    // ... then show the correct version of the label, depending on min_severity, ...
-                    $(this).find('.violations-only').addClass('softhide').each(function () {
-                        if ($(this).data('severity') === min_severity_val) {
-                            $(this).removeClass('softhide');
-                            let enclosing_link = $(this).closest('a');
-                            let new_url = new URL(enclosing_link.attr('href'), window.location.origin);
-                            new_url.searchParams.set('min_severity', min_severity_text);
-                            enclosing_link.attr('href', new_url.toString());
-                        }
-                    })
                 }
                 // ... hide those that match the given kind (if given).
                 if (violation_kind_val !== -1 && $(this).data('violation_kind') !== violation_kind_val) {
                     $(this).addClass('softhide');
                 }
             });
+
+            // For each violation show the correct version of the label, ...
+            if (results_elements["violations-only"] === undefined) {
+                results_elements["violations-only"] = results_elements["violations"].find('.violations-only');
+            }
+            results_elements["violations-only"].addClass('softhide').each(function () {
+                // ... depending on min_severity.
+                if ($(this).data('severity') === min_severity_val) {
+                    $(this).removeClass('softhide');
+                    let enclosing_link = $(this).closest('a');
+                    let new_url = new URL(enclosing_link.attr('href'), window.location.origin);
+                    new_url.searchParams.set('min_severity', min_severity_text);
+                    enclosing_link.attr('href', new_url.toString());
+                }
+            })
 
             // Replace the current url in the history with the new filter.
             history.replaceState(null, "", window.location.pathname + "?" + $(this).closest('form').serialize() + window.location.hash);
