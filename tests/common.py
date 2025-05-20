@@ -953,6 +953,8 @@ def as_users(*users: UserIdentifier, maintain_data: bool = False,
                 with self.subTest(user=user):
                     if i > 0:
                         if maintain_data:
+                            if isinstance(self, FrontendTest):
+                                self.get("/")
                             self.logout(allow_anonymous=True)
                         else:
                             self.setUp()

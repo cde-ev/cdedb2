@@ -203,7 +203,7 @@ class TestCoreBackend(BackendTest):
             self.core.change_foto(other_key, other_user["id"], new_hash)
         self.assertIsNone(self.login(other_user))
 
-    @as_users("anton", "berta", "janis", maintain_data=True)
+    @as_users("anton", "berta", "janis")
     def test_change_username(self) -> None:
         user = self.user
         newaddress = "newaddress@example.cde"

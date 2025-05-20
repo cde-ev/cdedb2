@@ -1144,7 +1144,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("E-Mail abgeschickt.", div='notifications')
         self.assertTitle("Janis Jalapeño")
 
-    @as_users("vera", "berta", "emilia", maintain_data=True)
+    @as_users("vera", "berta", "emilia")
     def test_change_username(self) -> None:
         # First test with current username
         user = self.user

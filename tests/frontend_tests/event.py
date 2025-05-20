@@ -554,7 +554,7 @@ class TestEventFrontend(FrontendTest):
             self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00",
                             div='timeframe-registration', exact=True)
 
-    @as_users("berta", "emilia")
+    @as_users("annika", "berta", "emilia")
     @prepsql("UPDATE event.courses SET is_visible = False WHERE id = 2")
     def test_course_list(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kursliste")
@@ -2716,7 +2716,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
-    @as_users("berta", "emilia", maintain_data=True)
+    @as_users("berta", "emilia")
     def test_lodgement_wish_detection(self) -> None:
         with self.switch_user("garcia"):
             self.event.set_event(self.key, 1, {

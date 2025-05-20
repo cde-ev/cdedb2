@@ -1693,7 +1693,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Aktivenforum")
         self.assertPresence("CdE-Party")
 
-    @as_users("nina", "janis", maintain_data=True)
+    @as_users("nina", "janis")
     def test_defect_email_roster(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Werbung'},
