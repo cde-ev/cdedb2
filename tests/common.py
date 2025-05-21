@@ -499,10 +499,15 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        self.core.logout(self.key)
+        if allow_anonymous:
+            try:
+                self.core.logout(self.key)
+            except PrivilegeError:
+                pass
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -1259,13 +1264,19 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        else:
+        def _logout() -> None:
             f = self.response.forms['logoutform']
             self.submit(f, check_notification=False, verbose=verbose,
                         check_mandatory_filled=False)
+
+        if allow_anonymous:
+            if not self.user_in("anonymous"):
+                if 'logoutform' in self.response.forms:
+                    _logout()
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            _logout()
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 

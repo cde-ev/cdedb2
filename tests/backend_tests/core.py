@@ -111,7 +111,7 @@ class TestCoreBackend(BackendTest):
     def test_logout(self) -> None:
         self.assertTrue(self.key)
         self.assertEqual(1, self.core.logout(self.key))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(PrivilegeError):
             self.core.logout(self.key)
 
     @as_users("anton")
