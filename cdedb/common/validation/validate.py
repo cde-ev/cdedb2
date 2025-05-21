@@ -4403,8 +4403,8 @@ def _ballot(
 
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
-    'title': LegacyShortname,
-    'shortname': ShortnameIdentifier,
+    'title': str,
+    'shortname': ShortnameRestrictiveIdentifier,
 }
 
 
