@@ -531,7 +531,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
         if not (rs.user.persona_id in ret.values()
                 or is_privileged(rs, EventPrivileges.registrations_read,
-                                 event_id=event_id)):
+                                 event_id=event_id)
+                or (self.get_event(rs, event_id).is_participant_list_visible
+                    and is_privileged(rs, EventPrivileges.participant_list,
+                                      event_id=event_id))):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 

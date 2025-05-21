@@ -27,6 +27,8 @@ class EventPrivileges(Flag):
     courses_write = auto()
     lodgements_read = auto()
     lodgements_write = auto()
+    # See the participant list whenever participants can see it
+    participant_list = auto()
     # Aggregated registration data
     registrations_stats = auto()
     # Backend only
@@ -34,7 +36,7 @@ class EventPrivileges(Flag):
     # Reading registrations includes reading the associated data (in the frontend)
     _registrations_read_dummy = auto()
     registrations_read = (_registrations_read_dummy | courses_read | lodgements_read
-                          | registrations_read_internal)
+                          | registrations_read_internal | participant_list)
     registrations_write = auto()
     payment_write = auto()
     token = auto()
@@ -82,7 +84,8 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     admin_privileges = ~(EP.conclude | EP.balance)
     orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
-                               | EP.registrations_stats | EP.registrations_read_internal)
+                               | EP.registrations_stats | EP.registrations_read_internal
+                               | EP.participant_list)
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
                                 | EP.payment_write | EP.balance)
