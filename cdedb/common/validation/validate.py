@@ -884,16 +884,6 @@ def _shortname(val: Any, argname: Optional[str] = None, *,
 
 
 @_add_typed_validator
-def _shortname_identifier(val: Any, argname: Optional[str] = None, *,
-                          ignore_warnings: bool = False,
-                          **kwargs: Any) -> ShortnameIdentifier:
-    """A string used as shortname and as programmatically accessible identifier."""
-    val = _identifier(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameIdentifier(val)
-
-
-@_add_typed_validator
 def _shortname_restrictive_identifier(
         val: Any, argname: Optional[str] = None, *,
         ignore_warnings: bool = False,
@@ -901,8 +891,7 @@ def _shortname_restrictive_identifier(
     """A string used as shortname and as restrictive identifier"""
     val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
                                   **kwargs)
-    val = _shortname_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                **kwargs)
+    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     return ShortnameRestrictiveIdentifier(val)
 
 
