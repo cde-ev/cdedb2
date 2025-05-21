@@ -37,7 +37,10 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import BALLOT_EXPOSED_FIELDS
+from cdedb.common.validation.validate import (
+    BALLOT_CANDIDATE_COMMON_FIELDS,
+    BALLOT_EXPOSED_FIELDS,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
@@ -911,14 +914,10 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
-
-        spec = {
-            'shortname': vtypes.ShortnameRestrictiveIdentifier,
-            'title': vtypes.LegacyShortname,
-        }
         existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, vtypes.BallotCandidate, existing_candidates, spec)
+            rs, vtypes.BallotCandidate, existing_candidates,
+            BALLOT_CANDIDATE_COMMON_FIELDS)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
 
