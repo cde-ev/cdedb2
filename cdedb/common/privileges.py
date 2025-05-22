@@ -27,12 +27,13 @@ class EventPrivileges(Flag):
     courses_write = auto()
     lodgements_read = auto()
     lodgements_write = auto()
-    # See the participant list whenever participants can see it
-    participant_list = auto()
     # Aggregated registration data
     registrations_stats = auto()
     # Backend only
     registrations_read_internal = auto()
+    # See the participant list whenever participants can see it
+    _participant_list_dummy = auto()
+    participant_list = _participant_list_dummy | registrations_read_internal
     # Reading registrations includes reading the associated data (in the frontend)
     _registrations_read_dummy = auto()
     registrations_read = (_registrations_read_dummy | courses_read | lodgements_read

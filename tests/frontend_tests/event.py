@@ -489,9 +489,9 @@ class TestEventFrontend(FrontendTest):
                 elif self.user_in('petra'):
                     ins = (
                             everyone | not_registered | registered_or_privileged
-                            | privileged | {"Teilnehmerliste"}
+                            | privileged
                     )
-                    out = (registered | orga | finance_admin) - {"Teilnehmerliste"}
+                    out = registered | orga | finance_admin
                 # event admin (annika is not registered)
                 elif self.user_in('annika'):
                     ins = (
