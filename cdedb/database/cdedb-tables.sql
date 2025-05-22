@@ -533,7 +533,8 @@ CREATE TABLE complaint.entries (
     id            serial PRIMARY KEY,
     case_id       integer NOT NULL REFERENCES complaint.cases(id),
     type          integer DEFAULT NULL, -- database.constants.ComplaintEntryType
-    relative_to   integer UNIQUE REFERENCES complaint.entries(id) DEFAULT NULL  -- only for some types
+    root_entry    integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
+    concerned_id  integer NOT NULL REFERENCES core.personas(id) DEFAULT NULL  -- maybe reference involved_id instead
 );
 GRANT SELECT, INSERT ON complaint.entries TO cdb_persona;
 
@@ -549,6 +550,7 @@ CREATE TABLE complaint.entry_versions (
     dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
     dreason       varchar DEFAULT NULL,
     deleted_by    integer REFERENCES core.personas(id) DEFAULT NULL,
+    UNIQUE(entry_id, dtime),
     CONSTRAINT complaint_entry_deletion_reason
         CHECK ((dtime IS NULL) = (dreason IS NULL)),
     CONSTRAINT complaint_entry_deletion_by
@@ -558,7 +560,7 @@ GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_ver
 
 CREATE TABLE complaint.authors (
     id            serial PRIMARY KEY,
-    entry_id      integer NOT NULL REFERENCES complaint.entries(id),
+    entry_id      integer NOT NULL REFERENCES complaint.entry_versions(id),
     author_id     integer NOT NULL REFERENCES core.personas(id),
     UNIQUE(entry_id, author_id)
 );
@@ -581,10 +583,19 @@ CREATE TABLE complaint.companions (
     involved_id   int NOT NULL REFERENCES complaint.involved(id),
     persona_id    int NOT NULL REFERENCES core.personas(id),
     UNIQUE(involved_id, persona_id),
-    is_withdrawn   boolean NOT NULL DEFAULT FALSE
+    is_withdrawn  boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;
 GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
+
+-- people, who are blocked from "meeting" within the complaint process
+CREATE TABLE complaint.companion_incompatibles (
+    id            serial PRIMARY KEY,
+    blocker_id    int NOT NULL REFERENCES core.personas(id),
+    blocked_id    int NOT NULL REFERENCES core.personas(id),
+    UNIQUE(blocker_id, blocked_id)
+);
+GRANT SELECT, INSERT, DELETE ON complaint.companion_incompatibles TO cdb_persona;
 
 -- like event helpers, may access limited information on measures
 CREATE TABLE complaint.enforcers (

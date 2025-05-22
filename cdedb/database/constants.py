@@ -486,7 +486,7 @@ class ComplaintInvolvementType(CdEIntEnum):
 
 
 @enum.unique
-class ComplaintEntryTye(CdEIntEnum):
+class ComplaintEntryType(CdEIntEnum):
     """Type of entries in the history of a complaint.
 
     Some things are shown in the entries, even though they are pulled in
@@ -494,26 +494,88 @@ class ComplaintEntryTye(CdEIntEnum):
     """
     # Initial
     initial_information = 101  #:
+    additional_information = 151  #:
 
     # Statements
     provisional_statement_given = 201  #:
     statement_signed = 211  #:
     statement_withdrawn = 221  #:
-    statement_cleared = 231  #:
-    statement_archived = 241  #:
+    statement_cleared = 231  #: there has been consent to use this for further cases
+    statement_sent = 241  #: statement has been printed and sent to Vereinsarchiv
+    statement_received = 246  #: statement has been received at Vereinsarchiv
 
-    # Agreements and Arbitration
-    agreement = 300  #:
+    # Agreements
+    agreement = 301  #: the factions reached a formal agreement as a partial resolution
+    agreement_measure = 321  #:
+    agreement_measure_revoked = 331  #:
+    agreement_measure_expired = 341  #:
+
+    # Provisional arbitration
     provisional_to_arbcom = 401  #:
     provisional_measure = 411  #:
-    provisional_measure_expired = 421  #:
+    provisional_measure_explanation = 421  #:
+    provisional_measure_comment = 431  #:
+    provisional_measure_revoked = 441  #:
+    provisional_measure_expired = 451  #:
+
+    # Definite arbitration
     definite_to_arbcom = 501  #:
     definite_measure = 511  #:
-    definite_measure_expired = 521  #:
+    definite_measure_explanation = 521  #:
+    definite_measure_expired = 531  #:
+    definite_measure_revoked = 541  #:
+    definite_measure_comment = 551  #:
 
     # Conclusion
     faction_summary = 1001  #: of some companions for a faction
     synthesis = 1011  #:
+
+    @property
+    def is_hidden(self) -> bool:
+        return self not in {self.provisional_measure, self.definite_measure}
+
+    @property
+    def root(self) -> Optional["ComplaintEntryType"]:
+        et = ComplaintEntryType
+        return {
+            et.statement_signed: et.provisional_statement_given,
+            et.statement_withdrawn: et.provisional_statement_given,
+            et.statement_cleared: et.provisional_statement_given,
+            et.statement_sent: et.provisional_statement_given,
+            et.statement_received: et.provisional_statement_given,
+            et.agreement_measure: et.agreement,
+            et.agreement_measure_revoked: et.agreement,
+            et.agreement_measure_expired: et.agreement,
+            et.provisional_measure: et.provisional_to_arbcom,
+            et.provisional_measure_comment: et.provisional_to_arbcom,
+            et.provisional_measure_explanation: et.provisional_to_arbcom,
+            et.provisional_measure_revoked: et.provisional_to_arbcom,
+            et.provisional_measure_expired: et.provisional_to_arbcom,
+            et.definite_measure: et.definite_to_arbcom,
+            et.definite_measure_comment: et.definite_to_arbcom,
+            et.definite_measure_revoked: et.definite_to_arbcom,
+            et.definite_measure_expired: et.definite_to_arbcom,
+        }.get(self)
+
+    @property
+    def has_description(self):
+        return self.root in {
+            None,
+            ComplaintEntryType.provisional_to_arbcom,
+            ComplaintEntryType.definite_to_arbcom
+        } and not self in {
+            ComplaintEntryType.provisional_measure_expired,
+            ComplaintEntryType.definite_measure_expired,
+        }
+
+    @property
+    def has_concerned(self):
+        return self in {
+            ComplaintEntryType.provisional_statement_given,
+            ComplaintEntryType.provisional_measure,
+            ComplaintEntryType.definite_measure,
+            ComplaintEntryType.agreement_measure,
+        }
 
 
 @enum.unique
