@@ -7,7 +7,7 @@ functionality for managing lodgements and lodgement groups belonging to an event
 import abc
 import collections
 import dataclasses
-from collections.abc import Collection, Iterator
+from collections.abc import Collection, Iterator, Mapping
 from functools import cached_property
 from typing import Any, Optional, Protocol
 
@@ -470,10 +470,12 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             self, rs: RequestState, event_id: int,
             lodgement_ids: Collection[int] | None = None,
             involved: bool | None = None,
+            _registrations: CdEDBObjectMap | None = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         involved = affirm_optional(bool, involved)
+        _registrations = affirm_optional(Mapping, _registrations)
 
         if not is_privileged(
                 rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
@@ -495,17 +497,20 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             else:
                 condition += " AND NOT(rp.status = ANY(%s))"
 
-        # Retrieve all registrations.
-        query = f"""
-            SELECT registration_id
-            FROM event.registration_parts rp
-                JOIN event.event_parts ep ON rp.part_id = ep.id
-            WHERE ep.event_id = %s AND {condition}
-        """
-        registration_ids = {
-            e['registration_id'] for e in self.query_all(rs, query, params)
-        }
-        registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+        if _registrations is None:
+            # Retrieve all registrations.
+            query = f"""
+                SELECT registration_id
+                FROM event.registration_parts rp
+                    JOIN event.event_parts ep ON rp.part_id = ep.id
+                WHERE ep.event_id = %s AND {condition}
+            """
+            registration_ids = {
+                e['registration_id'] for e in self.query_all(rs, query, params)
+            }
+            registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+        else:
+            registrations = _registrations
 
         # Retrieve grouped registration ids.
         query = f"""
