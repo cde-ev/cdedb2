@@ -410,6 +410,7 @@ class MlBackend(AbstractBackend):
                        persona_ids: Collection[int], *,
                        change_note: Optional[str] = None,
                        on_creation: bool = False,
+                       allow_archived: bool = False,
                        ) -> DefaultReturnCode:
         """Add moderators to a mailinglist.
 
@@ -422,7 +423,11 @@ class MlBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
+            if allow_archived:
+                if not self.core.verify_ids(rs, persona_ids):
+                    raise ValueError(n_(
+                        "Some of these users do not exist."))
+            elif not self.core.verify_ids(rs, persona_ids, is_archived=False):
                 raise ValueError(n_(
                     "Some of these users do not exist or are archived."))
             if not self.core.verify_personas(rs, persona_ids, {"ml"}):
@@ -1508,13 +1513,12 @@ class MlBackend(AbstractBackend):
             if not self.core.verify_persona(rs, target_persona_id,
                                             required_roles={'ml'}):
                 raise ValueError(n_("Target User is no valid ml user."))
-            if target['is_archived']:
-                raise ValueError(n_("Target User is not accessible."))
+            if target['is_archived'] and not clone_addresses:
+                raise ValueError(n_("Clone addresses required for archived target."))
             if source_persona_id == target_persona_id:
                 raise ValueError(n_("Can not merge user into himself."))
 
             # retrieve all mailinglists they are subscribed to
-            # TODO restrict to active mailinglists?
             source_subscriptions = self.get_user_subscriptions(
                 rs, source_persona_id, states=non_implicit_states)
             target_subscriptions = self.get_user_subscriptions(rs, target_persona_id)
@@ -1564,14 +1568,20 @@ class MlBackend(AbstractBackend):
                         email=explicit_address or source['username'])
 
             for ml_id in source_moderates:
-                # we do not mind if both users are currently moderator of a mailinglist
-                self.add_moderators(rs, ml_id, {target_persona_id}, change_note=msg)
+                # We do not mind if both users are currently moderator of a mailinglist.
+                # We need to do this before archival to ensure each list has at least
+                # one moderator.
+                self.add_moderators(rs, ml_id, {target_persona_id}, change_note=msg,
+                                    allow_archived=True)
 
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
             msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
             code *= self.core.archive_persona(rs, persona_id=source_persona_id,
                                               note=msg)
+            if target['is_archived']:
+                code *= self.core.dearchive_persona(rs, persona_id=target_persona_id,
+                                                    new_username=source['username'])
 
         return code
 

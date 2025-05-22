@@ -222,6 +222,22 @@ class TestMlFrontend(FrontendTest):
         f['target_persona_id'] = berta_id
         self.submit(f)
 
+    @as_users("nina")
+    def test_merge_archived_accounts(self) -> None:
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+
+        berta_id = USER_DICT['hades']['DB-ID']
+        janis_id = USER_DICT['janis']['DB-ID']
+
+        # ... and finally merge the two.
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        self.submit(f)
+
     @as_users("anton")
     def test_ml_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
