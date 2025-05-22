@@ -24,6 +24,7 @@ import collections
 import dataclasses
 import datetime
 import enum
+import functools
 import inspect
 import itertools
 from collections.abc import Collection, Iterable
@@ -465,6 +466,16 @@ class ConstraintViolation(abc.ABC):
         return (-self.severity.value, self.__class__.__name__) + self.event.get_sortkey()
 
     @classmethod
+    @functools.cache
+    def _get_subclasses(
+            cls,
+    ) -> tuple[list[type["ConstraintViolation"]], list[type["ConstraintViolation"]]]:
+        abstract, non_abstract = [], []
+        for cv in cls.__subclasses__():
+            (abstract if inspect.isabstract(cv) else non_abstract).append(cv)
+        return abstract, non_abstract
+
+    @classmethod
     def get_contexts(
             cls, aux: ViolationAux, context: ViolationContext,
     ) -> list[ViolationContext]:
@@ -508,11 +519,11 @@ class ConstraintViolation(abc.ABC):
         """
         ret = ViolationList()
 
+        abstract, non_abstrct = cls._get_subclasses()
         for new_context in cls.get_contexts(aux, context):
-            for cv in cls.__subclasses__():
-                if inspect.isabstract(cv):
-                    ret += cv.dispatch(aux, new_context)
-                    continue
+            for cv in abstract:
+                ret.extend(cv.dispatch(aux, new_context))
+            for cv in non_abstrct:
                 ret.append(cv.check(aux, new_context))
 
         return ret
