@@ -1735,7 +1735,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def book_registration_payment(
             self, rs: RequestState, *, registration_id: int,
             amount: decimal.Decimal, date: datetime.date,
-            by_orga: bool, is_member: bool,
+            by_orga: bool, is_member: Optional[bool] = None,
     ) -> CdEDBObject:
         """
         Add the given amount to the amount that was paid for this registration.
@@ -1744,7 +1744,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         The caller is responsible for validating the input, due to this being internal.
 
-        Returns the new state of the registration for convenienve.
+        :param is_member: Whether the persona is member at the moment
+        :returns: the new state of the registration for convenience.
         """
 
         event_log_transfer_template = "{amount} am {date} gezahlt."
@@ -1772,9 +1773,11 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             if not registration['payment']:
                 update['payment'] = date
-            if (registration['amount_paid'] == 0 and not registration['is_member']
-                    and not by_orga):
-                update['is_member'] = is_member
+            if is_member is not None:
+                if by_orga:
+                    raise PrivilegeError
+                elif registration['payment'] is None and not registration['is_member']:
+                    update['is_member'] = is_member
             change_note = event_log_transfer_template.format(
                 amount=money_filter(amount),
                 date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
@@ -1855,13 +1858,10 @@ class EventRegistrationBackend(EventBaseBackend):
                 persona_ids = {t['persona_id'] for t in transfers}
                 personas = self.core.get_personas(rs, persona_ids)
 
-                transfers = xsorted(transfers,  # type: ignore[assignment]
-                                    key=lambda t: t['registration_id'] is not None)
                 for index, transfer in enumerate(transfers):
                     registration = self.book_registration_payment(
                         rs, registration_id=transfer['registration_id'],
                         amount=transfer['amount'], date=transfer['date'], by_orga=True,
-                        is_member=personas[transfer['persona_id']]['is_member'],
                     )
                     ret = models_finance.MoneyTransfer(
                         persona=personas[transfer['persona_id']],

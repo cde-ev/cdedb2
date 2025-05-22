@@ -46,6 +46,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
 )
@@ -138,6 +139,8 @@ class CdEBaseBackend(AbstractBackend):
     def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
                              ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        transfers = xsorted(transfers,
+                            key=lambda t: (t['date'], t['registration_id'] is not None))
         index = 0
 
         changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
