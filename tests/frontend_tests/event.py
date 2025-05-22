@@ -2487,12 +2487,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users('emilia')
     def test_participant_list(self) -> None:
         # first, check non-visibility for all participants
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.get('/event/event/1/registration/list')
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
-                            "veröffentlicht.", div='notifications')
+        def _check_invisible() -> None:
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'})
+            self.get('/event/event/1/registration/list')
+            self.assertTitle("Große Testakademie 2222")
+            self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
+                                "veröffentlicht.", div='notifications')
+        _check_invisible()
+
+        # check non-visibility for event helper
+        with self.switch_user('petra'):
+            _check_invisible()
 
         # now, check visibility for orgas
         with self.switch_user('garcia'):
@@ -2546,17 +2552,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['is_participant_list_visible'].checked = True
             self.submit(f)
 
+        def _check_visible() -> None:
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'},
+                          {'href': '/event/event/1/registration/list'})
+            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
+                                   "und Admins sichtbar.", div='static-notifications')
+            self.assertPresence("Warmup")
+            self.assertPresence("Zweite Hälfte")
+            self.traverse({'description': 'Zweite Hälfte'})
+            self.assertPresence("α. Heldentum (KL)")
+
         # check visibility for participant with list consent
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/list'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
-        self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
-                               "und Admins sichtbar.", div='static-notifications')
-        self.assertPresence("Warmup")
-        self.assertPresence("Zweite Hälfte")
-        self.traverse({'description': 'Zweite Hälfte'})
-        self.assertPresence("α. Heldentum (KL)")
+        _check_visible()
+
+        # check visibility for event helper
+        with self.switch_user('petra'):
+            _check_visible()
 
         # check non-visibility for participant without list consent
         with self.switch_user('inga'):
