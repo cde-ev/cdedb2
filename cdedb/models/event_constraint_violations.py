@@ -470,7 +470,8 @@ class ConstraintViolation(abc.ABC):
     def _get_subclasses(
             cls,
     ) -> tuple[list[type["ConstraintViolation"]], list[type["ConstraintViolation"]]]:
-        abstract, non_abstract = [], []
+        abstract: list[type[ConstraintViolation]] = []
+        non_abstract: list[type[ConstraintViolation]] = []
         for cv in cls.__subclasses__():
             (abstract if inspect.isabstract(cv) else non_abstract).append(cv)
         return abstract, non_abstract

@@ -475,7 +475,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         involved = affirm_optional(bool, involved)
-        _registrations = affirm_optional(Mapping, _registrations)
+        _registrations = affirm_optional(Mapping, _registrations)  # type: ignore[type-abstract]
 
         if not is_privileged(
                 rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
