@@ -572,6 +572,8 @@ class ComplaintLogCode(CdEIntEnum):
 
     enforcer_added = 101  #:
     enforcer_removed = 102  #:
+    monitor_added = 106  #:
+    monitor_removed = 107  #:
 
     case_unlocked = 201  #:
     concealed_case_detected = 202  #:

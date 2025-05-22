@@ -578,13 +578,21 @@ CREATE TABLE complaint.companions (
 GRANT SELECT ON complaint.companions TO cdb_persona;
 GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
 
--- like event helpers, may access limited information
+-- like event helpers, may access limited information on measures
 CREATE TABLE complaint.enforcers (
     id                      serial PRIMARY KEY,
     persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
 );
 GRANT SELECT ON complaint.enforcers TO cdb_persona;
 GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
+
+-- like event helpers, may access limited information on involved parties
+CREATE TABLE complaint.monitors (
+    id                      serial PRIMARY KEY,
+    persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+);
+GRANT SELECT ON complaint.monitors TO cdb_persona;
+GRANT INSERT, DELETE ON complaint.monitors TO cdb_admin;
 
 -- logs changes and decryption
 CREATE TABLE complaint.log (
