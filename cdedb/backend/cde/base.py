@@ -184,6 +184,7 @@ class CdEBaseBackend(AbstractBackend):
                         registration = self.event.book_registration_payment(
                             rs, registration_id=transfer['registration_id'],
                             amount=amount, date=date, by_orga=False,
+                            is_member=persona['is_member'],
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(
