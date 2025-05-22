@@ -549,7 +549,7 @@ class CoreLogCodes(CdEIntEnum):
 
 
 @enum.unique
-class ComplaintLogCode(CdEIntEnum):
+class ComplaintLogCodes(CdEIntEnum):
     case_created = 1  #:
     case_changed_kind = 2  #:
     case_changed_grave = 3  #:
