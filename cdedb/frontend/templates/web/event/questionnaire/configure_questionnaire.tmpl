@@ -1,79 +1,110 @@
-{% set sidenav_active='event_configure_registration' %}
+{% set sidenav_active = "event_register_config" if kind == enums["QuestionnaireUsages"].registration else'event_quest_config' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% set jshint="strong" %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% set jshint='strong' %}
 {% block scripts %}
     {{ super() }}
-    {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
-    {{ util.cdedb_script('cdedb_questionnaire_config.js') }}
+    {{ util.cdedb_script("cdedb_helper.js") }}
+    {{ util.cdedb_script("cdedb_dynamicrow.js") }}
+    {{ util.cdedb_script("cdedb_questionnaire_config.js") }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] %}
-    	Configure Registration ({{ title }})
-    {% endtrans %}
+    {% if kind == enums["QuestionnaireUsages"].registration %}
+        {% trans title=ambience["event"].title %}
+            Configure Registration ({{ title }})
+        {% endtrans %}
+    {% else %}
+        {% trans title=ambience["event"].title %}
+            Configure Questionnaire ({{ title }})
+        {% endtrans %}
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
+    {% if kind == enums["QuestionnaireUsages"].registration %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_registration_form"), gettext("Configure Registration"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire_form"), gettext("Configure Questionnaire"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Configure Registration"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event")) }}
+    {% if kind == enums["QuestionnaireUsages"].registration %}
+        {{ util.context_heading(gettext("Configure Registration"), ambience["event"].title,
+                                "chalkboard-teacher", gettext("Event")) }}
+    {% else %}
+        {{ util.context_heading(gettext("Configure Questionnaire"), ambience["event"].title,
+                                "chalkboard-teacher", gettext("Event")) }}
+    {% endif %}
 {% endblock %}
 
 {% block content %}
+    {% if kind == enums["QuestionnaireUsages"].registration %}
+        {% set preview_endpoint = "event/register" %}
+        {% set preview_label = gettext("Registration Preview") %}
+        {% set reorder_label = gettext("Reorder Registration") %}
+        {% set config_endpoint = "event/configure_registration" %}
+    {% else %}
+        {% set preview_endpoint = "event/additional_questionnaire" %}
+        {% set preview_label = gettext("Questionnaire Preview") %}
+        {% set reorder_label = gettext("Reorder Questionnaire") %}
+        {% set config_endpoint = "event/configure_additional_questionnaire" %}
+    {% endif %}
     <div class="p button-par">
-        {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].registration.value}),
-                     gettext("Reorder Registration"), readonly=not is_privileged_for("reorder_questionnaire"),
-                     aclass="btn btn-warning btn-sm", icon='sort') }}
-        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"),
-                     readonly=not is_privileged_for("reorder_questionnaire"),
-                     aclass="btn btn-warning btn-sm", icon='file-upload') }}
-        {{ util.href(cdedblink('event/register', {"preview": True}), gettext("Registration Preview"),
-                     aclass="btn btn-default btn-sm", icon='eye') }}
+        {{ util.href(cdedblink(preview_endpoint, {"preview": True}), preview_label,
+                     aclass="btn btn-default btn-sm", icon="eye") }}
+        {{ util.href(cdedblink("event/reorder_questionnaire_form", {"kind": kind}), reorder_label,
+                     aclass="btn btn-warning btn-sm", icon="sort",
+                     readonly=not is_privileged_for("reorder_questionnaire_form")) }}
+        {{ util.href(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"),
+                     aclass="btn btn-warning btn-sm", icon="file-upload",
+                     readonly=not is_privileged_for("questionnaire_import_form")) }}
     </div>
-    <form action="{{ cdedblink('event/configure_registration') }}" method="POST" id="configureregistrationform">
-        {{ util.anti_csrf_token('event/configure_registration') }}
-        {% set kind = enums['QuestionnaireUsages'].registration %}
+    <form action="{{ cdedblink(config_endpoint) }}" method="POST" id="configurequestionnaireform">
+        {{ util.anti_csrf_token(config_endpoint) }}
+
         <div id="drow-container">
             {# Old items, already stored in the database #}
-            {% for entry in reg_questionnaire %}
-                {{ generic_event.print_questionnaire_config(loop.index0, kind, aclass='drow-row') }}
+            {% for entry in questionnaire %}
+                {{ generic_event.questionnaire_config_entry(loop.index0, kind, aclass="drow-row") }}
             {% endfor %}
 
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ generic_event.print_questionnaire_config(-i, kind, aclass='drow-new', newrow=True) }}
+            {% for i in range(1, values.get("create_last_index", 0) + 1) %}
+                {{ generic_event.questionnaire_config_entry(-i, kind, aclass="drow-new", newrow=True) }}
             {% endfor %}
+
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ generic_event.print_questionnaire_config(-values.get('create_last_index', 0) - 1, kind=kind, aclass='drow-prototype', newrow=True) }}
+            {{ generic_event.questionnaire_config_entry(-values.get('create_last_index', 0) - 1, kind=kind, aclass='drow-prototype', newrow=True) }}
             <p>
                 <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                    {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}
+                    {{ util.make_icon("plus") }} {% trans %}Add Part{% endtrans %}
                 </button>
             </p>
         </div>
-        {{ util.input_submit(label=gettext("Save"), readonly=not is_privileged_for('configure_registration')) }}
+        {{ util.input_submit(label=gettext("Save"), readonly=not is_privileged_for(config_endpoint)) }}
     </form>
+    {% if not jshint == "strong" %}
+        {{ util.raise_for_test("jshint not strong for questionnaire config") }}
+    {% endif %}
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
-            var field_list = {{ registration_fields|tojson }};
-            var translations = {
-                'true': "{{ gettext("true") }}",
-                'false': "{{ gettext("false") }}"};
-            $('#drow-container').cdedbDynamicRow(
+            let field_list = {{ registration_fields|tojson }};
+            let translations = {
+                "true": "{{ gettext("true") }}",
+                "false": "{{ gettext("false") }}",
+            };
+            $("#drow-container").cdedbDynamicRow(
                 {
-                    addButton: $('#drow-addbutton'),
+                    addButton: $("#drow-addbutton"),
                     callback: function () {
                         $(this).cdedbQuestionnaireConfig(field_list, translations);
                     },
                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
                 });
-            $('#configureregistrationform').cdedbProtectChanges();
-            $('.drow-row').cdedbQuestionnaireConfig(field_list, translations);
+            $("#configurequestionnaireform").cdedbProtectChanges();
+            $(".drow-row").cdedbQuestionnaireConfig(field_list, translations);
         })()
     </script>
 {% endblock %}

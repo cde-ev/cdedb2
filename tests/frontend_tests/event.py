@@ -2092,32 +2092,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bin unter 13 Jahre alt."
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bringe noch jemanden mit."
         f['field_id_-1'] = 1002
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Name des Partners"
         f['field_id_-1'] = 1003
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Anzahl an Kissen"
         f['field_id_-1'] = 1004
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Essgewohnheiten"
         f['field_id_-1'] = 1005
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Dein Lieblingstag"
         f['field_id_-1'] = 1006
@@ -7478,11 +7478,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['entries_-1'] = "1;Ja\n0;Nein"
         self.submit(f)
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)

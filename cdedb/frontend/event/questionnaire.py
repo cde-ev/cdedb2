@@ -41,44 +41,52 @@ from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def configure_registration_form(self, rs: RequestState, event_id: int,
-                                    ) -> Response:
+    def configure_registration_form(
+            self, rs: RequestState, event_id: int,
+    ) -> Response:
         """Render form."""
-        reg_questionnaire, reg_fields = self._prepare_questionnaire_form(
-            rs, event_id, const.QuestionnaireUsages.registration)
-        return self.render(rs, "questionnaire/configure_registration",
-                           {'reg_questionnaire': reg_questionnaire,
-                            'registration_fields': reg_fields})
+        return self.configure_questionnaire_form(
+            rs, event_id, const.QuestionnaireUsages.registration,
+        )
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def configure_additional_questionnaire_form(self, rs: RequestState,
-                                                event_id: int) -> Response:
+    def configure_additional_questionnaire_form(
+            self, rs: RequestState, event_id: int,
+    ) -> Response:
         """Render form."""
-        add_questionnaire, reg_fields = self._prepare_questionnaire_form(
-            rs, event_id, const.QuestionnaireUsages.additional)
-        return self.render(rs, "questionnaire/configure_additional_questionnaire", {
-            'add_questionnaire': add_questionnaire,
-            'registration_fields': reg_fields})
+        return self.configure_questionnaire_form(
+            rs, event_id, const.QuestionnaireUsages.additional,
+        )
 
     def _prepare_questionnaire_form(
             self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages,
     ) -> tuple[list[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(kind,)))
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
         fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
         current = {
             f"{key}_{i}": value
             for i, entry in enumerate(questionnaire)
-            for key, value in entry.items()}
+            for key, value in entry.items()
+        }
         merge_dicts(rs.values, current)
         registration_fields = {
-            k: v for k, v in rs.ambience['event'].fields.items()
+            k: v for k, v in rs.ambience["event"].fields.items()
             if v.association == const.FieldAssociations.registration
                and (kind.allow_fee_condition() or not fees_by_field[k])
         }
         return questionnaire, registration_fields
+
+    def configure_questionnaire_form(
+            self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages,
+    ) -> Response:
+        questionnaire, reg_fields = self._prepare_questionnaire_form(rs, event_id, kind)
+        return self.render(rs, "questionnaire/configure_questionnaire", {
+            "questionnaire": questionnaire,
+            "registration_fields": reg_fields,
+            "kind": kind,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
