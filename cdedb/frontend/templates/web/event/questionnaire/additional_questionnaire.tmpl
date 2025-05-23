@@ -1,4 +1,4 @@
-{% set sidenav_active = 'event_configure_additional_questionnaire' if preview else 'event_quest' %}
+{% set sidenav_active = "event_quest_preview" if preview else "event_quest" %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
@@ -19,17 +19,15 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{% if not preview %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                            gettext("Questionnaire"), active=True) }}
-{% else %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
-    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                            gettext("Questionnaire Preview"), active=True) }}
-{% endif %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
+    {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
+                                gettext("Questionnaire Preview"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire"),
+                                gettext("Questionnaire"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Questionnaire Preview") if preview else gettext("Participant Questionnaire"),
