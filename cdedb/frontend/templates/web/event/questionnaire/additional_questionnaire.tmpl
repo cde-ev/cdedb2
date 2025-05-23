@@ -1,4 +1,4 @@
-{% set sidenav_active = 'event_configure_additional_questionnaire' if preview else 'event_quest' %}
+{% set sidenav_active = 'event_quest_preview' if preview else 'event_quest' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
