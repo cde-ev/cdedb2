@@ -4,7 +4,6 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
-from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,16 +11,14 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject
-from cdedb.common.sorting import Sortkey, collate
-from cdedb.common.validation.types import TypeMapping
+from cdedb.common import CdEDBObject, get_mandatory_form_fields, is_optional_type
+from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
@@ -31,17 +28,9 @@ if TYPE_CHECKING:
         DatabaseValue_s,
     )
 
-NoneType = type(None)
 T = TypeVar("T")
 # Should actually be a vtypes.ProtoID instead of an int
 CdEDataclassMap = dict[int, T]
-
-
-def is_optional_type(type_: Any) -> bool:
-    return (
-            get_origin(type_) is Union
-            or get_origin(type_) is UnionType
-    ) and NoneType in get_args(type_)
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
@@ -142,7 +131,7 @@ class CdEDataclass:
     def many_from_database(cls, list_of_data: Collection[CdEDBObject],
                            ) -> CdEDataclassMap["Self"]:
         return {
-            obj.id: obj for obj in map(cls.from_database, list_of_data)
+            obj.id: obj for obj in xsorted(map(cls.from_database, list_of_data))
         }
 
     @classmethod
@@ -163,14 +152,16 @@ class CdEDataclass:
         return self.id < 0
 
     @classmethod
-    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(
+            cls, *, creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Map the field names to the type of the fields to validate this entity.
 
         This returns two TypeMapping tuples, for mandatory and optional validation
         fields, respectively. Each TypeMapping maps the name of the field to its type.
         """
-        mandatory: TypeMapping = {}
-        optional: TypeMapping = {}
+        mandatory: vtypes.MutableTypeMapping = {}
+        optional: vtypes.MutableTypeMapping = {}
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
             if field.metadata.get('validation_exclude'):
@@ -202,6 +193,18 @@ class CdEDataclass:
                 else:
                     optional[field.name] = field.type
         return mandatory, optional
+
+    @classmethod
+    def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
+        """Determine fields where user needs to enter something.
+
+        We cannot use `validation_fields` for this - that also has a distinction of
+        mandatory and optional fields, but with different semantics. Mandatory there
+        means that the value needs to be given for validating this object, but it may be
+        `None`. `None` (or the empty string) is not considered a valid input for the
+        fields returned by this function.
+        """
+        return get_mandatory_form_fields(*cls.validation_fields(creation=creation))
 
     @classmethod
     def requestdict_fields(

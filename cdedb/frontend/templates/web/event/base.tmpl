@@ -72,8 +72,8 @@
                          gettext("Participant info"), aclass='list-group-item', icon='info',
                          active=(sidenav_active == 'participant_info')) }}
         {% endif %}
-        {% if (event['is_participant_list_visible'] and is_participant) or (event['id'] in user.orga
-               or 'event_orga' in user.admin_views) and is_privileged(enums['EventPrivileges'].registrations_read) %}
+        {% if ((event['is_participant_list_visible'] and (is_participant or 'event_orga' in user.admin_views and is_privileged(enums['EventPrivileges'].participant_list)))
+               or (event['id'] in user.orga or 'event_orga' in user.admin_views) and is_privileged(enums['EventPrivileges'].registrations_read)) %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": event['id']}), gettext("Participant list"),
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
@@ -122,7 +122,7 @@
             {% if 'finance' in user.admin_views or is_privileged_for("batch_fees_form") %}
                 {{ util.href(cdedblink("event/batch_fees_form", {"event_id": event['id']}), gettext("Enter Money Transfers"),
                              aclass="list-group-item", icon="euro-sign", readonly=is_locked or event.is_balanced,
-                             title=gettext("Event is balanced. May not book paments.") if event.is_balanced else "",
+                             title=gettext("Event is balanced. May not book payments.") if event.is_balanced else "",
                              active=(sidenav_active == 'event_batch_fees')) }}
             {% endif %}
         </div>
@@ -234,6 +234,8 @@
             {% if 'event_list' in user.admin_views %}
                 {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
+                {{ util.href(cdedblink("event/constraint_violations_summary"), gettext("Constraint Violations"),
+                             aclass="list-group-item", icon="exclamation-circle", active=(sidenav_active == 'violations_summary')) }}
             {% endif %}
             {% if "event" in user.roles %}
                 {{ util.href(cdedblink("event/list_event_helpers"), gettext("Event Helpers"), aclass="list-group-item",
@@ -273,7 +275,7 @@
     {% else %}
         {{ util.admin_views_toggle((
                 (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["event_user"]),
-                (gettext("Event Administration"), ["event_mgmt"], None),
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], None),
                 (gettext("Auditor"), ["auditor"], None),
             )) }}
     {% endif %}

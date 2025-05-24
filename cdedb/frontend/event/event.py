@@ -25,6 +25,7 @@ from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES,
     CdEDBObject,
     RequestState,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
     unwrap,
@@ -42,9 +43,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS,
-    EVENT_PART_CREATION_OPTIONAL_FIELDS,
     EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
@@ -214,11 +212,15 @@ class EventEventMixin(EventBaseFrontend):
             (str(account), f"{iban_filter(account.value)} ({account.get_bank()})")
             for account in Accounts.get_event_accounts()
         ]
-        return self.render(rs, "event/change_event", {
-            'accounts': accounts,
-            'lodge_fields': lodge_fields,
-            'reimbursement_fields': reimbursement_fields,
-        })
+        return self.render(
+            rs, "event/change_event",
+            {
+                'accounts': accounts,
+                'lodge_fields': lodge_fields,
+                'reimbursement_fields': reimbursement_fields,
+            },
+            models.Event.mandatory_form_fields(creation=False),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -334,7 +336,7 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTdata("persona_id")
     def add_event_helper(self, rs: RequestState, persona_id: vtypes.CdedbID,
                          ) -> Response:
-        """Make an additional persona become orga."""
+        """Make an additional persona become event helper."""
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable cdedbid
             return self.list_event_helpers(rs)
@@ -352,9 +354,9 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTdata("persona_id")
     def remove_event_helper(self, rs: RequestState, persona_id: vtypes.ID,
                             ) -> Response:
-        """Remove a persona as orga of an event.
+        """Remove a persona as event helper.
 
-        This is only available for admins. This can drop your own orga role.
+        This is only available for admins.
         """
         if rs.has_validation_errors():
             return self.list_event_helpers(rs)
@@ -546,14 +548,17 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        return self.render(rs, "event/add_part", {
-            'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+        mandatory_fields = models.EventPart.mandatory_form_fields(creation=True)
+        return self.render(
+            rs, "event/add_part",
+            {'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES},
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("fee")
-    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
-                     *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
+    @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=True))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
         if rs.ambience['event'].is_balanced:
@@ -629,25 +634,28 @@ class EventEventMixin(EventBaseFrontend):
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        return self.render(rs, "event/change_part", {
-            'part_id': part_id,
-            'sorted_track_ids': sorted_track_ids,
-            'fields': fields,
-            'referenced_tracks': referenced_tracks,
-            'has_registrations': has_registrations,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
-            'readonly_synced_tracks': readonly_synced_tracks,
-        })
+        mandatory_fields = (models.EventPart.mandatory_form_fields(creation=False)
+                            | models.CourseTrack.mandatory_form_fields(creation=False))
+        return self.render(
+            rs, "event/change_part",
+            {
+                'part_id': part_id,
+                'sorted_track_ids': sorted_track_ids,
+                'fields': fields,
+                'referenced_tracks': referenced_tracks,
+                'has_registrations': has_registrations,
+                'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
+                'readonly_synced_tracks': readonly_synced_tracks,
+            },
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
+    @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=False))
     def change_part(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        # this will be added at the end after processing the dynamic input and will only
-        # yield false validation errors
-        del data['tracks']
         data = check(rs, vtypes.EventPart, data)
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
@@ -721,7 +729,8 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _get_payment_query_base(
             event: models.Event, constraints: Collection[QueryConstraint],
-            fee: Optional[models.EventFee] = None,
+            fee: models.EventFee | None = None,
+            kind: const.EventFeeType | None = None,
     ) -> Query:
         return Query(
             QueryScope.registration,
@@ -734,6 +743,8 @@ class EventEventMixin(EventBaseFrontend):
             ] + (
                 [f"fee{fee.id}.amount"] if fee else []
             ) + (
+                [f"amount_owed.{kind.name}"] if kind else []
+            ) + (
                 [f"reg_fields.xfield_{event.reimbursement_iban_field.field_name}"]
                 if event.reimbursement_iban_field else []
             ),
@@ -745,7 +756,8 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     def _get_payment_query(
-            self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
+            self, event: models.Event, ids: Collection[int], fee_id: int | None,
+            kind: const.EventFeeType | None,
     ) -> Query:
         fee = event.fees.get(fee_id or 0)
         if fee and fee.is_personalized():
@@ -761,7 +773,7 @@ class EventEventMixin(EventBaseFrontend):
             constraints = [
                 ("reg.id", QueryOperators.empty, None),
             ]
-        return self._get_payment_query_base(event, constraints, fee)
+        return self._get_payment_query_base(event, constraints, fee, kind)
 
     @access("event")
     # TODO Be more lenient here (for finance_admins and auditors)
@@ -773,8 +785,8 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/fee/fee_summary", {
             'fee_stats': fee_stats,
             'get_query':
-                lambda ids, fee_id: self._get_payment_query(
-                    rs.ambience['event'], ids, fee_id,
+                lambda ids, fee_id, kind: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id, kind,
                 ),
         })
 
@@ -800,8 +812,8 @@ class EventEventMixin(EventBaseFrontend):
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
             'get_query':
-                lambda ids, fee_id: self._get_payment_query(
-                    rs.ambience['event'], ids, fee_id,
+                lambda ids, fee_id, kind: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id, kind,
                 ),
         })
 
@@ -816,18 +828,24 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify(
                 "error", n_("Event is balanced. May not change fee configuration."))
             return self.redirect(rs, "event/fee_summary")
+        creation = True
         if fee_id:
+            creation = False
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'].as_dict())
                 personalized = rs.ambience['fee'].is_personalized()
+        mandatory_fields = models.EventFee.mandatory_form_fields(creation=creation)
+        if not personalized:
+            mandatory_fields |= {'amount', 'condition'}
         return self.render(
             rs, "event/fee/configure_fee",
             {
                 'personalized': personalized,
             },
+            mandatory_fields=mandatory_fields,
         )
 
     @access("event", modi={"POST"})
@@ -889,7 +907,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/configure_part_group")
+        return self.render(rs, "event/configure_part_group", {},
+                           get_mandatory_form_fields(self.add_part_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -929,7 +948,8 @@ class EventEventMixin(EventBaseFrontend):
         merge_dicts(rs.values, rs.ambience['part_group'].as_dict())
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"part_ids": rs.ambience['part_group'].parts.keys()})
-        return self.render(rs, "event/configure_part_group")
+        return self.render(rs, "event/configure_part_group", {},
+                           get_mandatory_form_fields(self.change_part_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -970,7 +990,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/configure_track_group")
+        return self.render(rs, "event/configure_track_group", {},
+                           get_mandatory_form_fields(self.add_track_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1035,7 +1056,8 @@ class EventEventMixin(EventBaseFrontend):
         merge_dicts(rs.values, rs.ambience['track_group'].as_dict())
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"track_ids": rs.ambience['track_group'].tracks.keys()})
-        return self.render(rs, "event/configure_track_group")
+        return self.render(rs, "event/configure_track_group", {},
+                           get_mandatory_form_fields(self.change_track_group))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1211,8 +1233,12 @@ class EventEventMixin(EventBaseFrontend):
             (str(account), f"{iban_filter(account.value)} ({account.get_bank()})")
             for account in Accounts.get_event_accounts()
         ]
-        return self.render(rs, "event/create_event",
-                           {'accounts': accounts})
+        mandatory_fields = (models.Event.mandatory_form_fields(creation=True)
+                            | get_mandatory_form_fields(self.create_event))
+        return self.render(
+            rs, "event/create_event", {'accounts': accounts},
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
@@ -1266,7 +1292,7 @@ class EventEventMixin(EventBaseFrontend):
                     'title': "Externenzusatzbeitrag",
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
-                    'condition': "any_part and not is_member",
+                    'condition': "any_part and not is_member and not age.U12",
                 },
             },
         })

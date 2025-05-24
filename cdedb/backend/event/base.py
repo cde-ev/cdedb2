@@ -20,7 +20,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -52,7 +52,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS,
     COURSE_SEGMENT_FIELDS,
@@ -80,6 +80,9 @@ from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 
+if TYPE_CHECKING:
+    from cdedb.backend.event.registration import ComplexRegistrationFee
+
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
 
@@ -93,7 +96,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self._event_keeper = EntityKeeper(
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
-    @access("event")
+    @access("anonymous")
     def is_locked(self, rs: RequestState, *, event_id: int) -> bool:
         """Helper to determine if an event is locked."""
         event_id = affirm(vtypes.ID, event_id)
@@ -693,10 +696,22 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, event_id, data['fields'])
-            # This also includes taking care of course tracks and fee modifiers, since
-            # they are each linked to a single event part.
+            # This also includes taking care of course tracks, since
+            # they are linked to a single event part.
             if 'parts' in data:
+                # Event begin can have an effect on fees.
+
+                current_fees = None
+                if current.is_balanced:
+                    current_fees = self._update_registrations_amount_owed(rs, event_id)
+
                 ret *= self._set_event_parts(rs, event_id, data['parts'])
+
+                new_fees = self._update_registrations_amount_owed(rs, event_id)
+
+                if current.is_balanced and (current_fees != new_fees):
+                    raise EventIsBalancedError(n_(
+                        "Event is balanced. Amount owed may no longer change."))
 
         return ret
 
@@ -980,7 +995,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self.get_event(rs, event_id)
 
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not change fee configuration."))
             if not fees:
                 return ret
@@ -1062,7 +1077,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @abc.abstractmethod
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
-                                          ) -> DefaultReturnCode: ...
+                                          ) -> dict[int, "ComplexRegistrationFee"]: ...
 
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,

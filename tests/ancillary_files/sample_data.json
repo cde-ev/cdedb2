@@ -4880,7 +4880,7 @@
             "kind": 1,
             "title": "Kinderpreis Warmup",
             "amount": "-5.00",
-            "condition": "part.Wu and field.is_child",
+            "condition": "part.Wu and age.U13",
             "notes": null
         },
         {
@@ -4888,7 +4888,7 @@
             "kind": 1,
             "title": "Kinderpreis 1. Hälfte",
             "amount": "-12.00",
-            "condition": "part.1.H. and field.is_child",
+            "condition": "part.1.H. and age.U16",
             "notes": null
         },
         {
@@ -4896,7 +4896,7 @@
             "kind": 1,
             "title": "Kinderpreis 2. Hälfte",
             "amount": "-19.00",
-            "condition": "part.2.H. and field.is_child",
+            "condition": "part.2.H. and age.U18",
             "notes": null
         },
         {
@@ -6144,7 +6144,7 @@
         {
             "id": 1,
             "event_id": 1,
-            "secret_hash": "$6$rounds=656000$QsRRW/SF0E/XS5cw$1eB.sENB2Rj2YfiorDgsvEYetMneDhUHQlHOZK0j.wBDwB2obAi8e2HOV/3tIpwsa3I9rKFhed4ayxnJLMQgM1",
+            "secret_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
             "ctime": "---now---",
             "etime": "2222-12-31T23:59:59+00:00",
             "rtime": null,
@@ -6249,6 +6249,10 @@
             "payment": "2014-01-01",
             "amount_paid": "200.00",
             "amount_owed": "553.99",
+            "amount_owed_by_kind": {
+                "1": "573.99",
+                "5": "-20.00"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6270,6 +6274,10 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "466.49",
+            "amount_owed_by_kind": {
+                "1": "461.49",
+                "3": "5.00"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6292,6 +6300,11 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "504.48",
+            "amount_owed_by_kind": {
+                "1": "534.49",
+                "5": "-30.00",
+                "10": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": false,
@@ -6312,6 +6325,9 @@
             "payment": "2014-04-04",
             "amount_paid": "548.48",
             "amount_owed": "431.99",
+            "amount_owed_by_kind": {
+                "1": "431.99"
+            },
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6334,6 +6350,10 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "584.48",
+            "amount_owed_by_kind": {
+                "1": "584.49",
+                "10": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": false,
             "list_consent": true,
@@ -6354,6 +6374,9 @@
             "payment": "2014-06-06",
             "amount_paid": "10.50",
             "amount_owed": "10.50",
+            "amount_owed_by_kind": {
+                "1": "10.50"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6375,6 +6398,7 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6391,6 +6415,7 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6407,6 +6432,7 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "0.00",
+            "amount_owed_by_kind": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6423,6 +6449,9 @@
             "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "4.20",
+            "amount_owed_by_kind": {
+                "1": "4.20"
+            },
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,

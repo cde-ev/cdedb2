@@ -22,6 +22,7 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from itertools import chain
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,6 +32,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
 
@@ -62,9 +65,11 @@ _CONFIG = LazyConfig()
 CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.common.validation.types import TypeMapping
     from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
+    TypeMapping = Mapping
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -809,6 +814,46 @@ def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     return value
 
 
+NoneType = type(None)
+
+
+def is_optional_type(type_: Any) -> bool:
+    return (
+        get_origin(type_) is Union
+        or get_origin(type_) is UnionType
+    ) and NoneType in get_args(type_)
+
+
+def is_list_type(type_: type[Any]) -> bool:
+    """Whether this is a custom list type.
+
+    Our validation accepts empty lists by default,
+    so we don't want to mark such inputs as mandatory.
+    """
+    return (
+        hasattr(type_, "__supertype__") and is_list_type(type_.__supertype__)
+        or get_origin(type_) is list  # get_origin(list[something]) is list
+    )
+
+
+def get_mandatory_form_fields(
+    *args: TypeMapping | Callable[..., werkzeug.Response],
+) -> set[str]:
+    """Extract which input fields are mandatory from a type dict or function.
+
+    :param args: Each parameter can be a frontend method or a mapping of
+        field names to types.
+    """
+    ret: set[str] = set()
+    for arg in args:
+        if isinstance(arg, Mapping):
+            ret |= {key for key, type_ in arg.items()
+                    if not (is_optional_type(type_) or is_list_type(type_))}
+        else:
+            ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
+    return ret
+
+
 @enum.unique
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
@@ -1392,11 +1437,10 @@ ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
 IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Version tag, so we know that we don't run out of sync with exported event
-#: data. This has to be incremented whenever the event schema changes.
+#: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-#: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (19, 1)
+EVENT_SCHEMA_VERSION = (19, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

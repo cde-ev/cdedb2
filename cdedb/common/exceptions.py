@@ -76,6 +76,10 @@ class DeletionImpossibleError(Exception):
     """Exception signalling that deletion is permanently blocked."""
 
 
+class EventIsBalancedError(Exception):
+    """Exception signalling, that a change to a balanced event was blocked."""
+
+
 class CryptographyError(Exception):
     """Exception signalling that a cryptographic action failed.
 

@@ -79,8 +79,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
     overload,
 )
@@ -347,10 +345,6 @@ def validate_check_optional(
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
-def is_optional(type_: type[T]) -> bool:
-    return get_origin(type_) is Union and NoneType in get_args(type_)
-
-
 def get_errors(errors: list[Error]) -> list[Error]:
     """Returns those errors which are not considered as warnings."""
     def is_error(e: Error) -> bool:
@@ -585,7 +579,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
     return ret
 
 
-def filter_none(data: dict[str, Any]) -> dict[str, Any]:
+def filter_none(data: Mapping[str, Any]) -> dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
 
@@ -890,16 +884,6 @@ def _shortname(val: Any, argname: Optional[str] = None, *,
 
 
 @_add_typed_validator
-def _shortname_identifier(val: Any, argname: Optional[str] = None, *,
-                          ignore_warnings: bool = False,
-                          **kwargs: Any) -> ShortnameIdentifier:
-    """A string used as shortname and as programmatically accessible identifier."""
-    val = _identifier(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameIdentifier(val)
-
-
-@_add_typed_validator
 def _shortname_restrictive_identifier(
         val: Any, argname: Optional[str] = None, *,
         ignore_warnings: bool = False,
@@ -907,8 +891,7 @@ def _shortname_restrictive_identifier(
     """A string used as shortname and as restrictive identifier"""
     val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
                                   **kwargs)
-    val = _shortname_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                **kwargs)
+    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     return ShortnameRestrictiveIdentifier(val)
 
 
@@ -1385,12 +1368,12 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_active': bool,
 }
 
-PERSONA_BASE_CREATION: Mapping[str, Any] = {
+PERSONA_BASE_CREATION: TypeMapping = {
     'username': Email,
-    'notes': Optional[str],
+    'notes': Optional[str],  # type: ignore[dict-item]
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': Optional[str],
+    'legal_given_names': Optional[str],  # type: ignore[dict-item]
     'show_legal_given_names': bool,
     'family_name': str,
     'title': NoneType,
@@ -1486,7 +1469,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
+PERSONA_FULL_CREATION: Mapping[str, Mapping[str, Any]] = {
     'ml': {**PERSONA_BASE_CREATION},
     'assembly': {**PERSONA_BASE_CREATION},
     'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
@@ -1494,7 +1477,7 @@ PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
             'is_member': bool, 'is_searchable': bool},
 }
 
-PERSONA_COMMON_FIELDS: dict[str, Any] = {
+PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1614,7 +1597,7 @@ def _persona(
         # promoting to cde realm may be used to grant a trial membership.
         #  since trial member implies is_member, we need to allow the latter here
         if val.get("is_cde_realm"):
-            optional_fields["is_member"] = bool
+            optional_fields |= {"is_member": bool}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -4409,8 +4392,8 @@ def _ballot(
 
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
-    'title': LegacyShortname,
-    'shortname': ShortnameIdentifier,
+    'title': str,
+    'shortname': ShortnameRestrictiveIdentifier,
 }
 
 

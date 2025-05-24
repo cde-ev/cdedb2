@@ -299,7 +299,9 @@ class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ProtoID = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True},
+    )
 
     title: str
     shortname: str
@@ -501,7 +503,10 @@ class EventFee(EventDataclass):
             return ""
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
-            parse_result, {}, {}, {}, condition_only=True)[1]
+            parse_result,
+            data={},  # type: ignore[typeddict-item]
+            condition_only=True,
+        )
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
@@ -546,7 +551,6 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (
-            self.event,
             self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
             self.sortkey,
             self.title,
@@ -578,7 +582,7 @@ class CustomQueryFilter(EventDataclass):
         return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.event_id, self.scope, self.title)
+        return self.scope, self.title
 
     @staticmethod
     def _get_field_string(fields: Collection[str]) -> str:
@@ -649,7 +653,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return (self.constraint_type, self.title)
+        return self.constraint_type, self.title
 
 
 @dataclasses.dataclass

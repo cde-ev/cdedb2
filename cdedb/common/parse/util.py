@@ -106,43 +106,35 @@ class TransactionType(CdEIntEnum):
 
     @property
     def has_event(self) -> bool:
-        return self in {TransactionType.EventFee,
-                        TransactionType.EventFeeRefund,
-                        TransactionType.InstructorRefund,
-                        TransactionType.EventExpenses,
-                        }
+        return self in {
+            TransactionType.EventFee,
+            TransactionType.EventFeeRefund,
+            TransactionType.InstructorRefund,
+            TransactionType.EventExpenses,
+        }
 
     @property
     def has_member(self) -> bool:
-        return self in {TransactionType.MembershipFee,
-                        TransactionType.EventFee,
-                        TransactionType.LastschriftInitiative,
-                        }
+        return self in {
+            TransactionType.MembershipFee,
+            TransactionType.EventFee,
+            TransactionType.LastschriftInitiative,
+        }
 
     @property
     def is_unknown(self) -> bool:
-        return self in {TransactionType.Unknown,
-                        TransactionType.Other,
-                        TransactionType.OtherPayment,
-                        }
+        return self in {
+            TransactionType.Unknown,
+            TransactionType.Other,
+            TransactionType.OtherPayment,
+        }
 
-    def old(self) -> str:
-        """Return a string representation compatible with the old excel
-        style.
+    def category(self) -> str:
+        """Return a string representation for excel and import
         """
-        if self == TransactionType.MembershipFee:
-            return "Mitgliedsbeitrag"
-        if self in {TransactionType.EventFee,
-                    TransactionType.EventExpenses,
-                    TransactionType.EventFeeRefund,
-                    TransactionType.InstructorRefund}:
-            return "Teilnahmebeitrag"
-        if self == TransactionType.LastschriftInitiative:
-            return "LastschriftInitiative"
-        if self == TransactionType.Donation:
-            return "Sonstiges"
-        else:
-            return "Sonstiges"
+        if self.has_member or self.has_event:
+            return self.display_str()
+        return "Sonstiges"
 
     def display_str(self) -> str:
         """
@@ -158,11 +150,9 @@ class TransactionType(CdEIntEnum):
             TransactionType.LastschriftInitiative: "Lastschriftinitiative",
             TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
-            TransactionType.EventFeeRefund:
-                "Teilnehmererstattung",
+            TransactionType.EventFeeRefund: "TN-Erstattung",
             TransactionType.InstructorRefund: "KL-Erstattung",
-            TransactionType.EventExpenses:
-                "Veranstaltungsausgabe",
+            TransactionType.EventExpenses: "Veranstaltungsausgabe",
             TransactionType.Expenses: "Ausgabe",
             TransactionType.AccountFee: "Kontogebühr",
             TransactionType.OtherPayment: "Andere Zahlung",

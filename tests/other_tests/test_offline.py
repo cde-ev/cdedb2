@@ -97,7 +97,6 @@ class TestOffline(FrontendTest):
                         model_droid.QuickPartialExportToken.get_token_string(
                             self.secrets['API_TOKENS']['quick_partial_export']),
                 })
-            self.assertEqual(self.response.json["message"], "success")
             expectation = {
                 'EVENT_SCHEMA_VERSION',
                 'kind',
@@ -109,7 +108,7 @@ class TestOffline(FrontendTest):
                 'courses',
                 'registrations',
             }
-            self.assertEqual(set(self.response.json["export"]), expectation)
+            self.assertEqual(set(self.response.json), expectation)
             self.login(user)
 
             # Test event keeper works properly, by triggering a manual commit

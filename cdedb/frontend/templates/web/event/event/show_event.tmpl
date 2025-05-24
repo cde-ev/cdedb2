@@ -225,7 +225,8 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/unlock_event') }}" method="POST" id="unlockeventform">
                                 {{ util.anti_csrf_token('event/unlock_event') }}
-                                {{ util.input_submit(label=gettext("Unlock Event"), icon='unlock', aclass='btn btn-primary') }}
+                                {{ util.input_submit(label=gettext("Unlock Event"), icon='unlock', aclass='btn btn-primary',
+                                                     readonly=not is_privileged_for("event/unlock_event")) }}
                             </form>
                         </div>
                     {% else %}
@@ -235,7 +236,8 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockeventform">
                                 {{ util.anti_csrf_token('event/lock_event') }}
-                                {{ util.input_submit(label=gettext("Lock Event"), icon='lock', aclass='btn btn-danger') }}
+                                {{ util.input_submit(label=gettext("Lock Event"), icon='lock', aclass='btn btn-danger',
+                                                     readonly=not is_privileged_for("event/lock_event")) }}
                             </form>
                         </div>
                     {% endif %}

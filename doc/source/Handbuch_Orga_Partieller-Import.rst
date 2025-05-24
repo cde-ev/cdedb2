@@ -170,6 +170,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (19, 2): Die Veranstaltungssperre wurde von ``offline_lock`` zu ``is_locked``
+  umbenannt. Der Voll-Import von Veranstaltungen aus einer Mitnahmeversion wurde abgeschafft.
 * Version (19, 1): Neues Veranstaltungsfeld ``is_balanced``.
 * Version (19, 0): Ersatz des Checkin-Zeitpunkts durch eine Liste von Checkins und Checkouts
 * Version (18, 0): Umstellung des Namensmodells von Personen

@@ -180,7 +180,9 @@ _SAMPLE_DATA = _read_sample_data()
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def _make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(
+        backend: B, internal: bool = False, allow_private: bool = False,
+) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -261,7 +263,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if name == "_event_keeper":
                 return attr
             if any([
-                not getattr(attr, "access", False),
+                not getattr(attr, "access", False) and not allow_private,
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
@@ -443,6 +445,7 @@ class BackendTest(CdEDBTest):
     """
     maxDiff = None
     session: ClassVar[SessionBackend]
+    _raw_backend: ClassVar[CoreBackend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
     event: ClassVar[EventBackend]
@@ -457,6 +460,7 @@ class BackendTest(CdEDBTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls._raw_backend = cls.initialze_private_backend(CoreBackend)
         cls.core = cls.initialize_backend(CoreBackend)
         cls.cde = cls.initialize_backend(CdEBackend)
         cls.event = cls.initialize_backend(EventBackend)
@@ -495,10 +499,15 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        self.core.logout(self.key)
+        if allow_anonymous:
+            try:
+                self.core.logout(self.key)
+            except PrivilegeError:
+                pass
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -595,7 +604,11 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+
+    @classmethod
+    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
@@ -934,8 +947,8 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
-                                                 Callable[..., None]]:
+def as_users(*users: UserIdentifier, maintain_data: bool = False,
+             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
@@ -944,7 +957,12 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
-                        self.setUp()
+                        if maintain_data:
+                            if isinstance(self, FrontendTest):
+                                self.get("/")
+                            self.logout(allow_anonymous=True)
+                        else:
+                            self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
@@ -1139,7 +1157,8 @@ class FrontendTest(BackendTest):
 
     def submit(self, form: webtest.Form, button: str = "", *,
                check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: Optional[str] = None) -> None:
+               verbose: bool = False, value: Optional[str] = None,
+               check_mandatory_filled: bool = True) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1149,10 +1168,22 @@ class FrontendTest(BackendTest):
             that the submission produces a notification indicating success.
         :param check_button_attrs: If True and button is given, check whether the
             button specifies a different form action and/or method.
+        :param check_mandatory_filled: If True, check that all fields with a `required`
+            attribute are non-empty. Most browers do this.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        if check_mandatory_filled:
+            # check that all required inputs are filled
+            for fieldname, field_list in form.fields.items():
+                if len(field_list) > 1:  # these are checkboxes or submit buttons
+                    # TODO: handle checkboxes when required-attr implemented there
+                    continue
+                field: webtest.forms.Field = unwrap(field_list)
+                if "required" in field.attrs:
+                    self.assertNotEqual(
+                        field.value, "", f"Required field {fieldname} left empty!")
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
@@ -1219,7 +1250,8 @@ class FrontendTest(BackendTest):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
@@ -1232,12 +1264,19 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        else:
+        def _logout() -> None:
             f = self.response.forms['logoutform']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
+
+        if allow_anonymous:
+            if not self.user_in("anonymous"):
+                if 'logoutform' in self.response.forms:
+                    _logout()
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            _logout()
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -1389,7 +1428,20 @@ class FrontendTest(BackendTest):
         if not tmp:
             self.fail(f"Div '{div}' not found.")
         classes = tmp[0].classes
-        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
+        self.assertIn(
+            html_class, classes,
+            f"{html_class} not in {list(classes)} of div {div!r}.",
+        )
+
+    def assertHasNotClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertNotIn(
+            html_class, classes,
+            f"{html_class} unexpectedly in {list(classes)} of div {div!r}.",
+        )
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
@@ -1991,7 +2043,7 @@ class FrontendTest(BackendTest):
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('new_username', "Darf nicht leer sein.")
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "zeruda@example.cde"

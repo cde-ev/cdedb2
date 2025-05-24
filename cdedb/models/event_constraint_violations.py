@@ -24,11 +24,12 @@ import collections
 import dataclasses
 import datetime
 import enum
+import functools
 import inspect
 import itertools
 from collections.abc import Collection, Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Self, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -78,11 +79,34 @@ class ViolationSeverity(enum.Enum):
             ViolationSeverity.DEBUG: 'panel-default',
         }[self]
 
+    @classmethod
+    def map(cls) -> dict[str, int]:
+        return {
+            entry.name: entry.value
+            for entry in cls
+        }
+
     def __lt__(self, other: 'ViolationSeverity') -> bool:
         return self.value < other.value
 
     def __ge__(self, other: 'ViolationSeverity') -> bool:
         return self.value >= other.value
+
+
+class ViolationKind(enum.Enum):
+    """Different kinds to filter by."""
+    financial = enum.auto()
+    minors_and_mixed_lodging = enum.auto()
+    courses = enum.auto()
+    lodgements = enum.auto()
+    other = enum.auto()
+
+    @classmethod
+    def map(cls) -> dict[str, int]:
+        return {
+            entry.name: entry.value
+            for entry in cls
+        }
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -156,6 +180,7 @@ class ViolationList(list['ConstraintViolation']):
 
     def get(
             self, *,
+            event_id: int = cast(int, _MISSING),
             course_id: int | None = cast(int, _MISSING),
             lodgement_id: int | None = cast(int, _MISSING),
             registration_id: int | None = cast(int, _MISSING),
@@ -176,7 +201,8 @@ class ViolationList(list['ConstraintViolation']):
         """
         return ViolationList([
             v for v in self
-            if (course_id is _MISSING
+            if (event_id is _MISSING or v.event.id == event_id)
+            and (course_id is _MISSING
                     or v.course is None and course_id is None
                     or v.course is not None and v.course['id'] == course_id
                     or (assigned_course := getattr(v, 'assigned_course', None)) is not None and assigned_course['id'] == course_id
@@ -332,6 +358,7 @@ class ConstraintViolation(abc.ABC):
     `dispatch` constructor. To make this work, an abstract subclass need only define
     the additional context needed for the evaluation ob its non-abstract children.
     """
+    kind: ClassVar[ViolationKind]
     event: models.Event
     severity: ViolationSeverity
 
@@ -398,21 +425,35 @@ class ConstraintViolation(abc.ABC):
 
         Need only be overridden if a subclass has additional associated primary entities.
         """
-        ret = {}
+        ret = {
+            'event': (
+                "event/show_event",
+                {'event_id': self.event.id},
+            ),
+        }
         if self.registration:
             ret['registration'] = (
                 "event/show_registration",
-                {'registration_id': self.registration['id']},
+                {
+                    'event_id': self.event.id,
+                    'registration_id': self.registration['id'],
+                },
             )
         if self.course:
             ret['course'] = (
                 "event/show_course",
-                {'course_id': self.course['id']},
+                {
+                    'event_id': self.event.id,
+                    'course_id': self.course['id'],
+                },
             )
         if self.lodgement:
             ret['lodgement'] = (
                 "event/show_lodgement",
-                {'lodgement_id': self.lodgement['id']},
+                {
+                    'event_id': self.event.id,
+                    'lodgement_id': self.lodgement['id'],
+                },
             )
         return ret
 
@@ -422,7 +463,18 @@ class ConstraintViolation(abc.ABC):
         return self.get_sortkey() < other.get_sortkey()
 
     def get_sortkey(self) -> Sortkey:
-        return (-self.severity.value, self.__class__.__name__)
+        return (-self.severity.value, self.__class__.__name__) + self.event.get_sortkey()
+
+    @classmethod
+    @functools.cache
+    def _get_subclasses(
+            cls,
+    ) -> tuple[list[type["ConstraintViolation"]], list[type["ConstraintViolation"]]]:
+        abstract: list[type[ConstraintViolation]] = []
+        non_abstract: list[type[ConstraintViolation]] = []
+        for cv in cls.__subclasses__():
+            (abstract if inspect.isabstract(cv) else non_abstract).append(cv)
+        return abstract, non_abstract
 
     @classmethod
     def get_contexts(
@@ -468,11 +520,11 @@ class ConstraintViolation(abc.ABC):
         """
         ret = ViolationList()
 
+        abstract, non_abstrct = cls._get_subclasses()
         for new_context in cls.get_contexts(aux, context):
-            for cv in cls.__subclasses__():
-                if inspect.isabstract(cv):
-                    ret += cv.dispatch(aux, new_context)
-                    continue
+            for cv in abstract:
+                ret.extend(cv.dispatch(aux, new_context))
+            for cv in non_abstrct:
                 ret.append(cv.check(aux, new_context))
 
         return ret
@@ -481,6 +533,8 @@ class ConstraintViolation(abc.ABC):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
     registration: CdEDBObject
+
+    kind = ViolationKind.other
 
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
@@ -521,6 +575,8 @@ class RegistrationPartConstraintViolation(RegistrationConstraintViolation, abc.A
 class RegistrationTrackConstraintViolation(RegistrationConstraintViolation, abc.ABC):
     track: models.CourseTrack
 
+    kind = ViolationKind.courses
+
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
         return [context.add(track=track) for track in aux.event.tracks.values()]
@@ -542,6 +598,8 @@ class RegistrationPartGroupConstraintViolation(RegistrationConstraintViolation, 
 class RegistrationTrackGroupConstraintViolation(RegistrationConstraintViolation, abc.ABC):
     track_group: models.TrackGroup
 
+    kind = ViolationKind.courses
+
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
         return [
@@ -553,6 +611,8 @@ class RegistrationTrackGroupConstraintViolation(RegistrationConstraintViolation,
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CourseConstraintViolation(ConstraintViolation, abc.ABC):
     course: CdEDBObject
+
+    kind = ViolationKind.courses
 
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
@@ -583,6 +643,8 @@ class CourseTrackGroupConstraintViolation(CourseConstraintViolation, abc.ABC):
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class LodgementConstraintViolation(ConstraintViolation, abc.ABC):
     lodgement: CdEDBObject
+
+    kind = ViolationKind.lodgements
 
     @classmethod
     def get_contexts(cls, aux: ViolationAux, context: ViolationContext) -> list[ViolationContext]:
@@ -903,6 +965,8 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class InconsistentPaymentCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -952,6 +1016,8 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NotPaidCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -996,6 +1062,8 @@ class NotPaidCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ZeroAmountOwedCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -1040,6 +1108,8 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NegativeAmountOwedCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -1074,6 +1144,8 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NegativeRemainingOwedCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -1112,6 +1184,8 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class RemainingOwedCV(RegistrationConstraintViolation):
+    kind = ViolationKind.financial
+
     min_involved_part_begin: datetime.date
 
     @classmethod
@@ -1306,6 +1380,8 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class MissingMinorFormCV(RegistrationConstraintViolation):
+    kind = ViolationKind.minors_and_mixed_lodging
+
     participant_begin: datetime.date
 
     @classmethod
@@ -1364,6 +1440,8 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class IllegalMixedLodgingCV(RegistrationConstraintViolation):
+    kind = ViolationKind.minors_and_mixed_lodging
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -1478,6 +1556,8 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class NoLodgementCV(RegistrationPartConstraintViolation):
+    kind = ViolationKind.lodgements
+
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         """
@@ -2018,6 +2098,8 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
+    kind = ViolationKind.minors_and_mixed_lodging
+
     not_specified: bool
 
     @classmethod

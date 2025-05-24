@@ -92,6 +92,14 @@ _DEFAULTS = {
     # Global stuff #
     ################
 
+    # host of the http application, since we do not trust apaches Host Header
+    "HTTP_HOSTS": [
+        "localhost",  # used in test suite
+        "localhost:20443",  # regular forwarded port from vm
+        "localhost:8443",  # used by docker
+        "localhost:5000",  # interactive debugger
+    ],
+
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
 
