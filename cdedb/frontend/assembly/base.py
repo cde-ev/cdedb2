@@ -17,13 +17,20 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState, merge_dicts, now
+from cdedb.common import (
+    CdEDBObject,
+    RequestState,
+    get_mandatory_form_fields,
+    merge_dicts,
+    now,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
+    PERSONA_COMMON_FIELDS,
     PERSONA_FULL_CREATION,
     filter_none,
 )
@@ -77,7 +84,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return self.render(rs, "base/create_user")
+        return self.render(rs, "base/create_user", {},
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
@@ -193,13 +201,16 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata("presider_id")
+    @REQUESTdata("presider_id", "ack_delete")
     def remove_presider(self, rs: RequestState, assembly_id: int,
-                        presider_id: vtypes.ID) -> Response:
+                        presider_id: vtypes.ID, ack_delete: bool) -> Response:
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         if presider_id not in rs.ambience['assembly']['presiders']:
@@ -219,7 +230,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "base/configure_assembly")
+        mandatory_fields = get_mandatory_form_fields(
+            self.change_assembly, ASSEMBLY_COMMON_FIELDS)
+        return self.render(rs, "base/configure_assembly",
+                           mandatory_fields=mandatory_fields)
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -246,7 +260,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "base/configure_assembly")
+        mandatory_fields = get_mandatory_form_fields(
+            self.create_assembly, ASSEMBLY_COMMON_FIELDS)
+        return self.render(rs, "base/configure_assembly",
+                           mandatory_fields=mandatory_fields)
 
     @staticmethod
     def _get_mailinglist_setter(rs: RequestState, assembly: CdEDBObject,

@@ -81,7 +81,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-psycopg python3-psycopg-pool                            \
     \
     python3-pip python3-click python3-freezegun                     \
-    python3-coverage                                                \
+    python3-coverage python3-cssselect                              \
     \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
     libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \

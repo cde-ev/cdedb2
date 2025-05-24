@@ -4,9 +4,10 @@
 The `EventLodgementBackend` subclasses the `EventBaseBackend` and provides
 functionality for managing lodgements and lodgement groups belonging to an event.
 """
+import abc
 import collections
 import dataclasses
-from collections.abc import Collection, Iterator
+from collections.abc import Collection, Iterator, Mapping
 from functools import cached_property
 from typing import Any, Optional, Protocol
 
@@ -66,7 +67,7 @@ class LodgementInhabitants:
         return iter((self.regular, self.camping_mat))
 
 
-class EventLodgementBackend(EventBaseBackend):
+class EventLodgementBackend(EventBaseBackend, abc.ABC):
     @access("event")
     def list_lodgement_groups(self, rs: RequestState,
                               event_id: int) -> dict[int, str]:
@@ -143,7 +144,7 @@ class EventLodgementBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.lodgements_write,
                                  event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
 
             # Do the actual work:
             ret *= self.sql_update(rs, "event.lodgement_groups", data)
@@ -337,7 +338,7 @@ class EventLodgementBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.lodgements_write,
                                  event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
-            self.assert_offline_lock(rs, event_id=event_id)
+            self.assert_lock(rs, event_id=event_id)
 
             # now we get to do the actual work
             ret = 1
@@ -382,7 +383,7 @@ class EventLodgementBackend(EventBaseBackend):
         if not is_privileged(rs, EventPrivileges.lodgements_write,
                              event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
+        self.assert_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "event.lodgements", data)
             self.event_log(
@@ -428,7 +429,7 @@ class EventLodgementBackend(EventBaseBackend):
         event_id = lodgement["event_id"]
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=event_id)
+        self.assert_lock(rs, event_id=event_id)
 
         blockers = self.delete_lodgement_blockers(rs, lodgement_id)
         if not cascade:
@@ -469,10 +470,12 @@ class EventLodgementBackend(EventBaseBackend):
             self, rs: RequestState, event_id: int,
             lodgement_ids: Collection[int] | None = None,
             involved: bool | None = None,
+            _registrations: CdEDBObjectMap | None = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         involved = affirm_optional(bool, involved)
+        _registrations = affirm_optional(Mapping, _registrations)  # type: ignore[type-abstract]
 
         if not is_privileged(
                 rs, EventPrivileges.lodgements_read | EventPrivileges.registrations_stats,
@@ -494,17 +497,20 @@ class EventLodgementBackend(EventBaseBackend):
             else:
                 condition += " AND NOT(rp.status = ANY(%s))"
 
-        # Retrieve all registrations.
-        query = f"""
-            SELECT registration_id
-            FROM event.registration_parts rp
-                JOIN event.event_parts ep ON rp.part_id = ep.id
-            WHERE ep.event_id = %s AND {condition}
-        """
-        registration_ids = {
-            e['registration_id'] for e in self.query_all(rs, query, params)
-        }
-        registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+        if _registrations is None:
+            # Retrieve all registrations.
+            query = f"""
+                SELECT registration_id
+                FROM event.registration_parts rp
+                    JOIN event.event_parts ep ON rp.part_id = ep.id
+                WHERE ep.event_id = %s AND {condition}
+            """
+            registration_ids = {
+                e['registration_id'] for e in self.query_all(rs, query, params)
+            }
+            registrations = self.get_registrations(rs, registration_ids)  # type: ignore[attr-defined]
+        else:
+            registrations = _registrations
 
         # Retrieve grouped registration ids.
         query = f"""

@@ -63,7 +63,7 @@
             {% set slices = 1 if ordered|length <= 5 else (2 if ordered|length <= 10 else 3) %}
             {% for list in ordered|slice(slices) %}
                 <div class="col-sm-{{ 12 // slices }}">
-                    <ul>
+                    <ul {% if not loop.last %}class="nosp"{% endif %}>
                         {% for anid in list %}
                             <li>{{ labels[anid] }}</li>
                         {% endfor %}

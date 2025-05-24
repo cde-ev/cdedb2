@@ -11,6 +11,7 @@ import collections.abc
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -52,6 +53,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    NotRequired,
     Optional,
     Protocol,
     TypeVar,
@@ -71,6 +73,7 @@ import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
 
+import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -104,6 +107,7 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
+    get_mandatory_form_fields,
     glue,
     json_serialize,
     make_persona_name,
@@ -118,7 +122,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
+from cdedb.common.parse.util import TransactionType
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -131,6 +135,7 @@ from cdedb.common.roles import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
+from cdedb.common.validation.validate import PERSONA_COMMON_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -140,6 +145,7 @@ from cdedb.filter import (
     JINJA_FILTERS,
     cdedbid_filter,
     enum_entries_filter,
+    money_filter,
     safe_filter,
     sanitize_None,
 )
@@ -398,6 +404,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
+            'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
@@ -638,6 +645,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        if attachment_hash is None:
+            rs.append_validation_error(
+                ("attachment", ValueError(n_("Must not be empty."))),
+            )
         return attachment_hash, attachment_filename
 
     @staticmethod
@@ -761,9 +772,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
+
+        :param mandatory_fields: specifies which input fields should be marked
+            as mandatory
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
@@ -799,6 +814,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['defect_username'], params['mls_with_defect_explicits'] = (
             self.transform_defect_addresses(rs, defect_addresses))
 
+        params.setdefault('mandatory_fields', mandatory_fields or [])
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -1371,6 +1387,166 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 **(template_kwargs or {}),
             })
 
+    def examine_money_transfer(
+            self, rs: RequestState,
+            datum: CdEDBObject, *,
+            events_by_shortname: dict[str, models_event.Event],
+            amounts_paid: dict[int, decimal.Decimal],
+            category: Optional[str] = None,
+    ) -> CdEDBObject:
+        """Check one line specifying a money transfer.
+
+        We test for fitness of the data itself.
+
+        :returns: The processed input datum.
+        """
+        raw = datum['raw']
+        problems, infos = [], []
+
+        if category is None:
+            category, p = inspect_validation(
+                vtypes.Identifier, raw['category'], argname="category")
+            problems.extend(p)
+        persona = None
+        registration = None
+        event = None
+
+        date, p = inspect_validation(
+            datetime.date, raw['date'], argname="date")
+        problems.extend(p)
+
+        amount, p = parse_util.check_amount(raw['amount_german'])
+        problems.extend(p)
+
+        persona_id, p = inspect_validation(
+            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+        problems.extend(p)
+
+        family_name, p = inspect_validation(
+            str, datum['raw']['family_name'], argname="family_name")
+        problems.extend(p)
+
+        given_names, p = inspect_validation(
+            str, datum['raw']['given_names'], argname="given_names")
+        problems.extend(p)
+
+        if category is None:
+            problems.append(('category', ValueError(n_("Invalid category."))))
+            type_ = TransactionType.Unknown
+        elif category == TransactionType.MembershipFee.category():
+            type_ = TransactionType.MembershipFee
+            if amount is not None and amount <= 0:
+                problems.append((
+                    'amount',
+                    ValueError(n_("Must be greater than zero.")),
+                ))
+        elif event := events_by_shortname.get(category):
+            type_ = TransactionType.EventFee
+            if amount is not None and amount == 0:
+                problems.append(('amount', ValueError(n_("Must not be zero."))))
+        else:
+            problems.append(('category', ValueError(n_("Unknown event."))))
+            type_ = TransactionType.Unknown
+
+        if persona_id:
+            try:
+                persona = self.coreproxy.get_persona(rs, persona_id)
+            except KeyError:
+                problems.append((
+                    'persona_id',
+                    ValueError(n_("No Member with ID %(p_id)s found."),
+                               {'p_id': persona_id}),
+                ))
+            else:
+                if persona['is_archived']:
+                    problems.append(
+                        ('persona_id', ValueError(n_("Persona is archived."))))
+                if type_ == TransactionType.MembershipFee:
+                    if not persona['is_cde_realm']:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not in CdE realm.")),
+                        ))
+                elif type_ == TransactionType.EventFee:
+                    if not persona['is_event_realm']:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not in event realm.")),
+                        ))
+                    assert event is not None
+                    registration_ids = self.eventproxy.list_registrations(
+                        rs, event.id, persona_id,
+                    )
+                    if not registration_ids:
+                        problems.append((
+                            'persona_id',
+                            ValueError(n_("Persona is not registerd for this event.")),
+                        ))
+                    elif amount:
+                        registration = self.eventproxy.get_registration(
+                            rs, unwrap(registration_ids.keys()),
+                        )
+                        if registration['id'] in amounts_paid:
+                            amount_paid = amounts_paid[registration['id']]
+                        else:
+                            amount_paid = registration['amount_paid']
+                        total = amount_paid + amount
+                        fee = registration['amount_owed']
+
+                        if (registration['ctime']
+                                and date < registration['ctime'].date()):
+                            infos.append((
+                                'date',
+                                ValueError(n_(
+                                    "Payment date before registration.")),
+                            ))
+
+                        params = {
+                            'total': money_filter(total, lang=rs.lang),
+                            'expected': money_filter(fee, lang=rs.lang),
+                        }
+                        if total < fee:
+                            infos.append((
+                                'amount',
+                                ValueError(
+                                    n_("Not enough money. %(total)s < %(expected)s"),
+                                    params,
+                                ),
+                            ))
+                        elif total > fee:
+                            infos.append((
+                                'amount',
+                                ValueError(
+                                    n_("Too much money. %(total)s > %(expected)s"),
+                                    params,
+                                ),
+                            ))
+                        amounts_paid[registration['id']] = total
+
+                if family_name != persona['family_name']:
+                    problems.append((
+                        'family_name', ValueError(n_("Family name doesn’t match.")),
+                    ))
+
+                if given_names != persona['given_names']:
+                    problems.append((
+                        'given_names', ValueError(n_("Given names don’t match.")),
+                    ))
+
+        datum.update({
+            'category': category,
+            'persona': persona,
+            'persona_id': persona['id'] if persona else None,
+            'event': event,
+            'event_id': event.id if event else None,
+            'registration_id': registration['id'] if registration else None,
+            'amount': amount,
+            'date': date,
+            'problems': problems,
+            'infos': infos,
+        })
+        return datum
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1387,7 +1563,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
-        return self.render(rs, "create_user")
+        return self.render(rs, "create_user", {},
+                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
@@ -1629,28 +1806,28 @@ class Worker(threading.Thread):
 
 
 class AmbienceDict(typing.TypedDict):
-    persona: CdEDBObject
-    privilege_change: CdEDBObject
-    genesis_case: CdEDBObject
-    lastschrift: CdEDBObject
-    transaction: CdEDBObject
-    event: models_event.Event
-    pevent: CdEDBObject
-    course: CdEDBObject
-    pcourse: CdEDBObject
-    registration: CdEDBObject
-    group: CdEDBObject
-    lodgement: CdEDBObject
-    part_group: models_event.PartGroup
-    track_group: models_event.TrackGroup
-    fee: models_event.EventFee
-    orga_token: models_droid.OrgaToken
-    custom_filter: CustomQueryFilter
-    attachment: CdEDBObject
-    attachment_version: CdEDBObject
-    assembly: CdEDBObject
-    ballot: CdEDBObject
-    mailinglist: models_ml.Mailinglist
+    persona: NotRequired[CdEDBObject]
+    privilege_change: NotRequired[CdEDBObject]
+    genesis_case: NotRequired[CdEDBObject]
+    lastschrift: NotRequired[CdEDBObject]
+    transaction: NotRequired[CdEDBObject]
+    event: NotRequired[models_event.Event]
+    pevent: NotRequired[CdEDBObject]
+    course: NotRequired[CdEDBObject]
+    pcourse: NotRequired[CdEDBObject]
+    registration: NotRequired[CdEDBObject]
+    group: NotRequired[CdEDBObject]
+    lodgement: NotRequired[CdEDBObject]
+    part_group: NotRequired[models_event.PartGroup]
+    track_group: NotRequired[models_event.TrackGroup]
+    fee: NotRequired[models_event.EventFee]
+    orga_token: NotRequired[models_droid.OrgaToken]
+    custom_filter: NotRequired[CustomQueryFilter]
+    attachment: NotRequired[CdEDBObject]
+    attachment_version: NotRequired[CdEDBObject]
+    assembly: NotRequired[CdEDBObject]
+    ballot: NotRequired[CdEDBObject]
+    mailinglist: NotRequired[models_ml.Mailinglist]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1807,13 +1984,18 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> werkzeug.Response:
-            if rs.user.roles & access_list:
+            roles = rs.user.roles.union(
+                f"{realm}.{realm_role}"
+                for realm, realm_roles in rs.user.realm_roles.items()
+                for realm_role in realm_roles
+            )
+            if roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 expects_persona = any('droid' not in role
                                       for role in access_list)
-                if rs.user.roles == {"anonymous"} and expects_persona:
+                if roles == {"anonymous"} and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -1836,7 +2018,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                log_msg = msg.format(**params) + f" Roles: {roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
@@ -2015,10 +2197,11 @@ def REQUESTdata(
     """
 
     def wrap(fun: F) -> F:
+        hints = _hints or typing.get_type_hints(fun)
+
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            hints = _hints or typing.get_type_hints(fun)
             for item in spec:
                 if item.startswith('#'):
                     name = item[1:]
@@ -2088,6 +2271,11 @@ def REQUESTdata(
                             kwargs[name] = check_validation(
                                 rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
+
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name.removeprefix('#')] for name in spec})
 
         return cast(F, new_fun)
 
@@ -2200,53 +2388,27 @@ def request_dict_extractor(
 
 
 # noinspection PyPep8Naming
-def REQUESTfile(*args: str) -> Callable[[F], F]:
+def REQUESTfile(*spec: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
-    :param args: Names of file parameters.
-    """
-
-    def wrap(fun: F) -> F:
-        @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args2: Any,
-                    **kwargs: Any) -> Any:
-            for name in args:
-                if name not in kwargs:
-                    kwargs[name] = rs.request.files.get(name, None)
-                rs.values[name] = kwargs[name]
-            return fun(obj, rs, *args2, **kwargs)
-
-        return cast(F, new_fun)
-
-    return wrap
-
-
-def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
-    """This decorator checks the access with respect to a specific event. The
-    event is specified by id which has either to be a keyword
-    parameter or the first positional parameter after the request state.
-
-    The event has to be organized via the DB. Only orgas and privileged
-    users are admitted. Additionally this can check for the offline
-    lock, so that no modifications happen to locked events.
+    :param spec: Names of file parameters.
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
-                raise werkzeug.exceptions.Forbidden(
-                    n_("This page can only be accessed by orgas."))
-            if required_privilege & EventPrivileges.all_write:
-                is_locked = obj.eventproxy.is_offline_locked(
-                    rs, event_id=rs.ambience['event'].id)
-                if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                    raise werkzeug.exceptions.Forbidden(
-                        n_("This event is locked for offline usage."))
+            for name in spec:
+                if name not in kwargs:
+                    kwargs[name] = rs.request.files.get(name, None)
+                rs.values[name] = kwargs[name]
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
+        hints = typing.get_type_hints(fun)
+        if not hasattr(new_fun, "mandatory_form_fields"):
+            new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
+        new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
+            {name: hints[name] for name in spec})
 
         return cast(F, new_fun)
 

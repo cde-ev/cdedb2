@@ -113,6 +113,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_deleted"),
     n_("EventLogCodes.registration_payment_received"),
     n_("EventLogCodes.registration_payment_reimbursed"),
+    n_("EventLogCodes.registration_payment_received_orga"),
+    n_("EventLogCodes.registration_payment_reimbursed_orga"),
     n_("EventLogCodes.event_locked"),
     n_("EventLogCodes.event_unlocked"),
     n_("EventLogCodes.event_partial_import"),
@@ -409,6 +411,18 @@ I18N_STRINGS = (
     # Lodgement violations.
     n_("IncorrectNumInhabitantsCV"),
     n_("IllegalMixedLodgementCV"),
+
+    n_("ViolationSeverity.DEBUG"),
+    n_("ViolationSeverity.INFO"),
+    n_("ViolationSeverity.WARNING"),
+    n_("ViolationSeverity.ERROR"),
+    n_("ViolationSeverity.CRITICAL"),
+
+    n_("ViolationKind.financial"),
+    n_("ViolationKind.minors_and_mixed_lodging"),
+    n_("ViolationKind.courses"),
+    n_("ViolationKind.lodgements"),
+    n_("ViolationKind.other"),
 
     #
     # Query datatypes

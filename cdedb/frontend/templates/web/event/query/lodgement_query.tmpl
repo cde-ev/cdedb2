@@ -3,7 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_queryform.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Lodgement Query ({{ title }})
@@ -20,22 +24,16 @@
 {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query"), active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-4">
-            <div class="p button-par">
-                {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), icon='plus',
-                             readonly=not is_privileged_for('create_lodgement'), aclass='btn btn-sm btn-success') }}
-            {% if ambience['event']['fields'] %}
-                {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].lodgement.value}), gettext("Set Field"),
-                             readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
-            {% endif %}
-            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].lodgement}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
-            </div>
-        </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries(enums['QueryScope'].lodgement, default_queries) }}
-        </div>
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), icon='plus',
+                     readonly=not is_privileged_for('create_lodgement'), aclass='btn btn-sm btn-success') }}
+    {% if ambience['event']['fields'] %}
+        {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].lodgement.value}), gettext("Set Field"),
+                     readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
+    {% endif %}
+    {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].lodgement}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
     </div>
+    {{ generic.place_default_queries(enums['QueryScope'].lodgement, default_queries, num_columns=3) }}
 
     {{ generic.format_query(enums['QueryScope'].lodgement, spec, selection_default=selection_default) }}
 

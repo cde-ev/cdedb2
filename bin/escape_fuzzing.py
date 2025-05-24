@@ -65,6 +65,7 @@ def work(
     app = Application()
     wt_app = webtest.TestApp(app, extra_environ={
         'REMOTE_ADDR': "127.0.0.0",
+        'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'})
     if not outdir.exists():

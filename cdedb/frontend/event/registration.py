@@ -9,7 +9,7 @@ import csv
 import datetime
 import decimal
 import io
-import re
+import itertools
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
@@ -20,24 +20,26 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
     ValidationWarning,
     build_msg,
     determine_age_class,
-    diacritic_patterns,
     get_hash,
+    get_mandatory_form_fields,
     json_serialize,
     make_persona_name,
     merge_dicts,
     now,
     unwrap,
 )
+from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -45,7 +47,6 @@ from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect,
-    Headers,
     REQUESTdata,
     REQUESTdatadict,
     REQUESTfile,
@@ -54,266 +55,143 @@ from cdedb.frontend.common import (
     cdedbid_filter,
     check_validation as check,
     check_validation_optional as check_optional,
-    event_guard,
-    inspect_validation as inspect,
     make_event_fee_reference,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 
 class EventRegistrationMixin(EventBaseFrontend):
-    @access("finance_admin")
-    def batch_fees_form(self, rs: RequestState, event_id: int,
-                        data: Optional[Collection[CdEDBObject]] = None,
-                        csvfields: Optional[Collection[str]] = None,
-                        saldo: Optional[decimal.Decimal] = None) -> Response:
-        """Render form.
+    @access("event")
+    @event_guard(EventPrivileges.payment_write)
+    def batch_fees_form(
+            self, rs: RequestState, event_id: int,
+            data: Optional[list[CdEDBObject]] = None,
+            csvfields: Optional[Collection[str]] = None,
+            saldo: Optional[decimal.Decimal] = None,
+    ) -> Response:
+        if rs.ambience['event'].is_balanced:
+            rs.notify("error", n_("Event is balanced. May not book payments."))
+            return self.redirect(rs, "event/show_event")
 
-        The ``data`` parameter contains all extra information assembled
-        during processing of a POST request.
-        """
-        # manual check for offline log, since we can not use event_guard here
-        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
-        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            raise werkzeug.exceptions.Forbidden(
-                n_("This event is locked for offline usage."))
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
-        return self.render(rs, "registration/batch_fees",
-                           {'data': data, 'csvfields': csv_position,
-                            'saldo': saldo})
+        return self.render(
+            rs, "registration/batch_fees",
+            {'data': data, 'csvfields': csv_position, 'saldo': saldo},
+            get_mandatory_form_fields(self.batch_fees),
+        )
 
-    def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                     expected_fees: dict[int, decimal.Decimal],
-                     seen_reg_ids: set[int],
-                     ) -> CdEDBObject:
-        """Check one line specifying a paid fee. Uninlined from `batch_fees`.
-
-        We test for fitness of the data itself.
-
-        :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
-
-        :returns: The processed input datum.
-        """
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.payment_write)
+    @REQUESTfile("transfers_file")
+    @REQUESTdata("send_notifications", "transfers", "checksum")
+    def batch_fees(
+            self, rs: RequestState, event_id: int, send_notifications: bool,
+            transfers: Optional[str], checksum: Optional[str],
+            transfers_file: Optional[werkzeug.datastructures.FileStorage],
+    ) -> Response:
         event = rs.ambience['event']
-        warnings = []
-        infos = []
-        # Allow an amount of zero to allow non-modification of amount_paid.
-        amount: Optional[decimal.Decimal]
-        amount, problems = inspect(decimal.Decimal,
-            (datum['raw']['amount'] or "").strip(), argname="amount")
-        persona_id, p = inspect(vtypes.CdedbID,
-            (datum['raw']['id'] or "").strip(), argname="persona_id")
-        problems.extend(p)
-        family_name, p = inspect(str,
-            datum['raw']['family_name'], argname="family_name")
-        problems.extend(p)
-        given_names, p = inspect(str,
-            datum['raw']['given_names'], argname="given_names")
-        problems.extend(p)
-        date, p = inspect(datetime.date,
-            (datum['raw']['date'] or "").strip(), argname="date")
-        problems.extend(p)
+        if event.is_balanced:
+            rs.notify("error", n_("Event is balanced. May not book payments."))
+            return self.redirect(rs, "event/show_event")
 
-        registration_id = None
-        if persona_id:
-            try:
-                persona = self.coreproxy.get_persona(rs, persona_id)
-            except KeyError:
-                problems.append(('persona_id',
-                                 ValueError(
-                                     n_("No Member with ID %(p_id)s found."),
-                                     {"p_id": persona_id})))
-            else:
-                registration_ids = self.eventproxy.list_registrations(
-                    rs, event.id, persona_id).keys()
-                if registration_ids:
-                    registration_id = unwrap(registration_ids)
-                    if registration_id in seen_reg_ids:
-                        warnings.append(
-                            ('persona_id',
-                             ValueError(n_("Multiple transfers for this user."))))
-                    seen_reg_ids.add(registration_id)
-                    registration = self.eventproxy.get_registration(
-                        rs, registration_id)
-                    if not amount:
-                        problems.append(
-                            ('amount', ValueError(n_("Must not be zero."))))
-                    else:
-                        amount_paid = registration['amount_paid']
-                        total = amount + amount_paid
-                        fee = expected_fees[registration_id]
-                        params = {
-                            'total': money_filter(total, lang=rs.lang),
-                            'expected': money_filter(fee, lang=rs.lang),
-                        }
-                        if total < fee:
-                            infos.append((
-                                'amount',
-                                ValueError(
-                                    n_("Not enough money. %(total)s < %(expected)s"),
-                                    params,
-                                ),
-                            ))
-                        elif total > fee:
-                            infos.append((
-                                'amount',
-                                ValueError(
-                                    n_("Too much money. %(total)s > %(expected)s"),
-                                    params,
-                                ),
-                            ))
-                        expected_fees[registration_id] -= amount
-                else:
-                    problems.append(('persona_id',
-                                     ValueError(n_("No registration found."))))
-
-                if family_name is not None and not re.search(
-                    diacritic_patterns(re.escape(family_name)),
-                    persona['family_name'],
-                    flags=re.IGNORECASE,
-                ):
-                    warnings.append(('family_name', ValueError(
-                        n_("Family name doesn’t match."))))
-
-                if given_names is not None and not re.search(
-                    diacritic_patterns(re.escape(given_names)),
-                    persona['given_names'],
-                    flags=re.IGNORECASE,
-                ):
-                    warnings.append(('given_names', ValueError(
-                        n_("Given names don’t match."))))
-        datum.update({
-            'persona_id': persona_id,
-            'registration_id': registration_id,
-            'date': date,
-            'amount': amount,
-            'warnings': warnings,
-            'problems': problems,
-            'infos': infos,
-        })
-        return datum
-
-    def book_fees(self, rs: RequestState,
-                  data: Collection[CdEDBObject], send_notifications: bool = False,
-                  ) -> tuple[bool, Optional[int]]:
-        """Book all paid fees.
-
-        :returns: Success information and
-
-          * for positive outcome the number of recorded transfers
-          * for negative outcome the line where an exception was triggered
-            or None if it was a DB serialization error
-        """
-        relevant_keys = {'registration_id', 'date', 'amount'}
-        relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
-                         for item in data]
-        with TransactionObserver(rs, self, "book_fees"):
-            success, number = self.eventproxy.book_fees(
-                rs, rs.ambience['event'].id, relevant_data)
-            if success and send_notifications:
-                persona_amounts = {e['persona_id']: e['amount'] for e in data}
-                personas = self.coreproxy.get_personas(rs, persona_amounts)
-                subject = f"Überweisung für {rs.ambience['event'].title} eingetroffen"
-                for persona in personas.values():
-                    headers: Headers = {
-                        'To': (persona['username'],),
-                        'Subject': subject,
-                    }
-                    if rs.ambience['event'].orga_address:
-                        headers['Reply-To'] = rs.ambience['event'].orga_address
-                    self.do_mail(rs, "transfer_received", headers, {
-                        'persona': persona, 'amount': persona_amounts[persona['id']]})
-            return success, number
-
-    @access("finance_admin", modi={"POST"})
-    @REQUESTfile("fee_data_file")
-    @REQUESTdata("force", "fee_data", "checksum", "send_notifications")
-    def batch_fees(self, rs: RequestState, event_id: int, force: bool,
-                   fee_data: Optional[str],
-                   fee_data_file: Optional[werkzeug.datastructures.FileStorage],
-                   checksum: Optional[str], send_notifications: bool) -> Response:
-        """Allow finance admins to add payment information of participants.
-
-        This is the only entry point for those information.
-        """
-        # manual check for offline log, since we can not use event_guard here
-        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
-        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            raise werkzeug.exceptions.Forbidden(
-                n_("This event is locked for offline usage."))
-
-        fee_data_file = check_optional(
-            rs, vtypes.CSVFile, fee_data_file, "fee_data_file")
+        transfers_file = check_optional(
+            rs, vtypes.CSVFile, transfers_file, "transfers_file")
         if rs.has_validation_errors():
             return self.batch_fees_form(rs, event_id)
-
-        if fee_data_file and fee_data:
+        if transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.batch_fees_form(rs, event_id)
-        elif fee_data_file:
-            rs.values["fee_data"] = fee_data_file
-            fee_data = fee_data_file
-            fee_data_lines = fee_data_file.splitlines()
-        elif fee_data:
-            fee_data_lines = fee_data.splitlines()
+        elif transfers_file:
+            rs.values["transfers"] = transfers = transfers_file
+            transferlines = transfers_file.splitlines()
+        elif transfers:
+            transferlines = transfers.splitlines()
         else:
             rs.notify("error", n_("No input provided."))
             return self.batch_fees_form(rs, event_id)
 
-        reg_ids = self.eventproxy.list_registrations(rs, event_id=event_id)
-        expected_fees = self.eventproxy.calculate_fees(rs, reg_ids)
+        events_by_shortname = {event.shortname: event}
+        fields = parse.ExportFields.db_import
 
-        fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
-            fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
+            transferlines, fieldnames=fields, dialect=CustomCSVDialect())
+
         data = []
-        seen_reg_ids: set[int] = set()
+        amounts_paid: dict[int, decimal.Decimal] = {}
+
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
-            data.append(self._examine_fee(
-                rs, dataset, expected_fees, seen_reg_ids=seen_reg_ids))
+            data.append(
+                self.examine_money_transfer(
+                    rs, dataset, events_by_shortname=events_by_shortname,
+                    amounts_paid=amounts_paid,
+                    category=rs.ambience['event'].shortname,
+                ),
+            )
+
+        for ds1, ds2 in itertools.combinations(data, 2):
+            if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
+                info = (
+                    None,
+                    ValueError(
+                        n_("More than one transfer for this account"
+                           " (lines %(first)s and %(second)s)."),
+                        {'first': ds1['lineno'] + 1, 'second': ds2['lineno'] + 1}),
+                )
+                ds1['infos'].append(info)
+                ds2['infos'].append(info)
+
+        if len(data) != len(transferlines):
+            rs.append_validation_error(
+                ("transfers", ValueError(n_("Lines didn’t match up."))))
+
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
-        if not force:
-            open_issues = open_issues or any(e['warnings'] for e in data)
+
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(
                 rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
-        current_checksum = get_hash(fee_data.encode())
+        current_checksum = get_hash(transfers.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.batch_fees_form(
                 rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         # Here validation is finished
-        success, num = self.book_fees(rs, data, send_notifications)
-        if success:
-            rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
-            if send_notifications and (
-                    orga_address := rs.ambience['event'].orga_address):
-                headers: Headers = {
-                    'To': (orga_address,),
-                    'Reply-To': self.conf["FINANCE_ADMIN_ADDRESS"],
-                    'Subject': "Neue Überweisungen für Eure Veranstaltung",
-                    'Prefix': "",
-                }
-                self.do_mail(rs, "transfers_booked", headers, {'num': num})
-            return self.redirect(rs, "event/show_event")
-        else:
-            if num is None:
+        transfers = [
+            {
+                'persona_id': datum['persona_id'],
+                'registration_id': datum['registration_id'],
+                'amount': datum['amount'],
+                'date': datum['date'],
+            }
+            for datum in data
+        ]
+        recipients = [event.orga_address, self.conf["EVENT_FINANCE_ADMIN_ADDRESS"]]
+        with TransactionObserver(rs, self, "book_fees", recipients=recipients):
+            if result := self.eventproxy.book_fees(rs, event_id, transfers):
+                result.send_notifications(
+                    rs, send_individual_notifications=send_notifications, by_orga=True,
+                    do_mail=self.do_mail, events={event.id: event},
+                )
+                return self.redirect(rs, "event/show_event")
+            elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num + 1})
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                rs.notify(
+                    "error",
+                    n_("Unexpected error on line %(num)s."),
+                    {'num': result.index + 1},
+                )
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
     def get_course_choice_params(self, rs: RequestState, event_id: int,
                                  orga: bool = True) -> CdEDBObject:
@@ -401,7 +279,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona['birthday'], event.begin)
+
+        birthday: datetime.date = persona['birthday']
+        begin = rs.ambience['event'].begin
+        age_class = determine_age_class(persona['birthday'], begin)
+        persona_age = begin.year - birthday.year - \
+                      ((begin.month, begin.day) < (birthday.month, birthday.day))
+
         rs.ignore_validation_errors()
         if not preview:
             if rs.user.persona_id in registrations.values():
@@ -419,7 +303,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_balanced:
                 rs.notify("error", n_("Event is balanced."))
                 return self.redirect(rs, "event/show_event")
-            if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
+            if not self.eventproxy.has_minor_form(rs, event_id) and age_class.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
@@ -445,7 +329,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
         return self.render(rs, "registration/register", {
-            'persona': persona, 'age': age, 'semester_fee': semester_fee,
+            'persona': persona, 'age_class': age_class, 'persona_age': persona_age,
+            'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
             'part_options': part_options, **course_choice_params,
         })
@@ -489,10 +374,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event")
-    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
+    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga", "age")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
                        is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
+                       age: Optional[int] = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -521,7 +407,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         field_values = request_extractor(rs, field_params, omit_missing=True)
 
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, is_member, is_orga, field_values)
+            rs, event_id, persona_id=persona_id,
+            part_ids=part_ids, field_values=field_values,
+            is_member=is_member, is_orga=is_orga, age=age,
+        )
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"
@@ -589,7 +478,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_group_map = course_choice_params['track_group_map']
 
         # Top-level registration data.
-        standard_params: vtypes.TypeMapping = {
+        standard_params: vtypes.MutableTypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
             "reg.notes": Optional[str],  # type: ignore[dict-item]
@@ -611,7 +500,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Part specific data:
         if orga_input:
-            part_params: vtypes.TypeMapping = {}
+            part_params: vtypes.MutableTypeMapping = {}
             for part_id in event.parts:
                 part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
@@ -652,7 +541,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Track specific data:
         # First for simple tracks.
-        track_params: vtypes.TypeMapping = {}
+        track_params: vtypes.MutableTypeMapping = {}
         if orga_input:
             track_params.update({
                 f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
@@ -671,7 +560,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, track_params)
 
         # Now for synced tracks.
-        synced_params: vtypes.TypeMapping = {
+        synced_params: vtypes.MutableTypeMapping = {
             f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
             for group in sync_track_groups.values() for i in range(group.num_choices)
         }
@@ -1198,8 +1087,13 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_registration_fee")
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
-        return self.render(rs, "event/fee/configure_fee",
-                           {'persona': persona, 'personalized': True})
+        mandatory_fields = (models.EventFee.mandatory_form_fields(creation=True)
+                            | get_mandatory_form_fields(self.add_new_personalized_fee))
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {'persona': persona, 'personalized': True},
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
@@ -1509,20 +1403,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not self.eventproxy.check_orga_addition_limit(rs, event_id):
             rs.append_validation_error(
                 ("persona.persona_id", ValueError(n_("Rate-limit reached."))))
-        if rs.ambience['event'].is_balanced:
-            if persona_id and self._calculate_partial_fee(
-                    rs, event_id, registration, persona_id,
-            ):
-                msg = n_("Event is balanced. May not create registration which owes a fee.")
-                # This is not an input so this error won't mark any input field.
-                rs.append_validation_error(("amount_owed", ValueError(msg)))
-                rs.notify("error", msg)
         if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
         registration['persona_id'] = persona_id
         registration['event_id'] = event_id
-        new_id = self.eventproxy.create_registration(rs, registration)
+
+        try:
+            new_id = self.eventproxy.create_registration(rs, registration)
+        except EventIsBalancedError as e:
+            rs.notify("error", *e.args[:2])
+            return self.add_registration_form(rs, event_id)
+
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
@@ -1704,9 +1596,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("part_ids")
+    @REQUESTdata("part_ids", "checkout")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[Collection[int]] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None,
+                     checkout: Optional[bool] = False) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event'].parts
@@ -1718,7 +1611,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             registration['parts'][part_id]['status']).is_present()
         registrations = {
             k: v for k, v in registrations.items()
-            if ((not v['checkin_periods'] or v['checkin_periods'][-1].checkout_time)
+            if (bool(not v['checkin_periods']
+                     or v['checkin_periods'][-1].checkout_time) != checkout
                 and any(there(v, id_) for id_ in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -1741,7 +1635,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         camping_mat_field_names = self._get_camping_mat_field_names(
             rs.ambience['event'])
         return self.render(rs, "registration/checkin", {
-            'registrations': registrations, 'personas': personas,
+            'registrations': registrations, 'personas': personas, 'checkout': checkout,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
             'part_ids': part_ids, 'camping_mat_field_names': camping_mat_field_names,
         })
@@ -1776,19 +1670,28 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
+    @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkout(
         self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+        from_checkin_page: Optional[bool] = False,
+        part_ids: Optional[Collection[int]] = None,
     ) -> Response:
         """Check a participant out."""
         if rs.has_validation_errors():
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         if rs.ambience['registration']['checkin_periods'][-1].checkout_time:
             rs.notify("error", n_("Already checked out."))
+            if from_checkin_page:
+                return self.checkin_form(rs, event_id)
             return self.show_registration(rs, event_id, registration_id)
 
         code = self.eventproxy.add_checkout(rs, registration_id)
         rs.notify_return_code(code, error=n_("Action failed."))
+        if from_checkin_page:
+            return self.redirect(rs, 'event/checkin_form', {'part_ids': part_ids, 'checkout': True})
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
 

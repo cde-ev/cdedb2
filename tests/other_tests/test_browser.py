@@ -4,14 +4,14 @@
 import functools
 import re
 import unittest
-from typing import Callable
+from typing import Any, Callable
 
 from playwright.sync_api import Page, expect, sync_playwright
 
 from tests.common import BrowserTest, event_keeper, storage
 
 
-def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
+def make_page(*args: Any, headless: bool = True,
               timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
     """Decorator to handle playwright setup.
 
@@ -253,7 +253,8 @@ class TestBrowser(BrowserTest):
         page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
-        page.locator(".selectize-input").first.click()
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+                     ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
             "textbox", name="Vergleichswert").click()
@@ -264,10 +265,8 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag",
-                                               ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit",
-                                               ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bezahlter Betrag").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit").nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()
         page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
@@ -283,3 +282,70 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#content')).to_contain_text('0,00 €')
         expect(page.locator('#content')).to_contain_text('weiblich')
         expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
+
+    @storage
+    @make_page
+    def test_js_genesis_request(self, page: Page) -> None:
+        """Test that hiding fields on genesis request form work.
+
+        Also test that the `required` attribute is set correctly, for this
+        the :required and :invalid CSS attributes are used.
+        """
+        ids_by_realm = {
+            "event": {"#input-select-gender", "#input-select-country"}
+                     | {f"#input-text-{name}"
+                        for name in ("birthday", "telephone", "mobile", "address",
+                                     "address_supplement", "postal_code", "location")},
+            "cde": {"#input-file-attachment"},
+        }
+        for realm in ("ml", "event", "cde"):
+            with self.subTest(realm=realm):
+                page.goto("http://localhost:5000/")
+                page.get_by_role("link", name="Account anfordern").click()
+                page.wait_for_url("http://localhost:5000/core/genesis/request")
+
+                page.locator("#input-text-given_names").fill("Gregor")
+                page.locator("#input-text-family_name").fill("Genesis")
+                page.locator("#input-text-username").fill(f"gregor-{realm}@example.cde")
+                page.locator("#realm-select").select_option(realm)
+                page.get_by_label("Begründung (max. 500 Zeichen)").fill("Grund")
+
+                if realm == "ml":
+                    for id_ in ids_by_realm["event"] | ids_by_realm["cde"]:
+                        expect(page.locator(f"{id_}:valid")).to_be_hidden()
+                else:
+                    page.get_by_role("button", name="Anfrage abschicken").click()
+                    page.wait_for_url("http://localhost:5000/core/genesis/request")
+                    expect(page.locator("#input-text-username")).to_have_value(
+                        f"gregor-{realm}@example.cde")
+                    expect(page.locator("#input-text-given_names")).to_have_value(
+                        "Gregor")
+                    expect(page.locator("#input-text-family_name")).to_have_value(
+                        "Genesis")
+                    for id_ in ids_by_realm["event"]:
+                        expect(page.locator(id_)).to_be_visible()
+                        if "gender" in id_:
+                            page.locator(f"{id_}:valid").select_option("Genders.male")
+                        elif "birthday" in id_:
+                            page.locator(f"{id_}:invalid").fill("1990-01-01")
+                        elif id_.endswith("address"):
+                            page.locator(f"{id_}:invalid").fill("Somewhere")
+                        elif "location" in id_:
+                            page.locator(f"{id_}:invalid").fill("in the Nowhere")
+                        else:
+                            expect(page.locator(f"{id_}:valid")).to_be_visible()
+                    if realm == "event":
+                        for id_ in ids_by_realm["cde"]:
+                            expect(page.locator(f"{id_}:valid")).to_be_hidden()
+                    elif realm == "cde":
+                        page.get_by_role("button", name="Anfrage abschicken").click()
+                        page.wait_for_url("http://localhost:5000/core/genesis/request")
+                        for id_ in ids_by_realm["cde"]:
+                            expect(page.locator(f"{id_}:invalid")).to_be_visible()
+                            page.locator(f"{id_}:invalid").set_input_files(
+                                self.testfile_dir / "picture.pdf")
+                    else:
+                        self.fail("Adjust cases for this test.")
+
+                page.get_by_role("button", name="Anfrage abschicken").click()
+                page.wait_for_url("http://localhost:5000")

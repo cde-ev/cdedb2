@@ -14,6 +14,7 @@ import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
+import werkzeug.wsgi
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.core import CoreBackend
@@ -118,6 +119,7 @@ class Application(BaseApp):
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['json.dumps_kwargs']['sort_keys'] = False
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
@@ -204,6 +206,14 @@ class Application(BaseApp):
         # note time for performance measurement
         begin = now()
         user = User()
+
+        # additional safeguard to apache blocking non-trusted hosts, see cdedb-site.conf
+        if (not werkzeug.wsgi.host_is_trusted(request.host, self.conf["HTTP_HOSTS"])
+                and not self.conf["CDEDB_DEV"]):
+            return self.make_error_page(
+                werkzeug.exceptions.SecurityError(),
+                request, user,
+                n_("Used a non-trusted http host header. Refuse to proceed."))
         try:
             sessionkey = request.cookies.get("sessionkey")
             apitoken = request.headers.get(APIToken.request_header_key)

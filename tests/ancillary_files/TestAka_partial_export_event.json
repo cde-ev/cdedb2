@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         19,
-        1
+        2
     ],
     "courses": {
         "1": {
@@ -131,19 +131,19 @@
             },
             "Kinderpreis 1. H\u00e4lfte": {
                 "amount": "-12.00",
-                "condition": "part.1.H. and field.is_child",
+                "condition": "part.1.H. and age.U16",
                 "kind": 1,
                 "notes": null
             },
             "Kinderpreis 2. H\u00e4lfte": {
                 "amount": "-19.00",
-                "condition": "part.2.H. and field.is_child",
+                "condition": "part.2.H. and age.U18",
                 "kind": 1,
                 "notes": null
             },
             "Kinderpreis Warmup": {
                 "amount": "-5.00",
-                "condition": "part.Wu and field.is_child",
+                "condition": "part.Wu and age.U13",
                 "kind": 1,
                 "notes": null
             },
@@ -288,13 +288,13 @@
         "is_course_assignment_visible": false,
         "is_course_list_visible": true,
         "is_course_state_visible": false,
+        "is_locked": false,
         "is_participant_list_visible": false,
         "is_visible": true,
         "lodge_field": "lodge",
         "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
         "notes": "Todoliste ... just kidding ;)",
         "notify_on_registration": -1,
-        "offline_lock": false,
         "orga_address": "aka@example.cde",
         "orga_tokens": {
             "1": {

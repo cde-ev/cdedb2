@@ -3,7 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Configure Custom Fields ({{ title }})
@@ -46,7 +50,8 @@
 
                         <div class="form-group">
                             <label class="col-sm-4 control-label" for="{{ drow_name('input-text-field_name', field_id) }}">
-                                {% trans %}Field Name{% endtrans %}
+                                {% trans %}Field Name{% endtrans -%}
+                                {{- util.required_marker() }}
                             </label>
                             <div class="col-sm-8 {{ util.has_errors(drow_name('field_name', field_id)) }}">
                                 {{ util.input_text(name=drow_name('field_name', field_id), aclass='drow-input form-control',

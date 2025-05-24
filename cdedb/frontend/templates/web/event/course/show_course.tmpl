@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint = 'weak' %}
@@ -208,7 +209,7 @@
                         {{ util.anti_csrf_token('event/delete_course') }}
                         {{ util.input_submit(label=gettext("Delete"), readonly=not is_privileged_for("delete_course") or blockers,
                                              aclass="btn btn-danger", icon="trash-alt", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                        {{ util.ack_delete(gettext("The course will be permanently deleted.")) }}
                     </form>
                 </div>
             </div>
@@ -219,9 +220,4 @@
             </div>
         </div>
     {% endcall %}
-    <script nonce="{{ csp_nonce }}">
-        $('#deletecourseform')
-            .cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}")
-            .find('[name="ack_delete"]').prop('checked', true).parent().hide();
-    </script>
 {% endblock %}

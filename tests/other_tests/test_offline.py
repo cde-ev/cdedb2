@@ -68,13 +68,8 @@ class TestOffline(FrontendTest):
             self.login(user)
 
             # Basic event functionality
-            self.traverse({'href': '/event/'},
-                          {'href': '/event/1/show'})
-            self.assertTitle("Große Testakademie 2222")
-            self.assertPresence(
-                'Die Veranstaltung befindet sich im Offline-Modus.')
-            self.traverse({'href': 'event/event/1/registration/query'},
-                          {'description': 'Alle Anmeldungen'})
+            self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                          "Anmeldungen", "Alle Anmeldungen")
             self.assertPresence('6', div='query-results')
             self.assertPresence('Inga')
 
@@ -102,7 +97,6 @@ class TestOffline(FrontendTest):
                         model_droid.QuickPartialExportToken.get_token_string(
                             self.secrets['API_TOKENS']['quick_partial_export']),
                 })
-            self.assertEqual(self.response.json["message"], "success")
             expectation = {
                 'EVENT_SCHEMA_VERSION',
                 'kind',
@@ -114,7 +108,7 @@ class TestOffline(FrontendTest):
                 'courses',
                 'registrations',
             }
-            self.assertEqual(set(self.response.json["export"]), expectation)
+            self.assertEqual(set(self.response.json), expectation)
             self.login(user)
 
             # Test event keeper works properly, by triggering a manual commit

@@ -73,8 +73,9 @@ class TestSessionBackend(BackendTest):
 
         user = self.session.lookuptoken(resolve_token, "127.0.1.0")
         self.assertIsNone(user.persona_id)
-        self.assertIs(model_droid.ResolveToken, user.droid_class)
-        self.assertIsNone(user.droid_token_id)
+        self.assertIsInstance(user.droid, model_droid.ResolveToken)
+        assert isinstance(user.droid, model_droid.ResolveToken)
+        self.assertIsNone(user.droid.id)
         self.assertEqual(
             {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
 
@@ -90,8 +91,9 @@ class TestSessionBackend(BackendTest):
 
         user = self.session.lookuptoken(qpe_token, "127.0.1.2")
         self.assertIsNone(user.persona_id)
-        self.assertIs(model_droid.QuickPartialExportToken, user.droid_class)
-        self.assertIsNone(user.droid_token_id)
+        self.assertIsInstance(user.droid, model_droid.QuickPartialExportToken)
+        assert isinstance(user.droid, model_droid.QuickPartialExportToken)
+        self.assertIsNone(user.droid.id)
         self.assertEqual(
             {"anonymous", "droid", "droid_quick_partial_export"}, user.roles)
 
@@ -102,7 +104,7 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken(invalid_qpe_token, "127.0.1.3")
 
         # event specific orga droid.
-        orga_token_secret = "0123456789abcdeffedcba9876543210" * 2
+        orga_token_secret = "secret"
         orgatoken = model_droid.OrgaToken._get_token_string(
             model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
 
@@ -110,8 +112,9 @@ class TestSessionBackend(BackendTest):
 
         user = self.session.lookuptoken(orgatoken, "127.0.2.0")
         self.assertIsNone(user.persona_id)
-        self.assertIs(model_droid.OrgaToken, user.droid_class)
-        self.assertEqual(1, user.droid_token_id)
+        self.assertIsInstance(user.droid, model_droid.OrgaToken)
+        assert isinstance(user.droid, model_droid.OrgaToken)
+        self.assertEqual(user.droid.id, 1)
         self.assertIn(1, user.orga)
         self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
 

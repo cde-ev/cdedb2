@@ -70,7 +70,7 @@ PERSONA_TEMPLATE = {
 
 
 class TestCdEFrontend(FrontendTest):
-    @as_users("vera", "berta")
+    @as_users("vera", "berta", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'description': 'Mitglieder'})
 
@@ -163,7 +163,7 @@ class TestCdEFrontend(FrontendTest):
         _assert_ejection_deadline("2022-02-01", trial_member, period)
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
-              "katarina")
+              "katarina", maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
@@ -209,7 +209,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.check_sidebar(ins, out)
 
-    @as_users("vera", "berta")
+    @as_users("vera", "berta", maintain_data=True)
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['given_names']})
         self.assertTitle(self.user['default_name_format'])
@@ -292,7 +292,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse("Bearbeiten")
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f['donation'] = "0"
@@ -746,7 +746,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Datenschutzerklärung")
         self.assertNonPresence("Suchmaske")
 
-    @as_users("daniel", "janis")
+    @as_users("daniel", "janis", maintain_data=True)
     def test_member_search_non_member(self) -> None:
         self.get("/cde/search/member")
         self.assertTitle("CdE-Mitglied suchen")
@@ -765,7 +765,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertå Beispiel")
         self.assertNonPresence("weiblich")
 
-    @as_users("inga", "farin")
+    @as_users("inga", "farin", maintain_data=True)
     def test_past_course_search(self) -> None:
         # by description
         self.traverse({'description': 'Mitglieder'},
@@ -843,7 +843,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
-    @as_users("paul", "quintus")
+    @as_users("paul", "quintus", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
@@ -1188,7 +1188,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Akira Abukara", div='inactive-authorizations')
         self.assertNonPresence("Bertå Beispiel", div='inactive-authorizations')
 
-    @as_users("farin", "berta")
+    @as_users("farin", "berta", maintain_data=True)
     def test_lastschrift_show(self) -> None:
         if self.user_in("berta"):
             self.traverse({'description': 'Mitglieder'},
@@ -1481,7 +1481,7 @@ class TestCdEFrontend(FrontendTest):
         # invalid/uncommon input for donation
         f = self.response.forms['changedataform']
         f['donation'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('donation',
                                    "Ungültige Eingabe für eine Dezimalzahl")
         f = self.response.forms['changedataform']
@@ -2110,7 +2110,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence(
             "2 Mitgliedsbeiträge verbucht. 1 neue Mitglieder.", div="notifications")
         self.assertPresence(
-            "1 Überweisungen verbucht für Große Testakademie 2222",
+            "1 Teilnahmebeiträge verbucht für Große Testakademie 2222",
             div="notifications")
         self.assertPresence(
             "1 Erstattungen eingetragen für Große Testakademie 2222",
@@ -2607,7 +2607,7 @@ class TestCdEFrontend(FrontendTest):
                             div='events-2019')
         self.assertNonPresence("PfingstAkademie")
 
-    @as_users("charly", "inga")
+    @as_users("charly", "inga", maintain_data=True)
     def test_show_past_event_course(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
@@ -2628,7 +2628,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
         self.assertPresence("Ferdinand Findus (Orga) ")
 
-    @as_users("vera", "berta", "charly", "ferdinand", "inga")
+    @as_users("vera", "berta", "charly", "ferdinand", "inga", maintain_data=True)
     def test_show_past_event_gallery(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
@@ -2653,7 +2653,7 @@ class TestCdEFrontend(FrontendTest):
                 "Mediensammlung https://pa14:secret@example.cde/pa14/",
                 div='gallery-link')
 
-    @as_users("vera", "berta", "charly", "garcia", "inga")
+    @as_users("vera", "berta", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_privacy(self) -> None:
 
         def _traverse_back() -> None:
@@ -2720,7 +2720,7 @@ class TestCdEFrontend(FrontendTest):
         self.get("/cde/past/event/4/course/3/show")
         self.assertPresence("Keine Teilnehmer eingetragen.")
 
-    @as_users("berta", "charly")
+    @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
@@ -2728,7 +2728,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.traverse({'description': self.user['default_name_format']})
 
-    @as_users("anton", "charly", "garcia", "inga")
+    @as_users("anton", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_orgas(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
@@ -2898,6 +2898,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
@@ -2918,17 +2919,21 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Garcia Generalis", div='list-participants')
-        self.assertPresence("Hades Hell", div='list-participants')
+        self.assertPresence("Charly", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
         f = self.response.forms['removeparticipantform3']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
@@ -2943,11 +2948,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Garcia Generalis (Orga) ")
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
 
-    @as_users("farin", "inga")
+    @as_users("farin", "inga", maintain_data=True)
     def test_member_stats(self) -> None:
         self.traverse("Mitglieder", "Mitglieder-Statistik")
         self.assertPresence("Mitglieder", div="cde-simple-stats")
@@ -3019,6 +3025,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1006, const.PastEventLogCodes.participant_removed))
 
@@ -3036,6 +3043,7 @@ class TestCdEFrontend(FrontendTest):
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
+        f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1009, const.PastEventLogCodes.participant_removed))
 

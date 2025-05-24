@@ -9,16 +9,8 @@
                            style="display: inline;">
                          {{ util.anti_csrf_token('assembly/delete_ballot') }}
                          {{ util.input_submit(label=gettext("Delete"), icon="trash-alt", aclass="btn btn-danger") }}
-                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                         {{ util.ack_delete(gettext("This ballot and all its data will be permanently deleted.")) }}
                      </form>
-                     <script nonce="{{ csp_nonce }}">
-                         $(function() {
-                             $('#deleteballotform').cdedbProtectAction(
-                                 "{{ gettext("This ballot and all its data will be permanently deleted.") }}");
-                             $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
-                                 .parent().hide();
-                         });
-                     </script>
                 </div>
             </div>
             <div class="col-sm-8">
@@ -213,7 +205,7 @@
         <div class="row" id="attachments">
             {% for slice in definitive_versions|keydictsort(EntitySorter.attachment)|slice(2) if definitive_versions %}
                 <div class="col-sm-6">
-                    <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
+                    <ul class="slim {% if not loop.last %}nosp{% endif %}" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
                         {% for attachment_id, definitive_version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                                 <div class="p">

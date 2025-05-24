@@ -92,6 +92,14 @@ _DEFAULTS = {
     # Global stuff #
     ################
 
+    # host of the http application, since we do not trust apaches Host Header
+    "HTTP_HOSTS": [
+        "localhost",  # used in test suite
+        "localhost:20443",  # regular forwarded port from vm
+        "localhost:8443",  # used by docker
+        "localhost:5000",  # interactive debugger
+    ],
+
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
 
@@ -177,8 +185,8 @@ _DEFAULTS = {
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
     # maximum length of personas presented via select persona API for selection
-    # in an intelligent input field for core admins
-    "NUM_PREVIEW_PERSONAS_CORE_ADMIN": 12,
+    # in an intelligent input field for privileged users (core admins and orgas)
+    "NUM_PREVIEW_PERSONAS_PRIVILEGED": 12,
     # maximum length of personas presented via select persona API for any other
     # user
     "NUM_PREVIEW_PERSONAS": 3,
@@ -235,6 +243,8 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
     # email for replies to finance mails
     "FINANCE_ADMIN_ADDRESS": "buchhaltung@lists.cde-ev.de",
+    # email for event related finance mails
+    "EVENT_FINANCE_ADMIN_ADDRESS": "aka-finanzen@lists.cde-ev.de",
 
     # email for privilege changes
     "META_ADMIN_ADDRESS": "admin@cde-ev.de",
