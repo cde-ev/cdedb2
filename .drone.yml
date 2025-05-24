@@ -280,9 +280,6 @@ volumes:
 
 
 trigger:
-  branch:
-  - master
-  - stable
-  - ci/*
-  # remove after #3073 is merged
-  - feature/mandatory-forms/*
+  event:
+    - push
+    - custom
