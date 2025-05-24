@@ -29,7 +29,7 @@ def _get_registration_part_stati(f: webtest.Form) -> set[const.RegistrationPartS
 
 
 class TestMlFrontend(FrontendTest):
-    @as_users("berta", "emilia", "janis")
+    @as_users("berta", "emilia", "janis", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'href': '/ml/'})
 
@@ -53,7 +53,7 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence("Mailman-Synchronisation")
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
-              "katarina")
+              "katarina", maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -139,7 +139,7 @@ class TestMlFrontend(FrontendTest):
         checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
         self.assertFalse(checkbox.get('data-checked') == 'True')
 
-    @as_users("nina", "vera")
+    @as_users("nina", "vera", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglistennutzerverwaltung")
@@ -270,14 +270,14 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("I can change this!", f['notes'].value)
         self.assertEqual("Spaß", f['subject_prefix'].value)
 
-    @as_users("berta", "charly")
+    @as_users("berta", "charly", maintain_data=True)
     def test_show_mailinglist(self) -> None:
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
-    @as_users("kalif", "janis")
+    @as_users("kalif", "janis", maintain_data=True)
     def test_assembly_ml_privileges(self) -> None:
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -287,7 +287,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Kanonische Beispielversammlung")
         self.assertNoLink(content="Kanonische Beispielversammlung")
 
-    @as_users("berta", "emilia", "annika", "nina")
+    @as_users("berta", "emilia", "annika", "nina", maintain_data=True)
     def test_hide_admin_notes(self) -> None:
         # CdElokal Hogwarts
         ml_data = self.get_sample_datum('ml.mailinglists', 65)
@@ -303,7 +303,7 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence(ml_data['notes'])
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
-              "katarina")
+              "katarina", maintain_data=True)
     def test_sidebar_one_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
@@ -330,7 +330,7 @@ class TestMlFrontend(FrontendTest):
 
         self.check_sidebar(ins, out)
 
-    @as_users("anton", "janis")
+    @as_users("anton", "janis", maintain_data=True)
     def test_show_ml_buttons_change_address(self) -> None:
         # not-mandatory
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'})
@@ -360,7 +360,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("changeaddressform", self.response.forms)
         self.assertPresence("Diese Mailingliste ist obligatorisch.")
 
-    @as_users("anton", "charly")
+    @as_users("anton", "charly", maintain_data=True)
     def test_show_ml_buttons_mod_opt_in(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
@@ -375,7 +375,7 @@ class TestMlFrontend(FrontendTest):
                             "Bestätigung durch einen Moderator. ")
         self.assertIn("cancel-request-form", self.response.forms)
 
-    @as_users("anton", "berta")
+    @as_users("anton", "berta", maintain_data=True)
     def test_show_ml_buttons_opt_in(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'})
         self.assertTitle("Aktivenforum 2001")
@@ -387,7 +387,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Du hast diese Mailingliste abonniert.")
         self.assertIn("unsubscribeform", self.response.forms)
 
-    @as_users("akira", "inga")
+    @as_users("akira", "inga", maintain_data=True)
     def test_show_ml_buttons_blocked(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/11'})
         self.assertTitle("Kampfbrief-Kommentare")
@@ -1062,7 +1062,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
-    @as_users("charly", "inga")
+    @as_users("charly", "inga", maintain_data=True)
     def test_subscribe_unsubscribe(self) -> None:
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/3'})
@@ -1212,7 +1212,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNotification("Der Nutzer ist aktuell blockiert.", 'error')
 
-    @as_users("berta", "janis")
+    @as_users("berta", "janis", maintain_data=True)
     def test_moderator_access(self) -> None:
         self.traverse({"href": "/ml"},
                       {"href": "/ml/mailinglist/3/show"})

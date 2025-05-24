@@ -886,7 +886,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
         self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
@@ -1012,7 +1012,7 @@ class TestEventBackend(BackendTest):
             [1, 3, 4],
             partial_export["registrations"][1]["tracks"][1]["choices"])
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_visible_events(self) -> None:
         rs = self.event.get_rs(self.key)  # type: ignore[attr-defined]
         expectation = {
@@ -1029,7 +1029,7 @@ class TestEventBackend(BackendTest):
                              if event.is_visible_for(rs.user, True, privileged=False)}
         self.assertEqual(event_ids, total_registration)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_has_registrations(self) -> None:
         self.assertTrue(self.event.has_registrations(self.key, 1))
 
@@ -1791,7 +1791,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
-    @as_users("berta", "emilia")
+    @as_users("berta", "emilia", maintain_data=True)
     def test_get_questionnaire(self) -> None:
         event_id = 1
         expectation = {
@@ -2967,7 +2967,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertEqual(expectation, delta)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_check_registration_status(self) -> None:
         event_id = 1
 
