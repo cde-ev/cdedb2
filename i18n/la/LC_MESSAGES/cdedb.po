@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-05-09 23:54+0200\n"
+"POT-Creation-Date: 2025-05-24 22:55+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -98,7 +98,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:395 cdedb/backend/assembly.py:419
 #: cdedb/backend/assembly.py:2218 cdedb/backend/past_event.py:546
-#: cdedb/frontend/common.py:689
+#: cdedb/frontend/common.py:692
 msgid "No input specified."
 msgstr "nihil praeitum."
 
@@ -401,7 +401,7 @@ msgstr ""
 #: cdedb/backend/event/base.py:1340 cdedb/common/__init__.py:277
 #: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:753
 #: cdedb/frontend/cde/lastschrift.py:543
-#: cdedb/frontend/cde/parse_statement.py:704 cdedb/frontend/common.py:709
+#: cdedb/frontend/cde/parse_statement.py:704 cdedb/frontend/common.py:712
 #: cdedb/frontend/event/base.py:458 cdedb/frontend/event/query_stats.py:443
 #: cdedb/frontend/event/query_stats.py:634
 #: cdedb/frontend/event/query_stats.py:677
@@ -837,7 +837,7 @@ msgstr ""
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1917 cdedb/frontend/common.py:1572
+#: cdedb/backend/core/base.py:1917 cdedb/frontend/common.py:1575
 #: cdedb/frontend/core/base.py:2606
 msgid "User with this E-Mail exists already."
 msgstr ""
@@ -904,7 +904,7 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2597 cdedb/frontend/common.py:2221
+#: cdedb/backend/core/base.py:2597 cdedb/frontend/common.py:2224
 msgid "Link expired."
 msgstr ""
 
@@ -940,7 +940,7 @@ msgid "Password too weak."
 msgstr "Signum arcanum"
 
 #: cdedb/backend/core/base.py:2697 cdedb/frontend/cde/base.py:690
-#: cdedb/frontend/cde/parse.py:298 cdedb/frontend/common.py:1052
+#: cdedb/frontend/cde/parse.py:298 cdedb/frontend/common.py:1055
 #: cdedb/frontend/event/registration.py:111
 msgid "No input provided."
 msgstr ""
@@ -3002,7 +3002,7 @@ msgid "Must be negative."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:684
-#: cdedb/common/validation/validate.py:738 cdedb/frontend/common.py:1438
+#: cdedb/common/validation/validate.py:738 cdedb/frontend/common.py:1441
 msgid "Must not be zero."
 msgstr ""
 
@@ -3015,7 +3015,7 @@ msgstr ""
 #: cdedb/common/validation/validate.py:2786
 #: cdedb/common/validation/validate.py:4158
 #: cdedb/common/validation/validate.py:4830 cdedb/frontend/cde/base.py:265
-#: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:647
+#: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:650
 #: cdedb/frontend/core/base.py:1256 cdedb/frontend/core/genesis.py:103
 #: cdedb/frontend/event/event.py:314 cdedb/frontend/event/registration.py:670
 #: cdedb/frontend/event/registration.py:1713
@@ -3681,15 +3681,23 @@ msgstr ""
 msgid "{minutes} minutes, {seconds} seconds"
 msgstr ""
 
+#: cdedb/filter.py:184
+msgid "{seconds} sseconds, {milliseconds} milliseconds"
+msgstr ""
+
+#: cdedb/filter.py:188
+msgid "{milliseconds} milliseconds"
+msgstr ""
+
 #: cdedb/frontend/application.py:127 cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr ""
 
-#: cdedb/frontend/application.py:243
+#: cdedb/frontend/application.py:246
 msgid "Session expired."
 msgstr ""
 
-#: cdedb/frontend/application.py:346
+#: cdedb/frontend/application.py:349
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -3697,7 +3705,7 @@ msgid ""
 "reset in the next days."
 msgstr ""
 
-#: cdedb/frontend/application.py:365
+#: cdedb/frontend/application.py:368
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -4281,108 +4289,108 @@ msgstr "notitiae rationis"
 msgid "New expuls started."
 msgstr ""
 
-#: cdedb/frontend/common.py:500 cdedb/frontend/common.py:510
+#: cdedb/frontend/common.py:501 cdedb/frontend/common.py:511
 msgid "Must not be used in web templates."
 msgstr ""
 
-#: cdedb/frontend/common.py:561
+#: cdedb/frontend/common.py:562
 msgid "Given method is not callable."
 msgstr ""
 
-#: cdedb/frontend/common.py:591
+#: cdedb/frontend/common.py:594
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:604
+#: cdedb/frontend/common.py:607
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:609
+#: cdedb/frontend/common.py:612
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:641
+#: cdedb/frontend/common.py:644
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 
-#: cdedb/frontend/common.py:691
+#: cdedb/frontend/common.py:694
 msgid "Ambiguous input."
 msgstr ""
 
-#: cdedb/frontend/common.py:707
+#: cdedb/frontend/common.py:710
 #, fuzzy
 msgid "Invalid input type."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/common.py:769
+#: cdedb/frontend/common.py:772
 #, fuzzy
 msgid "Unknown download kind {kind}."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/frontend/common.py:796
+#: cdedb/frontend/common.py:799
 msgid ""
 "The CdEDB is curently locked for maintenance. You can still access it as "
 "admin. Only use the CdEDB if you know why it was locked!"
 msgstr ""
 
-#: cdedb/frontend/common.py:800
+#: cdedb/frontend/common.py:803
 msgid "The CdE database is currently under maintenance and is unavailable."
 msgstr ""
 
-#: cdedb/frontend/common.py:882
+#: cdedb/frontend/common.py:885
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1007
+#: cdedb/frontend/common.py:1010
 msgid "Scope mismatch."
 msgstr ""
 
-#: cdedb/frontend/common.py:1159
+#: cdedb/frontend/common.py:1162
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
 msgstr ""
 
-#: cdedb/frontend/common.py:1299
+#: cdedb/frontend/common.py:1302
 msgid "Anti CSRF token is required for this form."
 msgstr ""
 
-#: cdedb/frontend/common.py:1305
+#: cdedb/frontend/common.py:1308
 msgid "Anti CSRF token expired. Please try again."
 msgstr ""
 
-#: cdedb/frontend/common.py:1307
+#: cdedb/frontend/common.py:1310
 msgid "Anti CSRF token is forged."
 msgstr ""
 
-#: cdedb/frontend/common.py:1309
+#: cdedb/frontend/common.py:1312
 msgid "Anti CSRF token is invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:1426
+#: cdedb/frontend/common.py:1429
 #, fuzzy
 msgid "Invalid category."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/common.py:1433
+#: cdedb/frontend/common.py:1436
 msgid "Must be greater than zero."
 msgstr ""
 
-#: cdedb/frontend/common.py:1440
+#: cdedb/frontend/common.py:1443
 #, fuzzy
 msgid "Unknown event."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/frontend/common.py:1449
+#: cdedb/frontend/common.py:1452
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr ""
 
-#: cdedb/frontend/common.py:1455 cdedb/frontend/core/base.py:775
+#: cdedb/frontend/common.py:1458 cdedb/frontend/core/base.py:775
 #: cdedb/frontend/core/base.py:1330 cdedb/frontend/core/base.py:1704
 #: cdedb/frontend/core/base.py:1929 cdedb/frontend/core/base.py:2008
 #: cdedb/frontend/core/base.py:2057 cdedb/frontend/core/base.py:2079
@@ -4391,85 +4399,85 @@ msgstr ""
 msgid "Persona is archived."
 msgstr ""
 
-#: cdedb/frontend/common.py:1460
+#: cdedb/frontend/common.py:1463
 msgid "Persona is not in CdE realm."
 msgstr ""
 
-#: cdedb/frontend/common.py:1466
+#: cdedb/frontend/common.py:1469
 msgid "Persona is not in event realm."
 msgstr ""
 
-#: cdedb/frontend/common.py:1475
+#: cdedb/frontend/common.py:1478
 msgid "Persona is not registerd for this event."
 msgstr ""
 
-#: cdedb/frontend/common.py:1492
+#: cdedb/frontend/common.py:1495
 #, fuzzy
 msgid "Payment date before registration."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/common.py:1504
+#: cdedb/frontend/common.py:1507
 #, python-format
 msgid "Not enough money. %(total)s < %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1512
+#: cdedb/frontend/common.py:1515
 #, python-format
 msgid "Too much money. %(total)s > %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1520
+#: cdedb/frontend/common.py:1523
 msgid "Family name doesn’t match."
 msgstr ""
 
-#: cdedb/frontend/common.py:1525
+#: cdedb/frontend/common.py:1528
 msgid "Given names don’t match."
 msgstr ""
 
-#: cdedb/frontend/common.py:1579
+#: cdedb/frontend/common.py:1582
 #, fuzzy
 msgid "User created."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/frontend/common.py:1925
+#: cdedb/frontend/common.py:1928
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:1999
+#: cdedb/frontend/common.py:2002
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:2002
+#: cdedb/frontend/common.py:2005
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:2068
+#: cdedb/frontend/common.py:2071
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:2223
+#: cdedb/frontend/common.py:2226
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:2298
+#: cdedb/frontend/common.py:2301
 #, fuzzy
 msgid "Invalid argtype {t} found."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/common.py:2416
+#: cdedb/frontend/common.py:2419
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:2421
+#: cdedb/frontend/common.py:2424
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:2425
+#: cdedb/frontend/common.py:2428
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2447
+#: cdedb/frontend/common.py:2450
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-05-09 23:54+0200\n"
+"POT-Creation-Date: 2025-05-24 22:55+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -98,7 +98,7 @@ msgstr "Unzulässiger Bereich."
 
 #: cdedb/backend/assembly.py:395 cdedb/backend/assembly.py:419
 #: cdedb/backend/assembly.py:2218 cdedb/backend/past_event.py:546
-#: cdedb/frontend/common.py:689
+#: cdedb/frontend/common.py:692
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -415,7 +415,7 @@ msgstr ""
 #: cdedb/backend/event/base.py:1340 cdedb/common/__init__.py:277
 #: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:753
 #: cdedb/frontend/cde/lastschrift.py:543
-#: cdedb/frontend/cde/parse_statement.py:704 cdedb/frontend/common.py:709
+#: cdedb/frontend/cde/parse_statement.py:704 cdedb/frontend/common.py:712
 #: cdedb/frontend/event/base.py:458 cdedb/frontend/event/query_stats.py:443
 #: cdedb/frontend/event/query_stats.py:634
 #: cdedb/frontend/event/query_stats.py:677
@@ -840,7 +840,7 @@ msgstr "Einziger Moderator der Mailinglisten %(ml_ids)s."
 msgid "Cannot archive silently."
 msgstr "Kann nicht still archiviert werden."
 
-#: cdedb/backend/core/base.py:1917 cdedb/frontend/common.py:1572
+#: cdedb/backend/core/base.py:1917 cdedb/frontend/common.py:1575
 #: cdedb/frontend/core/base.py:2606
 msgid "User with this E-Mail exists already."
 msgstr "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
@@ -907,7 +907,7 @@ msgstr "Fehler bei verschachtelten Transaktionen."
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core/base.py:2597 cdedb/frontend/common.py:2221
+#: cdedb/backend/core/base.py:2597 cdedb/frontend/common.py:2224
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -941,7 +941,7 @@ msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
 #: cdedb/backend/core/base.py:2697 cdedb/frontend/cde/base.py:690
-#: cdedb/frontend/cde/parse.py:298 cdedb/frontend/common.py:1052
+#: cdedb/frontend/cde/parse.py:298 cdedb/frontend/common.py:1055
 #: cdedb/frontend/event/registration.py:111
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
@@ -2939,7 +2939,7 @@ msgid "Must be negative."
 msgstr "Muss negativ sein."
 
 #: cdedb/common/validation/validate.py:684
-#: cdedb/common/validation/validate.py:738 cdedb/frontend/common.py:1438
+#: cdedb/common/validation/validate.py:738 cdedb/frontend/common.py:1441
 msgid "Must not be zero."
 msgstr "Darf nicht null sein."
 
@@ -2952,7 +2952,7 @@ msgstr "Darf nicht null sein."
 #: cdedb/common/validation/validate.py:2786
 #: cdedb/common/validation/validate.py:4158
 #: cdedb/common/validation/validate.py:4830 cdedb/frontend/cde/base.py:265
-#: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:647
+#: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:650
 #: cdedb/frontend/core/base.py:1256 cdedb/frontend/core/genesis.py:103
 #: cdedb/frontend/event/event.py:314 cdedb/frontend/event/registration.py:670
 #: cdedb/frontend/event/registration.py:1713
@@ -3608,15 +3608,23 @@ msgstr "{hours} Stunden, {minutes} Minuten"
 msgid "{minutes} minutes, {seconds} seconds"
 msgstr "{minutes} Minuten, {seconds} Sekunden"
 
+#: cdedb/filter.py:184
+msgid "{seconds} sseconds, {milliseconds} milliseconds"
+msgstr "{seconds} Sekunden, {milliseconds} Millisekunden"
+
+#: cdedb/filter.py:188
+msgid "{milliseconds} milliseconds"
+msgstr "{milliseconds} Millisekunden"
+
 #: cdedb/frontend/application.py:127 cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr "Start im Entwicklungs- oder Offlinemodus ist unzulässig."
 
-#: cdedb/frontend/application.py:243
+#: cdedb/frontend/application.py:246
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
-#: cdedb/frontend/application.py:346
+#: cdedb/frontend/application.py:349
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -3628,7 +3636,7 @@ msgstr ""
 "es leider auch zu ungewollten Beschränkungen kommen. Deine Limitierung wird "
 "im Laufe der nächsten Tage automatisch zurückgesetzt."
 
-#: cdedb/frontend/application.py:365
+#: cdedb/frontend/application.py:368
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -4199,48 +4207,48 @@ msgstr "Adressabfrage noch nicht erledigt."
 msgid "New expuls started."
 msgstr "Nächster exPuls initialisiert."
 
-#: cdedb/frontend/common.py:500 cdedb/frontend/common.py:510
+#: cdedb/frontend/common.py:501 cdedb/frontend/common.py:511
 msgid "Must not be used in web templates."
 msgstr "Darf nicht in Web-Templates verwendet werden."
 
-#: cdedb/frontend/common.py:561
+#: cdedb/frontend/common.py:562
 msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
-#: cdedb/frontend/common.py:591
+#: cdedb/frontend/common.py:594
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
-#: cdedb/frontend/common.py:604
+#: cdedb/frontend/common.py:607
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr "Angefordeter modus existiert nicht: %(modus)s"
 
-#: cdedb/frontend/common.py:609
+#: cdedb/frontend/common.py:612
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr "Template nicht gefunden: %(file)s"
 
-#: cdedb/frontend/common.py:641
+#: cdedb/frontend/common.py:644
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde "
 "mittlerweile wieder gelöscht."
 
-#: cdedb/frontend/common.py:691
+#: cdedb/frontend/common.py:694
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:707
+#: cdedb/frontend/common.py:710
 msgid "Invalid input type."
 msgstr "Ungültiger Eingabetyp."
 
-#: cdedb/frontend/common.py:769
+#: cdedb/frontend/common.py:772
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
-#: cdedb/frontend/common.py:796
+#: cdedb/frontend/common.py:799
 msgid ""
 "The CdEDB is curently locked for maintenance. You can still access it as "
 "admin. Only use the CdEDB if you know why it was locked!"
@@ -4249,22 +4257,22 @@ msgstr ""
 "weiterhin nutzen. Benutze die CdEDB nur, wenn du weißt, warum sie gesperrt "
 "wurde!"
 
-#: cdedb/frontend/common.py:800
+#: cdedb/frontend/common.py:803
 msgid "The CdE database is currently under maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der CdE-Datenbank vorgenommen und "
 "diese ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:882
+#: cdedb/frontend/common.py:885
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1007
+#: cdedb/frontend/common.py:1010
 msgid "Scope mismatch."
 msgstr "Scope passt nicht zu Query."
 
-#: cdedb/frontend/common.py:1159
+#: cdedb/frontend/common.py:1162
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
@@ -4272,40 +4280,40 @@ msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Du kannst die Quelldateien "
 "herunterladen und versuchen sie manuell zu kompilieren."
 
-#: cdedb/frontend/common.py:1299
+#: cdedb/frontend/common.py:1302
 msgid "Anti CSRF token is required for this form."
 msgstr "Dieses Formular benötigt einen Anti-CSRF-Token."
 
-#: cdedb/frontend/common.py:1305
+#: cdedb/frontend/common.py:1308
 msgid "Anti CSRF token expired. Please try again."
 msgstr "Der Anti-CSRF-Token ist abgelaufen. Probiere es erneut."
 
-#: cdedb/frontend/common.py:1307
+#: cdedb/frontend/common.py:1310
 msgid "Anti CSRF token is forged."
 msgstr "Der Anti-CSRF-Token wurde gefälscht."
 
-#: cdedb/frontend/common.py:1309
+#: cdedb/frontend/common.py:1312
 msgid "Anti CSRF token is invalid."
 msgstr "Der Anti-CSRF-Token ist ungültig."
 
-#: cdedb/frontend/common.py:1426
+#: cdedb/frontend/common.py:1429
 msgid "Invalid category."
 msgstr "Unzulässige Kategorie."
 
-#: cdedb/frontend/common.py:1433
+#: cdedb/frontend/common.py:1436
 msgid "Must be greater than zero."
 msgstr "Muss größer als Null sein."
 
-#: cdedb/frontend/common.py:1440
+#: cdedb/frontend/common.py:1443
 msgid "Unknown event."
 msgstr "Unbekannte Veranstaltung."
 
-#: cdedb/frontend/common.py:1449
+#: cdedb/frontend/common.py:1452
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
-#: cdedb/frontend/common.py:1455 cdedb/frontend/core/base.py:775
+#: cdedb/frontend/common.py:1458 cdedb/frontend/core/base.py:775
 #: cdedb/frontend/core/base.py:1330 cdedb/frontend/core/base.py:1704
 #: cdedb/frontend/core/base.py:1929 cdedb/frontend/core/base.py:2008
 #: cdedb/frontend/core/base.py:2057 cdedb/frontend/core/base.py:2079
@@ -4314,84 +4322,84 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
-#: cdedb/frontend/common.py:1460
+#: cdedb/frontend/common.py:1463
 msgid "Persona is not in CdE realm."
 msgstr "Account ist kein CdE-Account"
 
-#: cdedb/frontend/common.py:1466
+#: cdedb/frontend/common.py:1469
 msgid "Persona is not in event realm."
 msgstr "Account ist kein Veranstaltungs-Account"
 
-#: cdedb/frontend/common.py:1475
+#: cdedb/frontend/common.py:1478
 msgid "Persona is not registerd for this event."
 msgstr "Benutzer ist nicht für diese Veranstaltung angemeldet."
 
-#: cdedb/frontend/common.py:1492
+#: cdedb/frontend/common.py:1495
 msgid "Payment date before registration."
 msgstr "Zahlungseingang vor Anmeldezeitpunkt."
 
-#: cdedb/frontend/common.py:1504
+#: cdedb/frontend/common.py:1507
 #, python-format
 msgid "Not enough money. %(total)s < %(expected)s"
 msgstr "Nicht genug Geld. %(total)s < %(expected)s"
 
-#: cdedb/frontend/common.py:1512
+#: cdedb/frontend/common.py:1515
 #, python-format
 msgid "Too much money. %(total)s > %(expected)s"
 msgstr "Zu viel Geld. %(total)s > %(expected)s"
 
-#: cdedb/frontend/common.py:1520
+#: cdedb/frontend/common.py:1523
 msgid "Family name doesn’t match."
 msgstr "Familienname passt nicht."
 
-#: cdedb/frontend/common.py:1525
+#: cdedb/frontend/common.py:1528
 msgid "Given names don’t match."
 msgstr "Rufnamen passen nicht zusammen."
 
-#: cdedb/frontend/common.py:1579
+#: cdedb/frontend/common.py:1582
 msgid "User created."
 msgstr "Account erstellt."
 
-#: cdedb/frontend/common.py:1925
+#: cdedb/frontend/common.py:1928
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
-#: cdedb/frontend/common.py:1999
+#: cdedb/frontend/common.py:2002
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:2002
+#: cdedb/frontend/common.py:2005
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:2068
+#: cdedb/frontend/common.py:2071
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:2223
+#: cdedb/frontend/common.py:2226
 msgid "Link invalid."
 msgstr "Link ungültig."
 
-#: cdedb/frontend/common.py:2298
+#: cdedb/frontend/common.py:2301
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-#: cdedb/frontend/common.py:2416
+#: cdedb/frontend/common.py:2419
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/common.py:2421
+#: cdedb/frontend/common.py:2424
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 "Du hast nur eingeschränkten Moderator-Zugriff und darfst keine Abbonements "
 "ändern."
 
-#: cdedb/frontend/common.py:2425
+#: cdedb/frontend/common.py:2428
 msgid "This page can only be accessed by appropriate admins."
 msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
-#: cdedb/frontend/common.py:2447
+#: cdedb/frontend/common.py:2450
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
