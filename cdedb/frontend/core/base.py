@@ -2450,6 +2450,13 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, rs.user.persona_id, new_username, password)
         rs.notify_return_code(code, success=n_("Email address changed."),
                                 error=message)
+        # Warn management of possible privilege escalation
+        if rs.user.roles & set(ADMIN_KEYS):
+            to = (self.conf["MANAGEMENT_ADDRESS"], self.conf["TROUBLESHOOTING_ADDRESS"])
+            self.do_mail(rs, "admin_username_change_info",
+                         {'To': to,
+                          'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                         {'new_username': new_username, 'persona': rs.user})
         if not code:
             return self.redirect(rs, "core/change_username_form")
         else:
@@ -2485,6 +2492,14 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, new_username, password=None)
         rs.notify_return_code(code, success=n_("Email address changed."),
                                 error=message)
+        # Warn management of possible privilege escalation
+        persona = self.coreproxy.get_persona(rs, persona_id)
+        if extract_roles(persona, introspection_only=True) & set(ADMIN_KEYS):
+            to = (self.conf["MANAGEMENT_ADDRESS"], self.conf["TROUBLESHOOTING_ADDRESS"])
+            self.do_mail(rs, "admin_username_change_info",
+                         {'To': to,
+                          'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                         {'new_username': new_username, 'persona': persona})
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")
         else:
