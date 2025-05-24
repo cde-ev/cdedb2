@@ -4953,6 +4953,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("4", f['field_id_5'].value)
         self.assertEqual("Input", f['title_5'].value)
 
+        f['create_-1'] = True
+        f['field_id_-1'] = 9  # 'arrival_at'
+        f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
+        self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertEqual(expectation + "+02:00", f['default_value_6'].value)
+
+        execsql("UPDATE event.registrations SET fields = '{}';")
+        self.traverse("Fragebogen")
+        f = self.response.forms['questionnaireform']
+        self.assertEqual(expectation, f['fields.arrival_at'].value.replace("T", " "))
+
     @as_users("garcia")
     def test_questionnaire_reorder(self) -> None:
         self.traverse({'href': '/event/$'},
