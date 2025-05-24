@@ -362,6 +362,7 @@
         $("#{{ anid }}").cdedbMarkdownPreview("{{ cdedblink("core/markdown_parse")|e }}",
                                               {{ {"title": gettext("Markdown Preview"),
                                                   "loading": gettext("Loading..."),
+                                                  "note": "",
                                                   "close": gettext("Close") }|tojson }})
     </script>
 {%- endmacro %}
