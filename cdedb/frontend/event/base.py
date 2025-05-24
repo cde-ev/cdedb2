@@ -532,7 +532,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         choice_stats: "ChoiceStats"  # noqa: UP037
         attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.get_lodgements(
@@ -545,7 +545,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event.id, involved=True,
+            rs, event.id, involved=True, _registrations=all_registrations,
         )
 
         violations = models_cv.ViolationAux(
