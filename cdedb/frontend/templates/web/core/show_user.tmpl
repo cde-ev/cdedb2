@@ -153,17 +153,10 @@
                         {% trans %}QR{% endtrans %}
                     </a>
                     <script nonce="{{ csp_nonce }}">
-                        $("#show-vcard-qr").cdedbQRCodeModal({% if data['foto'] %}
-                                                                {{ {'title': util.persona_name(data),
-                                                                    'loading': gettext("Loading..."),
-                                                                    'note': gettext("QR code does not include the profile photo. Consider downloading the vCard instead."),
-                                                                    'close': gettext("Close") }|tojson }}
-                                                             {%- else %}
-                                                                {{ {'title': util.persona_name(data),
-                                                                    'loading': gettext("Loading..."),
-                                                                    'note': "",
-                                                                    'close': gettext("Close") }|tojson }}
-                                                             {%- endif %})
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                                                                 'loading': gettext("Loading..."),
+                                                                 'note': "" if not data['foto'] else gettext("QR code does not include the profile photo. Consider downloading the vCard instead."),
+                                                                 'close': gettext("Close") }|tojson }})
                     </script>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'],
                                                          persona_id=user.persona_id, timeout=None) %}
