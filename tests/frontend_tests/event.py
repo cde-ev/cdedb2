@@ -4948,6 +4948,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
+        # Test warning against overwrite.
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Die Konfiguration hat sich in der Zwischenzeit geändert.")
+        self.traverse("Fragebogen konfigurieren")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)

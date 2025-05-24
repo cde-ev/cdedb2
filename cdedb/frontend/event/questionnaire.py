@@ -21,6 +21,8 @@ from cdedb.common import (
     DefaultReturnCode,
     Error,
     RequestState,
+    get_hash,
+    json_serialize,
     merge_dicts,
     unwrap,
 )
@@ -61,7 +63,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
             self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages,
-    ) -> tuple[list[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
+    ) -> tuple[list[CdEDBObject], str, models.CdEDataclassMap[models.EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
         fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
@@ -76,14 +78,19 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             if v.association == const.FieldAssociations.registration
                and (kind.allow_fee_condition() or not fees_by_field[k])
         }
-        return questionnaire, registration_fields
+        checksum = get_hash(json_serialize(questionnaire).encode())
+
+        return questionnaire, checksum, registration_fields
 
     def configure_questionnaire_form(
             self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages,
     ) -> Response:
-        questionnaire, reg_fields = self._prepare_questionnaire_form(rs, event_id, kind)
+        questionnaire, checksum, reg_fields = self._prepare_questionnaire_form(
+            rs, event_id, kind,
+        )
         return self.render(rs, "questionnaire/configure_questionnaire", {
             "questionnaire": questionnaire,
+            "checksum": checksum,
             "registration_fields": reg_fields,
             "kind": kind,
         })
@@ -99,7 +106,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         kind = const.QuestionnaireUsages.registration
         code = self._set_questionnaire(rs, event_id, kind)
-        if rs.has_validation_errors() or code is None:
+        if code <= 0:
             return self.configure_registration_form(rs, event_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_registration_form")
@@ -115,7 +122,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
-        if rs.has_validation_errors() or code is None:
+        if code <= 0:
             return self.configure_additional_questionnaire_form(rs, event_id)
         rs.notify_return_code(code)
         return self.redirect(
@@ -123,7 +130,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _set_questionnaire(self, rs: RequestState, event_id: int,
                            kind: const.QuestionnaireUsages,
-                           ) -> Optional[DefaultReturnCode]:
+                           ) -> DefaultReturnCode:
         """Deduplicated code to set questionnaire rows of one kind."""
         other_kinds = set(const.QuestionnaireUsages) - {kind}
         other_questionnaire = self.eventproxy.get_questionnaire(
@@ -131,17 +138,26 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         other_used_fields = {e['field_id'] for v in other_questionnaire.values()
                              for e in v if e['field_id']}
 
-        old_questionnaire, registration_fields = self._prepare_questionnaire_form(
-            rs, event_id, kind)
+        checksum = request_extractor(
+            rs,
+            {"checksum": str | None},  # type: ignore[dict-item]
+        )["checksum"]
+        old_questionnaire, old_checksum, registration_fields = \
+            self._prepare_questionnaire_form(rs, event_id, kind)
 
         new_questionnaire = self.process_questionnaire_input(
             rs, len(old_questionnaire), registration_fields, kind,
             other_used_fields)
         if rs.has_validation_errors():
-            return None
-        code = self.eventproxy.set_questionnaire(
-            rs, event_id, new_questionnaire)
-        return code
+            return 0
+
+        if checksum != old_checksum:
+            rs.notify("warning", n_(
+                "The configuration changed in the meantime. Saving your changes will"
+                " override those changes. Submit again form again to proceed."))
+            return -1
+
+        return self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
 
     @access("event")
     @REQUESTdata("preview")

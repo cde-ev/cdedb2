@@ -20839,3 +20839,6 @@ msgstr "%(num)s Teilnahmebeiträge verbucht für %(event)s."
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr "%(num)s Erstattungen eingetragen für %(event)s."
+
+msgid "The configuration changed in the meantime. Saving your changes will override those changes. Submit again form again to proceed."
+msgstr "Die Konfiguration hat sich in der Zwischenzeit geändert. Wenn du deine Änderungen speicherst, überschreibst du damit die zwischenzeitlichen Änderungen. Klicke erneut auf Speichern um fortzufahren."
