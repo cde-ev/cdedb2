@@ -22,23 +22,6 @@
             "shortname": "Heldentum",
             "title": "Planetenretten f\u00fcr Anf\u00e4nger"
         },
-        "13": {
-            "description": "Besser sp\u00e4t als nie.",
-            "fields": {},
-            "instructors": null,
-            "is_visible": true,
-            "max_size": null,
-            "min_size": null,
-            "notes": null,
-            "nr": "\u03b6",
-            "segments": {
-                "1": false,
-                "2": true,
-                "3": true
-            },
-            "shortname": "Extra",
-            "title": "Extra-Kurs"
-        },
         "2": {
             "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
             "fields": {
@@ -112,6 +95,23 @@
             },
             "shortname": "Backup",
             "title": "Backup-Kurs"
+        },
+        "13": {
+            "description": "Besser sp\u00e4t als nie.",
+            "fields": {},
+            "instructors": null,
+            "is_visible": true,
+            "max_size": null,
+            "min_size": null,
+            "notes": null,
+            "nr": "\u03b6",
+            "segments": {
+                "1": false,
+                "2": true,
+                "3": true
+            },
+            "shortname": "Extra",
+            "title": "Extra-Kurs"
         }
     },
     "event": {
