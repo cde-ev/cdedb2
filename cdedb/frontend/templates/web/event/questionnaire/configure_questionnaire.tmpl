@@ -1,4 +1,4 @@
-{% set sidenav_active = "event_register_config" if kind == enums["QuestionnaireUsages"].registration else'event_quest_config' %}
+{% set sidenav_active = "event_register_config" if kind == enums["QuestionnaireUsages"].registration else "event_quest_config" %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint="strong" %}
@@ -85,9 +85,6 @@
         </div>
         {{ util.input_submit(label=gettext("Save"), readonly=not is_privileged_for(config_endpoint)) }}
     </form>
-    {% if not jshint == "strong" %}
-        {{ util.raise_for_test("jshint not strong for questionnaire config") }}
-    {% endif %}
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
             let field_list = {{ registration_fields|tojson }};
