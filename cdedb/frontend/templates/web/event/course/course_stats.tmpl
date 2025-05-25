@@ -114,17 +114,17 @@
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                     <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}">
-                        {{ course['nr'] }}
+                        {{ course.nr }}
                     </td>
                     <td class="{{ aclass }}" title="{{ atitle }}">
-                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname'],
+                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course.shortname,
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
                         {% set format = violations.get(course_id=course_id, track=track, track_group=None).course_stats_format -%}
                         {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
-                        {% if track.id in course['segments'] %}
+                        {% if track.id in course.segments %}
                             <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
                                 {% for icon, icon_title in format.icons %}
                                     {{ util.make_icon(icon, title=gettext(icon_title)) }}
@@ -155,8 +155,8 @@
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
-                    <td class="b-left text-right">{{ course['min_size'] }}</td>
-                    <td class="text-right">{{ course['max_size'] }}</td>
+                    <td class="b-left text-right">{{ course.min_size }}</td>
+                    <td class="text-right">{{ course.max_size }}</td>
                     {% if ambience['event']['tracks']|length < 4 %}
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
