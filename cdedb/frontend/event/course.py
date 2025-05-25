@@ -19,7 +19,6 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDataclassMap,
     CdEDBObject,
     CdEDBObjectMap,
     CourseChoiceToolActions,
@@ -47,6 +46,7 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.models.common import CdEDataclassMap
 from cdedb.models.event_constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(

@@ -35,7 +35,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
-    CdEDataclassMap,
     CdEDBObject,
     CdEDBObjectMap,
     determine_age_class,
@@ -45,6 +44,7 @@ from cdedb.common import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
+from cdedb.models.common import CdEDataclassMap
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
