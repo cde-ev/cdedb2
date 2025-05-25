@@ -1336,6 +1336,16 @@ span.fag {
     }
 }
 
+/* In modals, main content and note are separate divs to more easily update them
+ * programmatically, but should have no visual separation.
+ */
+#cdedb-modal-content {
+    padding-bottom: 0;
+}
+#cdedb-modal-content-note {
+    padding-top: 0;
+}
+
 /*
  * the following should be replaced with
  * display: inline-flex; width: auto;

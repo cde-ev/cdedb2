@@ -2,6 +2,7 @@
 
 """Basic services for the core realm."""
 
+import base64
 import collections
 import datetime
 import decimal
@@ -419,7 +420,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=True)
         persona = self.coreproxy.get_persona(rs, persona_id)
         filename = sanitize_filename(make_persona_name(persona))
 
@@ -432,15 +433,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=False)
 
         buffer = io.BytesIO()
         segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
-    @staticmethod
-    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+    def _make_vcard_data(self, rs: RequestState, persona: CdEDBObject, include_foto: bool) -> str:
         """Creates a string encoding the contact information as vCard 3.0.
 
         Only a subset of available `vCard 3.0 properties
@@ -477,11 +477,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 data.append(prefix + ";".join(escape(e or "") for e in address))
         if persona['birthday'] != datetime.date.min:
             data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        if persona['foto'] and include_foto:
+            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
+            foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
+            if mime_type and foto_data:
+                data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
         data.append('END:VCARD')
         data.append('')
         return '\r\n'.join(data)
 
-    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+    def _create_vcard(self, rs: RequestState, persona_id: int, include_foto: bool) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
 
@@ -496,7 +501,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        vcard = self._make_vcard_data(rs, persona)
+        vcard = self._make_vcard_data(rs, persona, include_foto)
         return vcard
 
     @access("persona")
