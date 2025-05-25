@@ -1744,12 +1744,11 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
         attendees = aux.attendee_data.involved.get(course.id, track.id)
 
         if track.id not in course.segments:
+            if not attendees.all:
+                return None
             return cls(
                 event=aux.event,
-                severity=(
-                    ViolationSeverity.ERROR
-                    if attendees.all else ViolationSeverity.DEBUG
-                ),
+                severity=ViolationSeverity.ERROR,
                 course=course,
                 track=track,
                 num=attendees.num,
