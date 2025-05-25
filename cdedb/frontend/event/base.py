@@ -330,7 +330,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
                     if course_id:
-                        prim_rank += prim_sorter(courses[course_id])
+                        prim_rank += courses[course_id].get_sortkey()
                     else:
                         prim_rank += ("0", "", "")
             else:
@@ -450,6 +450,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
+                # TODO remove when migrating lodgements to dataclasses here
+                instance = instance.as_dict()
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and

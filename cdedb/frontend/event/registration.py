@@ -251,7 +251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             course_id: {
                 tg_id: {
                     event.tracks[t_id].part_id for t_id in
-                    (set(tg.tracks) & course['segments'])
+                    (set(tg.tracks) & course.segments)
                 }
                 for tg_id, tg in event.track_groups.items()
                 if tg.constraint_type == ccs

@@ -108,7 +108,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
+            {% for course_id, course in courses.items() %}
                 <tr>
                     {% set format = violations.get(course_id=course_id, track=None, track_group=None).course_stats_format -%}
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}

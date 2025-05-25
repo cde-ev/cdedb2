@@ -461,7 +461,7 @@ class EventEventMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         # referenced tracks block part deletion
         for course in courses.values():
-            for track_id in course['segments']:
+            for track_id in course.segments:
                 blocked_parts.add(rs.ambience['event'].tracks[track_id].part_id)
         part_fees = self.eventproxy.get_event_fees_per_entity(rs, event_id).parts
         for part_id, fees in part_fees.items():
@@ -481,7 +481,7 @@ class EventEventMixin(EventBaseFrontend):
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
-            blocked_tracks.update(course['segments'])
+            blocked_tracks.update(course.segments)
         for tg in rs.ambience['event'].track_groups.values():
             blocked_tracks.update(tg.tracks)
         return blocked_tracks

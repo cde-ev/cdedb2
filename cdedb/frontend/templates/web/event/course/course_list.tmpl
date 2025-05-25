@@ -89,7 +89,7 @@
                 <summary class="h3">{% trans %}Table of Contents{% endtrans %}</summary>
                 <ul>
                     {% for course_id, course in courses %}
-                        <li>{{ util.href("#course-{}".format(course_id), "{}. {}".format(course['nr'], course['title'])) }}</li>
+                        <li>{{ util.href("#course-{}".format(course_id), course.label) }}</li>
                     {% endfor %}
                 </ul>
                 </details>
@@ -97,32 +97,31 @@
         {% endif %}
 
         <div id="list-courses">
-        {% for anid, entry in courses %}
-            <div class="hide-hover-container" id="course-{{ entry['id'] }}">
-                {{ util.h(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
-                          translate=False) }}
-                {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {% for course_id, course in courses %}
+            <div class="hide-hover-container" id="course-{{ course.id }}">
+                {{ util.h(course.label, anchor="course-" + course.id|string, translate=False) }}
+                {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right heading-supplement">
-                        {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
+                        {{ util.href(cdedblink('event/show_course', {'course_id' : course_id}), gettext("Details"),
                                      readonly=not is_privileged_for('show_course'), icon='list',
                                      aclass='btn btn-xs btn-info hide-hover') }}
-                        {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), gettext("Edit"),
+                        {{ util.href(cdedblink('event/change_course_form', {'course_id' : course_id}), gettext("Edit"),
                                      readonly=not is_privileged_for('change_course'), icon='pen',
                                      aclass='btn btn-xs btn-warning hide-hover') }}
                     </div>
                 {% endif %}
                 <p class="heading-supplement">
-                    {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
-                        <span class="label label-primary">{{ entry['shortname'] }}</span>
+                    {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
+                        <span class="label label-primary">{{ course.shortname }}</span>
                     {% endif %}
-                    {% if "event" in user.roles and entry['instructors'] %}
-                        {% trans instructors=entry['instructors'] %}
+                    {% if "event" in user.roles and course.instructors %}
+                        {% trans instructors=course.instructors %}
                             by {{ instructors }}
                         {% endtrans %}
                     {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
-                        {% for track in ambience['event']['tracks'].values()|sort if track.id in entry['segments'] -%}
+                        {% for track in ambience['event'].tracks.values()|sort if track.id in course.segments -%}
                             {% if not loop.first %}
                                 {%- if loop.last %}
                                     {% trans %}and{% endtrans %}
@@ -130,19 +129,19 @@
                                     ,
                                 {% endif %}
                             {%- endif %}
-                            {%- if track.id not in entry['active_segments'] and show_course_state %}
+                            {%- if track.id not in course.active_segments and show_course_state %}
                                 <i><s>{{ track['title'] }}</s></i>{# -#}
                                 <span class="sr-only"> ({% trans %}cancelled{% endtrans %})</span>
                             {%- else %}
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
-                    {% elif (ambience['event']['tracks'].keys()|list)[0] not in entry['active_segments']
+                    {% elif (ambience['event'].tracks.keys()|list)[0] not in course.active_segments
                              and show_course_state %}
                         – <span class="text-info">{% trans %}cancelled{% endtrans %}</span>
                     {% endif %}
                 </p>
-                {{ entry['description']|md }}
+                {{ course.description|md }}
             </div>
         {% endfor %}
         </div>

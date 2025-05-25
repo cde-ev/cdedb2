@@ -451,7 +451,7 @@ class TestEventBackend(BackendTest):
         new_course['active_segments'] = new_course['segments']
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
-            self.key, new_course_id))
+            self.key, new_course_id).as_dict())
 
         new_group = {
             'event_id': new_id,
@@ -868,24 +868,21 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
         data['fields'] = {}
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'] = {1, 3}
         data['active_segments'] = {1, 3}
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
             'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
             'id': new_id, 'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:

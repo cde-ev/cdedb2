@@ -789,6 +789,10 @@ class Course(EventDataclass):
 
     fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
+    @property
+    def label(self) -> str:
+        return f"{self.nr}. {self.shortname}"
+
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          entity_key: Optional[str] = None,
