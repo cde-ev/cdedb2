@@ -154,7 +154,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if checksum != old_checksum:
             rs.notify("warning", n_(
                 "The configuration changed in the meantime. Saving your changes will"
-                " override those changes. Submit again form again to proceed."))
+                " override those changes. Submit form again to proceed."))
             return -1
 
         return self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
