@@ -1,4 +1,4 @@
-{% set sidenav_active='event_register_preview' if preview else 'event_register' %}
+{% set sidenav_active = "event_register_preview" if preview else "event_register" %}
 {% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
@@ -20,16 +20,17 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
-{% if preview %}
-    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"), active=True) }}
-{% else %}
-    {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
-{% endif %}
+    {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
+                                gettext("Registration Preview"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+    {% endif %}
 {% endblock %}
 
 {% block heading %}
