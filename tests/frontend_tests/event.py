@@ -443,7 +443,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
-            "Freitexte",
+            "Freitexte", "Fragebogen-Vorschau",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
