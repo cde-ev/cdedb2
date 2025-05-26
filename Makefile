@@ -35,10 +35,14 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
-ISORT ?= $(RUFF) --select I
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
+ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
+
+FORMAT_TARGETS ?= cdedb/__init__.py
+ISORT_TARGETS ?= bin/*.py cdedb tests
+LINT_TARGETS ?= cdedb tests
 
 
 #####################
@@ -118,11 +122,17 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 
 .PHONY: format
 format:
-	$(ISORT) --fix bin/*.py cdedb tests
+	$(RUFF) format $(FORMAT_TARGETS)
+	$(ISORT) --fix $(ISORT_TARGETS)
+
+.PHONY: format-diff
+format-diff:
+	$(RUFF) format $(FORMAT_TARGETS) --diff
+	$(ISORT) $(ISORT_TARGETS)
 
 .PHONY: mypy
 mypy:
-	$(MYPY) bin/*.py cdedb tests
+	$(MYPY) bin/*.py $(LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 
@@ -131,7 +141,7 @@ isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	$(ISORT) bin/*.py cdedb tests
+	$(ISORT) $(ISORT_TARGETS)
 	@echo ""
 
 .PHONY: ruff
@@ -144,8 +154,10 @@ ruff:
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
 	$(RUFF) --output-format=grouped cdedb tests
+	$(RUFF) format $(FORMAT_TARGETS) --check
 else
-	$(RUFF) cdedb tests
+	$(RUFF) check cdedb tests
+	$(RUFF) format $(FORMAT_TARGETS) --check
 endif
 	@echo ""
 
