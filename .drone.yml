@@ -280,6 +280,7 @@ volumes:
 
 
 trigger:
-  event:
-    - push
-    - custom
+  branch:
+    - master
+    - stable
+    - ci/*
