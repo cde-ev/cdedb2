@@ -164,8 +164,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.eventproxy.is_locked(rs, event_id=event_id) and
-                required_privilege & EventPrivileges.all_write):
+        if event := rs.ambience.get('event'):
+            is_locked = event.is_locked
+        else:
+            is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
+        if is_locked and required_privilege & EventPrivileges.all_write:
             return False
         return is_privileged_event(rs, required_privilege, event_id)
 
