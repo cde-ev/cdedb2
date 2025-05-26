@@ -457,7 +457,7 @@
             placeholder="0"
         {%- elif type == 'tel' %}
             placeholder="+49 1234 5678910"
-            pattern="\+?[0-9 ()]+"
+            pattern="\+?[0-9 \(\)]+"
             title="{{ gettext("Phone number in the format +49 1234 5678910") }}"
         {%- elif type == 'date' %}
             placeholder="YYYY-MM-DD"
@@ -475,6 +475,10 @@
             value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
         {%- elif type == 'datetime-local' %}
             value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
+        {%- elif type == 'tel' %}
+            value="{{ values.get(name, defaultvalue)|phone }}"
+        {%- elif type == 'iban' %}
+            value="{{ values.get(name, defaultvalue)|iban }}"
         {%- elif type != 'password' %}
             value="{{ values.get(name, defaultvalue) }}"
         {%- endif %}
