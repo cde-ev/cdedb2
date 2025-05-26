@@ -697,19 +697,19 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
     return [tuple(value[k] for k in args) for value in values]
 
 
-def entries_filter(entity_map: dict[Any, "CdEDataclass"], *args: str,
-                   include: Optional[Container[int]] = None,
+def entries_filter(entities: dict[Any, "CdEDataclass"] | list["CdEDataclass"],
+                   *args: str, include: Optional[Container[int]] = None,
                    ) -> list[tuple[Any, ...]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
 
     Example::
 
-        >>> entity_map = {1: Dataclass(id=1, name=a, active=True),
-                          2: Dataclass(id=2, name=b, active=False)}
+        >>> entities = {1: Dataclass(id=1, name=a, active=True),
+                        2: Dataclass(id=2, name=b, active=False)}
         >>> entries_filter(items, 'name', 'active')
         [('a', True), ('b', False)]
 
-    :param entity_map: A dict of CdEDataclasses.
+    :param entities: A dict of CdEDataclasses.
     :param args: Additional positional arguments describing which keys of
       the dataclasses should be inserted in the resulting tuple
     :param include: An iteratable to search for entities' ids. Only entities with
@@ -717,10 +717,11 @@ def entries_filter(entity_map: dict[Any, "CdEDataclass"], *args: str,
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
       input_select macros), built from the selected fields of the dataclasses.
     """
+    if isinstance(entities, dict):
+        entities = entities.values()
     return [
-        tuple(getattr(entity, k) for k in args)
-        for entity in entity_map.values()
-        if (include is None or entity.id in include)
+        tuple(getattr(entity, key) for key in args)
+        for entity in entities if (include is None or entity.id in include)
     ]
 
 
