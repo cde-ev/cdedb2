@@ -52,17 +52,18 @@
         {% set config_endpoint = "event/configure_additional_questionnaire" %}
     {% endif %}
     <div class="p button-par">
-        {{ util.href(cdedblink(preview_endpoint, {"preview": True}), preview_label,
-                     aclass="btn btn-default btn-sm", icon="eye") }}
         {{ util.href(cdedblink("event/reorder_questionnaire_form", {"kind": kind}), reorder_label,
                      aclass="btn btn-warning btn-sm", icon="sort",
                      readonly=not is_privileged_for("reorder_questionnaire_form")) }}
         {{ util.href(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"),
                      aclass="btn btn-warning btn-sm", icon="file-upload",
                      readonly=not is_privileged_for("questionnaire_import_form")) }}
+        {{ util.href(cdedblink(preview_endpoint, {"preview": True}), preview_label,
+                     aclass="btn btn-default btn-sm", icon="eye") }}
     </div>
     <form action="{{ cdedblink(config_endpoint) }}" method="POST" id="configurequestionnaireform">
         {{ util.anti_csrf_token(config_endpoint) }}
+        {{ util.input_hidden("checksum", value=checksum) }}
 
         <div id="drow-container">
             {# Old items, already stored in the database #}
