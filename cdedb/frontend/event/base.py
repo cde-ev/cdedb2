@@ -451,7 +451,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
                 # TODO remove when migrating lodgements to dataclasses here
-                instance = instance.as_dict()
+                if isinstance(instance, models.EventDataclass):
+                    instance = instance.as_dict()
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and

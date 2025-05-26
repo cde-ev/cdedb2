@@ -206,8 +206,8 @@ class ViolationList(list['ConstraintViolation']):
             and (course is _MISSING
                     or v.course == course
                     or course is not None and (
-                        getattr(v, 'assigned_course') == course
-                        or getattr(v, 'instructed_course') == course
+                        getattr(v, 'assigned_course', None) == course
+                        or getattr(v, 'instructed_course', None) == course
                     )
                 )
             and (lodgement_id is _MISSING
