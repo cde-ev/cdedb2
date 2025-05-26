@@ -1513,8 +1513,10 @@ class MlBackend(AbstractBackend):
             if not self.core.verify_persona(rs, target_persona_id,
                                             required_roles={'ml'}):
                 raise ValueError(n_("Target User is no valid ml user."))
-            if target['is_archived'] and not clone_addresses:
-                raise ValueError(n_("Clone addresses required for archived target."))
+            if target['is_archived']:
+                # Otherwise, we will have a lot of redundant explicit addresses. This
+                # should meet expectations no matter whether the checkbox was checked.
+                clone_addresses = False
             if source_persona_id == target_persona_id:
                 raise ValueError(n_("Can not merge user into himself."))
 

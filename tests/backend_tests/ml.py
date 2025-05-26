@@ -58,12 +58,6 @@ class TestMlBackend(BackendTest):
         self.assertEqual("Source User is admin and can not be merged.",
                          str(e.exception))
 
-        with self.assertRaises(ValueError) as e:
-            self.ml.merge_accounts(self.key,
-                                   source_persona_id=janis_id,
-                                   target_persona_id=USER_DICT['hades']['id'])
-        self.assertEqual("Target User is not accessible.", str(e.exception))
-
         code = self.ml.merge_accounts(self.key,
                                       source_persona_id=janis_id,
                                       target_persona_id=berta_id)
