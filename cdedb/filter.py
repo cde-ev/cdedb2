@@ -13,7 +13,6 @@ from collections.abc import (
     ItemsView,
     Iterable,
     Mapping,
-    Sequence,
 )
 from typing import (
     TYPE_CHECKING,
@@ -36,7 +35,7 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common import compute_checkdigit
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
 
@@ -719,7 +718,7 @@ def entries_filter(entity_map: dict[Any, "CdEDataclass"], *args: str,
       input_select macros), built from the selected fields of the dataclasses.
     """
     return [
-        tuple(entity.__getattribute__(k) for k in args)
+        tuple(getattr(entity, k) for k in args)
         for entity in entity_map.values()
         if (include is None or entity.id in include)
     ]

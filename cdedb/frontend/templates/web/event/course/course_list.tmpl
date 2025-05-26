@@ -88,7 +88,7 @@
             <details open>
                 <summary class="h3">{% trans %}Table of Contents{% endtrans %}</summary>
                 <ul>
-                    {% for course_id, course in courses %}
+                    {% for course_id, course in courses.items() %}
                         <li>{{ util.href("#course-{}".format(course_id), course.label) }}</li>
                     {% endfor %}
                 </ul>
@@ -97,7 +97,7 @@
         {% endif %}
 
         <div id="list-courses">
-        {% for course_id, course in courses %}
+        {% for course_id, course in courses.items() %}
             <div class="hide-hover-container" id="course-{{ course.id }}">
                 {{ util.h(course.label, anchor="course-" + course.id|string, translate=False) }}
                 {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}

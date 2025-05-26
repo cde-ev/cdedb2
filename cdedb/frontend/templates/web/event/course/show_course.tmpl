@@ -76,7 +76,7 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set general_violations = violations.get(course_id=ambience['course'].id, track_not=ambience['course'].segments) %}
+    {% set general_violations = violations.get(course=ambience['course'], track_not=ambience['course'].segments) %}
     {% if general_violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(general_violations.max_severity) %}
             {{ generic_event.list_violations("constraint-violations", general_violations, entity_page="course") }}
@@ -103,7 +103,7 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {% set track_violations = violations.get(course_id=ambience['course'].id, track=track) %}
+                        {% set track_violations = violations.get(course=ambience['course'], track=track) %}
                         <div id="track-violations-{{ track.id }}">
                             {# Skip violations where the assigned course matches but the instructed course does not. #}
                             {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG and (

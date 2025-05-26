@@ -182,7 +182,7 @@ class ViolationList(list['ConstraintViolation']):
     def get(
             self, *,
             event_id: int = cast(int, _MISSING),
-            course_id: int | None = cast(int, _MISSING),
+            course: models.Course | None = cast(models.Course, _MISSING),
             lodgement_id: int | None = cast(int, _MISSING),
             registration_id: int | None = cast(int, _MISSING),
             track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
@@ -203,11 +203,12 @@ class ViolationList(list['ConstraintViolation']):
         return ViolationList([
             v for v in self
             if (event_id is _MISSING or v.event.id == event_id)
-            and (course_id is _MISSING
-                    or v.course is None and course_id is None
-                    or v.course is not None and v.course.id == course_id
-                    or (assigned_course := getattr(v, 'assigned_course', None)) is not None and assigned_course.id == course_id
-                    or (instructed_course := getattr(v, 'instructed_course', None)) is not None and instructed_course.id == course_id
+            and (course is _MISSING
+                    or v.course == course
+                    or course is not None and (
+                        getattr(v, 'assigned_course') == course
+                        or getattr(v, 'instructed_course') == course
+                    )
                 )
             and (lodgement_id is _MISSING
                      or v.lodgement is None and lodgement_id is None
@@ -877,7 +878,7 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
                 and track.id in instructed_course.active_segments
                 and (
                     assigned_course is None
-                    or instructed_course.id != assigned_course.id
+                    or instructed_course != assigned_course
                 )
         ):
             return cls(
@@ -894,7 +895,7 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
                 assigned_course.id not in reg_track['choices']
                 and (
                     instructed_course is None
-                    or assigned_course.id != instructed_course.id
+                    or assigned_course != instructed_course
                 )
         ):
             return cls(

@@ -711,7 +711,6 @@ class TestEventModels(BackendTest):
     @as_users("anton")
     def test_get_courses(self) -> None:
         course_id = 1
-        # print(self.event.get_course(self.key, course_id))
 
         expectation = models.Course(
             id=course_id,  # type: ignore[arg-type]
@@ -737,7 +736,6 @@ class TestEventModels(BackendTest):
         )
 
         course_ids = [1, 2]
-        # print(self.event.get_courses(self.key, course_ids))
 
         expectation = {
             1: expectation,
