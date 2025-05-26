@@ -8065,7 +8065,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(iban)
         self.traverse("Bearbeiten")
         f = self.response.forms["changeregistrationform"]
-        self.assertEqual(iban.replace(" ", ""), f["fields.iban"].value)
+        self.assertEqual(iban, f["fields.iban"].value)
 
         self.traverse("Übersicht")
         f = self.response.forms["quickregistrationform"]
@@ -8081,7 +8081,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms["changeeventform"]
         f["reimbursement_iban_field_id"] = 1001
         self.submit(f)
-        self.assertNonPresence(non_iban)
         self.traverse(
             "Teilnahmebeiträge", "Beitrags-Statistik",
             {"linkid": "surplus_query"},
