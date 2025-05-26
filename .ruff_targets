@@ -1,0 +1,3 @@
+FORMAT_TARGETS="cdedb/__init__.py"
+LINT_TARGETS="cdedb tests"
+ISORT_TARGETS="bin/*.py cdedb tests"
