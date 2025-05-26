@@ -791,6 +791,10 @@ class Course(EventDataclass):
 
     @property
     def label(self) -> str:
+        return f"{self.nr}. {self.title}"
+
+    @property
+    def shortlabel(self) -> str:
         return f"{self.nr}. {self.shortname}"
 
     @classmethod

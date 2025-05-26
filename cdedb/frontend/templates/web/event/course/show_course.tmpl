@@ -20,7 +20,7 @@
             icon='book') }}
 {% endblock %}
 {% block heading %}
-    {# TODO use course.label instead? #}
+    {# TODO use course.shortlabel instead? #}
     {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course'].nr,
                                                                         course=ambience['course'].shortname),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}

@@ -942,9 +942,9 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
             "registration": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
             "assigned_course":
-                self.assigned_course.label if self.assigned_course else None,
+                self.assigned_course.shortlabel if self.assigned_course else None,
             "instructed_course":
-                self.instructed_course.label if self.instructed_course else None,
+                self.instructed_course.shortlabel if self.instructed_course else None,
         }
         return [msg], params
 
@@ -1669,7 +1669,7 @@ class HiddenCourseCV(CourseConstraintViolation):
             msg = n_("Is hidden and registration is open or about to start.")
         else:
             msg = n_("%(course)s is hidden and registration is open or about to start.")
-        params = {"course": self.course.label}
+        params = {"course": self.course.shortlabel}
         return [msg], params
 
     @cached_property
@@ -1715,7 +1715,7 @@ class MutuallyExclusiveCoursesCV(CourseTrackGroupConstraintViolation):
             )
         track_ids = set(self.course.active_segments) & set(self.track_group.tracks)
         params = {
-            "course": self.course.label,
+            "course": self.course.shortlabel,
             "track_list": ", ".join(
                 track.shortname for track in xsorted(self.track_group.tracks.values())
                 if track.id in track_ids
@@ -1785,7 +1785,7 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
         else:
             msg = n_("%(course)s is cancelled in %(track)s but has %(num)s attendees.")
         params = {
-            "course": self.course.label,
+            "course": self.course.shortlabel,
             "track": self.track.shortname,
             "num": self.num,
         }
@@ -1878,7 +1878,7 @@ class IncorrectNumAttendeesCV(CourseTrackConstraintViolation):
         else:
             return [], {}
         params = {
-            "course": self.course.label,
+            "course": self.course.shortlabel,
             "num": self.num,
             "track": self.track.shortname,
             "min_size": self.course.min_size,
@@ -1946,7 +1946,7 @@ class LonelyAttendeesCV(CourseTrackConstraintViolation):
         else:
             msg = n_("%(course)s has %(num)s instructors but no attendees in %(track)s.")
         params = {
-            "course": self.course.label,
+            "course": self.course.shortlabel,
             "track": self.track.shortname,
             "num": self.num_learners or self.num_instructors,
         }

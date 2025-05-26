@@ -845,7 +845,7 @@ class EventCourseMixin(EventBaseFrontend):
         }
         courses = self.eventproxy.list_courses(rs, event_id)
         course_names = {
-            course.id: course.label
+            course.id: course.shortlabel
             for course in self.eventproxy.get_courses(rs, courses.keys()).values()
         }
 
