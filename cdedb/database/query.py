@@ -9,7 +9,7 @@ import datetime
 import decimal
 import enum
 import logging
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Optional, Union, cast
 
 import psycopg2.extensions
@@ -28,6 +28,9 @@ DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.dat
 # DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
 # used with an "ANY(%s)" like comparison.
 DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
+
+Params = Sequence[DatabaseValue_s] | Mapping[str, DatabaseValue_s]
+
 # EntityKey is the value of an identifier, most often an id, given to retrieve or
 # delete the corresponding entity from the database.
 EntityKey = Union[int, str]
@@ -48,7 +51,7 @@ class SqlQueryBackend:
         self.logger = logger
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence[DatabaseValue_s]) -> None:
+                         params: Params) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`to_db_input`. However in nearly all cases you want to
@@ -59,13 +62,17 @@ class SqlQueryBackend:
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        sanitized_params = tuple(to_db_input(p) for p in params)
+        sanitized_params: Params
+        if isinstance(params, Mapping):
+            sanitized_params = {k: to_db_input(p) for k, p in params.items()}
+        else:
+            sanitized_params = tuple(to_db_input(p) for p in params)
         self.logger.debug(f"Execute PostgreSQL query"
                           f" {cur.mogrify(query, sanitized_params).decode()}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, container: ConnectionContainer, query: str,
-                   params: Sequence[DatabaseValue_s]) -> int:
+                   params: Params) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with container.conn as conn:
             with conn.cursor() as cur:
@@ -73,7 +80,7 @@ class SqlQueryBackend:
                 return cur.rowcount
 
     def query_one(self, container: ConnectionContainer, query: str,
-                  params: Sequence[DatabaseValue_s]) -> Optional[CdEDBObject]:
+                  params: Params) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -84,7 +91,7 @@ class SqlQueryBackend:
                 return from_db_output(cur.fetchone())
 
     def query_all(self, container: ConnectionContainer, query: str,
-                  params: Sequence[DatabaseValue_s]) -> tuple[CdEDBObject, ...]:
+                  params: Params) -> tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
