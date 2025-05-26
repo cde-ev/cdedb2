@@ -1134,10 +1134,14 @@ class EventBaseBackend(EventLowLevelBackend):
         for row in d:
             row['kind'] = const.QuestionnaireUsages(row['kind'])
             if field := event.fields.get(row['field_id']):
+                # Deserialize the stored string into the datatype of the field if able.
                 row['default_value'] = validate_check_optional(
                     FIELD_DATATYPE_VALIDATORS[field.kind], row['default_value'],
                     ignore_warnings=True,
                 )[0]
+                # Special case for datetimes: Convert them to the default timezone so
+                #  they can be submitted again even without the timezone.
+                #  This is required for use with 'datetime-local' inputs.
                 if field.kind == const.FieldDatatypes.datetime:
                     if row['default_value']:
                         row['default_value'] = row['default_value'].astimezone(self.conf["DEFAULT_TIMEZONE"])
