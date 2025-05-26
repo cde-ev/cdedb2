@@ -21,10 +21,8 @@
             {% endif %}
         </h4>
 
-        {% set course_entries = all_courses|keydictsort(EntitySorter.course)
-                                           |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
-        {% set all_course_entries = all_courses|keydictsort(EntitySorter.course)
-                                               |xdict_entries('{id}', '{nr}. {title}', include=all_course_choices) %}
+        {% set course_entries = all_courses|entries('id', 'label', include=course_choices) %}
+        {% set all_course_entries = all_courses|entries('id', 'label', include=all_course_choices) %}
         {% if cco.is_complex() %}
             {% set choice_name = "group{}.course_choice".format(cco['id']) + "_{}" %}
             {% set instructor_name = "group{}.course_instructor".format(cco['id']) %}
@@ -300,7 +298,7 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields.values()|sort|entries('id', 'field_name'),
+                                              entries=registration_fields|entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}

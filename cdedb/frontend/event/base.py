@@ -303,7 +303,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
-            "course": EntitySorter.course,
+            # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }

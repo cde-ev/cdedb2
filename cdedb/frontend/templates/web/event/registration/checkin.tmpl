@@ -42,7 +42,7 @@
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
-                        entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
+                        entries=ambience['event']['parts']|entries('id', 'title')) }}
                     {{ util.input_hidden(name="checkout", value=checkout) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
