@@ -82,7 +82,7 @@ class EventImportMixin(EventBaseFrontend):
             rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_additional_questionnaire")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)

@@ -6279,7 +6279,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f)
         # This only works because we configured the checkboxes accordingly.
-        self.traverse("Fragebogenimport")
+        self.traverse("Fragebogen konfigurieren", "Fragebogenimport")
         f = self.response.forms["importform"]
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
