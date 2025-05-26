@@ -310,14 +310,13 @@ class EventCourseMixin(EventBaseFrontend):
                            ) -> Response:
         """Render form."""
         if 'segments' not in rs.values:
-            rs.values.setlist('segments', rs.ambience['course']['segments'])
+            rs.values.setlist('segments', rs.ambience['course'].segments)
         if 'active_segments' not in rs.values:
-            rs.values.setlist('active_segments',
-                              rs.ambience['course']['active_segments'])
+            rs.values.setlist('active_segments', rs.ambience['course'].active_segments)
         field_values = {
             f"fields.{key}": value
-            for key, value in rs.ambience['course']['fields'].items()}
-        merge_dicts(rs.values, rs.ambience['course'], field_values)
+            for key, value in rs.ambience['course'].fields.items()}
+        merge_dicts(rs.values, rs.ambience['course'].as_dict(), field_values)
         mandatory_fields = get_mandatory_form_fields(
             self.change_course, COURSE_COMMON_FIELDS)
         return self.render(
@@ -427,8 +426,8 @@ class EventCourseMixin(EventBaseFrontend):
                                   "has attendees."))
             return self.redirect(rs, "event/show_course")
 
-        pre_msg = f"Snapshot vor Löschen von Kurs {rs.ambience['course']['shortname']}."
-        post_msg = f"Lösche Kurs {rs.ambience['course']['shortname']}."
+        pre_msg = f"Snapshot vor Löschen von Kurs {rs.ambience['course'].shortname}."
+        post_msg = f"Lösche Kurs {rs.ambience['course'].shortname}."
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
@@ -868,17 +867,17 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: [reg_id for reg_id, registration in registrations.items()
                        if registration['tracks'][track_id]['course_id']
                        == course_id]
-            for track_id in rs.ambience['course']['segments']}
+            for track_id in rs.ambience['course'].segments}
 
         # Parse request data
         params: vtypes.TypeMapping = {
             **{
                 f"new_{track_id}": Collection[Optional[vtypes.ID]]
-                for track_id in rs.ambience['course']['segments']
+                for track_id in rs.ambience['course'].segments
             },
             **{
                 f"delete_{track_id}_{reg_id}": bool
-                for track_id in rs.ambience['course']['segments']
+                for track_id in rs.ambience['course'].segments
                 for reg_id in current_attendees[track_id]
             },
         }
@@ -889,7 +888,7 @@ class EventCourseMixin(EventBaseFrontend):
         # Iterate all registrations to find changed ones
         code = 1
         change_note = ("Kursteilnehmer von"
-                       f" {rs.ambience['course']['shortname']} geändert.")
+                       f" {rs.ambience['course'].shortname} geändert.")
 
         reg_data = []
         for reg_id, registration in registrations.items():
@@ -899,7 +898,7 @@ class EventCourseMixin(EventBaseFrontend):
             }
             # Check if registration is new attendee or deleted attendee
             # in any track of the course
-            for track_id in rs.ambience['course']['segments']:
+            for track_id in rs.ambience['course'].segments:
                 new_attendee = reg_id in data[f"new_{track_id}"]
                 deleted_attendee = data.get(f"delete_{track_id}_{reg_id}", False)
                 if new_attendee or deleted_attendee:
