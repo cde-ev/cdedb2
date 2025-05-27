@@ -499,10 +499,15 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        self.core.logout(self.key)
+        if allow_anonymous:
+            try:
+                self.core.logout(self.key)
+            except PrivilegeError:
+                pass
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -942,8 +947,8 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
-                                                 Callable[..., None]]:
+def as_users(*users: UserIdentifier, maintain_data: bool = False,
+             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
@@ -952,7 +957,12 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
-                        self.setUp()
+                        if maintain_data:
+                            if isinstance(self, FrontendTest):
+                                self.get("/")
+                            self.logout(allow_anonymous=True)
+                        else:
+                            self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
@@ -1254,13 +1264,19 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        else:
+        def _logout() -> None:
             f = self.response.forms['logoutform']
             self.submit(f, check_notification=False, verbose=verbose,
                         check_mandatory_filled=False)
+
+        if allow_anonymous:
+            if not self.user_in("anonymous"):
+                if 'logoutform' in self.response.forms:
+                    _logout()
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            _logout()
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 

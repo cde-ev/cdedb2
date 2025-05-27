@@ -76,6 +76,10 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.validation.validate import (
+    FIELD_DATATYPE_VALIDATORS,
+    validate_check_optional,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
@@ -1115,6 +1119,7 @@ class EventBaseBackend(EventLowLevelBackend):
         of those kinds, otherwise you get them all.
         """
         event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
@@ -1128,6 +1133,19 @@ class EventBaseBackend(EventLowLevelBackend):
         d = self.query_all(rs, query, params)
         for row in d:
             row['kind'] = const.QuestionnaireUsages(row['kind'])
+            if field := event.fields.get(row['field_id']):
+                # Deserialize the stored string into the datatype of the field if able.
+                row['default_value'] = validate_check_optional(
+                    FIELD_DATATYPE_VALIDATORS[field.kind], row['default_value'],
+                    ignore_warnings=True,
+                )[0]
+                # Special case for datetimes: Convert them to the default timezone so
+                #  they can be submitted again even without the timezone.
+                #  This is required for use with 'datetime-local' inputs.
+                if field.kind == const.FieldDatatypes.datetime:
+                    if row['default_value']:
+                        row['default_value'] = row['default_value'].astimezone(self.conf["DEFAULT_TIMEZONE"])
+
         ret = {
             k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages

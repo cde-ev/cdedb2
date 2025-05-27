@@ -84,7 +84,7 @@ class TestEventFrontend(FrontendTest):
         }
         self.event.book_fees(self.key, event_id, [data])
 
-    @as_users("anton", "emilia")
+    @as_users("anton", "emilia", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
@@ -95,7 +95,7 @@ class TestEventFrontend(FrontendTest):
         if self.user_in('emilia'):
             self.assertNonPresence("CdE-Party 2050")
 
-    @as_users("anonymous", "janis")
+    @as_users("anonymous", "janis", maintain_data=True)
     def test_no_event_realm_view(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
@@ -117,14 +117,15 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
 
-    @as_users("anton", "berta")
+    @as_users("anton", "berta", maintain_data=True)
     def test_index_orga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
-    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina", "petra")
+    @as_users("annika", "emilia", "martin", "vera", "werner", "katarina", "petra",
+              maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
@@ -218,7 +219,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Nein", div='account-active')
 
-    @as_users("annika", "vera")
+    @as_users("annika", "vera", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
@@ -332,7 +333,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Orgas")
         self.assertPresence("Anmeldungen")
 
-    @as_users("anonymous", "garcia")
+    @as_users("anonymous", "garcia", maintain_data=True)
     def test_list_events_unprivileged(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'href': '/event/event/list'})
@@ -343,70 +344,61 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Orgas")
         self.assertNonPresence("Anmeldungen")
 
-    @as_users("annika", "berta", "emilia")
-    def test_show_event(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-        link = self.response.html.find(id="website-link").find(name="a")
-        self.assertEqual(link.attrs["href"], "https://www.cde-ev.de/")
-        self.assertIn("Große Testakademie 2222", link.getText())
-        self.assertPresence("Warmup: 02.02.2222 – 02.02.2222 "
-                            "Erste Hälfte: 01.11.2222 – 11.11.2222 "
-                            "Zweite Hälfte: 11.11.2222 – 30.11.2222",
-                            div='timeframe-parts')
-        self.assertPresence("Everybody come!", div='description')
-        self.assertNonPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
-                               div='notifications')
-        self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
-                            div='timeframe-registration')
-        self.assertPresence("aka@example.cde", div='orga-address')
-        self.assertPresence("Garcia Generalis", div='orgas', exact=True)
-
-    @as_users("berta", "charly")
+    @as_users("berta", "charly", "annika", "garcia", "emilia",
+              maintain_data=True)
     def test_show_event_noorga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
+        if self.user_in("annika", "berta", "emilia"):
+            link = self.response.html.find(id="website-link").find(name="a")
+            self.assertEqual(link.attrs["href"], "https://www.cde-ev.de/")
+            self.assertIn("Große Testakademie 2222", link.getText())
+            self.assertPresence("Warmup: 02.02.2222 – 02.02.2222 "
+                                "Erste Hälfte: 01.11.2222 – 11.11.2222 "
+                                "Zweite Hälfte: 11.11.2222 – 30.11.2222",
+                                div='timeframe-parts')
+            self.assertPresence("Everybody come!", div='description')
+            self.assertNonPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
+                                   div='notifications')
+            self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
+                                div='timeframe-registration')
+            self.assertPresence("aka@example.cde", div='orga-address')
+            self.assertPresence("Garcia Generalis", div='orgas', exact=True)
+        if self.user_in("berta", "charly"):
+            # no orga
+            self.assertNonPresence("TestAka")
+            self.assertNonPresence("CdE-Konto IBAN")
+            self.assertNonPresence("Fragebogen aktiv")
+            self.assertNonPresence("Todoliste … just kidding ;)")
+            self.assertNonPresence("Kristallkugel-basiertes Kurszuteilungssystemm")
 
-        self.assertNonPresence("TestAka")
-        self.assertNonPresence("CdE-Konto IBAN")
-        self.assertNonPresence("Fragebogen aktiv")
-        self.assertNonPresence("Todoliste … just kidding ;)")
-        self.assertNonPresence("Kristallkugel-basiertes Kurszuteilungssystemm")
+            self.assertNotIn("quickregistrationform", self.response.forms)
+            self.assertNotIn("changeminorformform", self.response.forms)
+            self.assertNotIn("lockform", self.response.forms)
+            self.assertNotIn("createparticipantlistform", self.response.forms)
+        if self.user_in("annika", "garcia"):
+            # orga
+            self.traverse({'description': 'Veranstaltungen'},
+                          {'description': 'Große Testakademie 2222'})
+            self.assertTitle("Große Testakademie 2222")
 
-        self.assertNotIn("quickregistrationform", self.response.forms)
-        self.assertNotIn("changeminorformform", self.response.forms)
-        self.assertNotIn("lockform", self.response.forms)
-        self.assertNotIn("createparticipantlistform", self.response.forms)
+            self.assertPresence("TestAka", div='shortname')
+            self.assertPresence("Club der Ehemaligen", div='institution')
+            self.assertPresence(iban_filter(Accounts.Sozialbank.get_iban()), div='cde-iban')
+            self.assertPresence("Nein", div='questionnaire-active')
+            self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
 
-    @as_users("annika", "garcia")
-    def test_show_event_orga(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-
-        self.assertPresence("TestAka", div='shortname')
-        self.assertPresence("Club der Ehemaligen", div='institution')
-        self.assertPresence(iban_filter(Accounts.Sozialbank.get_iban()), div='cde-iban')
-        self.assertPresence("Nein", div='questionnaire-active')
-        self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
-
-        self.assertIn('quickregistrationform', self.response.forms)
-        self.assertIn('changeminorformform', self.response.forms)
-        self.assertIn('lockeventform', self.response.forms)
-        self.assertIn('createparticipantlistform', self.response.forms)
-
-    @as_users("berta", "garcia")
-    def test_show_event_noadmin(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-
-        self.assertNotIn("addorgaform", self.response.forms)
-        self.assertNotIn("removeorgaform7", self.response.forms)
-        self.assertNotIn("archiveeventform", self.response.forms)
-        self.assertNotIn("deleteeventform", self.response.forms)
+            self.assertIn('quickregistrationform', self.response.forms)
+            self.assertIn('changeminorformform', self.response.forms)
+            self.assertIn('lockeventform', self.response.forms)
+            self.assertIn('createparticipantlistform', self.response.forms)
+        if self.user_in("berta", "garcia"):
+            # no admin
+            self.assertNotIn("addorgaform", self.response.forms)
+            self.assertNotIn("removeorgaform7", self.response.forms)
+            self.assertNotIn("archiveeventform", self.response.forms)
+            self.assertNotIn("deleteeventform", self.response.forms)
 
     @as_users("annika")
     def test_show_event_admin(self) -> None:
@@ -428,8 +420,6 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['addorgaform']
         f['orga_id'] = USER_DICT['garcia']['DB-ID']
         self.submit(f)
-        f = self.response.forms['createparticipantlistform']
-        self.submit(f)
 
     @as_users("annika", "garcia")
     def test_create_participant_list(self) -> None:
@@ -441,6 +431,8 @@ class TestEventFrontend(FrontendTest):
 
     # remove event admin rights from farin
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
+    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
+              "farin", "petra", maintain_data=True)
     def test_sidebar_one_event(self) -> None:
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
@@ -451,7 +443,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
-            "Freitexte",
+            "Freitexte", "Fragebogen-Vorschau",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
@@ -537,7 +529,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("30.10.2000, 01:00:00 – 01.05.2222, 00:00:00")
 
-    @as_users("anton", "berta")
+    @as_users("anton", "berta", maintain_data=True)
     def test_no_hard_limit(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
@@ -546,21 +538,20 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("01.12.2049, 01:00:00 – 31.12.2049, 01:00:00",
                             div='timeframe-registration', exact=True)
 
-    @as_users("annika", "garcia")
-    def test_hard_limit_orga(self) -> None:
+    @as_users("annika", "garcia", "charly", "emilia", maintain_data=True)
+    def test_hard_limit(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 "
-                            "(Nachmeldungen bis 30.10.2221, 01:00:00) ",
-                            div='timeframe-registration', exact=True)
 
-    @as_users("charly", "emilia")
-    def test_hard_limit_noorga(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00",
+        if self.user_in("annika", "garcia"):
+            # orga
+            self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 "
+                                "(Nachmeldungen bis 30.10.2221, 01:00:00) ",
+                                div='timeframe-registration', exact=True)
+        else:
+            # no orga
+            self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00",
                             div='timeframe-registration', exact=True)
 
     @as_users("annika", "berta", "emilia")
@@ -1793,6 +1784,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
 
         # check log
+        # TODO Rewrite this test to not require reset to work
         self.logout()
         self.login("garcia")
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
@@ -2011,7 +2003,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
-    @as_users("anton", "berta")
+    @as_users("berta")
     @prepsql(
         "DELETE FROM event.course_choices;"
         "DELETE FROM event.registration_tracks;"
@@ -2100,32 +2092,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bin unter 13 Jahre alt."
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bringe noch jemanden mit."
         f['field_id_-1'] = 1002
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Name des Partners"
         f['field_id_-1'] = 1003
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Anzahl an Kissen"
         f['field_id_-1'] = 1004
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Essgewohnheiten"
         f['field_id_-1'] = 1005
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Dein Lieblingstag"
         f['field_id_-1'] = 1006
@@ -2487,12 +2479,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users('emilia')
     def test_participant_list(self) -> None:
         # first, check non-visibility for all participants
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.get('/event/event/1/registration/list')
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
-                            "veröffentlicht.", div='notifications')
+        def _check_invisible() -> None:
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'})
+            self.get('/event/event/1/registration/list')
+            self.assertTitle("Große Testakademie 2222")
+            self.assertPresence("Fehler! Die Teilnehmerliste ist noch nicht "
+                                "veröffentlicht.", div='notifications')
+        _check_invisible()
+
+        # check non-visibility for event helper
+        with self.switch_user('petra'):
+            _check_invisible()
 
         # now, check visibility for orgas
         with self.switch_user('garcia'):
@@ -2546,17 +2544,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             f['is_participant_list_visible'].checked = True
             self.submit(f)
 
+        def _check_visible() -> None:
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/event/1/show'},
+                          {'href': '/event/event/1/registration/list'})
+            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
+                                   "und Admins sichtbar.", div='static-notifications')
+            self.assertPresence("Warmup")
+            self.assertPresence("Zweite Hälfte")
+            self.traverse({'description': 'Zweite Hälfte'})
+            self.assertPresence("α. Heldentum (KL)")
+
         # check visibility for participant with list consent
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/list'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
-        self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
-                               "und Admins sichtbar.", div='static-notifications')
-        self.assertPresence("Warmup")
-        self.assertPresence("Zweite Hälfte")
-        self.traverse({'description': 'Zweite Hälfte'})
-        self.assertPresence("α. Heldentum (KL)")
+        _check_visible()
+
+        # check visibility for event helper
+        with self.switch_user('petra'):
+            _check_visible()
 
         # check non-visibility for participant without list consent
         with self.switch_user('inga'):
@@ -2693,7 +2698,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({'description': r"\sKurs$"})
         self._sort_appearance([anton, akira, emilia])
 
-    @as_users("emilia", "garcia")
+    @as_users("emilia", "garcia", maintain_data=True)
     def test_participant_list_profile_link(self) -> None:
         # first, show list for participants
         if self.user_in('emilia'):
@@ -2724,7 +2729,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             # orga of this event
             self.assertPresence("akira@example.cde", div='contact-email')
 
-    @as_users("berta")
+    @as_users("berta", "emilia")
     def test_lodgement_wish_detection(self) -> None:
         with self.switch_user("garcia"):
             self.event.set_event(self.key, 1, {
@@ -4943,10 +4948,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
+        # Test warning against overwrite.
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Die Konfiguration hat sich in der Zwischenzeit geändert.")
+        self.traverse("Fragebogen konfigurieren")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)
         self.assertEqual("Input", f['title_5'].value)
+
+        # Add a row with a datetime field and check that the default value works.
+        f['create_-1'] = True
+        f['field_id_-1'] = 9  # 'arrival_at'
+        f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
+        self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertEqual(expectation + "+02:00", f['default_value_6'].value)
+
+        execsql("UPDATE event.registrations SET fields = '{}';")
+        self.traverse("Fragebogen")
+        f = self.response.forms['questionnaireform']
+        self.assertEqual(expectation, f['fields.arrival_at'].value.replace("T", " "))
 
     @as_users("garcia")
     def test_questionnaire_reorder(self) -> None:
@@ -5761,7 +5786,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_selectregistration(self) -> None:
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
@@ -5801,7 +5826,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
 
     @storage
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_partial_export(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -6079,7 +6104,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
 
-    @as_users("charly", "daniel")
+    @as_users("charly", "daniel", maintain_data=True)
     def test_free_event(self) -> None:
         # first, make Große Testakademie 2222 free
         with self.switch_user("garcia"):
@@ -6274,7 +6299,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f)
         # This only works because we configured the checkboxes accordingly.
-        self.traverse("Fragebogenimport")
+        self.traverse("Fragebogen konfigurieren", "Fragebogenimport")
         f = self.response.forms["importform"]
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
@@ -7473,11 +7498,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['entries_-1'] = "1;Ja\n0;Nein"
         self.submit(f)
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
@@ -8047,7 +8072,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(iban)
         self.traverse("Bearbeiten")
         f = self.response.forms["changeregistrationform"]
-        self.assertEqual(iban.replace(" ", ""), f["fields.iban"].value)
+        self.assertEqual(iban, f["fields.iban"].value)
 
         self.traverse("Übersicht")
         f = self.response.forms["quickregistrationform"]
@@ -8063,7 +8088,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms["changeeventform"]
         f["reimbursement_iban_field_id"] = 1001
         self.submit(f)
-        self.assertNonPresence(non_iban)
         self.traverse(
             "Teilnahmebeiträge", "Beitrags-Statistik",
             {"linkid": "surplus_query"},

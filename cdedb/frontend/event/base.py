@@ -164,8 +164,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.eventproxy.is_locked(rs, event_id=event_id) and
-                required_privilege & EventPrivileges.all_write):
+        if event := rs.ambience.get('event'):
+            is_locked = event.is_locked
+        else:
+            is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
+        if is_locked and required_privilege & EventPrivileges.all_write:
             return False
         return is_privileged_event(rs, required_privilege, event_id)
 
@@ -225,15 +228,12 @@ class EventBaseFrontend(AbstractUserFrontend):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
-        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+        if not self.is_privileged(rs, EventPrivileges.participant_list):
             assert rs.user.persona_id is not None
             if not self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
                     {const.RegistrationPartStati.participant}):
                 rs.notify('warning', n_("No participant of event."))
-                return self.redirect(rs, "event/show_event")
-            if not rs.ambience['event'].is_participant_list_visible:
-                rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
             reg_list = self.eventproxy.list_registrations(rs, event_id,
                                                           rs.user.persona_id)
@@ -241,6 +241,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             list_consent = registration['list_consent']
         else:
             list_consent = True
+        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+            if not rs.ambience['event'].is_participant_list_visible:
+                rs.notify("error", n_("Participant list not published yet."))
+                return self.redirect(rs, "event/show_event")
 
         if part_id:
             part_ids: Collection[int] = [part_id]
@@ -531,7 +535,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         choice_stats: "ChoiceStats"  # noqa: UP037
         attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.get_lodgements(
@@ -544,7 +548,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event.id, involved=True,
+            rs, event.id, involved=True, _registrations=all_registrations,
         )
 
         violations = models_cv.ViolationAux(

@@ -1405,14 +1405,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if category is None:
             category, p = inspect_validation(
-                vtypes.Identifier, raw['category_old'], argname="category")
+                vtypes.Identifier, raw['category'], argname="category")
             problems.extend(p)
         persona = None
         registration = None
         event = None
 
         date, p = inspect_validation(
-            datetime.date, raw['transaction_date'], argname="date")
+            datetime.date, raw['date'], argname="date")
         problems.extend(p)
 
         amount, p = parse_util.check_amount(raw['amount_german'])
@@ -1433,7 +1433,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if category is None:
             problems.append(('category', ValueError(n_("Invalid category."))))
             type_ = TransactionType.Unknown
-        elif category == TransactionType.MembershipFee.old():
+        elif category == TransactionType.MembershipFee.category():
             type_ = TransactionType.MembershipFee
             if amount is not None and amount <= 0:
                 problems.append((

@@ -27,7 +27,7 @@ Realm $realm
 
 EOF
     mkdir "$1/doc/source/emails/$realm"
-    for mail in $(find "$1/cdedb/frontend/templates/mail/$realm" -type f,l)
+    for mail in $(find -L "$1/cdedb/frontend/templates/mail/$realm" -type f)
     do
         ln -si "../../../../$mail" "$1/doc/source/emails/$realm/$(basename $mail)"
         cat >> "$1/doc/source/Handbuch_Email_Templates.rst" <<EOF

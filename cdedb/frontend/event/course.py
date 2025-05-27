@@ -20,6 +20,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
+    CdEDBObjectMap,
     CourseChoiceToolActions,
     CourseFilterPositions,
     InfiniteEnum,
@@ -679,15 +680,10 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     def get_course_stats(
-            self, rs: RequestState, event: models.Event,
+            self, rs: RequestState, event: models.Event, registrations: CdEDBObjectMap,
     ) -> tuple[ChoiceStats, AttendeeStats]:
         """Generate choice counts and attendee counts"""
         course_ids = self.eventproxy.list_courses(rs, event.id)
-        registration_ids = self.eventproxy.list_registrations(rs, event.id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_event_users(
-            rs, [reg['persona_id'] for reg in registrations.values()], event_id=event.id,
-        )
 
         # Collection of number of choices in two categories: participant and involved.
         choice_counts_data = {
@@ -727,7 +723,6 @@ class EventCourseMixin(EventBaseFrontend):
 
         # Convert the collected attendee lists into helper class, separating
         #  instructors and learners.
-        sortkey = lambda reg: EntitySorter.persona(personas[reg['persona_id']])
         attendees_data = {}
         for k, lists in [
             ('involved', involved_attendees_lists),
@@ -736,20 +731,14 @@ class EventCourseMixin(EventBaseFrontend):
             attendees_data[k] = {
                 course_id: {
                     track_id: CourseAttendees(
-                        xsorted(
-                            (
-                                reg for reg in lists[(course_id, track_id)]
-                                if reg['tracks'][track_id]['course_instructor'] != course_id
-                            ),
-                            key=sortkey,
-                        ),
-                        xsorted(
-                            (
-                                reg for reg in lists[(course_id, track_id)]
-                                if reg['tracks'][track_id]['course_instructor'] == course_id
-                            ),
-                            key=sortkey,
-                        ),
+                        [
+                            reg for reg in lists[(course_id, track_id)]
+                            if reg['tracks'][track_id]['course_instructor'] != course_id
+                        ],
+                        [
+                            reg for reg in lists[(course_id, track_id)]
+                            if reg['tracks'][track_id]['course_instructor'] == course_id
+                        ],
                     )
                     for track_id, track in event.tracks.items()
                 }

@@ -551,7 +551,6 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (
-            self.event,
             self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
             self.sortkey,
             self.title,
@@ -583,7 +582,7 @@ class CustomQueryFilter(EventDataclass):
         return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.event_id, self.scope, self.title)
+        return self.scope, self.title
 
     @staticmethod
     def _get_field_string(fields: Collection[str]) -> str:
@@ -654,7 +653,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return (self.constraint_type, self.title)
+        return self.constraint_type, self.title
 
 
 @dataclasses.dataclass

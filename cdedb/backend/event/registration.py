@@ -513,6 +513,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: Mapping of registration ids to persona_ids.
         """
         event_id = affirm(vtypes.ID, event_id)
+        is_visible = self.get_event(rs, event_id).is_participant_list_visible
 
         # In this case, privilege check is performed afterwards since it depends on
         # the result of the query.
@@ -529,9 +530,10 @@ class EventRegistrationBackend(EventBaseBackend):
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
 
-        if not (rs.user.persona_id in ret.values()
-                or is_privileged(rs, EventPrivileges.registrations_read,
-                                 event_id=event_id)):
+        if not (is_visible and (
+                    rs.user.persona_id in ret.values()
+                    or is_privileged(rs, EventPrivileges.participant_list, event_id))
+                or is_privileged(rs, EventPrivileges.registrations_read, event_id)):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 

@@ -18,7 +18,7 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, get_mandatory_form_fields, is_optional_type
-from cdedb.common.sorting import Sortkey, collate
+from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ class CdEDataclass:
     def many_from_database(cls, list_of_data: Collection[CdEDBObject],
                            ) -> CdEDataclassMap["Self"]:
         return {
-            obj.id: obj for obj in map(cls.from_database, list_of_data)
+            obj.id: obj for obj in xsorted(map(cls.from_database, list_of_data))
         }
 
     @classmethod

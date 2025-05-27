@@ -27,8 +27,8 @@ Fehler bei Anmeldungen
 
 .. _InconsistentPaymentCV:
 
-Anmeldungen mit Inkonsistentem Zahlungstatus
---------------------------------------------
+Anmeldungen mit inkonsistentem Zahlungsstatus
+---------------------------------------------
 
 Dieser Verstoß tritt auf, wenn beim Eintragen der Zahlungsdaten einer Person etwas
 schiefgelaufen ist, z.B. wenn sie einen negativen Betrag bezahlt hat oder kein
@@ -162,7 +162,7 @@ Unterbringung zugestimmt hat. Üblicherweise tritt dies nur bei manuellem Eingri
 Orgas auf.
 
 Um den Verstoß zu beheben, bearbeite die Anmeldung und entferne den Haken für
-"Gemischte Unterbringung". Beachte allerdings, dass eine eine gemischt untergebrachte
+"Gemischte Unterbringung". Beachte allerdings, dass eine gemischt untergebrachte
 minderjährige Person ebenfalls einen Verstoß auslöst.
 
 

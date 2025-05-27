@@ -585,7 +585,7 @@ class TestMlBackend(BackendTest):
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(models_ml.EventAssociatedMailinglist(**expectation), reality)
 
-    @as_users("nina", "berta", "paul", "quintus")
+    @as_users("nina", "berta", "paul", "quintus", maintain_data=True)
     def test_subscriptions(self) -> None:
         # Which lists is Berta subscribed to.
         expectation = {
@@ -609,7 +609,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
 
-    @as_users("nina", "janis", "paul")
+    @as_users("nina", "janis", "paul", maintain_data=True)
     def test_subscriptions_two(self) -> None:
         # Which lists is Janis subscribed to.
         expectation = {
@@ -1195,7 +1195,7 @@ class TestMlBackend(BackendTest):
         self._check_state(
             mailinglist_id=3, persona_id=3, expected_state=SS.none)
 
-    @as_users("charly", "emilia", "janis")
+    @as_users("charly", "emilia", "janis", maintain_data=True)
     def test_no_privileges(self) -> None:
 
         def _try_everything(ml_id: int, user_id: int) -> None:
