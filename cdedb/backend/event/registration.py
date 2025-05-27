@@ -1790,6 +1790,9 @@ class EventRegistrationBackend(EventBaseBackend):
             self.sql_update(
                 rs, models.Registration.database_table, update,
             )
+            # Changing the is_member bit might change the fee.
+            # We accept that this will not be updated in the registration.
+            self._update_registration_amount_owed(rs, registration_id)
             if by_orga:
                 log_code = const.EventLogCodes.registration_payment_received_orga
             else:
@@ -1803,7 +1806,6 @@ class EventRegistrationBackend(EventBaseBackend):
             update = {
                 'id': registration['id'],
                 'amount_paid': registration['amount_paid'] + amount,
-                # Do not update payment date for reimbursements.
             }
             change_note = event_log_reimbursement_template.format(
                 amount=money_filter(-amount),

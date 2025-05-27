@@ -689,7 +689,7 @@
     Skip fee kinds that sum to zero, unless `show_all=True`.
 #}
 {% macro fee_breakdown_by_kind(show_all=False) -%}
-    <table class="table-slim table-condensed bg-info" style="color: #333">
+    <table id="fee-breakdown" class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
             {# Already sorted automatically. #}
             {% for kind, amount in complex_fee if amount or show_all %}

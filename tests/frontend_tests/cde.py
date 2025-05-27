@@ -2133,22 +2133,12 @@ class TestCdEFrontend(FrontendTest):
         finance_log_expectation: list[CdEDBObject] = [
             # new entries:
             {
-                'persona_id': 3,
-                'code': const.FinanceLogCodes.increase_balance,
-                'delta': "12.34",
-                'new_balance': "13.34",
-                'total': "738.21",
-                'member_total': "127.10",
-                'members': 9,
-                'transaction_date': datetime.date(2024, 3, 26),
-            },
-            {
                 'persona_id': 4,
                 'code': const.FinanceLogCodes.increase_balance,
                 'delta': "100.00",
                 'new_balance': "100.00",
-                'total': "838.21",
-                'member_total': "127.10",
+                'total': "825.87",
+                'member_total': "114.76",
                 'members': 9,
                 'transaction_date': datetime.date(2019, 3, 17),
             },
@@ -2157,10 +2147,20 @@ class TestCdEFrontend(FrontendTest):
                 'code': const.FinanceLogCodes.gain_membership,
                 'delta': None,
                 'new_balance': None,
+                'total': "825.87",
+                'member_total': "214.76",
+                'members': 10,
+                'transaction_date': None,
+            },
+            {
+                'persona_id': 3,
+                'code': const.FinanceLogCodes.increase_balance,
+                'delta': "12.34",
+                'new_balance': "13.34",
                 'total': "838.21",
                 'member_total': "227.10",
                 'members': 10,
-                'transaction_date': None,
+                'transaction_date': datetime.date(2024, 3, 26),
             },
         ]
         self.assertLogEqual(
@@ -2289,6 +2289,23 @@ class TestCdEFrontend(FrontendTest):
             },
         ]
         self.assertLogEqual(log_expectation, "event", offset=11)
+
+    @as_users("anton")
+    @prepsql("UPDATE core.personas SET is_cde_realm = TRUE AND is_member = TRUE"
+             f" AND balance = {decimal.Decimal('0.00')}"
+             f" WHERE id = {USER_DICT['emilia']['id']};")
+    def test_money_transfers_waived_fee(self) -> None:
+        # TODO Make_change_persona_realms actually usable, and do that instead.
+        # An upgrade from event to cde realm should not require any additional keys.
+        self.traverse("Mitglieder", "Überweisungen eintragen")
+        f = self.response.forms["transfersform"]
+        f["transfers"] = "01.03.2025;461,49;DB-5-1;Eventis;Emilia;TestAka"
+        self.submit(f, check_notification=False)
+        f = self.response.forms['transfersform']
+        self.submit(f)
+        self.get('/event/event/1/registration/2/fee/summary')
+        self.assertNonPresence("Externenbeitrag", div='fee-breakdown')
+        print(self.response)
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
