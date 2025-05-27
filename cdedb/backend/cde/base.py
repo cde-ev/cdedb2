@@ -139,6 +139,7 @@ class CdEBaseBackend(AbstractBackend):
     def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
                              ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        # This ensures that membership fees are handled before event fees for each day.
         transfers = xsorted(transfers,
                             key=lambda t: (t['date'], t['registration_id'] is not None))
         index = 0

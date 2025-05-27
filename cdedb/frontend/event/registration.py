@@ -899,7 +899,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         ]
 
         return self.render(rs, "registration/registration_status", {
-            'registration': registration, 'age': age,
+            'registration': registration,
+            'persona': persona,
+            'age': age,
             'reg_questionnaire': reg_questionnaire,
             'waitlist_position': waitlist_position,
             'sorted_involved_tracks': sorted_involved_tracks,

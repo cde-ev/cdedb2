@@ -1776,6 +1776,9 @@ class EventRegistrationBackend(EventBaseBackend):
             if is_member is not None:
                 if by_orga:
                     raise PrivilegeError
+                # If someone has gained membership since the creation of their
+                # registration (and hence before "finalizing" it), we waive the
+                # non-member fee after the fact.
                 elif registration['payment'] is None and not registration['is_member']:
                     update['is_member'] = is_member
             change_note = event_log_transfer_template.format(

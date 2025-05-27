@@ -131,6 +131,11 @@
                 {% trans %}
                     Because you are not a CdE-Member, you might have to pay an additional fee.
                 {% endtrans %}
+                {% if persona["is cde_realm"] %}
+                    {% trans %}
+                        If you pay your membership fee before your registration fee, the additional fee will be waived.
+                    {% endtrans %}
+                {% endif %}
                 </p>
             </div>
         {% endif %}
