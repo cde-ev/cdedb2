@@ -6830,8 +6830,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
-                    self.fail(f"{text!r} not found for event {event_id}"
-                              f" at severity {filtered_severity.name}.")
+                    self.fail(
+                        f"{text!r} not found for event {event_id} at severity {filtered_severity.name}."
+                        f" I found these texts:\n" + "\n".join(node_texts),
+                    )
             if check_complete and len(nodes) > len(texts):
                 # print("\n".join(lxml.etree.tostring(node, encoding="unicode") for node in nodes))
                 self.fail(
