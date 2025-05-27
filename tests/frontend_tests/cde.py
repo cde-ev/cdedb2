@@ -2291,9 +2291,15 @@ class TestCdEFrontend(FrontendTest):
         self.assertLogEqual(log_expectation, "event", offset=11)
 
     @as_users("anton")
-    @prepsql("UPDATE core.personas SET is_cde_realm = TRUE AND is_member = TRUE"
-             f" AND balance = {decimal.Decimal('0.00')}"
-             f" WHERE id = {USER_DICT['emilia']['id']};")
+    @prepsql(f"""
+        UPDATE core.personas
+        SET
+            is_cde_realm = TRUE, is_member = TRUE, balance = {decimal.Decimal('0.00')},
+            bub_search = FALSE, decided_search = FALSE, is_searchable = FALSE,
+            donation = 0, honorary_member = FALSE, paper_expuls = FALSE,
+            trial_member = FALSE, is_assembly_realm = TRUE
+        WHERE id = {USER_DICT['emilia']['id']};
+    """)
     def test_money_transfers_waived_fee(self) -> None:
         # TODO Make_change_persona_realms actually usable, and do that instead.
         # An upgrade from event to cde realm should not require any additional keys.
@@ -2304,8 +2310,9 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.submit(f)
         self.get('/event/event/1/registration/2/fee/summary')
-        self.assertNonPresence("Externenbeitrag", div='fee-breakdown')
-        print(self.response)
+        self.assertNonPresence("Externenbeitrag", div='amount-owed')
+        self.assertPresence("461,49 €", div='amount-owed')
+        self.assertEqual(decimal.Decimal("461.49"), self.event.get_registration(self.key, 2)['amount_owed'])
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
