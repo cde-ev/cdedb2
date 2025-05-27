@@ -215,7 +215,7 @@ class Application(BaseApp):
                 and not self.conf["CDEDB_DEV"]):
             return self.make_error_page(
                 werkzeug.exceptions.SecurityError(),
-                request, user,
+                request, user, begin,
                 n_("Used a non-trusted http host header. Refuse to proceed."))
         try:
             sessionkey = request.cookies.get("sessionkey")

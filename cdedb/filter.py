@@ -190,7 +190,6 @@ def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -
         )
 
 
-
 @overload
 def money_filter(val: None, currency: str = "EUR", lang: str = "de",
                  ) -> None: ...
