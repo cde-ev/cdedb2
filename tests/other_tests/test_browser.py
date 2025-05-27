@@ -177,8 +177,11 @@ class TestBrowser(BrowserTest):
 
         page.locator("#dynamicrow-delete-button-9").click()
 
+        page.get_by_role("tab", name="Kursfelder").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+
         page.get_by_role("button", name="Speichern").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_registration")
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
 
         expect(page.locator('input[name="title_1001"]')).to_have_value('Lieblingsheld')
         expect(page.locator('input[name="field_name_1001"]')).to_have_value('held')
