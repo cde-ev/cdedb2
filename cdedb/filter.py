@@ -176,10 +176,19 @@ def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -
         return gettext("{hours}\xa0hours, {minutes}\xa0minutes").format(
             hours=hours, minutes=(delta.seconds % (60*60)) // 60,
         )
-    else:
+    elif minutes := delta.seconds // 60:
         return gettext("{minutes}\xa0minutes, {seconds}\xa0seconds").format(
-            minutes=delta.seconds // 60, seconds=delta.seconds % 60,
+            minutes=minutes, seconds=delta.seconds % 60,
         )
+    elif delta.seconds >= 10:
+        return gettext("{seconds}\xa0sseconds, {milliseconds}\xa0milliseconds").format(
+            seconds=delta.seconds, milliseconds=delta.microseconds // 1000,
+        )
+    else:
+        return gettext("{milliseconds}\xa0milliseconds").format(
+            milliseconds=delta.seconds * 1000 + delta.microseconds // 1000,
+        )
+
 
 
 @overload
