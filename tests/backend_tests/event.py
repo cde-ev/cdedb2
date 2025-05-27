@@ -1821,7 +1821,7 @@ class TestEventBackend(BackendTest):
                 },
                 {
                     'field_id': 1,
-                    'default_value': 'True',
+                    'default_value': True,
                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
                             ' abzuwerfen.',
                     'pos': 1,

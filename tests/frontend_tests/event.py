@@ -443,7 +443,7 @@ class TestEventFrontend(FrontendTest):
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
-            "Freitexte",
+            "Freitexte", "Fragebogen-Vorschau",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
@@ -2092,32 +2092,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bin unter 13 Jahre alt."
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bringe noch jemanden mit."
         f['field_id_-1'] = 1002
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Name des Partners"
         f['field_id_-1'] = 1003
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Anzahl an Kissen"
         f['field_id_-1'] = 1004
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Essgewohnheiten"
         f['field_id_-1'] = 1005
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
         f['title_-1'] = "Dein Lieblingstag"
         f['field_id_-1'] = 1006
@@ -4948,10 +4948,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
+        # Test warning against overwrite.
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Die Konfiguration hat sich in der Zwischenzeit geändert.")
+        self.traverse("Fragebogen konfigurieren")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)
         self.assertEqual("Input", f['title_5'].value)
+
+        # Add a row with a datetime field and check that the default value works.
+        f['create_-1'] = True
+        f['field_id_-1'] = 9  # 'arrival_at'
+        f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
+        self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        self.assertEqual(expectation + "+02:00", f['default_value_6'].value)
+
+        execsql("UPDATE event.registrations SET fields = '{}';")
+        self.traverse("Fragebogen")
+        f = self.response.forms['questionnaireform']
+        self.assertEqual(expectation, f['fields.arrival_at'].value.replace("T", " "))
 
     @as_users("garcia")
     def test_questionnaire_reorder(self) -> None:
@@ -6279,7 +6299,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f)
         # This only works because we configured the checkboxes accordingly.
-        self.traverse("Fragebogenimport")
+        self.traverse("Fragebogen konfigurieren", "Fragebogenimport")
         f = self.response.forms["importform"]
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
@@ -7478,11 +7498,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['entries_-1'] = "1;Ja\n0;Nein"
         self.submit(f)
         self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['configureregistrationform']
+        f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
@@ -8052,7 +8072,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(iban)
         self.traverse("Bearbeiten")
         f = self.response.forms["changeregistrationform"]
-        self.assertEqual(iban.replace(" ", ""), f["fields.iban"].value)
+        self.assertEqual(iban, f["fields.iban"].value)
 
         self.traverse("Übersicht")
         f = self.response.forms["quickregistrationform"]
@@ -8068,7 +8088,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms["changeeventform"]
         f["reimbursement_iban_field_id"] = 1001
         self.submit(f)
-        self.assertNonPresence(non_iban)
         self.traverse(
             "Teilnahmebeiträge", "Beitrags-Statistik",
             {"linkid": "surplus_query"},
