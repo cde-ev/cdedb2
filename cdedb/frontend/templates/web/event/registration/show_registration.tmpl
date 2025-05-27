@@ -237,7 +237,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr id="addperiodrow" class="nojs-only drow-new">
+            <tr id="addperiodrow" class="nojs-only drow-new {{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
                 <td></td>
                 <td class="{{ util.has_errors('checkin_time') }} {{ util.has_errors('checkout_time') }}">
                     <form action="{{ cdedblink('event/add_backdated_checkin_period') }}" method="POST"
@@ -317,7 +317,8 @@
                 </td>
                 <td style="padding-left: 0;">
                     {{ util.input_submit(icon="chevron-up", label="", title=gettext("Insert previous period"),
-                                         aclass="btn btn-success btn-sm add-backdated-button softhide", value=loop.index) }}
+                                         aclass="btn btn-success btn-sm add-backdated-button softhide", value=loop.index,
+                                         display_ignore_warnings=false) }}
                 </td>
                 <td>{{ period.get_duration()|timedelta(gettext) }}</td>
             </tr>
