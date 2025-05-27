@@ -999,10 +999,10 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
+            if not {"core_admin", "cde_admin", "ml_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if "core_admin" not in rs.user.roles:
+            if not {"core_admin", "ml_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":

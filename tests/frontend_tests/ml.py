@@ -187,14 +187,7 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = "DB-100000-4"
         self.submit(f, check_notification=False)
-        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
-        self.assertValidationError('target_persona_id', msg)
-
-        f = self.response.forms['merge-accounts']
-        f['source_persona_id'] = janis_id
-        f['target_persona_id'] = USER_DICT['hades']['DB-ID']
-        self.submit(f, check_notification=False)
-        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        msg = "Dieser Benutzer existiert nicht."
         self.assertValidationError('target_persona_id', msg)
 
         # The next case is possible in principle, but has a blocking mailinglist ...
@@ -221,6 +214,26 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f)
+
+    @as_users("anton", "nina")
+    def test_merge_archived_accounts(self) -> None:
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+
+        berta_id = USER_DICT['hades']['DB-ID']
+        janis_id = USER_DICT['janis']['DB-ID']
+
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        if self.user_in("anton"):
+            self.submit(f)
+        else:
+            self.submit(f, check_notification=False)
+            msg = "Du darfst diesen Benutzer nicht aus dem Archiv wiederherstellen."
+            self.assertValidationError('target_persona_id', msg)
 
     @as_users("anton")
     def test_ml_admin_views(self) -> None:

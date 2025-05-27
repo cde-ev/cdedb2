@@ -476,13 +476,13 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "berta", "katarina", "martin", "nina", "paul", "rowena",
               "quintus", "viktor", "werner", maintain_data=True)
     def test_selectpersona_403(self) -> None:
-        # only core admins
-        if not self.user_in("paul"):
+        # only core and ml admins
+        if not self.user_in("paul", "nina"):
             self.get('/core/persona/select?kind=admin_all_users&phrase=hades',
                      status=403)
             self.assertTitle('403: Forbidden')
-        # only core or cde admins and auditors
-        if not self.user_in("paul", "quintus", "katarina"):
+        # only core or cde or ml admins and auditors
+        if not self.user_in("paul", "quintus", "nina", "katarina"):
             self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
