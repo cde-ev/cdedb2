@@ -980,12 +980,12 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str) -> Callable[[F], F]:
+def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(*args: Any, **kwargs: Any) -> Any:
-            execsql(sql)
+            execsql(sql, verbose=verbose)
             return fun(*args, **kwargs)
         return cast(F, new_fun)
     return decorator
@@ -1003,9 +1003,9 @@ def event_keeper(fun: F) -> F:
     return storage(fun)
 
 
-def execsql(sql: str) -> None:
+def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):
