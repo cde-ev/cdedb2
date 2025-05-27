@@ -46,6 +46,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
 )
@@ -138,6 +139,9 @@ class CdEBaseBackend(AbstractBackend):
     def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
                              ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        # This ensures that membership fees are handled before event fees for each day.
+        transfers = xsorted(transfers,
+                            key=lambda t: (t['date'], t['registration_id'] is not None))
         index = 0
 
         changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
@@ -184,6 +188,7 @@ class CdEBaseBackend(AbstractBackend):
                         registration = self.event.book_registration_payment(
                             rs, registration_id=transfer['registration_id'],
                             amount=amount, date=date, by_orga=False,
+                            is_member=persona['is_member'],
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(

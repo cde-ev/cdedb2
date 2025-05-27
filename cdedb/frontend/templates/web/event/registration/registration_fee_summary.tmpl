@@ -25,7 +25,7 @@
 
     <h4 class="heading-underline">{% trans %}Overview{% endtrans %}</h4>
     <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
-    <dd>
+    <dd id="amount-owed">
         {% if complex_fee.is_complex() %}
             {{ generic_event.fee_breakdown_by_kind() }}
         {% else %}

@@ -1737,7 +1737,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def book_registration_payment(
             self, rs: RequestState, *, registration_id: int,
             amount: decimal.Decimal, date: datetime.date,
-            by_orga: bool,
+            by_orga: bool, is_member: Optional[bool] = None,
     ) -> CdEDBObject:
         """
         Add the given amount to the amount that was paid for this registration.
@@ -1746,7 +1746,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
         The caller is responsible for validating the input, due to this being internal.
 
-        Returns the new state of the registration for convenienve.
+        :param is_member: Whether the persona is member at the moment
+        :returns: the new state of the registration for convenience.
         """
 
         event_log_transfer_template = "{amount} am {date} gezahlt."
@@ -1774,6 +1775,14 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             if not registration['payment']:
                 update['payment'] = date
+            if is_member is not None:
+                if by_orga:
+                    raise PrivilegeError
+                # If someone has gained membership since the creation of their
+                # registration (and hence before "finalizing" it), we waive the
+                # non-member fee after the fact.
+                elif registration['payment'] is None and not registration['is_member']:
+                    update['is_member'] = is_member
             change_note = event_log_transfer_template.format(
                 amount=money_filter(amount),
                 date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
@@ -1781,6 +1790,9 @@ class EventRegistrationBackend(EventBaseBackend):
             self.sql_update(
                 rs, models.Registration.database_table, update,
             )
+            # Changing the is_member bit might change the fee.
+            # We accept that this will not be updated in the registration.
+            self._update_registration_amount_owed(rs, registration_id)
             if by_orga:
                 log_code = const.EventLogCodes.registration_payment_received_orga
             else:
@@ -1794,7 +1806,6 @@ class EventRegistrationBackend(EventBaseBackend):
             update = {
                 'id': registration['id'],
                 'amount_paid': registration['amount_paid'] + amount,
-                # Do not update payment date for reimbursements.
             }
             change_note = event_log_reimbursement_template.format(
                 amount=money_filter(-amount),
