@@ -42,6 +42,7 @@ from cdedb.common import (
     n_,
     now,
 )
+import cdedb.common.parse.util as parse_util
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.models.common import CdEDataclassMap
@@ -2155,3 +2156,26 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
             html_classes=["lodgement-illegal-mixing"],
             titles=[n_("Mixed with non-mixing inhabitants.")],
         )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectIBANCV(ConstraintViolation):
+    kind = ViolationKind.financial
+
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        if aux.event.is_balanced:
+            return None
+        if aux.event.iban and aux.event.iban != parse_util.Accounts.Skatbank:
+            return cls(
+                event=aux.event,
+                severity=ViolationSeverity.WARNING,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        msg = n_("Event fees should be collected at the Sozialbank account.")
+
+        return [msg], {}

@@ -6714,6 +6714,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt (504,48 €). (Als Orga).",
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 353,99 €).",
             "Inga Iota muss eine Erstattung erhalten (116,49 €).",
+            "Event fees should be collected at the Sozialbank account.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6741,6 +6742,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 461,49 €).",
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.",
             "Inga Iota muss eine Erstattung erhalten",
+            "Event fees should be collected at the Sozialbank account.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6894,6 +6896,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
                 "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
+                "1 IncorrectIBANCV",
             ],
         )
 
