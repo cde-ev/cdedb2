@@ -27,4 +27,3 @@ NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=/var/log/cdedb

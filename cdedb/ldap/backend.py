@@ -2,6 +2,7 @@
 
 import asyncio
 import datetime
+import logging
 import pkgutil
 import re
 from collections import defaultdict
@@ -36,7 +37,7 @@ from cdedb.database.constants import (
 )
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
-from cdedb.ldap.util import AttributeDescriptionList, FilterLike, setup_logger
+from cdedb.ldap.types import AttributeDescriptionList, FilterLike
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
@@ -47,6 +48,9 @@ if TYPE_CHECKING:
 LDAPObject = dict[bytes, list[bytes]]
 LDAPObjectMap = dict[DN, LDAPObject]
 TO_BYTES_RETURN = Any  # Placeholder because of very annoying recursive return type.
+
+
+logger = logging.getLogger(__name__)
 
 
 class classproperty:
@@ -131,10 +135,10 @@ class LDAPsqlBackend:
         # encrypting dua passwords once at startup, to increase runtime performance
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
-        self.logger = setup_logger("cdedb.ldap.backend", Config())
         self.config = Config()
 
-    async def execute_db_query(self, cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
+    @staticmethod
+    async def execute_db_query(cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
@@ -153,8 +157,8 @@ class LDAPsqlBackend:
             query = query.as_string(cur)
         elif isinstance(query, bytes):
             query = query.decode("utf-8")
-        self.logger.debug(f"Execute PostgreSQL query {query} with"
-                          f" parameters {sanitized_params}.")
+        logger.debug(f"Execute PostgreSQL query {query} with"
+                     f" parameters {sanitized_params}.")
         try:
             await cur.execute(query, sanitized_params)
         except Exception as e:
@@ -235,13 +239,14 @@ class LDAPsqlBackend:
 
     _to_bytes = staticmethod(_to_bytes)
 
-    def load_schemas(self, *schemas: str) -> SchemaDescription:
+    @staticmethod
+    def load_schemas(*schemas: str) -> SchemaDescription:
         """Load the provided ldap schemas and parse their content from file."""
         data = []
         for schema in schemas:
             datum = pkgutil.get_data("cdedb.ldap", f"schema/{schema}")
             if datum is None:
-                self.logger.error(f"Schema {schema} could not be loaded.")
+                logger.error(f"Schema {schema} could not be loaded.")
                 continue
             data.append(datum.decode("utf-8"))
 
@@ -287,7 +292,7 @@ class LDAPsqlBackend:
         if timestamp is None:
             # this happens in the test suite due to insufficient sample data
             if not self.config["CDEDB_TEST"]:
-                self.logger.error("Timestamp must not be None.")
+                logger.error("Timestamp must not be None.")
             timestamp = now()
         # our timestamps are always in UTC
         return timestamp.strftime("%Y%m%d%H%M%SZ")

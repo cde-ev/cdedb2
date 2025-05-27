@@ -2,6 +2,7 @@
 
 import abc
 import asyncio
+import logging
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from typing import Any, Callable, Optional, Union
 
@@ -19,11 +20,14 @@ from ldaptor.protocols.ldap.ldaperrors import (
 from twisted.python.util import InsensitiveDict
 
 from cdedb.ldap.backend import LDAPObject, LDAPObjectMap, LDAPsqlBackend
-from cdedb.ldap.util import AttributeDescriptionList
+from cdedb.ldap.types import AttributeDescriptionList
 
 Callback = Callable[[Any], None]
 LDAPEntries = list["CdEDBBaseLDAPEntry"]
 BoundDn = Optional[DistinguishedName]
+
+
+logger = logging.getLogger(__name__)
 
 
 class CdEDBBaseLDAPEntry(

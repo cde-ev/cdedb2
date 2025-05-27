@@ -106,9 +106,6 @@ steps:
   - python3 -m cdedb db create # create the test database for ldap ...
   - python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
   - python3 -m cdedb db populate # ... and populates it
-  volumes:
-  - name: tmp_dir
-    path: /tmp
 - name: ldap # is used as the hostname for the container
   image: ldaptor
   pull: never # do not try to pull image from docker hub
@@ -120,8 +117,6 @@ steps:
       - failure
       - success
   volumes:
-  - name: tmp_dir
-    path: /tmp
   - name: ldap
     path: /etc/ssl/ldap
   environment:

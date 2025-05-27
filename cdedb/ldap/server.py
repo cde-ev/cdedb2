@@ -1,6 +1,7 @@
 """Custom ldaptor server."""
 
 import asyncio
+import logging
 import sys
 from asyncio import StreamReader, StreamWriter
 from collections.abc import Coroutine
@@ -24,14 +25,14 @@ from ldaptor.protocols.pureldap import (
     LDAPSearchRequest,
 )
 
-from cdedb.config import Config
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
-from cdedb.ldap.util import setup_logger
 
 # see RFC 2696
 PagedResultsControlType = b"1.2.840.113556.1.4.319"
 
 KNOWN_CONTROL_TYPES = [PagedResultsControlType]
+
+logger = logging.getLogger(__name__)
 
 
 class ReplyCallback(Protocol):
@@ -58,7 +59,6 @@ class LdapHandler:
         self.writer = writer
         self.reader = reader
         self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
-        self.logger = setup_logger("cdedb.ldap.server", Config())
 
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
         inherit=pureldap.LDAPBERDecoderContext_LDAPMessage(
@@ -80,7 +80,7 @@ class LdapHandler:
                 buffer = await self.reader.readexactly(2)
             except asyncio.IncompleteReadError as e:
                 if e.partial:
-                    self.logger.exception("Client disconnected with unhandled data")
+                    logger.exception("Client disconnected with unhandled data")
                 return
 
             length = pureber.ber2int(buffer[1:2], signed=0)
@@ -102,9 +102,10 @@ class LdapHandler:
             assert isinstance(msg, LDAPMessage)
             asyncio.create_task(self.handle(msg))
 
-    def unsolicited_notification(self, msg: LDAPProtocolRequest) -> None:
+    @staticmethod
+    def unsolicited_notification(msg: LDAPProtocolRequest) -> None:
         """Special kind of ldap request which might be ignored by the server."""
-        self.logger.error(f"Got unsolicited notification: f{repr(msg)}")
+        logger.error(f"Got unsolicited notification: f{repr(msg)}")
 
     @staticmethod
     def check_controls(controls: Optional[tuple[Any, Any, Any]]) -> None:
@@ -129,14 +130,14 @@ class LdapHandler:
                 raise ldaperrors.LDAPUnavailableCriticalExtension(
                     b"Unknown control %s" % controlType)
 
+    @staticmethod
     async def handle_unknown(
-        self,
         request: pureldap.LDAPProtocolRequest,
         controls: Optional[pureldap.LDAPControls],
         reply: ReplyCallback,
     ) -> None:
         """Fallback handler if the current request to the server is not known."""
-        self.logger.error(f"Unknown request: {repr(request)}")
+        logger.error(f"Unknown request: {repr(request)}")
         msg = pureldap.LDAPExtendedResponse(
             resultCode=ldaperrors.LDAPProtocolError.resultCode,
             responseName="1.3.6.1.4.1.1466.20036",
@@ -162,13 +163,13 @@ class LdapHandler:
         please consult the specific RFCs or the implementation details of ldaptor.
         """
         assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
-        self.logger.debug(f"S<-C {repr(msg)}")
+        logger.debug(f"S<-C {repr(msg)}")
 
         def reply(response: pureldap.LDAPProtocolResponse,
                   controls: Optional[list[Any]] = None) -> None:
             """Send a message back to the client."""
             response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
-            self.logger.debug(f"S->C {repr(response_msg)}")
+            logger.debug(f"S->C {repr(response_msg)}")
             self.writer.write(response_msg.toWire())
 
         # exactly unsolicited notifications have a message id of 0
@@ -187,10 +188,10 @@ class LdapHandler:
         try:
             await handler(msg.value, msg.controls, reply)
         except LDAPException as e:
-            self.logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
             reply(error_handler(e.resultCode, e.message))
         except Exception as e:
-            self.logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(msg)}")
             reply(error_handler(LDAPProtocolError.resultCode, str(e)))
         return
 
@@ -323,14 +324,14 @@ class LdapHandler:
             control_values = pureber.BERSequence.fromBER(
                 pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext(),
             ).data[0]
-            self.logger.debug(f"Control values: {control_values.data}")
+            logger.debug(f"Control values: {control_values.data}")
             paged_size = control_values[0].value
             # Signaling we should return the first page.
             if control_values[1].value != b"":
                 paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
             is_paged = paged_size != 0
-            self.logger.debug(f"Received Paged size: {paged_size}")
-            self.logger.debug(f"Received Paged cookie: {paged_cookie}")
+            logger.debug(f"Received Paged size: {paged_size}")
+            logger.debug(f"Received Paged cookie: {paged_cookie}")
 
         # short-circuit if the requested entry is the root entry
         # ignore the paged_search request, since its only one entry
@@ -480,8 +481,8 @@ class LdapHandler:
                 pureber.BERInteger(total_size), pureber.BEROctetString(enc_new_cookie),
             ])
             controls = [(PagedResultsControlType, None, control_value)]
-            self.logger.debug(f"Returned Paged size: {total_size}")
-            self.logger.debug(f"Retruned Paged cookie: {new_cookie}")
+            logger.debug(f"Returned Paged size: {total_size}")
+            logger.debug(f"Retruned Paged cookie: {new_cookie}")
 
         reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode),
               controls=controls)
