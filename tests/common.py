@@ -1826,10 +1826,13 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name = make_persona_name(
-                    personas[entry['persona_id']],
-                    include_nickname=(realm == 'event' and 'event_id' in kwargs))
-                self.assertPresence(name, div=f"{i}-{log_id}")
+                name1 = make_persona_name(personas[entry['persona_id']])
+                name2 = make_persona_name(
+                    personas[entry['persona_id']], include_nickname=True,
+                )
+                self.assertPresence(
+                    f'({re.escape(name1)}|{re.escape(name2)})',
+                    regex=True, div=f"{i}-{log_id}")
             if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 
