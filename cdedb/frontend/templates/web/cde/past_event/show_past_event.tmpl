@@ -47,7 +47,7 @@
                 {% if orga['viewable'] %}
                     {{ util.persona_anchor(personas[anid], quote_me=not is_admin) -}}
                 {% else %}
-                    {{ util.persona_name(personas[anid]) -}}
+                    {{ personas[anid]|persona_name -}}
                 {% endif -%}
                 {% if not loop.last %},{% endif %}
             {% endfor %}
@@ -149,7 +149,7 @@
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
                     {% else %}
-                        {{ util.persona_name(personas[anid]) -}}
+                        {{ personas[anid]|persona_name -}}
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (

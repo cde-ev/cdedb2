@@ -39,7 +39,7 @@
                             {{ util.href(cdedblink('event/show_registration',
                                     {'registration_id': registration_map[(entry['event_id'], entry['persona_id'])],
                                      'event_id': entry['event_id']}),
-                                    label=util.persona_name(personas[entry['persona_id']])) }}
+                                    label=personas[entry['persona_id']]|persona_name) }}
                         {% else %}
                             {{ util.persona_anchor(personas[entry['persona_id']], event_id=ambience['event']['id']) }}
                         {% endif %}

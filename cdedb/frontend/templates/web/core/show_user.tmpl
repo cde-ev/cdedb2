@@ -8,11 +8,11 @@
 {% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {{ util.persona_name(data) }}
+    {{ data|persona_name }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
         icon="user", active=True) }}
 {% endblock %}
 
@@ -153,7 +153,7 @@
                         {% trans %}QR{% endtrans %}
                     </a>
                     <script nonce="{{ csp_nonce }}">
-                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': data|persona_name,
                                                                  'loading': gettext("Loading..."),
                                                                  'note': "" if not data['foto'] else gettext("QR code does not include the profile photo. Consider downloading the vCard instead."),
                                                                  'close': gettext("Close") }|tojson }})
@@ -178,7 +178,7 @@
                 {% trans %}Name{% endtrans %}
             </dt>
             <dd>
-                {{ util.persona_name(data, include_nickname=True, with_titles=True) }}
+                {{ data|persona_name(include_nickname=True, with_titles=True) }}
                 {% if data['pronouns'] and data['pronouns_profile'] %}
                     <small class="text-muted">
                         ({{ data['pronouns'] }})
@@ -189,7 +189,7 @@
                 <dt title="{% trans %}Legal Name{% endtrans %}">
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
-                <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
+                <dd>{{ data|persona_name(use_legal_name=True, with_titles=True) }}</dd>
                 {% if "show_legal_given_names" in data %}
                     <dt title="{% trans %}Show legal name in member search{% endtrans %}">
                         {% trans %}Show legal name in member search{% endtrans %}

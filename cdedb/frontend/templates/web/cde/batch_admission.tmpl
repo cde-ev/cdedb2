@@ -86,7 +86,7 @@
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {% if dataset['persona'] %}
-                        {{ util.persona_name(dataset['persona']) }}
+                        {{ dataset['persona']|persona_name }}
                     {% endif %}
                     {% if dataset['persona']['username'] %}
                         &lt;{{ dataset['persona']['username'] }}&gt;
