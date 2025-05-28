@@ -1217,10 +1217,14 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         """Display detailed information about amount owed and individual fees."""
         payment_data = self._get_payment_data(rs, event_id, registration_id)
+        violation_data = self.get_constraint_violations(
+            rs, rs.ambience['event'], registration_id=registration_id
+        )
         return self.render(
             rs,
             "registration/registration_fee_summary",
             {
+                "violations": violation_data["violations"],
                 **payment_data,
             },
         )

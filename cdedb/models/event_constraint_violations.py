@@ -28,6 +28,7 @@ import enum
 import functools
 import inspect
 import itertools
+import re
 from collections.abc import Collection, Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
@@ -81,6 +82,15 @@ class ViolationSeverity(CdEEnum):
             ViolationSeverity.WARNING: 'panel-warning',
             ViolationSeverity.INFO: 'panel-info',
             ViolationSeverity.DEBUG: 'panel-default',
+        }[self]
+
+    def alert_class(self) -> str:
+        return {
+            ViolationSeverity.CRITICAL: 'alert-danger',
+            ViolationSeverity.ERROR: 'alert-danger',
+            ViolationSeverity.WARNING: 'alert-warning',
+            ViolationSeverity.INFO: 'alert-info',
+            ViolationSeverity.DEBUG: '',
         }[self]
 
     @classmethod
@@ -184,6 +194,7 @@ class ViolationList(list['ConstraintViolation']):
         course: models.Course | None = cast(models.Course, _MISSING),
         lodgement: models.Lodgement | None = cast(models.Lodgement, _MISSING),
         registration_id: int | None = cast(int, _MISSING),
+        fee: models.EventFee | None = cast(models.EventFee, _MISSING),
         track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
         track_not: Collection[int] = cast(Collection[int], _MISSING),
         track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
@@ -216,6 +227,7 @@ class ViolationList(list['ConstraintViolation']):
                 or v.registration is None and registration_id is None
                 or v.registration is not None and v.registration['id'] == registration_id
             )
+            and (fee is _MISSING or v.fee == fee)
             and (track is _MISSING or v.track == track)
             and (
                 track_not is _MISSING
@@ -276,6 +288,17 @@ class ViolationList(list['ConstraintViolation']):
             start=ViolationFormat(),
         )
 
+    @cached_property
+    def event_fee_summary_format(self) -> ViolationFormat:
+        return sum(
+            (
+                format_
+                for v in self
+                if (format_ := getattr(v, 'event_fee_summary_format', None))
+            ),
+            start=ViolationFormat(),
+        )
+
     def __lt__(self, other: 'list[ConstraintViolation] | ViolationList') -> bool:
         if not isinstance(other, ViolationList):
             return NotImplemented
@@ -332,6 +355,8 @@ class ViolationContext:
     course: models.Course | None = None
     lodgement: models.Lodgement | None = None
 
+    fee: models.EventFee | None = None
+
     part: models.EventPart | None = None
     track: models.CourseTrack | None = None
     part_group: models.PartGroup | None = None
@@ -382,6 +407,8 @@ class ConstraintViolation(abc.ABC):
     course: models.Course | None = None
     lodgement: models.Lodgement | None = None
 
+    fee: models.EventFee | None = None
+
     # Secondary entities.
     part: models.EventPart | None = None
     track: models.CourseTrack | None = None
@@ -421,9 +448,9 @@ class ConstraintViolation(abc.ABC):
         """
         raise NotImplementedError
 
-    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject, str]]:
         """
-        Return link targets and necessary parameters for linking to primary entities.
+        Return link targets, necessary parameters and an anchor for linking to primary entities.
 
         Link target will be something like "event/show_course", parameters will contain
         the entity id, e.g. `{'course_id': self.course['id']}`.
@@ -435,6 +462,7 @@ class ConstraintViolation(abc.ABC):
             'event': (
                 "event/show_event",
                 {'event_id': self.event.id},
+                "",
             ),
         }
         if self.registration:
@@ -444,6 +472,7 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'registration_id': self.registration['id'],
                 },
+                "",
             )
         if self.course:
             ret['course'] = (
@@ -452,6 +481,7 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'course_id': self.course.id,
                 },
+                "",
             )
         if self.lodgement:
             ret['lodgement'] = (
@@ -460,6 +490,13 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'lodgement_id': self.lodgement.id,
                 },
+                "",
+            )
+        if self.fee:
+            ret['fee'] = (
+                "event/fee_summary",
+                {},
+                f"#eventfee_{self.fee.id}",
             )
         return ret
 
@@ -693,6 +730,19 @@ class LodgementPartConstraintViolation(LodgementConstraintViolation, abc.ABC):
         cls, aux: ViolationAux, context: ViolationContext
     ) -> list[ViolationContext]:
         return [context.add(part=part) for part in aux.event.parts.values()]
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventFeeConstraintViolation(ConstraintViolation, abc.ABC):
+    fee: models.EventFee
+
+    kind = ViolationKind.financial
+
+    @classmethod
+    def get_contexts(
+        cls, aux: ViolationAux, context: ViolationContext
+    ) -> list[ViolationContext]:
+        return [context.add(fee=fee) for fee in aux.event.fees.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -972,17 +1022,19 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
         }
         return [msg], params
 
-    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject, str]]:
         ret = super().get_link_params()
         if self.assigned_course:
             ret['assigned_course'] = (
                 "event/show_course",
                 {'course_id': self.assigned_course.id},
+                "",
             )
         if self.instructed_course:
             ret['instructed_course'] = (
                 "event/show_course",
                 {'course_id': self.instructed_course.id},
+                "",
             )
         return ret
 
@@ -2209,3 +2261,54 @@ class IncorrectIBANCV(ConstraintViolation):
         msg = n_("Event fees should be collected at the Skatbank account.")
 
         return [msg], {}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectlyTypedExternalFeeCV(EventFeeConstraintViolation):
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.fee is not None
+
+        if not context.fee.is_conditional():
+            return None
+
+        assert context.fee.condition is not None
+
+        is_external = context.fee.kind == const.EventFeeType.external
+        is_member = bool(re.search(r"\bis_member\b", context.fee.condition))
+
+        if is_external == is_member:
+            return None
+
+        return cls(
+            event=aux.event,
+            severity=(
+                ViolationSeverity.WARNING
+                if context.fee.amount
+                else ViolationSeverity.DEBUG
+            ),
+            fee=context.fee,
+        )
+
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
+        if self.fee.kind == const.EventFeeType.external:
+            msg = n_("External fee %(fee)s does not check 'is_member'.")
+        else:
+            msg = n_("Non-external fee %(fee)s depends on 'is_member'.")
+
+        params = {
+            "fee": self.fee.title,
+        }
+        return [msg], params
+
+    @cached_property
+    def event_fee_summary_format(self) -> ViolationFormat | None:
+        if self.fee.kind == const.EventFeeType.external:
+            title = n_("External fee does not check 'is_member'.")
+        else:
+            title = n_("Non-external fee depends on 'is_member'.")
+        return ViolationFormat(
+            html_classes=[self.severity.html_class()],
+            titles=[title],
+            icons=["exclamation-triangle"],
+        )
