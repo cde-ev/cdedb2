@@ -2723,7 +2723,7 @@ class TestCdEFrontend(FrontendTest):
             # admin
             self.traverse('Charly Clown')
             _traverse_back()
-            self.traverse('Emilia (Emmy) Eventis')
+            self.traverse(re.escape('Emilia (Emmy) Eventis'))
             _traverse_back()
         else:
             # normal members
