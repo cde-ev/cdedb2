@@ -120,7 +120,7 @@ class User:
                  droid: "APIToken | None" = None,
                  roles: Optional[set[Role]] = None,
                  realm_roles: Optional[dict[Realm, set[str]]] = None,
-                 given_names: str = "", family_name: str = "",
+                 given_names: str = "", nickname: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
@@ -132,6 +132,7 @@ class User:
         self.realm_roles = realm_roles or {}
         self.username = username
         self.given_names = given_names
+        self.nickname = nickname
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
         self.moderator: set[int] = set(moderator) if moderator else set()
@@ -146,11 +147,12 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
-    def persona_name(self) -> str:
+    def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name({
             'given_names': self.given_names,
+            'nickname': self.nickname,
             'family_name': self.family_name,
-        })
+        }, include_nickname=include_nickname)
 
 
 if TYPE_CHECKING:

@@ -312,7 +312,7 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
 def persona_name_filter(val: CdEDBObject | User, *args: bool, **kwargs: bool) -> str:
     """Wrapper to format persona names."""
     if isinstance(val, User):
-        return val.persona_name()
+        return val.persona_name(*args, **kwargs)
     else:
         return make_persona_name(val, *args, **kwargs)
 
