@@ -36,7 +36,7 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common import CdEDBObject, compute_checkdigit, make_persona_name
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
 
@@ -765,6 +765,7 @@ JINJA_FILTERS = {
     'iban': iban_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
+    'persona_name': make_persona_name,
     'escape': escape_filter,
     'e': escape_filter,
     'stringIn': stringIn_filter,

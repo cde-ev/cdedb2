@@ -68,6 +68,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     PathLike,
     RequestState,
+    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -98,7 +99,6 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
     AbstractFrontend,
     Worker,
-    make_persona_name,
     setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend

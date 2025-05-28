@@ -571,6 +571,7 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
         minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
 
 
+# TODO: This function is duplicated in sorting.py – Import instead of copy?
 def make_persona_forename(persona: CdEDBObject,
                           use_legal_name: bool = False,
                           include_nickname: bool = False) -> str:
@@ -600,7 +601,6 @@ def make_persona_name(persona: CdEDBObject,
                       with_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
 
-    This is the Python pendant of the `util.persona_name()` macro.
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """

@@ -165,10 +165,10 @@
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
                             'id', 'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
-   use_legal_name:          see 'persona_name' macro
-   include_nickname:        see 'persona_name' macro
-   with_family_name:        see 'persona_name' macro
-   with_titles:             see 'persona_name' macro
+   use_legal_name:          see `cdedb.common.make_persona_name()`
+   include_nickname:        see `cdedb.common.make_persona_name()`
+   with_family_name:        see `cdedb.common.make_persona_name()`
+   with_titles:             see `cdedb.common.make_persona_name()`
    quote_me:                see show_user_link()
    event_id:                see show_user_link()
    ml_id:                   see show_user_link()
@@ -179,8 +179,8 @@
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-            persona_name(persona, use_legal_name, include_nickname, with_family_name),
-            aclass=aclass, readonly=readonly, title=title) -}}
+             persona|persona_name(use_legal_name, include_nickname, with_family_name),
+             aclass=aclass, readonly=readonly, title=title) -}}
 {% endmacro %}
 
 {# Display the name of a given persona
@@ -1042,7 +1042,7 @@ mailto:
     {% if link %}
         {{ persona_anchor(persona, include_nickname=True) }}
     {% else %}
-        {{ persona_name(persona, include_nickname=True) }}
+        {{ persona|persona_name(include_nickname=True) }}
     {% endif %}
     {%- if persona['birth_name'] %}
         ({{ persona['birth_name'] }})
