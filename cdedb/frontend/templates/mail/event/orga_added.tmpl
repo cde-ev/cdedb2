@@ -1,7 +1,7 @@
 Liebes Akademieteam,
 
-{{ orga['given_names'] }} {{ orga['family_name'] }} wurde der Veranstaltung "{{ event.title }}"
-durch {{ user['given_names'] }} {{ user['family_name'] }} als Orga hinzugefügt.
+{{ orga|persona_name }} wurde der Veranstaltung "{{ event.title }}"
+durch {{ user.persona_name() }} als Orga hinzugefügt.
 
 Viele Grüße
 

@@ -1,7 +1,7 @@
 Liebe Orgas,
 
 {% if event.notify_on_registration.send_on_register() -%}
-{{ persona_name(registrations[0]) }} hat sich gerade für eure Veranstaltung angemeldet.
+{{ registrations[0]|persona_name }} hat sich gerade für eure Veranstaltung angemeldet.
 
 Hier könnt ihr die Anmeldung ansehen:
 {{ cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': registrations[0]['id']}) }}
@@ -20,7 +20,7 @@ hat sich folgende Person
 {%- endif %} für eure Veranstaltung angemeldet:
 
 {% for reg in registrations -%}
-    - {{ persona_name(reg) }}
+    - {{ reg|persona_name }}
 {% endfor %}
 
 Hier könnt ihr diese Anmeldungen ansehen:

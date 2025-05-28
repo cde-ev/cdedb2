@@ -183,37 +183,6 @@
              aclass=aclass, readonly=readonly, title=title) -}}
 {% endmacro %}
 
-{# Display the name of a given persona
-
-   This macro includes some logic to display a person's name correctly, depending on the context.
-   For a full specification, which name variant should be used in which context, see the documentation
-   page about "User Experience Conventions".
-
-   For usage in Python code, the `cdedb.common.make_persona_name()` function implements the same logic.
-
-   persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
-   use_legal_name:          If True, use legal_given_names. Can not be combined with 'include_nickname'.
-   include_nickname:        If True, the display of all given_names and the nickname (if not equal) is enforced.
-                            Should only be used for orga-facing pages.
-   with_family_name:        If True (default), the family name is included in the macro output
-   with_titles:             If True, the person's title(s) and name supplement are included in the macro output
-#}
-{% macro persona_name(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False) %}
-    {%- set nickname = persona['nickname'] or "" %}
-    {%- set given_names = persona['given_names'] %}
-    {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
-    {%- if use_legal_name -%}
-        {{ persona['legal_given_names'] or given_names }}
-    {%- elif include_nickname and nickname -%}
-        {{ given_names }} ({{ nickname }})
-    {%- else -%}
-        {{ given_names }}
-    {%- endif %}
-    {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
-    {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
-{% endmacro %}
-
 {% macro tel_link(phonenumber) %}
     {% set linknumber = phonenumber|replace(" ", "")|replace("(", "")|replace(")", "")|replace("/", "")|replace("-", ("")) %}
     {%- if linknumber.startswith("+") -%}
