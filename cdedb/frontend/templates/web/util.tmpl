@@ -386,13 +386,14 @@
    used for purely cosmetical changes, admin views in particular. Furthermore, it is not supported for all input types,
    hence we fake it in some cases by introducing an additional hidden field while renaming the previous one.
    To make a use of the readonly attribute a concious decision, we obsure it by the name actualreadonly. #}
-{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none) %}
+{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none, form=none) %}
     <input{{ dict(
         type="hidden",
         name=name,
         value=values.get(name, defaultvalue) if value is none else value,
         id=anid,
         class=aclass,
+        form=form
     )|xmlattr }}/>
 {% endmacro %}
 
