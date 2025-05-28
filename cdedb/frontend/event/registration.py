@@ -769,7 +769,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             registration = self.eventproxy.get_registration(rs, registration_id)
             persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
             persona['registration_id'] = registration_id
-            registrations = (persona,)
+            registrations: tuple[CdEDBObject, ...] = (persona,)
             query: Query | None = None
         elif event.notify_on_registration.send_periodically():
             query = Query(
