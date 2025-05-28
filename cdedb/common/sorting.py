@@ -7,7 +7,7 @@ from typing import Any, Callable, Protocol, TypeVar, Union
 
 import icu
 
-from cdedb.common.n_ import n_
+from cdedb.common import make_persona_forename
 
 # Global unified collator to be used when sorting.
 # The locale provided here must exist as collation in SQL for this to
@@ -54,28 +54,6 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     """
     return sorted(iterable, key=lambda x: collate(key(x)),
                   reverse=reverse)
-
-
-def make_persona_forename(persona: CdEDBObject,
-                          use_legal_name: bool = False,
-                          include_nickname: bool = False) -> str:
-    """Construct the forename of a persona according to the display name specification.
-
-    The name specification can be found at the documentation page about
-    "User Experience Conventions".
-    """
-    if use_legal_name and include_nickname:
-        raise RuntimeError(n_("Invalid use of keyword parameters."))
-    nickname: str = persona.get('nickname', "")
-    given_names: str = persona['given_names']
-    if use_legal_name:
-        return persona['legal_given_names'] or given_names
-    if include_nickname:
-        if not nickname:
-            return given_names
-        else:
-            return f"{given_names} ({nickname})"
-    return given_names
 
 
 class Comparable(Protocol):

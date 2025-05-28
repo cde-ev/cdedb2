@@ -571,7 +571,6 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
         minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
 
 
-# TODO: This function is duplicated in sorting.py – Import instead of copy?
 def make_persona_forename(persona: CdEDBObject,
                           use_legal_name: bool = False,
                           include_nickname: bool = False) -> str:
