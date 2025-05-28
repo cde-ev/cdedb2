@@ -697,7 +697,7 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
     return [tuple(value[k] for k in args) for value in values]
 
 
-def entries_filter(entities: dict[Any, "CdEDataclass"] | list["CdEDataclass"],
+def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDataclass"],
                    *args: str, include: Optional[Container[int]] = None,
                    ) -> list[tuple[Any, ...]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
