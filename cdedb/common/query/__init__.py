@@ -159,6 +159,7 @@ class QuerySpecEntry:
     translate_prefix: bool = False
     order_by: str = ""
     order_type: str = ""
+    group: str = ""
 
     # Mask gettext so pybabel doesn't try to extract the f-string.
     def get_title(self, g: Callable[[str], str]) -> str:
@@ -898,7 +899,7 @@ def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]",
 
 
 def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
-                   prefix: str, translate_prefix: bool = False) -> QuerySpec:
+                   prefix: str, translate_prefix: bool = False, group: str = "") -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 
     Entries are grouped by their position in the individual spec. Thus the individual
@@ -928,7 +929,7 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
         ret[key] = QuerySpecEntry(
             type=entry.type, title_base=entry.title_base, title_prefix=prefix,
             title_params=entry.title_params, choices=entry.choices,
-            translate_prefix=translate_prefix,
+            translate_prefix=translate_prefix, group=group,
         )
     return ret
 
@@ -972,8 +973,8 @@ def make_registration_query_spec(event: "models.Event",
     lodgement_choices = _get_lodgement_choices(lodgements)
     lodgement_group_choices = _get_lodgement_group_choices(lodgement_groups)
     spec: QuerySpec = {
-        "reg.id": QuerySpecEntry("id", n_("ID")),
-        "persona.id": QuerySpecEntry("id", n_("CdEDB-ID")),
+        "reg.id": QuerySpecEntry("id", n_("ID"), group=n_("Registration")),
+        "persona.id": QuerySpecEntry("id", n_("CdEDB-ID"), group=n_("User")),
         "persona.nickname": QuerySpecEntry("str", n_("Nickname")),
         "persona.given_names": QuerySpecEntry("str", n_("Given Names")),
         "persona.legal_given_names": QuerySpecEntry("str", n_("Legal Given Names")),
@@ -982,8 +983,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.family_name": QuerySpecEntry("str", n_("Family Name")),
         "persona.username": QuerySpecEntry("str", n_("E-Mail")),
         "persona.is_member": QuerySpecEntry("bool", n_("CdE-Member")),
-        "reg.is_member": QuerySpecEntry("bool", n_("Member at registration")),
-        "reg.is_orga": QuerySpecEntry("bool", n_("Is Orga")),
+        "reg.is_member": QuerySpecEntry("bool", n_("Member at registration"), group=n_("Registration")),
+        "reg.is_orga": QuerySpecEntry("bool", n_("Is Orga"), group=n_("Registration")),
         "persona.title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
@@ -999,35 +1000,35 @@ def make_registration_query_spec(event: "models.Event",
         "persona.location": QuerySpecEntry("str", n_("City")),
         # Choices for the country will be manually set when displaying the result.
         "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
-        "reg.payment": QuerySpecEntry("date", n_("Payment")),
-        "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid")),
-        "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed")),
-        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
-        "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
-        "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
-        "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
-        "reg.notes": QuerySpecEntry("str", n_("Notes")),
-        "reg.orga_notes": QuerySpecEntry("str", n_("Orga-Notes")),
-        "reg.is_checked_in": QuerySpecEntry("bool", n_("Currently checked-in")),
-        "reg.has_been_checked_in": QuerySpecEntry("bool", n_("Has been checked-in")),
+        "reg.payment": QuerySpecEntry("date", n_("Payment"), group=n_("Registration")),
+        "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid"), group=n_("Registration")),
+        "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed"), group=n_("Registration")),
+        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed"), group=n_("Registration")),
+        "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent"), group=n_("Registration")),
+        "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging"), group=n_("Registration")),
+        "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent"), group=n_("Registration")),
+        "reg.notes": QuerySpecEntry("str", n_("Notes"), group=n_("Registration")),
+        "reg.orga_notes": QuerySpecEntry("str", n_("Orga-Notes"), group=n_("Registration")),
+        "reg.is_checked_in": QuerySpecEntry("bool", n_("Currently checked-in"), group=n_("Registration")),
+        "reg.has_been_checked_in": QuerySpecEntry("bool", n_("Has been checked-in"), group=n_("Registration")),
         "checkin_at.checkin_time,checkin_at.checkout_time": QuerySpecEntry(
-            "checkin_datetime", n_("Checked in at")),
-        "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin")),
-        "checkin_periods.min_checkout_time": QuerySpecEntry("datetime", n_("First checkout")),
-        "checkin_periods.max_checkin_time": QuerySpecEntry("datetime", n_("Last checkin")),
-        "checkin_periods.max_checkout_time": QuerySpecEntry("datetime", n_("Last checkout")),
-        "ctime.creation_time": QuerySpecEntry("datetime", n_("Registration Time")),
+            "checkin_datetime", n_("Checked in at"), group=n_("Checkin")),
+        "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin"), group=n_("Checkin")),
+        "checkin_periods.min_checkout_time": QuerySpecEntry("datetime", n_("First checkout"), group=n_("Checkin")),
+        "checkin_periods.max_checkin_time": QuerySpecEntry("datetime", n_("Last checkin"), group=n_("Checkin")),
+        "checkin_periods.max_checkout_time": QuerySpecEntry("datetime", n_("Last checkout"), group=n_("Checkin")),
+        "ctime.creation_time": QuerySpecEntry("datetime", n_("Registration Time"), group=n_("Registration")),
         "mtime.modification_time":
-            QuerySpecEntry("datetime", n_("Last Modification Time")),
+            QuerySpecEntry("datetime", n_("Last Modification Time"), group=n_("Registration")),
         **{
             f"fee{fee.id}.amount": QuerySpecEntry(
-                "money", n_("Personalized Amount"), fee.title)
+                "money", n_("Personalized Amount"), fee.title, group=n_("Participation Fee"))
             for fee in event.fees.values() if fee.is_personalized()
         },
         **{
             f"amount_owed.{kind.name}": QuerySpecEntry(
                 "money", title_base=str(kind), title_prefix=n_("Amount Owed"),
-                translate_prefix=True,
+                translate_prefix=True, group=n_("Participation Fee"),
             )
             for kind in const.EventFeeType
         },
@@ -1038,33 +1039,36 @@ def make_registration_query_spec(event: "models.Event",
         return {
             # Choices for the status will be manually set.
             f"part{part.id}.status": QuerySpecEntry(
-                "enum_int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
+                "enum_int", n_("registration status"), prefix, choices=None,  # type: ignore[arg-type]
+                group=prefix,
+            ),
             f"part{part.id}.is_camping_mat": QuerySpecEntry(
-                "bool", n_("camping mat user"), prefix),
+                "bool", n_("camping mat user"), prefix, group=prefix),
             f"part{part.id}.lodgement_id": QuerySpecEntry(
                 "enum_int", n_("lodgement"), prefix, choices=lodgement_choices,
                 order_by=f"lodgement{part.id}.title", order_type="str",
+                group=prefix,
             ),
-            f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
+            f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix, group=prefix),
             f"lodgement{part.id}.group_id": QuerySpecEntry(
                 "enum_int", n_("lodgement group"), prefix,
-                choices=lodgement_group_choices,
+                choices=lodgement_group_choices, group=prefix,
                 order_by=f"lodgement_group{part.id}.title", order_type="str",
             ),
             f"lodgement{part.id}.title": QuerySpecEntry(
-                "str", n_("lodgement title"), prefix),
+                "str", n_("lodgement title"), prefix, group=prefix),
             f"lodgement{part.id}.notes": QuerySpecEntry(
-                "str", n_("lodgement notes"), prefix),
+                "str", n_("lodgement notes"), prefix, group=prefix),
             **{
                 f"lodgement{part.id}.xfield_{f.field_name}": QuerySpecEntry(
                     f.kind.spec_type, n_("lodgement {field}"), prefix,
-                    {'field': f.field_name})
+                    {'field': f.field_name}, group=prefix)
                 for f in sorted_fields[const.FieldAssociations.lodgement]
             },
             f"lodgement_group{part.id}.id": QuerySpecEntry(
-                "id", n_("lodgement group ID"), prefix),
+                "id", n_("lodgement group ID"), prefix, group=prefix),
             f"lodgement_group{part.id}.title": QuerySpecEntry(
-                "str", n_("lodgement group title"), prefix),
+                "str", n_("lodgement group title"), prefix, group=prefix),
         }
 
     def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
@@ -1072,48 +1076,52 @@ def make_registration_query_spec(event: "models.Event",
         prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
-                "bool", n_("instructs their course"), prefix),
+                "bool", n_("instructs their course"), prefix, group=prefix),
             f"track{track_id}.course_id": QuerySpecEntry(
                 "enum_int", n_("course"), prefix, choices=course_choices,
                 order_by=f"course{track_id}.nr_shortname", order_type="str",
+                group=prefix,
             ),
             f"track{track_id}.course_instructor": QuerySpecEntry(
                 "enum_int", n_("instructed course"), prefix, choices=course_choices,
                 order_by=f"course_instructor{track_id}.nr_shortname", order_type="str",
+                group=prefix,
             ),
-            f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
-            f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
+            f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix, group=prefix),
+            f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix, group=prefix),
             f"course{track_id}.nr_shortname": QuerySpecEntry(
-                "str", n_("course nr+shortname"), prefix),
+                "str", n_("course nr+shortname"), prefix, group=prefix),
             f"course{track_id}.title": QuerySpecEntry(
-                "str", n_("course title"), prefix),
+                "str", n_("course title"), prefix, group=prefix),
             f"course{track_id}.shortname": QuerySpecEntry(
-                "str", n_("course shortname"), prefix),
+                "str", n_("course shortname"), prefix, group=prefix),
             f"course{track_id}.notes": QuerySpecEntry(
-                "str", n_("course notes"), prefix),
+                "str", n_("course notes"), prefix, group=prefix),
             **{
                 f"course{track_id}.xfield_{f.field_name}": QuerySpecEntry(
                     f.kind.spec_type, n_("course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
+                    group=prefix,
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
             },
             f"course_instructor{track_id}.id": QuerySpecEntry(
-                "id", n_("instructed course ID"), prefix),
+                "id", n_("instructed course ID"), prefix, group=prefix),
             f"course_instructor{track_id}.nr": QuerySpecEntry(
-                "str", n_("instructed course nr"), prefix),
+                "str", n_("instructed course nr"), prefix, group=prefix),
             f"course_instructor{track_id}.nr_shortname": QuerySpecEntry(
-                "str", n_("instructed course nr+shortname"), prefix),
+                "str", n_("instructed course nr+shortname"), prefix, group=prefix),
             f"course_instructor{track_id}.title": QuerySpecEntry(
-                "str", n_("instructed course title"), prefix),
+                "str", n_("instructed course title"), prefix, group=prefix),
             f"course_instructor{track_id}.shortname": QuerySpecEntry(
-                "str", n_("instructed course shortname"), prefix),
+                "str", n_("instructed course shortname"), prefix, group=prefix),
             f"course_instructor{track_id}.notes": QuerySpecEntry(
-                "str", n_("instructed course notes"), prefix),
+                "str", n_("instructed course notes"), prefix, group=prefix),
             **{
                 f"course_instructor{track_id}.xfield_{f.field_name}": QuerySpecEntry(
                     f.kind.spec_type, n_("instructed course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
+                    group=prefix,
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
             },
@@ -1125,7 +1133,7 @@ def make_registration_query_spec(event: "models.Event",
         ret = {
             f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
                 "enum_int", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
-                choices=course_choices,
+                choices=course_choices, group=prefix,
             )
             for i in range(cco.num_choices)
         }
@@ -1136,7 +1144,7 @@ def make_registration_query_spec(event: "models.Event",
             #  This happens if there is exactly one choice.
             if key not in ret:
                 ret[key] = QuerySpecEntry(
-                    "enum_int", n_("Any Choice"), prefix, choices=course_choices)
+                    "enum_int", n_("Any Choice"), prefix, choices=course_choices, group=prefix)
 
         return ret
 
@@ -1171,9 +1179,9 @@ def make_registration_query_spec(event: "models.Event",
 
         # Add Entries for all tracks in this part.
         spec.update(_combine_specs(
-            track_specs, part.tracks, prefix=part.shortname))
+            track_specs, part.tracks, prefix=part.shortname, group=part.shortname))
         spec.update(_combine_specs(
-            course_choice_specs, part.tracks, prefix=part.shortname))
+            course_choice_specs, part.tracks, prefix=part.shortname, group=part.shortname))
 
     # Add entries for groups of parts and tracks in those parts.
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
@@ -1186,16 +1194,16 @@ def make_registration_query_spec(event: "models.Event",
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids, prefix=prefix or n_("any part"),
-            translate_prefix=not prefix))
+            translate_prefix=not prefix, group=prefix or n_("any part")))
         # Add entries for track combinations.
         track_ids = tuple(itertools.chain.from_iterable(
             event.parts[part_id].tracks.keys() for part_id in part_ids))
         spec.update(_combine_specs(
             track_specs, track_ids, prefix=prefix or n_("any track"),
-            translate_prefix=not prefix))
+            translate_prefix=not prefix, group=prefix or n_("any track")))
         spec.update(_combine_specs(
             course_choice_specs, track_ids, prefix=prefix or n_("any track"),
-            translate_prefix=not prefix))
+            translate_prefix=not prefix, group=prefix or n_("any track")))
 
     # Add entries for track groups.
     for track_group in xsorted(event.track_groups.values()):
@@ -1207,7 +1215,7 @@ def make_registration_query_spec(event: "models.Event",
 
     spec.update({
         f"reg_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name], group=n_("Custom Fields"))
         for f in sorted_fields[const.FieldAssociations.registration]
     })
 
