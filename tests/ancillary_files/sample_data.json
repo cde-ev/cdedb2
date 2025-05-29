@@ -4361,7 +4361,7 @@
             "kind": 15,
             "is_grave": false,
             "summary": "Berta schnarcht ganz furchtbar.",
-            "start_date": "2025-05-29",
+            "start_date": "2025-05-28",
             "end_date": null
         }
     ],
@@ -4397,7 +4397,7 @@
         {
             "id": 5,
             "case_id": 1,
-            "entry_type": 321,
+            "entry_type": 311,
             "root_entry": 4,
             "concerned_id": 2
         }
