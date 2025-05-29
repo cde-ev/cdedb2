@@ -1,4 +1,4 @@
-{% if ambience["case"] %}
+{% if ambience['case'] %}
     {% set action_target = "core/change_case" %}
     {% set sidenav_active='complaint_index' %}
 {% else %}
@@ -25,7 +25,7 @@
     {{ super() }}
     {% if ambience["case"] %}
         {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
-                                icon="scale-unbalanced") }}
+                                icon="gavel") }}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Change"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Create Case"), active=True) }}
@@ -55,7 +55,7 @@
                 );
             </script>
             {{ util.form_input_checkbox(name="is_grave", label=gettext("is affected")) }}
-            {{ util.form_input_text(name="target_ids", label=gettext("Further Affected"), anid="input-affected_ids",
+            {{ util.form_input_text(name="affected_ids", label=gettext("Further Affected"), anid="input-affected_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-affected_ids').cdedbSearchPerson(

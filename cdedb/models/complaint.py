@@ -35,8 +35,7 @@ class Case(CdEDataclass):
         for entry in self.entries.values():
             if entry.concerned_id:
                 ret.add(entry.concerned_id)
-            update = {version.submitted_by for version in entry.all_versions}
-            ret.update(update)
+            ret.update(version.submitted_by for version in entry.all_versions)
         return ret
 
     def get_sortkey(self) -> Sortkey:
