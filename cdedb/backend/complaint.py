@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol
+from typing import Any, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -34,6 +34,24 @@ from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
+DATE_FORMAT = "%d.%m.%Y"
+
+
+def _format_date_change_note(
+    current_date: datetime.date | None, new_date: datetime.date | None
+) -> str:
+    if current_date and new_date:
+        msg = (
+            f"{current_date.strftime(DATE_FORMAT)} -> {new_date.strftime(DATE_FORMAT)}"
+        )
+    elif current_date:
+        msg = f"Entfernt ({current_date.strftime(DATE_FORMAT)})"
+    elif new_date:
+        msg = f"Hinzugefügt ({new_date.strftime(DATE_FORMAT)})"
+    else:
+        return ""
+    return msg
+
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
@@ -44,20 +62,16 @@ class ComplaintBackend(AbstractBackend):
         return "core_admin" in rs.user.roles
         # return super().is_admin(rs)
 
-    @access("core_admin")
-    def case_log(
+    def complaint_log(
         self,
+        *,
         rs: RequestState,
         code: const.ComplaintLogCodes,
         case_id: Optional[int],
         persona_id: Optional[int] = None,
         change_note: Optional[str] = None,
     ) -> int:
-        """Make an entry in the log for concluded events.
-
-        See
-        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-        """
+        """Make an entry in the log for complaint cases."""
         # To ensure logging is done if and only if the corresponding action happened,
         # we require atomization here.
         self.affirm_atomized_context(rs)
@@ -124,4 +138,38 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, case_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
         case_id = affirm(vtypes.ID, case_id)
-        data = affirm(models.Case, data)
+        data = cast(CdEDBObject, affirm(models.Case, data))
+
+        with Atomizer(rs):
+            current = self.get_case(rs, case_id)
+            data['id'] = case_id
+            ret = self.sql_update(rs, models.Case.database_table, data)
+
+            log_entries = []
+            if (new_kind := data.get("kind")) != current.kind:
+                msg = f"{rs.log_gettext(str(current.kind))} -> {rs.log_gettext(str(new_kind))}"
+                code = const.ComplaintLogCodes.case_changed_kind
+                log_entries.append((msg, code))
+            if (new_is_grave := data.get("is_grave")) != current.is_grave:
+                if new_is_grave:
+                    msg = "Ist jetzt schwerwiegend."
+                else:
+                    msg = "Ist nicht mehr schwerwiegend."
+                code = const.ComplaintLogCodes.case_changed_grave
+                log_entries.append((msg, code))
+            if (new_summary := data.get("summary")) != current.summary:
+                msg = f"{current.summary} -> {current.summary}"
+                code = const.ComplaintLogCodes.case_changed_summary
+                log_entries.append((msg, code))
+            if (new_start_date := data.get("start_date")) != current.start_date:
+                msg = _format_date_change_note(current.start_date, new_start_date)
+                code = const.ComplaintLogCodes.case_changed_start_date
+                log_entries.append((msg, code))
+            if (new_end_date := data.get("end_date")) != current.end_date:
+                code = const.ComplaintLogCodes.case_changed_end_date
+                msg = _format_date_change_note(current.end_date, new_end_date)
+                log_entries.append((msg, code))
+            for msg, code in log_entries:
+                self.complaint_log(rs=rs, code=code, case_id=case_id, change_note=msg)
+
+            return ret
