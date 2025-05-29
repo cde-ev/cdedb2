@@ -543,7 +543,9 @@ CREATE TABLE complaint.entry_versions (
     entry_id      integer NOT NULL REFERENCES complaint.entries(id),
     submitted_by  integer NOT NULL REFERENCES core.personas(id),
     description   varchar, -- encrypted
-    length        integer NOT NULL,
+    length        integer,
+    CONSTRAINT complaint_entry_empty_description_length
+        CHECK ((description IS NULL) = (length IS NULL)),
     ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
