@@ -47,7 +47,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         persona_ids = rs.ambience['case'].get_persona_ids()
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        return self.render(rs, "complaint/show_case", {'personas': personas})
+        # descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
+        # ToDo: Retrieve here, or on dataclass construction?
+        # log_filter = ComplaintLogFilter(case_id=case_id)
+        # log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
+        return self.render(rs, "complaint/show_case",
+                           {'personas': personas})
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
@@ -122,7 +127,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
     @access("core_admin")
-    def replace_entry_form(self, rs: RequestState, case_id: int) -> Response:
+    def replace_entry_form(self, rs: RequestState, case_id: int, entry_id: int
+                           ) -> Response:
         """Render form."""
         return self.render(rs, "complaint/configure_entry", {})
 
@@ -149,7 +155,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("core_admin")
-    def view_case_log(
+    def view_complaint_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:
         """View activities."""
@@ -159,5 +165,5 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ComplaintLogFilter,
             self.complaintproxy.retrieve_log,
             download=download,
-            template="complaint/view_case_log",
+            template="complaint/view_complaint_log",
         )

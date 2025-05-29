@@ -11,7 +11,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/view_case_log"), gettext("Case Log"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/view_complaint_log"), gettext("Case Log"), active=True) }}
 {% endblock %}
 {% block content %}
     {% call logging.table(log, 'Event') %}
@@ -27,6 +27,6 @@
         {% endfor %}
     {% endcall %}
 
-    {{ logging.navigation('core/view_case_log', total, length, loglinks) }}
-    {{ logging.filter('core/view_case_log', enums['ComplaintLogCodes'], 'admin_all_users', 'case_id') }}
+    {{ logging.navigation('core/view_complaint_log', total, length, loglinks) }}
+    {{ logging.filter('core/view_complaint_log', enums['ComplaintLogCodes'], 'admin_all_users', 'case_id') }}
 {% endblock %}
