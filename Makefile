@@ -35,10 +35,20 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
-ISORT ?= $(RUFF) --select I
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
+ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
+
+include .ruff_targets
+
+# Taken from a combination of the answers here:
+#  https://stackoverflow.com/questions/10424645/how-to-convert-a-quoted-string-to-a-normal-one-in-makefile
+Q := $\"
+
+MAKE_FORMAT_TARGETS ?= $(subst $(Q),,$(FORMAT_TARGETS))
+MAKE_LINT_TARGETS ?= $(subst $(Q),,$(LINT_TARGETS))
+MAKE_ISORT_TARGETS ?= $(subst $(Q),,$(ISORT_TARGETS))
 
 
 #####################
@@ -118,11 +128,17 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 
 .PHONY: format
 format:
-	$(ISORT) --fix bin/*.py cdedb tests
+	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS)
+
+.PHONY: format-diff
+format-diff:
+	$(ISORT) $(MAKE_ISORT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
 .PHONY: mypy
 mypy:
-	$(MYPY) bin/*.py cdedb tests
+	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 
@@ -131,7 +147,7 @@ isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	$(ISORT) bin/*.py cdedb tests
+	$(ISORT) $(MAKE_ISORT_TARGETS)
 	@echo ""
 
 .PHONY: ruff
@@ -143,9 +159,11 @@ ruff:
 	sudo chown cdedb -R .ruff_cache
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
-	$(RUFF) --output-format=grouped cdedb tests
+	$(RUFF) check $(MAKE_LINT_TARGETS) --output-format=grouped
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
 else
-	$(RUFF) cdedb tests
+	$(RUFF) check $(MAKE_LINT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
 endif
 	@echo ""
 
