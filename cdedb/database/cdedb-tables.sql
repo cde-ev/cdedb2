@@ -556,6 +556,7 @@ CREATE TABLE complaint.entry_versions (
     CONSTRAINT complaint_entry_deletion_by
         CHECK ((dtime IS NULL) = (deleted_by IS NULL))
 );
+CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
 GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
 
 CREATE TABLE complaint.authors (

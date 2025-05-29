@@ -615,22 +615,23 @@ class ComplaintLogCodes(CdEIntEnum):
     case_created = 1  #:
     case_changed_kind = 2  #:
     case_changed_grave = 3  #:
-    case_changed_start_date = 4  #:
-    case_changed_end_date = 5  #:
+    case_changed_summary = 4  #:
+    case_changed_start_date = 5  #:
+    case_changed_end_date = 6  #:
 
-    case_deleted = 11  #:
-    case_concluded = 12  #:
-    case_aborted = 13  #:
+    case_deleted = 21  #:
+    case_concluded = 22  #:
+    case_aborted = 23  #:
 
-    involvee_added = 31  #:
-    involvee_removed = 32  #:
-    involvee_informed = 36  #:
-    involvee_uninformed = 37  #:
+    involvee_added = 41  #:
+    involvee_removed = 42  #:
+    involvee_informed = 46  #:
+    involvee_uninformed = 47  #:
 
-    companion_added = 41  #:
-    companion_withdrawn = 42  #:
-    companion_reinstated = 43  #:
-    companion_removed = 44  #:
+    companion_added = 51  #:
+    companion_withdrawn = 52  #:
+    companion_reinstated = 53  #:
+    companion_removed = 54  #:
 
     enforcer_added = 101  #:
     enforcer_removed = 102  #:
