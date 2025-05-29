@@ -538,6 +538,7 @@ CREATE TABLE complaint.entries (
     concerned_id  integer REFERENCES core.personas(id) DEFAULT NULL  -- maybe reference involved_id instead
 );
 GRANT SELECT, INSERT ON complaint.entries TO cdb_persona;
+GRANT SELECT, UPDATE ON complaint.entries_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.entry_versions (
     id            serial PRIMARY KEY,
@@ -561,6 +562,7 @@ CREATE TABLE complaint.entry_versions (
 );
 CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
 GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
+GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.authors (
     id            serial PRIMARY KEY,

@@ -203,6 +203,87 @@ class ComplaintBackend(AbstractBackend):
         return new_case
 
     @access("core_admin")
+    def add_entry(
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_data: CdEDBObject,
+        version_data: CdEDBObject,
+    ) -> DefaultReturnCode:
+        """Add a new entry to an existing complaint case."""
+        case_id = affirm(vtypes.ID, case_id)
+        entry_data = cast(CdEDBObject, affirm(models.ComplaintEntry, entry_data))
+        version_data = cast(
+            CdEDBObject, affirm(models.ComplaintEntryVersion, version_data)
+        )
+
+        with Atomizer(rs):
+            case = self.get_case(rs, case_id)
+            if root_entry_id := entry_data.get("root_entry_id"):
+                if root_entry_id not in case.entries:
+                    raise KeyError(n_("Unknown root entry for this case."))
+            entry_data["case_id"] = case_id
+            new_entry_id = self.sql_insert(
+                rs, models.ComplaintEntry.database_table, entry_data
+            )
+            version_data.update(
+                entry_id=new_entry_id,
+                length=(
+                    len(version_data["description"])
+                    if version_data.get("description")
+                    else None
+                ),
+                submitted_by=rs.user.persona_id,
+            )
+            self.sql_insert(
+                rs, models.ComplaintEntryVersion.database_table, version_data
+            )
+        return new_entry_id
+
+    @access("core_admin")
+    def replace_entry_version(
+        self,
+        rs: RequestState,
+        entry_id: int,
+        data: CdEDBObject,
+        dreason: str | None,
+    ) -> DefaultReturnCode:
+        """Add a new version of an existing complaint entry."""
+        entry_id = affirm(vtypes.ID, entry_id)
+        data = cast(CdEDBObject, affirm(models.ComplaintEntryVersion, data))
+        dreason = affirm_optional(str, dreason)
+
+        with Atomizer(rs):
+            case_data = self.sql_select_one(
+                rs, models.ComplaintEntry.database_table, ["case_id"], entry_id
+            )
+            if not case_data:
+                raise KeyError(n_("Unknown entry."))
+            case = self.get_case(rs, case_data["case_id"])
+            entry = case.entries[entry_id]
+            if bool(entry.active_version) != bool(dreason):
+                raise ValueError(
+                    n_("Deletion reason given, but entry has no active version.")
+                )
+            if dreason and entry.active_version:
+                update = {
+                    'id': entry.active_version.id,
+                    'dreason': dreason,
+                    'dtime': "now()",
+                    'deleted_by': rs.user.persona_id,
+                }
+                self.sql_update(rs, models.ComplaintEntryVersion.database_table, update)
+            data.update(
+                entry_id=entry_id,
+                length=len(data["description"]) if data.get("description") else None,
+                submitted_by=rs.user.persona_id,
+            )
+            new_id = self.sql_insert(
+                rs, models.ComplaintEntryVersion.database_table, data
+            )
+        return new_id
+
+    @access("core_admin")
     def get_visible_descriptions(
         self, rs: RequestState, case_id: int
     ) -> dict[int, str]:

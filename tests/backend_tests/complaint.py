@@ -2,10 +2,9 @@ import datetime
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import CdEDBObject, nearly_now
+from cdedb.common import CdEDBObject, nearly_now, now
 from tests.common import BackendTest, as_users
-from tests.other_tests import TestValidation
-from tests.other_tests.test_validation import INVAL
+from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
 class TestComplaintBackend(BackendTest):
@@ -218,8 +217,74 @@ class TestComplaintBackend(BackendTest):
         ]
         self.assertLogEqual(log_expectation, "complaint", case_id=new_case.id)
 
+    @as_users("anton")
+    def test_add_entry(self) -> None:
+        case_id = 1
+        new_entry_data: CdEDBObject = {
+            "entry_type": const.ComplaintEntryType.provisional_statement_given,
+            "concerned_id": 2,
+        }
+        new_version_data: CdEDBObject = {
+            "description": "Ich hab auch etwas zu sagen!",
+            "timestamp": now(),
+        }
+        new_entry_id = self.complaint.add_entry(
+            self.key, case_id, new_entry_data, new_version_data
+        )
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            models.ComplaintEntry(
+                id=new_entry_id,  # type: ignore[arg-type]
+                case_id=case_id,  # type: ignore[arg-type]
+                **new_entry_data,
+                all_versions=[
+                    models.ComplaintEntryVersion(
+                        id=1001,  # type: ignore[arg-type]
+                        entry_id=new_entry_id,  # type: ignore[arg-type]
+                        timestamp=new_version_data["timestamp"],
+                        length=len(new_version_data["description"]),
+                        ctime=nearly_now(),
+                        submitted_by=self.user['id'],
+                    )
+                ],
+            ),
+            case.entries[new_entry_id],
+        )
+        self.assertLogEqual([], "complaint", case_id=case_id)
 
-class TestComplaintValidation(TestValidation):
+    @as_users("anton")
+    def test_replace_entry(self) -> None:
+        case_id = 1
+        entry_id = 3
+        original_case = self.complaint.get_case(self.key, case_id)
+        new_version_data: CdEDBObject = {
+            "timestamp": now(),
+        }
+        self.complaint.replace_entry_version(
+            self.key, entry_id, new_version_data, "Zeitpunkt aktualisiert."
+        )
+
+        replaced_entry = original_case.entries[entry_id]
+        assert replaced_entry.active_version is not None
+        replaced_entry.active_version.dreason = "Zeitpunkt aktualisiert."
+        replaced_entry.active_version.dtime = nearly_now()
+        replaced_entry.active_version.deleted_by = self.user['id']
+        replaced_entry.all_versions.append(
+            models.ComplaintEntryVersion(
+                id=1001,  # type: ignore[arg-type]
+                entry_id=entry_id,  # type: ignore[arg-type]
+                timestamp=new_version_data["timestamp"],
+                ctime=nearly_now(),
+                submitted_by=self.user['id'],
+            )
+        )
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(replaced_entry, case.entries[entry_id])
+
+        self.assertLogEqual([], "complaint", case_id=case_id)
+
+
+class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:
         # Test successful creations.
         self.do_validator_test(

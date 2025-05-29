@@ -4940,6 +4940,8 @@ def _log_filter(
 
 
 _create_dataclass_validator(models_complaint.Case, models_complaint.Case)
+_create_dataclass_validator(models_complaint.ComplaintEntry, models_complaint.ComplaintEntry)
+_create_dataclass_validator(models_complaint.ComplaintEntryVersion, models_complaint.ComplaintEntryVersion)
 
 
 E = TypeVar('E', bound=enum.Enum)

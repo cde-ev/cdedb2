@@ -46,7 +46,7 @@ T = TypeVar('T')
 INVAL = object()
 
 
-class TestValidation(unittest.TestCase):
+class TestValidationBase(unittest.TestCase):
     def do_validator_test(
         self,
         type_: type[T],
@@ -104,6 +104,8 @@ class TestValidation(unittest.TestCase):
                     type_, onepass, ignore_warnings, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
+
+class TestValidation(TestValidationBase):
     def test_optional(self) -> None:
         ignore_warnings = True
         self.assertEqual((12, []), validate.validate_check(int, 12, ignore_warnings))

@@ -56,13 +56,15 @@ class ComplaintEntry(CdEDataclass):
     database_table = "complaint.entries"
     entity_key = "case_id"
 
+    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+
     case: Case = dataclasses.field(init=False, compare=False, repr=False)
-    case_id: vtypes.ID
+    case_id: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
     entry_type: const.ComplaintEntryType
 
-    root_entry_id: vtypes.ID | None
+    root_entry_id: vtypes.ID | None = None
 
-    concerned_id: vtypes.ID | None
+    concerned_id: vtypes.ID | None = None
 
     all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
         metadata={"database_exclude": True},
@@ -109,18 +111,30 @@ class ComplaintEntryVersion(CdEDataclass):
     database_table = "complaint.entry_versions"
     entity_key = "entry_id"
 
+    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+
     entry_id: vtypes.ID
 
-    # description: str | None
-    length: int | None
+    description: str | None = dataclasses.field(
+        init=False, default=None, metadata={"database_exclude": True}
+    )
+    length: int | None = dataclasses.field(
+        default=None, metadata={"validation_exclude": True}
+    )
     timestamp: datetime.datetime
 
-    ctime: datetime.datetime
-    submitted_by: vtypes.ID
+    ctime: datetime.datetime = dataclasses.field(metadata={"validation_exclude": True})
+    submitted_by: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
 
-    dtime: datetime.datetime | None
-    deleted_by: vtypes.ID | None
-    dreason: str | None
+    dtime: datetime.datetime | None = dataclasses.field(
+        default=None, metadata={"validation_exclude": True}
+    )
+    deleted_by: vtypes.ID | None = dataclasses.field(
+        default=None, metadata={"validation_exclude": True}
+    )
+    dreason: str | None = dataclasses.field(
+        default=None, metadata={"validation_exclude": True}
+    )
 
     def get_sortkey(self) -> Sortkey:
         return (self.ctime,)

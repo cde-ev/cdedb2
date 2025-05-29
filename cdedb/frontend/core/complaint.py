@@ -138,11 +138,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=True))
     def add_entry(
-        self, rs: RequestState, case_id: int, data: dict[str, Any]
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_data: dict[str, Any],
+        version_data: dict[str, Any],
     ) -> Response:
         if rs.has_validation_errors():
             return self.add_entry_form(rs, case_id)
-        entry = self.complaintproxy.add_entry(rs, data)
+        entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
@@ -156,11 +160,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
     def replace_entry(
-        self, rs: RequestState, case_id: int, entry_id: int, data: dict[str, Any]
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_id: int,
+        data: dict[str, Any],
+        dreason: str | None,
     ) -> Response:
         if rs.has_validation_errors():
             return self.replace_entry_form(rs, case_id, entry_id)
-        entry = self.complaintproxy.replace_entry(rs, entry_id, data)
+        entry = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
