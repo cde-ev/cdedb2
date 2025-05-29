@@ -28,7 +28,9 @@ class TestComplaintBackend(BackendTest):
                             id=1,  # type: ignore[arg-type]
                             entry_id=1,  # type: ignore[arg-type]
                             length=146,
-                            timestamp=datetime.datetime(2025, 5, 28, 14, tzinfo=datetime.timezone.utc),
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                            ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             dtime=None,
@@ -48,7 +50,9 @@ class TestComplaintBackend(BackendTest):
                             id=2,  # type: ignore[arg-type]
                             entry_id=2,  # type: ignore[arg-type]
                             length=258,
-                            timestamp=datetime.datetime(2025, 5, 28, 14, tzinfo=datetime.timezone.utc),
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                            ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             dtime=None,
@@ -68,7 +72,9 @@ class TestComplaintBackend(BackendTest):
                             id=3,  # type: ignore[arg-type]
                             entry_id=3,  # type: ignore[arg-type]
                             length=None,
-                            timestamp=datetime.datetime(2025, 5, 28, 15, tzinfo=datetime.timezone.utc),
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, tzinfo=datetime.timezone.utc
+                            ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             dtime=None,
@@ -88,7 +94,9 @@ class TestComplaintBackend(BackendTest):
                             id=4,  # type: ignore[arg-type]
                             entry_id=4,  # type: ignore[arg-type]
                             length=77,
-                            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.timezone.utc),
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                            ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             dtime=None,
@@ -108,7 +116,9 @@ class TestComplaintBackend(BackendTest):
                             id=5,  # type: ignore[arg-type]
                             entry_id=5,  # type: ignore[arg-type]
                             length=None,
-                            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.timezone.utc),
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                            ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             dtime=None,
@@ -120,8 +130,12 @@ class TestComplaintBackend(BackendTest):
             },
         )
         reality = self.complaint.get_case(self.key, 1)
-        for expected_entry, real_entry in zip(expectation.entries.values(), reality.entries.values()):
-            for expected_version, real_version in zip(expected_entry.all_versions, real_entry.all_versions):
+        for expected_entry, real_entry in zip(
+            expectation.entries.values(), reality.entries.values()
+        ):
+            for expected_version, real_version in zip(
+                expected_entry.all_versions, real_entry.all_versions
+            ):
                 self.assertEqual(expected_version.as_dict(), real_version.as_dict())
                 self.assertEqual(expected_version, real_version)
             self.assertEqual(expected_entry.as_dict(), real_entry.as_dict())
