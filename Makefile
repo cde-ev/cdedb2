@@ -128,13 +128,13 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 
 .PHONY: format
 format:
-	$(RUFF) format $(MAKE_FORMAT_TARGETS)
 	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS)
 
 .PHONY: format-diff
 format-diff:
-	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 	$(ISORT) $(MAKE_ISORT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
 .PHONY: mypy
 mypy:
