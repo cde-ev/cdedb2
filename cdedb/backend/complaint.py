@@ -5,6 +5,7 @@ from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
@@ -75,6 +76,22 @@ class ComplaintBackend(AbstractBackend):
         log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
+    @access("core_admin")
+    def get_case(self, rs: RequestState, case_id: int) -> models.Case:
+        case_id = affirm(vtypes.ID, case_id)
+        with Atomizer(rs):
+            case_data = self.query_one(rs, *models.Case.get_select_query([case_id]))
+            if not case_data:
+                raise KeyError(case_id)
+            entry_data = self.query_all(rs, *models.ComplaintEntry.get_select_query([case_id]))
+            all_entries = {e['id']: e for e in entry_data}
+            version_data = self.query_all(rs, *models.ComplaintEntryVersion.get_select_query(all_entries.keys()))
 
+            case_data["entries"] = []
+            for entry in entry_data:
+                entry["all_versions"] = []
+                case_data["entries"].append(entry)
+            for entry_version in version_data:
+                all_entries[entry_version["entry_id"]]["all_versions"].append(entry_version)
 
-
+            return models.Case.from_database(case_data)
