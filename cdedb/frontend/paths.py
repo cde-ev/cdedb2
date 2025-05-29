@@ -210,15 +210,17 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/decide", methods=_POST,
                      endpoint="decide_privilege_change"))),
             sub('/complaint', (
+                rule("/index", methods=_GET,
+                     endpoint="complaint_index"),
                 rule("/log", methods=_GET,
                      endpoint="view_case_log"),
-                sub('/complaint/<int:case_id>', (
+                rule("/case/create", methods=_GET,
+                         endpoint="create_case_form"),
+                rule("/case/create", methods=_POST,
+                         endpoint="create_case"),
+                sub('/case/<int:case_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_case"),
-                    rule("/create", methods=_GET,
-                         endpoint="create_case_form"),
-                    rule("/create", methods=_POST,
-                         endpoint="create_case"),
                     rule("/change", methods=_GET,
                          endpoint="change_case_form"),
                     rule("/change", methods=_POST,

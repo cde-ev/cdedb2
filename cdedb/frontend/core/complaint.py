@@ -40,6 +40,10 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin")
+    def complaint_index(self, rs: RequestState) -> Response:
+        return self.render(rs, "complaint/index", {})
+
+    @access("core_admin")
     def show_case(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
         return self.render(rs, "complaint/show_case", {})
@@ -47,13 +51,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "configure_case", {})
+        return self.render(rs, "complaint/configure_case", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata("involved", "info")
-    def create_case(self, rs: RequestState, data: dict[str, Any],
-                    involved: Collection[int], info: str) -> Response:
+    @REQUESTdata("appellant_id", "is_affected", "target_ids", "info")
+    def create_case(
+        self,
+        rs: RequestState, data: dict[str, Any],
+        appellant_id: int,
+        is_affected: bool,
+        target_ids: Optional[Collection[int]],
+        info: str
+    ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
         with TransactionObserver(rs, self, "create_complaint_case"):
@@ -61,13 +71,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
             # Add involvees to the case
             # Add first entry with info as text
         rs.notify_return_code(new_id)
-        return self.redirect(rs, "complaint/show_case", {
-            'case_id': new_id})
+        return self.redirect(rs, "complaint/show_case", {'case_id': new_id})
 
     @access("core_admin")
-    def change_case_form(self, rs: RequestState) -> Response:
+    def change_case_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
-        return self.render(rs, "change_case", {})
+        return self.render(rs, "complaint/configure_case", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=False))
