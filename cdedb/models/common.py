@@ -180,7 +180,8 @@ class CdEDataclass:
                         #  retrieved from the database can pass validation.
                         or not field.init
                         # Fields with a default are optional at creation.
-                        or field.default or field.default_factory
+                        or field.default is not dataclasses.MISSING
+                        or field.default_factory is not dataclasses.MISSING
                 ):
                     optional[field.name] = field.type
                 else:
