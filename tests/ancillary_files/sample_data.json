@@ -4438,6 +4438,17 @@
         },
         {
             "entry_id": 4,
+            "description": "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            "length": 80,
+            "timestamp": "2025-05-28T16:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": "---now---",
+            "deleted_by": 1,
+            "dreason": "Ungünstige Wortwahl."
+        },
+        {
+            "entry_id": 4,
             "description": "Berta hat sich bereit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
             "length": 77,
             "timestamp": "2025-05-28T16:00:00",
@@ -4449,8 +4460,8 @@
         },
         {
             "entry_id": 5,
-            "description": null,
-            "length": null,
+            "description": "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            "length": 53,
             "timestamp": "2025-05-28T16:00:00",
             "ctime": "---now---",
             "submitted_by": 1,

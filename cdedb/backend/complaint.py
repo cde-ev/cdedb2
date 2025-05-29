@@ -173,3 +173,21 @@ class ComplaintBackend(AbstractBackend):
                 self.complaint_log(rs=rs, code=code, case_id=case_id, change_note=msg)
 
             return ret
+
+    @access("core_admin")
+    def get_visible_descriptions(
+        self, rs: RequestState, case_id: int
+    ) -> dict[int, str]:
+        """List all descriptions that are visible without unlock.
+
+        :returns: Mapping of entry *version* ids to descriptions..
+        """
+        case_id = affirm(int, case_id)
+        query = (
+            "SELECT ev.id, ev.description FROM complaint.entry_versions AS ev"
+            " LEFT JOIN complaint.entries AS e on ev.entry_id = e.id"
+            " WHERE e.case_id = %s AND e.entry_type = ANY(%s)"
+        )
+        params = [case_id, const.ComplaintEntryType.visible_types()]
+        # TODO Add encryption in database and decryption here.
+        return {e['id']: e['description'] for e in self.query_all(rs, query, params)}

@@ -235,6 +235,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="replace_entry_form"),
                     rule("/entry/replace", methods=_POST,
                          endpoint="replace_entry"),
+                    rule("/entry/remove", methods=_GET,
+                         endpoint="remove_entry_form"),
                     rule("/entry/remove", methods=_POST,
                          endpoint="remove_entry"),
                 )))),

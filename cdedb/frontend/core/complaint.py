@@ -14,6 +14,7 @@ from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
     RequestState,
+    determine_age_class,
     get_mandatory_form_fields,
     merge_dicts,
     now,
@@ -47,13 +48,26 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         persona_ids = rs.ambience['case'].get_persona_ids()
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        descriptions = {}
-        # descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
+        age_classes = {}
+        for persona_id, persona in personas.items():
+            if persona['is_event_realm']:
+                age_classes[persona_id] = determine_age_class(
+                    self.coreproxy.get_event_user(rs, persona_id)['birthday'],
+                    rs.ambience['case'].start_date,
+                )
+        descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         log_filter = ComplaintLogFilter(case_id=case_id)
         log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
         # events = rs.ambience['case'].list_events(log_entries)
-        return self.render(rs, "complaint/show_case",
-                           {'personas': personas, 'descriptions': descriptions,})
+        return self.render(
+            rs,
+            "complaint/show_case",
+            {
+                'personas': personas,
+                'descriptions': descriptions,
+                'age_classes': age_classes,
+            },
+        )
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
@@ -147,6 +161,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entry = self.complaintproxy.replace_entry(rs, data)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
+
+    @access("core_admin")
+    def remove_entry_form(
+        self, rs: RequestState, case_id: int, entry_id: int
+    ) -> Response:
+        """Render form."""
+        return self.render(rs, "complaint/remove_entry", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("entry_id")

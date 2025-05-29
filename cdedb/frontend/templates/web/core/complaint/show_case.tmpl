@@ -62,7 +62,12 @@
     </dl>
 
     {{ util.h(n_("Relevant Individuals")) }}
-    {# TODO #}
+    {#
+    TODO
+    {% if age_classes[persona.id] != enums['AgeClasses'].full %}
+        <strong>({{ gettext(age_classes[persona.id]|string) }})</strong>
+    {% endif %}
+    #}
 
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
@@ -83,9 +88,27 @@
     <div class="list-group list-group-hover">
     {% for entry in ambience['case']['entries'].values() %}
         <div id="entry{{ entry.id }}" class="list-group-item">
-            <span class="float-right">
-                {{ entry.active_version.timestamp|datetime(lang=lang) }}
-            </span>
+            <div class="float-right text-right">
+                <div style="margin-bottom: 5px;">
+                    {{ entry.active_version.timestamp|datetime(lang=lang) }}
+                </div>
+                <div class="button-par">
+                    {{ util.href(cdedblink('core/replace_entry_form'),
+                                 label="",
+                                 title=gettext("Replace"),
+                                 aclass="btn btn-xs btn-warning",
+                                 icon="pen",
+                                 readonly=entry.entry_type.is_locked)
+                    }}
+                    {{ util.href(cdedblink('core/remove_entry_form'),
+                                 label="",
+                                 title=gettext("Remove"),
+                                 aclass="btn btn-xs btn-danger",
+                                 icon="eye-slash",
+                                 readonly=entry.entry_type.is_locked)
+                    }}
+                </div>
+            </div>
             <strong>
                 {{ entry.entry_type.name }}
             </strong>
@@ -124,20 +147,24 @@
                 {% endtrans %}
             {% endif %}
             </span>
-            {% if descriptions.get(entry.id) %}
+            {% if descriptions.get(entry.active_version.id) %}
+                <hr class="nosp" />
                 <p>
-                    {{ description|md }}
+
+                    {{ descriptions[entry.active_version.id]|md }}
                 </p>
             {% endif %}
             {% if entry.parent %}
-                <br /> ◂
+                <hr class="nosp" />
+                ◂
                 {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
                          stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
                     {{ label }} at {{ stamp }}
                 {% endtrans %}
             {% endif %}
             {% if entry.children %}
-                <br /> ▸
+                <hr class="nosp" />
+                ▸
                 {% for child in entry.children %}
                     {% if not loop.first %}, {% endif %}
                     {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
