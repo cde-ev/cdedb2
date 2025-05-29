@@ -45,9 +45,14 @@ class ComplaintBackend(AbstractBackend):
         # return super().is_admin(rs)
 
     @access("core_admin")
-    def case_log(self, rs: RequestState, code: const.ComplaintLogCodes,
-                 case_id: Optional[int], persona_id: Optional[int] = None,
-                 change_note: Optional[str] = None) -> int:
+    def case_log(
+        self,
+        rs: RequestState,
+        code: const.ComplaintLogCodes,
+        case_id: Optional[int],
+        persona_id: Optional[int] = None,
+        change_note: Optional[str] = None,
+    ) -> int:
         """Make an entry in the log for concluded events.
 
         See
@@ -66,8 +71,11 @@ class ComplaintBackend(AbstractBackend):
         return self.sql_insert(rs, "complaint.log", data)
 
     @access("core_admin")
-    def retrieve_log(self, rs: RequestState, log_filter: ComplaintLogFilter,
-                          ) -> CdEDBLog:
+    def retrieve_log(
+        self,
+        rs: RequestState,
+        log_filter: ComplaintLogFilter,
+    ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
@@ -83,15 +91,21 @@ class ComplaintBackend(AbstractBackend):
             case_data = self.query_one(rs, *models.Case.get_select_query([case_id]))
             if not case_data:
                 raise KeyError(case_id)
-            entry_data = self.query_all(rs, *models.ComplaintEntry.get_select_query([case_id]))
+            entry_data = self.query_all(
+                rs, *models.ComplaintEntry.get_select_query([case_id])
+            )
             all_entries = {e['id']: e for e in entry_data}
-            version_data = self.query_all(rs, *models.ComplaintEntryVersion.get_select_query(all_entries.keys()))
+            version_data = self.query_all(
+                rs, *models.ComplaintEntryVersion.get_select_query(all_entries.keys())
+            )
 
             case_data["entries"] = []
             for entry in entry_data:
                 entry["all_versions"] = []
                 case_data["entries"].append(entry)
             for entry_version in version_data:
-                all_entries[entry_version["entry_id"]]["all_versions"].append(entry_version)
+                all_entries[entry_version["entry_id"]]["all_versions"].append(
+                    entry_version
+                )
 
             return models.Case.from_database(case_data)

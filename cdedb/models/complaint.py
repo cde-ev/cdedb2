@@ -1,4 +1,5 @@
 """Dataclass definitions for the complaint realm."""
+
 import dataclasses
 import datetime
 import functools
@@ -70,7 +71,9 @@ class ComplaintEntry(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        data["all_versions"] = list(ComplaintEntryVersion.many_from_database(data["all_versions"]).values())
+        data["all_versions"] = list(
+            ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
+        )
         return super().from_database(data)
 
 
