@@ -241,7 +241,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(str, (
             ("a string", "a string", None),
             ("string with stuff äößł€", "string with stuff äößł€", None),
-            ("", "", ValueError),
+            ("", None, ValueError),
             (54, "54", None),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
@@ -275,9 +275,9 @@ class TestValidation(TestValidationBase):
                 bytes, "no encoding", ignore_warnings=True, encoding=None)
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (  # type: ignore[type-abstract]
+        self.do_validator_test(Mapping, (
             ({"a": "dict"}, {"a": "dict"}, None),
-            ("something else", "", TypeError),
+            ("something else", None, TypeError),
         ))
 
     def test_sequence(self) -> None:
@@ -336,7 +336,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(PrintableASCII, (
             ("a string", "a string", None),
             ("string with stuff äößł€", None, ValueError),
-            ("", "", ValueError),
+            ("", None, ValueError),
             (54, "54", None),
         ))
 
@@ -345,7 +345,7 @@ class TestValidation(TestValidationBase):
             ("Secure String 0#", "Secure String 0#", None),
             ("short", None, ValueError),
             ("insecure", None, ValueError),
-            ("", "", ValueError),
+            ("", None, ValueError),
         ))
 
     def test_email(self) -> None:
@@ -379,9 +379,9 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(Persona, (
             (base_example, base_example, None),
             (stripped_example, stripped_example, None),
-            (key_example, key_example, KeyError),
-            (password_example, password_example, KeyError),
-            (value_example, value_example, ValueError),
+            (key_example, None, KeyError),
+            (password_example, None, KeyError),
+            (value_example, None, ValueError),
         ))
 
     def test_date(self) -> None:
@@ -517,10 +517,10 @@ class TestValidation(TestValidationBase):
             (base_example, base_example, None),
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
-            (key_example, key_example, KeyError),
+            (key_example, None, KeyError),
         ))
         self.do_validator_test(
-            Persona, [(value_example, value_example, ValidationWarning)],
+            Persona, [(value_example, None, ValidationWarning)],
             ignore_warnings=False)
 
     def test_event_user_data(self) -> None:
