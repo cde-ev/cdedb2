@@ -187,6 +187,24 @@ class TestComplaintBackend(BackendTest):
         ]
         self.assertLogEqual(log_expectation, "complaint", case_id=case_id)
 
+    @as_users("anton")
+    def test_create_case(self) -> None:
+        new_case_data: CdEDBObject = {
+            "kind": const.ComplaintKind.mobbing.value,
+            "is_grave": False,
+            "summary": "<REDACTED> hat jemandem Kaugummi in die Haare geklebt.",
+        }
+        new_case = self.complaint.create_case(self.key, new_case_data)
+        expectation = models.Case(id=new_case.id, **new_case_data, entries={})
+        self.assertEqual(expectation.as_dict(), new_case.as_dict())
+        self.assertEqual(expectation, new_case)
+        log_expectation = [
+            {
+                "code": const.ComplaintLogCodes.case_created,
+            }
+        ]
+        self.assertLogEqual(log_expectation, "complaint", case_id=new_case.id)
+
 
 class TestComplaintValidation(TestValidation):
     def test_case(self) -> None:

@@ -92,11 +92,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.create_case_form(rs)
         with TransactionObserver(rs, self, "create_complaint_case"):
-            new_id = self.complaintproxy.create_case(rs, data)
+            new_case = self.complaintproxy.create_case(rs, data)
             # Add involvees to the case
             # Add first entry with info as text
-        rs.notify_return_code(new_id)
-        return self.redirect(rs, "complaint/show_case", {'case_id': new_id})
+        rs.notify_return_code(bool(new_case))
+        return self.redirect(rs, "complaint/show_case", {'case_id': new_case.id})
 
     @access("core_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:

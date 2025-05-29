@@ -191,6 +191,18 @@ class ComplaintBackend(AbstractBackend):
             return ret
 
     @access("core_admin")
+    def create_case(self, rs: RequestState, data: CdEDBObject) -> models.Case:
+        data = cast(CdEDBObject, affirm(models.Case, data, creation=True))
+
+        with Atomizer(rs):
+            new_id = self.sql_insert(rs, models.Case.database_table, data)
+            new_case = models.Case(id=cast(vtypes.ID, new_id), **data, entries={})
+            self.complaint_log(
+                rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
+            )
+        return new_case
+
+    @access("core_admin")
     def get_visible_descriptions(
         self, rs: RequestState, case_id: int
     ) -> dict[int, str]:

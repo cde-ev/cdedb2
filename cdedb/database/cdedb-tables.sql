@@ -527,6 +527,7 @@ CREATE TABLE complaint.cases (
 );
 GRANT SELECT ON complaint.cases TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON complaint.cases TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.cases_id_seq TO cdb_admin;
 
 -- Maybe explicitly model entry versions after all?
 CREATE TABLE complaint.entries (
