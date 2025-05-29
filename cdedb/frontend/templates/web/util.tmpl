@@ -175,12 +175,13 @@
    aclass:                  see 'href' macro
    readonly:                see 'href' macro
    title:                   see 'href' macro
+   icon:                    see 'href' macro
 #}
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
-                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
+                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
             persona_name(persona, use_legal_name, include_nickname, with_family_name),
-            aclass=aclass, readonly=readonly, title=title) -}}
+            aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 
 {# Display the name of a given persona

@@ -46,7 +46,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin")
     def show_case(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
-        return self.render(rs, "complaint/show_case", {})
+        persona_ids = rs.ambience['case'].get_persona_ids()
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        return self.render(rs, "complaint/show_case",
+                           {'personas': personas})
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
@@ -55,12 +58,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata("appellant_id", "is_affected", "target_ids", "info")
+    @REQUESTdata("appellant_id", "is_affected", "affected_ids", "target_ids", "info")
     def create_case(
         self,
         rs: RequestState, data: dict[str, Any],
         appellant_id: int,
         is_affected: bool,
+        affected_ids: Optional[Collection[int]],
         target_ids: Optional[Collection[int]],
         info: str
     ) -> Response:
@@ -87,14 +91,27 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret)
         return self.redirect(rs, "complaint/show_case")
 
+    @access("core_admin", modi={"POST"})
+    def unlock_case(self, rs: RequestState, case_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        persona_ids = rs.ambience['case'].get_persona_ids()
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        descriptions = self.complaintproxy.unlock_case(rs, case_id)
+        rs.notify_return_code(1)
+        # Do maybe not redirect here?
+        return self.render(rs, "complaint/show_case",
+                           {'personas': personas, 'descriptions': descriptions})
+
     @access("core_admin")
-    def add_entry_form(self, rs: RequestState) -> Response:
+    def add_entry_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
         return self.render(rs, "complaint/configure_entry", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=True))
-    def add_entry(self, rs: RequestState, data: dict[str, Any]) -> Response:
+    def add_entry(self, rs: RequestState, case_id: int, data: dict[str, Any]
+                  ) -> Response:
         if rs.has_validation_errors():
             return self.add_entry_form(rs)
         entry = self.complaintproxy.add_entry(rs, data)
@@ -102,13 +119,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
     @access("core_admin")
-    def replace_entry_form(self, rs: RequestState) -> Response:
+    def replace_entry_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
         return self.render(rs, "complaint/configure_entry", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
-    def replace_entry(self, rs: RequestState, data: dict[str, Any]) -> Response:
+    def replace_entry(self, rs: RequestState, case_id: int, data: dict[str, Any]
+                      ) -> Response:
         if rs.has_validation_errors():
             return self.replace_entry_form(rs)
         entry = self.complaintproxy.replace_entry(rs, data)
@@ -117,7 +135,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("entry_id")
-    def remove_entry(self, rs: RequestState, entry_id: int) -> Response:
+    def remove_entry(self, rs: RequestState, case_id: int, entry_id: int) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
         entry = self.complaintproxy.delete_entry(rs, entry_id)

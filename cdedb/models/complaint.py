@@ -25,6 +25,16 @@ class Case(CdEDataclass):
 
     entries: CdEDataclassMap["ComplaintEntry"]
 
+    def get_persona_ids(self) -> set[int]:
+        ret = set()
+        # TODO add more people here
+        for entry in self.entries.values():
+            if entry.concerned_id:
+                ret.add(entry.concerned_id)
+            update = {version.submitted_by for version in entry.all_versions}
+            ret.update(update)
+        return ret
+
     def get_sortkey(self) -> Sortkey:
         today = now().date()
         return (self.kind, self.end_date or today, self.start_date or today)
@@ -47,7 +57,7 @@ class ComplaintEntry(CdEDataclass):
     case_id: vtypes.ID
     entry_type: const.ComplaintEntryType
 
-    root_entry: vtypes.ID | None
+    root_entry_id: vtypes.ID | None
 
     concerned_id: vtypes.ID | None
 
@@ -65,6 +75,20 @@ class ComplaintEntry(CdEDataclass):
     @functools.cached_property
     def deleted_versions(self) -> list["ComplaintEntryVersion"]:
         return [version for version in self.all_versions if version.dtime]
+
+    @property
+    def root_entry(self) -> Self:
+        if self.root_entry_id is None:
+            return None
+        return self.case.entries[self.root_entry_id]
+
+    @functools.cached_property
+    def children(self) -> list["ComplaintEntry"]:
+        return [
+            entry
+            for entry in self.case.entries.values()
+            if entry.root_entry_id == self.id
+        ]
 
     def get_sortkey(self) -> Sortkey:
         return ()

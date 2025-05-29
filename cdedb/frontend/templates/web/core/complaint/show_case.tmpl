@@ -1,0 +1,120 @@
+{% set sidenav_active='assembly_show' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/util.tmpl" as assembly_util with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+
+{% set jshint = 'weak' %}
+
+{% block title %}
+    {% trans id=ambience['case'].id|string %}
+        Case {{ id }}
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+                            icon="scale-unbalanced") }}
+{% endblock %}
+
+
+{% block content %}
+    <dl class="dl-horizontal">
+        <dt title="{% trans %}Summary{% endtrans %}">
+            {% trans %}Summary{% endtrans %}
+        </dt>
+        <dd id="case-summary">
+            {{ ambience['case'].summary }}
+        </dd>
+        <dt title="{% trans %}Kind{% endtrans %}">
+            {% trans %}Kind{% endtrans %}
+        </dt>
+        <dd id="case-kind">
+            {{ gettext(ambience['case'].kind|string) }}
+        </dd>
+        <dt title="{% trans %}is grave{% endtrans %}">
+            {% trans %}is grave{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=ambience['case']['is_grave'],
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+        <dt title="{% trans %}Start Date{% endtrans %}">
+        {% trans %}Start Date{% endtrans %}
+        </dt>
+        <dd>
+            {{ ambience['case'].start_date|date(lang=lang) }}
+        </dd>
+        <dt title="{% trans %}End Date{% endtrans %}">
+            {% trans %}End Date{% endtrans %}
+        </dt>
+        <dd >
+            {{ ambience['case'].end_date|date(lang=lang) }}
+        </dd>
+    </dl>
+
+    {{ util.h(n_("Relevant Individuals")) }}
+    {# TODO #}
+
+    {{ util.h(n_("Events_[[in a complaint]]")) }}
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add entry"),
+                     aclass="btn btn-sm btn-success", icon="plus") }}
+        <form action="{{ cdedblink("core/unlock_case") }}"
+            method="POST"
+            id="addentryform"
+            class="display-inline"
+        >
+            {{ util.anti_csrf_token('core/unlock_case') }}
+            {{ util.input_submit(label=gettext("Unlock"),
+                                 aclass="btn btn-sm btn-primary",
+                                 icon="unlock") }}
+        </form>
+    </div>
+
+    <div class="list-group list-group-hover">
+    {% for entry in ambience['case']['entries'].values() %}
+        <div class="list-group-item">
+            <span class="float-right">
+                {{ entry.active_version.timestamp|datetime(lang=lang) }}
+            </span>
+            <strong>
+                {{ entry.entry_type }}
+            </strong>
+            {% trans author="Some Author" %}
+                by {{ author }}
+            {% endtrans %}
+            {% if entry.concerned_id %}
+                {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
+                     (for {{ concerned }})
+                {% endtrans %}
+            {% endif %}
+            <br />
+            <span class="text-muted">
+            {% if entry.active_version.length %}
+                {% trans length=entry.active_version.length %}
+                    {{ length }} characters.
+                {% endtrans %}
+            {% endif %}
+            {% if entry.all_versions|length > 1 %}
+                {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
+                         count=entry.all_versions|length - 1,
+                         submitted_by=entry.active_version.submitted_by %}
+                    {{ count }} previous versions, last changed at {{ ctime }} by {{ submitted_by }}.
+                {% endtrans %}
+            {% else %}
+                {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
+                         submitted_by=entry.active_version.submitted_by %}
+                    Created at {{ ctime }} by {{ submitted_by }}.
+                {% endtrans %}
+            {% endif %}
+            </span>
+            {# ToDo: Previous versions? Root/Children? Show content if not hidden! #}
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}

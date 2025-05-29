@@ -4360,7 +4360,7 @@
             "id": 1,
             "kind": 15,
             "is_grave": false,
-            "summary": "Berta schnarcht ganz furchtbar.",
+            "summary": "Jemand schnarcht ganz furchtbar.",
             "start_date": "2025-05-28",
             "end_date": null
         }
@@ -4370,35 +4370,35 @@
             "id": 1,
             "case_id": 1,
             "entry_type": 101,
-            "root_entry": null,
+            "root_entry_id": null,
             "concerned_id": null
         },
         {
             "id": 2,
             "case_id": 1,
             "entry_type": 201,
-            "root_entry": null,
+            "root_entry_id": null,
             "concerned_id": 2
         },
         {
             "id": 3,
             "case_id": 1,
             "entry_type": 211,
-            "root_entry": 2,
+            "root_entry_id": 2,
             "concerned_id": null
         },
         {
             "id": 4,
             "case_id": 1,
             "entry_type": 301,
-            "root_entry": null,
+            "root_entry_id": null,
             "concerned_id": null
         },
         {
             "id": 5,
             "case_id": 1,
             "entry_type": 311,
-            "root_entry": 4,
+            "root_entry_id": 4,
             "concerned_id": 2
         }
     ],

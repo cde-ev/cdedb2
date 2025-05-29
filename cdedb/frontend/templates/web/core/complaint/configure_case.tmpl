@@ -24,7 +24,8 @@
 {% block breadcrumb %}
     {{ super() }}
     {% if ambience["case"] %}
-        {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']), icon="scale-unbalanced") }}
+        {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+                                icon="scale-unbalanced") }}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Change"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Create Case"), active=True) }}
@@ -54,6 +55,14 @@
                 );
             </script>
             {{ util.form_input_checkbox(name="is_grave", label=gettext("is affected")) }}
+            {{ util.form_input_text(name="target_ids", label=gettext("Further Affected"), anid="input-affected_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-affected_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
             {{ util.form_input_text(name="target_ids", label=gettext("Target"), anid="input-target_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
                                     info=gettext("You can add further involvees later.")) }}
@@ -64,7 +73,8 @@
                 );
             </script>
             <hr />
-            {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True) }}
+            {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True.
+                                        info=gettext("Avoid using names of further affected individuals in this field.")) }}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}
         {% endif %}
     </form>

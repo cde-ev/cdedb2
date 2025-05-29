@@ -13,7 +13,7 @@ class TestComplaintBackend(BackendTest):
             id=1,  # type: ignore[arg-type]
             kind=const.ComplaintKind.other_harassment,
             is_grave=False,
-            summary="Berta schnarcht ganz furchtbar.",
+            summary="Jemand schnarcht ganz furchtbar.",
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
             entries={
@@ -21,7 +21,7 @@ class TestComplaintBackend(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.initial_information,
-                    root_entry=None,
+                    root_entry_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -41,7 +41,7 @@ class TestComplaintBackend(BackendTest):
                     id=2,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.provisional_statement_given,
-                    root_entry=None,
+                    root_entry_id=None,
                     concerned_id=2,  # type: ignore[arg-type]
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -61,7 +61,7 @@ class TestComplaintBackend(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.statement_signed,
-                    root_entry=2,  # type: ignore[arg-type]
+                    root_entry_id=2,  # type: ignore[arg-type]
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -81,7 +81,7 @@ class TestComplaintBackend(BackendTest):
                     id=4,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.agreement,
-                    root_entry=None,
+                    root_entry_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -101,7 +101,7 @@ class TestComplaintBackend(BackendTest):
                     id=5,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    root_entry=4,  # type: ignore[arg-type]
+                    root_entry_id=4,  # type: ignore[arg-type]
                     concerned_id=2,  # type: ignore[arg-type]
                     all_versions=[
                         models.ComplaintEntryVersion(
