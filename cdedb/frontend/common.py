@@ -77,6 +77,7 @@ import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
@@ -1832,6 +1833,7 @@ class AmbienceDict(typing.TypedDict):
     assembly: NotRequired[CdEDBObject]
     ballot: NotRequired[CdEDBObject]
     mailinglist: NotRequired[models_ml.Mailinglist]
+    case: NotRequired[models_complaint.Case]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1925,6 +1927,8 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                                     in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
               'mailinglist_id', 'mailinglist', ()),
+        Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
+              'case_id', 'case', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
