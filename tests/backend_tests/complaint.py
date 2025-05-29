@@ -95,6 +95,19 @@ class TestComplaintBackend(BackendTest):
                         models.ComplaintEntryVersion(
                             id=4,  # type: ignore[arg-type]
                             entry_id=4,  # type: ignore[arg-type]
+                            length=80,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=1,  # type: ignore[arg-type]
+                            dtime=nearly_now(),
+                            deleted_by=1,  # type: ignore[arg-type]
+                            dreason="Ungünstige Wortwahl.",
+                        ),
+                        models.ComplaintEntryVersion(
+                            id=5,  # type: ignore[arg-type]
+                            entry_id=4,  # type: ignore[arg-type]
                             length=77,
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 16, tzinfo=datetime.timezone.utc
@@ -115,9 +128,9 @@ class TestComplaintBackend(BackendTest):
                     concerned_id=2,  # type: ignore[arg-type]
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=5,  # type: ignore[arg-type]
+                            id=6,  # type: ignore[arg-type]
                             entry_id=5,  # type: ignore[arg-type]
-                            length=None,
+                            length=53,
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 16, tzinfo=datetime.timezone.utc
                             ),
