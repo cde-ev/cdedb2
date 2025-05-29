@@ -1,0 +1,32 @@
+{% set sidenav_active='core_cases_log' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}Case Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/view_case_log"), gettext("Case Log"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% call logging.table(log, 'Event') %}
+        {% for entry in log %}
+            {% set link = None %}
+            {% if entry['case_id'] %}
+                {#
+                {% set link = util.href(cdedblink("core/show_case", {"case_id": entry['case_id']}),
+                                        gettext("Fall %s")|format(entry['case_id']) %}
+                #}
+            {% endif %}
+            {{ logging.row(entry, enums['ComplaintLogCodes'], loop.index, 'case_id', link) }}
+        {% endfor %}
+    {% endcall %}
+
+    {{ logging.navigation('core/view_case_log', total, length, loglinks) }}
+    {{ logging.filter('core/view_case_log', enums['ComplaintLogCodes'], 'admin_all_users', 'case_id') }}
+{% endblock %}

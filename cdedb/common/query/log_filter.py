@@ -205,6 +205,29 @@ class ChangelogLogFilter(GenericLogFilter):
 
         return conditions, params
 
+@dataclasses.dataclass
+class ComplaintLogFilter(GenericLogFilter):
+    log_table = "complaint.log"
+    log_code_class = const.ComplaintLogCodes
+    additional_columns = ("case_id",)
+
+    case_id: Optional[int] = None
+    _case_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def case_ids(self) -> list[int]:
+        if self.case_id:
+            return [self.case_id]
+        return self._case_ids
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.case_ids():
+            conditions.append("case_id = ANY(%s)")
+            params.append(self.case_ids())
+
+        return conditions, params
+
 
 @dataclasses.dataclass
 class AssemblyLogFilter(GenericLogFilter):

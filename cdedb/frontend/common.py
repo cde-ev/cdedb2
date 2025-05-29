@@ -83,6 +83,7 @@ import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -448,6 +449,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.pasteventproxy = make_proxy(PastEventBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         # Provide mailman access
         secrets = SecretsConfig()
         # local variables to prevent closure over secrets
