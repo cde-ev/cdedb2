@@ -81,7 +81,7 @@ class ComplaintEntry(CdEDataclass):
         return [version for version in self.all_versions if version.dtime]
 
     @property
-    def root_entry(self) -> Self:
+    def parent(self) -> Self:
         if self.root_entry_id is None:
             return None
         return self.case.entries[self.root_entry_id]

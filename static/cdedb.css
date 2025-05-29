@@ -718,7 +718,8 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td, tr:target td{
+tr.ls-selected td, tr:target td, .list-group-item:target
+{
     background: #d9edf7;
 }
 .ls-item {

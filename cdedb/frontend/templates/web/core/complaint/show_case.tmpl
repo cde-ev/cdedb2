@@ -1,7 +1,6 @@
-{% set sidenav_active='assembly_show' %}
-{% extends "web/assembly/base.tmpl" %}
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/assembly/util.tmpl" as assembly_util with context %}
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
@@ -18,11 +17,16 @@
 
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
-                            icon="scale-unbalanced") }}
+                            icon="gavel") }}
 {% endblock %}
 
 
 {% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/change_case'), gettext("Edit"),
+                     aclass="btn btn-sm btn-warning", icon="pen") }}
+    </div>
+
     <dl class="dl-horizontal">
         <dt title="{% trans %}Summary{% endtrans %}">
             {% trans %}Summary{% endtrans %}
@@ -78,21 +82,22 @@
 
     <div class="list-group list-group-hover">
     {% for entry in ambience['case']['entries'].values() %}
-        <div class="list-group-item">
+        <div id="entry{{ entry.id }}" class="list-group-item">
             <span class="float-right">
                 {{ entry.active_version.timestamp|datetime(lang=lang) }}
             </span>
             <strong>
-                {{ entry.entry_type }}
+                {{ entry.entry_type.name }}
             </strong>
-            {% trans author="Some Author" %}
-                by {{ author }}
-            {% endtrans %}
             {% if entry.concerned_id %}
                 {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
                      (for {{ concerned }})
                 {% endtrans %}
             {% endif %}
+            <br />
+            {% trans author="Some Author" %}
+                by {{ author }}
+            {% endtrans %}
             <br />
             <span class="text-muted">
             {% if entry.active_version.length %}
@@ -101,19 +106,47 @@
                 {% endtrans %}
             {% endif %}
             {% if entry.all_versions|length > 1 %}
-                {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
-                         count=entry.all_versions|length - 1,
-                         submitted_by=entry.active_version.submitted_by %}
-                    {{ count }} previous versions, last changed at {{ ctime }} by {{ submitted_by }}.
+                {% trans count=entry.all_versions|length - 1 %}
+                    {{ count }} previous versions.
+                {% endtrans %}
+                <br />
+                {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
+                         submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
+                         ctime=entry.all_versions[0].ctime|datetime(lang=lang),
+                         first_submitted_by=util.persona_anchor(personas[entry.all_versions[0].submitted_by]) %}
+                    Created at {{ ctime }} by {{ first_submitted_by }};
+                    last changed at {{ mtime }} by {{ submitted_by }}.
                 {% endtrans %}
             {% else %}
-                {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
-                         submitted_by=entry.active_version.submitted_by %}
-                    Created at {{ ctime }} by {{ submitted_by }}.
+                {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
+                         submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
+                    Created at {{ mtime }} by {{ submitted_by }}.
                 {% endtrans %}
             {% endif %}
             </span>
-            {# ToDo: Previous versions? Root/Children? Show content if not hidden! Where put the edit buttons? #}
+            {% if descriptions.get(entry.id) %}
+                <p>
+                    {{ description|md }}
+                </p>
+            {% endif %}
+            {% if entry.parent %}
+                <br /> ◂
+                {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
+                         stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
+                    {{ label }} at {{ stamp }}
+                {% endtrans %}
+            {% endif %}
+            {% if entry.children %}
+                <br /> ▸
+                {% for child in entry.children %}
+                    {% if not loop.first %}, {% endif %}
+                    {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
+                             stamp=child.active_version.timestamp|date(lang=lang) %}
+                        {{ label }} at {{ stamp }}
+                    {% endtrans %}
+                {% endfor %}
+            {% endif %}
+            {# ToDo: Previous versions? Show content if not hidden! Add edit buttons? #}
         </div>
     {% endfor %}
     </div>

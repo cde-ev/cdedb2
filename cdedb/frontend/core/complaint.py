@@ -47,11 +47,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         persona_ids = rs.ambience['case'].get_persona_ids()
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        descriptions = {}
         # descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
-        # ToDo: Retrieve here, or on dataclass construction?
-        # log_filter = ComplaintLogFilter(case_id=case_id)
-        # log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
-        return self.render(rs, "complaint/show_case", {'personas': personas})
+        log_filter = ComplaintLogFilter(case_id=case_id)
+        log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
+        # events = rs.ambience['case'].list_events(log_entries)
+        return self.render(rs, "complaint/show_case",
+                           {'personas': personas, 'descriptions': descriptions,})
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
