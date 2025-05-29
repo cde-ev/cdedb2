@@ -204,6 +204,21 @@ class ComplaintBackend(AbstractBackend):
             )
         return new_case
 
+    def _insert_entry_version(
+        self, rs: RequestState, entry_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
+        """Process data for a new entry version and insert it."""
+        self.affirm_atomized_context(rs)
+        if data.get("description"):
+            data["length"] = len(data["description"])
+        else:
+            data["length"] = None
+        data.update(
+            entry_id=entry_id,
+            submitted_by=rs.user.persona_id,
+        )
+        return self.sql_insert(rs, models.ComplaintEntryVersion.database_table, data)
+
     @access("core_admin")
     def add_entry(
         self,
@@ -228,18 +243,7 @@ class ComplaintBackend(AbstractBackend):
             new_entry_id = self.sql_insert(
                 rs, models.ComplaintEntry.database_table, entry_data
             )
-            version_data.update(
-                entry_id=new_entry_id,
-                length=(
-                    len(version_data["description"])
-                    if version_data.get("description")
-                    else None
-                ),
-                submitted_by=rs.user.persona_id,
-            )
-            self.sql_insert(
-                rs, models.ComplaintEntryVersion.database_table, version_data
-            )
+            self._insert_entry_version(rs, new_entry_id, version_data)
         return new_entry_id
 
     @access("core_admin")
@@ -275,15 +279,7 @@ class ComplaintBackend(AbstractBackend):
                     'deleted_by': rs.user.persona_id,
                 }
                 self.sql_update(rs, models.ComplaintEntryVersion.database_table, update)
-            data.update(
-                entry_id=entry_id,
-                length=len(data["description"]) if data.get("description") else None,
-                submitted_by=rs.user.persona_id,
-            )
-            new_id = self.sql_insert(
-                rs, models.ComplaintEntryVersion.database_table, data
-            )
-        return new_id
+            return self._insert_entry_version(rs, entry_id, data)
 
     @access("core_admin")
     def get_visible_descriptions(
