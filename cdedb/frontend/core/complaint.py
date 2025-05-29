@@ -38,7 +38,6 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 
 
 class CoreComplaintMixin(CoreBaseFrontend):
-
     @access("core_admin")
     def complaint_index(self, rs: RequestState) -> Response:
         return self.render(rs, "complaint/index", {})
@@ -48,8 +47,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         persona_ids = rs.ambience['case'].get_persona_ids()
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        return self.render(rs, "complaint/show_case",
-                           {'personas': personas})
+        return self.render(rs, "complaint/show_case", {'personas': personas})
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
@@ -61,12 +59,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @REQUESTdata("appellant_id", "is_affected", "affected_ids", "target_ids", "info")
     def create_case(
         self,
-        rs: RequestState, data: dict[str, Any],
+        rs: RequestState,
+        data: dict[str, Any],
         appellant_id: int,
         is_affected: bool,
         affected_ids: Optional[Collection[int]],
         target_ids: Optional[Collection[int]],
-        info: str
+        info: str,
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
@@ -100,8 +99,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         descriptions = self.complaintproxy.unlock_case(rs, case_id)
         rs.notify_return_code(1)
         # Do maybe not redirect here?
-        return self.render(rs, "complaint/show_case",
-                           {'personas': personas, 'descriptions': descriptions})
+        return self.render(
+            rs,
+            "complaint/show_case",
+            {'personas': personas, 'descriptions': descriptions},
+        )
 
     @access("core_admin")
     def add_entry_form(self, rs: RequestState, case_id: int) -> Response:
@@ -110,8 +112,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=True))
-    def add_entry(self, rs: RequestState, case_id: int, data: dict[str, Any]
-                  ) -> Response:
+    def add_entry(
+        self, rs: RequestState, case_id: int, data: dict[str, Any]
+    ) -> Response:
         if rs.has_validation_errors():
             return self.add_entry_form(rs)
         entry = self.complaintproxy.add_entry(rs, data)
@@ -125,8 +128,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
-    def replace_entry(self, rs: RequestState, case_id: int, data: dict[str, Any]
-                      ) -> Response:
+    def replace_entry(
+        self, rs: RequestState, case_id: int, data: dict[str, Any]
+    ) -> Response:
         if rs.has_validation_errors():
             return self.replace_entry_form(rs)
         entry = self.complaintproxy.replace_entry(rs, data)
@@ -145,10 +149,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("core_admin")
-    def view_case_log(self, rs: RequestState, data: CdEDBObject, download: bool
-                      ) -> Response:
+    def view_case_log(
+        self, rs: RequestState, data: CdEDBObject, download: bool
+    ) -> Response:
         """View activities."""
         return self.generic_view_log(
-            rs, data, ComplaintLogFilter, self.complaintproxy.retrieve_log,
-            download=download, template="complaint/view_case_log"
+            rs,
+            data,
+            ComplaintLogFilter,
+            self.complaintproxy.retrieve_log,
+            download=download,
+            template="complaint/view_case_log",
         )
