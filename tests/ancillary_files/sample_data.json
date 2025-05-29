@@ -4355,6 +4355,110 @@
     ],
     "core.anonymous_messages": [],
     "core.postal_code_locations": [],
+    "complaint.cases": [
+        {
+            "id": 1,
+            "kind": 15,
+            "is_grave": false,
+            "summary": "Berta schnarcht ganz furchtbar.",
+            "start_date": "2025-05-29",
+            "end_date": null
+        }
+    ],
+    "complaint.entries": [
+        {
+            "id": 1,
+            "case_id": 1,
+            "entry_type": 101,
+            "root_entry": null,
+            "concerned_id": null
+        },
+        {
+            "id": 2,
+            "case_id": 1,
+            "entry_type": 201,
+            "root_entry": null,
+            "concerned_id": 2
+        },
+        {
+            "id": 3,
+            "case_id": 1,
+            "entry_type": 211,
+            "root_entry": 2,
+            "concerned_id": null
+        },
+        {
+            "id": 4,
+            "case_id": 1,
+            "entry_type": 301,
+            "root_entry": null,
+            "concerned_id": null
+        },
+        {
+            "id": 5,
+            "case_id": 1,
+            "entry_type": 321,
+            "root_entry": 4,
+            "concerned_id": 2
+        }
+    ],
+    "complaint.entry_versions": [
+        {
+            "entry_id": 1,
+            "description": "Mehrere Mitbewohnys von Berta haben sich über penetrantes Schnarrchen beschwert, wodurch auf der Akademie nicht ausreichend Schlaf bekommen haben.",
+            "length": 146,
+            "timestamp": "2025-05-28T14:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": null,
+            "deleted_by": null,
+            "dreason": null
+        },
+        {
+            "entry_id": 2,
+            "description": "Ich war mit Berta in einem Haus und konnte durch das Schnarchen so wenig schlafen, dass ich in meinem Philosophiekurs nicht aufmerksam war und von den KLs angemeckert wurde. Ich möchte bitte in Zukunft nicht mehr im gleichen Haus eingeteilt werden wie Berta.",
+            "length": 258,
+            "timestamp": "2025-05-28T14:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": null,
+            "deleted_by": null,
+            "dreason": null
+        },
+        {
+            "entry_id": 3,
+            "description": null,
+            "length": null,
+            "timestamp": "2025-05-28T15:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": null,
+            "deleted_by": null,
+            "dreason": null
+        },
+        {
+            "entry_id": 4,
+            "description": "Berta hat sich bereit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            "length": 77,
+            "timestamp": "2025-05-28T16:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": null,
+            "deleted_by": null,
+            "dreason": null
+        },
+        {
+            "entry_id": 5,
+            "description": null,
+            "length": null,
+            "timestamp": "2025-05-28T16:00:00",
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "dtime": null,
+            "deleted_by": null,
+            "dreason": null
+        }
+    ],
     "cde.org_period": [
         {
             "id": 41,
