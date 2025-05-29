@@ -18,10 +18,8 @@
         {% for entry in log %}
             {% set link = None %}
             {% if entry['case_id'] %}
-                {#
                 {% set link = util.href(cdedblink("core/show_case", {"case_id": entry['case_id']}),
-                                        gettext("Fall %s")|format(entry['case_id']) %}
-                #}
+                                        gettext("Fall %s")|format(entry['case_id'])) %}
             {% endif %}
             {{ logging.row(entry, enums['ComplaintLogCodes'], loop.index, 'case_id', link) }}
         {% endfor %}
