@@ -91,10 +91,9 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         log_filter: ComplaintLogFilter,
     ) -> CdEDBLog:
-        """Get recorded activity for concluded events.
+        """Retrieve log entries related to complaint cases.
 
-        See
-        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+        The full history of a case consists of both log entries and complaint entries.
         """
         log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
@@ -103,6 +102,7 @@ class ComplaintBackend(AbstractBackend):
     def get_cases(
         self, rs: RequestState, case_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Case]:
+        """Retrieve metadata and a list of complaint entries for some complaint cases."""
         case_ids = affirm_set(vtypes.ID, case_ids)
         with Atomizer(rs):
             case_data = self.query_all(rs, *models.Case.get_select_query(case_ids))
@@ -138,6 +138,7 @@ class ComplaintBackend(AbstractBackend):
     def set_case(
         self, rs: RequestState, case_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
+        """Alter metadata of a complaint case."""
         case_id = affirm(vtypes.ID, case_id)
         data = cast(CdEDBObject, affirm(models.Case, data))
 
@@ -192,6 +193,7 @@ class ComplaintBackend(AbstractBackend):
 
     @access("core_admin")
     def create_case(self, rs: RequestState, data: CdEDBObject) -> models.Case:
+        """Create a new complaint case. Only includes the metadata and not entries."""
         data = cast(CdEDBObject, affirm(models.Case, data, creation=True))
 
         with Atomizer(rs):
