@@ -85,27 +85,43 @@ class ComplaintBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin")
-    def get_case(self, rs: RequestState, case_id: int) -> models.Case:
-        case_id = affirm(vtypes.ID, case_id)
+    def get_cases(
+        self, rs: RequestState, case_ids: Collection[int]
+    ) -> models.CdEDataclassMap[models.Case]:
+        case_ids = affirm_set(vtypes.ID, case_ids)
         with Atomizer(rs):
-            case_data = self.query_one(rs, *models.Case.get_select_query([case_id]))
+            case_data = self.query_all(rs, *models.Case.get_select_query(case_ids))
             if not case_data:
-                raise KeyError(case_id)
+                return {}
+            all_cases = {e['id']: e for e in case_data}
             entry_data = self.query_all(
-                rs, *models.ComplaintEntry.get_select_query([case_id])
+                rs, *models.ComplaintEntry.get_select_query(case_ids)
             )
             all_entries = {e['id']: e for e in entry_data}
             version_data = self.query_all(
                 rs, *models.ComplaintEntryVersion.get_select_query(all_entries.keys())
             )
 
-            case_data["entries"] = []
+            for case in case_data:
+                case["entries"] = []
             for entry in entry_data:
                 entry["all_versions"] = []
-                case_data["entries"].append(entry)
+                all_cases[entry["case_id"]]["entries"].append(entry)
             for entry_version in version_data:
                 all_entries[entry_version["entry_id"]]["all_versions"].append(
                     entry_version
                 )
 
-            return models.Case.from_database(case_data)
+            return models.Case.many_from_database(case_data)
+
+    class _GetCaseProtocol(Protocol):
+        def __call__(self, rs: RequestState, case_id: int) -> CdEDBObject: ...
+
+    get_case = singularize(get_cases, 'case_ids', 'case_id')
+
+    @access("core_admin")
+    def set_case(
+        self, rs: RequestState, case_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
+        case_id = affirm(vtypes.ID, case_id)
+        data = affirm(models.Case, data)
