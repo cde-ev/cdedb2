@@ -1,4 +1,4 @@
-{% if ambience["complaint"] %}
+{% if ambience["case"] %}
     {% set action_target = "core/change_case" %}
     {% set sidenav_active='complaint_index' %}
 {% else %}
@@ -73,7 +73,7 @@
                 );
             </script>
             <hr />
-            {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True.
+            {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True,
                                         info=gettext("Avoid using names of further affected individuals in this field.")) }}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}
         {% endif %}

@@ -51,8 +51,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # ToDo: Retrieve here, or on dataclass construction?
         # log_filter = ComplaintLogFilter(case_id=case_id)
         # log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
-        return self.render(rs, "complaint/show_case",
-                           {'personas': personas})
+        return self.render(rs, "complaint/show_case", {'personas': personas})
 
     @access("core_admin")
     def create_case_form(self, rs: RequestState) -> Response:
@@ -84,16 +83,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
+        merge_dicts(rs.values, rs.ambience['case'].as_dict())
         return self.render(rs, "complaint/configure_case", {})
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=False))
-    def change_case(self, rs: RequestState, data: dict[str, Any]) -> Response:
+    def change_case(
+        self, rs: RequestState, case_id: int, data: dict[str, Any]
+    ) -> Response:
         if rs.has_validation_errors():
             return self.change_case_form(rs)
-        ret = self.complaintproxy.set_case(rs, data)
+        ret = self.complaintproxy.set_case(rs, case_id, data)
         rs.notify_return_code(ret)
-        return self.redirect(rs, "complaint/show_case")
+        return self.redirect(rs, "core/show_case")
 
     @access("core_admin", modi={"POST"})
     def unlock_case(self, rs: RequestState, case_id: int) -> Response:
@@ -127,8 +129,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
     @access("core_admin")
-    def replace_entry_form(self, rs: RequestState, case_id: int, entry_id: int
-                           ) -> Response:
+    def replace_entry_form(
+        self, rs: RequestState, case_id: int, entry_id: int
+    ) -> Response:
         """Render form."""
         return self.render(rs, "complaint/configure_entry", {})
 
