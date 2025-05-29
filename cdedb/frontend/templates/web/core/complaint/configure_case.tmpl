@@ -48,7 +48,7 @@
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
         {% else %}
             {{ util.form_input_text(name="appellant_id", label=gettext("Appellant"), anid="input-appellant_id",
-                                    placeholder=gettext("DB-XXXX-X")) }}
+                                    placeholder=gettext("DB-XXXX-X"), outerclass="nosp") }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-appellant_id').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},

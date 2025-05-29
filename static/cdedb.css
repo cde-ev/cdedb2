@@ -298,7 +298,7 @@ summary.btn {
 }
 
 /* no-space and more-space classes */
-p.nosp {
+p.nosp, .form-group.nosp {
     margin-bottom: 0;
 }
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {

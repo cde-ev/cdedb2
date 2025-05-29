@@ -570,6 +570,7 @@ class ComplaintEntryType(CdEIntEnum):
     def has_description(self) -> bool:
         return self.root in {
             None,
+            ComplaintEntryType.agreement,
             ComplaintEntryType.provisional_to_arbcom,
             ComplaintEntryType.definite_to_arbcom
         } and self not in {
