@@ -43,6 +43,8 @@ from cdedb.config import Config
 
 T = TypeVar('T')
 
+INVAL = object()
+
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(
@@ -62,7 +64,9 @@ class TestValidation(unittest.TestCase):
         """
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
-            with self.subTest(inval=inval):
+            with self.subTest(inval=inval, exception=exception):
+                if retval is INVAL:
+                    retval = inval
                 if not exception:
                     self.assertEqual(
                         validate.validate_check(
@@ -75,16 +79,6 @@ class TestValidation(unittest.TestCase):
                         retval,
                     )
                 else:
-                    self.assertEqual(
-                        None,
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams)[0],
-                    )
-                    self.assertNotEqual(
-                        [],
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams)[1],
-                    )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
@@ -94,6 +88,16 @@ class TestValidation(unittest.TestCase):
                             type_, inval, ignore_warnings, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
+                    self.assertEqual(
+                        retval,
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[0],
+                    )
+                    self.assertNotEqual(
+                        [],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[1],
+                    )
                 onepass = validate.validate_check(
                     type_, inval, ignore_warnings, **extraparams)[0]
                 twopass = validate.validate_check(
