@@ -521,7 +521,7 @@ CREATE TABLE complaint.cases (
     id         serial PRIMARY KEY,
     kind       integer NOT NULL, -- database.constants.ComplaintKind
     is_grave   boolean DEFAULT FALSE,
-    summary    varchar,
+    summary    varchar NOT NULL,
     start_date date,
     end_date   date
 );

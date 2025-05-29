@@ -16,14 +16,18 @@ from cdedb.models.common import CdEDataclass, CdEDataclassMap
 class Case(CdEDataclass):
     database_table = "complaint.cases"
 
+    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+
     kind: const.ComplaintKind
-    is_grave: bool
-    summary: str | None
+    is_grave: bool = False
+    summary: str
 
-    start_date: datetime.date | None
-    end_date: datetime.date | None
+    start_date: datetime.date | None = None
+    end_date: datetime.date | None = None
 
-    entries: CdEDataclassMap["ComplaintEntry"]
+    entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
+        metadata={"validation_exclude": True}
+    )
 
     def get_persona_ids(self) -> set[int]:
         ret = set()
