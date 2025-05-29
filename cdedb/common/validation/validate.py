@@ -95,6 +95,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
@@ -4936,6 +4937,9 @@ def _log_filter(
     val = _examine_dictionary_fields(val, mandatory, optional)
 
     return LogFilter(val)
+
+
+_create_dataclass_validator(models_complaint.Case, models_complaint.Case)
 
 
 E = TypeVar('E', bound=enum.Enum)

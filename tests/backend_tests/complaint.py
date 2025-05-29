@@ -4,6 +4,8 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import nearly_now
 from tests.common import BackendTest, as_users
+from tests.other_tests import TestValidation
+from tests.other_tests.test_validation import INVAL
 
 
 class TestComplaintBackend(BackendTest):
@@ -142,3 +144,125 @@ class TestComplaintBackend(BackendTest):
             self.assertEqual(expected_entry, real_entry)
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
+
+
+class TestComplaintValidation(TestValidation):
+    def test_case(self) -> None:
+        # Test successful creations.
+        self.do_validator_test(
+            models.Case,
+            [
+                (
+                    {
+                        "kind": const.ComplaintKind.other_harassment,
+                        "is_grave": False,
+                        "summary": "<REDACTED> schnarcht.",
+                        "start_date": datetime.date(2025, 5, 28),
+                    },
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.mobbing.value,
+                        "is_grave": False,
+                        "summary": "<REDACTED> hat jemandem Kaugummi in die Haare geklebt.",
+                    },
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.volunteer_harassment,
+                        "is_grave": False,
+                        "summary": "<REDACTED> hat mal wieder einen halben Roman in die Orga-Notizen geschrieben.",
+                        "start_date": datetime.date.today(),
+                        "end_date": datetime.date.today(),
+                    },
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "kind": str(const.ComplaintKind.verbal_abuse),
+                        "is_grave": False,
+                        "summary": "<REDACTED> hat Kursteilys angeschriehen.",
+                        "end_date": datetime.date.today(),
+                    },
+                    {
+                        "kind": const.ComplaintKind.verbal_abuse,
+                        "is_grave": False,
+                        "summary": "<REDACTED> hat Kursteilys angeschriehen.",
+                        "end_date": datetime.date.today(),
+                    },
+                    None,
+                ),
+            ],
+            {"creation": True},
+        )
+        # Test unsuccessful creations.
+        self.do_validator_test(
+            models.Case,
+            [
+                (
+                    {
+                        "summary": "<REDACTED> schnarcht.",
+                        "is_grave": False,
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    None,
+                    KeyError("Mandatory key missing. (kind)"),
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.other_harassment,
+                        "summary": "<REDACTED> schnarcht.",
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    None,
+                    KeyError("Mandatory key missing. (is_grave)"),
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.other_harassment,
+                        "is_grave": False,
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    None,
+                    KeyError("Mandatory key missing. (summary)"),
+                ),
+            ],
+            {"creation": True},
+        )
+        # Test unsuccessful updates.
+        self.do_validator_test(
+            models.Case,
+            [
+                (
+                    {
+                        "kind": 2**30,
+                        "summary": "<REDACTED> schnarcht.",
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    None,
+                    ValueError(
+                        "Invalid input for the enumeration %(enum)s (kind)",
+                        {'enum': const.ComplaintKind},
+                    ),
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.other_harassment,
+                        "summary": "",
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    None,
+                    ValueError("Must not be empty. (summary)"),
+                ),
+            ],
+        )
