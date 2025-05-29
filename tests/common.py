@@ -80,6 +80,7 @@ from cdedb.common.query.log_filter import (
     AssemblyLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     CoreLogFilter,
     EventLogFilter,
     FinanceLogFilter,
@@ -541,6 +542,7 @@ class BackendTest(CdEDBTest):
             'event': (self.event.retrieve_log, EventLogFilter),
             'ml': (self.ml.retrieve_log, MlLogFilter),
             'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+            'complaint': (self.complaint.retrieve_log, ComplaintLogFilter),
         }
         log_retriever, log_filter_class = logs[realm]
         _, log = log_retriever(self.key, log_filter_class(**kwargs))
@@ -552,7 +554,7 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
                 if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):

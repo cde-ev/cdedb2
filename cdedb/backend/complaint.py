@@ -147,26 +147,41 @@ class ComplaintBackend(AbstractBackend):
             ret = self.sql_update(rs, models.Case.database_table, data)
 
             log_entries = []
-            if (new_kind := data.get("kind")) != current.kind:
-                msg = f"{rs.log_gettext(str(current.kind))} -> {rs.log_gettext(str(new_kind))}"
+            if "kind" in data and (new_kind := data["kind"]) != current.kind:
+                msg = (
+                    f"{rs.log_gettext(str(current.kind))!r}"
+                    f" -> {rs.log_gettext(str(new_kind))!r}"
+                )
                 code = const.ComplaintLogCodes.case_changed_kind
                 log_entries.append((msg, code))
-            if (new_is_grave := data.get("is_grave")) != current.is_grave:
+            if (
+                "is_grave" in data
+                and (new_is_grave := data["is_grave"]) != current.is_grave
+            ):
                 if new_is_grave:
                     msg = "Ist jetzt schwerwiegend."
                 else:
                     msg = "Ist nicht mehr schwerwiegend."
                 code = const.ComplaintLogCodes.case_changed_grave
                 log_entries.append((msg, code))
-            if (new_summary := data.get("summary")) != current.summary:
+            if (
+                "summary" in data
+                and (new_summary := data["summary"]) != current.summary
+            ):
                 msg = f"{current.summary} -> {new_summary}"
                 code = const.ComplaintLogCodes.case_changed_summary
                 log_entries.append((msg, code))
-            if (new_start_date := data.get("start_date")) != current.start_date:
+            if (
+                "start_date" in data
+                and (new_start_date := data["start_date"]) != current.start_date
+            ):
                 msg = _format_date_change_note(current.start_date, new_start_date)
                 code = const.ComplaintLogCodes.case_changed_start_date
                 log_entries.append((msg, code))
-            if (new_end_date := data.get("end_date")) != current.end_date:
+            if (
+                "end_date" in data
+                and (new_end_date := data["end_date"]) != current.end_date
+            ):
                 code = const.ComplaintLogCodes.case_changed_end_date
                 msg = _format_date_change_note(current.end_date, new_end_date)
                 log_entries.append((msg, code))

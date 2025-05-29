@@ -2,7 +2,7 @@ import datetime
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import nearly_now
+from cdedb.common import CdEDBObject, nearly_now
 from tests.common import BackendTest, as_users
 from tests.other_tests import TestValidation
 from tests.other_tests.test_validation import INVAL
@@ -144,6 +144,48 @@ class TestComplaintBackend(BackendTest):
             self.assertEqual(expected_entry, real_entry)
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
+
+    @as_users("anton")
+    def test_set_case(self) -> None:
+        case_id = 1
+        case_data = self.complaint.get_case(self.key, case_id).as_dict()
+        case_update = {
+            "is_grave": True,
+            "end_date": datetime.date.today(),
+        }
+        self.assertLess(0, self.complaint.set_case(self.key, case_id, case_update))
+        case_data |= case_update
+        self.assertEqual(
+            case_data, self.complaint.get_case(self.key, case_id).as_dict()
+        )
+        case_update = {
+            "summary": "Da war eigentlich gar nix.",
+            "start_date": None,
+        }
+        self.assertLess(0, self.complaint.set_case(self.key, case_id, case_update))
+        self.assertEqual(
+            case_data | case_update,
+            self.complaint.get_case(self.key, case_id).as_dict(),
+        )
+        log_expectation = [
+            {
+                "code": const.ComplaintLogCodes.case_changed_grave,
+                "change_note": "Ist jetzt schwerwiegend.",
+            },
+            {
+                "code": const.ComplaintLogCodes.case_changed_end_date,
+                "change_note": f"Hinzugefügt ({datetime.date.today().strftime('%d.%m.%Y')})",
+            },
+            {
+                "code": const.ComplaintLogCodes.case_changed_summary,
+                "change_note": "Jemand schnarcht ganz furchtbar. -> Da war eigentlich gar nix.",
+            },
+            {
+                "code": const.ComplaintLogCodes.case_changed_start_date,
+                "change_note": "Entfernt (28.05.2025)",
+            },
+        ]
+        self.assertLogEqual(log_expectation, "complaint", case_id=case_id)
 
 
 class TestComplaintValidation(TestValidation):
