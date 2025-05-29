@@ -1,0 +1,21 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}
+    	Case Archive
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases"), active=True) }}
+{% endblock %}
+
+
+{% block content %}
+
+{% endblock %}
