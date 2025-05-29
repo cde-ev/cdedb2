@@ -506,9 +506,11 @@ class ComplaintEntryType(CdEIntEnum):
 
     # Agreements
     agreement = 301  #: the factions reached a formal agreement as a partial resolution
-    agreement_measure = 321  #:
-    agreement_measure_revoked = 331  #:
-    agreement_measure_expired = 341  #:
+    agreement_measure = 311  #:
+    agreement_measure_explanation = 321  #:
+    agreement_measure_comment = 331  #:
+    agreement_measure_revoked = 341  #:
+    agreement_measure_expired = 351  #:
 
     # Provisional arbitration
     provisional_to_arbcom = 401  #:
@@ -522,9 +524,9 @@ class ComplaintEntryType(CdEIntEnum):
     definite_to_arbcom = 501  #:
     definite_measure = 511  #:
     definite_measure_explanation = 521  #:
-    definite_measure_expired = 531  #:
+    definite_measure_comment = 531  #:
     definite_measure_revoked = 541  #:
-    definite_measure_comment = 551  #:
+    definite_measure_expired = 551  #:
 
     # Conclusion
     faction_summary = 1001  #: of some companions for a faction
@@ -544,14 +546,17 @@ class ComplaintEntryType(CdEIntEnum):
             et.statement_sent: et.provisional_statement_given,
             et.statement_received: et.provisional_statement_given,
             et.agreement_measure: et.agreement,
+            et.agreement_measure_explanation: et.agreement,
+            et.agreement_measure_comment: et.agreement,
             et.agreement_measure_revoked: et.agreement,
             et.agreement_measure_expired: et.agreement,
             et.provisional_measure: et.provisional_to_arbcom,
-            et.provisional_measure_comment: et.provisional_to_arbcom,
             et.provisional_measure_explanation: et.provisional_to_arbcom,
+            et.provisional_measure_comment: et.provisional_to_arbcom,
             et.provisional_measure_revoked: et.provisional_to_arbcom,
             et.provisional_measure_expired: et.provisional_to_arbcom,
             et.definite_measure: et.definite_to_arbcom,
+            et.definite_measure_explanation: et.definite_to_arbcom,
             et.definite_measure_comment: et.definite_to_arbcom,
             et.definite_measure_revoked: et.definite_to_arbcom,
             et.definite_measure_expired: et.definite_to_arbcom,
@@ -564,6 +569,7 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.provisional_to_arbcom,
             ComplaintEntryType.definite_to_arbcom
         } and not self in {
+            ComplaintEntryType.agreement_measure_expired,
             ComplaintEntryType.provisional_measure_expired,
             ComplaintEntryType.definite_measure_expired,
         }
