@@ -2,11 +2,10 @@
 import dataclasses
 import datetime
 import functools
-
 from typing import Self
 
-import cdedb.database.constants as const
 import cdedb.common.validation.types as vtypes
+import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
@@ -50,22 +49,18 @@ class ComplaintEntry(CdEDataclass):
 
     concerned_id: vtypes.ID
 
-    all_versions: CdEDataclassMap["ComplaintEntryVersion"]
+    all_versions: list["ComplaintEntryVersion"]
 
     @functools.cached_property
     def active_version(self) -> "ComplaintEntryVersion | None":
-        for version in self.all_versions.values():
+        for version in self.all_versions:
             if version.dtime is None:
                 return version
         return None
 
     @functools.cached_property
-    def deleted_versions(self) -> CdEDataclassMap["ComplaintEntryVersion"]:
-        return {
-            version.id: version
-            for version in self.all_versions.values()
-            if version.dtime
-        }
+    def deleted_versions(self) -> list["ComplaintEntryVersion"]:
+        return [version for version in self.all_versions if version.dtime]
 
     def get_sortkey(self) -> Sortkey:
         return ()
