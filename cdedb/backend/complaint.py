@@ -158,7 +158,7 @@ class ComplaintBackend(AbstractBackend):
                 code = const.ComplaintLogCodes.case_changed_grave
                 log_entries.append((msg, code))
             if (new_summary := data.get("summary")) != current.summary:
-                msg = f"{current.summary} -> {current.summary}"
+                msg = f"{current.summary} -> {new_summary}"
                 code = const.ComplaintLogCodes.case_changed_summary
                 log_entries.append((msg, code))
             if (new_start_date := data.get("start_date")) != current.start_date:

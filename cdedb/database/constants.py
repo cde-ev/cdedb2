@@ -572,7 +572,7 @@ class ComplaintEntryType(CdEIntEnum):
             None,
             ComplaintEntryType.provisional_to_arbcom,
             ComplaintEntryType.definite_to_arbcom
-        } and not self in {
+        } and self not in {
             ComplaintEntryType.agreement_measure_expired,
             ComplaintEntryType.provisional_measure_expired,
             ComplaintEntryType.definite_measure_expired,

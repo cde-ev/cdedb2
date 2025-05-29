@@ -205,6 +205,7 @@ class ChangelogLogFilter(GenericLogFilter):
 
         return conditions, params
 
+
 @dataclasses.dataclass
 class ComplaintLogFilter(GenericLogFilter):
     log_table = "complaint.log"

@@ -2,7 +2,8 @@
 
 import collections
 import datetime
-from typing import Any, Collection, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -66,6 +67,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'personas': personas,
                 'descriptions': descriptions,
                 'age_classes': age_classes,
+                'log_entries': log_entries,
             },
         )
 
