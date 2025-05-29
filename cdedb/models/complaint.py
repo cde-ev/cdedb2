@@ -19,8 +19,8 @@ class Case(CdEDataclass):
     is_grave: bool
     summary: str | None
 
-    start_date: datetime.datetime | None
-    end_date: datetime.datetime | None
+    start_date: datetime.date | None
+    end_date: datetime.date | None
 
     entries: CdEDataclassMap["ComplaintEntry"]
 
@@ -30,9 +30,9 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        data["entries"] = ComplaintEntry.from_database(data["entries"])
+        data["entries"] = ComplaintEntry.many_from_database(data["entries"])
         ret = super().from_database(data)
-        for entry in data["entries"]:
+        for entry in data["entries"].values():
             entry.case = ret
         return ret
 
@@ -40,6 +40,7 @@ class Case(CdEDataclass):
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntry(CdEDataclass):
     database_table = "complaint.entries"
+    entity_key = "case_id"
 
     case: Case = dataclasses.field(init=False, compare=False, repr=False)
     case_id: vtypes.ID
@@ -47,9 +48,11 @@ class ComplaintEntry(CdEDataclass):
 
     root_entry: vtypes.ID | None
 
-    concerned_id: vtypes.ID
+    concerned_id: vtypes.ID | None
 
-    all_versions: list["ComplaintEntryVersion"]
+    all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
+        metadata={"database_exclude": True},
+    )
 
     @functools.cached_property
     def active_version(self) -> "ComplaintEntryVersion | None":
@@ -67,13 +70,14 @@ class ComplaintEntry(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        data["all_versions"] = ComplaintEntryVersion.from_database(data["all_versions"])
+        data["all_versions"] = list(ComplaintEntryVersion.many_from_database(data["all_versions"]).values())
         return super().from_database(data)
 
 
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntryVersion(CdEDataclass):
     database_table = "complaint.entry_versions"
+    entity_key = "entry_id"
 
     entry_id: vtypes.ID
 
@@ -84,7 +88,7 @@ class ComplaintEntryVersion(CdEDataclass):
     ctime: datetime.datetime
     submitted_by: vtypes.ID
 
-    dtime: datetime.datetime
+    dtime: datetime.datetime | None
     deleted_by: vtypes.ID | None
     dreason: str | None
 
