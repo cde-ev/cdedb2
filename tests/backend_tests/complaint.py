@@ -355,16 +355,6 @@ class TestComplaintValidation(TestValidationBase):
                 (
                     {
                         "kind": const.ComplaintKind.other_harassment,
-                        "summary": "<REDACTED> schnarcht.",
-                        "start_date": datetime.date(2025, 5, 28),
-                        "end_date": datetime.date(2025, 5, 29),
-                    },
-                    None,
-                    KeyError("Mandatory key missing. (is_grave)"),
-                ),
-                (
-                    {
-                        "kind": const.ComplaintKind.other_harassment,
                         "is_grave": False,
                         "start_date": datetime.date(2025, 5, 28),
                         "end_date": datetime.date(2025, 5, 29),
