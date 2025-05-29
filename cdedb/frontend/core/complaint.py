@@ -51,7 +51,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         age_classes = {}
         for persona_id, persona in personas.items():
-            if persona['is_event_realm']:
+            if persona['is_event_realm'] and rs.ambience['case'].start_date:
                 age_classes[persona_id] = determine_age_class(
                     self.coreproxy.get_event_user(rs, persona_id)['birthday'],
                     rs.ambience['case'].start_date,
@@ -110,7 +110,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self, rs: RequestState, case_id: int, data: dict[str, Any]
     ) -> Response:
         if rs.has_validation_errors():
-            return self.change_case_form(rs)
+            return self.change_case_form(rs, case_id)
         ret = self.complaintproxy.set_case(rs, case_id, data)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
@@ -141,7 +141,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self, rs: RequestState, case_id: int, data: dict[str, Any]
     ) -> Response:
         if rs.has_validation_errors():
-            return self.add_entry_form(rs)
+            return self.add_entry_form(rs, case_id)
         entry = self.complaintproxy.add_entry(rs, data)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
@@ -156,11 +156,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
     def replace_entry(
-        self, rs: RequestState, case_id: int, data: dict[str, Any]
+        self, rs: RequestState, case_id: int, entry_id: int, data: dict[str, Any]
     ) -> Response:
         if rs.has_validation_errors():
-            return self.replace_entry_form(rs)
-        entry = self.complaintproxy.replace_entry(rs, data)
+            return self.replace_entry_form(rs, case_id, entry_id)
+        entry = self.complaintproxy.replace_entry(rs, entry_id, data)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 

@@ -33,6 +33,7 @@ from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s
 
 DATE_FORMAT = "%d.%m.%Y"
 
@@ -183,11 +184,15 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions..
         """
         case_id = affirm(int, case_id)
-        query = (
-            "SELECT ev.id, ev.description FROM complaint.entry_versions AS ev"
-            " LEFT JOIN complaint.entries AS e on ev.entry_id = e.id"
-            " WHERE e.case_id = %s AND e.entry_type = ANY(%s)"
-        )
-        params = [case_id, const.ComplaintEntryType.visible_types()]
+        query = """
+            SELECT ev.id, ev.description
+            FROM complaint.entry_versions AS ev
+                LEFT JOIN complaint.entries AS e on ev.entry_id = e.id
+            WHERE e.case_id = %s AND e.entry_type = ANY(%s)
+        """
+        params: list[DatabaseValue_s] = [
+            case_id,
+            const.ComplaintEntryType.visible_types(),
+        ]
         # TODO Add encryption in database and decryption here.
         return {e['id']: e['description'] for e in self.query_all(rs, query, params)}

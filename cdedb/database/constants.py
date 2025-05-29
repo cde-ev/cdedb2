@@ -9,7 +9,7 @@ their symbolic names provided by this module should be used.
 
 import builtins
 import enum
-from typing import Optional, Self
+from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -533,7 +533,7 @@ class ComplaintEntryType(CdEIntEnum):
     synthesis = 1011  #:
 
     @classmethod
-    def visible_types(cls) -> set[Self]:
+    def visible_types(cls) -> set["ComplaintEntryType"]:
         return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
 
     @property
@@ -567,7 +567,7 @@ class ComplaintEntryType(CdEIntEnum):
         }.get(self)
 
     @property
-    def has_description(self):
+    def has_description(self) -> bool:
         return self.root in {
             None,
             ComplaintEntryType.provisional_to_arbcom,
@@ -583,7 +583,7 @@ class ComplaintEntryType(CdEIntEnum):
         return self.has_description and self.is_hidden
 
     @property
-    def has_concerned(self):
+    def has_concerned(self) -> bool:
         return self in {
             ComplaintEntryType.provisional_statement_given,
             ComplaintEntryType.provisional_measure,

@@ -30,7 +30,7 @@ class Case(CdEDataclass):
     )
 
     def get_persona_ids(self) -> set[int]:
-        ret = set()
+        ret: set[int] = set()
         # TODO add more people here
         for entry in self.entries.values():
             if entry.concerned_id:
@@ -80,7 +80,7 @@ class ComplaintEntry(CdEDataclass):
         return [version for version in self.all_versions if version.dtime]
 
     @property
-    def parent(self) -> Self:
+    def parent(self) -> "ComplaintEntry | None":
         if self.root_entry_id is None:
             return None
         return self.case.entries[self.root_entry_id]
