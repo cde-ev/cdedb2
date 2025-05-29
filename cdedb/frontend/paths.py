@@ -212,9 +212,27 @@ CDEDB_PATHS = werkzeug.routing.Map((
             sub('/complaint', (
                 rule("/log", methods=_GET,
                      endpoint="view_case_log"),
-                sub('/complaint', (
+                sub('/complaint/<int:case_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_case"),
+                    rule("/create", methods=_GET,
+                         endpoint="create_case_form"),
+                    rule("/create", methods=_POST,
+                         endpoint="create_case"),
+                    rule("/change", methods=_GET,
+                         endpoint="change_case_form"),
+                    rule("/change", methods=_POST,
+                         endpoint="change_case"),
+                    rule("/entry/add", methods=_GET,
+                         endpoint="add_entry_form"),
+                    rule("/entry/add", methods=_POST,
+                         endpoint="add_entry"),
+                    rule("/entry/replace", methods=_GET,
+                         endpoint="replace_entry_form"),
+                    rule("/entry/replace", methods=_POST,
+                         endpoint="replace_entry"),
+                    rule("/entry/remove", methods=_POST,
+                         endpoint="remove_entry"),
                 )))),
         )))),
     werkzeug.routing.EndpointPrefix('cde/', (
