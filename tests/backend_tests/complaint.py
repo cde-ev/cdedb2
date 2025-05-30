@@ -161,7 +161,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
 
-        self.assertEqual({1, 2, 3, 4, 7}, reality.get_persona_ids())
+        self.assertEqual({1, 2, 3, 4, 7}, reality.get_persona_ids(tuple()))
 
     @as_users("anton")
     def test_set_case(self) -> None:

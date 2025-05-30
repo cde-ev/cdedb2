@@ -5,12 +5,12 @@ import datetime
 import functools
 import itertools
 from collections.abc import Collection
-from typing import Self
+from typing import Self, Union
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
@@ -46,9 +46,12 @@ class Case(CdEDataclass):
                 ret.setdefault(persona_id, set()).add(companion)
         return ret
 
-    def get_persona_ids(self) -> set[int]:
+    def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = set(itertools.chain.from_iterable(self.involved.values()))
         ret.update(self.companions)
+        if log_entries:
+            ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
+            ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
         for entry in self.entries.values():
             if entry.concerned_id:
                 ret.add(entry.concerned_id)
@@ -59,6 +62,19 @@ class Case(CdEDataclass):
                 )
             )
         return ret
+
+    def list_entries(
+        self, log_entries: tuple[CdEDBObject, ...]
+    ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:
+        mutable_entries = [e for e in self.entries.values() if e.active_version]
+        all_entries= list(log_entries) + mutable_entries
+        all_entries = xsorted(
+            all_entries,
+            key=lambda e: e.active_version.timestamp  # type: ignore[union-attr]
+            if isinstance(e, ComplaintEntry)
+            else e['ctime'],
+        )
+        return all_entries
 
     def get_sortkey(self) -> Sortkey:
         today = now().date()
@@ -209,7 +225,7 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     def get_sortkey(self) -> Sortkey:
-        return (self.ctime,)
+        return (self.timestamp, self.ctime)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:

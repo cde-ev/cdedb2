@@ -19,6 +19,7 @@ from cdedb.common import (
     get_mandatory_form_fields,
     merge_dicts,
     now,
+    unwrap,
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
@@ -50,7 +51,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
     def show_case(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
-        persona_ids = rs.ambience['case'].get_persona_ids()
+        # Collect all entries to be displayed.
+        log_filter = ComplaintLogFilter(case_id=case_id)
+        _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
+        log_entries = log_entries or tuple()
+        all_entries = rs.ambience['case'].list_entries(log_entries)
+
+        # Collect all persona data which may be displayed.
+        persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
         personas = self.coreproxy.get_personas(rs, persona_ids)
         age_classes = {}
         for persona_id, persona in personas.items():
@@ -59,10 +67,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     self.coreproxy.get_event_user(rs, persona_id)['birthday'],
                     rs.ambience['case'].start_date,
                 )
+
+        # Collect descriptions separately as a privacy precaution
         descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
-        log_filter = ComplaintLogFilter(case_id=case_id)
-        log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
-        # events = rs.ambience['case'].list_events(log_entries)
+
         return self.render(
             rs,
             "complaint/show_case",
@@ -70,7 +78,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'personas': personas,
                 'descriptions': descriptions,
                 'age_classes': age_classes,
-                'log_entries': log_entries,
+                'all_entries': all_entries,
             },
         )
 
