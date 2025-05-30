@@ -182,7 +182,9 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
 
-    authors: set[vtypes.ID] = dataclasses.field(metadata={"database_exclude": True})
+    authors: list[vtypes.ID] = dataclasses.field(
+        metadata={"request_include": True, "database_exclude": True}
+    )
 
     def get_sortkey(self) -> Sortkey:
         return (self.ctime,)

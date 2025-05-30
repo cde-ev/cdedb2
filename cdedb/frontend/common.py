@@ -151,6 +151,7 @@ from cdedb.filter import (
     safe_filter,
     sanitize_None,
 )
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
@@ -2533,6 +2534,22 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+DC = TypeVar('DC', bound=CdEDataclass)
+
+
+def extract_and_check_dataclass_validation(
+    rs: RequestState,
+    type_: type[DC],
+    name: Optional[str] = None,
+    *,
+    creation: bool,
+    **kwargs: Any
+) -> Optional[CdEDBObject]:
+    data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
+    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    return cast(Optional[CdEDBObject], data)
 
 
 def inspect_validation(

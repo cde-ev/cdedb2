@@ -4940,8 +4940,58 @@ def _log_filter(
 
 
 _create_dataclass_validator(models_complaint.Case, models_complaint.Case)
-_create_dataclass_validator(models_complaint.ComplaintEntry, models_complaint.ComplaintEntry)
-_create_dataclass_validator(models_complaint.ComplaintEntryVersion, models_complaint.ComplaintEntryVersion)
+
+
+@_create_dataclass_validator(
+    models_complaint.ComplaintEntry,
+    models_complaint.ComplaintEntry
+)
+def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    entry_type: const.ComplaintEntryType = val['entry_type']
+
+    # Validate concerned_id dependent on entry_type
+    type_ = CdedbID if entry_type.has_concerned else NoneType
+    with errs:
+        val['concerned_id'] = _ALL_TYPED[type_](
+                val.get('concerned_id'), 'concerned_id', **kwargs)
+
+    # Validate parent_id dependent on entry_type
+    type_ = ID if entry_type.root else NoneType
+    with errs:
+        val['parent_id'] = _ALL_TYPED[type_](
+            val.get('parent_id'), 'parent_id', **kwargs)
+
+    if val.get('authors'):
+        # Remove any duplicates
+        val['authors'] = list(set(val['authors']))
+    else:
+        errs.append(ValueError('authors', n_("May not be empty.")))
+
+    return val
+
+
+@_create_dataclass_validator(
+    models_complaint.ComplaintEntryVersion,
+    models_complaint.ComplaintEntryVersion,
+)
+def _complaint_entry_version(
+    val: Any, argname: str, entry_type: const.ComplaintEntryType | None, **kwargs: Any
+) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    if not entry_type:
+        raise ValidationSummary(ValueError(
+            "entry_type", "Must provide entry_type for setting entry."))
+
+    # Validate concerned_id dependent on entry_type
+    type_ = str if entry_type.has_description else NoneType
+    with errs:
+        val['description'] = _ALL_TYPED[type_](
+                val.get('description'), 'description', **kwargs)
+
+    return val
 
 
 E = TypeVar('E', bound=enum.Enum)

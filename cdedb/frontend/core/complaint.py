@@ -37,6 +37,7 @@ from cdedb.frontend.common import (
     periodic,
     request_dict_extractor,
     request_extractor,
+    extract_and_check_dataclass_validation as extract_and_check_dataclass,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 
@@ -183,20 +184,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        entry_data = request_dict_extractor(
-            rs, models.ComplaintEntry.requestdict_fields(creation=True)
-        )
-        entry_data = cast(
-            CdEDBObject | None,
-            check(rs, models.ComplaintEntry, entry_data, creation=True),
-        )
-        version_data = request_dict_extractor(
-            rs, models.ComplaintEntryVersion.requestdict_fields(creation=True)
-        )
-        version_data["authors"] = [rs.user.persona_id]
-        version_data = cast(
-            CdEDBObject | None,
-            check(rs, models.ComplaintEntryVersion, version_data, creation=True),
+        entry_data = extract_and_check_dataclass(
+            rs, models.ComplaintEntry, creation=True
+        ) or {}
+        version_data = extract_and_check_dataclass(
+            rs, models.ComplaintEntryVersion, creation=True,
+            entry_type=entry_data.get('entry_type'),
         )
         if rs.has_validation_errors() or not entry_data or not version_data:
             return self.add_entry_form(
@@ -220,6 +213,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         rs.ignore_validation_errors()
+        if not rs.ambience['entry'].active_version:
+            rs.notify('error', n_("Can not replace deleted entry."))
+            self.redirect(rs, "core/show_case", {'case_id': case_id})
+        assert rs.ambience['entry'].active_version is not None
+        merge_dicts(
+            rs.values,
+            rs.ambience['entry'].active_version.as_dict(),
+        )
         personas = {}
         if rs.ambience['entry'].concerned_id:
             personas = self.coreproxy.get_personas(
@@ -233,21 +234,25 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("dreason")
-    @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
     def replace_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_id: int,
-        data: dict[str, Any],
-        dreason: str | None,
+        dreason: str,
     ) -> Response:
-        if rs.has_validation_errors():
-            return self.replace_entry_form(rs, case_id, data['id'])
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        entry = self.complaintproxy.replace_entry_version(rs, data['id'], data, dreason)
-        rs.notify_return_code(1)
+        data = extract_and_check_dataclass(
+            rs,
+            models.ComplaintEntryVersion,
+            creation=False,
+            entry_type=rs.ambience['entry'].entry_type,
+        )
+        if rs.has_validation_errors() or not data:
+            return self.replace_entry_form(rs, case_id, entry_id)
+        entry = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
+        rs.notify_return_code(bool(entry))
         return self.redirect(rs, "core/show_case", {'entry': entry})
 
     @access("core_admin")

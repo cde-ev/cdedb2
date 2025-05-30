@@ -220,7 +220,7 @@ class CdEDataclass:
         field_names.discard("id")
         fields = []
         for field in dataclasses.fields(cls):
-            if field.name not in field_names:
+            if field.name not in field_names and not field.metadata.get('request_include'):
                 continue
             if field.metadata.get('request_exclude'):
                 continue
