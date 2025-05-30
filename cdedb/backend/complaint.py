@@ -358,6 +358,14 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Unknown users."))
 
             case = self.get_case(rs, case_id)
+
+            if any(
+                persona_ids & involved
+                for inv_type, involved in case.involved.items()
+                if inv_type != involved_type
+            ):
+                raise ValueError(n_("Already involved otherwise."))
+
             newly_involved = persona_ids - case.involved.get(involved_type, set())
             if not newly_involved:
                 return -1

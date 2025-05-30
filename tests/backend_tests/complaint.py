@@ -332,6 +332,10 @@ class TestComplaintBackend(BackendTest):
                 self.key, case_id, const.ComplaintInvolvementType.target, [1]
             ),
         )
+        with self.assertRaisesRegex(ValueError, "Already involved otherwise."):
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.other, [1]
+            )
 
         case = self.complaint.get_case(self.key, case_id)
         expectation.involved.setdefault(
