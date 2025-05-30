@@ -184,6 +184,10 @@ class ComplaintEntryVersion(CdEDataclass):
         return mandatory, optional
 
 
+class AccessLog:
+    database_table = "complaint.access_log"
+
+
 class ComplaintAuthors:
     database_table = "complaint.authors"
     entity_key = "entry_version_id"

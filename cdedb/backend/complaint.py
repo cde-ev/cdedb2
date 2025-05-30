@@ -329,24 +329,111 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
+    def _get_descriptions(
+        self, rs: RequestState, case_id: int, visible: bool
+    ) -> dict[int, str]:
+        query = f"""
+            SELECT versions.id, versions.description
+            FROM
+                {models.ComplaintEntryVersion.database_table} AS versions
+                LEFT JOIN {models.ComplaintEntry.database_table} AS entries
+                    ON versions.entry_id = entries.id
+            WHERE
+                entries.case_id = %(case_id)s
+                AND entries.entry_type = ANY(%(entry_types)s)
+        """
+        params: dict[str, DatabaseValue_s] = {
+            "case_id": case_id,
+            "entry_types": const.ComplaintEntryType.visible_types()
+            if visible
+            else const.ComplaintEntryType.hidden_types(),
+        }
+        decrypt = lambda x: x
+        if not visible:
+            # TODO: implement decryption here.
+            pass
+        return {
+            e["id"]: decrypt(e["description"])
+            for e in self.query_all(rs, query, params)
+        }
+
     @access("core_admin")
     def get_visible_descriptions(
         self, rs: RequestState, case_id: int
     ) -> dict[int, str]:
         """List all descriptions that are visible without unlock.
 
-        :returns: Mapping of entry *version* ids to descriptions..
+        :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        query = """
-            SELECT ev.id, ev.description
-            FROM complaint.entry_versions AS ev
-                LEFT JOIN complaint.entries AS e on ev.entry_id = e.id
-            WHERE e.case_id = %s AND e.entry_type = ANY(%s)
+        return self._get_descriptions(rs, case_id, visible=True)
+
+    def _log_unlock(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+        self.affirm_atomized_context(rs)
+        ret = self.complaint_log(
+            rs=rs, code=const.ComplaintLogCodes.case_unlocked, case_id=case_id
+        )
+        query = f"""
+            INSERT INTO {models.AccessLog.database_table} (case_id, persona_id)
+            VALUES (%(case_id)s, %(persona_id)s)
+            ON CONFLICT (case_id, persona_id) DO UPDATE
+                SET ctime = excluded.ctime, atime = excluded.atime
         """
-        params: list[DatabaseValue_s] = [
-            case_id,
-            const.ComplaintEntryType.visible_types(),
-        ]
-        # TODO Add encryption in database and decryption here.
-        return {e['id']: e['description'] for e in self.query_all(rs, query, params)}
+        ret *= self.query_exec(
+            rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
+        )
+        return ret
+
+    def _is_unlocked(self, rs: RequestState, case_id: int) -> bool | None:
+        """Determine whether a case is currently unlocked for the active user.
+
+        :returns: 'True' if the case is unlocked. 'False' if the unlock has timed out.
+            'None' if the case has not been unlocked.
+        """
+        query = f"""
+            SELECT id, ctime
+            FROM {models.AccessLog.database_table}
+            WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+        """
+        timestamp = now()
+
+        data = self.query_one(
+            rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
+        )
+        if data is None:
+            # Case has not been unlocked.
+            return None
+        if (data["ctime"] + self.conf["COMPLAINT_UNLOCK_TIMEOUT"]) >= timestamp:
+            # Case is unlocked.
+            return True
+        # Unlock has timed out.
+        return False
+
+    def _unlock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+        self.affirm_atomized_context(rs)
+
+        if not self._is_unlocked(rs, case_id):
+            ret = self._log_unlock(rs, case_id=case_id)
+        else:
+            # Update last access time.
+            query = f"""
+                UPDATE {models.AccessLog.database_table}
+                SET atime = now()
+                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+            """
+            ret = self.query_exec(
+                rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
+            )
+        return ret
+
+    @access("core_admin")
+    def unlock_case(self, rs: RequestState, case_id: int) -> dict[int, str]:
+        """Log access to locked data, decrypt the descriptions and return them.
+
+        :returns: Mapping of entry *version* ids to descriptions.
+        """
+        case_id = affirm(int, case_id)
+        with Atomizer(rs):
+            if not self._unlock_case(rs, case_id):
+                raise RuntimeError
+            return self._get_descriptions(rs, case_id, visible=False)

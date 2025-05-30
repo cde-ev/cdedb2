@@ -358,6 +358,13 @@ _DEFAULTS = {
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
 
+    #
+    # complaint stuff
+    #
+
+    # time which a access to a case remains active for.
+    "COMPLAINT_UNLOCK_TIMEOUT": datetime.timedelta(minutes=30),
+
     ###############
     # Query stuff #
     ###############

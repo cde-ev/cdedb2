@@ -136,7 +136,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         persona_ids = rs.ambience['case'].get_persona_ids()
         personas = self.coreproxy.get_personas(rs, persona_ids)
         descriptions = self.complaintproxy.unlock_case(rs, case_id)
-        rs.notify_return_code(1)
+        rs.notify_return_code(1, success=n_("Case unlocked."))
         # Do maybe not redirect here?
         return self.render(
             rs,

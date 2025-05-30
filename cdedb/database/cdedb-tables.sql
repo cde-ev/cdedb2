@@ -529,6 +529,17 @@ GRANT SELECT ON complaint.cases TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON complaint.cases TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.cases_id_seq TO cdb_admin;
 
+CREATE TABLE complaint.access_log (
+    id              bigserial PRIMARY KEY,
+    persona_id      integer NOT NULL REFERENCES core.personas(id),
+    case_id         integer NOT NULL REFERENCES complaint.cases(id),
+    ctime           timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+    atime           timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+    UNIQUE (persona_id, case_id)
+);
+GRANT SELECT, INSERT, UPDATE(ctime, atime) ON complaint.access_log TO cdb_persona;
+GRANT SELECT, UPDATE ON complaint.access_log_id_seq TO cdb_persona;
+
 -- Maybe explicitly model entry versions after all?
 CREATE TABLE complaint.entries (
     id            serial PRIMARY KEY,
