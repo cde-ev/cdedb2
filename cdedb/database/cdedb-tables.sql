@@ -609,7 +609,7 @@ CREATE TABLE complaint.companions (
     case_id                 int NOT NULL REFERENCES complaint.cases(id),
     involved_persona_id     int NOT NULL REFERENCES core.personas(id),
     -- This is duplicating the info from above, but this ensures integrity to the other table.
-    involved_id             int NOT NULL REFERENCES complaint.involved(id),
+    involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
     -- Who is doing the accompanying.
     persona_id              int NOT NULL REFERENCES core.personas(id),
     UNIQUE(involved_id, persona_id),
@@ -654,6 +654,7 @@ CREATE TABLE complaint.log (
         case_id                 integer REFERENCES complaint.cases(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
+        companion_id            integer REFERENCES core.personas(id),
         change_note             varchar
 );
 CREATE INDEX event_log_code_idx ON complaint.log(code);

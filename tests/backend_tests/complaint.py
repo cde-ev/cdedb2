@@ -375,11 +375,25 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
+        case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(
             original_case.as_dict(),
-            self.complaint.get_case(self.key, case_id).as_dict(),
+            case.as_dict(),
         )
-        self.assertEqual(original_case, self.complaint.get_case(self.key, case_id))
+        self.assertEqual(original_case, case)
+
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [2]
+            ),
+        )
+
+        original_case.involved.pop(const.ComplaintInvolvementType.target)
+        original_case.companions.pop(3)
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(original_case.as_dict(), case.as_dict())
+        self.assertEqual(original_case, case)
 
         log_expectation = [
             {
@@ -391,6 +405,16 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.involvee_removed,
                 "change_note": str(const.ComplaintInvolvementType.target),
                 "persona_id": 1,
+            },
+            {
+                "code": const.ComplaintLogCodes.involvee_removed,
+                "change_note": str(const.ComplaintInvolvementType.target),
+                "persona_id": 2,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_removed,
+                "persona_id": 2,
+                "companion_id": 3,
             },
         ]
         self.assertLogEqual(

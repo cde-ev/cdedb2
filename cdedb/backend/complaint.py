@@ -66,9 +66,10 @@ class ComplaintBackend(AbstractBackend):
         *,
         rs: RequestState,
         code: const.ComplaintLogCodes,
-        case_id: Optional[int],
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        case_id: int | None,
+        persona_id: int | None = None,
+        companion_id: int | None = None,
+        change_note: str | None = None,
     ) -> int:
         """Make an entry in the log for complaint cases."""
         # To ensure logging is done if and only if the corresponding action happened,
@@ -79,6 +80,7 @@ class ComplaintBackend(AbstractBackend):
             "case_id": case_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
+            "companion_id": companion_id,
             "change_note": change_note,
         }
         return self.sql_insert(rs, "complaint.log", data)
@@ -454,15 +456,24 @@ class ComplaintBackend(AbstractBackend):
                     "involved_type": involved_type,
                 },
             )
-            code = const.ComplaintLogCodes.involvee_removed
             for persona_id in mixed_existence_sorter(removed):
                 ret *= self.complaint_log(
                     rs=rs,
-                    code=code,
+                    code=const.ComplaintLogCodes.involvee_removed,
                     case_id=case_id,
                     persona_id=persona_id,
                     change_note=rs.log_gettext(str(involved_type)),
                 )
+                for companion_id in mixed_existence_sorter(
+                    case.companions_by_involved.get(persona_id, set())
+                ):
+                    ret *= self.complaint_log(
+                        rs=rs,
+                        code=const.ComplaintLogCodes.companion_removed,
+                        case_id=case_id,
+                        persona_id=persona_id,
+                        companion_id=companion_id,
+                    )
         return ret
 
     def _get_descriptions(

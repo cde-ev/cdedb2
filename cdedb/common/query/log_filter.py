@@ -210,7 +210,7 @@ class ChangelogLogFilter(GenericLogFilter):
 class ComplaintLogFilter(GenericLogFilter):
     log_table = "complaint.log"
     log_code_class = const.ComplaintLogCodes
-    additional_columns = ("case_id",)
+    additional_columns = ("case_id", "companion_id")
 
     case_id: Optional[int] = None
     _case_ids: list[int] = dataclasses.field(default_factory=list)
