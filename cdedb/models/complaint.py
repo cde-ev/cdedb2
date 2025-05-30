@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import functools
+import itertools
 from collections.abc import Collection
 from typing import Optional, Self
 
@@ -38,6 +39,11 @@ class Case(CdEDataclass):
             if entry.concerned_id:
                 ret.add(entry.concerned_id)
             ret.update(version.submitted_by for version in entry.all_versions)
+            ret.update(
+                itertools.chain.from_iterable(
+                    version.authors for version in entry.all_versions
+                )
+            )
         return ret
 
     def get_sortkey(self) -> Sortkey:

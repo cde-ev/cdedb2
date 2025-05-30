@@ -62,7 +62,7 @@
                     </script>
                 {% endif %}
             {% endif %}
-            {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="date",
+            {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
                                     placeholder=now().strftime("%b %d %Y %H:%M:%S")) }}
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="20", markdown=True,
                                         info=infotext) }}

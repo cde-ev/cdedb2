@@ -130,9 +130,11 @@
                 {% endtrans %}
             {% endif %}
             <br />
-            {% trans author="Some Author" %}
-                by {{ author }}
-            {% endtrans %}
+            {{ gettext("by") }}
+            {% for author_id in entry.active_version.authors %}
+                {% if not loop.first %}, {% endif %}
+                {{ util.persona_anchor(personas[author_id]) }}
+            {% endfor %}
             <br />
             <span class="text-muted">
             {% if entry.active_version.length %}
