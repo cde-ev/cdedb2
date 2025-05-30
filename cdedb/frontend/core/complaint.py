@@ -78,25 +78,39 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata("appellant_id", "is_affected", "affected_ids", "target_ids", "info")
+    @REQUESTdata(
+        "appellant_id", "is_affected", "affected_ids", "target_ids", "timestamp", "info"
+    )
     def create_case(
         self,
         rs: RequestState,
         data: dict[str, Any],
-        appellant_id: int,
+        appellant_id: vtypes.CdedbID,
         is_affected: bool,
-        affected_ids: Optional[Collection[int]],
-        target_ids: Optional[Collection[int]],
+        affected_ids: Optional[vtypes.CdedbIDList],
+        target_ids: Optional[vtypes.CdedbIDList],
+        timestamp: datetime.datetime,
         info: str,
     ) -> Response:
+        # TODO validation
         if rs.has_validation_errors():
             return self.create_case_form(rs)
         with TransactionObserver(rs, self, "create_complaint_case"):
             new_case = self.complaintproxy.create_case(rs, data)
-            # Add involvees to the case
-            # Add first entry with info as text
-        rs.notify_return_code(bool(new_case))
-        return self.redirect(rs, "complaint/show_case", {'case_id': new_case.id})
+            entry_data = {
+                'entry_type': const.ComplaintEntryType.initial_information,
+            }
+            version_data = {
+                'timestamp': timestamp,
+                'authors': {rs.user.persona_id},
+                'description': info,
+            }
+            ret = self.complaintproxy.add_entry(
+                rs, new_case.id, entry_data, version_data
+            )
+            # ToDo Add involvees to the case
+        rs.notify_return_code(ret * bool(new_case))
+        return self.redirect(rs, "core/show_case", {'case_id': new_case.id})
 
     @access("core_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
@@ -173,8 +187,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if rs.has_validation_errors():
             # TODO Deal with validation errors here?
-            return self.add_entry_form(rs, case_id, entry_type=data.get('entry_type'),
-                                       parent_id=data.get('parent_id'))
+            return self.add_entry_form(
+                rs,
+                case_id,
+                entry_type=data.get('entry_type'),
+                parent_id=data.get('parent_id'),
+            )
         # TODO Solve this somehow
         entry_data = version_data = data
         entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
@@ -194,7 +212,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.ignore_validation_errors()
         personas = {}
         if rs.ambience['entry'].concerned_id:
-            personas = self.coreproxy.get_personas(rs, {rs.ambience['entry'].concerned_id})
+            personas = self.coreproxy.get_personas(
+                rs, {rs.ambience['entry'].concerned_id}
+            )
         return self.render(
             rs,
             "complaint/configure_entry",
