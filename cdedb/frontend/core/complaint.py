@@ -3,7 +3,7 @@
 import collections
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -35,6 +35,8 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     periodic,
+    request_dict_extractor,
+    request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 
@@ -174,26 +176,35 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=True))
     def add_entry(
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int,
-        data: dict[str, Any],
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        if rs.has_validation_errors():
-            # TODO Deal with validation errors here?
+        entry_data = request_dict_extractor(
+            rs, models.ComplaintEntry.requestdict_fields(creation=True)
+        )
+        entry_data = cast(
+            CdEDBObject | None,
+            check(rs, models.ComplaintEntry, entry_data, creation=True),
+        )
+        version_data = request_dict_extractor(
+            rs, models.ComplaintEntryVersion.requestdict_fields(creation=True)
+        )
+        version_data["authors"] = [rs.user.persona_id]
+        version_data = cast(
+            CdEDBObject | None,
+            check(rs, models.ComplaintEntryVersion, version_data, creation=True),
+        )
+        if rs.has_validation_errors() or not entry_data or not version_data:
             return self.add_entry_form(
                 rs,
                 case_id,
-                entry_type=data.get('entry_type'),
-                parent_id=data.get('parent_id'),
+                entry_type=entry_data.get('entry_type') if entry_data else None,
+                parent_id=entry_data.get('parent_id') if entry_data else None,
             )
-        # TODO Solve this somehow
-        entry_data = version_data = data
         entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(bool(entry))
         return self.redirect(rs, "core/show_case", {'entry': entry})

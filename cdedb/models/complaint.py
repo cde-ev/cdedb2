@@ -67,7 +67,9 @@ class ComplaintEntry(CdEDataclass):
     id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
 
     case: Case = dataclasses.field(init=False, compare=False, repr=False)
-    case_id: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
+    case_id: vtypes.ID = dataclasses.field(
+        metadata={"validation_exclude": True, 'request_exclude': True}
+    )
     entry_type: const.ComplaintEntryType
 
     root_entry_id: vtypes.ID | None = None
@@ -121,27 +123,33 @@ class ComplaintEntryVersion(CdEDataclass):
 
     id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
 
-    entry_id: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
+    entry_id: vtypes.ID = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     description: str | None = dataclasses.field(
         init=False, default=None, metadata={"database_exclude": True}
     )
     length: int | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True}
+        default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
     timestamp: datetime.datetime
 
-    ctime: datetime.datetime = dataclasses.field(metadata={"validation_exclude": True})
-    submitted_by: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
+    ctime: datetime.datetime = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
+    submitted_by: vtypes.ID = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     dtime: datetime.datetime | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True}
+        default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
     deleted_by: vtypes.ID | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True}
+        default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
     dreason: str | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True}
+        default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
 
     authors: list[vtypes.ID] = dataclasses.field(
