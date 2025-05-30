@@ -1013,8 +1013,15 @@ def _realm(
 
 @_add_typed_validator
 def _cdedbid(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, passthrough: bool = False, **kwargs: Any,
 ) -> CdedbID:
+    if passthrough:
+        try:
+            val = _id(val, argname, **kwargs)
+        except ValidationSummary:
+            pass
+        else:
+            return CdedbID(val)
     val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
     if not match:
