@@ -13,9 +13,11 @@ help:
 	@echo "Translations"
 	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
 	@echo ""
-	@echo "Code formatting:"
-	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
+	@echo "Formatting and static analysis:"
+	@echo "mypy                -- let mypy run over our codebase"
 	@echo "lint                -- run linters (ruff)"
+	@echo "format              -- automatcically sort imports and reformat code"
+	@echo "format-diff         -- show the changes 'format' would make but do not apply them"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -133,7 +135,7 @@ format:
 
 .PHONY: format-diff
 format-diff:
-	$(ISORT) $(MAKE_ISORT_TARGETS)
+	$(ISORT) $(MAKE_ISORT_TARGETS) --diff
 	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
 .PHONY: mypy
