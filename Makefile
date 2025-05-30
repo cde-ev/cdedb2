@@ -45,9 +45,6 @@ MYPY ?= $(PYTHONBIN) -m mypy
 
 include .ruff_targets
 
-# Taken from a combination of the answers here:
-#  https://stackoverflow.com/questions/10424645/how-to-convert-a-quoted-string-to-a-normal-one-in-makefile
-
 MAKE_FORMAT_TARGETS ?= $(FORMAT_TARGETS)
 MAKE_LINT_TARGETS ?= $(LINT_TARGETS)
 MAKE_ISORT_TARGETS ?= $(ISORT_TARGETS)
