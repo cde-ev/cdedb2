@@ -16,7 +16,8 @@ help:
 	@echo "Formatting and static analysis:"
 	@echo "mypy                -- let mypy run over our codebase"
 	@echo "lint                -- run linters (ruff)"
-	@echo "format              -- automatcically sort imports and reformat code"
+	@echo "format              -- automatically sort imports and reformat code"
+	@echo "autoformat          -- automatically sort imports, reformat code and lint"
 	@echo "format-diff         -- show the changes 'format' would make but do not apply them"
 	@echo ""
 	@echo "Code testing:"
@@ -37,7 +38,7 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
+RUFF ?= $(PYTHONBIN) -m ruff --config pyproject.toml
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
@@ -46,11 +47,10 @@ include .ruff_targets
 
 # Taken from a combination of the answers here:
 #  https://stackoverflow.com/questions/10424645/how-to-convert-a-quoted-string-to-a-normal-one-in-makefile
-Q := $\"
 
-MAKE_FORMAT_TARGETS ?= $(subst $(Q),,$(FORMAT_TARGETS))
-MAKE_LINT_TARGETS ?= $(subst $(Q),,$(LINT_TARGETS))
-MAKE_ISORT_TARGETS ?= $(subst $(Q),,$(ISORT_TARGETS))
+MAKE_FORMAT_TARGETS ?= $(FORMAT_TARGETS)
+MAKE_LINT_TARGETS ?= $(LINT_TARGETS)
+MAKE_ISORT_TARGETS ?= $(ISORT_TARGETS)
 
 
 #####################
@@ -132,6 +132,10 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 format:
 	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
 	$(RUFF) format $(MAKE_FORMAT_TARGETS)
+
+.PHONY: autoformat
+autoformat: format
+	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
 
 .PHONY: format-diff
 format-diff:
