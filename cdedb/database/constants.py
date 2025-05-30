@@ -10,8 +10,7 @@ their symbolic names provided by this module should be used.
 import builtins
 import collections
 import enum
-import functools
-from typing import Optional, Self
+from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
