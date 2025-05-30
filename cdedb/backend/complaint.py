@@ -213,11 +213,27 @@ class ComplaintBackend(AbstractBackend):
             data["length"] = len(data["description"])
         else:
             data["length"] = None
+        authors = data.pop("authors")
+        if not authors:
+            raise ValueError(n_("No authors specified."))
+        if not self.core.verify_ids(rs, authors):
+            raise ValueError(n_("Unknown authors."))
         data.update(
             entry_id=entry_id,
             submitted_by=rs.user.persona_id,
         )
-        return self.sql_insert(rs, models.ComplaintEntryVersion.database_table, data)
+        new_version_id = self.sql_insert(
+            rs, models.ComplaintEntryVersion.database_table, data
+        )
+        self.sql_insert_many(
+            rs,
+            "complaint.authors",
+            [
+                {'entry_version_id': new_version_id, 'persona_id': persona_id}
+                for persona_id in authors
+            ],
+        )
+        return new_version_id
 
     @access("core_admin")
     def add_entry(
@@ -229,9 +245,12 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a new entry to an existing complaint case."""
         case_id = affirm(vtypes.ID, case_id)
-        entry_data = cast(CdEDBObject, affirm(models.ComplaintEntry, entry_data))
+        entry_data = cast(
+            CdEDBObject, affirm(models.ComplaintEntry, entry_data, creation=True)
+        )
         version_data = cast(
-            CdEDBObject, affirm(models.ComplaintEntryVersion, version_data)
+            CdEDBObject,
+            affirm(models.ComplaintEntryVersion, version_data, creation=True),
         )
 
         with Atomizer(rs):
@@ -256,7 +275,9 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a new version of an existing complaint entry."""
         entry_id = affirm(vtypes.ID, entry_id)
-        data = cast(CdEDBObject, affirm(models.ComplaintEntryVersion, data))
+        data = cast(
+            CdEDBObject, affirm(models.ComplaintEntryVersion, data, creation=True)
+        )
         dreason = affirm_optional(str, dreason)
 
         with Atomizer(rs):

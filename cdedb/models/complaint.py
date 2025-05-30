@@ -3,12 +3,14 @@
 import dataclasses
 import datetime
 import functools
-from typing import Self
+from collections.abc import Collection
+from typing import Optional, Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
 from cdedb.common.sorting import Sortkey
+from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 
@@ -67,7 +69,7 @@ class ComplaintEntry(CdEDataclass):
     concerned_id: vtypes.ID | None = None
 
     all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
-        metadata={"database_exclude": True},
+        metadata={"validation_exclude": True, "database_exclude": True},
     )
 
     @functools.cached_property
@@ -113,7 +115,7 @@ class ComplaintEntryVersion(CdEDataclass):
 
     id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
 
-    entry_id: vtypes.ID
+    entry_id: vtypes.ID = dataclasses.field(metadata={"validation_exclude": True})
 
     description: str | None = dataclasses.field(
         init=False, default=None, metadata={"database_exclude": True}
@@ -136,5 +138,46 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None, metadata={"validation_exclude": True}
     )
 
+    authors: list[vtypes.ID] = dataclasses.field(
+        metadata={"validation_exclude": True, "database_exclude": True}
+    )
+
     def get_sortkey(self) -> Sortkey:
         return (self.ctime,)
+
+    @classmethod
+    def get_select_query(
+        cls,
+        entities: Collection[int],
+        entity_key: Optional[str] = None,
+    ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        query = f"""
+            SELECT
+                {','.join(cls.database_fields())},
+                array(
+                    SELECT persona_id
+                    FROM {ComplaintAuthors.database_table} AS authors
+                    WHERE authors.{ComplaintAuthors.entity_key} = versions.id
+                ) AS authors
+            FROM
+                {cls.database_table} AS versions
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
+
+    @classmethod
+    def validation_fields(
+        cls,
+        *,
+        creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        if creation:
+            mandatory["authors"] = set[vtypes.ID]
+        return mandatory, optional
+
+
+class ComplaintAuthors:
+    database_table = "complaint.authors"
+    entity_key = "entry_version_id"

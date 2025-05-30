@@ -34,9 +34,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            dtime=None,
-                            deleted_by=None,
-                            dreason=None,
+                            authors=[],
                         ),
                     ],
                 ),
@@ -56,9 +54,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            dtime=None,
-                            deleted_by=None,
-                            dreason=None,
+                            authors=[],
                         ),
                     ],
                 ),
@@ -78,9 +74,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            dtime=None,
-                            deleted_by=None,
-                            dreason=None,
+                            authors=[],
                         ),
                     ],
                 ),
@@ -103,6 +97,7 @@ class TestComplaintBackend(BackendTest):
                             dtime=nearly_now(),
                             deleted_by=1,  # type: ignore[arg-type]
                             dreason="Ungünstige Wortwahl.",
+                            authors=[],
                         ),
                         models.ComplaintEntryVersion(
                             id=5,  # type: ignore[arg-type]
@@ -113,9 +108,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            dtime=None,
-                            deleted_by=None,
-                            dreason=None,
+                            authors=[],
                         ),
                     ],
                 ),
@@ -135,9 +128,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            dtime=None,
-                            deleted_by=None,
-                            dreason=None,
+                            authors=[],
                         ),
                     ],
                 ),
@@ -227,29 +218,30 @@ class TestComplaintBackend(BackendTest):
         new_version_data: CdEDBObject = {
             "description": "Ich hab auch etwas zu sagen!",
             "timestamp": now(),
+            "authors": [3],
         }
         new_entry_id = self.complaint.add_entry(
             self.key, case_id, new_entry_data, new_version_data
         )
         case = self.complaint.get_case(self.key, case_id)
-        self.assertEqual(
-            models.ComplaintEntry(
-                id=new_entry_id,  # type: ignore[arg-type]
-                case_id=case_id,  # type: ignore[arg-type]
-                **new_entry_data,
-                all_versions=[
-                    models.ComplaintEntryVersion(
-                        id=1001,  # type: ignore[arg-type]
-                        entry_id=new_entry_id,  # type: ignore[arg-type]
-                        timestamp=new_version_data["timestamp"],
-                        length=len(new_version_data["description"]),
-                        ctime=nearly_now(),
-                        submitted_by=self.user['id'],
-                    )
-                ],
-            ),
-            case.entries[new_entry_id],
+        expectation = models.ComplaintEntry(
+            id=new_entry_id,  # type: ignore[arg-type]
+            case_id=case_id,  # type: ignore[arg-type]
+            **new_entry_data,
+            all_versions=[
+                models.ComplaintEntryVersion(
+                    id=1001,  # type: ignore[arg-type]
+                    entry_id=new_entry_id,  # type: ignore[arg-type]
+                    timestamp=new_version_data["timestamp"],
+                    length=len(new_version_data["description"]),
+                    ctime=nearly_now(),
+                    submitted_by=self.user['id'],
+                    authors=[3],  # type: ignore[list-item]
+                )
+            ],
         )
+        self.assertEqual(expectation.as_dict(), case.entries[new_entry_id].as_dict())
+        self.assertEqual(expectation, case.entries[new_entry_id])
         self.assertLogEqual([], "complaint", case_id=case_id)
 
     @as_users("anton")
@@ -259,6 +251,7 @@ class TestComplaintBackend(BackendTest):
         original_case = self.complaint.get_case(self.key, case_id)
         new_version_data: CdEDBObject = {
             "timestamp": now(),
+            "authors": [3],
         }
         self.complaint.replace_entry_version(
             self.key, entry_id, new_version_data, "Zeitpunkt aktualisiert."
@@ -273,12 +266,13 @@ class TestComplaintBackend(BackendTest):
             models.ComplaintEntryVersion(
                 id=1001,  # type: ignore[arg-type]
                 entry_id=entry_id,  # type: ignore[arg-type]
-                timestamp=new_version_data["timestamp"],
+                **new_version_data,
                 ctime=nearly_now(),
                 submitted_by=self.user['id'],
             )
         )
         case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(replaced_entry.as_dict(), case.entries[entry_id].as_dict())
         self.assertEqual(replaced_entry, case.entries[entry_id])
 
         self.assertLogEqual([], "complaint", case_id=case_id)

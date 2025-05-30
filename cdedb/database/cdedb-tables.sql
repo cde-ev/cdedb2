@@ -565,12 +565,13 @@ GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_ver
 GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.authors (
-    id            serial PRIMARY KEY,
-    entry_id      integer NOT NULL REFERENCES complaint.entry_versions(id),
-    author_id     integer NOT NULL REFERENCES core.personas(id),
-    UNIQUE(entry_id, author_id)
+    id                      serial PRIMARY KEY,
+    entry_version_id        integer NOT NULL REFERENCES complaint.entry_versions(id),
+    persona_id              integer NOT NULL REFERENCES core.personas(id),
+    UNIQUE(entry_version_id, persona_id)
 );
 GRANT SELECT, INSERT ON complaint.authors TO cdb_persona;
+GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.involved (
     id            serial PRIMARY KEY,
