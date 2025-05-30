@@ -9,7 +9,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    Optional,
     TypeVar,
     cast,
     get_args,
@@ -136,7 +135,7 @@ class CdEDataclass:
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
-                         entity_key: Optional[str] = None,
+                         entity_key: str | None = None,
                          ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}

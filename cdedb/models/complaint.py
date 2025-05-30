@@ -5,7 +5,7 @@ import datetime
 import functools
 import itertools
 from collections.abc import Collection
-from typing import Optional, Self
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -196,7 +196,7 @@ class ComplaintEntryVersion(CdEDataclass):
     def get_select_query(
         cls,
         entities: Collection[int],
-        entity_key: Optional[str] = None,
+        entity_key: str | None = None,
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
