@@ -4720,12 +4720,27 @@
         {
             "id": 2,
             "case_id": 1,
-            "persona_id": 3,
+            "persona_id": 4,
             "involved_type": 1,
             "is_informed": false
         }
     ],
-    "complaint.companions": [],
+    "complaint.companions": [
+        {
+            "case_id": 1,
+            "involved_persona_id": 2,
+            "involved_id": 1,
+            "persona_id": 3,
+            "is_withdrawn": false
+        },
+        {
+            "case_id": 1,
+            "involved_persona_id": 4,
+            "involved_id": 2,
+            "persona_id": 7,
+            "is_withdrawn": false
+        }
+    ],
     "complaint.companion_incompatibles": [],
     "complaint.enforcers": [],
     "complaint.monitors": [],

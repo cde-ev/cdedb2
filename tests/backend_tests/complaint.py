@@ -23,8 +23,12 @@ class TestComplaintBackend(BackendTest):
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
             involved={
-                const.ComplaintInvolvementType.affected: {3},
+                const.ComplaintInvolvementType.affected: {4},
                 const.ComplaintInvolvementType.target: {2},
+            },
+            companions={
+                3: {2},
+                7: {4},
             },
             entries={
                 1: models.ComplaintEntry(
@@ -157,7 +161,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
 
-        self.assertEqual({1, 2, 3}, reality.get_persona_ids())
+        self.assertEqual({1, 2, 3, 4, 7}, reality.get_persona_ids())
 
     @as_users("anton")
     def test_set_case(self) -> None:
@@ -216,6 +220,7 @@ class TestComplaintBackend(BackendTest):
             **new_case_data,
             entries={},
             involved={},
+            companions={},
         )
         self.assertEqual(expectation.as_dict(), new_case.as_dict())
         self.assertEqual(expectation, new_case)

@@ -604,14 +604,20 @@ GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 
 -- very limited access per case and persona
 CREATE TABLE complaint.companions (
-    id            serial PRIMARY KEY,
-    involved_id   int NOT NULL REFERENCES complaint.involved(id),
-    persona_id    int NOT NULL REFERENCES core.personas(id),
+    id                      serial PRIMARY KEY,
+    -- Who is being accompanied in which case.
+    case_id                 int NOT NULL REFERENCES complaint.cases(id),
+    involved_persona_id     int NOT NULL REFERENCES core.personas(id),
+    -- This is duplicating the info from above, but this ensures integrity to the other table.
+    involved_id             int NOT NULL REFERENCES complaint.involved(id),
+    -- Who is doing the accompanying.
+    persona_id              int NOT NULL REFERENCES core.personas(id),
     UNIQUE(involved_id, persona_id),
     is_withdrawn  boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;
 GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.companions_id_seq TO cdb_admin;
 
 -- people, who are blocked from "meeting" within the complaint process
 CREATE TABLE complaint.companion_incompatibles (

@@ -34,10 +34,21 @@ class Case(CdEDataclass):
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
+    companions: dict[int, set[int]] = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
+
+    @functools.cached_property
+    def companions_by_involved(self) -> dict[int, set[int]]:
+        ret: dict[int, set[int]] = {}
+        for companion, accompanied in self.companions.items():
+            for persona_id in accompanied:
+                ret.setdefault(persona_id, set()).add(companion)
+        return ret
 
     def get_persona_ids(self) -> set[int]:
         ret: set[int] = set(itertools.chain.from_iterable(self.involved.values()))
-        # TODO add more people here
+        ret.update(self.companions)
         for entry in self.entries.values():
             if entry.concerned_id:
                 ret.add(entry.concerned_id)
@@ -55,13 +66,19 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        new_involved: dict[const.ComplaintInvolvementType, set[vtypes.ID]] = {}
+        new_involved: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involved in data["involved"]:
             involved_type = const.ComplaintInvolvementType(involved[1])
             if involved_type not in new_involved:
                 new_involved[involved_type] = set()
             new_involved[involved_type].add(involved[0])
         data["involved"] = new_involved
+
+        new_companions: dict[int, set[int]] = {}
+        for companion in data["companions"]:
+            new_companions.setdefault(companion[1], set()).add(companion[0])
+        data["companions"] = new_companions
+
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
         ret = super().from_database(data)
         for entry in data["entries"].values():
@@ -81,7 +98,12 @@ class Case(CdEDataclass):
                     SELECT ARRAY[involved.persona_id, involved.involved_type]
                     FROM {ComplaintInvolved.database_table} AS involved
                     WHERE involved.case_id = cases.id
-                ) AS involved
+                ) AS involved,
+                array(
+                    SELECT ARRAY[companion.involved_persona_id, companion.persona_id]
+                    FROM {ComplaintCompanion.database_table} AS companion
+                    WHERE companion.case_id = cases.id
+                ) as companions
             FROM
                 {cls.database_table} AS cases
             WHERE {entity_key or cls.entity_key} = ANY(%s)
@@ -228,3 +250,7 @@ class ComplaintAuthors:
 class ComplaintInvolved:
     database_table = "complaint.involved"
     entity_key = "case_id"
+
+
+class ComplaintCompanion:
+    database_table = "complaint.companions"
