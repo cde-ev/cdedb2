@@ -1226,7 +1226,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Annika", div='query-result')
@@ -1569,7 +1569,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [14]", div='query-results')
+        self.assertPresence("Ergebnis [15]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
     @as_users("vera")
@@ -1614,7 +1614,7 @@ class TestCoreFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [27]", div='query-results')
+        self.assertPresence("Ergebnis [28]", div='query-results')
         self.assertPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value

@@ -10569,6 +10569,11 @@
         },
         {
             "mailinglist_id": 13,
+            "persona_id": 19,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
             "persona_id": 22,
             "subscription_state": 1
         },
