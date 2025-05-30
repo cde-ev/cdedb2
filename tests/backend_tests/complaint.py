@@ -31,7 +31,7 @@ class TestComplaintBackend(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.initial_information,
-                    root_entry_id=None,
+                    parent_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -51,7 +51,7 @@ class TestComplaintBackend(BackendTest):
                     id=2,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.provisional_statement_given,
-                    root_entry_id=None,
+                    parent_id=None,
                     concerned_id=2,  # type: ignore[arg-type]
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -71,7 +71,7 @@ class TestComplaintBackend(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.statement_signed,
-                    root_entry_id=2,  # type: ignore[arg-type]
+                    parent_id=2,  # type: ignore[arg-type]
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -91,7 +91,7 @@ class TestComplaintBackend(BackendTest):
                     id=4,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.agreement,
-                    root_entry_id=None,
+                    parent_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -125,7 +125,7 @@ class TestComplaintBackend(BackendTest):
                     id=5,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    root_entry_id=4,  # type: ignore[arg-type]
+                    parent_id=4,  # type: ignore[arg-type]
                     concerned_id=2,  # type: ignore[arg-type]
                     all_versions=[
                         models.ComplaintEntryVersion(
@@ -552,6 +552,8 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     {
                         "entry_type": const.ComplaintEntryType.initial_information,
+                        "concerned_id": None,
+                        "parent_id": None,
                     },
                     None,
                 ),
@@ -563,17 +565,19 @@ class TestComplaintValidation(TestValidationBase):
                     {
                         "entry_type": const.ComplaintEntryType.provisional_statement_given,
                         "concerned_id": 1,
+                        "parent_id": None,
                     },
                     None,
                 ),
                 (
                     {
                         "entry_type": const.ComplaintEntryType.statement_signed,
-                        "root_entry_id": 1,
+                        "parent_id": 1,
                     },
                     {
                         "entry_type": const.ComplaintEntryType.statement_signed,
-                        "root_entry_id": 1,
+                        "parent_id": 1,
+                        "concerned_id": None,
                     },
                     None,
                 ),
@@ -581,13 +585,13 @@ class TestComplaintValidation(TestValidationBase):
                     {
                         "entry_type": const.ComplaintEntryType.agreement_measure,
                         "concerned_id": 1,
-                        "root_entry_id": 1,
+                        "parent_id": 1,
                     },
                     INVAL,
                     None,
                 ),
             ],
-            {"creation": True},
+            {"creation": True, "passthrough": True},
         )
         # Test unsuccessful creations.
         self.do_validator_test(
@@ -616,7 +620,7 @@ class TestComplaintValidation(TestValidationBase):
                 (
                     {
                         "concerned_id": 1,
-                        "root_entry_id": 1,
+                        "parent_id": 1,
                     },
                     None,
                     KeyError("Mandatory key missing. (entry_type)"),
@@ -627,16 +631,18 @@ class TestComplaintValidation(TestValidationBase):
 
     def test_entry_version(self) -> None:
         # Only creation allowed.
-        # Test successful creations.
+        # Test successful creation of entry version without description.
         self.do_validator_test(
             models.ComplaintEntryVersion,
             [
                 (
                     {
+                        "description": None,
                         "timestamp": "2025-05-30 22:25:00",
                         "authors": [1],
                     },
                     {
+                        "description": None,
                         "timestamp": datetime.datetime(
                             2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
                         ),
@@ -646,6 +652,7 @@ class TestComplaintValidation(TestValidationBase):
                 ),
                 (
                     {
+                        "description": None,
                         "timestamp": now(),
                         "authors": [1, 2, 3],
                     },
@@ -658,11 +665,36 @@ class TestComplaintValidation(TestValidationBase):
                         "authors": ["DB-1-9"],
                     },
                     {
+                        "description": None,
                         "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
                         "authors": [1],
                     },
                     None,
                 ),
             ],
-            {"creation": True, "passthrough": True},
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.agreement_measure_expired,
+            },
+        )
+        # Test successful creation of entry version with description:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                    },
+                    INVAL,
+                    None,
+                ),
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.initial_information,
+            },
         )

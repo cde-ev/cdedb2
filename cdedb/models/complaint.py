@@ -102,7 +102,7 @@ class ComplaintEntry(CdEDataclass):
     )
     entry_type: const.ComplaintEntryType
 
-    root_entry_id: vtypes.ID | None = None
+    parent_id: vtypes.ID | None = None
 
     concerned_id: vtypes.ID | None = None
 
@@ -123,16 +123,14 @@ class ComplaintEntry(CdEDataclass):
 
     @property
     def parent(self) -> "ComplaintEntry | None":
-        if self.root_entry_id is None:
+        if self.parent_id is None:
             return None
-        return self.case.entries[self.root_entry_id]
+        return self.case.entries[self.parent_id]
 
     @functools.cached_property
     def children(self) -> list["ComplaintEntry"]:
         return [
-            entry
-            for entry in self.case.entries.values()
-            if entry.root_entry_id == self.id
+            entry for entry in self.case.entries.values() if entry.parent_id == self.id
         ]
 
     def get_sortkey(self) -> Sortkey:

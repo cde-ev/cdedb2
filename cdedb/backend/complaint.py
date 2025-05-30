@@ -281,7 +281,8 @@ class ComplaintBackend(AbstractBackend):
         """Add a new entry to an existing complaint case."""
         case_id = affirm(vtypes.ID, case_id)
         entry_data = cast(
-            CdEDBObject, affirm(models.ComplaintEntry, entry_data, creation=True)
+            CdEDBObject,
+            affirm(models.ComplaintEntry, entry_data, creation=True, passthrough=True),
         )
         version_data = cast(
             CdEDBObject,

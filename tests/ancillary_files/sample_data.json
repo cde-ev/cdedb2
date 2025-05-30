@@ -4571,35 +4571,35 @@
             "id": 1,
             "case_id": 1,
             "entry_type": 101,
-            "root_entry_id": null,
+            "parent_id": null,
             "concerned_id": null
         },
         {
             "id": 2,
             "case_id": 1,
             "entry_type": 201,
-            "root_entry_id": null,
+            "parent_id": null,
             "concerned_id": 2
         },
         {
             "id": 3,
             "case_id": 1,
             "entry_type": 211,
-            "root_entry_id": 2,
+            "parent_id": 2,
             "concerned_id": null
         },
         {
             "id": 4,
             "case_id": 1,
             "entry_type": 301,
-            "root_entry_id": null,
+            "parent_id": null,
             "concerned_id": null
         },
         {
             "id": 5,
             "case_id": 1,
             "entry_type": 311,
-            "root_entry_id": 4,
+            "parent_id": 4,
             "concerned_id": 2
         }
     ],

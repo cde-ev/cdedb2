@@ -551,7 +551,7 @@ CREATE TABLE complaint.entries (
     id            serial PRIMARY KEY,
     case_id       integer NOT NULL REFERENCES complaint.cases(id),
     entry_type    integer DEFAULT NULL, -- database.constants.ComplaintEntryType
-    root_entry_id integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
+    parent_id     integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
     concerned_id  integer REFERENCES core.personas(id) DEFAULT NULL  -- maybe reference involved_id instead
 );
 GRANT SELECT, INSERT ON complaint.entries TO cdb_persona;

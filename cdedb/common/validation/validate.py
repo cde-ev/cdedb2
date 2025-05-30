@@ -4971,12 +4971,6 @@ def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
         val['parent_id'] = _ALL_TYPED[type_](
             val.get('parent_id'), 'parent_id', **kwargs)
 
-    if val.get('authors'):
-        # Remove any duplicates
-        val['authors'] = list(set(val['authors']))
-    else:
-        errs.append(ValueError('authors', n_("May not be empty.")))
-
     if errs:
         raise errs
 
@@ -5000,6 +4994,12 @@ def _complaint_entry_version(
     validator = _str if entry_type.has_description else _None
     with errs:
         val['description'] = validator(val.get('description'), 'description', **kwargs)
+
+    if val.get('authors'):
+        # Remove any duplicates
+        val['authors'] = list(set(val['authors']))
+    else:
+        errs.append(ValueError('authors', n_("May not be empty.")))
 
     if errs:
         raise errs
