@@ -624,3 +624,45 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {"creation": True},
         )
+
+    def test_entry_version(self) -> None:
+        # Only creation allowed.
+        # Test successful creations.
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "timestamp": "2025-05-30 22:25:00",
+                        "authors": [1],
+                    },
+                    {
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                        ),
+                        "authors": [1],
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "timestamp": now(),
+                        "authors": [1, 2, 3],
+                    },
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "authors": ["DB-1-9"],
+                    },
+                    {
+                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "authors": [1],
+                    },
+                    None,
+                ),
+            ],
+            {"creation": True, "passthrough": True},
+        )

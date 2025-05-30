@@ -160,7 +160,7 @@ class ComplaintEntryVersion(CdEDataclass):
     description: str | None = dataclasses.field(
         init=False,
         default=None,
-        metadata={"database_exclude": True, "request_include": True}
+        metadata={"database_exclude": True, "request_include": True},
     )
     length: int | None = dataclasses.field(
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
@@ -184,7 +184,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
 
-    authors: list[vtypes.ID] = dataclasses.field(
+    authors: vtypes.CdedbIDList = dataclasses.field(
         metadata={"request_include": True, "database_exclude": True}
     )
 
