@@ -379,6 +379,42 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {"creation": True},
         )
+        # Test successful updates.
+        self.do_validator_test(
+            models.Case,
+            [
+                (
+                    {"kind": const.ComplaintKind.volunteer_harassment},
+                    INVAL,
+                    None,
+                ),
+                (
+                    {"summary": "<REDACTED> schnarcht."},
+                    INVAL,
+                    None,
+                ),
+                (
+                    {"start_date": datetime.date.today()},
+                    INVAL,
+                    None,
+                ),
+                (
+                    {"end_date": datetime.date.today()},
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "kind": const.ComplaintKind.other_harassment,
+                        "summary": "<REDACTED> schnarcht.",
+                        "start_date": datetime.date(2025, 5, 28),
+                        "end_date": datetime.date(2025, 5, 29),
+                    },
+                    INVAL,
+                    None,
+                ),
+            ],
+        )
         # Test unsuccessful updates.
         self.do_validator_test(
             models.Case,
