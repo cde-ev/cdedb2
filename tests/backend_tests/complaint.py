@@ -277,6 +277,26 @@ class TestComplaintBackend(BackendTest):
 
         self.assertLogEqual([], "complaint", case_id=case_id)
 
+    @as_users("anton")
+    def test_delete_entry_version(self) -> None:
+        case_id = 1
+        entry_id = 4
+
+        original_case = self.complaint.get_case(self.key, case_id)
+
+        self.complaint.delete_entry(self.key, entry_id, "Vertippt.")
+
+        deleted_entry = original_case.entries[entry_id]
+        assert deleted_entry.active_version is not None
+        deleted_entry.active_version.dreason = "Vertippt."
+        deleted_entry.active_version.dtime = nearly_now()
+        deleted_entry.active_version.deleted_by = self.user['id']
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(deleted_entry.as_dict(), case.entries[entry_id].as_dict())
+        self.assertEqual(deleted_entry, case.entries[entry_id])
+        self.assertLogEqual([], "complaint", case_id=case_id)
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:

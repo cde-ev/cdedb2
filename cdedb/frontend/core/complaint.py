@@ -219,11 +219,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(rs, "complaint/remove_entry", {})
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdata("entry_id")
-    def remove_entry(self, rs: RequestState, case_id: int, entry_id: int) -> Response:
+    @REQUESTdata("entry_id", "dreason")
+    def remove_entry(
+        self, rs: RequestState, case_id: int, entry_id: int, dreason: str | None
+    ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        entry = self.complaintproxy.delete_entry(rs, entry_id)
+        entry = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 

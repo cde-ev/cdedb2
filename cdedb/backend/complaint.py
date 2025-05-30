@@ -235,6 +235,41 @@ class ComplaintBackend(AbstractBackend):
         )
         return new_version_id
 
+    def _delete_entry(
+        self, rs: RequestState, entry_id: int, dreason: str | None
+    ) -> DefaultReturnCode:
+        """Process the deletion of the active version of an existing entry.
+
+        :returns: 1 if the entry had an active version that was "deleted". 0 otherwise.
+        """
+        self.affirm_atomized_context(rs)
+        case_id = self._get_case_id(rs, entry_id)
+        case = self.get_case(rs, case_id)
+        entry = case.entries[entry_id]
+        if bool(entry.active_version) != bool(dreason):
+            raise ValueError(
+                n_("Deletion reason given, but entry has no active version.")
+            )
+        if dreason and entry.active_version:
+            update = {
+                'id': entry.active_version.id,
+                'dreason': dreason,
+                'dtime': "now()",
+                'deleted_by': rs.user.persona_id,
+            }
+            return self.sql_update(
+                rs, models.ComplaintEntryVersion.database_table, update
+            )
+        return 0
+
+    def _get_case_id(self, rs: RequestState, entry_id: int) -> int:
+        case_data = self.sql_select_one(
+            rs, models.ComplaintEntry.database_table, ["case_id"], entry_id
+        )
+        if not case_data:
+            raise KeyError(n_("Unknown entry."))
+        return case_data["case_id"]
+
     @access("core_admin")
     def add_entry(
         self,
@@ -281,26 +316,18 @@ class ComplaintBackend(AbstractBackend):
         dreason = affirm_optional(str, dreason)
 
         with Atomizer(rs):
-            case_data = self.sql_select_one(
-                rs, models.ComplaintEntry.database_table, ["case_id"], entry_id
-            )
-            if not case_data:
-                raise KeyError(n_("Unknown entry."))
-            case = self.get_case(rs, case_data["case_id"])
-            entry = case.entries[entry_id]
-            if bool(entry.active_version) != bool(dreason):
-                raise ValueError(
-                    n_("Deletion reason given, but entry has no active version.")
-                )
-            if dreason and entry.active_version:
-                update = {
-                    'id': entry.active_version.id,
-                    'dreason': dreason,
-                    'dtime': "now()",
-                    'deleted_by': rs.user.persona_id,
-                }
-                self.sql_update(rs, models.ComplaintEntryVersion.database_table, update)
-            return self._insert_entry_version(rs, entry_id, data)
+            self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
+            return self._insert_entry_version(rs, entry_id=entry_id, data=data)
+
+    @access("core_admin")
+    def delete_entry(
+        self, rs: RequestState, entry_id: int, dreason: str | None
+    ) -> DefaultReturnCode:
+        """Delete an existing entry version."""
+        entry_id = affirm(vtypes.ID, entry_id)
+        dreason = affirm_optional(str, dreason)
+        with Atomizer(rs):
+            return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("core_admin")
     def get_visible_descriptions(
