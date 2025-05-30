@@ -1,4 +1,5 @@
 import datetime
+import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
@@ -8,6 +9,10 @@ from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
 class TestComplaintBackend(BackendTest):
+    @functools.cached_property
+    def LOG_OFFSET(self) -> int:
+        return len(self.get_sample_data("complaint.log"))
+
     @as_users("anton")
     def test_get_case(self) -> None:
         expectation = models.Case(
@@ -18,8 +23,8 @@ class TestComplaintBackend(BackendTest):
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
             involved={
-                const.ComplaintInvolvementType.affected: {3},  # type: ignore[dict-item]
-                const.ComplaintInvolvementType.target: {2},  # type: ignore[dict-item]
+                const.ComplaintInvolvementType.affected: {3},
+                const.ComplaintInvolvementType.target: {2},
             },
             entries={
                 1: models.ComplaintEntry(
@@ -38,7 +43,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                     ],
                 ),
@@ -58,7 +63,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                     ],
                 ),
@@ -78,7 +83,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                     ],
                 ),
@@ -101,7 +106,7 @@ class TestComplaintBackend(BackendTest):
                             dtime=nearly_now(),
                             deleted_by=1,  # type: ignore[arg-type]
                             dreason="Ungünstige Wortwahl.",
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                         models.ComplaintEntryVersion(
                             id=5,  # type: ignore[arg-type]
@@ -112,7 +117,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                     ],
                 ),
@@ -132,7 +137,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=set(),
+                            authors={3},  # type: ignore[arg-type]
                         ),
                     ],
                 ),
@@ -194,7 +199,9 @@ class TestComplaintBackend(BackendTest):
                 "change_note": "Entfernt (28.05.2025)",
             },
         ]
-        self.assertLogEqual(log_expectation, "complaint", case_id=case_id)
+        self.assertLogEqual(
+            log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
+        )
 
     @as_users("anton")
     def test_create_case(self) -> None:
@@ -253,7 +260,7 @@ class TestComplaintBackend(BackendTest):
         )
         self.assertEqual(expectation.as_dict(), case.entries[new_entry_id].as_dict())
         self.assertEqual(expectation, case.entries[new_entry_id])
-        self.assertLogEqual([], "complaint", case_id=case_id)
+        self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
     @as_users("anton")
     def test_replace_entry(self) -> None:
@@ -286,7 +293,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(replaced_entry.as_dict(), case.entries[entry_id].as_dict())
         self.assertEqual(replaced_entry, case.entries[entry_id])
 
-        self.assertLogEqual([], "complaint", case_id=case_id)
+        self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
     @as_users("anton")
     def test_delete_entry(self) -> None:
@@ -306,7 +313,7 @@ class TestComplaintBackend(BackendTest):
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(deleted_entry.as_dict(), case.entries[entry_id].as_dict())
         self.assertEqual(deleted_entry, case.entries[entry_id])
-        self.assertLogEqual([], "complaint", case_id=case_id)
+        self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
     @as_users("anton")
     def test_add_remove_involved(self) -> None:
@@ -381,7 +388,9 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": 1,
             },
         ]
-        self.assertLogEqual(log_expectation, "complaint", case_id=case_id)
+        self.assertLogEqual(
+            log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
+        )
 
 
 class TestComplaintValidation(TestValidationBase):

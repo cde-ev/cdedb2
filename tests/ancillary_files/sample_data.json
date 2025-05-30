@@ -4470,7 +4470,32 @@
             "dreason": null
         }
     ],
-    "complaint.authors": [],
+    "complaint.authors": [
+        {
+            "entry_version_id": 1,
+            "persona_id": 3
+        },
+        {
+            "entry_version_id": 2,
+            "persona_id": 3
+        },
+        {
+            "entry_version_id": 3,
+            "persona_id": 3
+        },
+        {
+            "entry_version_id": 4,
+            "persona_id": 3
+        },
+        {
+            "entry_version_id": 5,
+            "persona_id": 3
+        },
+        {
+            "entry_version_id": 6,
+            "persona_id": 3
+        }
+    ],
     "complaint.involved": [
         {
             "case_id": 1,
@@ -4481,6 +4506,32 @@
             "case_id": 1,
             "persona_id": 3,
             "involved_type": 1
+        }
+    ],
+    "complaint.log": [
+        {
+            "case_id": 1,
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "code": 1,
+            "persona_id": null,
+            "change_note": null
+        },
+        {
+            "case_id": 1,
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "code": 41,
+            "persona_id": 3,
+            "change_note": "ComplaintInvolvedType.affected"
+        },
+        {
+            "case_id": 1,
+            "ctime": "---now---",
+            "submitted_by": 1,
+            "code": 41,
+            "persona_id": 2,
+            "change_note": "ComplaintInvolvedType.target"
         }
     ],
     "cde.org_period": [
