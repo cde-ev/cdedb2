@@ -34,7 +34,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=[],
+                            authors=set(),
                         ),
                     ],
                 ),
@@ -54,7 +54,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=[],
+                            authors=set(),
                         ),
                     ],
                 ),
@@ -74,7 +74,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=[],
+                            authors=set(),
                         ),
                     ],
                 ),
@@ -97,7 +97,7 @@ class TestComplaintBackend(BackendTest):
                             dtime=nearly_now(),
                             deleted_by=1,  # type: ignore[arg-type]
                             dreason="Ungünstige Wortwahl.",
-                            authors=[],
+                            authors=set(),
                         ),
                         models.ComplaintEntryVersion(
                             id=5,  # type: ignore[arg-type]
@@ -108,7 +108,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=[],
+                            authors=set(),
                         ),
                     ],
                 ),
@@ -128,7 +128,7 @@ class TestComplaintBackend(BackendTest):
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
-                            authors=[],
+                            authors=set(),
                         ),
                     ],
                 ),
@@ -236,7 +236,7 @@ class TestComplaintBackend(BackendTest):
                     length=len(new_version_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
-                    authors=[3],  # type: ignore[list-item]
+                    authors={3},  # type: ignore[arg-type]
                 )
             ],
         )
