@@ -4471,6 +4471,18 @@
         }
     ],
     "complaint.authors": [],
+    "complaint.involved": [
+        {
+            "case_id": 1,
+            "persona_id": 2,
+            "involved_type": 21
+        },
+        {
+            "case_id": 1,
+            "persona_id": 3,
+            "involved_type": 1
+        }
+    ],
     "cde.org_period": [
         {
             "id": 41,

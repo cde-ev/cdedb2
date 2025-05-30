@@ -198,7 +198,9 @@ class ComplaintBackend(AbstractBackend):
 
         with Atomizer(rs):
             new_id = self.sql_insert(rs, models.Case.database_table, data)
-            new_case = models.Case(id=cast(vtypes.ID, new_id), **data, entries={})
+            new_case = models.Case(
+                id=cast(vtypes.ID, new_id), **data, entries={}, involved={}
+            )
             self.complaint_log(
                 rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
             )

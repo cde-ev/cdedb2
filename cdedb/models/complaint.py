@@ -31,9 +31,12 @@ class Case(CdEDataclass):
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
         metadata={"validation_exclude": True}
     )
+    involved: dict[const.ComplaintInvolvementType, vtypes.ID] = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     def get_persona_ids(self) -> set[int]:
-        ret: set[int] = set()
+        ret: set[int] = set(itertools.chain.from_iterable(self.involved.values()))
         # TODO add more people here
         for entry in self.entries.values():
             if entry.concerned_id:
@@ -52,11 +55,38 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
+        new_involved: dict[const.ComplaintInvolvementType, set[vtypes.ID]] = {}
+        for involved in data["involved"]:
+            involved_type = const.ComplaintInvolvementType(involved[1])
+            if involved_type not in new_involved:
+                new_involved[involved_type] = set()
+            new_involved[involved_type].add(involved[0])
+        data["involved"] = new_involved
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
         ret = super().from_database(data)
         for entry in data["entries"].values():
             entry.case = ret
         return ret
+
+    @classmethod
+    def get_select_query(
+        cls,
+        entities: Collection[int],
+        entity_key: str | None = None,
+    ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        query = f"""
+            SELECT
+                {", ".join(cls.database_fields())},
+                array(
+                    SELECT ARRAY[involved.persona_id, involved.involved_type]
+                    FROM {ComplaintInvolved.database_table} AS involved
+                    WHERE involved.case_id = cases.id
+                ) AS involved
+            FROM
+                {cls.database_table} AS cases
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
+        return query, (entities,)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -158,6 +188,11 @@ class ComplaintEntryVersion(CdEDataclass):
         return (self.ctime,)
 
     @classmethod
+    def from_database(cls, data: CdEDBObject) -> Self:
+        data["authors"] = set(data["authors"])
+        return super().from_database(data)
+
+    @classmethod
     def get_select_query(
         cls,
         entities: Collection[int],
@@ -186,3 +221,8 @@ class AccessLog:
 class ComplaintAuthors:
     database_table = "complaint.authors"
     entity_key = "entry_version_id"
+
+
+class ComplaintInvolved:
+    database_table = "complaint.involved"
+    entity_key = "case_id"

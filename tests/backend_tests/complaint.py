@@ -17,6 +17,10 @@ class TestComplaintBackend(BackendTest):
             summary="Jemand schnarcht ganz furchtbar.",
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
+            involved={
+                const.ComplaintInvolvementType.affected: {3},  # type: ignore[dict-item]
+                const.ComplaintInvolvementType.target: {2},  # type: ignore[dict-item]
+            },
             entries={
                 1: models.ComplaintEntry(
                     id=1,  # type: ignore[arg-type]
@@ -148,6 +152,8 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
 
+        self.assertEqual({1, 2, 3}, reality.get_persona_ids())
+
     @as_users("anton")
     def test_set_case(self) -> None:
         case_id = 1
@@ -198,7 +204,12 @@ class TestComplaintBackend(BackendTest):
             "summary": "<REDACTED> hat jemandem Kaugummi in die Haare geklebt.",
         }
         new_case = self.complaint.create_case(self.key, new_case_data)
-        expectation = models.Case(id=new_case.id, **new_case_data, entries={})
+        expectation = models.Case(
+            id=new_case.id,
+            **new_case_data,
+            entries={},
+            involved={},
+        )
         self.assertEqual(expectation.as_dict(), new_case.as_dict())
         self.assertEqual(expectation, new_case)
         log_expectation = [
