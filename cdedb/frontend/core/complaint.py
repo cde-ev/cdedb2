@@ -156,8 +156,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
+        rs.ignore_validation_errors()
         if parent_id:
             parent = rs.ambience['case'].entries[parent_id]
             available_types = parent.entry_type.possible_children
@@ -256,7 +255,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        ret = self.complaintproxy.delete_entry(rs, entry_id)
+        ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case", {})
 

@@ -1930,7 +1930,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'mailinglist_id', 'mailinglist', ()),
         Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
               'case_id', 'case', ()),
-        Scout(lambda anid: ambience['case'].entries[anid],
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
               'entry_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
