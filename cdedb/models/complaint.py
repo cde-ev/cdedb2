@@ -152,9 +152,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
 
-    authors: list[vtypes.ID] = dataclasses.field(
-        metadata={"validation_exclude": True, "database_exclude": True}
-    )
+    authors: set[vtypes.ID] = dataclasses.field(metadata={"database_exclude": True})
 
     def get_sortkey(self) -> Sortkey:
         return (self.ctime,)
@@ -179,17 +177,6 @@ class ComplaintEntryVersion(CdEDataclass):
         """
         params = (entities,)
         return query, params
-
-    @classmethod
-    def validation_fields(
-        cls,
-        *,
-        creation: bool,
-    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
-        mandatory, optional = super().validation_fields(creation=creation)
-        if creation:
-            mandatory["authors"] = set[vtypes.ID]
-        return mandatory, optional
 
 
 class AccessLog:
