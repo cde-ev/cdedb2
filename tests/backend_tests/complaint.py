@@ -289,7 +289,7 @@ class TestComplaintBackend(BackendTest):
         self.assertLogEqual([], "complaint", case_id=case_id)
 
     @as_users("anton")
-    def test_delete_entry_version(self) -> None:
+    def test_delete_entry(self) -> None:
         case_id = 1
         entry_id = 4
 
