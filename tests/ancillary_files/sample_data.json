@@ -4365,6 +4365,7 @@
             "end_date": null
         }
     ],
+    "complaint.access_log": [],
     "complaint.entries": [
         {
             "id": 1,
@@ -4404,132 +4405,155 @@
     ],
     "complaint.entry_versions": [
         {
+            "id": 1,
             "entry_id": 1,
+            "submitted_by": 1,
             "description": "Mehrere Mitbewohnys von Berta haben sich über penetrantes Schnarrchen beschwert, wodurch auf der Akademie nicht ausreichend Schlaf bekommen haben.",
             "length": 146,
-            "timestamp": "2025-05-28T14:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T14:00:00+00:00",
             "dtime": null,
-            "deleted_by": null,
-            "dreason": null
+            "dreason": null,
+            "deleted_by": null
         },
         {
+            "id": 2,
             "entry_id": 2,
+            "submitted_by": 1,
             "description": "Ich war mit Berta in einem Haus und konnte durch das Schnarchen so wenig schlafen, dass ich in meinem Philosophiekurs nicht aufmerksam war und von den KLs angemeckert wurde. Ich möchte bitte in Zukunft nicht mehr im gleichen Haus eingeteilt werden wie Berta.",
             "length": 258,
-            "timestamp": "2025-05-28T14:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T14:00:00+00:00",
             "dtime": null,
-            "deleted_by": null,
-            "dreason": null
+            "dreason": null,
+            "deleted_by": null
         },
         {
+            "id": 3,
             "entry_id": 3,
+            "submitted_by": 1,
             "description": null,
             "length": null,
-            "timestamp": "2025-05-28T15:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T15:00:00+00:00",
             "dtime": null,
-            "deleted_by": null,
-            "dreason": null
+            "dreason": null,
+            "deleted_by": null
         },
         {
+            "id": 4,
             "entry_id": 4,
+            "submitted_by": 1,
             "description": "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
             "length": 80,
-            "timestamp": "2025-05-28T16:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T16:00:00+00:00",
             "dtime": "---now---",
-            "deleted_by": 1,
-            "dreason": "Ungünstige Wortwahl."
+            "dreason": "Ungünstige Wortwahl.",
+            "deleted_by": 1
         },
         {
+            "id": 5,
             "entry_id": 4,
+            "submitted_by": 1,
             "description": "Berta hat sich bereit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
             "length": 77,
-            "timestamp": "2025-05-28T16:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T16:00:00+00:00",
             "dtime": null,
-            "deleted_by": null,
-            "dreason": null
+            "dreason": null,
+            "deleted_by": null
         },
         {
+            "id": 6,
             "entry_id": 5,
+            "submitted_by": 1,
             "description": "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
             "length": 53,
-            "timestamp": "2025-05-28T16:00:00",
             "ctime": "---now---",
-            "submitted_by": 1,
+            "timestamp": "2025-05-28T16:00:00+00:00",
             "dtime": null,
-            "deleted_by": null,
-            "dreason": null
+            "dreason": null,
+            "deleted_by": null
         }
     ],
     "complaint.authors": [
         {
+            "id": 1,
             "entry_version_id": 1,
             "persona_id": 3
         },
         {
+            "id": 2,
             "entry_version_id": 2,
             "persona_id": 3
         },
         {
+            "id": 3,
             "entry_version_id": 3,
             "persona_id": 3
         },
         {
+            "id": 4,
             "entry_version_id": 4,
             "persona_id": 3
         },
         {
+            "id": 5,
             "entry_version_id": 5,
             "persona_id": 3
         },
         {
+            "id": 6,
             "entry_version_id": 6,
             "persona_id": 3
         }
     ],
     "complaint.involved": [
         {
+            "id": 1,
             "case_id": 1,
             "persona_id": 2,
-            "involved_type": 21
+            "involved_type": 21,
+            "is_informed": false
         },
         {
+            "id": 2,
             "case_id": 1,
             "persona_id": 3,
-            "involved_type": 1
+            "involved_type": 1,
+            "is_informed": false
         }
     ],
+    "complaint.companions": [],
+    "complaint.companion_incompatibles": [],
+    "complaint.enforcers": [],
+    "complaint.monitors": [],
     "complaint.log": [
         {
-            "case_id": 1,
+            "id": 1,
             "ctime": "---now---",
-            "submitted_by": 1,
             "code": 1,
+            "submitted_by": 1,
+            "case_id": 1,
             "persona_id": null,
             "change_note": null
         },
         {
-            "case_id": 1,
+            "id": 2,
             "ctime": "---now---",
-            "submitted_by": 1,
             "code": 41,
+            "submitted_by": 1,
+            "case_id": 1,
             "persona_id": 3,
             "change_note": "ComplaintInvolvedType.affected"
         },
         {
-            "case_id": 1,
+            "id": 3,
             "ctime": "---now---",
-            "submitted_by": 1,
             "code": 41,
+            "submitted_by": 1,
+            "case_id": 1,
             "persona_id": 2,
             "change_note": "ComplaintInvolvedType.target"
         }
