@@ -31,7 +31,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
 
@@ -330,6 +330,115 @@ class ComplaintBackend(AbstractBackend):
         dreason = affirm_optional(str, dreason)
         with Atomizer(rs):
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
+
+    @access("core_admin")
+    def add_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        involved_type: const.ComplaintInvolvementType,
+        persona_ids: Collection[int],
+    ) -> DefaultReturnCode:
+        """Add the given personas as involved people of the given type to a case.
+
+        :returns:
+            0 if no persona ids were given or if something went wrong.
+            -1 if no one was added (because they were already involved).
+            The number of newly added personas otherwise.
+        """
+        case_id = affirm(vtypes.ID, case_id)
+        involved_type = affirm(const.ComplaintInvolvementType, involved_type)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        if not persona_ids:
+            return 0
+
+        with Atomizer(rs):
+            if not self.core.verify_ids(rs, persona_ids):
+                raise ValueError(n_("Unknown users."))
+
+            case = self.get_case(rs, case_id)
+            newly_involved = persona_ids - case.involved.get(involved_type, set())
+            if not newly_involved:
+                return -1
+            ret = self.sql_insert_many(
+                rs,
+                models.ComplaintInvolved.database_table,
+                [
+                    {
+                        "case_id": case_id,
+                        "persona_id": persona_id,
+                        "involved_type": involved_type,
+                    }
+                    for persona_id in newly_involved
+                ],
+            )
+            code = const.ComplaintLogCodes.involvee_added
+            for persona_id in mixed_existence_sorter(newly_involved):
+                ret *= self.complaint_log(
+                    rs=rs,
+                    code=code,
+                    case_id=case_id,
+                    persona_id=persona_id,
+                    change_note=rs.log_gettext(str(involved_type)),
+                )
+        return ret
+
+    @access("core_admin")
+    def remove_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        involved_type: const.ComplaintInvolvementType,
+        persona_ids: Collection[int],
+    ) -> DefaultReturnCode:
+        """Remove some users as involved with the given type from a case.
+
+        :returns:
+            0 if no persona ids were given or if something went wrong.
+            -1 if no one was removed (because they weren't involved).
+            The number of removed personas otherwise.
+        """
+        case_id = affirm(vtypes.ID, case_id)
+        involved_type = affirm(const.ComplaintInvolvementType, involved_type)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        if not persona_ids:
+            return 0
+
+        with Atomizer(rs):
+            if not self.core.verify_ids(rs, persona_ids):
+                raise ValueError(n_("Unknown users."))
+
+            case = self.get_case(rs, case_id)
+            removed = persona_ids.intersection(case.involved.get(involved_type, set()))
+            if not removed:
+                return -1
+            query = f"""
+                DELETE FROM {models.ComplaintInvolved.database_table}
+                WHERE case_id = %(case_id)s
+                    AND persona_id = ANY(%(persona_ids)s)
+                    AND involved_type = %(involved_type)s
+            """
+            ret = self.query_exec(
+                rs,
+                query,
+                {
+                    "case_id": case_id,
+                    "persona_ids": persona_ids,
+                    "involved_type": involved_type,
+                },
+            )
+            code = const.ComplaintLogCodes.involvee_removed
+            for persona_id in mixed_existence_sorter(removed):
+                ret *= self.complaint_log(
+                    rs=rs,
+                    code=code,
+                    case_id=case_id,
+                    persona_id=persona_id,
+                    change_note=rs.log_gettext(str(involved_type)),
+                )
+        return ret
 
     def _get_descriptions(
         self, rs: RequestState, case_id: int, visible: bool

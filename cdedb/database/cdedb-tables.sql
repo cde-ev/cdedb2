@@ -593,7 +593,8 @@ CREATE TABLE complaint.involved (
     is_informed   boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.involved TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON complaint.involved TO cdb_admin;
+GRANT INSERT, UPDATE (is_informed), DELETE ON complaint.involved TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 
 -- very limited access per case and persona
 CREATE TABLE complaint.companions (

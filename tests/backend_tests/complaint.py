@@ -308,6 +308,77 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(deleted_entry, case.entries[entry_id])
         self.assertLogEqual([], "complaint", case_id=case_id)
 
+    @as_users("anton")
+    def test_add_remove_involved(self) -> None:
+        case_id = 1
+        original_case = self.complaint.get_case(self.key, case_id)
+        expectation = self.complaint.get_case(self.key, case_id)
+
+        self.assertEqual(
+            0,
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, []
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+            ),
+        )
+        self.assertEqual(
+            -1,
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+            ),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        expectation.involved.setdefault(
+            const.ComplaintInvolvementType.target, set()
+        ).add(1)
+        self.assertEqual(expectation.as_dict(), case.as_dict())
+        self.assertEqual(expectation, case)
+
+        self.assertEqual(
+            0,
+            self.complaint.remove_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, []
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+            ),
+        )
+        self.assertEqual(
+            -1,
+            self.complaint.remove_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+            ),
+        )
+
+        self.assertEqual(
+            original_case.as_dict(),
+            self.complaint.get_case(self.key, case_id).as_dict(),
+        )
+        self.assertEqual(original_case, self.complaint.get_case(self.key, case_id))
+
+        log_expectation = [
+            {
+                "code": const.ComplaintLogCodes.involvee_added,
+                "change_note": str(const.ComplaintInvolvementType.target),
+                "persona_id": 1,
+            },
+            {
+                "code": const.ComplaintLogCodes.involvee_removed,
+                "change_note": str(const.ComplaintInvolvementType.target),
+                "persona_id": 1,
+            },
+        ]
+        self.assertLogEqual(log_expectation, "complaint", case_id=case_id)
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:
