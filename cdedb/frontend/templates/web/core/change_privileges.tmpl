@@ -38,6 +38,7 @@
             {% endif %}
             {% if ambience['persona']['is_event_realm'] %}
                 {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_complaint_admin", label=gettext("Complaint-Admin"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_ml_realm'] %}
                 {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}

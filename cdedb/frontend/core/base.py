@@ -1749,7 +1749,8 @@ class CoreBaseFrontend(AbstractFrontend):
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          is_auditor: bool, notes: str) -> Response:
+                          is_complaint_admin: bool, is_auditor: bool, notes: str,
+                          ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)

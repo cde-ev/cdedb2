@@ -297,6 +297,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -371,6 +372,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -409,6 +411,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -434,6 +437,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -473,6 +477,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -798,6 +803,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -884,6 +890,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -973,6 +980,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -1093,6 +1101,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'is_purged': False,
             'is_searchable': True,

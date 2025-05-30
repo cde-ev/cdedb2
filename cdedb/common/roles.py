@@ -56,6 +56,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False,
                 ret.add("searchable")
         if session.get("is_auditor"):
             ret.add("auditor")
+    if "event" in ret:
+        if session.get("is_complaint_admin"):
+            ret.add("complaint_admin")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -250,6 +253,7 @@ ADMIN_KEYS = {
     n_("is_ml_admin"): "is_ml_realm",
     n_("is_assembly_admin"): "is_assembly_realm",
     n_("is_cdelokal_admin"): "is_ml_realm",
+    n_("is_complaint_admin"): "is_event_realm",
     n_("is_auditor"): "is_cde_realm",
 }
 
@@ -265,6 +269,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("event_admin", "cdb_admin"),
     ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
+    ("complaint_admin", "cdb_admin"),
 
     ("searchable", "cdb_member"),
     ("member", "cdb_member"),
@@ -331,10 +336,9 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        # complaint to be removed here
         result |= {
             "core", "core_user", "cde_user", "event_user", "assembly_user",
-            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core", "complaint",
+            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
         }
     if "complaint_admin" in roles:
         result |= {"complaint"}

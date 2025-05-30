@@ -1717,6 +1717,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_complaint_admin': False,
                 'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.

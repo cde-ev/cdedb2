@@ -61,6 +61,10 @@ CREATE TABLE core.personas (
         is_cdelokal_admin       boolean NOT NULL DEFAULT False,
         CONSTRAINT personas_admin_cdelokal
             CHECK (NOT is_cdelokal_admin OR is_ml_realm),
+        -- allows management of complaint cases
+        is_complaint_admin      boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_complaint_admin_event_realm
+            CHECK (NOT is_complaint_admin OR is_event_realm),
         -- allows auditing, i.e. viewing of all logs
         is_auditor              boolean NOT NULL DEFAULT False,
         CONSTRAINT personas_cde_auditor
@@ -210,7 +214,7 @@ CREATE INDEX personas_is_ml_realm_idx ON core.personas(is_ml_realm);
 CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_complaint_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
 GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
@@ -287,6 +291,7 @@ CREATE TABLE core.privilege_changes (
         -- changes to the admin bits. NULL is for no change.
         is_meta_admin           boolean DEFAULT NULL,
         is_core_admin           boolean DEFAULT NULL,
+        is_complaint_admin      boolean DEFAULT NULL,
         is_cde_admin            boolean DEFAULT NULL,
         is_finance_admin        boolean DEFAULT NULL,
         is_event_admin          boolean DEFAULT NULL,
@@ -398,6 +403,7 @@ CREATE TABLE core.changelog (
         is_ml_admin             boolean,
         is_assembly_admin       boolean,
         is_cdelokal_admin       boolean,
+        is_complaint_admin      boolean,
         is_auditor              boolean,
         is_cde_realm            boolean,
         is_event_realm          boolean,
