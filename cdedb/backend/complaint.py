@@ -327,7 +327,7 @@ class ComplaintBackend(AbstractBackend):
             affirm(
                 models.ComplaintEntryVersion,
                 data,
-                creation=True,
+                creation=False,
                 passthrough=True,
                 entry_type=entry.entry_type,
             ),
