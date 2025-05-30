@@ -52,7 +52,7 @@
             {{ util.form_input_static(label=gettext("Entry Type"), value=gettext(entry_type)) }}
             {% if entry_type.has_concerned %}
                 {% if ambience['entry'] %}
-                    {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[entry.concerned_id], icon='user')) }}
+                    {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[ambience['entry'].concerned_id], icon='user')) }}
                 {% else %}
                     {{ util.form_input_text(name="concerned_id", label=gettext("Concerns"), anid="input-concerned_id",
                                             placeholder=gettext("DB-XXXX-X")) }}

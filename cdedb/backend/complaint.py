@@ -287,7 +287,8 @@ class ComplaintBackend(AbstractBackend):
         )
         version_data = cast(
             CdEDBObject,
-            affirm(models.ComplaintEntryVersion, version_data, creation=True),
+            affirm(models.ComplaintEntryVersion, version_data, creation=True,
+                   entry_type=entry_data['entry_type']),
         )
 
         with Atomizer(rs):
@@ -312,8 +313,10 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a new version of an existing complaint entry."""
         entry_id = affirm(vtypes.ID, entry_id)
+        entry = self.get_case(rs, self._get_case_id(rs, entry_id)).entries[entry_id]
         data = cast(
-            CdEDBObject, affirm(models.ComplaintEntryVersion, data, creation=False)
+            CdEDBObject, affirm(models.ComplaintEntryVersion, data, creation=False,
+                                entry_type=entry.entry_type)
         )
         dreason = affirm_optional(str, dreason)
 

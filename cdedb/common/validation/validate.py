@@ -4969,6 +4969,9 @@ def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
     else:
         errs.append(ValueError('authors', n_("May not be empty.")))
 
+    if errs:
+        raise errs
+
     return val
 
 
@@ -4986,10 +4989,12 @@ def _complaint_entry_version(
             "entry_type", "Must provide entry_type for setting entry."))
 
     # Validate concerned_id dependent on entry_type
-    type_ = str if entry_type.has_description else NoneType
+    validator = _str if entry_type.has_description else _None
     with errs:
-        val['description'] = _ALL_TYPED[type_](
-                val.get('description'), 'description', **kwargs)
+        val['description'] = validator(val.get('description'), 'description', **kwargs)
+
+    if errs:
+        raise errs
 
     return val
 

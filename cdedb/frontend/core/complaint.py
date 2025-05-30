@@ -34,10 +34,10 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     check_validation as check,
+    extract_and_check_dataclass_validation as extract_and_check_dataclass,
     periodic,
     request_dict_extractor,
     request_extractor,
-    extract_and_check_dataclass_validation as extract_and_check_dataclass,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 
@@ -184,11 +184,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        entry_data = extract_and_check_dataclass(
-            rs, models.ComplaintEntry, creation=True
-        ) or {}
+        entry_data = (
+            extract_and_check_dataclass(rs, models.ComplaintEntry, creation=True) or {}
+        )
         version_data = extract_and_check_dataclass(
-            rs, models.ComplaintEntryVersion, creation=True,
+            rs,
+            models.ComplaintEntryVersion,
+            creation=True,
             entry_type=entry_data.get('entry_type'),
         )
         if rs.has_validation_errors() or not entry_data or not version_data:

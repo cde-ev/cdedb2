@@ -220,22 +220,23 @@ class CdEDataclass:
         field_names.discard("id")
         fields = []
         for field in dataclasses.fields(cls):
-            if field.name not in field_names and not field.metadata.get('request_include'):
-                continue
-            if field.metadata.get('request_exclude'):
-                continue
-            if not field.init:
-                continue
-            if creation is True:
-                if field.metadata.get('creation_exclude'):
+            if not field.metadata.get('request_include'):
+                if field.name not in field_names:
                     continue
-                if field.metadata.get('creation_request_exclude'):
+                if field.metadata.get('request_exclude'):
                     continue
-            if creation is False:
-                if field.metadata.get('update_exclude'):
+                if not field.init:
                     continue
-                if field.metadata.get('update_request_exclude'):
-                    continue
+                if creation is True:
+                    if field.metadata.get('creation_exclude'):
+                        continue
+                    if field.metadata.get('creation_request_exclude'):
+                        continue
+                if creation is False:
+                    if field.metadata.get('update_exclude'):
+                        continue
+                    if field.metadata.get('update_request_exclude'):
+                        continue
             fields.append((field.name, requestdict_field_spec(field)))
         return fields
 

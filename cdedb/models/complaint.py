@@ -158,7 +158,9 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     description: str | None = dataclasses.field(
-        init=False, default=None, metadata={"database_exclude": True}
+        init=False,
+        default=None,
+        metadata={"database_exclude": True, "request_include": True}
     )
     length: int | None = dataclasses.field(
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
