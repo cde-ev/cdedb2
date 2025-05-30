@@ -73,7 +73,7 @@
 
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
-        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add entry"),
+        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
                      aclass="btn btn-sm btn-success", icon="plus") }}
         <form action="{{ cdedblink("core/unlock_case") }}"
             method="POST"
@@ -95,14 +95,22 @@
                     {{ entry.active_version.timestamp|datetime(lang=lang) }}
                 </div>
                 <div class="button-par">
-                    {{ util.href(cdedblink('core/replace_entry_form'),
+                    {% if entry.entry_type.possible_children %}
+                        {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),
+                                     label="",
+                                     title=gettext("Add child entry"),
+                                     aclass="btn btn-xs btn-success",
+                                     icon="forward-fast")
+                        }}
+                    {% endif %}
+                    {{ util.href(cdedblink('core/replace_entry_form', {'entry_id': entry.id}),
                                  label="",
                                  title=gettext("Replace"),
                                  aclass="btn btn-xs btn-warning",
                                  icon="pen",
                                  readonly=entry.entry_type.is_locked)
                     }}
-                    {{ util.href(cdedblink('core/remove_entry_form'),
+                    {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': entry.id}),
                                  label="",
                                  title=gettext("Remove"),
                                  aclass="btn btn-xs btn-danger",

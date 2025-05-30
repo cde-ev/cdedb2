@@ -8,8 +8,10 @@ their symbolic names provided by this module should be used.
 """
 
 import builtins
+import collections
 import enum
-from typing import Optional
+import functools
+from typing import Optional, Self
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -540,8 +542,8 @@ class ComplaintEntryType(CdEIntEnum):
     def is_hidden(self) -> bool:
         return self not in self.visible_types()
 
-    @property
-    def root(self) -> Optional["ComplaintEntryType"]:
+    @classmethod
+    def get_root_map(self) -> dict["ComplaintEntryType", "ComplaintEntryType"]:
         et = ComplaintEntryType
         return {
             et.statement_signed: et.provisional_statement_given,
@@ -564,7 +566,22 @@ class ComplaintEntryType(CdEIntEnum):
             et.definite_measure_comment: et.definite_to_arbcom,
             et.definite_measure_revoked: et.definite_to_arbcom,
             et.definite_measure_expired: et.definite_to_arbcom,
-        }.get(self)
+        }
+
+    @classmethod
+    def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
+        inverted_map = collections.defaultdict(set)
+        for k, v in cls.get_root_map().items():
+            inverted_map[v].add(k)
+        return inverted_map
+
+    @property
+    def possible_children(self) -> set["ComplaintEntryType"]:
+        return self._get_children_map().get(self, set())
+
+    @property
+    def root(self) -> Optional["ComplaintEntryType"]:
+        return self.get_root_map().get(self)
 
     @property
     def has_description(self) -> bool:

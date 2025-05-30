@@ -131,9 +131,32 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("core_admin")
-    def add_entry_form(self, rs: RequestState, case_id: int) -> Response:
+    @REQUESTdata("entry_type", "parent_id")
+    def add_entry_form(
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_type: Optional[const.ComplaintEntryType],
+        parent_id: Optional[int],
+    ) -> Response:
         """Render form."""
-        return self.render(rs, "complaint/configure_entry", {})
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if parent_id:
+            parent = rs.ambience['case'].entries[parent_id]
+            available_types = parent.entry_type.possible_children
+        else:
+            et = const.ComplaintEntryType
+            available_types = set(et) - et.get_root_map().keys()
+        return self.render(
+            rs,
+            "complaint/configure_entry",
+            {
+                'entry_type': entry_type,
+                'parent_id': parent_id,
+                'available_types': available_types,
+            },
+        )
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=True))
@@ -141,35 +164,50 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        entry_data: dict[str, Any],
-        version_data: dict[str, Any],
+        data: dict[str, Any],
     ) -> Response:
         if rs.has_validation_errors():
-            return self.add_entry_form(rs, case_id)
+            # TODO Deal with validation errors here?
+            return self.add_entry_form(rs, case_id, entry_type=data.get('entry_type'),
+                                       parent_id=data.get('parent_id'))
+        # TODO Solve this somehow
+        entry_data = version_data = data
         entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
-        rs.notify_return_code(1)
+        rs.notify_return_code(bool(entry))
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 
     @access("core_admin")
+    @REQUESTdata("entry_id")
     def replace_entry_form(
-        self, rs: RequestState, case_id: int, entry_id: int
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_id: int,
     ) -> Response:
         """Render form."""
-        return self.render(rs, "complaint/configure_entry", {})
+        rs.ignore_validation_errors()
+        entry = rs.ambience['case'].entries[entry_id]
+        personas = self.coreproxy.get_personas(rs, {entry.concerned_id})
+        return self.render(
+            rs,
+            "complaint/configure_entry",
+            {'entry': entry, 'entry_type': entry.entry_type, 'personas': personas},
+        )
 
     @access("core_admin", modi={"POST"})
+    @REQUESTdata("dreason")
     @REQUESTdatadict(*models.ComplaintEntry.requestdict_fields(creation=False))
     def replace_entry(
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int,
+        # entry_id: int,
         data: dict[str, Any],
         dreason: str | None,
     ) -> Response:
         if rs.has_validation_errors():
-            return self.replace_entry_form(rs, case_id, entry_id)
-        entry = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
+            return self.replace_entry_form(rs, case_id, data['id'])
+        entry = self.complaintproxy.replace_entry_version(rs, data['id'], data, dreason)
         rs.notify_return_code(1)
         return self.redirect(rs, "complaint/show_case", {'entry': entry})
 

@@ -1,0 +1,84 @@
+{% set sidenav_active='complaint_index' %}
+{% if entry_id %}
+    {% set action_target = "core/replace_entry" %}
+{% else %}
+    {% set action_target = "core/add_entry" %}
+{% endif %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% if entry_id %}
+        {{ util.context_heading(gettext("Replace Entry"), gettext("Case %s")|format(ambience['case'].id),
+                                'gavel', "") }}
+    {% else %}
+        {{ util.context_heading(gettext("Add Entry"), gettext("Case %s")|format(ambience['case'].id),
+                                'gavel', "") }}
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
+                            icon="gavel") }}
+    {% if entry_id %}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Replace Entry"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Add Entry"), active=True) }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {% if not entry_id and entry_type is none %}
+        <form action="{{ cdedblink(action_target + '_form') }}" method="GET" id="selectentrytypeform"
+              class="form-horizontal">
+            {{ util.form_input_select(name="entry_type", label=gettext("Entry Type"),
+                                      entries=available_types|enum_entries(processing=gettext)) }}
+            {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("core/show_case",),
+                                      icon="chevron-right") }}
+        </form>
+    {% else %}
+        <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
+            {% if entry_id %}
+                {{ util.input_hidden(name="id", value=entry_id) }}
+            {% endif %}
+            {{ util.input_hidden(name="entry_type", value=entry_type) }}
+            {{ util.anti_csrf_token(action_target) }}
+            {{ util.form_input_static(label=gettext("Entry Type"), value=gettext(entry_type)) }}
+            {% if entry_type.has_concerned %}
+                {% if entry_id %}
+                    {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[entry.concerned_id], icon='user')) }}
+                {% else %}
+                    {{ util.form_input_text(name="concerned_id", label=gettext("Concerns"), anid="input-concerned_id",
+                                            placeholder=gettext("DB-XXXX-X")) }}
+                    <script nonce="{{ csp_nonce }}">
+                        $('#input-concerned_id').cdedbSearchPerson(
+                            '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                            [], false, false, "{{ gettext("ID, name, email") }}"
+                        );
+                    </script>
+                {% endif %}
+            {% endif %}
+            {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="date",
+                                    placeholder=now().strftime("%b %d %Y %H:%M:%S")) }}
+            {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="20", markdown=True,
+                                        info=infotext) }}
+            {# Add some conditional warnings here. #}
+            {% if entry_id %}
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}
+                    </div>
+                </div>
+            {% endif %}
+            {{ util.form_input_submit(label=gettext("Replace"), cancellink=cdedblink('core/show_case')) }}
+        </form>
+    {% endif %}
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configureentryform').cdedbProtectChanges();
+    </script>
+{% endblock %}
