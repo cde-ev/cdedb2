@@ -444,3 +444,88 @@ class TestComplaintValidation(TestValidationBase):
                 ),
             ],
         )
+
+    def test_entry(self) -> None:
+        # These cannot be updated, so creation only.
+        # Test successful creations.
+        self.do_validator_test(
+            models.ComplaintEntry,
+            [
+                (
+                    {
+                        "entry_type": str(const.ComplaintEntryType.initial_information),
+                    },
+                    {
+                        "entry_type": const.ComplaintEntryType.initial_information,
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.provisional_statement_given.value,
+                        "concerned_id": 1,
+                    },
+                    {
+                        "entry_type": const.ComplaintEntryType.provisional_statement_given,
+                        "concerned_id": 1,
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.statement_signed,
+                        "root_entry_id": 1,
+                    },
+                    {
+                        "entry_type": const.ComplaintEntryType.statement_signed,
+                        "root_entry_id": 1,
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.agreement_measure,
+                        "concerned_id": 1,
+                        "root_entry_id": 1,
+                    },
+                    INVAL,
+                    None,
+                ),
+            ],
+            {"creation": True},
+        )
+        # Test unsuccessful creations.
+        self.do_validator_test(
+            models.ComplaintEntry,
+            [
+                (
+                    {
+                        "entry_type": "bla",
+                    },
+                    None,
+                    ValueError(
+                        "Invalid input for the enumeration %(enum)s (entry_type)",
+                        {'enum': const.ComplaintEntryType},
+                    ),
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.agreement.name,
+                    },
+                    None,
+                    ValueError(
+                        "Invalid input for the enumeration %(enum)s (entry_type)",
+                        {'enum': const.ComplaintEntryType},
+                    ),
+                ),
+                (
+                    {
+                        "concerned_id": 1,
+                        "root_entry_id": 1,
+                    },
+                    None,
+                    KeyError("Mandatory key missing. (entry_type)"),
+                ),
+            ],
+            {"creation": True},
+        )
