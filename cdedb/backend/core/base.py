@@ -20,6 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend,
@@ -1946,6 +1947,10 @@ class CoreBaseBackend(AbstractBackend):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
+            if self.sql_select(
+                rs, models_complaint.ComplaintInvolved.database_table, ("id",), (persona_id,), entity_key="persona_id"
+            ):
+                raise RuntimeError(n_("Persona may not be purged."))
             #
             # 1. Zap information
             #
