@@ -16,8 +16,10 @@
 {% endblock %}
 
 {% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
     {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
-                            icon="gavel") }}
+                            icon="gavel", active=True) }}
 {% endblock %}
 
 

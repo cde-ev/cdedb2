@@ -140,6 +140,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         parent_id: Optional[int],
     ) -> Response:
         """Render form."""
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if parent_id:
@@ -164,8 +166,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
+        entry_id: int,
         data: dict[str, Any],
     ) -> Response:
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if rs.has_validation_errors():
             # TODO Deal with validation errors here?
             return self.add_entry_form(rs, case_id, entry_type=data.get('entry_type'),
@@ -174,10 +179,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entry_data = version_data = data
         entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(bool(entry))
-        return self.redirect(rs, "complaint/show_case", {'entry': entry})
+        return self.redirect(rs, "core/show_case", {'entry': entry})
 
     @access("core_admin")
-    @REQUESTdata("entry_id")
     def replace_entry_form(
         self,
         rs: RequestState,
@@ -185,13 +189,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entry_id: int,
     ) -> Response:
         """Render form."""
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         rs.ignore_validation_errors()
-        entry = rs.ambience['case'].entries[entry_id]
-        personas = self.coreproxy.get_personas(rs, {entry.concerned_id})
+        personas = {}
+        if rs.ambience['entry'].concerned_id:
+            personas = self.coreproxy.get_personas(rs, {rs.ambience['entry'].concerned_id})
         return self.render(
             rs,
             "complaint/configure_entry",
-            {'entry': entry, 'entry_type': entry.entry_type, 'personas': personas},
+            {'entry_type': rs.ambience['entry'].entry_type, 'personas': personas},
         )
 
     @access("core_admin", modi={"POST"})
@@ -201,21 +208,25 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        # entry_id: int,
+        entry_id: int,
         data: dict[str, Any],
         dreason: str | None,
     ) -> Response:
         if rs.has_validation_errors():
             return self.replace_entry_form(rs, case_id, data['id'])
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         entry = self.complaintproxy.replace_entry_version(rs, data['id'], data, dreason)
         rs.notify_return_code(1)
-        return self.redirect(rs, "complaint/show_case", {'entry': entry})
+        return self.redirect(rs, "core/show_case", {'entry': entry})
 
     @access("core_admin")
     def remove_entry_form(
         self, rs: RequestState, case_id: int, entry_id: int
     ) -> Response:
         """Render form."""
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         return self.render(rs, "complaint/remove_entry", {})
 
     @access("core_admin", modi={"POST"})
@@ -225,9 +236,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        entry = self.complaintproxy.delete_entry(rs, entry_id, dreason)
-        rs.notify_return_code(1)
-        return self.redirect(rs, "complaint/show_case", {'entry': entry})
+        ret = self.complaintproxy.delete_entry(rs, entry_id)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", {})
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")

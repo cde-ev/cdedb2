@@ -17,5 +17,8 @@
 
 
 {% block content %}
-
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/create_case'), gettext("Create Case"),
+                     aclass="btn btn-sm btn-success", icon="plus") }}
+    </div>
 {% endblock %}

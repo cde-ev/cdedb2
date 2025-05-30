@@ -1834,6 +1834,7 @@ class AmbienceDict(typing.TypedDict):
     ballot: NotRequired[CdEDBObject]
     mailinglist: NotRequired[models_ml.Mailinglist]
     case: NotRequired[models_complaint.Case]
+    entry: NotRequired[models_complaint.ComplaintEntry]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1929,6 +1930,8 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'mailinglist_id', 'mailinglist', ()),
         Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
               'case_id', 'case', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],
+              'entry_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
