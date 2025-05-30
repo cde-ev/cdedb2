@@ -2073,7 +2073,10 @@ class CoreBaseBackend(AbstractBackend):
         event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin",
+                                          "complaint_admin", "core_admin"}
+            )
+        ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """

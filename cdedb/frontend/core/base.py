@@ -966,8 +966,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
+        - ``admin_persona``: Search for users as
+          (core|cde|complaint|ml)_admin or auditor.
+        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -999,10 +1000,13 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "ml_admin", "auditor"} & rs.user.roles:
+            if not (
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if not {"core_admin", "ml_admin"} & rs.user.roles:
+            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
