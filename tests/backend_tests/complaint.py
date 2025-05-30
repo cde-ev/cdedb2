@@ -262,7 +262,7 @@ class TestComplaintBackend(BackendTest):
         original_case = self.complaint.get_case(self.key, case_id)
         new_version_data: CdEDBObject = {
             "timestamp": now(),
-            "authors": [3],
+            "authors": {3},
         }
         self.complaint.replace_entry_version(
             self.key, entry_id, new_version_data, "Zeitpunkt aktualisiert."
