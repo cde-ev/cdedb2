@@ -31,7 +31,7 @@ class Case(CdEDataclass):
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
         metadata={"validation_exclude": True}
     )
-    involved: dict[const.ComplaintInvolvementType, vtypes.ID] = dataclasses.field(
+    involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
 
