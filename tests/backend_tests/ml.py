@@ -205,6 +205,7 @@ class TestMlBackend(BackendTest):
             68: 'Windischleuba-Mailingliste für Hexerei und Zauberei',
             69: 'Windischleuba-Mailingliste für Hexerei und Zauberei'
                 ' (muggelfreie Zone)',
+            70: 'Strukturierungskomitee',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -292,7 +293,7 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
         self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
-                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67})
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67, 70})
 
     @as_users("janis")
     def test_double_link(self) -> None:

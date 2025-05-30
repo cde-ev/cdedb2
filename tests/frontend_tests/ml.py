@@ -390,7 +390,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton", "berta", maintain_data=True)
     def test_show_ml_buttons_opt_in(self) -> None:
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7/'})
         self.assertTitle("Aktivenforum 2001")
         self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
         self.assertIn("subscribe-no-mod-form", self.response.forms)

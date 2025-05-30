@@ -336,6 +336,8 @@ class MailinglistTypes(CdEIntEnum):
 
     public_member_implicit = 70
 
+    complaint_admin_implicit = 80
+
 
 @enum.unique
 class MailinglistDomain(CdEIntEnum):

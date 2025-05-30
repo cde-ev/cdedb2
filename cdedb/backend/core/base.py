@@ -1281,6 +1281,7 @@ class CoreBaseBackend(AbstractBackend):
             "ml": "is_ml_admin = TRUE",
             "assembly": "is_assembly_admin = TRUE",
             "cdelokal": "is_cdelokal_admin = TRUE",
+            "complaint": "is_complaint_admin = TRUE",
             "auditor": "is_auditor = TRUE",
         }
         constraint = constraints.get(realm)
