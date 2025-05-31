@@ -141,11 +141,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret * bool(new_case))
         return self.redirect(rs, "core/show_case", {'case_id': new_case.id})
 
-    @access("complaint_admin")
-    def add_involved_form(self, rs: RequestState, case_id: int) -> Response:
-        return self.render(rs, "complaint/add_involved")
-
-    @access("complaint_admin")
+    @access("complaint_admin", modi={"POST"})
     @REQUESTdata("involvement_type", "persona_ids")
     def add_involved(
         self,
@@ -155,16 +151,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         persona_ids: vtypes.CdedbIDList,
     ) -> Response:
         if rs.has_validation_errors():
-            return self.add_involved_form(rs, case_id)
+            return self.show_case(rs, case_id)
         if set(persona_ids) & rs.ambience['case'].all_involved.keys():
             rs.notify('info', n_("Some of these users were already involved."))
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
             rs.append_validation_error((
-                "persona_id",
+                "persona_ids",
                 ValueError(n_("Some of these users do not exist.")),
             ))
         if rs.has_validation_errors():
-            return self.add_involved_form(rs, case_id)
+            return self.show_case(rs, case_id)
         else:
             self.complaintproxy.add_involved(rs, case_id, involvement_type, persona_ids)
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
@@ -175,7 +171,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        if not self.coreproxy.verify_ids(rs, [persona_id], is_archived=None):
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=None):
             rs.append_validation_error((
                 "persona_id",
                 ValueError(n_("This user does not exist.")),
@@ -186,7 +182,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         else:
-            self.complaintproxy.remove_involved(rs, case_id, [persona_id])
+            ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
+            rs.notify_return_code(ret)
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin", modi={"POST"})

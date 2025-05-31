@@ -225,8 +225,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="change_case_form"),
                     rule("/change", methods=_POST,
                          endpoint="change_case"),
-                    rule("/involved/add", methods=_GET,
-                         endpoint="add_involved_form"),
                     rule("/involved/add", methods=_POST,
                          endpoint="add_involved"),
                     sub("/involved/<int:persona_id>", (
