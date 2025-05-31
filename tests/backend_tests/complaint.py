@@ -620,9 +620,9 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(case_id, result[0]["cases.id"])
 
         query.constraints = [
-            ("companion_persona.given_names", QueryOperators.equal, "Charly"),
+            ("companion.companion_persona_id", QueryOperators.equal, 3),
             ("companion.is_withdrawn", QueryOperators.equal, True),
-            ("involved_persona.given_names", QueryOperators.equal, "Bertå"),
+            ("involved.persona_id", QueryOperators.equal, 2),
         ]
         result = self.complaint.submit_general_query(self.key, query)
         self.assertEqual(1, len(result))
@@ -631,6 +631,34 @@ class TestComplaintBackend(BackendTest):
         self.complaint.set_companion_withdrawn(self.key, case_id, 2, 3, False)
         result = self.complaint.submit_general_query(self.key, query)
         self.assertEqual(0, len(result))
+
+        query.constraints = [
+            (
+                "entries.concerned_id,authors.persona_id,involved.persona_id,companion.companion_persona_id",
+                QueryOperators.equal,
+                2,
+            ),
+        ]
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(1, len(result))
+        self.assertEqual(case_id, result[0]["cases.id"])
+
+        query.constraints = [
+            (
+                "entries.concerned_id,authors.persona_id,involved.persona_id,companion.companion_persona_id",
+                QueryOperators.equal,
+                1,
+            ),
+        ]
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(0, len(result))
+
+        self.complaint.add_involved(
+            self.key, case_id, const.ComplaintInvolvementType.appellant, [1]
+        )
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(1, len(result))
+        self.assertEqual(case_id, result[0]["cases.id"])
 
 
 class TestComplaintValidation(TestValidationBase):
