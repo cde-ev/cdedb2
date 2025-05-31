@@ -66,12 +66,61 @@
     </dl>
 
     {{ util.h(n_("Relevant Individuals")) }}
-    {#
-    TODO
-    {% if age_classes[persona.id] != enums['AgeClasses'].full %}
-        <strong>({{ gettext(age_classes[persona.id]|string) }})</strong>
-    {% endif %}
-    #}
+    <div class="button-par">
+        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add individuals"),
+                     aclass="btn btn-sm btn-success", icon="user-plus") }}
+    </div>
+    <div class="row">
+    {% for list in ambience['case'].involved.items()|slice(2) %}
+        {% for type, involved_ids in list %}
+            <div class="col-sm-6">
+                {{ util.h("Zielpersonen", level=4) }}
+                {% if involved_ids %}
+                    <ul>
+                        {% for involved_id in involved_ids %}
+                            <li class="hide-hover-container">
+                                {{ util.persona_anchor(personas[involved_id]) }}
+                                {% if age_classes[involved_id] != enums['AgeClasses'].full %}
+                                    <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
+                                {% endif %}
+                                <div class="list-button-float hide-hover">
+                                    {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': involved_id}),
+                                         label="",
+                                         title=gettext("Manage companions"),
+                                         aclass="btn btn-xs btn-warning",
+                                         icon="people-group")
+                                    }}
+                                    {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': involved_id}),
+                                         label="",
+                                         title=gettext("Remove"),
+                                         aclass="btn btn-xs btn-danger",
+                                         icon="minus")
+                                    }}
+                                </div>
+                                {% if ambience['case'].companions_by_involved[involved_id] %}
+                                    <br />
+                                    {{ gettext("Companions") }}:
+                                    {% for companion_id in ambience['case'].companions_by_involved[involved_id] %}
+                                        {%- if not loop.first -%}
+                                            ,
+                                        {% endif %}
+                                        {{ util.persona_anchor(personas[companion_id]) -}}
+                                    {% endfor %}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">
+                        {% trans %}
+                            There are no involved individuals yet.
+                        {% endtrans %}
+                    </span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endfor %}
+    </div>
 
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
