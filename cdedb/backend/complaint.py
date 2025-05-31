@@ -204,6 +204,7 @@ class ComplaintBackend(AbstractBackend):
                 entries={},
                 involved={},
                 companions={},
+                informed_involved=set(),
             )
             self.complaint_log(
                 rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
@@ -357,6 +358,7 @@ class ComplaintBackend(AbstractBackend):
         case_id: int,
         involved_type: const.ComplaintInvolvementType,
         persona_ids: Collection[int],
+        is_informed: bool | None = None,
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
 
@@ -368,9 +370,17 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involved_type = affirm(const.ComplaintInvolvementType, involved_type)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
+        is_informed = affirm_optional(bool, is_informed)
 
         if not persona_ids:
             return 0
+
+        if involved_type == const.ComplaintInvolvementType.appellant:
+            if is_informed is False:
+                raise ValueError(n_("Appellant cannot be uninformed."))
+            is_informed = True
+        elif is_informed is None:
+            is_informed = False
 
         with Atomizer(rs):
             if not self.core.verify_ids(rs, persona_ids):
@@ -396,19 +406,26 @@ class ComplaintBackend(AbstractBackend):
                         "case_id": case_id,
                         "persona_id": persona_id,
                         "involved_type": involved_type,
+                        "is_informed": is_informed,
                     }
                     for persona_id in newly_involved
                 ],
             )
-            code = const.ComplaintLogCodes.involved_added
             for persona_id in mixed_existence_sorter(newly_involved):
                 ret *= self.complaint_log(
                     rs=rs,
-                    code=code,
+                    code=const.ComplaintLogCodes.involvee_added,
                     case_id=case_id,
                     persona_id=persona_id,
                     change_note=rs.log_gettext(str(involved_type)),
                 )
+                if is_informed:
+                    ret *= self.complaint_log(
+                        rs=rs,
+                        code=const.ComplaintLogCodes.involvee_informed,
+                        case_id=case_id,
+                        persona_id=persona_id,
+                    )
         return ret
 
     @access("complaint_admin")
@@ -469,6 +486,40 @@ class ComplaintBackend(AbstractBackend):
                         persona_id=persona_id,
                         companion_id=companion_id,
                     )
+        return ret
+
+    @access("complaint_admin")
+    def set_involved_informed(
+        self, rs: RequestState, case_id: int, persona_id: int, is_informed: bool
+    ) -> DefaultReturnCode:
+        """Set the informed status of an involved person."""
+        case_id = affirm(vtypes.ID, case_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        with Atomizer(rs):
+            case = self.get_case(rs, case_id)
+            if persona_id not in case.all_involved:
+                raise ValueError(n_("Uninvolved user."))
+            if is_informed == (persona_id in case.informed_involved):
+                return -1
+            query = f"""
+                UPDATE {models.ComplaintInvolved.database_table}
+                SET is_informed = %(is_informed)s
+                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+            """
+            params = {
+                "case_id": case_id,
+                "persona_id": persona_id,
+                "is_informed": is_informed,
+            }
+            ret = self.query_exec(rs, query, params)
+            if is_informed:
+                code = const.ComplaintLogCodes.involvee_informed
+            else:
+                code = const.ComplaintLogCodes.involvee_uninformed
+            ret *= self.complaint_log(
+                rs=rs, code=code, case_id=case_id, persona_id=persona_id
+            )
         return ret
 
     @access("complaint_admin")

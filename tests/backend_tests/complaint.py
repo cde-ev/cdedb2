@@ -26,6 +26,7 @@ class TestComplaintBackend(BackendTest):
                 const.ComplaintInvolvementType.affected: {4},
                 const.ComplaintInvolvementType.target: {2},
             },
+            informed_involved={4},
             companions={
                 3: {2},
                 7: {4},
@@ -221,6 +222,7 @@ class TestComplaintBackend(BackendTest):
             entries={},
             involved={},
             companions={},
+            informed_involved=set(),
         )
         self.assertEqual(expectation.as_dict(), new_case.as_dict())
         self.assertEqual(expectation, new_case)

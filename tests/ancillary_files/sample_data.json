@@ -4722,7 +4722,7 @@
             "case_id": 1,
             "persona_id": 4,
             "involved_type": 1,
-            "is_informed": false
+            "is_informed": true
         }
     ],
     "complaint.companions": [

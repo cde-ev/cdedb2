@@ -124,7 +124,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 )
             else:
                 ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.affected, [appellant_id], is_informed=True,
+                    rs,
+                    new_case.id,
+                    t.affected,
+                    [appellant_id],
+                    is_informed=True,
                 )
             if affected_ids:
                 ret *= self.complaintproxy.add_involved(
@@ -148,15 +152,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: vtypes.CdedbIDList
+        persona_ids: vtypes.CdedbIDList,
     ) -> Response:
         if rs.has_validation_errors():
             return self.add_involved_form(rs, case_id)
         if set(persona_ids) & rs.ambience['case'].all_involved.keys():
             rs.notify('info', n_("Some of these users were already involved."))
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
-            rs.append_validation_error(("persona_id", ValueError(n_(
-                "Some of these users do not exist."))))
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("Some of these users do not exist.")),
+            ))
         if rs.has_validation_errors():
             return self.add_involved_form(rs, case_id)
         else:
@@ -165,16 +171,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
-        self,
-        rs: RequestState,
-        case_id: int,
-        persona_id: int
+        self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if not self.coreproxy.verify_ids(rs, persona_id, is_archived=None):
-            rs.append_validation_error(("persona_id", ValueError(n_(
-                "This user does not exist."))))
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user does not exist.")),
+            ))
         if persona_id not in rs.ambience['case'].all_involved.keys():
             rs.notify("info", "This user is not involved.")
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
@@ -186,16 +191,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
-        self,
-        rs: RequestState,
-        case_id: int,
-        persona_id: int
+        self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].all_involved:
-            rs.append_validation_error(("persona_id", ValueError(n_(
-                "This user is not involved."))))
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user is not involved.")),
+            ))
         # elif check informed state
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
@@ -205,16 +209,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
-        self,
-        rs: RequestState,
-        case_id: int,
-        persona_id: int
+        self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].all_involved:
-            rs.append_validation_error(("persona_id", ValueError(n_(
-                "This user is not involved."))))
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user is not involved.")),
+            ))
         # elif check informed state
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)

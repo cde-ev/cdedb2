@@ -34,6 +34,9 @@ class Case(CdEDataclass):
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
+    informed_involved: set[int] = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     @functools.cached_property
     def all_involved(self) -> dict[int, const.ComplaintInvolvementType]:
@@ -91,12 +94,15 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
+        data["informed_involved"] = set()
         new_involved: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involved in data["involved"]:
             involved_type = const.ComplaintInvolvementType(involved[1])
             if involved_type not in new_involved:
                 new_involved[involved_type] = set()
             new_involved[involved_type].add(involved[0])
+            if involved[2]:
+                data["informed_involved"].add(involved[0])
         data["involved"] = new_involved
 
         new_companions: dict[int, set[int]] = {}
@@ -120,7 +126,7 @@ class Case(CdEDataclass):
             SELECT
                 {", ".join(cls.database_fields())},
                 array(
-                    SELECT ARRAY[involved.persona_id, involved.involved_type]
+                    SELECT ARRAY[involved.persona_id, involved.involved_type, involved.is_informed::int]
                     FROM {ComplaintInvolved.database_table} AS involved
                     WHERE involved.case_id = cases.id
                 ) AS involved,
