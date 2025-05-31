@@ -14,14 +14,24 @@
     {{ util.breadcrumb_link(cdedblink("core/view_complaint_log"), gettext("Case Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call logging.table(log, 'Event') %}
+    {% call logging.table(log, ['Case', 'Companion']) %}
         {% for entry in log %}
-            {% set link = None %}
+            {% set additional = [] %}
             {% if entry['case_id'] %}
                 {% set link = util.href(cdedblink("core/show_case", {"case_id": entry['case_id']}),
                                         gettext("Fall %s")|format(entry['case_id'])) %}
+                {% do additional.append(link) %}
+            {% else %}
+                {% do additional.append(None) %}
             {% endif %}
-            {{ logging.row(entry, enums['ComplaintLogCodes'], loop.index, 'case_id', link) }}
+            {% if entry['companion_id'] %}
+                {% set link = util.persona_anchor(personas[entry['companion_id']]) %}
+                {% do additional.append(link) %}
+            {% else %}
+                {% do additional.append(None) %}
+            {% endif %}
+
+            {{ logging.row(entry, enums['ComplaintLogCodes'], loop.index, additional) }}
         {% endfor %}
     {% endcall %}
 

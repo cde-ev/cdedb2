@@ -4760,7 +4760,7 @@
             "code": 41,
             "submitted_by": 1,
             "case_id": 1,
-            "persona_id": 3,
+            "persona_id": 4,
             "change_note": "ComplaintInvolvedType.affected"
         },
         {
@@ -4771,6 +4771,26 @@
             "case_id": 1,
             "persona_id": 2,
             "change_note": "ComplaintInvolvedType.target"
+        },
+        {
+            "id": 4,
+            "ctime": "---now---",
+            "code": 51,
+            "submitted_by": 1,
+            "case_id": 1,
+            "persona_id": 4,
+            "companion_id": 7,
+            "change_note": ""
+        },
+        {
+            "id": 5,
+            "ctime": "---now---",
+            "code": 51,
+            "submitted_by": 1,
+            "case_id": 1,
+            "persona_id": 2,
+            "companion_id": 3,
+            "change_note": ""
         }
     ],
     "cde.org_period": [

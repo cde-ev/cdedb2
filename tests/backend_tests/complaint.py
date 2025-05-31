@@ -395,7 +395,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 "code": const.ComplaintLogCodes.involvee_added,
                 "change_note": str(const.ComplaintInvolvementType.target),

@@ -211,9 +211,12 @@ class ComplaintLogFilter(GenericLogFilter):
     log_table = "complaint.log"
     log_code_class = const.ComplaintLogCodes
     additional_columns = ("case_id", "companion_id")
+    additional_persona_columns = ("companion_id",)
 
     case_id: Optional[int] = None
     _case_ids: list[int] = dataclasses.field(default_factory=list)
+
+    companion_id: int | None = None
 
     def case_ids(self) -> list[int]:
         if self.case_id:
@@ -226,6 +229,9 @@ class ComplaintLogFilter(GenericLogFilter):
         if self.case_ids():
             conditions.append("case_id = ANY(%s)")
             params.append(self.case_ids())
+        if self.companion_id:
+            conditions.append("companion_id = %s")
+            params.append(self.companion_id)
 
         return conditions, params
 

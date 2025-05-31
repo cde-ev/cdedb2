@@ -14,7 +14,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call logging.table(log, keytitle='Assembly') %}
+    {% call logging.table(log, additional=['Assembly']) %}
         {% for entry in log %}
             {% set link = None %}
             {% if entry['assembly_id'] %}
@@ -22,7 +22,7 @@
                                         all_assemblies[entry['assembly_id']]['title'],
                                         readonly=not may_view(entry['assembly_id'])) %}
             {% endif %}
-            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, 'assembly_id', link) }}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, [link]) }}
         {% endfor %}
     {% endcall %}
 
