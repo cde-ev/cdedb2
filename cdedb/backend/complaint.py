@@ -477,7 +477,13 @@ class ComplaintBackend(AbstractBackend):
         return ret
 
     def _get_descriptions(
-        self, rs: RequestState, case_id: int, visible: bool
+        self,
+        rs: RequestState,
+        *,
+        case_id: int,
+        entry_id: int | None = None,
+        visible: bool | None,
+        deleted: bool | None = False,
     ) -> dict[int, str]:
         query = f"""
             SELECT versions.id, versions.description
@@ -487,18 +493,29 @@ class ComplaintBackend(AbstractBackend):
                     ON versions.entry_id = entries.id
             WHERE
                 entries.case_id = %(case_id)s
-                AND entries.entry_type = ANY(%(entry_types)s)
         """
         params: dict[str, DatabaseValue_s] = {
             "case_id": case_id,
-            "entry_types": const.ComplaintEntryType.visible_types()
-            if visible
-            else const.ComplaintEntryType.hidden_types(),
         }
+
+        if visible is not None:
+            query += " AND entries.entry_type = ANY(%(entry_types)s)"
+            if visible:
+                params["entry_types"] = const.ComplaintEntryType.visible_types()
+            else:
+                params["entry_types"] = const.ComplaintEntryType.hidden_types()
+
+        if deleted is not None:
+            if deleted:
+                query += " AND versions.dtime IS NOT NULL"
+            else:
+                query += " AND versions.dtime IS NULL"
+
+        if entry_id is not None:
+            query += " AND entry_id = %(entry_id)s"
+            params['entry_id'] = entry_id
+
         decrypt = lambda x: x
-        if not visible:
-            # TODO: implement decryption here.
-            pass
         return {
             e["id"]: decrypt(e["description"])
             for e in self.query_all(rs, query, params)
@@ -506,14 +523,22 @@ class ComplaintBackend(AbstractBackend):
 
     @access("complaint_admin")
     def get_visible_descriptions(
-        self, rs: RequestState, case_id: int
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_id: int | None = None,
+        deleted: bool | None = False,
     ) -> dict[int, str]:
         """List all descriptions that are visible without unlock.
 
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        return self._get_descriptions(rs, case_id, visible=True)
+        entry_id = affirm_optional(int, entry_id)
+        deleted = affirm_optional(bool, deleted)
+        return self._get_descriptions(
+            rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
+        )
 
     def _log_unlock(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
@@ -586,7 +611,7 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             if not self._unlock_case(rs, case_id):
                 raise RuntimeError
-            return self._get_descriptions(rs, case_id, visible=False)
+            return self._get_descriptions(rs, case_id=case_id, visible=False)
 
     @access("complaint_admin")
     def lock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
