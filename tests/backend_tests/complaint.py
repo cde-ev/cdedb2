@@ -4,6 +4,7 @@ import functools
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, nearly_now, now
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
@@ -592,6 +593,44 @@ class TestComplaintBackend(BackendTest):
         self.assertLogEqual(
             log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
         )
+
+    @as_users("simon")
+    def test_query(self) -> None:
+        case_id = 1
+        scope = QueryScope.complaint_case
+        query = Query(
+            scope=scope,
+            spec=scope.get_spec(),
+            fields_of_interest=["cases.id", "cases.summary"],
+            constraints=[
+                (
+                    "entries.entry_type",
+                    QueryOperators.oneof,
+                    [
+                        const.ComplaintEntryType.agreement_measure,
+                        const.ComplaintEntryType.definite_measure,
+                        const.ComplaintEntryType.provisional_measure,
+                    ],
+                ),
+            ],
+            order=[],
+        )
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(1, len(result))
+        self.assertEqual(case_id, result[0]["cases.id"])
+
+        query.constraints = [
+            ("companion_persona.given_names", QueryOperators.equal, "Charly"),
+            ("companion.is_withdrawn", QueryOperators.equal, True),
+            ("involved_persona.given_names", QueryOperators.equal, "Bertå"),
+        ]
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(1, len(result))
+        self.assertEqual(case_id, result[0]["cases.id"])
+
+        self.complaint.set_companion_withdrawn(self.key, case_id, 2, 3, False)
+        result = self.complaint.submit_general_query(self.key, query)
+        self.assertEqual(0, len(result))
 
 
 class TestComplaintValidation(TestValidationBase):

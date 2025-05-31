@@ -827,3 +827,43 @@ class ComplaintBackend(AbstractBackend):
             return self.query_exec(
                 rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
             )
+
+    @access("complaint_admin")
+    def submit_general_query(
+        self, rs: RequestState, query: Query
+    ) -> tuple[CdEDBObject, ...]:
+        query = affirm(Query, query)
+
+        if query.scope != QueryScope.complaint_case:
+            raise RuntimeError(n_("Bad scope."), query.scope)
+
+        access_timeout = now() - self.conf["COMPLAINT_UNLOCK_TIMEOUT"]
+        view = f"""
+            SELECT * FROM
+                {models.Case.database_table} AS cases
+                LEFT JOIN (
+                    SELECT case_id, ctime < '{access_timeout.isoformat()}' AS is_unlocked
+                    FROM {models.AccessLog.database_table}
+                    WHERE persona_id = {rs.user.persona_id}
+                ) AS access ON access.case_id = cases.id
+                LEFT JOIN {models.ComplaintEntry.database_table}
+                    AS entries ON entries.case_id = cases.id
+                LEFT JOIN core.personas
+                    AS concerned_persona ON concerned_persona.id = entries.concerned_id
+                LEFT JOIN {models.ComplaintEntryVersion.database_table}
+                    AS versions ON versions.entry_id = entries.id
+                LEFT JOIN {models.ComplaintAuthors.database_table}
+                    AS authors ON authors.entry_version_id = versions.id
+                LEFT JOIN core.personas
+                    AS authors_persona ON authors_persona.id = authors.persona_id
+                LEFT JOIN {models.ComplaintInvolved.database_table}
+                    AS involved ON involved.case_id = cases.id
+                LEFT JOIN core.personas
+                    AS involved_persona ON involved_persona.id = involved.persona_id
+                LEFT JOIN {models.ComplaintCompanion.database_table}
+                    AS companion ON companion.involved_id = involved.id
+                LEFT JOIN core.personas
+                    AS companion_persona ON companion_persona.id = companion.companion_persona_id
+        """.strip().removeprefix("SELECT * FROM")
+
+        return self.general_query(rs, query, view=view)

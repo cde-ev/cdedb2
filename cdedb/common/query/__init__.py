@@ -215,6 +215,7 @@ class QueryScope(CdEIntEnum):
     lodgement = 32, "event"
     event_course = 33, "event"
     past_event_course = 40, "cde"
+    complaint_case = 50, "complaint"
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -392,6 +393,7 @@ PRIMARY_KEYS = {
     QueryScope.lodgement: "lodgement.id",
     QueryScope.event_course: "course.id",
     QueryScope.past_event_course: "courses.id",
+    QueryScope.complaint_case: "cases.id",
 }
 
 # See QueryScope.get_spec().
@@ -600,6 +602,35 @@ _QUERY_SPECS = {
             ),
             "events.tempus": QuerySpecEntry(
                 "date", n_("Cutoff date"), n_("Past Event"), translate_prefix=True),
+        },
+    QueryScope.complaint_case:
+        {
+            "cases.id": QuerySpecEntry("id", n_("case ID")),
+            "cases.summary": QuerySpecEntry("str", n_("Case Summary")),
+            "cases.is_grave": QuerySpecEntry("bool", n_("is grave")),
+            "cases.start_date": QuerySpecEntry("date", n_("Start Date")),
+            "cases.end_date": QuerySpecEntry("date", n_("End Date")),
+            "access.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
+            "entries.entry_type": QuerySpecEntry("enum_int", n_("Entry Type"), choices=None),  # type: ignore[arg-type]
+            "concerned_persona.given_names": QuerySpecEntry("str", n_("Given Names"), title_prefix=n_("Concerned"), translate_prefix=True),
+            "concerned_persona.family_name": QuerySpecEntry("str", n_("Family Name"), title_prefix=n_("Concerned"), translate_prefix=True),
+            "concerned_persona.is_member": QuerySpecEntry("bool", n_("Is Member"), title_prefix=n_("Concerned"), translate_prefix=True),
+            "entry_versions.length": QuerySpecEntry("int", n_("Length of Description"), title_prefix=n_("Entry Version"), translate_prefix=True),
+            "entry_versions.ctime": QuerySpecEntry("datetime", n_("Created at"), title_prefix=n_("Entry Version"), translate_prefix=True),
+            "entry_versions.dtime": QuerySpecEntry("datetime", n_("Deleted at"), title_prefix=n_("Entry Version"), translate_prefix=True),
+            "entry_versions.dreason": QuerySpecEntry("str", n_("Deletion Reason"), title_prefix=n_("Entry Version"), translate_prefix=True),
+            "authors_persona.given_names": QuerySpecEntry("str", n_("Given Names"), title_prefix=n_("Author"), translate_prefix=True),
+            "authors_persona.family_name": QuerySpecEntry("str", n_("Family Name"), title_prefix=n_("Author"), translate_prefix=True),
+            "authors_persona.is_member": QuerySpecEntry("bool", n_("Is Member"), title_prefix=n_("Author"), translate_prefix=True),
+            "involved_persona.given_names": QuerySpecEntry("str", n_("Given Names"), title_prefix=n_("Involved"), translate_prefix=True),
+            "involved_persona.family_name": QuerySpecEntry("str", n_("Family Name"), title_prefix=n_("Involved"), translate_prefix=True),
+            "involved_persona.is_member": QuerySpecEntry("bool", n_("Is Member"), title_prefix=n_("Involved"), translate_prefix=True),
+            "involved.involved_type": QuerySpecEntry("bool", n_("Is Member"), title_prefix=n_("Involved"), translate_prefix=True),
+            "involved.is_informed": QuerySpecEntry("bool", n_("Is Informed"), title_prefix=n_("Involved"), translate_prefix=True),
+            "companion_persona.given_names": QuerySpecEntry("str", n_("Given Names"), title_prefix=n_("Companion"), translate_prefix=True),
+            "companion_persona.family_name": QuerySpecEntry("str", n_("Family Name"), title_prefix=n_("Companion"), translate_prefix=True),
+            "companion_persona.is_member": QuerySpecEntry("bool", n_("Is Member"), title_prefix=n_("Companion"), translate_prefix=True),
+            "companion.is_withdrawn": QuerySpecEntry("bool", n_("Is Withdrawn"), title_prefix=n_("Companion"), translate_prefix=True),
         },
 }
 
