@@ -162,11 +162,19 @@
                                     {{ gettext("Companions") }}:
                                     {% if ambience['case'].companions_by_involved[involved_id]|length == 1 %}
                                         {% set companion_id = (ambience['case'].companions_by_involved[involved_id]|list)[0] %}
-                                        {{ util.persona_anchor(personas[companion_id]) -}}
+                                        {{ util.strike(util.persona_anchor(personas[companion_id]),
+                                                       companion_id not in ambience['case'].withdrawn_companions,
+                                                       gettext("has withdrawn")) }}
                                     {% else %}
                                         <ul class="slim">
                                         {% for companion_id in ambience['case'].companions_by_involved[involved_id] %}
-                                            <li>{{ util.persona_anchor(personas[companion_id]) -}}</li>
+                                            <li>
+                                                {{ util.strike(
+                                                    util.persona_anchor(personas[companion_id]),
+                                                    companion_id not in ambience['case'].withdrawn_companions,
+                                                    gettext("has withdrawn")
+                                                ) }}
+                                            </li>
                                         {% endfor %}
                                         </ul>
                                     {% endif %}

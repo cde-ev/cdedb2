@@ -79,6 +79,17 @@
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
 {%- endmacro %}
 
+{# Strike-through a value if parameter is false #}
+{% macro strike(value, valid=False, striketitle="") -%}
+    {%- if not valid -%}
+        <s title="{{ striketitle }}">
+    {% endif %}
+    {{ value }}
+    {%- if not valid -%}
+        </s>
+    {% endif %}
+{% endmacro %}
+
 {% macro gettext_country(country) -%}
     {%- if country %}
         {{- gettext("CountryCodes." + country) -}}

@@ -230,6 +230,16 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     sub("/involved/<int:persona_id>", (
                         rule("/companions/change", methods=_GET,
                              endpoint="manage_companions_form"),
+                        rule("/companions/add", methods=_POST,
+                             endpoint="add_companions"),
+                        sub("/companions/<int:companion_id>", (
+                            rule("/remove", methods=_POST,
+                                 endpoint="remove_companion"),
+                            rule("/withdraw", methods=_POST,
+                                 endpoint="withdraw_companion"),
+                            rule("/reinstate", methods=_POST,
+                                 endpoint="reinstate_companion"),
+                        )),
                         rule("/inform", methods=_POST,
                              endpoint="inform_involved"),
                         rule("/uninform", methods=_POST,

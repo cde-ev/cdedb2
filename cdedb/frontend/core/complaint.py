@@ -219,15 +219,149 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # elif check informed state
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        else:
-            self.complaintproxy.set_involved_informed(rs, case_id, persona_id, False)
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        ret = self.complaintproxy.set_involved_informed(rs, case_id, persona_id, False)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin")
     def manage_companions_form(
-        self, rs: RequestState, case_id: int, involved_id: int
+        self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
-        return self.render(rs, "complaint/manage_companions")
+        companion_ids = rs.ambience['case'].companions_by_involved.get(persona_id)
+        companions = (
+            self.coreproxy.get_personas(rs, companion_ids) if companion_ids else {}
+        )
+        involved = self.coreproxy.get_persona(rs, persona_id)
+        return self.render(
+            rs,
+            "complaint/manage_companions",
+            {
+                'involved': involved,
+                'companions': companions,
+            },
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("companion_ids")
+    def add_companions(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_ids: vtypes.CdedbIDList,
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if set(companion_ids) & rs.ambience['case'].companions.keys():
+            rs.notify('info', n_("Some of these users were already companions."))
+        if persona_id in companion_ids:
+            rs.append_validation_error((
+                "companion_ids",
+                ValueError(n_("User may not be their own companion.")),
+            ))
+        if not self.coreproxy.verify_ids(rs, companion_ids, is_archived=None):
+            rs.append_validation_error((
+                "companion_ids",
+                ValueError(n_("Some of these users do not exist.")),
+            ))
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        ret = self.complaintproxy.add_companions(rs, case_id, persona_id, companion_ids)
+        rs.notify_return_code(ret)
+        return self.redirect(
+            rs,
+            "core/manage_companions_form",
+            {'case_id': case_id, 'persona_id': persona_id},
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    def remove_companion(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_id: int,
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if companion_id not in rs.ambience['case'].companions:
+            rs.notify("info", "This user is no companion.")
+            return self.redirect(
+                rs,
+                "core/manage_companions_form",
+                {'case_id': case_id, 'persona_id': persona_id},
+            )
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        ret = self.complaintproxy.remove_companions(
+            rs, case_id, persona_id, [companion_id]
+        )
+        rs.notify_return_code(ret)
+        return self.redirect(
+            rs,
+            "core/manage_companions_form",
+            {'case_id': case_id, 'persona_id': persona_id},
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    def withdraw_companion(
+        self, rs: RequestState, case_id: int, persona_id: int, companion_id: int
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if companion_id not in rs.ambience['case'].companions:
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user is no companion.")),
+            ))
+        if companion_id in rs.ambience['case'].withdrawn_companions:
+            rs.notify('info', n_("This companion is already marked as withdrawn."))
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        ret = self.complaintproxy.set_companion_withdrawn(
+            rs, case_id, persona_id, companion_id, True
+        )
+        rs.notify_return_code(ret)
+        return self.redirect(
+            rs,
+            "core/manage_companions_form",
+            {'case_id': case_id, 'persona_id': persona_id},
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    def reinstate_companion(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_id: int,
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if companion_id not in rs.ambience['case'].companions:
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user is no companion.")),
+            ))
+        if companion_id not in rs.ambience['case'].withdrawn_companions:
+            rs.notify('info', n_("This companion is already marked as active."))
+            return self.redirect(
+                rs,
+                "core/manage_companions_form",
+                {'case_id': case_id, 'persona_id': persona_id},
+            )
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        ret = self.complaintproxy.set_companion_withdrawn(
+            rs, case_id, persona_id, companion_id, False
+        )
+        rs.notify_return_code(ret)
+        return self.redirect(
+            rs,
+            "core/manage_companions_form",
+            {'case_id': case_id, 'persona_id': persona_id},
+        )
 
     @access("complaint_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
