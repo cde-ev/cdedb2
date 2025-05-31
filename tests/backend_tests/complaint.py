@@ -325,6 +325,14 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_add_remove_involved(self) -> None:
         case_id = 1
+        new_involved = 1
+        _case = self.complaint.get_case(self.key, case_id)
+        original_involved = list(_case.all_involved)[0]
+        original_companions = sorted(_case.companions_by_involved[original_involved])
+        self.assertNotIn(
+            new_involved, _case.all_involved, "Sample data changed. Review test setup."
+        )
+
         original_case = self.complaint.get_case(self.key, case_id)
         expectation = self.complaint.get_case(self.key, case_id)
 
@@ -337,39 +345,69 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.add_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+                self.key,
+                case_id=case_id,
+                involved_type=const.ComplaintInvolvementType.target,
+                persona_ids=[new_involved],
+                is_informed=True,
             ),
         )
         self.assertEqual(
             -1,
             self.complaint.add_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, [1]
+                self.key,
+                case_id=case_id,
+                involved_type=const.ComplaintInvolvementType.target,
+                persona_ids=[new_involved],
             ),
         )
         with self.assertRaisesRegex(ValueError, "Already involved otherwise."):
             self.complaint.add_involved(
-                self.key, case_id, const.ComplaintInvolvementType.other, [1]
+                self.key, case_id, const.ComplaintInvolvementType.other, [new_involved]
             )
 
         case = self.complaint.get_case(self.key, case_id)
         expectation.involved.setdefault(
             const.ComplaintInvolvementType.target, set()
-        ).add(1)
+        ).add(new_involved)
+        expectation.informed_involved.add(new_involved)
+
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
 
+        self.assertEqual(
+            -1,
+            self.complaint.set_involved_informed(self.key, case_id, new_involved, True),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.set_involved_informed(
+                self.key, case_id, new_involved, False
+            ),
+        )
+
         self.assertEqual(0, self.complaint.remove_involved(self.key, case_id, []))
-        self.assertLessEqual(1, self.complaint.remove_involved(self.key, case_id, [1]))
-        self.assertEqual(-1, self.complaint.remove_involved(self.key, case_id, [1]))
+        self.assertLessEqual(
+            1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+        )
+        self.assertEqual(
+            -1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+        )
 
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
-        self.assertLessEqual(1, self.complaint.remove_involved(self.key, case_id, [2]))
+        self.assertLessEqual(
+            1, self.complaint.remove_involved(self.key, case_id, [original_involved])
+        )
 
         original_case.involved.pop(const.ComplaintInvolvementType.target)
-        original_case.companions.pop(3)
+        for companion_id in original_companions:
+            if len(original_case.companions[companion_id]) == 1:
+                del original_case.companions[companion_id]
+            else:
+                original_case.companions[companion_id].remove(original_involved)
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -378,23 +416,34 @@ class TestComplaintBackend(BackendTest):
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "change_note": "Zielpersonen",
-                "persona_id": 1,
+                "persona_id": new_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involvee_informed,
+                "persona_id": new_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involvee_uninformed,
+                "persona_id": new_involved,
             },
             {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
-                "persona_id": 1,
+                "persona_id": new_involved,
             },
             {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
-                "persona_id": 2,
+                "persona_id": original_involved,
             },
-            {
-                "code": const.ComplaintLogCodes.companion_removed,
-                "persona_id": 2,
-                "companion_id": 3,
-            },
+            *[
+                {
+                    "code": const.ComplaintLogCodes.companion_removed,
+                    "persona_id": original_involved,
+                    "companion_id": companion_id,
+                }
+                for companion_id in original_companions
+            ],
         ]
         self.assertLogEqual(
             log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
