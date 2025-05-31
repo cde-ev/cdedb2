@@ -356,38 +356,15 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
 
-        self.assertEqual(
-            0,
-            self.complaint.remove_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, []
-            ),
-        )
-        self.assertLessEqual(
-            1,
-            self.complaint.remove_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, [1]
-            ),
-        )
-        self.assertEqual(
-            -1,
-            self.complaint.remove_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, [1]
-            ),
-        )
+        self.assertEqual(0, self.complaint.remove_involved(self.key, case_id, []))
+        self.assertLessEqual(1, self.complaint.remove_involved(self.key, case_id, [1]))
+        self.assertEqual(-1, self.complaint.remove_involved(self.key, case_id, [1]))
 
         case = self.complaint.get_case(self.key, case_id)
-        self.assertEqual(
-            original_case.as_dict(),
-            case.as_dict(),
-        )
+        self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
-        self.assertLessEqual(
-            1,
-            self.complaint.remove_involved(
-                self.key, case_id, const.ComplaintInvolvementType.target, [2]
-            ),
-        )
+        self.assertLessEqual(1, self.complaint.remove_involved(self.key, case_id, [2]))
 
         original_case.involved.pop(const.ComplaintInvolvementType.target)
         original_case.companions.pop(3)

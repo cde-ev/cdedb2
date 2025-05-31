@@ -416,10 +416,9 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_type: const.ComplaintInvolvementType,
         persona_ids: Collection[int],
     ) -> DefaultReturnCode:
-        """Remove some users as involved with the given type from a case.
+        """Remove some users as involved with a case.
 
         :returns:
             0 if no persona ids were given or if something went wrong.
@@ -427,7 +426,6 @@ class ComplaintBackend(AbstractBackend):
             The number of removed personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        involved_type = affirm(const.ComplaintInvolvementType, involved_type)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         if not persona_ids:
@@ -438,14 +436,12 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Unknown users."))
 
             case = self.get_case(rs, case_id)
-            removed = persona_ids.intersection(case.involved.get(involved_type, set()))
+            removed = persona_ids & case.all_involved.keys()
             if not removed:
                 return -1
             query = f"""
                 DELETE FROM {models.ComplaintInvolved.database_table}
-                WHERE case_id = %(case_id)s
-                    AND persona_id = ANY(%(persona_ids)s)
-                    AND involved_type = %(involved_type)s
+                WHERE case_id = %(case_id)s AND persona_id = ANY(%(persona_ids)s)
             """
             ret = self.query_exec(
                 rs,
@@ -453,7 +449,6 @@ class ComplaintBackend(AbstractBackend):
                 {
                     "case_id": case_id,
                     "persona_ids": persona_ids,
-                    "involved_type": involved_type,
                 },
             )
             for persona_id in mixed_existence_sorter(removed):
@@ -462,7 +457,7 @@ class ComplaintBackend(AbstractBackend):
                     code=const.ComplaintLogCodes.involvee_removed,
                     case_id=case_id,
                     persona_id=persona_id,
-                    change_note=rs.log_gettext(str(involved_type)),
+                    change_note=rs.log_gettext(str(case.all_involved[persona_id])),
                 )
                 for companion_id in mixed_existence_sorter(
                     case.companions_by_involved.get(persona_id, set())

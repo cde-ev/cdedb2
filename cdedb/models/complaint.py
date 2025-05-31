@@ -34,6 +34,15 @@ class Case(CdEDataclass):
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
+
+    @functools.cached_property
+    def all_involved(self) -> dict[int, const.ComplaintInvolvementType]:
+        return {
+            persona_id: involved_type
+            for involved_type, involved in self.involved.items()
+            for persona_id in involved
+        }
+
     companions: dict[int, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
@@ -47,7 +56,7 @@ class Case(CdEDataclass):
         return ret
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
-        ret: set[int] = set(itertools.chain.from_iterable(self.involved.values()))
+        ret: set[int] = set(self.all_involved)
         ret.update(self.companions)
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
