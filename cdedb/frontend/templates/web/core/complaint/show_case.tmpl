@@ -110,7 +110,7 @@
                             <div class="list-button-float hide-hover">
                                 {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
                                      label="",
-                                     title=gettext("Manage companions"),
+                                     title=gettext("Manage Companions"),
                                      aclass="btn btn-xs btn-warning",
                                      icon="people-group")
                                 }}
@@ -294,9 +294,9 @@
                         last changed at {{ mtime }} by {{ submitted_by }}.
                     {% endtrans %}
                 {% else %}
-                    {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
+                    {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
                              submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
-                        Created at {{ mtime }} by {{ submitted_by }}.
+                        Created at {{ ctime }} by {{ submitted_by }}.
                     {% endtrans %}
                 {% endif %}
                 </span>

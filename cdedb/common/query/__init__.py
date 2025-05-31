@@ -605,8 +605,8 @@ _QUERY_SPECS = {
         },
     QueryScope.complaint_case:
         {
-            "cases.id": QuerySpecEntry("id", n_("case ID")),
-            "cases.summary": QuerySpecEntry("str", n_("Case Summary")),
+            "cases.id": QuerySpecEntry("id", n_("Case ID")),
+            "cases.summary": QuerySpecEntry("str", n_("Summary")),
             "cases.is_grave": QuerySpecEntry("bool", n_("is grave")),
             "cases.start_date": QuerySpecEntry("date", n_("Start Date")),
             "cases.end_date": QuerySpecEntry("date", n_("End Date")),

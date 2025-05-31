@@ -362,6 +362,7 @@ I18N_STRINGS = (
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
+    n_("MailinglistTypes.complaint_admin_implicit"),
 
     n_("MailinglistRosterVisibility.none"),
     n_("MailinglistRosterVisibility.subscribable"),

@@ -64,7 +64,7 @@
                     [], false, true, "{{ gettext("ID, name, email") }}"
                 );
             </script>
-            {{ util.form_input_text(name="target_ids", label=gettext("Target"), anid="input-target_ids",
+            {{ util.form_input_text(name="target_ids", label=gettext("Targets"), anid="input-target_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
                                     info=gettext("You can add further involved people later.")) }}
             <script nonce="{{ csp_nonce }}">

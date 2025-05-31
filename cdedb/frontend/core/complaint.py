@@ -194,7 +194,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 ValueError(n_("This user is not involved.")),
             ))
         if persona_id in rs.ambience['case'].informed_involved:
-            rs.notify('info', n_("This user is already marked as uninformed.."))
+            rs.notify('info', n_("This user is already marked as uninformed."))
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
@@ -209,7 +209,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].informed_involved:
-            rs.notify('info', n_("This user is already marked as uninformed.."))
+            rs.notify('info', n_("This user is already marked as uninformed."))
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if persona_id not in rs.ambience['case'].all_involved:
             rs.append_validation_error((

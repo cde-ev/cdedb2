@@ -19,7 +19,7 @@
             {% set additional = [] %}
             {% if entry['case_id'] %}
                 {% set link = util.href(cdedblink("core/show_case", {"case_id": entry['case_id']}),
-                                        gettext("Fall %s")|format(entry['case_id'])) %}
+                                        gettext("Case %s")|format(entry['case_id'])) %}
                 {% do additional.append(link) %}
             {% else %}
                 {% do additional.append(None) %}

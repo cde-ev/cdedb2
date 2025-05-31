@@ -4999,7 +4999,7 @@ def _complaint_entry_version(
         # Remove any duplicates
         val['authors'] = list(set(val['authors']))
     else:
-        errs.append(ValueError('authors', n_("May not be empty.")))
+        errs.append(ValueError('authors', n_("Must not be empty.")))
 
     if errs:
         raise errs
