@@ -161,9 +161,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        else:
-            self.complaintproxy.add_involved(rs, case_id, involvement_type, persona_ids)
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        ret = self.complaintproxy.add_involved(
+            rs, case_id, involvement_type, persona_ids
+        )
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
@@ -171,20 +173,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=None):
-            rs.append_validation_error((
-                "persona_id",
-                ValueError(n_("This user does not exist.")),
-            ))
         if persona_id not in rs.ambience['case'].all_involved.keys():
             rs.notify("info", "This user is not involved.")
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        else:
-            ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
-            rs.notify_return_code(ret)
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
@@ -197,12 +193,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 "persona_id",
                 ValueError(n_("This user is not involved.")),
             ))
-        # elif check informed state
+        if persona_id in rs.ambience['case'].informed_involved:
+            rs.notify('info', n_("This user is already marked as uninformed.."))
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        else:
-            self.complaintproxy.set_involved_informed(rs, case_id, persona_id, True)
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        ret = self.complaintproxy.set_involved_informed(rs, case_id, persona_id, True)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
@@ -210,6 +208,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
+        if persona_id not in rs.ambience['case'].informed_involved:
+            rs.notify('info', n_("This user is already marked as uninformed.."))
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if persona_id not in rs.ambience['case'].all_involved:
             rs.append_validation_error((
                 "persona_id",

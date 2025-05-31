@@ -103,7 +103,8 @@
                     {% for involved_id in involved_ids %}
                         <div class="hide-hover-container">
                             {{ util.persona_anchor(personas[involved_id]) }}
-                            {% if age_classes[involved_id] != enums['AgeClasses'].full %}
+                            {# assembly and ml users are missing here #}
+                            {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
                                 <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
                             {% endif %}
                             <div class="list-button-float hide-hover">
@@ -114,16 +115,33 @@
                                      icon="people-group")
                                 }}
                                 {% if not type == enums['ComplaintInvolvementType'].appellant %}
-                                    <form action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
-                                        method="POST"
-                                        id="informinvolvedform"
-                                        class="display-inline"
-                                    >
-                                        {{ util.anti_csrf_token('core/inform_involved') }}
-                                        {{ util.input_submit(label="",
-                                                             aclass="btn btn-xs btn-success",
-                                                             icon="info") }}
-                                    </form>
+                                    {% if involved_id in ambience['case'].informed_involved %}
+                                        <form
+                                                action="{{ cdedblink("core/uninform_involved", {'persona_id': involved_id}) }}"
+                                                method="POST"
+                                                id="uninforminvolvedform"
+                                                class="display-inline"
+                                            >
+                                                {{ util.anti_csrf_token('core/uninform_involved') }}
+                                                {{ util.input_submit(label="",
+                                                                     title=gettext("Mark as uninformed"),
+                                                                     aclass="btn btn-xs btn-danger",
+                                                                     icon="question") }}
+                                        </form>
+                                    {% else %}
+                                        <form
+                                            action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
+                                            method="POST"
+                                            id="informinvolvedform"
+                                            class="display-inline"
+                                        >
+                                            {{ util.anti_csrf_token('core/inform_involved') }}
+                                            {{ util.input_submit(label="",
+                                                                 title=gettext("Mark as informed"),
+                                                                 aclass="btn btn-xs btn-primary",
+                                                                 icon="info") }}
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
                                 <form
                                     action="{{ cdedblink("core/remove_involved", {'persona_id': involved_id}) }}"
