@@ -419,11 +419,11 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": new_involved,
             },
             {
-                "code": const.ComplaintLogCodes.involvee_informed,
+                "code": const.ComplaintLogCodes.involved_informed,
                 "persona_id": new_involved,
             },
             {
-                "code": const.ComplaintLogCodes.involvee_uninformed,
+                "code": const.ComplaintLogCodes.involved_uninformed,
                 "persona_id": new_involved,
             },
             {

@@ -414,7 +414,7 @@ class ComplaintBackend(AbstractBackend):
             for persona_id in mixed_existence_sorter(newly_involved):
                 ret *= self.complaint_log(
                     rs=rs,
-                    code=const.ComplaintLogCodes.involvee_added,
+                    code=const.ComplaintLogCodes.involved_added,
                     case_id=case_id,
                     persona_id=persona_id,
                     change_note=rs.log_gettext(str(involved_type)),
@@ -422,7 +422,7 @@ class ComplaintBackend(AbstractBackend):
                 if is_informed:
                     ret *= self.complaint_log(
                         rs=rs,
-                        code=const.ComplaintLogCodes.involvee_informed,
+                        code=const.ComplaintLogCodes.involved_informed,
                         case_id=case_id,
                         persona_id=persona_id,
                     )
@@ -514,9 +514,9 @@ class ComplaintBackend(AbstractBackend):
             }
             ret = self.query_exec(rs, query, params)
             if is_informed:
-                code = const.ComplaintLogCodes.involvee_informed
+                code = const.ComplaintLogCodes.involved_informed
             else:
-                code = const.ComplaintLogCodes.involvee_uninformed
+                code = const.ComplaintLogCodes.involved_uninformed
             ret *= self.complaint_log(
                 rs=rs, code=code, case_id=case_id, persona_id=persona_id
             )
