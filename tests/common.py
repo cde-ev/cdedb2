@@ -879,6 +879,7 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-37-X",
         'username': "katarina@example.cde",
         'password': "secret",
+        'given_names': "Katarina",
         'legal_given_names': None,
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
