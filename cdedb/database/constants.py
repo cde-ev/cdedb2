@@ -656,9 +656,9 @@ class ComplaintLogCodes(CdEIntEnum):
     case_changed_start_date = 5  #:
     case_changed_end_date = 6  #:
 
-    case_deleted = 21  #:
-    case_concluded = 22  #:
-    case_aborted = 23  #:
+    # case_deleted = 21  #:
+    # case_concluded = 22  #:
+    # case_aborted = 23  #:
 
     involvee_added = 41  #:
     involvee_removed = 42  #:
@@ -677,6 +677,11 @@ class ComplaintLogCodes(CdEIntEnum):
 
     case_unlocked = 201  #:
     concealed_case_detected = 202  #:
+
+    @property
+    def is_historic(self) -> bool:
+        """List log codes which are relevant to display on a case history"""
+        return 1 < self.value < 100
 
 
 @enum.unique

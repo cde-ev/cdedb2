@@ -190,7 +190,7 @@
                 {% endif %}
                 {# ToDo: Previous versions? #}
             </div>
-        {% else %}
+        {% elif entry['code'].is_historic %}
             <div id="logentry{{ entry.id }}" class="list-group-item">
                 <div class="float-right text-right">
                     {{ entry['ctime']|datetime(lang=lang) }}
@@ -198,12 +198,23 @@
                 <strong>
                     {{ entry['code'].name -}}
                 </strong>
-                {%- if entry['persona_id'] -%}
+                {%- if entry['companion_id'] -%}
+                    : {{ util.persona_anchor(personas[entry['companion_id']]) }}
+                    {% trans involved=util.persona_anchor(personas[entry['persona_id']], icon='user') %}
+                         (for {{ involved }})
+                    {% endtrans %}
+                {%- elif entry['persona_id'] -%}
                     : {{ util.persona_anchor(personas[entry['persona_id']]) }}
                 {% endif %}
                 <br />
                 {{ gettext("by") }}
                 {{ util.persona_anchor(personas[entry['submitted_by']]) }}
+                <br />
+                <span class="text-muted">
+                    {% trans change_note=entry['change_note'] %}
+                         {{ change_note }}
+                    {% endtrans %}
+                </span>
             </div>
         {% endif %}
     {% endfor %}
