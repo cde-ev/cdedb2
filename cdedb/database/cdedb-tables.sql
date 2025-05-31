@@ -543,7 +543,7 @@ CREATE TABLE complaint.access_log (
     atime           timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
     UNIQUE (persona_id, case_id)
 );
-GRANT SELECT, INSERT, UPDATE(ctime, atime) ON complaint.access_log TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE(ctime, atime), DELETE ON complaint.access_log TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.access_log_id_seq TO cdb_persona;
 
 -- Maybe explicitly model entry versions after all?

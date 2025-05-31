@@ -4,7 +4,7 @@ import functools
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, nearly_now, now
-from tests.common import BackendTest, as_users
+from tests.common import BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -415,6 +415,38 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.companion_removed,
                 "persona_id": 2,
                 "companion_id": 3,
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
+        )
+
+    @as_users("simon")
+    def test_lock_unlock_case(self) -> None:
+        case_id = 1
+        self.assertIsNone(self.complaint.is_unlocked(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+        self.assertIs(True, self.complaint.is_unlocked(self.key, case_id))
+        self.assertEqual(1, self.complaint.lock_case(self.key, case_id))
+        self.assertEqual(-1, self.complaint.lock_case(self.key, case_id))
+        self.assertIsNone(self.complaint.is_unlocked(self.key, case_id))
+
+        execsql(
+            f"""
+            INSERT INTO {models.AccessLog.database_table} (case_id, persona_id, ctime)
+            VALUES ({case_id}, {self.user['id']}, '{now() - datetime.timedelta(hours=1)}')
+        """,
+            verbose=1,
+        )
+        self.assertIs(False, self.complaint.is_unlocked(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                "code": const.ComplaintLogCodes.case_unlocked,
+            },
+            {
+                "code": const.ComplaintLogCodes.case_unlocked,
             },
         ]
         self.assertLogEqual(

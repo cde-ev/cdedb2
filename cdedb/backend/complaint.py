@@ -587,3 +587,17 @@ class ComplaintBackend(AbstractBackend):
             if not self._unlock_case(rs, case_id):
                 raise RuntimeError
             return self._get_descriptions(rs, case_id, visible=False)
+
+    @access("complaint_admin")
+    def lock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+        case_id = affirm(int, case_id)
+        with Atomizer(rs):
+            if not self.is_unlocked(rs, case_id):
+                return -1
+            query = f"""
+                DELETE FROM {models.AccessLog.database_table}
+                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+            """
+            return self.query_exec(
+                rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
+            )
