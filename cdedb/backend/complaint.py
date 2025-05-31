@@ -531,12 +531,15 @@ class ComplaintBackend(AbstractBackend):
         )
         return ret
 
-    def _is_unlocked(self, rs: RequestState, case_id: int) -> bool | None:
+    @access("complaint_admin")
+    def is_unlocked(self, rs: RequestState, case_id: int) -> bool | None:
         """Determine whether a case is currently unlocked for the active user.
 
         :returns: 'True' if the case is unlocked. 'False' if the unlock has timed out.
             'None' if the case has not been unlocked.
         """
+        case_id = affirm(int, case_id)
+
         query = f"""
             SELECT id, ctime
             FROM {models.AccessLog.database_table}
@@ -559,7 +562,7 @@ class ComplaintBackend(AbstractBackend):
     def _unlock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
 
-        if not self._is_unlocked(rs, case_id):
+        if not self.is_unlocked(rs, case_id):
             ret = self._log_unlock(rs, case_id=case_id)
         else:
             # Update last access time.

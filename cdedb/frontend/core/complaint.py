@@ -13,25 +13,17 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import (
     CdEDBObject,
-    GenesisDecision,
     RequestState,
     determine_age_class,
-    get_mandatory_form_fields,
     merge_dicts,
     now,
     unwrap,
 )
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.validation.validate import (
-    GENESIS_CASE_EXPOSED_FIELDS,
-    PERSONA_COMMON_FIELDS,
-)
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
-    REQUESTfile,
     TransactionObserver,
     access,
     check_validation as check,
@@ -69,7 +61,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 )
 
         # Collect descriptions separately as a privacy precaution
-        descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
+        is_locked = True
+        if self.complaintproxy.is_unlocked(rs, case_id):
+            is_locked = False
+            descriptions = self.complaintproxy.unlock_case(rs, case_id)
+        else:
+            descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
 
         return self.render(
             rs,
@@ -79,6 +76,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'descriptions': descriptions,
                 'age_classes': age_classes,
                 'all_entries': all_entries,
+                'is_locked': is_locked,
             },
         )
 
@@ -144,16 +142,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def unlock_case(self, rs: RequestState, case_id: int) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        persona_ids = rs.ambience['case'].get_persona_ids()
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        descriptions = self.complaintproxy.unlock_case(rs, case_id)
+        _ = self.complaintproxy.unlock_case(rs, case_id)
         rs.notify_return_code(1, success=n_("Case unlocked."))
-        # Do maybe not redirect here?
-        return self.render(
-            rs,
-            "complaint/show_case",
-            {'personas': personas, 'descriptions': descriptions},
-        )
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+    @access("complaint_admin", modi={"POST"})
+    def lock_case(self, rs: RequestState, case_id: int) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        _ = self.complaintproxy.unlock_case(rs, case_id)
+        rs.notify_return_code(1, success=n_("Case locked."))
+        return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin")
     @REQUESTdata("entry_type", "parent_id")
@@ -208,9 +207,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 entry_type=entry_data.get('entry_type') if entry_data else None,
                 parent_id=entry_data.get('parent_id') if entry_data else None,
             )
-        entry = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
-        rs.notify_return_code(bool(entry))
-        return self.redirect(rs, "core/show_case", {'entry': entry})
+        entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
+        rs.notify_return_code(entry_id)
+        return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
 
     @access("complaint_admin")
     def replace_entry_form(
@@ -222,6 +221,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if rs.ambience[
+            'entry'
+        ].entry_type.is_hidden and not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case before replacing entry."))
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         rs.ignore_validation_errors()
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Can not replace deleted entry."))
@@ -261,9 +265,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         if rs.has_validation_errors() or not data:
             return self.replace_entry_form(rs, case_id, entry_id)
-        entry = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
-        rs.notify_return_code(bool(entry))
-        return self.redirect(rs, "core/show_case", {'entry': entry})
+        ret = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
 
     @access("complaint_admin")
     def remove_entry_form(

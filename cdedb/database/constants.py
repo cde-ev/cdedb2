@@ -544,7 +544,7 @@ class ComplaintEntryType(CdEIntEnum):
         return set(cls) - cls.visible_types()
 
     @property
-    def is_hidden(self) -> bool:
+    def _is_hidden(self) -> bool:
         return self not in self.visible_types()
 
     @classmethod
@@ -602,8 +602,8 @@ class ComplaintEntryType(CdEIntEnum):
         }
 
     @property
-    def is_locked(self) -> bool:
-        return self.has_description and self.is_hidden
+    def is_hidden(self) -> bool:
+        return self.has_description and self._is_hidden
 
     @property
     def has_concerned(self) -> bool:

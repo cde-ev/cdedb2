@@ -77,16 +77,29 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
                      aclass="btn btn-sm btn-success", icon="plus") }}
-        <form action="{{ cdedblink("core/unlock_case") }}"
-            method="POST"
-            id="addentryform"
-            class="display-inline"
-        >
-            {{ util.anti_csrf_token('core/unlock_case') }}
-            {{ util.input_submit(label=gettext("Unlock"),
-                                 aclass="btn btn-sm btn-primary",
-                                 icon="unlock") }}
-        </form>
+        {% if is_locked %}
+            <form action="{{ cdedblink("core/unlock_case") }}"
+                method="POST"
+                id="unlockcaseform"
+                class="display-inline"
+            >
+                {{ util.anti_csrf_token('core/unlock_case') }}
+                {{ util.input_submit(label=gettext("Unlock"),
+                                     aclass="btn btn-sm btn-primary",
+                                     icon="unlock") }}
+            </form>
+        {% else %}
+            <form action="{{ cdedblink("core/lock_case") }}"
+                method="POST"
+                id="lockcaseform"
+                class="display-inline"
+            >
+                {{ util.anti_csrf_token('core/lock_case') }}
+                {{ util.input_submit(label=gettext("Lock"),
+                                     aclass="btn btn-sm btn-primary",
+                                     icon="lock") }}
+            </form>
+        {% endif %}
     </div>
 
     <div class="list-group list-group-hover">
@@ -111,14 +124,14 @@
                                      title=gettext("Replace"),
                                      aclass="btn btn-xs btn-warning",
                                      icon="pen",
-                                     readonly=entry.entry_type.is_locked)
+                                     readonly=entry.entry_type.is_hidden and is_locked)
                         }}
                         {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': entry.id}),
                                      label="",
                                      title=gettext("Remove"),
                                      aclass="btn btn-xs btn-danger",
                                      icon="eye-slash",
-                                     readonly=entry.entry_type.is_locked)
+                                     readonly=entry.entry_type.is_hidden and is_locked)
                         }}
                     </div>
                 </div>
