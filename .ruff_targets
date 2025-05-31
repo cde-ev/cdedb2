@@ -1,3 +1,4 @@
-FORMAT_TARGETS="cdedb/models/complaint.py cdedb/backend/complaint.py tests/backend_tests/complaint.py cdedb/frontend/core/complaint.py"
-LINT_TARGETS="cdedb tests"
-ISORT_TARGETS="bin/*.py cdedb tests"
+# lists of files to be considered by our linters
+FORMAT_TARGETS=cdedb/models/complaint.py cdedb/backend/complaint.py tests/backend_tests/complaint.py cdedb/frontend/core/complaint.py
+LINT_TARGETS=cdedb tests
+ISORT_TARGETS=bin/*.py cdedb tests
