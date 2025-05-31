@@ -272,18 +272,48 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        return self.render(rs, "complaint/remove_entry", {})
+        if not rs.ambience['entry'].active_version:
+            rs.notify('info', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+
+        version_id = rs.ambience['entry'].active_version.id
+        description = None
+        if rs.ambience['entry'].entry_type.is_hidden:
+            if not self.complaintproxy.is_unlocked(rs, case_id):
+                msg = n_("Need to unlock case before removing entry.")
+                rs.notify('error', msg)
+                return self.redirect(
+                    rs, "core/show_case", anchor="entry" + str(entry_id)
+                )
+            else:
+                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+        elif rs.ambience['entry'].entry_type.has_description:
+            description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
+                version_id
+            ]
+        concerned = self.coreproxy.get_persona(rs, rs.ambience['entry'].concerned_id)
+        authors = self.coreproxy.get_personas(
+            rs, rs.ambience['entry'].active_version.authors
+        ).values()
+        return self.render(
+            rs,
+            "complaint/remove_entry",
+            {'authors': authors, 'concerned': concerned, 'description': description},
+        )
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("entry_id", "dreason")
     def remove_entry(
-        self, rs: RequestState, case_id: int, entry_id: int, dreason: str | None
+        self, rs: RequestState, case_id: int, entry_id: int, dreason: str
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
+        if not rs.ambience['entry'].active_version:
+            rs.notify('info', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", {})
+        return self.redirect(rs, "core/show_case")
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")

@@ -184,6 +184,16 @@
             aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 
+{# Comma-separated list of links to personas' profile pages. #}
+{% macro persona_anchors(personas, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
+                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
+    {%- for persona in personas -%}
+        {%- if not loop.first -%}, {% endif %}
+        {{- persona_anchor(persona, use_legal_name, include_nickname, with_family_name, with_titles,
+                           quote_me, event_id, ml_id, aclass, readonly, title, icon) }}
+    {% endfor %}
+{% endmacro %}
+
 {# Display the name of a given persona
 
    This macro includes some logic to display a person's name correctly, depending on the context.
