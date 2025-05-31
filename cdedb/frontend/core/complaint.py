@@ -117,15 +117,122 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ret = self.complaintproxy.add_entry(
                 rs, new_case.id, entry_data, version_data
             )
-            # ToDo Add involvees to the case
+            t = const.ComplaintInvolvementType
+            if is_affected:
+                ret *= self.complaintproxy.add_involved(
+                    rs, new_case.id, t.appellant, [appellant_id]
+                )
+            else:
+                ret *= self.complaintproxy.add_involved(
+                    rs, new_case.id, t.affected, [appellant_id], is_informed=True,
+                )
+            if affected_ids:
+                ret *= self.complaintproxy.add_involved(
+                    rs, new_case.id, t.affected, affected_ids
+                )
+            if target_ids:
+                ret *= self.complaintproxy.add_involved(
+                    rs, new_case.id, t.target, target_ids
+                )
         rs.notify_return_code(ret * bool(new_case))
         return self.redirect(rs, "core/show_case", {'case_id': new_case.id})
+
+    @access("complaint_admin")
+    def add_involved_form(self, rs: RequestState, case_id: int) -> Response:
+        return self.render(rs, "complaint/add_involved")
+
+    @access("complaint_admin")
+    @REQUESTdata("involvement_type", "persona_ids")
+    def add_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        involvement_type: const.ComplaintInvolvementType,
+        persona_ids: vtypes.CdedbIDList
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.add_involved_form(rs, case_id)
+        if set(persona_ids) & rs.ambience['case'].all_involved.keys():
+            rs.notify('info', n_("Some of these users were already involved."))
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error(("persona_id", ValueError(n_(
+                "Some of these users do not exist."))))
+        if rs.has_validation_errors():
+            return self.add_involved_form(rs, case_id)
+        else:
+            self.complaintproxy.add_involved(rs, case_id, involvement_type, persona_ids)
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+    @access("complaint_admin", modi={"POST"})
+    def remove_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if not self.coreproxy.verify_ids(rs, persona_id, is_archived=None):
+            rs.append_validation_error(("persona_id", ValueError(n_(
+                "This user does not exist."))))
+        if persona_id not in rs.ambience['case'].all_involved.keys():
+            rs.notify("info", "This user is not involved.")
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        else:
+            self.complaintproxy.remove_involved(rs, case_id, [persona_id])
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+    @access("complaint_admin", modi={"POST"})
+    def inform_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if persona_id not in rs.ambience['case'].all_involved:
+            rs.append_validation_error(("persona_id", ValueError(n_(
+                "This user is not involved."))))
+        # elif check informed state
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        else:
+            self.set_involved_informed(rs, case_id, persona_id, True)
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+    @access("complaint_admin", modi={"POST"})
+    def uninform_involved(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        if persona_id not in rs.ambience['case'].all_involved:
+            rs.append_validation_error(("persona_id", ValueError(n_(
+                "This user is not involved."))))
+        # elif check informed state
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        else:
+            self.set_involved_informed(rs, case_id, persona_id, False)
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+    @access("complaint_admin")
+    def manage_companions_form(
+        self, rs: RequestState, case_id: int, involved_id: int
+    ) -> Response:
+        return self.render(rs, "complaint/manage_companions")
 
     @access("complaint_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['case'].as_dict())
-        return self.render(rs, "complaint/configure_case", {})
+        return self.render(rs, "complaint/configure_case")
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=False))

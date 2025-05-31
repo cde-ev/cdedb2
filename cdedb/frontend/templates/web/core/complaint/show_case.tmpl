@@ -67,7 +67,7 @@
 
     {{ util.h(n_("Relevant Individuals")) }}
     <div class="p button-par">
-        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add individuals"),
+        {{ util.href(cdedblink('core/add_involved_form'), gettext("Add individuals"),
                      aclass="btn btn-sm btn-success", icon="user-plus") }}
     </div>
     <div class="row">
@@ -84,19 +84,25 @@
                                 <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
                             {% endif %}
                             <div class="list-button-float hide-hover">
-                                {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': involved_id}),
+                                {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
                                      label="",
                                      title=gettext("Manage companions"),
                                      aclass="btn btn-xs btn-warning",
                                      icon="people-group")
                                 }}
-                                {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': involved_id}),
-                                     label="",
-                                     title=gettext("Informed"),
-                                     aclass="btn btn-xs btn-success",
-                                     icon="info")
-                                }}
-                                {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': involved_id}),
+                                {% if not type == enums['ComplaintInvolvementType'].appellant %}
+                                    <form action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
+                                        method="POST"
+                                        id="informinvolvedform"
+                                        class="display-inline"
+                                    >
+                                        {{ util.anti_csrf_token('core/inform_involved') }}
+                                        {{ util.input_submit(label="",
+                                                             aclass="btn btn-xs btn-success",
+                                                             icon="info") }}
+                                    </form>
+                                {% endif %}
+                                {{ util.href(cdedblink('core/remove_involved', {'persona_id': involved_id}),
                                      label="",
                                      title=gettext("Remove"),
                                      aclass="btn btn-xs btn-danger",
