@@ -144,7 +144,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anmelden")
         self.assertNonPresence("Meine Daten")
 
-    @as_users("annika", "martin", "nina", "vera", "werner", "katarina",
+    @as_users("annika", "martin", "nina", "vera", "werner", "katarina", "simon",
               maintain_data=True)
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
@@ -157,31 +157,37 @@ class TestCoreFrontend(FrontendTest):
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
+        complaint = {"Fallarchiv", "Complaints-Log"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = pending | defect_email | genesis | core_admin | meta_admin | log
+            out = (pending | defect_email | genesis | core_admin | meta_admin | log
+                   | complaint)
         # event admin (genesis, review)
         elif self.user_in('annika'):
             ins = everyone | genesis | pending
-            out = core_admin | meta_admin | log | defect_email
+            out = core_admin | meta_admin | log | defect_email | complaint
         # ml admin (genesis)
         elif self.user_in('nina'):
             ins = everyone | genesis | defect_email
-            out = pending | core_admin | meta_admin | log
+            out = pending | core_admin | meta_admin | log | complaint
         # core admin
         elif self.user_in('vera'):
             ins = everyone | pending | genesis | core_admin | log | defect_email
-            out = meta_admin
+            out = meta_admin | complaint
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = pending | genesis | core_admin | log | defect_email
+            out = pending | genesis | core_admin | log | defect_email | complaint
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = pending | genesis | core_admin | meta_admin | defect_email
+            out = pending | genesis | core_admin | meta_admin | defect_email | complaint
+        # complaint admin
+        elif self.user_in('simon'):
+            ins = everyone | complaint
+            out = pending | defect_email | core_admin | meta_admin | log
         else:
             self.fail("Please adjust users for this tests.")
 
