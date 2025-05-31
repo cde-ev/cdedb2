@@ -150,8 +150,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def lock_case(self, rs: RequestState, case_id: int) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        _ = self.complaintproxy.unlock_case(rs, case_id)
-        rs.notify_return_code(1, success=n_("Case locked."))
+        code = self.complaintproxy.lock_case(rs, case_id)
+        rs.notify_return_code(code, success=n_("Case locked."))
         return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin")
