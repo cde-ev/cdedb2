@@ -4730,14 +4730,14 @@
             "case_id": 1,
             "involved_persona_id": 2,
             "involved_id": 1,
-            "persona_id": 3,
+            "companion_persona_id": 3,
             "is_withdrawn": false
         },
         {
             "case_id": 1,
             "involved_persona_id": 4,
             "involved_id": 2,
-            "persona_id": 7,
+            "companion_persona_id": 7,
             "is_withdrawn": false
         }
     ],

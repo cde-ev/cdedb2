@@ -611,8 +611,8 @@ CREATE TABLE complaint.companions (
     -- This is duplicating the info from above, but this ensures integrity to the other table.
     involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
     -- Who is doing the accompanying.
-    persona_id              int NOT NULL REFERENCES core.personas(id),
-    UNIQUE(involved_id, persona_id),
+    companion_persona_id    int NOT NULL REFERENCES core.personas(id),
+    UNIQUE(involved_id, companion_persona_id),
     is_withdrawn  boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;

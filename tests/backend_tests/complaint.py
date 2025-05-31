@@ -399,6 +399,72 @@ class TestComplaintBackend(BackendTest):
         )
 
     @as_users("simon")
+    def test_add_remove_companions(self) -> None:
+        case_id = 1
+        _case = self.complaint.get_case(self.key, case_id)
+        persona_id = 2
+        old_companion = list(_case.companions_by_involved[persona_id])[0]
+        new_companion = 5
+        self.assertNotIn(
+            new_companion, _case.companions, "Sample data changed, review test setup."
+        )
+
+        original_case = self.complaint.get_case(self.key, case_id)
+
+        self.assertEqual(
+            0, self.complaint.add_companions(self.key, case_id, persona_id, [])
+        )
+        self.assertEqual(
+            -1,
+            self.complaint.add_companions(
+                self.key, case_id, persona_id, [old_companion]
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_companions(
+                self.key, case_id, persona_id, [new_companion]
+            ),
+        )
+
+        original_case.companions[5] = {2}
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(original_case.as_dict(), case.as_dict())
+        self.assertEqual(original_case, case)
+
+        # self.assertEqual(
+        #     0, self.complaint.remove_companions(self.key, case_id, persona_id, [])
+        # )
+        # self.assertEqual(
+        #     1,
+        #     self.complaint.remove_companions(
+        #         self.key, case_id, persona_id, [new_companion]
+        #     ),
+        # )
+        # self.assertEqual(
+        #     -1,
+        #     self.complaint.remove_companions(
+        #         self.key, case_id, persona_id, [new_companion]
+        #     ),
+        # )
+
+        log_expectation = [
+            {
+                "code": const.ComplaintLogCodes.companion_added,
+                "persona_id": persona_id,
+                "companion_id": new_companion,
+            },
+            # {
+            #     "code": const.ComplaintLogCodes.companion_removed,
+            #     "persona_id": persona_id,
+            #     "companion_id": new_companion,
+            # },
+        ]
+        self.assertLogEqual(
+            log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
+        )
+
+    @as_users("simon")
     def test_lock_unlock_case(self) -> None:
         case_id = 1
         self.assertIsNone(self.complaint.is_unlocked(self.key, case_id))

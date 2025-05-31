@@ -471,6 +471,65 @@ class ComplaintBackend(AbstractBackend):
                     )
         return ret
 
+    @access("complaint_admin")
+    def add_companions(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_ids: Collection[int],
+    ) -> DefaultReturnCode:
+        """Add companions to a person involved in a case."""
+        case_id = affirm(vtypes.ID, case_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        companion_ids = affirm_set(vtypes.ID, companion_ids)
+
+        if not companion_ids:
+            return 0
+
+        with Atomizer(rs):
+            if not self.core.verify_ids(rs, companion_ids):
+                raise ValueError(n_("Unknown companions."))
+
+            case = self.get_case(rs, case_id)
+            companion_ids -= case.companions_by_involved.get(persona_id, set())
+            if not companion_ids:
+                return -1
+
+            # Retrieve id of the involvement table.
+            query = f"""
+                SELECT id
+                FROM {models.ComplaintInvolved.database_table}
+                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+            """
+            params = {"case_id": case_id, "persona_id": persona_id}
+            if not (involved := self.query_one(rs, query, params)):
+                raise ValueError(n_("Uninvolved user."))
+            involved_id = involved["id"]
+
+            values = [
+                {
+                    "case_id": case_id,
+                    "involved_persona_id": persona_id,
+                    "involved_id": involved_id,
+                    "companion_persona_id": companion_id,
+                }
+                for companion_id in companion_ids
+            ]
+            ret = self.sql_insert_many(
+                rs, models.ComplaintCompanion.database_table, values
+            )
+            code = const.ComplaintLogCodes.companion_added
+            for companion_id in mixed_existence_sorter(companion_ids):
+                ret *= self.complaint_log(
+                    rs=rs,
+                    code=code,
+                    case_id=case_id,
+                    persona_id=persona_id,
+                    companion_id=companion_id,
+                )
+        return ret
+
     def _get_descriptions(
         self,
         rs: RequestState,

@@ -125,7 +125,7 @@ class Case(CdEDataclass):
                     WHERE involved.case_id = cases.id
                 ) AS involved,
                 array(
-                    SELECT ARRAY[companion.involved_persona_id, companion.persona_id]
+                    SELECT ARRAY[companion.involved_persona_id, companion.companion_persona_id]
                     FROM {ComplaintCompanion.database_table} AS companion
                     WHERE companion.case_id = cases.id
                 ) as companions
