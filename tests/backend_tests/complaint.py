@@ -432,21 +432,21 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
-        # self.assertEqual(
-        #     0, self.complaint.remove_companions(self.key, case_id, persona_id, [])
-        # )
-        # self.assertEqual(
-        #     1,
-        #     self.complaint.remove_companions(
-        #         self.key, case_id, persona_id, [new_companion]
-        #     ),
-        # )
-        # self.assertEqual(
-        #     -1,
-        #     self.complaint.remove_companions(
-        #         self.key, case_id, persona_id, [new_companion]
-        #     ),
-        # )
+        self.assertEqual(
+            0, self.complaint.remove_companions(self.key, case_id, persona_id, [])
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_companions(
+                self.key, case_id, persona_id, [new_companion]
+            ),
+        )
+        self.assertEqual(
+            -1,
+            self.complaint.remove_companions(
+                self.key, case_id, persona_id, [new_companion]
+            ),
+        )
 
         log_expectation = [
             {
@@ -454,11 +454,11 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": persona_id,
                 "companion_id": new_companion,
             },
-            # {
-            #     "code": const.ComplaintLogCodes.companion_removed,
-            #     "persona_id": persona_id,
-            #     "companion_id": new_companion,
-            # },
+            {
+                "code": const.ComplaintLogCodes.companion_removed,
+                "persona_id": persona_id,
+                "companion_id": new_companion,
+            },
         ]
         self.assertLogEqual(
             log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET

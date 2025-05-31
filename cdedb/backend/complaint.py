@@ -519,11 +519,53 @@ class ComplaintBackend(AbstractBackend):
             ret = self.sql_insert_many(
                 rs, models.ComplaintCompanion.database_table, values
             )
-            code = const.ComplaintLogCodes.companion_added
             for companion_id in mixed_existence_sorter(companion_ids):
                 ret *= self.complaint_log(
                     rs=rs,
-                    code=code,
+                    code=const.ComplaintLogCodes.companion_added,
+                    case_id=case_id,
+                    persona_id=persona_id,
+                    companion_id=companion_id,
+                )
+        return ret
+
+    @access("complaint_admin")
+    def remove_companions(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_ids: Collection[int],
+    ) -> DefaultReturnCode:
+        """Remove companions from a person involved in a case."""
+        case_id = affirm(vtypes.ID, case_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        companion_ids = affirm_set(vtypes.ID, companion_ids)
+        if not companion_ids:
+            return 0
+        with Atomizer(rs):
+            case = self.get_case(rs, case_id)
+            companion_ids &= case.companions_by_involved.get(persona_id, set())
+            if not companion_ids:
+                return -1
+
+            query = f"""
+                DELETE FROM {models.ComplaintCompanion.database_table}
+                WHERE case_id = %(case_id)s
+                    AND involved_persona_id = %(persona_id)s
+                    AND companion_persona_id = ANY(%(companion_ids)s)
+            """
+            params: dict[str, DatabaseValue_s] = {
+                "case_id": case_id,
+                "persona_id": persona_id,
+                "companion_ids": companion_ids,
+            }
+            ret = self.query_exec(rs, query, params)
+
+            for companion_id in mixed_existence_sorter(companion_ids):
+                ret *= self.complaint_log(
+                    rs=rs,
+                    code=const.ComplaintLogCodes.companion_removed,
                     case_id=case_id,
                     persona_id=persona_id,
                     companion_id=companion_id,
