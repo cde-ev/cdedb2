@@ -58,6 +58,18 @@ class Case(CdEDataclass):
                 ret.setdefault(persona_id, set()).add(companion)
         return ret
 
+    withdrawn_companions: dict[int, set[int]] = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
+
+    @functools.cached_property
+    def withdrawn_companions_by_involved(self) -> dict[int, set[int]]:
+        ret: dict[int, set[int]] = {}
+        for companion, accompanied in self.withdrawn_companions.items():
+            for persona_id in accompanied:
+                ret.setdefault(persona_id, set()).add(companion)
+        return ret
+
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = set(self.all_involved)
         ret.update(self.companions)
@@ -106,9 +118,13 @@ class Case(CdEDataclass):
         data["involved"] = new_involved
 
         new_companions: dict[int, set[int]] = {}
+        withdrawn_companions: dict[int, set[int]] = {}
         for companion in data["companions"]:
             new_companions.setdefault(companion[1], set()).add(companion[0])
+            if companion[2]:
+                withdrawn_companions.setdefault(companion[1], set()).add(companion[0])
         data["companions"] = new_companions
+        data["withdrawn_companions"] = withdrawn_companions
 
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
         ret = super().from_database(data)
@@ -126,12 +142,22 @@ class Case(CdEDataclass):
             SELECT
                 {", ".join(cls.database_fields())},
                 array(
-                    SELECT ARRAY[involved.persona_id, involved.involved_type, involved.is_informed::int]
+                    SELECT
+                        ARRAY[
+                            involved.persona_id,
+                            involved.involved_type,
+                            involved.is_informed::int
+                        ]
                     FROM {ComplaintInvolved.database_table} AS involved
                     WHERE involved.case_id = cases.id
                 ) AS involved,
                 array(
-                    SELECT ARRAY[companion.involved_persona_id, companion.companion_persona_id]
+                    SELECT
+                        ARRAY[
+                            companion.involved_persona_id,
+                            companion.companion_persona_id,
+                            companion.is_withdrawn::int
+                        ]
                     FROM {ComplaintCompanion.database_table} AS companion
                     WHERE companion.case_id = cases.id
                 ) as companions

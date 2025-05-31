@@ -203,8 +203,9 @@ class ComplaintBackend(AbstractBackend):
                 **data,
                 entries={},
                 involved={},
-                companions={},
                 informed_involved=set(),
+                companions={},
+                withdrawn_companions={},
             )
             self.complaint_log(
                 rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
@@ -495,6 +496,7 @@ class ComplaintBackend(AbstractBackend):
         """Set the informed status of an involved person."""
         case_id = affirm(vtypes.ID, case_id)
         persona_id = affirm(vtypes.ID, persona_id)
+        is_informed = affirm(bool, is_informed)
 
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
@@ -621,6 +623,58 @@ class ComplaintBackend(AbstractBackend):
                     persona_id=persona_id,
                     companion_id=companion_id,
                 )
+        return ret
+
+    @access("complaint_admin")
+    def set_companion_withdrawn(
+        self,
+        rs: RequestState,
+        case_id: int,
+        persona_id: int,
+        companion_id: int,
+        is_withdrawn: bool,
+    ) -> DefaultReturnCode:
+        """Set the informed status of an involved person."""
+        case_id = affirm(vtypes.ID, case_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        companion_id = affirm(vtypes.ID, companion_id)
+        is_withdrawn = affirm(bool, is_withdrawn)
+
+        with Atomizer(rs):
+            case = self.get_case(rs, case_id)
+            if persona_id not in case.all_involved:
+                raise ValueError(n_("Uninvolved user."))
+            if companion_id not in case.companions_by_involved.get(persona_id, set()):
+                raise ValueError(n_("Not a companion."))
+            if is_withdrawn == (
+                persona_id in case.withdrawn_companions.get(companion_id, set())
+            ):
+                return -1
+            query = f"""
+                UPDATE {models.ComplaintCompanion.database_table}
+                SET is_withdrawn = %(is_withdrawn)s
+                WHERE case_id = %(case_id)s
+                    AND involved_persona_id = %(persona_id)s
+                    AND companion_persona_id = %(companion_id)s
+            """
+            params = {
+                "case_id": case_id,
+                "persona_id": persona_id,
+                "companion_id": companion_id,
+                "is_withdrawn": is_withdrawn,
+            }
+            ret = self.query_exec(rs, query, params)
+            if is_withdrawn:
+                code = const.ComplaintLogCodes.companion_withdrawn
+            else:
+                code = const.ComplaintLogCodes.companion_reinstated
+            ret *= self.complaint_log(
+                rs=rs,
+                code=code,
+                case_id=case_id,
+                persona_id=persona_id,
+                companion_id=companion_id,
+            )
         return ret
 
     def _get_descriptions(
