@@ -490,7 +490,7 @@ class ComplaintInvolvementType(CdEIntEnum):
     def get_icon(self) -> str | None:
         return {
             ComplaintInvolvementType.affected: "user-injured",
-            ComplaintInvolvementType.appellant: "phone",
+            ComplaintInvolvementType.appellant: "comment",
             ComplaintInvolvementType.target: "crosshairs",
             ComplaintInvolvementType.other: "question",
             ComplaintInvolvementType.withheld: "eye-slash",

@@ -346,13 +346,14 @@
                 {% endif %}
                 <br />
                 {{ gettext("by") }}
-                {{ util.persona_anchor(personas[entry['submitted_by']]) }}
-                <br />
-                <span class="text-muted">
-                    {% trans change_note=entry['change_note'] %}
-                         {{ change_note }}
-                    {% endtrans %}
-                </span>
+                {{ util.persona_anchor(personas[entry['submitted_by']]) -}}
+                {%- if entry['change_note'] -%}
+                    <span class="text-muted">
+                        {%- trans change_note=entry['change_note'] %}
+                             ; {{ change_note }}
+                        {% endtrans %}
+                    </span>
+                {% endif %}
             </div>
         {% endif %}
     {% endfor %}
