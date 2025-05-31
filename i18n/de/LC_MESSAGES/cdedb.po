@@ -22694,3 +22694,18 @@ msgstr "%(num)s Teilnahmebeiträge verbucht für %(event)s."
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr "%(num)s Erstattungen eingetragen für %(event)s."
+
+msgid "ComplaintInvolvementType.affected"
+msgstr "Betroffene"
+
+msgid "ComplaintInvolvementType.appellant"
+msgstr "Beschwerdeführer"
+
+msgid "ComplaintInvolvementType.target"
+msgstr "Zielpersonen"
+
+msgid "ComplaintInvolvementType.other"
+msgstr "Sonstige"
+
+msgid "ComplaintInvolvementType.withheld"
+msgstr "Befangene"

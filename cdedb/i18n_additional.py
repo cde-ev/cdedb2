@@ -385,6 +385,12 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
 
+    n_("ComplaintInvolvementType.affected"),
+    n_("ComplaintInvolvementType.appellant"),
+    n_("ComplaintInvolvementType.target"),
+    n_("ComplaintInvolvementType.other"),
+    n_("ComplaintInvolvementType.withheld"),
+
     # Registration violations.
     n_("MutuallyExclusiveParticipationCV"),
     n_("CourseChoiceSyncCV"),

@@ -92,16 +92,16 @@
 
 {% macro bootstrap_panel(
         title="", aclass="panel-default", icon=none, anid=none, button=none,
-        footer_text=none, footer_class="", footer_icon=none
+        footer_text=none, footer_class="", footer_icon=none, level=3
 ) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon or button %}
             <div class="panel-heading">
                 {{- button -}}
-                <h3 class="panel-title">
+                <h{{ level }} class="panel-title">
                     {{- make_icon(icon) + nbsp if icon }}
                     {{- title -}}
-                </h3>
+                </h{{ level }}>
                 <div style="clear:both;"></div>
             </div>
         {%- endif %}

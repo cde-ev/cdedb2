@@ -198,7 +198,8 @@ h4, .h4, h5, .h5, h6, .h6 {
     margin-top: 12px;
     margin-bottom: 6px;
 }
-h4.heading-underline, h5.heading-underline, h6.heading-underline {
+h4.heading-underline, h5.heading-underline, h6.heading-underline,
+h4.panel-title, h5.panel-title, h6.panel-title {
     font-weight: inherit;
 }
 @media (max-width: 767px) {

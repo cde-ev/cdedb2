@@ -487,6 +487,14 @@ class ComplaintInvolvementType(CdEIntEnum):
     other = 51  #: especially for cases which are no actual complaints
     withheld = 100  #: hides complaint even if otherwise visible to user
 
+    def get_icon(self):
+        return {
+            ComplaintInvolvementType.affected: "user-injured",
+            ComplaintInvolvementType.appellant: "phone",
+            ComplaintInvolvementType.target: "crosshairs",
+            ComplaintInvolvementType.other: "question",
+            ComplaintInvolvementType.withheld: "eye-slash",
+        }.get(self)
 
 @enum.unique
 class ComplaintEntryType(CdEIntEnum):
