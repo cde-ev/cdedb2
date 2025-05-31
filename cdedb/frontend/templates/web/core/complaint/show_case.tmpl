@@ -76,7 +76,7 @@
             <div class="col-sm-6">
                 {% if involved_ids %}
                     {% call util.bootstrap_panel(
-                        title=gettext(type), aclass="panel-info", icon=type.get_icon(), level=4) %}
+                        title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
                     {% for involved_id in involved_ids %}
                         <div class="hide-hover-container">
                             {{ util.persona_anchor(personas[involved_id]) }}
@@ -154,7 +154,7 @@
                 class="display-inline"
             >
                 {{ util.anti_csrf_token('core/unlock_case') }}
-                {{ util.input_submit(label=gettext("Unlock"),
+                {{ util.input_submit(label=gettext("Unlock descriptions"),
                                      aclass="btn btn-sm btn-primary",
                                      icon="unlock") }}
             </form>
@@ -165,7 +165,7 @@
                 class="display-inline"
             >
                 {{ util.anti_csrf_token('core/lock_case') }}
-                {{ util.input_submit(label=gettext("Lock"),
+                {{ util.input_submit(label=gettext("Lock descriptions"),
                                      aclass="btn btn-sm btn-primary",
                                      icon="lock") }}
             </form>
@@ -279,7 +279,7 @@
                     {{ entry['ctime']|datetime(lang=lang) }}
                 </div>
                 <strong>
-                    {{ entry['code'].name -}}
+                    {{ gettext(entry['code']|string) -}}
                 </strong>
                 {%- if entry['companion_id'] -%}
                     : {{ util.persona_anchor(personas[entry['companion_id']]) }}

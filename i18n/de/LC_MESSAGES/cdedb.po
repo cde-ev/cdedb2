@@ -22708,4 +22708,121 @@ msgid "ComplaintInvolvementType.other"
 msgstr "Sonstige"
 
 msgid "ComplaintInvolvementType.withheld"
-msgstr "Befangene"
+msgstr "Versteckt vor"
+
+msgid "ComplaintKind.physical_sexual_transgression"
+msgstr "Körperliche sexuelle Grenzüberschreitung"
+
+msgid "ComplaintKind.physical_nonsexual_violence"
+msgstr "Physische nicht-sexualisierte Gewalt"
+
+msgid "ComplaintKind.nonphysical_sexual_transgression"
+msgstr "Sexuelle Belästigung"
+
+msgid "ComplaintKind.verbal_abuse"
+msgstr "Verbale Ausfälle"
+
+msgid "ComplaintKind.volunteer_harassment"
+msgstr "Belästigung von Aktiven"
+
+msgid "ComplaintKind.other_harassment"
+msgstr "Sonstige Belästigung"
+
+msgid "ComplaintKind.mobbing"
+msgstr "Mobbing"
+
+msgid "ComplaintKind.bad_administration"
+msgstr "Schlechte Amtsführung"
+
+msgid "Case %s"
+msgstr "Fall %s"
+
+msgid "Kind"
+msgstr "Art"
+
+msgid "(for %s)"
+msgstr "(für %s)"
+
+msgid "Relevant Individuals"
+msgstr "Relevante Personen"
+
+msgid "Add individuals"
+msgstr "Personen hinzufügen"
+
+msgid "Companions"
+msgstr "Fallbegleitung"
+
+msgid "Events_[[in a complaint]]"
+msgstr "Ereignisse"
+
+msgid "Add standalone entry"
+msgstr "Eigenständigen Eintrag hinzufügen"
+
+msgid "Unlock descriptions"
+msgstr "Beschreibungen entsperren"
+
+msgid "Lock descriptions"
+msgstr "Beschreibungen sperren"
+
+msgid "%s at %s"
+msgstr "%s am %s"
+
+msgid "ComplaintLogCodes.case_created"
+msgstr "Fall erstellt"
+
+msgid "ComplaintLogCodes.case_changed_kind"
+msgstr "Fall geändert: Art"
+
+msgid "ComplaintLogCodes.case_changed_grave"
+msgstr "Fall geändert: Schwere"
+
+msgid "ComplaintLogCodes.case_changed_summary"
+msgstr "Fall geändert: Zusammenfassung"
+
+msgid "ComplaintLogCodes.case_changed_start_date"
+msgstr "Fall geändert: Anfangsdatum"
+
+msgid "ComplaintLogCodes.case_changed_end_date"
+msgstr "Fall geändert: Enddatum"
+
+msgid "ComplaintLogCodes.involved_added"
+msgstr "Beteiligten hinzugefügt"
+
+msgid "ComplaintLogCodes.involved_removed"
+msgstr "Beteiligten entfernt"
+
+msgid "ComplaintLogCodes.involved_informed"
+msgstr "Beteiligen informiert"
+
+msgid "ComplaintLogCodes.involved_uninformed"
+msgstr "Beteiligten entinformiert"
+
+msgid "ComplaintLogCodes.companion_added"
+msgstr "Fallbegleitung hinzugefügt"
+
+msgid "ComplaintLogCodes.companion_withdrawn"
+msgstr "Fallbegleitung zurückgezogen"
+
+msgid "ComplaintLogCodes.companion_reinstated"
+msgstr "Fallbegleitung wiedereingesetzt"
+
+msgid "ComplaintLogCodes.companion_removed"
+msgstr "Fallbegleitung entfernt"
+
+msgid "ComplaintLogCodes.enforcer_added"
+msgstr "Maßnahmenmanager hinzugefügt"
+
+msgid "ComplaintLogCodes.enforcer_removed"
+msgstr "Maßnahmenmanager entfernt"
+
+msgid "ComplaintLogCodes.monitor_added"
+msgstr "Übersichtsperson hinzugefügt"
+
+msgid "ComplaintLogCodes.monitor_removed"
+msgstr "Übersichtsperson entfernt"
+
+msgid "ComplaintLogCodes.case_unlocked"
+msgstr "Fallbeschreibungen entsperrt"
+
+msgid "ComplaintLogCodes.concealed_case_detected"
+msgstr "Versteckten Fall gefunden"

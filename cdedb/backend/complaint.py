@@ -400,7 +400,7 @@ class ComplaintBackend(AbstractBackend):
                     for persona_id in newly_involved
                 ],
             )
-            code = const.ComplaintLogCodes.involvee_added
+            code = const.ComplaintLogCodes.involved_added
             for persona_id in mixed_existence_sorter(newly_involved):
                 ret *= self.complaint_log(
                     rs=rs,
@@ -454,7 +454,7 @@ class ComplaintBackend(AbstractBackend):
             for persona_id in mixed_existence_sorter(removed):
                 ret *= self.complaint_log(
                     rs=rs,
-                    code=const.ComplaintLogCodes.involvee_removed,
+                    code=const.ComplaintLogCodes.involved_removed,
                     case_id=case_id,
                     persona_id=persona_id,
                     change_note=rs.log_gettext(str(case.all_involved[persona_id])),

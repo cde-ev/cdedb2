@@ -21591,3 +21591,81 @@ msgstr ""
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr ""
+
+msgid "Events_[[in a complaint]]"
+msgstr "Events"
+
+msgid "ComplaintInvolvementType.affected"
+msgstr "Affected"
+
+msgid "ComplaintInvolvementType.appellant"
+msgstr "Appellants"
+
+msgid "ComplaintInvolvementType.target"
+msgstr "Subjects"
+
+msgid "ComplaintInvolvementType.other"
+msgstr "Other"
+
+msgid "ComplaintInvolvementType.withheld"
+msgstr "Wiithheld from"
+
+msgid "ComplaintLogCodes.case_created"
+msgstr "Case created"
+
+msgid "ComplaintLogCodes.case_changed_kind"
+msgstr "Case changed: kind"
+
+msgid "ComplaintLogCodes.case_changed_grave"
+msgstr "Case changed: is grave"
+
+msgid "ComplaintLogCodes.case_changed_summary"
+msgstr "Case changed: summary"
+
+msgid "ComplaintLogCodes.case_changed_start_date"
+msgstr "Case changed: start date"
+
+msgid "ComplaintLogCodes.case_changed_end_date"
+msgstr "Case changed: end date"
+
+msgid "ComplaintLogCodes.involved_added"
+msgstr "Involved person added"
+
+msgid "ComplaintLogCodes.involved_removed"
+msgstr "Involved person removed"
+
+msgid "ComplaintLogCodes.involved_informed"
+msgstr "Involved person informed"
+
+msgid "ComplaintLogCodes.involved_uninformed"
+msgstr "Involved person uninformed"
+
+msgid "ComplaintLogCodes.companion_added"
+msgstr "Companion added"
+
+msgid "ComplaintLogCodes.companion_withdrawn"
+msgstr "Companion withdrawn"
+
+msgid "ComplaintLogCodes.companion_reinstated"
+msgstr "Companion reinstated"
+
+msgid "ComplaintLogCodes.companion_removed"
+msgstr "Companion removed"
+
+msgid "ComplaintLogCodes.enforcer_added"
+msgstr "Enforcer added"
+
+msgid "ComplaintLogCodes.enforcer_removed"
+msgstr "Enforcer removed"
+
+msgid "ComplaintLogCodes.monitor_added"
+msgstr "Monitor added"
+
+msgid "ComplaintLogCodes.monitor_removed"
+msgstr "Monitor removed"
+
+msgid "ComplaintLogCodes.case_unlocked"
+msgstr "Case descriptions unlocked"
+
+msgid "ComplaintLogCodes.concealed_case_detected"
+msgstr "Concealed case detected"

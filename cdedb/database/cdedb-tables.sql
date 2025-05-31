@@ -567,7 +567,7 @@ CREATE TABLE complaint.entry_versions (
         CHECK ((description IS NULL) = (length IS NULL)),
     ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involvee
+    -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involved personas
     dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
     dreason       varchar DEFAULT NULL,
     deleted_by    integer REFERENCES core.personas(id) DEFAULT NULL,

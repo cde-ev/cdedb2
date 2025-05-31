@@ -669,10 +669,10 @@ class ComplaintLogCodes(CdEIntEnum):
     # case_concluded = 22  #:
     # case_aborted = 23  #:
 
-    involvee_added = 41  #:
-    involvee_removed = 42  #:
-    involvee_informed = 46  #:
-    involvee_uninformed = 47  #:
+    involved_added = 41  #:
+    involved_removed = 42  #:
+    involved_informed = 46  #:
+    involved_uninformed = 47  #:
 
     companion_added = 51  #:
     companion_withdrawn = 52  #:

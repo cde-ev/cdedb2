@@ -374,17 +374,17 @@ class TestComplaintBackend(BackendTest):
 
         log_expectation: list[CdEDBObject] = [
             {
-                "code": const.ComplaintLogCodes.involvee_added,
+                "code": const.ComplaintLogCodes.involved_added,
                 "change_note": "Zielpersonen",
                 "persona_id": 1,
             },
             {
-                "code": const.ComplaintLogCodes.involvee_removed,
+                "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
                 "persona_id": 1,
             },
             {
-                "code": const.ComplaintLogCodes.involvee_removed,
+                "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
                 "persona_id": 2,
             },
