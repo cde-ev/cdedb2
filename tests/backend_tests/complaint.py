@@ -13,7 +13,7 @@ class TestComplaintBackend(BackendTest):
     def LOG_OFFSET(self) -> int:
         return len(self.get_sample_data("complaint.log"))
 
-    @as_users("anton")
+    @as_users("simon")
     def test_get_case(self) -> None:
         expectation = models.Case(
             id=1,  # type: ignore[arg-type]
@@ -163,7 +163,7 @@ class TestComplaintBackend(BackendTest):
 
         self.assertEqual({1, 2, 3, 4, 7}, reality.get_persona_ids(tuple()))
 
-    @as_users("anton")
+    @as_users("simon")
     def test_set_case(self) -> None:
         case_id = 1
         case_data = self.complaint.get_case(self.key, case_id).as_dict()
@@ -207,7 +207,7 @@ class TestComplaintBackend(BackendTest):
             log_expectation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
         )
 
-    @as_users("anton")
+    @as_users("simon")
     def test_create_case(self) -> None:
         new_case_data: CdEDBObject = {
             "kind": const.ComplaintKind.mobbing.value,
@@ -231,7 +231,7 @@ class TestComplaintBackend(BackendTest):
         ]
         self.assertLogEqual(log_expectation, "complaint", case_id=new_case.id)
 
-    @as_users("anton")
+    @as_users("simon")
     def test_add_entry(self) -> None:
         case_id = 1
         new_entry_data: CdEDBObject = {
@@ -267,7 +267,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation, case.entries[new_entry_id])
         self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
-    @as_users("anton")
+    @as_users("simon")
     def test_replace_entry(self) -> None:
         case_id = 1
         entry_id = 3
@@ -300,7 +300,7 @@ class TestComplaintBackend(BackendTest):
 
         self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
-    @as_users("anton")
+    @as_users("simon")
     def test_delete_entry(self) -> None:
         case_id = 1
         entry_id = 4
@@ -320,7 +320,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(deleted_entry, case.entries[entry_id])
         self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
-    @as_users("anton")
+    @as_users("simon")
     def test_add_remove_involved(self) -> None:
         case_id = 1
         original_case = self.complaint.get_case(self.key, case_id)
