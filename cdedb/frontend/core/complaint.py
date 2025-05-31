@@ -175,7 +175,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        if not self.coreproxy.verify_ids(rs, persona_id, is_archived=None):
+        if not self.coreproxy.verify_ids(rs, [persona_id], is_archived=None):
             rs.append_validation_error((
                 "persona_id",
                 ValueError(n_("This user does not exist.")),
@@ -204,7 +204,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         else:
-            self.set_involved_informed(rs, case_id, persona_id, True)
+            self.complaintproxy.set_involved_informed(rs, case_id, persona_id, True)
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin", modi={"POST"})
@@ -222,7 +222,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         else:
-            self.set_involved_informed(rs, case_id, persona_id, False)
+            self.complaintproxy.set_involved_informed(rs, case_id, persona_id, False)
             return self.redirect(rs, "core/show_case", {'case_id': case_id})
 
     @access("complaint_admin")
