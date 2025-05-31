@@ -4727,6 +4727,7 @@
     ],
     "complaint.companions": [
         {
+            "id": 1,
             "case_id": 1,
             "involved_persona_id": 2,
             "involved_id": 1,
@@ -4734,6 +4735,7 @@
             "is_withdrawn": true
         },
         {
+            "id": 2,
             "case_id": 1,
             "involved_persona_id": 4,
             "involved_id": 2,
@@ -4752,6 +4754,7 @@
             "submitted_by": 1,
             "case_id": 1,
             "persona_id": null,
+            "companion_id": null,
             "change_note": null
         },
         {
@@ -4761,6 +4764,7 @@
             "submitted_by": 1,
             "case_id": 1,
             "persona_id": 4,
+            "companion_id": null,
             "change_note": "ComplaintInvolvedType.affected"
         },
         {
@@ -4770,6 +4774,7 @@
             "submitted_by": 1,
             "case_id": 1,
             "persona_id": 2,
+            "companion_id": null,
             "change_note": "ComplaintInvolvedType.target"
         },
         {

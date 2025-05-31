@@ -91,7 +91,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
 
     # take care that the order is preserved
     full_sample_data = dict()
-    reference_frame = nearly_now(delta=datetime.timedelta(days=30))
+    reference_frame = nearly_now(delta=datetime.timedelta(days=1))
 
     def datetime_from_date(date: datetime.date) -> datetime.datetime:
         return datetime.datetime(
