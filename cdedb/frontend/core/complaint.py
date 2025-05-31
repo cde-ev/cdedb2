@@ -221,9 +221,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
-        if rs.ambience[
-            'entry'
-        ].entry_type.is_hidden and not self.complaintproxy.is_unlocked(rs, case_id):
+        if (
+            rs.ambience['entry'].entry_type.is_hidden
+            and not self.complaintproxy.is_unlocked(rs, case_id)
+        ):  # fmt: skip
             rs.notify('error', n_("Need to unlock case before replacing entry."))
             return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         rs.ignore_validation_errors()
