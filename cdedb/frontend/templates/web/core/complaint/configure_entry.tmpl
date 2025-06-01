@@ -49,7 +49,11 @@
             {{ util.input_hidden(name="entry_type", value=entry_type) }}
             {{ util.input_hidden(name="parent_id") }}
             {{ util.anti_csrf_token(action_target) }}
-            {{ util.form_input_static(label=gettext("Entry Type"), value=gettext(entry_type)) }}
+            {% call util.form_input_static(label=gettext("Entry Type")) %}
+                {{ entry_type }}{{- nbsp -}}
+                {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
+                             gettext("Change"), icon="pen", aclass="btn btn-warning btn-sm") }}
+            {% endcall %}
             {% if entry_type.has_concerned %}
                 {% if ambience['entry'] %}
                     {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[ambience['entry'].concerned_id], icon='user')) }}
@@ -85,8 +89,10 @@
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}
                     </div>
                 </div>
+                {{ util.form_input_submit(label=gettext("Replace"), cancellink=cdedblink('core/show_case')) }}
+            {% else %}
+                {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('core/show_case')) }}
             {% endif %}
-            {{ util.form_input_submit(label=gettext("Replace"), cancellink=cdedblink('core/show_case')) }}
         </form>
     {% endif %}
 
