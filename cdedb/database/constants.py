@@ -548,6 +548,10 @@ class ComplaintEntryType(CdEIntEnum):
     revocation_explanation = 10001  #: Can be child of everything
 
     @classmethod
+    def measure_types(cls) -> set["ComplaintEntryType"]:
+        return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
+
+    @classmethod
     def visible_types(cls) -> set["ComplaintEntryType"]:
         return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
 

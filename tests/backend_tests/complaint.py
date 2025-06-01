@@ -932,6 +932,49 @@ class TestComplaintBackend(BackendTest):
             log_expecation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
         )
 
+    @as_users("simon")
+    def test_get_measures(self) -> None:
+        case_id = 1
+        active_measure_entry_id = 5
+        active_measure_persona_id = 2
+
+        self.assertEqual({}, self.complaint.get_measures(self.key, 3, is_active=None))
+        self.assertEqual({}, self.complaint.get_measures(self.key, 4, is_active=None))
+        self.assertEqual({}, self.complaint.get_measures(self.key, 7, is_active=None))
+        self.assertEqual({}, self.complaint.get_measures(self.key, 2, is_active=False))
+
+        case = self.complaint.get_case(self.key, case_id)
+        measure = case.entries[active_measure_entry_id].active_version
+        assert measure is not None
+        self.assertEqual(
+            {measure.id: measure},
+            self.complaint.get_measures(self.key, active_measure_persona_id),
+        )
+
+        revoke_data: CdEDBObject = {
+            "timestamp": now(),
+            "description": "Oops!... I Did It Again",
+            "authors": {3},
+        }
+        self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
+
+        self.assertEqual(
+            {},
+            self.complaint.get_measures(
+                self.key, active_measure_persona_id, is_active=True
+            ),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        measure = case.entries[active_measure_entry_id].active_version
+        assert measure is not None
+        self.assertEqual(
+            {measure.id: measure},
+            self.complaint.get_measures(
+                self.key, active_measure_persona_id, is_active=False
+            ),
+        )
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:

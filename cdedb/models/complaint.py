@@ -268,6 +268,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None, metadata={"validation_exclude": True, "request_exclude": True}
     )
     timestamp: datetime.datetime
+    etime: datetime.datetime | None = None
 
     ctime: datetime.datetime = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}

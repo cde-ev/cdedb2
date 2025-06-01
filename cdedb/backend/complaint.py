@@ -923,3 +923,40 @@ class ComplaintBackend(AbstractBackend):
         """.strip().removeprefix("SELECT * FROM")
 
         return self.general_query(rs, query, view=view)
+
+    @access("complaint_admin")
+    def get_measures(
+        self, rs: RequestState, concerned_id: int, is_active: bool | None = True
+    ) -> dict[int, models.ComplaintEntryVersion]:
+        query = f"""
+            SELECT versions.id
+            FROM {models.ComplaintEntryVersion.database_table} AS versions
+                LEFT JOIN {models.ComplaintEntry.database_table} AS entries
+                    ON entries.id = versions.entry_id
+            WHERE
+                entries.concerned_id = %(concerned_id)s
+                AND entries.entry_type = ANY(%(entry_types)s)
+                AND versions.dtime IS NULL
+        """
+        params: dict[str, DatabaseValue_s] = {
+            "concerned_id": concerned_id,
+            "entry_types": const.ComplaintEntryType.measure_types(),
+        }
+
+        if is_active is not None:
+            query += """
+                AND (
+                    NOT entries.is_revoked
+                    AND versions.etime IS NULL
+                ) = %(is_active)s
+            """
+            params["is_active"] = is_active
+
+        entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
+        entry_version_data = self.query_all(
+            rs,
+            *models.ComplaintEntryVersion.get_select_query(
+                entry_version_ids, entity_key="id"
+            ),
+        )
+        return models.ComplaintEntryVersion.many_from_database(entry_version_data)

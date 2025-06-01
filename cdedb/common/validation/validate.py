@@ -5010,6 +5010,9 @@ def _complaint_entry_version(
     else:
         errs.append(ValueError('authors', n_("Must not be empty.")))
 
+    if val.get('etime') and val['etime'] <= val['timestamp']:
+        errs.append(ValueError('etime', n_("Must be after timestamp.")))
+
     if errs:
         raise errs
 
