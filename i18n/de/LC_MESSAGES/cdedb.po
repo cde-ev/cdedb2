@@ -13034,7 +13034,7 @@ msgid "Questionnaire Export"
 msgstr "Fragebogenexport"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:148
-msgid "for import into other events"
+msgid "for import in other events"
 msgstr "für den Import in anderen Veranstaltungen"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:154
