@@ -13,6 +13,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% set jshint='weak' %}
+
 {% block title %}
     {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
         {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
@@ -23,10 +24,25 @@
             Replace Entry ({{ title }})
         {% endtrans %}
     {% else %}
+        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+            Add Entry ({{ title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
         {{ util.context_heading(gettext("Add Entry"), gettext("Case %s")|format(ambience['case'].id),
+                                'gavel', "") }}
+    {% elif ambience['entry'] %}
+        {{ util.context_heading(gettext("Replace Entry"), gettext("Case %s")|format(ambience['case'].id),
+                                'gavel', "") }}
+    {% else %}
+        {{ util.context_heading(gettext("Revoke Entry"), gettext("Case %s")|format(ambience['case'].id),
                                 'gavel', "") }}
     {% endif %}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
@@ -40,6 +56,7 @@
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Add Entry"), active=True) }}
     {% endif %}
 {% endblock %}
+
 {% block content %}
     {% if not ambience['entry'] and entry_type is none %}
         <form action="{{ cdedblink(action_target + '_form') }}" method="GET" id="selectentrytypeform"

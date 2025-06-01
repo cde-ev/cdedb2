@@ -1,10 +1,18 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+
 {% block title %}
+    {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+        Remove Entry ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
     {{ util.context_heading(gettext("Remove Entry"), gettext("Case %s")|format(ambience['case'].id),
                             'gavel', "") }}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
@@ -12,6 +20,7 @@
                             icon="gavel") }}
     {{ util.breadcrumb_link(cdedblink("core/remove_entry"), gettext("Remove Entry"), active=True) }}
 {% endblock %}
++
 {% block content %}
     {% set entry_type = ambience['entry'].entry_type %}
     <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal">
