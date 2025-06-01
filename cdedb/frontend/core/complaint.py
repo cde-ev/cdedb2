@@ -64,6 +64,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
+        invisible_cases = 0
 
         if not is_search:
             cases = personas = unlocked_cases = None
@@ -92,6 +93,21 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     e['cases.id'] for e in result if e['access.is_unlocked']
                 }
                 cases = self.complaintproxy.get_cases(rs, case_ids)
+
+                # Exclude invisible cases
+                cases = {
+                    case_id: case
+                    for case_id, case in cases.items()
+                    if case.is_visible_for(rs.user)
+                }
+                if count > len(cases):
+                    rs.notify(
+                        "warning",
+                        n_("%(count)s cases not shown."),
+                        {"count": count - len(cases)},
+                    )
+                    # TODO Send email to complaint admins
+
                 persona_ids = []
                 for case in cases.values():
                     persona_ids.extend(case.all_involved.keys())
