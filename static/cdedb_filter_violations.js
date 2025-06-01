@@ -118,17 +118,5 @@
             history.replaceState(null, "", window.location.pathname + "?" + $(this).closest('form').serialize() + window.location.hash);
         }
         $(this).find(':input').on('change', update_results);
-        // Submit currently active tab to keep it active.
-        if (typeof $().cdedbGetActiveTab !== "undefined") {
-            $(this).on("submit", function (event) {
-                event.preventDefault();
-                $(this).append($('<input />', {
-                    "type": "hidden",
-                    "name": "nav_tab_active",
-                    "value": $().cdedbGetActiveTab(),
-                }));
-                this.submit();
-            })
-        }
     };
 })(jQuery);

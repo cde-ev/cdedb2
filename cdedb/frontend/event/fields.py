@@ -85,9 +85,10 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("active_tab")
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
-                      ) -> Response:
+    @REQUESTdata("nav_tab_active")
+    def field_summary(
+            self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
+    ) -> Response:
         """Manipulate the fields of an event."""
         mandatory, optional = models.EventField.validation_fields(creation=False)
         spec = dict(mandatory) | dict(optional)
@@ -124,8 +125,7 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, "Ändere Datenfelder.", after_change=True)
         rs.notify_return_code(code)
         return self.redirect(
-            rs, "event/field_summary_form", anchor=(
-                ("tab:" + active_tab) if active_tab is not None else None))
+            rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#"))
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",

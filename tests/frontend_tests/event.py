@@ -453,66 +453,62 @@ class TestEventFrontend(FrontendTest):
         }
         finance_admin: set[str] = set()
 
-        for user in ("annika", "emilia", "garcia", "martin", "vera", "werner",
-                     "katarina", "farin", "petra"):
-            with self.switch_user(user):
-                self.traverse("Veranstaltungen", "Große Testakademie 2222")
-                # TODO this could be more expanded (event without courses, distinguish
-                #  between registered and participant, ...
-                # not registered, not event admin, no event helper, no auditor
-                if self.user_in('martin', 'vera', 'werner'):
-                    ins = everyone | not_registered
-                    out = (
-                            registered | registered_or_privileged | privileged | orga
-                            | finance_admin
-                    )
-                # registered
-                elif self.user_in('emilia'):
-                    ins = everyone | registered | registered_or_privileged
-                    out = not_registered | privileged | orga | finance_admin
-                # orga
-                elif self.user_in('garcia'):
-                    ins = (
-                            everyone | registered | registered_or_privileged
-                            | privileged | orga
-                    )
-                    out = not_registered | finance_admin
-                # event helper
-                elif self.user_in('petra'):
-                    ins = (
-                            everyone | not_registered | registered_or_privileged
-                            | privileged
-                    )
-                    out = registered | orga | finance_admin
-                # event admin (annika is not registered)
-                elif self.user_in('annika'):
-                    ins = (
-                            everyone | not_registered | registered_or_privileged
-                            | privileged | orga
-                    )
-                    out = registered | finance_admin
-                # not registered, auditor
-                elif self.user_in('katarina'):
-                    ins = (
-                            everyone | not_registered | privileged
-                              | registered_or_privileged | {"Log"}
-                    ) - registrations_stats
-                    out = (
-                            registered | orga | finance_admin | registrations_stats
-                    ) - {"Log"}
-                # finance admin
-                elif self.user_in('farin'):
-                    ins = (
-                            everyone | not_registered | privileged
-                            | registered_or_privileged | finance_admin
-                    ) - registrations_stats | {"Überweisungen eintragen"}
-                    # TODO: solve this more elegantly.
-                    out = (registered | orga | registrations_stats) - {"Überweisungen eintragen"}
-                else:
-                    self.fail("Please adjust users for this tests.")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        # TODO this could be more expanded (event without courses, distinguish
+        #  between registered and participant, ...
+        # not registered, not event admin, no event helper, no auditor
+        if self.user_in('martin', 'vera', 'werner'):
+            ins = everyone | not_registered
+            out = (
+                    registered | registered_or_privileged | privileged | orga
+                    | finance_admin
+            )
+        # registered
+        elif self.user_in('emilia'):
+            ins = everyone | registered | registered_or_privileged
+            out = not_registered | privileged | orga | finance_admin
+        # orga
+        elif self.user_in('garcia'):
+            ins = (
+                    everyone | registered | registered_or_privileged
+                    | privileged | orga
+            )
+            out = not_registered | finance_admin
+        # event helper
+        elif self.user_in('petra'):
+            ins = (
+                    everyone | not_registered | registered_or_privileged
+                    | privileged
+            )
+            out = registered | orga | finance_admin
+        # event admin (annika is not registered)
+        elif self.user_in('annika'):
+            ins = (
+                    everyone | not_registered | registered_or_privileged
+                    | privileged | orga
+            )
+            out = registered | finance_admin
+        # not registered, auditor
+        elif self.user_in('katarina'):
+            ins = (
+                    everyone | not_registered | privileged
+                      | registered_or_privileged | {"Log"}
+            ) - registrations_stats
+            out = (
+                    registered | orga | finance_admin | registrations_stats
+            ) - {"Log"}
+        # finance admin
+        elif self.user_in('farin'):
+            ins = (
+                    everyone | not_registered | privileged
+                    | registered_or_privileged | finance_admin
+            ) - registrations_stats | {"Überweisungen eintragen"}
+            # TODO: solve this more elegantly.
+            out = (registered | orga | registrations_stats) - {"Überweisungen eintragen"}
+        else:
+            self.fail("Please adjust users for this tests.")
 
-                with self.subTest(user=user):
-                    self.check_sidebar(ins, out)
+        self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
     def test_no_soft_limit(self) -> None:

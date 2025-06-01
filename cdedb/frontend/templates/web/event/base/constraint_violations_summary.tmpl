@@ -2,7 +2,8 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint = 'weak' %}
-{% import "web/event/generic.tmpl" as generic with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
     {% trans %}Constraint Violations Summary{% endtrans %}
 {% endblock %}
@@ -82,50 +83,15 @@
     </div>
 {% endmacro %}
 
-{% macro tabs(anid, nav_tabs) %}
-    <div id="{{ anid }}" class="tab-container">
-        <ul class="nav nav-tabs mosp softhide" role="tablist" id="{{ anid }}_tablist">
-            {% for nav_tab_data in nav_tabs %}
-                {{ nav_tab(nav_tab_data.target, nav_tab_data.label, nav_tab_data.icon, nav_tab_data.anid) }}
-            {% endfor %}
-        </ul>
-        <div class="tab-content" id="{{ anid }}">
-            {{ caller() }}
-        </div>
-    </div>
-    {% if not jshint %}
-        {{ raise_for_test("jshint not set for 'util.tabs'.") }}
-    {% endif %}
-        <script nonce="{{ csp_nonce }}">
-        $("#{{ anid }}").cdedbTabNavigation();
-    </script>
-{% endmacro %}
-
-{% macro nav_tab(target, label, icon=none, anid="") %}
-    <li role="presentation">
-        <a data-toggle="tab" role="tab" data-target="{{ target }}" id="{{ anid }}">
-            {{ util.make_icon(icon) if icon }}{{ nbsp if icon and label -}}
-            {{ label }}
-        </a>
-    </li>
-{% endmacro %}
-
-{% macro tab_pane(anid, labelid, alt_heading="") %}
-    <div class="tab-pane active" role="tabpanel" id="{{ anid }}" aria-labelledby="{{ labelid }}">
-        {{ util.h(alt_heading, aclass="tab-heading-alt") }}
-        {{ caller() }}
-    </div>
-{% endmacro %}
-
 {% block content %}
 
-    {{ generic.filter_violations("event/constraint_violations_summary", "violations", event_options=event_options) }}
+    {{ generic_event.filter_violations("event/constraint_violations_summary", "violations", event_options=event_options) }}
 
-    {% call tabs("violations", [
+    {% call generic.tabs("violations", [
             {"target": "#tab_group_by_event", "label": gettext("Group by Event"), "icon": "chalkboard-teacher", "anid": "event_tab"},
             {"target": "#tab_group_by_violation", "label": gettext("Group by Violation Class"), "icon": "exclamation-circle", "anid":"violation_tab"},
-    ]) %}
-        {% call tab_pane("tab_group_by_event", "event_tab", gettext("Group by Event")) %}
+    ], formid="filterconstraintsform") %}
+        {% call generic.tab_pane("tab_group_by_event", "event_tab", gettext("Group by Event")) %}
             {% for event in all_events.values()|sort %}
                 {% call event_wrapper(event) %}
                     {% set event_violations = violations.get(event_id=event.id) %}
@@ -151,7 +117,7 @@
                 {% trans %}Filter matched no events.{% endtrans %}
             </p>
         {% endcall %}
-        {% call tab_pane("tab_group_by_violation", "violation_tab", gettext("Group by Violation Class")) %}
+        {% call generic.tab_pane("tab_group_by_violation", "violation_tab", gettext("Group by Violation Class")) %}
             {% for class_name, violations_ in violations.by_class.items() %}
                 <div class="violation-list maybehide">
                     {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
