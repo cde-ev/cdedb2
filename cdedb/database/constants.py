@@ -602,8 +602,11 @@ class ComplaintEntryType(CdEIntEnum):
         return self.root in {
             None,
             ComplaintEntryType.agreement,
+            ComplaintEntryType.agreement_measure,
             ComplaintEntryType.provisional_to_arbcom,
-            ComplaintEntryType.definite_to_arbcom
+            ComplaintEntryType.provisional_measure,
+            ComplaintEntryType.definite_to_arbcom,
+            ComplaintEntryType.definite_measure,
         } and self not in {
             ComplaintEntryType.agreement_measure_expired,
             ComplaintEntryType.provisional_measure_expired,
