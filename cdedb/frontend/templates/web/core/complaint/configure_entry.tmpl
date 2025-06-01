@@ -13,7 +13,7 @@
 {% set jshint='weak' %}
 {% block title %}
     {% if ambience['entry'] %}
-        {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}
+        {% trans lodgement=ambience['case']['title'], title=gettext("Case %s")|format(ambience['case'].id) %}
             Replace Entry ({{ title }})
         {% endtrans %}
     {% else %}

@@ -480,9 +480,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.ambience['entry'].active_version.as_dict(),
         )
         # Rerender the input as CSV of DB-IDs
-        authors = list(map(cdedbid_filter, rs.values.getlist('authors')))
+        authors: list[str] = list(map(
+            lambda x: cdedbid_filter(x) if isinstance(x, int) else x,
+            rs.values.getlist('authors'))
+        )
         rs.values['authors'] = ", ".join(authors)
-        # rs.values.setlist('authors', [", ".join(authors)])
 
         personas = {}
         if rs.ambience['entry'].concerned_id:
@@ -530,6 +532,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/show_case")
 
         version_id = rs.ambience['entry'].active_version.id
+
         description = None
         if rs.ambience['entry'].entry_type.is_hidden:
             if not self.complaintproxy.is_unlocked(rs, case_id):
@@ -544,7 +547,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
                 version_id
             ]
-        concerned = self.coreproxy.get_persona(rs, rs.ambience['entry'].concerned_id)
+
+        concerned = None
+        if concerned_id := rs.ambience['entry'].concerned_id:
+            concerned = self.coreproxy.get_persona(rs, concerned_id)
+
         authors = self.coreproxy.get_personas(
             rs, rs.ambience['entry'].active_version.authors
         ).values()
@@ -560,7 +567,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self, rs: RequestState, case_id: int, entry_id: int, dreason: str
     ) -> Response:
         if rs.has_validation_errors():
-            return self.create_case_form(rs)
+            return self.remove_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")

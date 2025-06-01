@@ -63,7 +63,7 @@
             <ul class="slim">
             {% for companion in list %}
                 <li class="hide-hover-container clearfix-after">
-                    {{ util.persona_anchor(companion) }}
+                    {{ util.strike(util.persona_anchor(companion), companion['id'] not in ambience['case'].withdrawn_companions) }}
                     <div class="list-button-float hide-hover">
                         {% if companion['id'] not in ambience['case'].withdrawn_companions %}
                         <form action="{{ cdedblink('core/withdraw_companion', {'persona_id': involved['id'], 'companion_id': companion['id']}) }}"
