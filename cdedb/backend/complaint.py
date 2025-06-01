@@ -879,6 +879,17 @@ class ComplaintBackend(AbstractBackend):
             return self._get_descriptions(rs, case_id=case_id, visible=False)
 
     @access("complaint_admin")
+    def get_all_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
+        """Return all descriptions if case already unlocked.
+
+        :returns: Mapping of entry *version* ids to descriptions.
+        """
+        case_id = affirm(int, case_id)
+        if not self.is_unlocked(rs, case_id):
+            raise PrivilegeError
+        return self._get_descriptions(rs, case_id=case_id, visible=False, deleted=None)
+
+    @access("complaint_admin")
     def lock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         case_id = affirm(int, case_id)
         with Atomizer(rs):

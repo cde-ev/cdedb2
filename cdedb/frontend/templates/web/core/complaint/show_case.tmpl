@@ -225,10 +225,11 @@
                                      icon="lock") }}
             </form>
         {% endif %}
-            {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
-                         + "#Events_[[in_a_complaint]]"|s,
-                         gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
-
+        {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
+                     + "#Events_[[in_a_complaint]]"|s,
+                     gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
+        {{ util.href(cdedblink('core/case_history'), gettext("Show entry history"),
+                     aclass="btn btn-sm btn-info", icon="clock", readonly=is_locked) }}
     </div>
 
     <div class="list-group list-group-hover">
@@ -297,9 +298,11 @@
                     {% endtrans %}
                 {% endif %}
                 {% if entry.all_versions|length > 1 %}
-                    {% trans count=entry.all_versions|length - 1 %}
-                        {{ count }} previous versions.
-                    {% endtrans %}
+                    {{ util.href(
+                        cdedblink("core/case_history", {'case_id': ambience['case'].id}) + "#entry"|s + entry.id|string,
+                        gettext("%s previous versions")|format(entry.all_versions|length - 1),
+                        readonly=is_locked
+                    ) }}
                     <br />
                     {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
                              submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
@@ -333,14 +336,13 @@
                     <hr class="nosp" />
                     ▸
                     {% for child in entry.children %}
-                        {% if not loop.first %}, {% endif %}
+                        {%- if not loop.first %}, {% endif %}
                         {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}
                             {{ label }} at {{ stamp }}
                         {% endtrans %}
-                    {% endfor %}
+                    {%- endfor %}
                 {% endif %}
-                {# ToDo: Previous versions? #}
             </div>
         {% elif entry['code'].is_historic %}
             <div id="logentry{{ entry.id }}" class="list-group-item">

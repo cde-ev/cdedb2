@@ -1,0 +1,157 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+
+{% set jshint = 'weak' %}
+
+{% block title %}
+    {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+        Entry history ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Entry History"), gettext("Case %s")|format(ambience['case'].id),
+                            'gavel', "") }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+                            icon="gavel") }}
+    {{ util.breadcrumb_link(cdedblink("core/case_history"), gettext("History"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <div class="list-group list-group-hover">
+    {% for entry in all_entries %}
+        {% if entry.entry_type %}
+            <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked or not entry.active_version %} list-group-item-muted{% endif %}">
+                <div class="float-right text-right">
+                    {% trans count=entry.all_versions|length %}
+                        {{ count }} versions
+                    {% endtrans %}
+                </div>
+                <strong>
+                    {{ entry.entry_type.name }}
+                </strong>
+                {% if entry.concerned_id %}
+                    {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
+                         (for {{ concerned }})
+                    {% endtrans %}
+                {% endif %}
+                {% if entry.parent %}
+                    <hr class="nosp" />
+                    ◂
+                    {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
+                             stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
+                        {{ label }} at {{ stamp }}
+                    {% endtrans %}
+                {% endif %}
+                {% if entry.children %}
+                    <hr class="nosp" />
+                    ▸
+                    {% for child in entry.children %}
+                        {%- if not loop.first %}, {% endif %}
+                        {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
+                                 stamp=child.active_version.timestamp|date(lang=lang) %}
+                            {{ label }} at {{ stamp }}
+                        {% endtrans %}
+                    {%- endfor %}
+                {% endif %}
+                <hr class="nosp" />
+                {% for version in entry.all_versions %}
+                    <div class="row">
+                        <div class="col-md-11 col-md-offset-1">
+                            {% if not loop.first %}
+                                <hr class="nosp" />
+                            {% endif %}
+                            <div class="float-right text-right">
+                                 {{ entry.active_version.timestamp|datetime(lang=lang) }}
+                            </div>
+                            <strong>{{ gettext("Version %s")|format(loop.index)}}</strong>
+                            {{ gettext("by") }}
+                            {% for author_id in version.authors %}
+                                {{ util.persona_anchor(personas[author_id]) -}}
+                                {%- if not loop.last -%}, {% else %}.{% endif %}
+                            {% endfor %}
+                            <span class="text-muted">
+                            {% if version.length %}
+                                {% trans length=version.length %}
+                                    {{ length }} characters.
+                                {% endtrans %}
+                            {% endif %}
+                            <br />
+                            {% if version.length %}
+                                {% trans length=version.length %}
+                                    {{ length }} characters.
+                                {% endtrans %}
+                            {% endif %}
+                            {% trans ctime=version.ctime|datetime(lang=lang),
+                                     submitted_by=util.persona_anchor(personas[version.submitted_by]) %}
+                                Created at {{ ctime }} by {{ submitted_by }}.
+                            {% endtrans %}
+                            <br />
+                            {% if version.dtime %}
+                                {% if loop.last %}
+                                    {% trans dtime=version.ctime|datetime(lang=lang),
+                                     deleted_by=util.persona_anchor(personas[version.submitted_by]),
+                                     dreason=version.dreason
+                                %}
+                                    Deleted at {{ dtime }} by {{ deleted_by }}: {{ dreason }}
+                                {% endtrans %}
+                                {% else %}
+                                    {% trans dtime=version.ctime|datetime(lang=lang),
+                                             deleted_by=util.persona_anchor(personas[version.submitted_by]),
+                                             dreason=version.dreason
+                                    %}
+                                        Replaced at {{ dtime }} by {{ deleted_by }}: {{ dreason }}
+                                    {% endtrans %}
+                                {% endif %}
+                            {% endif %}
+                            </span>
+                            {% if descriptions.get(version.id) %}
+                                <p>
+                                    {{ descriptions[version.id]|md }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif entry['code'].is_historic %}
+            <div id="logentry{{ entry.id }}" class="list-group-item">
+                <div class="float-right text-right">
+                    {{ entry['ctime']|datetime(lang=lang) }}
+                </div>
+                <strong>
+                    {{ gettext(entry['code']|string) -}}
+                </strong>
+                {%- if entry['companion_id'] -%}
+                    : {{ util.persona_anchor(personas[entry['companion_id']]) }}
+                    {% trans involved=util.persona_anchor(personas[entry['persona_id']], icon='user') %}
+                         (for {{ involved }})
+                    {% endtrans %}
+                {%- elif entry['persona_id'] -%}
+                    : {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                {% endif %}
+                <br />
+                {{ gettext("by") }}
+                {{ util.persona_anchor(personas[entry['submitted_by']]) -}}
+                {%- if entry['change_note'] -%}
+                    <span class="text-muted">
+                        {%- trans change_note=entry['change_note'] %}
+                             ; {{ change_note }}
+                        {% endtrans %}
+                    </span>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+    </div>
+{% endblock %}

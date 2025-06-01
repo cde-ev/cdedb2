@@ -115,13 +115,15 @@ class Case(CdEDataclass):
         return ret
 
     def list_entries(
-        self, log_entries: tuple[CdEDBObject, ...]
+        self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
     ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:
-        mutable_entries = [e for e in self.entries.values() if e.active_version]
+        mutable_entries = [
+            e for e in self.entries.values() if e.active_version or include_deleted
+        ]
         all_entries = list(log_entries) + mutable_entries
         all_entries = xsorted(
             all_entries,
-            key=lambda e: e.active_version.timestamp  # type: ignore[union-attr]
+            key=lambda e: e.all_versions[-1].timestamp  # type: ignore[union-attr]
             if isinstance(e, ComplaintEntry)
             else e['ctime'],
         )

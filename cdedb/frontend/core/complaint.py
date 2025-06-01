@@ -174,6 +174,36 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin")
+    def case_history(self, rs: RequestState, case_id: int) -> Response:
+        """Show all entry versions for a case."""
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case first."))
+            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+
+        log_filter = ComplaintLogFilter(case_id=case_id)
+        _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
+        log_entries = log_entries or tuple()
+        all_entries = rs.ambience['case'].list_entries(
+            log_entries, include_deleted=True
+        )
+        descriptions = self.complaintproxy.get_all_descriptions(rs, case_id)
+        # Collect all persona data which may be displayed.
+        persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        return self.render(
+            rs,
+            "complaint/case_history",
+            {
+                'descriptions': descriptions,
+                'all_entries': all_entries,
+                'personas': personas,
+            },
+        )
+
+    @access("complaint_admin")
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(rs, "complaint/configure_case", {})
