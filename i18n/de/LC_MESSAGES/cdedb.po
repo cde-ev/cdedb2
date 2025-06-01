@@ -10690,6 +10690,9 @@ msgstr "Eintrag entfernen"
 msgid "Case %(id)s"
 msgstr "Fall %(id)s"
 
+msgid "Case&nbsp;%(id)s"
+msgstr "Fall&nbsp;%(id)s"
+
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:31
 msgid "View Log"
 msgstr "Log anzeigen"

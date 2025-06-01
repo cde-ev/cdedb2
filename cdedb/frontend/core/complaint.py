@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import copy
 import collections
 import datetime
+import itertools
 from collections.abc import Collection
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, Sequence
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -20,6 +22,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.query import QueryScope, QueryOperators, QuerySpecEntry
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
@@ -35,15 +38,64 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 
+CASE_SEARCH_DEFAULTS = {
+    'qsel_cases.summary': True,
+    'qop_cases.summary': QueryOperators.match,
+    'qsel_cases.is_grave': True,
+    'qop_cases.is_grave': QueryOperators.equal,
+    'qsel_cases.kind': True,
+    'qop_cases.kind': QueryOperators.equal,
+    'qop_involved.persona_id': QueryOperators.equal,
+    'qop_involved.involvement_type': QueryOperators.equal,
+    'qop_involved.is_informed': QueryOperators.equal,
+    'qop_companion.companion_persona_id': QueryOperators.equal,
+    'qop_companion.is_withdrawn': QueryOperators.equal,
+}
 
 class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
-    def complaint_index(self, rs: RequestState) -> Response:
-        return self.render(rs, "complaint/index", {})
+    @REQUESTdata("is_search")
+    def complaint_index(self, rs: RequestState, is_search: bool) -> Response:
+        rs.ignore_validation_errors()
+        defaults = copy.deepcopy(CASE_SEARCH_DEFAULTS)
+        scope = QueryScope.complaint_case
+        spec = scope.get_spec()
+
+        result: Optional[Sequence[CdEDBObject]] = None
+        count = 0
+
+        if not is_search:
+            cases = personas = None
+        else:
+            # our query facility does not allow + signs, thus special-case it here
+            query = check(rs, vtypes.QueryInput,
+                          scope.mangle_query_input(rs, defaults), "query", spec=spec,
+                          allow_empty=not is_search, separator=" ")
+            assert query is not None
+            rs.ignore_validation_errors()
+            query.fields_of_interest = ['cases.id']
+            result = self.complaintproxy.submit_general_query(rs, query)
+            count = len(result)
+            if count == 1:
+                case_id = result[0][query.scope.get_primary_key()]
+                return self.redirect(rs, "core/show_case", {'case_id': case_id})
+            else:
+                case_ids = [e['cases.id'] for e in result]
+                cases = self.complaintproxy.get_cases(rs, case_ids)
+                persona_ids = []
+                for case in cases.values():
+                    persona_ids.extend(case.all_involved.keys())
+                personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        return self.render(rs, "complaint/index", {
+            'spec': spec, 'cases': cases, 'count': count, 'personas': personas
+        })
 
     @access("complaint_admin")
     @REQUESTdata("show_log_entries")
-    def show_case(self, rs: RequestState, case_id: int, show_log_entries: bool = False) -> Response:
+    def show_case(
+        self, rs: RequestState, case_id: int, show_log_entries: bool = False
+    ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         # Collect all entries to be displayed.

@@ -504,6 +504,16 @@ class ComplaintInvolvementType(CdEIntEnum):
             ComplaintInvolvementType.withheld: "eye-slash",
         }[self]
 
+    @property
+    def shortname(self):
+        return {
+            ComplaintInvolvementType.affected: "Bt",
+            ComplaintInvolvementType.appellant: "Bf",
+            ComplaintInvolvementType.target: "Zp",
+            ComplaintInvolvementType.other: "Sonst",
+            ComplaintInvolvementType.withheld: "Pst",
+        }[self]
+
 
 @enum.unique
 class ComplaintEntryType(CdEIntEnum):

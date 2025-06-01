@@ -610,6 +610,7 @@ _QUERY_SPECS = {
             "cases.is_grave": QuerySpecEntry("bool", n_("is grave")),
             "cases.start_date": QuerySpecEntry("date", n_("Start Date")),
             "cases.end_date": QuerySpecEntry("date", n_("End Date")),
+            "cases.kind": QuerySpecEntry("enum_int", n_("Kind")),
             "access.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
             "entries.entry_type": QuerySpecEntry("enum_int", n_("Entry Type"), choices=None),  # type: ignore[arg-type]
             "entries.concerned_id": QuerySpecEntry("id", n_("Concerned")),

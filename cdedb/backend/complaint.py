@@ -902,6 +902,7 @@ class ComplaintBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."), query.scope)
 
         access_timeout = now() - self.conf["COMPLAINT_UNLOCK_TIMEOUT"]
+        # "SELECT * FROM" for syntax highlighting only
         view = f"""
             SELECT * FROM
                 {models.Case.database_table} AS cases

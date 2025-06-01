@@ -651,6 +651,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
+                        intval: bool = False,
                         ) -> list[tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
@@ -664,6 +665,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         is, otherwise they are converted to str first.
     :param prefix: A prefix to prepend to the string output of every entry.
     :param exempt: Enum members not to include
+    :param intval: Use int representation of enum for values
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
@@ -673,9 +675,15 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         pre = lambda x: x
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
-    to_sort = ((entry, prefix + processing(pre(entry)))
+    if intval:
+        transform = lambda x: int(x)
+        sortkey = lambda x: x
+    else:
+        transform = lambda x: x
+        sortkey = lambda e: e[0].value
+    to_sort = ((transform(entry), prefix + processing(pre(entry)))
                for entry in enum if entry not in exempt)
-    return xsorted(to_sort, key=lambda e: e[0].value)
+    return xsorted(to_sort, key=sortkey)
 
 
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
