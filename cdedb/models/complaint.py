@@ -46,6 +46,7 @@ class Case(CdEDataclass):
             for persona_id in involved
         }
 
+    # Companions to set of involved personas they accompany
     companions: dict[int, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
     )
@@ -56,6 +57,15 @@ class Case(CdEDataclass):
         for companion, accompanied in self.companions.items():
             for persona_id in accompanied:
                 ret.setdefault(persona_id, set()).add(companion)
+        return ret
+
+    @functools.cached_property
+    def companions_by_involved_type(self) -> dict[const.ComplaintInvolvementType, set[int]]:
+        ret: dict[const.ComplaintInvolvementType, set[int]] = {}
+        for involvement_type, involved_personas in self.involved.items():
+            for persona_id in involved_personas:
+                companions = self.companions_by_involved[persona_id]
+                ret.setdefault(involvement_type, set()).update(companions)
         return ret
 
     withdrawn_companions: dict[int, set[int]] = dataclasses.field(
