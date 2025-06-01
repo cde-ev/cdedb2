@@ -505,7 +505,7 @@ class ComplaintInvolvementType(CdEIntEnum):
         }[self]
 
     @property
-    def shortname(self):
+    def shortname(self) -> str:
         return {
             ComplaintInvolvementType.affected: "Bt",
             ComplaintInvolvementType.appellant: "Bf",

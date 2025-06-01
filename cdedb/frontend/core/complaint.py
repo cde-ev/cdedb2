@@ -62,11 +62,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         scope = QueryScope.complaint_case
         spec = scope.get_spec()
 
-        result: Optional[Sequence[CdEDBObject]] = None
-        count = 0
-        invisible_cases = 0
-
         if not is_search:
+            count = 0
             cases = personas = unlocked_cases = None
         else:
             # our query facility does not allow + signs, thus special-case it here
@@ -80,6 +77,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
+            assert query is not None
             query.fields_of_interest = ['cases.id', 'access.is_unlocked']
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)
@@ -107,7 +105,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     )
                     # TODO Send email to complaint admins
 
-                persona_ids = []
+                persona_ids: list[int] = []
                 for case in cases.values():
                     persona_ids.extend(case.all_involved.keys())
                 personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -134,7 +132,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         # Collect all entries to be displayed.
-        log_entries = tuple()
+        log_entries: tuple[dict[str, Any], ...] = tuple()
         if show_log_entries:
             log_filter = ComplaintLogFilter(case_id=case_id)
             _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
@@ -224,10 +222,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         timestamp: datetime.datetime,
         info: str,
     ) -> Response:
-        # TODO validation
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:
+        if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:  # type: ignore[arg-type]
             rs.notify('error', n_("May not create case with own involvement."))
             return self.create_case_form(rs)
         with TransactionObserver(rs, self, "create_complaint_case"):
