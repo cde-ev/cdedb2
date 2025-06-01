@@ -906,9 +906,15 @@ class ComplaintBackend(AbstractBackend):
             SELECT * FROM
                 {models.Case.database_table} AS cases
                 LEFT JOIN (
-                    SELECT case_id, ctime < '{access_timeout.isoformat()}' AS is_unlocked
-                    FROM {models.AccessLog.database_table}
-                    WHERE persona_id = {rs.user.persona_id}
+                    SELECT id AS case_id, EXISTS(
+                        SELECT case_id
+                        FROM {models.AccessLog.database_table}
+                        WHERE
+                            persona_id = {rs.user.persona_id}
+                            AND case_id = cases.id
+                            AND ctime > '{access_timeout.isoformat()}'
+                    ) AS is_unlocked
+                    FROM {models.Case.database_table}
                 ) AS access ON access.case_id = cases.id
                 LEFT JOIN {models.ComplaintEntry.database_table}
                     AS entries ON entries.case_id = cases.id
