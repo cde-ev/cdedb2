@@ -4966,7 +4966,7 @@ def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
                 val.get('concerned_id'), 'concerned_id', **kwargs)
 
     # Validate parent_id dependent on entry_type
-    type_ = ID if entry_type.root else NoneType
+    type_ = ID if entry_type in entry_type.all_children() else NoneType
     with errs:
         val['parent_id'] = _ALL_TYPED[type_](
             val.get('parent_id'), 'parent_id', **kwargs)

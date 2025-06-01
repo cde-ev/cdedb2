@@ -415,7 +415,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             available_types = parent.entry_type.possible_children
         else:
             et = const.ComplaintEntryType
-            available_types = set(et) - et.get_root_map().keys()
+            available_types = set(et) - et.all_children()
         return self.render(
             rs,
             "complaint/configure_entry",

@@ -511,7 +511,7 @@ class ComplaintEntryType(CdEIntEnum):
     # Statements
     provisional_statement_given = 201  #:
     statement_signed = 211  #:
-    statement_withdrawn = 221  #:
+    # statement_withdrawn = 221  #:
     statement_cleared = 231  #: there has been consent to use this for further cases
     statement_sent = 241  #: statement has been printed and sent to Vereinsarchiv
     statement_received = 246  #: statement has been received at Vereinsarchiv
@@ -522,27 +522,30 @@ class ComplaintEntryType(CdEIntEnum):
     agreement_measure_explanation = 321  #:
     agreement_measure_comment = 331  #:
     agreement_measure_revoked = 341  #:
-    agreement_measure_expired = 351  #:
+    # agreement_measure_expired = 351  #:
 
     # Provisional arbitration
     provisional_to_arbcom = 401  #:
     provisional_measure = 411  #:
     provisional_measure_explanation = 421  #:
     provisional_measure_comment = 431  #:
-    provisional_measure_revoked = 441  #:
-    provisional_measure_expired = 451  #:
+    # provisional_measure_revoked = 441  #:
+    # provisional_measure_expired = 451  #:
 
     # Definite arbitration
     definite_to_arbcom = 501  #:
     definite_measure = 511  #:
     definite_measure_explanation = 521  #:
     definite_measure_comment = 531  #:
-    definite_measure_revoked = 541  #:
-    definite_measure_expired = 551  #:
+    # definite_measure_revoked = 541  #:
+    # definite_measure_expired = 551  #:
 
     # Conclusion
     faction_summary = 1001  #: of some companions for a faction
     synthesis = 1011  #:
+
+    # Special
+    revocation_explanation = 10001  #: Can be child of everything
 
     @classmethod
     def visible_types(cls) -> set["ComplaintEntryType"]:
@@ -557,61 +560,48 @@ class ComplaintEntryType(CdEIntEnum):
         return self not in self.visible_types()
 
     @classmethod
-    def get_root_map(self) -> dict["ComplaintEntryType", "ComplaintEntryType"]:
+    def _get_children_map(self) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
         et = ComplaintEntryType
-        return {
-            et.statement_signed: et.provisional_statement_given,
-            et.statement_withdrawn: et.provisional_statement_given,
-            et.statement_cleared: et.provisional_statement_given,
-            et.statement_sent: et.provisional_statement_given,
-            et.statement_received: et.provisional_statement_given,
-            et.agreement_measure: et.agreement,
-            et.agreement_measure_explanation: et.agreement_measure,
-            et.agreement_measure_comment: et.agreement_measure,
-            et.agreement_measure_revoked: et.agreement_measure,
-            et.agreement_measure_expired: et.agreement_measure,
-            et.provisional_measure: et.provisional_to_arbcom,
-            et.provisional_measure_explanation: et.provisional_measure,
-            et.provisional_measure_comment: et.provisional_measure,
-            et.provisional_measure_revoked: et.provisional_measure,
-            et.provisional_measure_expired: et.provisional_measure,
-            et.definite_measure: et.definite_to_arbcom,
-            et.definite_measure_explanation: et.definite_measure,
-            et.definite_measure_comment: et.definite_measure,
-            et.definite_measure_revoked: et.definite_measure,
-            et.definite_measure_expired: et.definite_measure,
-        }
+        children = collections.defaultdict(set)
+        children.update({
+            et.provisional_statement_given: {
+                et.statement_signed,
+                et.statement_cleared,
+                et.statement_sent,
+                et.statement_received,
+            },
+            et.provisional_to_arbcom: {et.provisional_measure},
+            et.provisional_measure: {
+                et.provisional_measure,
+                et.provisional_measure_explanation,
+                et.provisional_measure_comment,
+            },
+            et.definite_to_arbcom: {et.definite_measure},
+            et.definite_measure: {
+                et.definite_measure,
+                et.definite_measure_explanation,
+                et.definite_measure_comment,
+            },
+        })
+        for t in et:
+            children[t].add(et.revocation_explanation)
+        return children
 
     @classmethod
-    def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
-        inverted_map = collections.defaultdict(set)
-        for k, v in cls.get_root_map().items():
-            inverted_map[v].add(k)
-        return inverted_map
+    def all_children(self) -> set["ComplaintEntryType"]:
+        ret = set()
+        for children in self._get_children_map().values():
+            ret.update(children)
+        return ret
 
     @property
     def possible_children(self) -> set["ComplaintEntryType"]:
         return self._get_children_map().get(self, set())
 
     @property
-    def root(self) -> Optional["ComplaintEntryType"]:
-        return self.get_root_map().get(self)
-
-    @property
     def has_description(self) -> bool:
-        return self.root in {
-            None,
-            ComplaintEntryType.agreement,
-            ComplaintEntryType.agreement_measure,
-            ComplaintEntryType.provisional_to_arbcom,
-            ComplaintEntryType.provisional_measure,
-            ComplaintEntryType.definite_to_arbcom,
-            ComplaintEntryType.definite_measure,
-        } and self not in {
-            ComplaintEntryType.agreement_measure_expired,
-            ComplaintEntryType.provisional_measure_expired,
-            ComplaintEntryType.definite_measure_expired,
-        }
+        et = ComplaintEntryType
+        return self not in {et.statement_sent, et.statement_received}
 
     @property
     def is_hidden(self) -> bool:
