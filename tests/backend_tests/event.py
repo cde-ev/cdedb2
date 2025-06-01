@@ -2510,6 +2510,8 @@ class TestEventBackend(BackendTest):
             reg['mtime'] = None
             for fee_id, amount in reg['personalized_fees'].items():
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
+            for fee_kind, amount in reg['amount_owed_by_kind'].items():
+                reg['amount_owed_by_kind'][fee_kind] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2641,12 +2643,22 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1]['mtime'] = nearly_now()
         # amount_owed is recalculated
         expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
+        expectation['registrations'][2]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("584.49"),
+            "external": decimal.Decimal("5.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
         expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
         expectation['registrations'][3]['personalized_fees'][10] = decimal.Decimal(
             expectation['registrations'][3]['personalized_fees'][10],
         )
+        expectation['registrations'][3]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("534.49"),
+            "instructor_refund": decimal.Decimal("-45.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -2655,6 +2667,9 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
+        expectation['registrations'][1002]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("573.99"),
+        }
         expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)
 
