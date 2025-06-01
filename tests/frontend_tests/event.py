@@ -5865,14 +5865,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         upload = copy.deepcopy(first)
         del upload['event']
-        for reg in upload['registrations'].values():
-            del reg['persona']
-            del reg['amount_owed']
-            del reg['amount_paid']
-            del reg['payment']
-            del reg['ctime']
-            del reg['mtime']
-            del reg['is_member']
         self.get('/')
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
