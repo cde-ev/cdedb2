@@ -109,25 +109,37 @@
                 <div class="row">
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
+                                                label=gettext("Beteiligte"), aclass="input-sm") }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-involved_id').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                                [], false, false, "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        {{ util.form_input_select(name="qval_involved.involvement_type",
+                                                  label=gettext("Involvement"), aclass="input-sm",
+                                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_select(name="qval_involved.is_informed",
+                                                  label=gettext("is informed"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                    </div>
+                    <div class="col-sm-6">
                         {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
                                                   entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
                                                   nulloption=nbsp) }}
-                        {{ util.form_input_text(name="qval_companion.companion_persona_id",
+                        {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
                                                 label=gettext("Companion"), aclass="input-sm") }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-companion_id').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                                [], false, false, "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
                         {{ util.form_input_select(name="qval_companion.is_withdrawn",
                                                    label=gettext("is withdrawn"), aclass="input-sm",
-                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],
-                                                   nulloption=nbsp) }}
-                    </div>
-                    <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_involved.persona_id",
-                                                label=gettext("Beteiligte"), aclass="input-sm") }}
-                        {{ util.form_input_select(name="qval_involved.involvement_type",
-                                                   label=gettext("Involvement"), aclass="input-sm",
-                                                   entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
-                                                   nulloption=nbsp) }}
-                        {{ util.form_input_select(name="qval_involved.is_informed",
-                                                   label=gettext("is informed"), aclass="input-sm",
                                                    entries=[(True, gettext("Yes")), (False, gettext("No"))],
                                                    nulloption=nbsp) }}
                     </div>

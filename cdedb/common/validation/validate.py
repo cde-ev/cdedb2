@@ -4694,7 +4694,7 @@ def _query_input(
                     vv: Any = _ALL_TYPED[
                         Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                     ](
-                        v, field, **kwargs)
+                        v, field, passthrough=True, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -4739,7 +4739,7 @@ def _query_input(
                 value = _ALL_TYPED[
                     Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                 ](
-                    value, field, **kwargs)
+                    value, field, passthrough=True, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -4856,7 +4856,7 @@ def _query(
                 Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
                 with errs:
-                    validator(v, f"constraints/{field}", **kwargs)
+                    validator(v, f"constraints/{field}", passthrough=True, **kwargs)
         else:
             try:
                 _ALL_TYPED[
@@ -4864,6 +4864,7 @@ def _query(
                 ](
                     value,
                     f"constraints/{field}",
+                    passthrough=True,
                     **kwargs,
                 )
             except ValidationSummary as e:

@@ -76,11 +76,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 scope.mangle_query_input(rs, defaults),
                 "query",
                 spec=spec,
-                allow_empty=not is_search,
                 separator=" ",
             )
-            assert query is not None
-            rs.ignore_validation_errors()
+            if rs.has_validation_errors():
+                return self.complaint_index(rs, is_search=False)
             query.fields_of_interest = ['cases.id', 'access.is_unlocked']
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)

@@ -107,6 +107,7 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
                          _ops.checkedin_notallof),
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
+VALID_QUERY_OPERATORS["cdedbid"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
 VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
     VALID_QUERY_OPERATORS["str"]
@@ -620,10 +621,10 @@ _QUERY_SPECS = {
             "entry_versions.dtime": QuerySpecEntry("datetime", n_("Deleted at"), title_prefix=n_("Entry Version"), translate_prefix=True),
             "entry_versions.dreason": QuerySpecEntry("str", n_("Deletion Reason"), title_prefix=n_("Entry Version"), translate_prefix=True),
             "authors.persona_id": QuerySpecEntry("id", n_("Author")),
-            "involved.persona_id": QuerySpecEntry("id", n_("Involved")),
+            "involved.persona_id": QuerySpecEntry("cdedbid", n_("Involved")),
             "involved.involved_type": QuerySpecEntry("bool", n_("Involved Type"), title_prefix=n_("Involved"), translate_prefix=True),
             "involved.is_informed": QuerySpecEntry("bool", n_("Is Informed"), title_prefix=n_("Involved"), translate_prefix=True),
-            "companion.companion_persona_id": QuerySpecEntry("id", n_("Companion")),
+            "companion.companion_persona_id": QuerySpecEntry("cdedbid", n_("Companion")),
             "companion.is_withdrawn": QuerySpecEntry("bool", n_("Is Withdrawn"), title_prefix=n_("Companion"), translate_prefix=True),
             "entries.concerned_id,authors.persona_id,involved.persona_id,companion.companion_persona_id": QuerySpecEntry("id", n_("Any Involvement")),
         },
