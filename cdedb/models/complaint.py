@@ -195,7 +195,7 @@ class ComplaintEntry(CdEDataclass):
 
     parent_id: vtypes.ID | None = None
 
-    concerned_id: vtypes.ID | None = None
+    concerned_id: vtypes.CdedbID | None = None
 
     is_revoked: bool = dataclasses.field(
         default=False, metadata={"validation_exclude": True, "request_exclude": True}

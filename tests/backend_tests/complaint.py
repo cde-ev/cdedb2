@@ -915,7 +915,7 @@ class TestComplaintValidation(TestValidationBase):
                 (
                     {
                         "entry_type": const.ComplaintEntryType.provisional_statement_given.value,
-                        "concerned_id": 1,
+                        "concerned_id": "DB-1-9",
                     },
                     {
                         "entry_type": const.ComplaintEntryType.provisional_statement_given,
