@@ -9,7 +9,7 @@ from typing import Self, Union
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, now, User
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
@@ -90,6 +90,12 @@ class Case(CdEDataclass):
             if active_accompanied := (accompanied - withdrawn):
                 ret[companion] = active_accompanied
         return ret
+
+    def is_visible_for(self, user: User) -> bool:
+        """Whether a user can see a case in principle.
+
+        For now, assumes the user is at least complaint admin."""
+        return user.persona_id not in self.all_involved
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = set(self.all_involved)

@@ -100,6 +100,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         # Collect all entries to be displayed.
         log_entries = tuple()
         if show_log_entries:
@@ -164,6 +166,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # TODO validation
         if rs.has_validation_errors():
             return self.create_case_form(rs)
+        if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:
+            rs.notify('error', n_("May not create case with own involvement."))
+            return self.create_case_form(rs)
         with TransactionObserver(rs, self, "create_complaint_case"):
             new_case = self.complaintproxy.create_case(rs, data)
             entry_data = {
@@ -210,8 +215,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         involvement_type: const.ComplaintInvolvementType,
         persona_ids: vtypes.CdedbIDList,
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
+        if rs.user.persona_id in persona_ids:
+            rs.notify('error', n_("May not add own involvement."))
+            return self.create_case_form(rs)
         if set(persona_ids) & rs.ambience['case'].all_involved.keys():
             rs.notify('info', n_("Some of these users were already involved."))
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
@@ -231,6 +241,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def remove_involved(
         self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].all_involved.keys():
@@ -246,6 +258,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def inform_involved(
         self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].all_involved:
@@ -266,6 +280,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def uninform_involved(
         self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].informed_involved:
@@ -287,6 +303,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def manage_companions_form(
         self, rs: RequestState, case_id: int, persona_id: int
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         companion_ids = rs.ambience['case'].companions_by_involved.get(persona_id)
         companions = (
             self.coreproxy.get_personas(rs, companion_ids) if companion_ids else {}
@@ -310,6 +328,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         persona_id: int,
         companion_ids: vtypes.CdedbIDList,
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if set(companion_ids) & rs.ambience['case'].companions.keys():
@@ -342,6 +362,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         persona_id: int,
         companion_id: int,
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if companion_id not in rs.ambience['case'].companions:
@@ -367,6 +389,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def withdraw_companion(
         self, rs: RequestState, case_id: int, persona_id: int, companion_id: int
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if companion_id not in rs.ambience['case'].companions:
@@ -397,6 +421,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         persona_id: int,
         companion_id: int,
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         if companion_id not in rs.ambience['case'].companions:
@@ -426,6 +452,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         merge_dicts(rs.values, rs.ambience['case'].as_dict())
         return self.render(rs, "complaint/configure_case")
 
@@ -434,6 +462,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def change_case(
         self, rs: RequestState, case_id: int, data: dict[str, Any]
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.change_case_form(rs, case_id)
         ret = self.complaintproxy.set_case(rs, case_id, data)
@@ -442,6 +472,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def unlock_case(self, rs: RequestState, case_id: int) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         _ = self.complaintproxy.unlock_case(rs, case_id)
@@ -465,6 +497,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entry_type: Optional[const.ComplaintEntryType],
         parent_id: Optional[int],
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
@@ -496,6 +530,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         entry_data = (
@@ -532,6 +568,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if (
             rs.ambience['entry'].entry_type.is_hidden
             and not self.complaintproxy.is_unlocked(rs, case_id)
@@ -578,6 +616,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         data = extract_and_check_dataclass(
             rs,
             models.ComplaintEntryVersion,
@@ -603,6 +643,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         rs.ignore_validation_errors()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
@@ -622,6 +664,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
@@ -644,6 +688,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
@@ -686,6 +732,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def remove_entry(
         self, rs: RequestState, case_id: int, entry_id: int, dreason: str
     ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
             return self.remove_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
