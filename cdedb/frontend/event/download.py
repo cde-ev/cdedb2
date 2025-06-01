@@ -524,6 +524,23 @@ class EventDownloadMixin(EventBaseFrontend):
             rs, mimetype="application/json", data=json, inline=False,
             filename=f"{rs.ambience['event'].shortname}_partial_export_event.json")
 
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    def download_questionnaire_export(self, rs: RequestState, event_id: int) -> Response:
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+        data = {
+            "fields": data["event"]["fields"],
+            "questionnaire": data["event"]["questionnaire"],
+        }
+        json = json_serialize(data, sort_keys=True)
+        return self.send_file(
+            rs, mimetype="application/json", data=json, inline=False,
+            filename=f"{rs.ambience['event'].shortname}_questionnaire_export.json",
+        )
+
     @access("droid_orga")
     @event_guard(EventPrivileges.all_read)
     def droid_partial_export(self, rs: RequestState, event_id: int) -> Response:

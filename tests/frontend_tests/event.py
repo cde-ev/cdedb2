@@ -6245,7 +6245,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("N. N.")
 
     @storage
-    @as_users("garcia", "annika")
+    @as_users("garcia")
     def test_questionnaire_import(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
                       "Fragebogen konfigurieren", "Fragebogenimport")
@@ -6317,6 +6317,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             })
 
         self.submit(f)
+
+        # Sixth: Compare the questionnaire export to the import file:
+        with self.switch_user("annika"):
+            self.traverse("Veranstaltungen", "TripelAkademie",
+                          "Fragebogen konfigurieren", "Fragebogenimport")
+            f = self.response.forms["importform"]
+            f["json_file"] = create_upload(data)
+            self.submit(f)
+            self.traverse("Downloads", {"href": "/download/questionnaire"})
+            export = json.loads(self.response.text)
+            self.assertEqual(data, export)
+            self.get("/")
 
     @as_users("emilia")
     def test_part_groups(self) -> None:

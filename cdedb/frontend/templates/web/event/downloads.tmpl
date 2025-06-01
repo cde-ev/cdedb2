@@ -143,6 +143,13 @@
                 <td>{{ util.href(cdedblink('event/download_partial_export'), gettext("JSON file"), icon='download') }}</td>
             </tr>
             <tr>
+                <td>
+                    {% trans %}Questionnaire Export{% endtrans %}<br />
+                    <small>({% trans %}for import into other events{% endtrans %})</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_questionnaire_export'), gettext("JSON file"), icon='download') }}</td>
+            </tr>
+            <tr>
                 <td>{% trans %}Registrations{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
