@@ -660,6 +660,78 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(1, len(result))
         self.assertEqual(case_id, result[0]["cases.id"])
 
+    @as_users("simon")
+    def test_revoke_entry(self) -> None:
+        case_id = 1
+        entry_id = 5
+        revocation_type = const.ComplaintEntryType.revocation_explanation
+
+        expectation = self.complaint.get_case(self.key, case_id)
+
+        # Revoke an entry.
+        revoke_data = {
+            "timestamp": now(),
+            "description": "Oops!... I Did It Again",
+            "authors": {3},
+        }
+        new_entry_id = self.complaint.revoke_entry(self.key, entry_id, revoke_data)
+        self.assertLessEqual(1, new_entry_id)
+
+        # Check the result.
+        expectation.entries[entry_id].is_revoked = True
+        expectation.entries[new_entry_id] = models.ComplaintEntry(
+            id=new_entry_id,
+            case_id=case_id,
+            entry_type=revocation_type,
+            parent_id=entry_id,
+            all_versions=[
+                models.ComplaintEntryVersion(
+                    id=1001,
+                    entry_id=new_entry_id,
+                    length=len(revoke_data["description"]),
+                    ctime=nearly_now(),
+                    submitted_by=self.user['id'],
+                    authors=revoke_data["authors"],
+                    timestamp=revoke_data["timestamp"],
+                ),
+            ],
+        )
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(expectation.as_dict(), case.as_dict())
+        self.assertEqual(expectation, case)
+
+        # Revoke the revocation.
+        new_new_entry_id = self.complaint.revoke_entry(
+            self.key, new_entry_id, revoke_data
+        )
+        self.assertLessEqual(1, new_new_entry_id)
+
+        # Check the result.
+        expectation.entries[entry_id].is_revoked = False
+        expectation.entries[new_entry_id].is_revoked = True
+        expectation.entries[new_new_entry_id] = models.ComplaintEntry(
+            id=new_new_entry_id,
+            case_id=case_id,
+            entry_type=revocation_type,
+            parent_id=new_entry_id,
+            all_versions=[
+                models.ComplaintEntryVersion(
+                    id=1002,
+                    entry_id=new_new_entry_id,
+                    length=len(revoke_data["description"]),
+                    ctime=nearly_now(),
+                    submitted_by=self.user['id'],
+                    authors=revoke_data["authors"],
+                    timestamp=revoke_data["timestamp"],
+                )
+            ],
+        )
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(expectation.as_dict(), case.as_dict())
+        self.assertEqual(expectation, case)
+
+        self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:

@@ -353,6 +353,55 @@ class ComplaintBackend(AbstractBackend):
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("complaint_admin")
+    def revoke_entry(
+        self, rs: RequestState, entry_id: int, version_data: CdEDBObject
+    ) -> DefaultReturnCode:
+        """Revoke an existing entry. If that entry is a revocation, unrevoke the parent."""
+        entry_id = affirm(vtypes.ID, entry_id)
+
+        revocation_type = const.ComplaintEntryType.revocation_explanation
+
+        version_data = cast(
+            CdEDBObject,
+            affirm(
+                models.ComplaintEntryVersion,
+                version_data,
+                creation=True,
+                passthrough=True,
+                entry_type=revocation_type,
+            ),
+        )
+        with Atomizer(rs):
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntry.database_table,
+                {'id': entry_id, 'is_revoked': True},
+            )
+            if not code:
+                raise RuntimeError
+
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if entry.entry_type == revocation_type:
+                if entry.parent and entry.parent.is_revoked:
+                    code = self.sql_update(
+                        rs,
+                        models.ComplaintEntry.database_table,
+                        {'id': entry.parent_id, 'is_revoked': False},
+                    )
+                    if not code:
+                        raise RuntimeError
+
+            new_entry = {
+                'entry_type': revocation_type,
+                'parent_id': entry_id,
+                'concerned_id': None,
+            }
+            return self.add_entry(rs, case_id, new_entry, version_data)
+
+    @access("complaint_admin")
     def add_involved(
         self,
         rs: RequestState,

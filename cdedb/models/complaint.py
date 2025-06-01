@@ -195,6 +195,10 @@ class ComplaintEntry(CdEDataclass):
 
     concerned_id: vtypes.ID | None = None
 
+    is_revoked: bool = dataclasses.field(
+        default=False, metadata={"validation_exclude": True, "request_exclude": True}
+    )
+
     all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
         metadata={"validation_exclude": True, "database_exclude": True},
     )

@@ -552,9 +552,10 @@ CREATE TABLE complaint.entries (
     case_id       integer NOT NULL REFERENCES complaint.cases(id),
     entry_type    integer DEFAULT NULL, -- database.constants.ComplaintEntryType
     parent_id     integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
-    concerned_id  integer REFERENCES core.personas(id) DEFAULT NULL  -- maybe reference involved_id instead
+    concerned_id  integer REFERENCES core.personas(id) DEFAULT NULL,  -- maybe reference involved_id instead
+    is_revoked    boolean NOT NULL DEFAULT FALSE
 );
-GRANT SELECT, INSERT ON complaint.entries TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE (is_revoked) ON complaint.entries TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.entries_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.entry_versions (
