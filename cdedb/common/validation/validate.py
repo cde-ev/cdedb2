@@ -4954,7 +4954,10 @@ _create_dataclass_validator(models_complaint.Case, models_complaint.Case)
     models_complaint.ComplaintEntry,
     models_complaint.ComplaintEntry
 )
-def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
+def _complaint_entry(
+    val: Any, argname: str, *, entries: dict[int, models_complaint.ComplaintEntry],
+    **kwargs: Any,
+) -> CdEDBObject:
 
     errs = ValidationSummary()
     entry_type: const.ComplaintEntryType = val['entry_type']
@@ -4970,6 +4973,12 @@ def _complaint_entry(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
     with errs:
         val['parent_id'] = _ALL_TYPED[type_](
             val.get('parent_id'), 'parent_id', **kwargs)
+
+    if val.get('parent_id'):
+        if val['parent_id'] not in entries:
+            errs.append(KeyError("parent_id", n_("Unknown parent entry.")))
+        elif entry_type not in entries[val['parent_id']].entry_type.possible_children:
+            errs.append(ValueError("parent_id", n_("Invalid parent type.")))
 
     if errs:
         raise errs

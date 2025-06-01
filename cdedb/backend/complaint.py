@@ -288,26 +288,30 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a new entry to an existing complaint case."""
         case_id = affirm(vtypes.ID, case_id)
-        entry_data = cast(
-            CdEDBObject,
-            affirm(models.ComplaintEntry, entry_data, creation=True, passthrough=True),
-        )
-        version_data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                version_data,
-                creation=True,
-                passthrough=True,
-                entry_type=entry_data['entry_type'],
-            ),
-        )
-
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            if root_entry_id := entry_data.get("root_entry_id"):
-                if root_entry_id not in case.entries:
-                    raise KeyError(n_("Unknown root entry for this case."))
+
+            entry_data = cast(
+                CdEDBObject,
+                affirm(
+                    models.ComplaintEntry,
+                    entry_data,
+                    creation=True,
+                    passthrough=True,
+                    entries=case.entries,
+                ),
+            )
+            version_data = cast(
+                CdEDBObject,
+                affirm(
+                    models.ComplaintEntryVersion,
+                    version_data,
+                    creation=True,
+                    passthrough=True,
+                    entry_type=entry_data['entry_type'],
+                ),
+            )
+
             entry_data["case_id"] = case_id
             new_entry_id = self.sql_insert(
                 rs, models.ComplaintEntry.database_table, entry_data

@@ -881,6 +881,21 @@ class TestComplaintValidation(TestValidationBase):
         )
 
     def test_entry(self) -> None:
+        entries = {
+            1: models.ComplaintEntry(
+                id=1,
+                case_id=1,
+                entry_type=const.ComplaintEntryType.agreement,
+                all_versions=[],
+            ),
+            2: models.ComplaintEntry(
+                id=2,
+                case_id=1,
+                entry_type=const.ComplaintEntryType.provisional_statement_given,
+                all_versions=[],
+            ),
+        }
+
         # These cannot be updated, so creation only.
         # Test successful creations.
         self.do_validator_test(
@@ -912,11 +927,11 @@ class TestComplaintValidation(TestValidationBase):
                 (
                     {
                         "entry_type": const.ComplaintEntryType.statement_signed,
-                        "parent_id": 1,
+                        "parent_id": 2,
                     },
                     {
                         "entry_type": const.ComplaintEntryType.statement_signed,
-                        "parent_id": 1,
+                        "parent_id": 2,
                         "concerned_id": None,
                     },
                     None,
@@ -931,7 +946,7 @@ class TestComplaintValidation(TestValidationBase):
                     None,
                 ),
             ],
-            {"creation": True, "passthrough": True},
+            {"creation": True, "passthrough": True, "entries": entries},
         )
         # Test unsuccessful creations.
         self.do_validator_test(
@@ -965,8 +980,33 @@ class TestComplaintValidation(TestValidationBase):
                     None,
                     KeyError("Mandatory key missing. (entry_type)"),
                 ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.agreement,
+                        "parent_id": 1,
+                    },
+                    None,
+                    ValueError("Must be empty. (parent_id)"),
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.agreement,
+                        "concerned_id": 1,
+                    },
+                    None,
+                    ValueError("Must be empty. (concerned_id)"),
+                ),
+                (
+                    {
+                        "entry_type": const.ComplaintEntryType.definite_measure,
+                        "concerned_id": 1,
+                        "parent_id": 1,
+                    },
+                    None,
+                    ValueError("Invalid parent type. (parent_id)"),
+                ),
             ],
-            {"creation": True},
+            {"creation": True, "passthrough": True, "entries": entries},
         )
 
     def test_entry_version(self) -> None:
