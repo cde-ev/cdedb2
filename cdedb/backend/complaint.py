@@ -448,6 +448,8 @@ class ComplaintBackend(AbstractBackend):
                 if inv_type != involved_type
             ):
                 raise ValueError(n_("Already involved otherwise."))
+            if persona_ids & case.active_companions.keys():
+                raise ValueError(n_("Already active companions."))
 
             newly_involved = persona_ids - case.involved.get(involved_type, set())
             if not newly_involved:

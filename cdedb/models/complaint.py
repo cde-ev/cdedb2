@@ -82,6 +82,15 @@ class Case(CdEDataclass):
                 ret.setdefault(persona_id, set()).add(companion)
         return ret
 
+    @functools.cached_property
+    def active_companions(self) -> dict[int, set[int]]:
+        ret: dict[int, set[int]] = {}
+        for companion, accompanied in self.companions.items():
+            withdrawn = self.withdrawn_companions.get(companion, set())
+            if active_accompanied := (accompanied - withdrawn):
+                ret[companion] = active_accompanied
+        return ret
+
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = set(self.all_involved)
         ret.update(self.companions)

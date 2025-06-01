@@ -170,6 +170,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual({2, 4}, reality.all_involved.keys())
         self.assertEqual({2: {3}, 4: {7}}, reality.companions_by_involved)
         self.assertEqual({2: {3}}, reality.withdrawn_companions_by_involved)
+        self.assertEqual({7: {4}}, reality.active_companions)
 
     @as_users("simon")
     def test_set_case(self) -> None:
@@ -771,6 +772,12 @@ class TestComplaintBackend(BackendTest):
                 self.key, case_id, appellant_id, [appellant_companion_id]
             ),
         )
+        self.assertLessEqual(
+            1,
+            self.complaint.set_companion_withdrawn(
+                self.key, case_id, target_id, target_companion_id, False
+            ),
+        )
 
         with self.assertRaisesRegex(ValueError, "Adverse companion."):
             self.complaint.add_companions(
@@ -797,6 +804,133 @@ class TestComplaintBackend(BackendTest):
             self.complaint.add_companions(
                 self.key, case_id, appellant_id, [appellant_id]
             )
+
+        with self.assertRaisesRegex(ValueError, "Already active companions."):
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.target,
+                [target_companion_id],
+            )
+        with self.assertRaisesRegex(ValueError, "Already active companions."):
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.affected,
+                [affected_companion_id],
+            )
+        with self.assertRaisesRegex(ValueError, "Already active companions."):
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.appellant,
+                [appellant_companion_id],
+            )
+
+        self.assertLessEqual(
+            1,
+            self.complaint.set_companion_withdrawn(
+                self.key, case_id, target_id, target_companion_id, True
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.target,
+                [target_companion_id],
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.set_companion_withdrawn(
+                self.key, case_id, affected_id, affected_companion_id, True
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.affected,
+                [affected_companion_id],
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.set_companion_withdrawn(
+                self.key, case_id, appellant_id, appellant_companion_id, True
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.appellant,
+                [appellant_companion_id],
+            ),
+        )
+
+        log_expecation = [
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "persona_id": appellant_id,
+                "change_note": "Beschwerdeführer",
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_informed,
+                "persona_id": appellant_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_added,
+                "persona_id": appellant_id,
+                "companion_id": appellant_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_reinstated,
+                "persona_id": target_id,
+                "companion_id": target_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_withdrawn,
+                "persona_id": target_id,
+                "companion_id": target_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "persona_id": target_companion_id,
+                "change_note": "Zielpersonen",
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_withdrawn,
+                "persona_id": affected_id,
+                "companion_id": affected_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "persona_id": affected_companion_id,
+                "change_note": "Betroffene",
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_withdrawn,
+                "persona_id": appellant_id,
+                "companion_id": appellant_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "persona_id": appellant_companion_id,
+                "change_note": "Beschwerdeführer",
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_informed,
+                "persona_id": appellant_companion_id,
+            },
+        ]
+        self.assertLogEqual(
+            log_expecation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
+        )
 
 
 class TestComplaintValidation(TestValidationBase):
