@@ -566,6 +566,7 @@ class ComplaintEntryType(CdEIntEnum):
     @classmethod
     def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
         et = ComplaintEntryType
+        children: dict[ComplaintEntryType, set[ComplaintEntryType]]
         children = collections.defaultdict(set)
         children.update({
             et.provisional_statement_given: {

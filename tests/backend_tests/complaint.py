@@ -670,7 +670,7 @@ class TestComplaintBackend(BackendTest):
         expectation = self.complaint.get_case(self.key, case_id)
 
         # Revoke an entry.
-        revoke_data = {
+        revoke_data: CdEDBObject = {
             "timestamp": now(),
             "description": "Oops!... I Did It Again",
             "authors": {3},
@@ -681,14 +681,14 @@ class TestComplaintBackend(BackendTest):
         # Check the result.
         expectation.entries[entry_id].is_revoked = True
         expectation.entries[new_entry_id] = models.ComplaintEntry(
-            id=new_entry_id,
-            case_id=case_id,
+            id=new_entry_id,  # type: ignore[arg-type]
+            case_id=case_id,  # type: ignore[arg-type]
             entry_type=revocation_type,
-            parent_id=entry_id,
+            parent_id=entry_id,  # type: ignore[arg-type]
             all_versions=[
                 models.ComplaintEntryVersion(
-                    id=1001,
-                    entry_id=new_entry_id,
+                    id=1001,  # type: ignore[arg-type]
+                    entry_id=new_entry_id,  # type: ignore[arg-type]
                     length=len(revoke_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
@@ -711,14 +711,14 @@ class TestComplaintBackend(BackendTest):
         expectation.entries[entry_id].is_revoked = False
         expectation.entries[new_entry_id].is_revoked = True
         expectation.entries[new_new_entry_id] = models.ComplaintEntry(
-            id=new_new_entry_id,
-            case_id=case_id,
+            id=new_new_entry_id,  # type: ignore[arg-type]
+            case_id=case_id,  # type: ignore[arg-type]
             entry_type=revocation_type,
-            parent_id=new_entry_id,
+            parent_id=new_entry_id,  # type: ignore[arg-type]
             all_versions=[
                 models.ComplaintEntryVersion(
-                    id=1002,
-                    entry_id=new_new_entry_id,
+                    id=1002,  # type: ignore[arg-type]
+                    entry_id=new_new_entry_id,  # type: ignore[arg-type]
                     length=len(revoke_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
@@ -873,7 +873,7 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
-        log_expecation = [
+        log_expecation: list[CdEDBObject] = [
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "persona_id": appellant_id,
@@ -1126,14 +1126,14 @@ class TestComplaintValidation(TestValidationBase):
     def test_entry(self) -> None:
         entries = {
             1: models.ComplaintEntry(
-                id=1,
-                case_id=1,
+                id=1,  # type: ignore[arg-type]
+                case_id=1,  # type: ignore[arg-type]
                 entry_type=const.ComplaintEntryType.agreement,
                 all_versions=[],
             ),
             2: models.ComplaintEntry(
-                id=2,
-                case_id=1,
+                id=2,  # type: ignore[arg-type]
+                case_id=1,  # type: ignore[arg-type]
                 entry_type=const.ComplaintEntryType.provisional_statement_given,
                 all_versions=[],
             ),
