@@ -9,7 +9,7 @@ from typing import Self, Union
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now, User
+from cdedb.common import CdEDBObject, User, now
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
@@ -245,9 +245,7 @@ class ComplaintEntry(CdEDataclass):
 
     @functools.cached_property
     def active_children(self) -> list["ComplaintEntry"]:
-        return [
-            entry for entry in self.children if entry.active_version
-        ]
+        return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
         return ()

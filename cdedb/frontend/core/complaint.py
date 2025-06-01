@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import copy
 import collections
+import copy
 import datetime
 import itertools
 from collections.abc import Collection
-from typing import Any, Optional, cast, Sequence
+from typing import Any, Optional, Sequence, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -22,7 +22,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import QueryScope, QueryOperators, QuerySpecEntry
+from cdedb.common.query import QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
@@ -52,6 +52,7 @@ CASE_SEARCH_DEFAULTS = {
     'qop_companion.is_withdrawn': QueryOperators.equal,
 }
 
+
 class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
     @REQUESTdata("is_search")
@@ -68,9 +69,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
             cases = personas = unlocked_cases = None
         else:
             # our query facility does not allow + signs, thus special-case it here
-            query = check(rs, vtypes.QueryInput,
-                          scope.mangle_query_input(rs, defaults), "query", spec=spec,
-                          allow_empty=not is_search, separator=" ")
+            query = check(
+                rs,
+                vtypes.QueryInput,
+                scope.mangle_query_input(rs, defaults),
+                "query",
+                spec=spec,
+                allow_empty=not is_search,
+                separator=" ",
+            )
             assert query is not None
             rs.ignore_validation_errors()
             query.fields_of_interest = ['cases.id', 'access.is_unlocked']
@@ -81,17 +88,26 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
                 case_ids = [e['cases.id'] for e in result]
-                unlocked_cases = {e['cases.id'] for e in result if e['access.is_unlocked']}
+                unlocked_cases = {
+                    e['cases.id'] for e in result if e['access.is_unlocked']
+                }
                 cases = self.complaintproxy.get_cases(rs, case_ids)
                 persona_ids = []
                 for case in cases.values():
                     persona_ids.extend(case.all_involved.keys())
                 personas = self.coreproxy.get_personas(rs, persona_ids)
 
-        return self.render(rs, "complaint/index", {
-            'spec': spec, 'cases': cases, 'count': count, 'personas': personas,
-            'unlocked_cases': unlocked_cases,
-        })
+        return self.render(
+            rs,
+            "complaint/index",
+            {
+                'spec': spec,
+                'cases': cases,
+                'count': count,
+                'personas': personas,
+                'unlocked_cases': unlocked_cases,
+            },
+        )
 
     @access("complaint_admin")
     @REQUESTdata("show_log_entries")
