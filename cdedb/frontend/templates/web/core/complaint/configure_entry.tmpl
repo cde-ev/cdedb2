@@ -1,5 +1,7 @@
 {% set sidenav_active='complaint_index' %}
-{% if ambience['entry'] %}
+{% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+    {% set action_target = "core/revoke_entry" %}
+{% elif ambience['entry'] %}
     {% set action_target = "core/replace_entry" %}
 {% else %}
     {% set action_target = "core/add_entry" %}
@@ -12,8 +14,12 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience['entry'] %}
-        {% trans lodgement=ambience['case']['title'], title=gettext("Case %s")|format(ambience['case'].id) %}
+    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+            Revoke Entry ({{ title }})
+        {% endtrans %}
+    {% elif ambience['entry'] %}
+        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
             Replace Entry ({{ title }})
         {% endtrans %}
     {% else %}
@@ -26,7 +32,9 @@
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
     {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
                             icon="gavel") }}
-    {% if ambience['entry'] %}
+    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Revoke Entry"), active=True) }}
+    {% elif ambience['entry'] %}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Replace Entry"), active=True) }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Add Entry"), active=True) }}
@@ -44,17 +52,20 @@
         </form>
     {% else %}
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
-            {% if ambience['entry'] %}
-                {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
-            {% endif %}
-            {{ util.input_hidden(name="entry_type", value=entry_type) }}
-            {{ util.input_hidden(name="parent_id") }}
             {{ util.anti_csrf_token(action_target) }}
-            {% call util.form_input_static(label=gettext("Entry Type")) %}
-                {{ entry_type }}{{- nbsp -}}
-                {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
-                             gettext("Change"), icon="pen", aclass="btn btn-warning btn-sm") }}
-            {% endcall %}
+            {% if not entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+                {% if ambience['entry'] %}
+                    {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
+                {% endif %}
+                {{ util.input_hidden(name="entry_type", value=entry_type) }}
+                {{ util.input_hidden(name="parent_id") }}
+
+                {% call util.form_input_static(label=gettext("Entry Type")) %}
+                    {{ entry_type }}{{- nbsp -}}
+                    {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
+                                 gettext("Change"), icon="pen", aclass="btn btn-warning btn-sm") }}
+                {% endcall %}
+            {% endif %}
             {% if entry_type.has_concerned %}
                 {% if ambience['entry'] %}
                     {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[ambience['entry'].concerned_id], icon='user')) }}
@@ -70,7 +81,7 @@
                 {% endif %}
             {% endif %}
             {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
-                                    placeholder=now().strftime("%b %d %Y %H:%M:%S")) }}
+                                    defaultvalue=now()) }}
             {{ util.form_input_text(name="authors", label=gettext("Authors"), anid="input-authors",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">
@@ -84,7 +95,7 @@
                                             info=infotext) }}
             {% endif %}
             {# Add some conditional warnings here. #}
-            {% if ambience['entry'] %}
+            {% if ambience['entry'] and entry_type != enums["ComplaintEntryType"].revocation_explanation %}
                 <div class="panel panel-primary">
                     <div class="panel-body">
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}

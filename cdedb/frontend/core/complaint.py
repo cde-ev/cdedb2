@@ -415,11 +415,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         rs.ignore_validation_errors()
+        et = const.ComplaintEntryType
         if parent_id:
             parent = rs.ambience['case'].entries[parent_id]
-            available_types = parent.entry_type.possible_children
+            available_types = parent.entry_type.possible_children - {
+                et.revocation_explanation
+            }
+            if not parent.active_version:
+                rs.notify('info', n_("Can not add child for deleted parent."))
+                return self.redirect(rs, "core/show_case")
         else:
-            et = const.ComplaintEntryType
             available_types = set(et) - et.all_children()
         return self.render(
             rs,
@@ -523,9 +528,56 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         if rs.has_validation_errors() or not data:
             return self.replace_entry_form(rs, case_id, entry_id)
+        if not rs.ambience['entry'].active_version:
+            rs.notify('error', n_("Can not replace deleted entry."))
+            self.redirect(rs, "core/show_case", {'case_id': case_id})
         ret = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
+
+    @access("complaint_admin")
+    def revoke_entry_form(
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_id: int,
+    ) -> Response:
+        """Render form."""
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        rs.ignore_validation_errors()
+        if not rs.ambience['entry'].active_version:
+            rs.notify('info', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+        return self.render(
+            rs,
+            "complaint/configure_entry",
+            {'entry_type': const.ComplaintEntryType.revocation_explanation},
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    def revoke_entry(
+        self,
+        rs: RequestState,
+        case_id: int,
+        entry_id: int,
+    ) -> Response:
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience['entry'].active_version:
+            rs.notify('info', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+        version_data = extract_and_check_dataclass(
+            rs,
+            models.ComplaintEntryVersion,
+            creation=True,
+            entry_type=const.ComplaintEntryType.revocation_explanation,
+        )
+        if rs.has_validation_errors() or not version_data:
+            return self.revoke_entry_form(rs, case_id, entry_id)
+        new_entry_id = self.complaintproxy.revoke_entry(rs, entry_id, version_data)
+        rs.notify_return_code(new_entry_id)
+        return self.redirect(rs, "core/show_case", anchor="entry" + str(new_entry_id))
 
     @access("complaint_admin")
     def remove_entry_form(

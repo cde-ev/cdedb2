@@ -151,7 +151,7 @@ ul.slim {
     color: #777;
     background-color: #eee;
 }
-.list-group-item-muted a, .text-muted a, a.text-muted {
+.list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;
 }
 
