@@ -3960,7 +3960,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       {'description': 'Datenfeld setzen'})
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
         self.assertPresence("Zu ändernde Kurse")
-        self.assertPresence("α Heldentum")
+        self.assertPresence("α. Heldentum")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 5
         self.submit(f)

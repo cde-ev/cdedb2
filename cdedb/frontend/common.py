@@ -1815,7 +1815,7 @@ class AmbienceDict(typing.TypedDict):
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
     pevent: NotRequired[CdEDBObject]
-    course: NotRequired[CdEDBObject]
+    course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
@@ -1867,7 +1867,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']

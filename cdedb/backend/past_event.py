@@ -662,7 +662,7 @@ class PastEventBackend(AbstractBackend):
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
         for course_id, course in courses.items():
-            pcourse = {k: v for k, v in course.items()
+            pcourse = {k: v for k, v in course.as_dict().items()
                        if k in PAST_COURSE_FIELDS}
             del pcourse['id']
             pcourse['pevent_id'] = new_id
@@ -710,7 +710,7 @@ class PastEventBackend(AbstractBackend):
         for course_id in courses.keys():
             if course_id not in courses_seen:
                 self.delete_past_course(rs, course_map[course_id])
-            elif not courses[course_id]['active_segments']:
+            elif not courses[course_id].active_segments:
                 self.logger.warning(f"Course {course_id} remains without active parts.")
         return new_id
 

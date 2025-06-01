@@ -158,9 +158,7 @@
                 <h5 class="mosp">{{ cco['title'] }}</h5>
             {% endif %}
             {% if cco.is_complex() %}
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}',
-                                         include=courses_per_track_group[cco['id']]) %}
+                {% set course_entries = courses|entries('id', 'label', include=courses_per_track_group[cco['id']]) %}
                 {% set prefix = "group{}".format(cco['id']) %}
                 {% for track in sorted_tracks if track.id in cco['tracks'] %}
                     {% call form_input_optional("track{}.course_id".format(track.id),
@@ -171,9 +169,7 @@
                     {% endcall %}
                 {% endfor %}
             {% else %}
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}',
-                                         include=courses_per_track[cco['id']]) %}
+                {% set course_entries = courses|entries('id', 'label', include=courses_per_track[cco['id']]) %}
                 {% set prefix = "track{}".format(cco['id']) %}
                 {% call form_input_optional(prefix + ".course_id",
                                             label=gettext("Course %s")|format(cco['shortname'])

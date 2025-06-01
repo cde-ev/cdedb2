@@ -22,7 +22,7 @@
         {% with course_id = registration['tracks'][track.id]['course_id'] %}
             {% if course_id %}
                 {{ util.href(cdedblink('event/course_list') + '#course-' + course_id|string,
-                             (courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'])) }}
+                             (courses[course_id].nr + "." + nbsp + courses[course_id].shortname)) }}
                 {% if registration['tracks'][track.id]['course_instructor'] == course_id %}
                     {{ "(KL)" }}
                 {% endif %}

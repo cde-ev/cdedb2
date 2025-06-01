@@ -141,10 +141,6 @@ class EntitySorter:
         return (country, postal_code, location, address)
 
     @staticmethod
-    def course(course: CdEDBObject) -> Sortkey:
-        return (course['nr'], course['shortname'], course['id'])
-
-    @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
         return (lodgement['title'], lodgement['id'])
 

@@ -249,7 +249,7 @@ class EventDownloadMixin(EventBaseFrontend):
             if track.course_room_field:
                 cr_field_names[track_id] = track.course_room_field.field_name
         for c_id, course in courses.items():
-            for t_id in course['active_segments']:
+            for t_id in course.active_segments:
                 instructors[(c_id, t_id)] = [
                     r_id
                     for r_id in attendees[(c_id, t_id)]
@@ -369,8 +369,8 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
-        active_courses = filter(lambda c: c["active_segments"], courses.values())
-        sorted_courses = xsorted(active_courses, key=EntitySorter.course)
+        active_courses = filter(lambda c: c.active_segments, courses.values())
+        sorted_courses = xsorted(active_courses)
         data = self.fill_template(rs, "other", "dokuteam_courselist", {
             "sorted_courses": sorted_courses,
         })
@@ -408,7 +408,7 @@ class EventDownloadMixin(EventBaseFrontend):
                     result = tuple(
                         {
                             k if k != course_key else 'course':
-                                v if k != course_key else courses[v]['nr']
+                                v if k != course_key else courses[v].nr
                             for k, v in entry.items()
                         }
                         for entry in query_res
@@ -434,7 +434,7 @@ class EventDownloadMixin(EventBaseFrontend):
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids)
+        courses = self.eventproxy.get_courses(rs, course_ids)
 
         spec = QueryScope.event_course.get_spec(
             event=rs.ambience['event'], courses=courses)
@@ -478,7 +478,7 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create CSV file with all registrations"""
         # Get data
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids)
+        courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)

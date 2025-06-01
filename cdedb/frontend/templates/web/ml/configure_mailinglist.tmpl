@@ -140,7 +140,7 @@
             {% if 'event_id' in additional_fields %}
                 {{ util.form_input_select(
                     name="event_id", label=gettext("Event"), nulloption='',
-                    entries=events.values()|sort|entries('id', 'title'), actualreadonly=readonly,
+                    entries=events|entries('id', 'title'), actualreadonly=readonly,
                     info=gettext("The participants of this event will be subscribers of"
                                  " this mailinglist. (Opt-Out)")) }}
             {% endif %}
