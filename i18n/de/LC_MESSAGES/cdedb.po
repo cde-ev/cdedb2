@@ -10665,6 +10665,10 @@ msgstr "Fallbegleitung verwalten"
 msgid "IDs of the new involved people"
 msgstr "IDs der neuen Beteiligten"
 
+#, python-format
+msgid "Withdraw %(name)s as companion"
+msgstr "%(name)s als Fallbegleitung zurückziehen"
+
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:80
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:94
 #, python-format

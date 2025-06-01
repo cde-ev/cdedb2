@@ -7,17 +7,19 @@
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint='weak' %}
+
 {% block title %}
     {% if ambience['course'] %}
-        {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] %}
-            Edit {{ course }} ({{ event }})
+        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+            Replace Entry ({{ title }})
         {% endtrans %}
     {% else %}
-        {% trans title=ambience['event']['title'] %}
-            Add Course ({{ title }})
+        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+            Add Entry ({{ title }})
         {% endtrans %}
     {% endif %}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
@@ -29,6 +31,7 @@
         {{ util.breadcrumb_link(cdedblink("event/create_course"), gettext("Add Course"), active=True) }}
     {% endif %}
 {% endblock %}
+
 {% block heading %}
     {% if ambience['course'] %}
         {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['course']['shortname']),

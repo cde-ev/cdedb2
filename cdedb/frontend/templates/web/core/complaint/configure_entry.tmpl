@@ -13,8 +13,9 @@
 {% set jshint='weak' %}
 {% block title %}
     {% if ambience['entry'] %}
-        {{ util.context_heading(gettext("Replace Entry"), gettext("Case %s")|format(ambience['case'].id),
-                                'gavel', "") }}
+        {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}
+            Replace Entry ({{ title }})
+        {% endtrans %}
     {% else %}
         {{ util.context_heading(gettext("Add Entry"), gettext("Case %s")|format(ambience['case'].id),
                                 'gavel', "") }}

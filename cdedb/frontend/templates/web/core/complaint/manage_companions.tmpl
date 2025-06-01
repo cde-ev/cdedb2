@@ -8,10 +8,9 @@
 {% set jshint='weak' %}
 
 {% block title %}
-    {{ util.context_heading(
-        gettext("Manage Companions"),
-        gettext("Case %s")|format(ambience['case'].id), 'gavel', "",
-    ) }}
+    {% trans involved=involved|persona_name, title=gettext("Case %s")|format(ambience['case'].id) %}
+        Manage Companions for {{ involved }} ({{ title }})
+    {% endtrans %}
 {% endblock %}
 
 {% block heading %}
@@ -77,7 +76,7 @@
                                 label='',
                                 aclass="btn btn-xs btn-danger",
                                 icon="person-walking-arrow-right",
-                                title=gettext("Reinstate %(name)s as companion")|format(name=util.persona_name(companion))|s
+                                title=gettext("Withdraw %(name)s as companion")|format(name=util.persona_name(companion))|s
                             ) }}
                         </form>
                         {% else %}

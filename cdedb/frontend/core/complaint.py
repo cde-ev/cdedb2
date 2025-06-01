@@ -21,6 +21,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
@@ -478,6 +479,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.values,
             rs.ambience['entry'].active_version.as_dict(),
         )
+        # Rerender the input as CSV of DB-IDs
+        authors = list(map(cdedbid_filter, rs.values.getlist('authors')))
+        rs.values['authors'] = ", ".join(authors)
+        # rs.values.setlist('authors', [", ".join(authors)])
+
         personas = {}
         if rs.ambience['entry'].concerned_id:
             personas = self.coreproxy.get_personas(

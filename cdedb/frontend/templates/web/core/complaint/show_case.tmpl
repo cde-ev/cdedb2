@@ -270,9 +270,9 @@
                 {% endif %}
                 <br />
                 {{ gettext("by") }}
-                {% for author_id in entry.active_version.authors %}
-                    {% if not loop.first %}, {% endif %}
-                    {{ util.persona_anchor(personas[author_id]) }}
+                {% for author_id in entry.active_version.authors -%}
+                    {%- if not loop.first -%}, {% endif -%}
+                    {{ util.persona_anchor(personas[author_id]) -}}
                 {% endfor %}
                 <br />
                 <span class="text-muted">
