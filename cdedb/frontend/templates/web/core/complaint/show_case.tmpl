@@ -48,7 +48,7 @@
             {% trans %}is grave{% endtrans %}
         </dt>
         <dd>
-            {{ util.deko_checkbox(checked=ambience['case']['is_grave'],
+            {{ util.deko_checkbox(checked=ambience['case'].is_grave,
                                   titles=[gettext("No"),gettext("Yes")]) }}
         </dd>
         <dt title="{% trans %}Start Date{% endtrans %}">
@@ -225,6 +225,10 @@
                                      icon="lock") }}
             </form>
         {% endif %}
+            {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
+                         + "#Events_[[in_a_complaint]]"|s,
+                         gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
+
     </div>
 
     <div class="list-group list-group-hover">

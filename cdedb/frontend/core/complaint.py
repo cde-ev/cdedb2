@@ -42,12 +42,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(rs, "complaint/index", {})
 
     @access("complaint_admin")
-    def show_case(self, rs: RequestState, case_id: int) -> Response:
+    @REQUESTdata("show_log_entries")
+    def show_case(self, rs: RequestState, case_id: int, show_log_entries: bool = False) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         # Collect all entries to be displayed.
-        log_filter = ComplaintLogFilter(case_id=case_id)
-        _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
-        log_entries = log_entries or tuple()
+        log_entries = tuple()
+        if show_log_entries:
+            log_filter = ComplaintLogFilter(case_id=case_id)
+            _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
+            log_entries = log_entries or tuple()
         all_entries = rs.ambience['case'].list_entries(log_entries)
 
         # Collect all persona data which may be displayed.
@@ -78,6 +82,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'age_classes': age_classes,
                 'all_entries': all_entries,
                 'is_locked': is_locked,
+                'show_log_entries': show_log_entries,
             },
         )
 
