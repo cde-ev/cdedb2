@@ -94,6 +94,10 @@
                 {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="20", markdown=True,
                                             info=infotext) }}
             {% endif %}
+            {% if entry_type.is_measure %}
+                {{ util.form_input_static(aclass='text-warning fw-bold', icon='exclamation-triangle',
+                                      value=gettext("Warning: This entry will be visible to all enforcers and the user themselves. Pseudonymize other involved people here, and defer details to other entries.")) }}
+            {% endif %}
             {# Add some conditional warnings here. #}
             {% if ambience['entry'] and entry_type != enums["ComplaintEntryType"].revocation_explanation %}
                 <div class="panel panel-primary">

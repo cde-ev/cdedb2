@@ -561,9 +561,13 @@ class ComplaintEntryType(CdEIntEnum):
     def measure_types(cls) -> set["ComplaintEntryType"]:
         return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
 
+    @property
+    def is_measure(self) -> bool:
+        return self in self.measure_types()
+
     @classmethod
     def visible_types(cls) -> set["ComplaintEntryType"]:
-        return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
+        return cls.measure_types()
 
     @classmethod
     def hidden_types(cls) -> set["ComplaintEntryType"]:
