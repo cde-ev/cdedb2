@@ -604,7 +604,7 @@ class ComplaintBackend(AbstractBackend):
 
             # Retrieve id of the involvement table.
             query = f"""
-                SELECT id
+                SELECT id, involved_type
                 FROM {models.ComplaintInvolved.database_table}
                 WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
             """
@@ -612,6 +612,15 @@ class ComplaintBackend(AbstractBackend):
             if not (involved := self.query_one(rs, query, params)):
                 raise ValueError(n_("Uninvolved user."))
             involved_id = involved["id"]
+            involved_type = const.ComplaintInvolvementType(involved["involved_type"])
+
+            if any(
+                companion_ids & case.companions_by_involved_type.get(type_, set())
+                for type_ in involved_type.adverse()
+            ):
+                raise ValueError(n_("Adverse companion."))
+            if companion_ids & case.all_involved.keys():
+                raise ValueError(n_("Involved companion."))
 
             values = [
                 {

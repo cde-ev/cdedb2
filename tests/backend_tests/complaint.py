@@ -732,6 +732,72 @@ class TestComplaintBackend(BackendTest):
 
         self.assertLogEqual([], "complaint", case_id=case_id, offset=self.LOG_OFFSET)
 
+    @as_users("simon")
+    def test_adverse_companions(self) -> None:
+        case_id = 1
+
+        case = self.complaint.get_case(self.key, case_id)
+
+        target_id = list(case.involved[const.ComplaintInvolvementType.target])[0]
+        target_companion_id = list(case.companions_by_involved[target_id])[0]
+        affected_id = list(case.involved[const.ComplaintInvolvementType.affected])[0]
+        affected_companion_id = list(case.companions_by_involved[affected_id])[0]
+        appellant_id = 5
+        appellant_companion_id = 6
+
+        self.assertEqual(
+            6,
+            len({
+                target_id,
+                target_companion_id,
+                affected_id,
+                affected_companion_id,
+                appellant_id,
+                appellant_companion_id,
+            }),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.appellant,
+                [appellant_id],
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_companions(
+                self.key, case_id, appellant_id, [appellant_companion_id]
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+            self.complaint.add_companions(
+                self.key, case_id, target_id, [affected_companion_id]
+            )
+        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+            self.complaint.add_companions(
+                self.key, case_id, target_id, [appellant_companion_id]
+            )
+        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+            self.complaint.add_companions(
+                self.key, case_id, affected_id, [target_companion_id]
+            )
+        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+            self.complaint.add_companions(
+                self.key, case_id, appellant_id, [target_companion_id]
+            )
+
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(self.key, case_id, target_id, [target_id])
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(self.key, case_id, affected_id, [affected_id])
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(
+                self.key, case_id, appellant_id, [appellant_id]
+            )
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:

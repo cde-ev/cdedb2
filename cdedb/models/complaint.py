@@ -66,7 +66,7 @@ class Case(CdEDataclass):
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involvement_type, involved_personas in self.involved.items():
             for persona_id in involved_personas:
-                companions = self.companions_by_involved[persona_id]
+                companions = self.companions_by_involved.get(persona_id, set())
                 ret.setdefault(involvement_type, set()).update(companions)
         return ret
 
