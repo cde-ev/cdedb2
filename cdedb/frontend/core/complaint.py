@@ -460,6 +460,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 entry_type=entry_data.get('entry_type') if entry_data else None,
                 parent_id=entry_data.get('parent_id') if entry_data else None,
             )
+        if parent_id := entry_data.get('parent_id'):
+            if not rs.ambience['case'].entries[parent_id].active_version:
+                rs.notify('info', n_("Can not add child for deleted parent."))
+                return self.redirect(rs, "core/show_case")
         entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(entry_id)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
@@ -589,6 +593,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].active_children:
+            rs.notify('error', n_("Entry has active children."))
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
 
         version_id = rs.ambience['entry'].active_version.id
 
@@ -630,6 +637,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].active_children:
+            rs.notify('error', n_("Entry has active children."))
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")

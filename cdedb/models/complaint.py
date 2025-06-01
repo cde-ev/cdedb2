@@ -237,6 +237,12 @@ class ComplaintEntry(CdEDataclass):
             entry for entry in self.case.entries.values() if entry.parent_id == self.id
         ]
 
+    @functools.cached_property
+    def active_children(self) -> list["ComplaintEntry"]:
+        return [
+            entry for entry in self.children if entry.active_version
+        ]
+
     def get_sortkey(self) -> Sortkey:
         return ()
 
