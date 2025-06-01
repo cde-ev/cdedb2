@@ -529,7 +529,7 @@ class ComplaintEntryType(CdEIntEnum):
     agreement_measure = 311  #:
     agreement_measure_explanation = 321  #:
     agreement_measure_comment = 331  #:
-    agreement_measure_revoked = 341  #:
+    # agreement_measure_revoked = 341  #:
     # agreement_measure_expired = 351  #:
 
     # Provisional arbitration
@@ -568,7 +568,7 @@ class ComplaintEntryType(CdEIntEnum):
         return self not in self.visible_types()
 
     @classmethod
-    def _get_children_map(self) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
+    def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
         et = ComplaintEntryType
         children = collections.defaultdict(set)
         children.update({
@@ -578,15 +578,18 @@ class ComplaintEntryType(CdEIntEnum):
                 et.statement_sent,
                 et.statement_received,
             },
+            et.agreement: {et.agreement_measure},
+            et.agreement_measure: {
+                et.agreement_measure_explanation,
+                et.agreement_measure_comment,
+            },
             et.provisional_to_arbcom: {et.provisional_measure},
             et.provisional_measure: {
-                et.provisional_measure,
                 et.provisional_measure_explanation,
                 et.provisional_measure_comment,
             },
             et.definite_to_arbcom: {et.definite_measure},
             et.definite_measure: {
-                et.definite_measure,
                 et.definite_measure_explanation,
                 et.definite_measure_comment,
             },
@@ -596,9 +599,9 @@ class ComplaintEntryType(CdEIntEnum):
         return children
 
     @classmethod
-    def all_children(self) -> set["ComplaintEntryType"]:
+    def all_children(cls) -> set["ComplaintEntryType"]:
         ret = set()
-        for children in self._get_children_map().values():
+        for children in cls._get_children_map().values():
             ret.update(children)
         return ret
 
@@ -609,7 +612,9 @@ class ComplaintEntryType(CdEIntEnum):
     @property
     def has_description(self) -> bool:
         et = ComplaintEntryType
-        return self not in {et.statement_sent, et.statement_received}
+        return self not in {
+            et.statement_signed, et.statement_sent, et.statement_received,
+        }
 
     @property
     def is_hidden(self) -> bool:

@@ -1015,7 +1015,7 @@ class TestComplaintValidation(TestValidationBase):
             {
                 "creation": True,
                 "passthrough": True,
-                "entry_type": const.ComplaintEntryType.agreement_measure_expired,
+                "entry_type": const.ComplaintEntryType.statement_signed,
             },
         )
         # Test successful creation of entry version with description:
