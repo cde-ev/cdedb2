@@ -60,7 +60,9 @@ class Case(CdEDataclass):
         return ret
 
     @functools.cached_property
-    def companions_by_involved_type(self) -> dict[const.ComplaintInvolvementType, set[int]]:
+    def companions_by_involved_type(
+        self,
+    ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involvement_type, involved_personas in self.involved.items():
             for persona_id in involved_personas:

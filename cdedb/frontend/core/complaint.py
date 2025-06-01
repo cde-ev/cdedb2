@@ -480,9 +480,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.ambience['entry'].active_version.as_dict(),
         )
         # Rerender the input as CSV of DB-IDs
-        authors: list[str] = list(map(
-            lambda x: cdedbid_filter(x) if isinstance(x, int) else x,
-            rs.values.getlist('authors'))
+        authors: list[str] = list(
+            map(
+                lambda x: cdedbid_filter(x) if isinstance(x, int) else x,
+                rs.values.getlist('authors'),
+            )
         )
         rs.values['authors'] = ", ".join(authors)
 
