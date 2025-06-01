@@ -527,26 +527,18 @@ class ComplaintEntryType(CdEIntEnum):
     # Agreements
     agreement = 301  #: the factions reached a formal agreement as a partial resolution
     agreement_measure = 311  #:
-    agreement_measure_explanation = 321  #:
-    agreement_measure_comment = 331  #:
-    # agreement_measure_revoked = 341  #:
-    # agreement_measure_expired = 351  #:
 
     # Provisional arbitration
     provisional_to_arbcom = 401  #:
     provisional_measure = 411  #:
-    provisional_measure_explanation = 421  #:
-    provisional_measure_comment = 431  #:
-    # provisional_measure_revoked = 441  #:
-    # provisional_measure_expired = 451  #:
 
     # Definite arbitration
     definite_to_arbcom = 501  #:
     definite_measure = 511  #:
-    definite_measure_explanation = 521  #:
-    definite_measure_comment = 531  #:
-    # definite_measure_revoked = 541  #:
-    # definite_measure_expired = 551  #:
+
+    # Measure details
+    measure_explanation = 601
+    measure_comment = 611
 
     # Conclusion
     faction_summary = 1001  #: of some companions for a faction
@@ -580,18 +572,18 @@ class ComplaintEntryType(CdEIntEnum):
             },
             et.agreement: {et.agreement_measure},
             et.agreement_measure: {
-                et.agreement_measure_explanation,
-                et.agreement_measure_comment,
+                et.measure_explanation,
+                et.measure_comment,
             },
             et.provisional_to_arbcom: {et.provisional_measure},
             et.provisional_measure: {
-                et.provisional_measure_explanation,
-                et.provisional_measure_comment,
+                et.measure_explanation,
+                et.measure_comment,
             },
             et.definite_to_arbcom: {et.definite_measure},
             et.definite_measure: {
-                et.definite_measure_explanation,
-                et.definite_measure_comment,
+                et.measure_explanation,
+                et.measure_comment,
             },
         })
         for t in et:
