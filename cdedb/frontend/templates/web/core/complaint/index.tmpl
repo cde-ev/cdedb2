@@ -37,41 +37,52 @@
             </h2>
             <div id="result" class="list-group list-group-hover list-group-condensed">
                 {% for case in cases.values() %}
-                    <div class="row list-group-item">
-                        <div class="col-md-1">
-                            {{- util.href(
-                                cdedblink("core/show_case", {'case_id': case.id}),
-                                gettext("Case&nbsp;%s")|s|format(case.id)
-                            ) }}
-                            <br />
-                            {{ util.make_icon('meteor', aclass='text-muted') -}}
-                        </div>
-                        <div class="col-md-3">
-                            {{ gettext(case.kind|string) }}
-                            <br />
-                            {% if case.start_date or case.end_date %}
-                                {{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }}
-                            {% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            {% for involvement_type, involved_ids in case.involved.items() %}
-                                {% if not involvement_type == enums["ComplaintInvolvementType"].withheld %}
-                                    {% if not loop.first %}
-                                        <br />
-                                    {% endif %}
-                                    <span class="text-muted">
-                                    {{ util.make_icon(involvement_type.get_icon()) }}
-                                    {{ gettext(involvement_type.shortname) }}:
-                                    </span>
-                                    {% for persona_id in involved_ids %}
-                                        {{ util.persona_anchor(personas[persona_id], with_family_name=False) -}}
-                                        {%- if not loop.last %}, {% endif %}
-                                    {% endfor %}
+                    <div class="list-group-item">
+                        <div class="row">
+                            <div class="col-md-2">
+                                {{- util.href(
+                                    cdedblink("core/show_case", {'case_id': case.id}),
+                                    gettext("Case&nbsp;%s")|s|format(case.id)
+                                ) }}
+                                {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
+                                {% if case.id in unlocked_cases %}
+                                    {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
                                 {% endif %}
-                            {% endfor %}
+                            </div>
+                            <div class="col-md-5">
+                                {{ gettext(case.kind|string) }}
+                            </div>
+                            <div class="col-md-5 text-right">
+                                {% if case.start_date or case.end_date %}
+                                    {{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }}
+                                {% endif %}
+                           </div>
                         </div>
-                        <div class="col-md-5">
-                            {{ case.summary }}
+                        <div class="row">
+                            <div class="col-md-10 col-md-offset-2">
+                            <hr class="nosp" />
+                                {% for involvement_type, involved_ids in case.involved.items() %}
+                                    {% if not involvement_type == enums["ComplaintInvolvementType"].withheld %}
+                                        {% if not loop.first %}
+                                            <br />
+                                        {% endif %}
+                                        <span class="text-muted">
+                                        {{ util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
+                                        <span aria-hidden="true">{{ gettext(involvement_type.shortname) }}</span>:
+                                        </span>
+                                        {% for persona_id in involved_ids %}
+                                            {{ util.persona_anchor(personas[persona_id]) -}}
+                                            {%- if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                <hr class="nosp" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-10 col-md-offset-2">
+                                {{ case.summary|md }}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}

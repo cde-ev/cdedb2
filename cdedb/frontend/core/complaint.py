@@ -65,7 +65,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         count = 0
 
         if not is_search:
-            cases = personas = None
+            cases = personas = unlocked_cases = None
         else:
             # our query facility does not allow + signs, thus special-case it here
             query = check(rs, vtypes.QueryInput,
@@ -73,7 +73,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                           allow_empty=not is_search, separator=" ")
             assert query is not None
             rs.ignore_validation_errors()
-            query.fields_of_interest = ['cases.id']
+            query.fields_of_interest = ['cases.id', 'access.is_unlocked']
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)
             if count == 1:
@@ -81,6 +81,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
                 case_ids = [e['cases.id'] for e in result]
+                unlocked_cases = {e['cases.id'] for e in result if e['access.is_unlocked']}
                 cases = self.complaintproxy.get_cases(rs, case_ids)
                 persona_ids = []
                 for case in cases.values():
@@ -88,7 +89,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(rs, "complaint/index", {
-            'spec': spec, 'cases': cases, 'count': count, 'personas': personas
+            'spec': spec, 'cases': cases, 'count': count, 'personas': personas,
+            'unlocked_cases': unlocked_cases,
         })
 
     @access("complaint_admin")
