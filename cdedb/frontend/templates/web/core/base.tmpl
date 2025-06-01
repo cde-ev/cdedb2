@@ -51,6 +51,10 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/complaint_index"), gettext("Case Archive"), aclass="list-group-item",
                              icon="gavel", active=(sidenav_active=='complaint_index')) }}
+                {{ util.href(cdedblink("core/measures"), gettext("Measure Overview"), aclass="list-group-item",
+                             icon="shield-halved", active=(sidenav_active=='show_measures')) }}
+                {{ util.href(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), aclass="list-group-item",
+                             icon="handshake-angle", active=(sidenav_active=='show_measures')) }}
                 {{ util.href(cdedblink("core/view_complaint_log"), gettext("Complaint Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='complaint_log')) }}
             </div>
