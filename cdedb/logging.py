@@ -18,9 +18,11 @@ def setup_cdedb_root_logger() -> None:
 
     # we can not rely on the config at this point, since this code will be executed
     # while importing the cdedb module. Therefore, we only distinguish between
-    # production and non-production setting
+    # production, CI/docker and vm.
     loglevel = logging.INFO
     if is_production := pathlib.Path("/PRODUCTIONVM").is_file():
+        loglevel = logging.WARNING
+    elif pathlib.Path('/CONTAINER').is_file():
         loglevel = logging.WARNING
     logger.setLevel(loglevel)
 
