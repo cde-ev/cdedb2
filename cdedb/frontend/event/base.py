@@ -306,7 +306,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
-            "course": EntitySorter.course,
+            # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
@@ -333,7 +333,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
                     if course_id:
-                        prim_rank += prim_sorter(courses[course_id])
+                        prim_rank += courses[course_id].get_sortkey()
                     else:
                         prim_rank += ("0", "", "")
             else:
@@ -453,6 +453,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
+                # TODO remove when migrating lodgements to dataclasses here
+                if isinstance(instance, models.EventDataclass):
+                    instance = instance.as_dict()
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and

@@ -1441,7 +1441,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 2)
+EVENT_SCHEMA_VERSION = (19, 3)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
