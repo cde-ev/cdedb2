@@ -48,7 +48,6 @@ def get_configpath() -> pathlib.Path:
     return DEFAULT_CONFIGPATH
 
 
-# TODO where exactly does this log?
 _LOGGER = logging.getLogger(__name__)
 
 _currentdir = pathlib.Path(__file__).resolve().parent

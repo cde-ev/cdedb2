@@ -30,7 +30,6 @@ from cdedb.common import (
     glue,
     make_proxy,
     now,
-    setup_logger,
 )
 from cdedb.common.exceptions import (
     APITokenError,
@@ -88,16 +87,6 @@ class Application(BaseApp):
         self.event = EventFrontend()
         self.assembly = AssemblyFrontend()
         self.ml = MlFrontend()
-        logger_path = self.conf["LOG_DIR"] / "cdedb.log"
-        setup_logger("cdedb", logger_path, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-
-        # Set up a logger for all Worker instances.
-        setup_logger(
-            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(

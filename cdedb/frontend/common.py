@@ -114,7 +114,6 @@ from cdedb.common import (
     make_proxy,
     merge_dicts,
     now,
-    setup_logger,
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
@@ -206,14 +205,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
             logger_name = f"cdedb.frontend.{self.realm}"
-            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
-        setup_logger(
-            logger_name, logger_file, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.debug(
             f"Instantiated {self} with configpath {self.conf._configpath}.")
@@ -1613,12 +1606,7 @@ class CdEMailmanClient(mailmanclient.Client):
         self.template_password = mailman_basic_auth_password
 
         # Initialize logger. This needs the base class initialization to be done.
-        logger_name = "cdedb.frontend.mailmanclient"
-        setup_logger(
-            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        self.logger = logging.getLogger(logger_name)
+        self.logger = logging.getLogger("cdedb.frontend.mailmanclient")
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[

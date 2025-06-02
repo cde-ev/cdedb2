@@ -15,7 +15,7 @@ from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 from cdedb.ldap.server import LdapHandler
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("cdedb.ldap")
 
 
 async def main() -> None:

@@ -24,7 +24,7 @@ import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import CdEDBObject, PathLike, now, setup_logger
+from cdedb.common import CdEDBObject, PathLike, now
 from cdedb.config import Config
 from cdedb.filter import datetime_filter
 
@@ -45,12 +45,7 @@ class EntityKeeper:
         self.log_timestamp_key = log_timestamp_key
 
         # Initialize logger.
-        logger_name = "cdedb.backend.entitykeeper"
-        setup_logger(
-            logger_name, self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        self.logger = logging.getLogger(logger_name)
+        self.logger = logging.getLogger("cdedb.backend.entitykeeper")
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def _run(self, args: list[Union[Path, str, bytes]], cwd: Optional[Path] = None,

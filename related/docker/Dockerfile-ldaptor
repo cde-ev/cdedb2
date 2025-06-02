@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-pip \
     python3-psycopg \
     python3-psycopg-pool \
+    python3-systemd \
     \
     && rm -rf /var/lib/apt/lists/* \
     \

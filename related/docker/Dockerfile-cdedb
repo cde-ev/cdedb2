@@ -66,6 +66,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-pyparsing \
     python3-psycopg \
     python3-psycopg-pool \
+    python3-systemd \
     \
     python3-pip \
     python3-click \
