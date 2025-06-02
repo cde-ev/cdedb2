@@ -10,8 +10,8 @@ file has to be present as environment variable CDEDB_CONFIGPATH.
 Note that setting that variable is mandatory, to prevent accidental misses.
 """
 
+import abc
 import collections
-import collections.abc
 import datetime
 import decimal
 import importlib.util
@@ -21,7 +21,7 @@ import pathlib
 import subprocess
 import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
-from typing import Any, Union
+from typing import Any, NoReturn, Union
 
 PathLike = Union[pathlib.Path, str]
 
@@ -422,37 +422,25 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     return {key: getattr(override, key) for key in dir(override)}
 
 
-class Config(Mapping[str, Any]):
-    """Main configuration.
-
-    Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
-    variable. However, this does not allow introducing keys which are not present in
-    the _DEFAULT configuration.
-    """
+class BaseConfig(Mapping[str, Any], abc.ABC):
+    _configpath: pathlib.Path
+    _configchain: collections.ChainMap
 
     def __init__(self) -> None:
-        configpath = get_configpath()
+        configpath = self._get_configpath()
         self._configpath = configpath
 
-        name = self.__class__.__name__
-        _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
-
-        if not configpath:
-            raise RuntimeError(f"No configpath for {name} provided!")  # pragma: no cover
         if not pathlib.Path(configpath).is_file():
             raise RuntimeError(  # pragma: no cover
-                f"During initialization of {name}, config file {configpath} not found!")
+                f"Config file {configpath} not found!")
 
-        override = self._process_config_overwrite()
-        self._configchain = collections.ChainMap(override, _DEFAULTS)
+        self._process_config_overwrite()
 
-    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
-        """Import the config overwrites from the file specified by the configpath.
+    @abc.abstractmethod
+    def _get_configpath(self) -> pathlib.Path: ...
 
-        Allow only keys which are already present in _DEFAULT.
-        """
-        override = _import_from_file(self._configpath)
-        return {key: value for key, value in override.items() if key in _DEFAULTS}
+    @abc.abstractmethod
+    def _process_config_overwrite(self) -> NoReturn: ...
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
@@ -469,6 +457,30 @@ class Config(Mapping[str, Any]):
     def __repr__(self) -> str:  # pragma: no cover
         name = self.__class__.__name__
         return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
+
+
+class Config(BaseConfig):
+    """Main configuration.
+
+    Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
+    variable. However, this does not allow introducing keys which are not present in
+    the _DEFAULT configuration.
+    """
+
+    def _get_configpath(self) -> pathlib.Path:
+        return get_configpath()
+
+    def _process_config_overwrite(self) -> NoReturn:
+        """Import the config overwrites from the file specified by the configpath.
+
+        Allow only keys which are already present in _DEFAULT.
+        """
+        override = {
+            key: value
+            for key, value in _import_from_file(self._configpath).items()
+            if key in _DEFAULTS
+        }
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
 
 
 class LazyConfig(Config):
@@ -528,15 +540,16 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
+    def _process_config_overwrite(self) -> NoReturn:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow additional keys which are not present in _DEFAULT.
         """
-        return _import_from_file(self._configpath)
+        override = _import_from_file(self._configpath)
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
 
 
-class SecretsConfig(Mapping[str, Any]):
+class SecretsConfig(BaseConfig):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -544,20 +557,12 @@ class SecretsConfig(Mapping[str, Any]):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self) -> None:
+    def _get_configpath(self) -> pathlib.Path:
         config = Config()
-        configpath = config["SECRETS_CONFIGPATH"]
-        self._configpath = configpath
-        _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
+        return config["SECRETS_CONFIGPATH"]
 
-        if not configpath:
-            raise RuntimeError("No configpath for SecretsConfig provided!")  # pragma: no cover
-        if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(  # pragma: no cover
-                f"During initialization of SecretsConfig,"
-                f" config file {configpath} not found!")
-
-        override = _import_from_file(configpath)
+    def _process_config_overwrite(self) -> NoReturn:
+        override = _import_from_file(self._configpath)
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
@@ -566,14 +571,3 @@ class SecretsConfig(Mapping[str, Any]):
             self._configchain = collections.ChainMap(override)
         else:
             self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
-
-    def __getitem__(self, key: str) -> Any:
-        return self._configchain.__getitem__(key)
-
-    # The following dunder methods are required to to inheriting from `Mapping`,
-    #  even though we never actually use them.
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover
-        return self._configchain.__iter__()
-
-    def __len__(self) -> int:  # pragma: no cover
-        return self._configchain.__len__()
