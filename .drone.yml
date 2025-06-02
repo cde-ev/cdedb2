@@ -60,7 +60,6 @@ steps:
     POSTGRES_PASSWORD: passwd
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
-    - python3 -m cdedb filesystem log create # TODO needed during dependencies of script.py
     - sleep 3 # wait for posgres container to start up
     - pg_isready --host=cdb --timeout=15 # wait for database to come online
     - python3 -m cdedb db create-users # basic setup of the database for all following tests
@@ -102,7 +101,6 @@ steps:
   commands:
   - make i18n-compile # required for sample-data target
   - pg_isready --host=cdb --timeout=15 # wait for database to come online
-  - python3 -m cdedb filesystem log create
   - python3 -m cdedb db create # create the test database for ldap ...
   - python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
   - python3 -m cdedb db populate # ... and populates it
