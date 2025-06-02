@@ -146,8 +146,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          'genesis_case_id': self.encode_parameter(
                              "core/genesis_verify", "genesis_case_id",
                              str(case_id), persona_id=None),
-                         'given_names': data['given_names'],
-                         'family_name': data['family_name'],
+                         'case': data,
                      })
         rs.notify(
             "success",

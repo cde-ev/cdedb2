@@ -130,7 +130,7 @@
                                                     {%- if not involved %}<s>{% endif %}
                                                     {{- util.href(cdedblink('event/show_registration',
                                                                         {'registration_id': reg['id']}),
-                                                                 util.persona_name(personas[reg['persona_id']], include_nickname=True)) }}
+                                                                 personas[reg['persona_id']]|persona_name(include_nickname=True)) }}
                                                     {%- if instructor %} ({% trans %}Instr.{% endtrans %}){%- endif %}
                                                     {%- if not involved %}</s>{% endif %}
                                                     {%- if reg['parts'][track.part_id]['status'] != enums['RegistrationPartStati'].participant %}

@@ -35,7 +35,7 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import compute_checkdigit
+from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
 from cdedb.common.sorting import xsorted
 from cdedb.config import Config
 
@@ -306,6 +306,14 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
 
     return phonenumbers.format_number(
         phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+
+
+def persona_name_filter(val: CdEDBObject | User, *args: bool, **kwargs: bool) -> str:
+    """Wrapper to format persona names."""
+    if isinstance(val, User):
+        return val.persona_name(*args, **kwargs)
+    else:
+        return make_persona_name(val, *args, **kwargs)
 
 
 @overload
@@ -744,6 +752,7 @@ JINJA_FILTERS = {
     'iban': iban_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
+    'persona_name': persona_name_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'stringIn': stringIn_filter,

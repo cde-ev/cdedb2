@@ -110,7 +110,6 @@ from cdedb.common import (
     get_mandatory_form_fields,
     glue,
     json_serialize,
-    make_persona_name,
     make_proxy,
     merge_dicts,
     now,
@@ -428,7 +427,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
-        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,

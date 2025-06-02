@@ -4,19 +4,19 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(values) %}
+    {% trans name=values|persona_name %}
         Edit {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), util.persona_name(values),
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), values|persona_name,
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Edit Userdata"), util.persona_name(values), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Edit Userdata"), values|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
