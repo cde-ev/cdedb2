@@ -8,8 +8,8 @@ cd /cdedb2 && make reload
 # access postgres database directly (from host!)
 docker compose exec cdb psql -U cdb -d cdb
 
-# list CdEDB log files (most recently changed first)
-ls -lht /var/log/cdedb
+# access cdedb logs (most recently first)
+docker container logs docker-app-1
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data

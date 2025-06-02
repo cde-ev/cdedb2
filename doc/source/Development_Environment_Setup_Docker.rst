@@ -124,6 +124,16 @@ For more information refer to the ``docker``/``docker compose`` documentation
 or execute ``docker compose help``.
 
 
+Accessing the container logs
+----------------------------
+
+In docker, we log everything to stdout. So, you see the log
+messages after executing a command in one docker container, or
+in your console running the docker containers.
+
+To access the logs of the app container (where most part of the
+cdedb resides), run ``docker container logs docker-app-1``.
+
 Resetting the containers
 ------------------------
 
