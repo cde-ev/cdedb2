@@ -99,6 +99,9 @@
             {% endif %}
             {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
                                     defaultvalue=now()) }}
+            {% if entry_type.is_measure %}
+                {{ util.form_input_text(name="etime", label=gettext("Expiration"), type="datetime-local") }}
+            {% endif %}
             {{ util.form_input_text(name="authors", label=gettext("Authors"), anid="input-authors",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">

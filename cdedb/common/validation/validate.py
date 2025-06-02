@@ -5011,6 +5011,11 @@ def _complaint_entry_version(
     else:
         errs.append(ValueError('authors', n_("Must not be empty.")))
 
+    if not entry_type.is_measure:
+        with errs:
+            val['etime'] = _ALL_TYPED[NoneType](
+                val.get('etime'), 'etime', **kwargs)
+
     if val.get('etime') and val['etime'] <= val['timestamp']:
         errs.append(ValueError('etime', n_("Must be after timestamp.")))
 
