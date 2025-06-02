@@ -44,6 +44,45 @@
      *               When the checkbox is checked, values from this object take precedence over those specified via the `params` argument.
      */
     $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder, toggle) {
+        submitRequest = function(query, callback) {
+            if (!query.length) return callback();
+
+            let target_url = new URL(url, document.location);
+            // no URI-encoding here, as URLSearchParams below does this internally:
+            // https://url.spec.whatwg.org/#interface-urlsearchparams
+            params['phrase'] = query;
+            if (toggle && toggle['toggle'].is(':checked')) {
+                let new_params = $.extend({}, params, toggle);  // values from toggle take precedence
+                delete new_params['toggle'];
+                for (const key in new_params)
+                    target_url.searchParams.append(key, new_params[key]);
+            } else {
+                for (const key in params)
+                    target_url.searchParams.append(key, params[key]);
+            }
+            $.ajax({
+                url: target_url,
+                type: 'GET',
+                error: function() {
+                    callback();
+                },
+                success: function(res) {
+                    if (!res.personas) return callback();
+
+                    var i = res.personas.length - 1;
+                    while (i >= 0) {
+                        var persona = res.personas[i];
+                        if (exclude.indexOf(persona.id) !== -1)
+                            res.personas.splice(i, 1);
+                        persona.cdedb_id = cdedb_id(persona.id);
+                        i -= 1;
+                    }
+
+                    return callback(res.personas);
+                }
+            });
+        }
+
         exclude ??= [];
         $(this).selectize({
             'placeholder' : placeholder || '',
@@ -76,42 +115,34 @@
                 }
             },
             load: function(query, callback) {
-                if (!query.length) return callback();
-
-                let target_url = new URL(url, document.location);
-                // no URI-encoding here, as URLSearchParams below does this internally:
-                // https://url.spec.whatwg.org/#interface-urlsearchparams
-                params['phrase'] = query;
-                if (toggle && toggle['toggle'].is(':checked')) {
-                    let new_params = $.extend({}, params, toggle);  // values from toggle take precedence
-                    delete new_params['toggle'];
-                    for (const key in new_params)
-                        target_url.searchParams.append(key, new_params[key]);
-                } else {
-                    for (const key in params)
-                        target_url.searchParams.append(key, params[key]);
-                }
-                $.ajax({
-                    url: target_url,
-                    type: 'GET',
-                    error: function() {
-                        callback();
-                    },
-                    success: function(res) {
-                        if (!res.personas) return callback();
-
-                        var i = res.personas.length - 1;
-                        while (i >= 0) {
-                            var persona = res.personas[i];
-                            if (exclude.indexOf(persona.id) !== -1)
-                                res.personas.splice(i, 1);
-                            persona.cdedb_id = cdedb_id(persona.id);
-                            i -= 1;
+                submitRequest(query, callback);
+            },
+            onInitialize: function() {
+                // Initialize with display names instead of raw CdEDBIDs (as prefilled in the HTML).
+                // To do this, we have to submit every CdEDBID to the server and wait for
+                // the result containing its display name.
+                console.log("Initializing...");
+                const selectize = this;
+                const initial_values = selectize.getValue().split(", ");
+                let retCount = 0;
+                for (const db_id of initial_values) {
+                    console.log("entry: ", db_id);
+                    // remove the old option only displayed by CdEDBID
+                    selectize.removeOption(db_id);
+                    submitRequest(db_id, function(res) {
+                        if (!res || res.length === 0) return;
+                        // add the new option with display name
+                        console.log("new option", res[0]);
+                        selectize.addOption(res[0]);
+                        // count how many (async) requests have returned
+                        retCount += 1;
+                        if (retCount === initial_values.length){
+                            // all requests have returned, set the values of the selectize control, now with pretty names
+                            console.log("all have returned!");
+                            selectize.setValue(initial_values);
                         }
-
-                        return callback(res.personas);
-                    }
-                });
+                    });
+                }
             }
         });
         if (toggle) {  // toggling potentially changes search results
