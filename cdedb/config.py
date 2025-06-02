@@ -137,19 +137,6 @@ _DEFAULTS = {
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
-    # Directory in which all logs will be saved. The name of the specific log file will
-    # be determined by the instance generating the log. The global log is in 'cdedb.log'
-    "LOG_DIR": pathlib.Path("/var/log/cdedb/"),
-
-    # Logging level for CdEDBs own log files
-    "LOG_LEVEL": logging.INFO,
-
-    # Logging level for syslog
-    "SYSLOG_LEVEL": logging.WARNING,
-
-    # Logging level for stdout
-    "CONSOLE_LOG_LEVEL": None,
-
     # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
 

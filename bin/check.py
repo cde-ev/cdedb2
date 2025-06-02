@@ -33,7 +33,6 @@ from cdedb.cli.database import (
     stop_services,
 )
 from cdedb.cli.storage import (
-    create_log,
     create_storage,
     populate_sample_event_keepers,
     populate_storage,
@@ -136,7 +135,6 @@ def run_application_tests(testpatterns: Optional[List[str]] = None, *,
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf)
     create_database(conf, secrets)
     populate_database(conf, secrets)
 
@@ -160,7 +158,6 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf)
     create_storage(conf)
     populate_storage(conf)
     populate_sample_event_keepers(conf)
@@ -181,7 +178,6 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
     # prepare the translations
     subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf)
     if is_docker():
         # the database is already initialized, since it is needed to start the
         # ldap container in the first place

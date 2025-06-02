@@ -2,12 +2,7 @@
 
 """Sample configuration for development instances."""
 
-import logging
 import pathlib
-
-LOG_LEVEL = logging.DEBUG
-SYSLOG_LEVEL = logging.INFO
-CONSOLE_LOG_LEVEL = logging.INFO
 
 CDEDB_DEV = True
 
@@ -22,7 +17,6 @@ if pathlib.Path('/CONTAINER').is_file():
 
 # dPROD relevant excerpt from actual config follows:
 # SECRETS_CONFIGPATH = pathlib.Path("/etc/cdedb/secrets.py")
-# LOG_DIR = pathlib.Path("/var/log/cdedb")
 # MAILMAN_HOST = "10.10.0.2:8001"
 # LDAP_HOST = "ldap.cde-ev.de"
 # LDAP_PEM_PATH = pathlib.Path("/var/local/letsencrypt/certs/ldap.cde-ev.de.pem")

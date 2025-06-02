@@ -6,11 +6,6 @@ which are shared by all configurations of the test suite.
 
 import pathlib
 
-# basic config
-SYSLOG_LEVEL: int | None = None
-CONSOLE_LOG_LEVEL: int | None = None
-
-
 # config
 # TODO make CDEDB_DEV and CDEDB_TEST orthogonal, so the test suite needs only the latter
 CDEDB_DEV = True
