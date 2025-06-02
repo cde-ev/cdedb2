@@ -7,19 +7,17 @@
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint='weak' %}
-
 {% block title %}
     {% if ambience['course'] %}
-        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
-            Replace Entry ({{ title }})
+        {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] %}
+            Edit {{ course }} ({{ event }})
         {% endtrans %}
     {% else %}
-        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
-            Add Entry ({{ title }})
+        {% trans title=ambience['event']['title'] %}
+            Add Course ({{ title }})
         {% endtrans %}
     {% endif %}
 {% endblock %}
-
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
@@ -31,7 +29,6 @@
         {{ util.breadcrumb_link(cdedblink("event/create_course"), gettext("Add Course"), active=True) }}
     {% endif %}
 {% endblock %}
-
 {% block heading %}
     {% if ambience['course'] %}
         {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['course']['shortname']),
@@ -70,7 +67,7 @@
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
             {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
-                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
+                                          entries=ambience['event']['tracks']|entries('id', 'title'),
                                           aclass='checkbox_segment', slice=2,
                                           info=gettext(
                                               'Course tracks, in which the Course was originally offered.'
@@ -95,7 +92,7 @@
                                                     "cancelled courses.")) }}
             {% else %}
                 {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
-                                              entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
+                                              entries=ambience['event']['tracks']|entries('id', 'title'),
                                               aclass='checkbox_active_segment', slice=2,
                                               info=gettext("Cancelled courses are no longer choosable by participants and "
                                                            "are marked in the courselist and the course assignment view.")
