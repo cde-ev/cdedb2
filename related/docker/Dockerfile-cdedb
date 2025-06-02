@@ -121,6 +121,8 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     subman==0.1.1 \
     segno==1.5.2 \
     mypy==1.14.0 \
+    ruff==0.8.4 \
+    \
     types-python-dateutil \
     types-bleach \
     types-Markdown \
@@ -194,7 +196,3 @@ WORKDIR /cdedb2
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
-
-USER cdedb
-RUN pip install --break-system-packages ruff==0.8.4
-USER root
