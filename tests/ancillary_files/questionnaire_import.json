@@ -1,245 +1,151 @@
 {
+    "fields": {
+        "KleidungAnmerkungen": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": null,
+            "kind": 1,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "KleidungAnmerkungen"
+        },
+        "KleidungTShirtCreator": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": {
+                "Anthracite": "Anthracite",
+                "Black": "Black",
+                "Bright Orange": "Bright Orange",
+                "Burgundy": "Burgundy",
+                "Caribbean Blue": "Caribbean Blue",
+                "French Navy": "French Navy",
+                "Fresh Green": "Fresh Green",
+                "None": "Ich will kein Unisex-T-Shirt bestellen",
+                "Red": "Red",
+                "Royal Blue": "Royal Blue",
+                "Spectra Yellow": "Spectra Yellow",
+                "Varsity Green": "Varsity Green"
+            },
+            "kind": 1,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "KleidungTShirtCreator"
+        },
+        "KleidungTShirtCreatorGroesse": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": {
+                "3XL": "3XL",
+                "L": "L",
+                "M": "M",
+                "None": "-",
+                "S": "S",
+                "XL": "XL",
+                "XS": "XS",
+                "XXL": "XXL"
+            },
+            "kind": 1,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "KleidungTShirtCreatorGroesse"
+        },
+        "KleidungTShirtExpresser": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": {
+                "Anthracite": "Anthracite",
+                "Black": "Black",
+                "Bright Orange": "Bright Orange",
+                "Burgundy": "Burgundy",
+                "Caribbean Blue": "Caribbean Blue",
+                "French Navy": "French Navy",
+                "Fresh Green": "Fresh Green",
+                "None": "Ich will kein Damen-T-Shirt bestellen",
+                "Red": "Red",
+                "Royal Blue": "Royal Blue",
+                "Spectra Yellow": "Spectra Yellow",
+                "Varsity Green": "Varsity Green"
+            },
+            "kind": 1,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "KleidungTShirtExpresser"
+        },
+        "KleidungTShirtExpresserGroesse": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": {
+                "3XL": "3XL",
+                "L": "L",
+                "M": "M",
+                "None": "-",
+                "S": "S",
+                "XL": "XL",
+                "XS": "XS",
+                "XXL": "XXL"
+            },
+            "kind": 1,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "KleidungTShirtExpresserGroesse"
+        }
+    },
     "questionnaire": {
         "QuestionnaireUsages.additional": [
             {
-                "title": "Akademiekleidung",
+                "default_value": null,
+                "field_name": null,
                 "info": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
                 "input_size": 0,
                 "readonly": null,
-                "default_value": null,
-                "field_name": null
+                "title": "Akademiekleidung"
             },
             {
-                "title": "Unisex T-Shirt",
+                "default_value": null,
+                "field_name": "KleidungTShirtCreator",
                 "info": null,
                 "input_size": 0,
                 "readonly": false,
-                "default_value": null,
-                "field_name": "KleidungTShirtCreator"
+                "title": "Unisex T-Shirt"
             },
             {
-                "title": "Unisex T-Shirt Gr\u00f6\u00dfe",
+                "default_value": null,
+                "field_name": "KleidungTShirtCreatorGroesse",
                 "info": null,
                 "input_size": 0,
                 "readonly": false,
-                "default_value": null,
-                "field_name": "KleidungTShirtCreatorGroesse"
+                "title": "Unisex T-Shirt Gr\u00f6\u00dfe"
             },
             {
-                "title": "Damen T-Shirt",
+                "default_value": null,
+                "field_name": "KleidungTShirtExpresser",
                 "info": null,
                 "input_size": 0,
                 "readonly": false,
-                "default_value": null,
-                "field_name": "KleidungTShirtExpresser"
+                "title": "Damen T-Shirt"
             },
             {
-                "title": "Damen T-Shirt Gr\u00f6\u00dfe",
+                "default_value": null,
+                "field_name": "KleidungTShirtExpresserGroesse",
                 "info": null,
                 "input_size": 0,
                 "readonly": false,
-                "default_value": null,
-                "field_name": "KleidungTShirtExpresserGroesse"
+                "title": "Damen T-Shirt Gr\u00f6\u00dfe"
             },
             {
-                "title": "Anmerkungen zur Kleidungsbestellung",
+                "default_value": null,
+                "field_name": "KleidungAnmerkungen",
                 "info": null,
                 "input_size": 2,
                 "readonly": false,
-                "default_value": null,
-                "field_name": "KleidungAnmerkungen"
+                "title": "Anmerkungen zur Kleidungsbestellung"
             }
-        ]
-    },
-    "fields": {
-        "KleidungAnmerkungen": {
-            "kind": 1,
-            "association": 1,
-            "entries": null
-        },
-        "KleidungTShirtCreator": {
-            "kind": 1,
-            "association": 1,
-            "entries": [
-                [
-                    "None",
-                    "Ich will kein Unisex-T-Shirt bestellen"
-                ],
-                [
-                    "Black",
-                    "Black"
-                ],
-                [
-                    "Anthracite",
-                    "Anthracite"
-                ],
-                [
-                    "Spectra Yellow",
-                    "Spectra Yellow"
-                ],
-                [
-                    "Fresh Green",
-                    "Fresh Green"
-                ],
-                [
-                    "Varsity Green",
-                    "Varsity Green"
-                ],
-                [
-                    "Caribbean Blue",
-                    "Caribbean Blue"
-                ],
-                [
-                    "Royal Blue",
-                    "Royal Blue"
-                ],
-                [
-                    "French Navy",
-                    "French Navy"
-                ],
-                [
-                    "Red",
-                    "Red"
-                ],
-                [
-                    "Burgundy",
-                    "Burgundy"
-                ],
-                [
-                    "Bright Orange",
-                    "Bright Orange"
-                ]
-            ]
-        },
-        "KleidungTShirtCreatorGroesse": {
-            "kind": 1,
-            "association": 1,
-            "entries": [
-                [
-                    "None",
-                    "-"
-                ],
-                [
-                    "XS",
-                    "XS"
-                ],
-                [
-                    "S",
-                    "S"
-                ],
-                [
-                    "M",
-                    "M"
-                ],
-                [
-                    "L",
-                    "L"
-                ],
-                [
-                    "XL",
-                    "XL"
-                ],
-                [
-                    "XXL",
-                    "XXL"
-                ],
-                [
-                    "3XL",
-                    "3XL"
-                ]
-            ]
-        },
-        "KleidungTShirtExpresser": {
-            "kind": 1,
-            "association": 1,
-            "entries": [
-                [
-                    "None",
-                    "Ich will kein Damen-T-Shirt bestellen"
-                ],
-                [
-                    "Black",
-                    "Black"
-                ],
-                [
-                    "Anthracite",
-                    "Anthracite"
-                ],
-                [
-                    "Spectra Yellow",
-                    "Spectra Yellow"
-                ],
-                [
-                    "Fresh Green",
-                    "Fresh Green"
-                ],
-                [
-                    "Varsity Green",
-                    "Varsity Green"
-                ],
-                [
-                    "Caribbean Blue",
-                    "Caribbean Blue"
-                ],
-                [
-                    "Royal Blue",
-                    "Royal Blue"
-                ],
-                [
-                    "French Navy",
-                    "French Navy"
-                ],
-                [
-                    "Red",
-                    "Red"
-                ],
-                [
-                    "Burgundy",
-                    "Burgundy"
-                ],
-                [
-                    "Bright Orange",
-                    "Bright Orange"
-                ]
-            ]
-        },
-        "KleidungTShirtExpresserGroesse": {
-            "kind": 1,
-            "association": 1,
-            "entries": [
-                [
-                    "None",
-                    "-"
-                ],
-                [
-                    "XS",
-                    "XS"
-                ],
-                [
-                    "S",
-                    "S"
-                ],
-                [
-                    "M",
-                    "M"
-                ],
-                [
-                    "L",
-                    "L"
-                ],
-                [
-                    "XL",
-                    "XL"
-                ],
-                [
-                    "XXL",
-                    "XXL"
-                ],
-                [
-                    "3XL",
-                    "3XL"
-                ]
-            ]
-        }
+        ],
+        "QuestionnaireUsages.registration": []
     }
 }
