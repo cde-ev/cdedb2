@@ -39,11 +39,8 @@ from cdedb.frontend.common import (
 from cdedb.frontend.core.base import CoreBaseFrontend
 
 CASE_SEARCH_DEFAULTS = {
-    'qsel_cases.summary': True,
     'qop_cases.summary': QueryOperators.match,
-    'qsel_cases.is_grave': True,
     'qop_cases.is_grave': QueryOperators.equal,
-    'qsel_cases.kind': True,
     'qop_cases.kind': QueryOperators.equal,
     'qop_involved.persona_id': QueryOperators.equal,
     'qop_involved.involvement_type': QueryOperators.equal,
