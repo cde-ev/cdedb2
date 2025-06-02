@@ -131,7 +131,13 @@ class Case(CdEDataclass):
 
     def get_sortkey(self) -> Sortkey:
         today = now().date()
-        return (self.kind, self.end_date or today, self.start_date or today)
+        return (
+            self.end_date or today,
+            self.start_date or today,
+            self.kind,
+            not self.is_grave,
+            self.summary,
+        )
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:

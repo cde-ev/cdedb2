@@ -3,6 +3,7 @@
 import copy
 import datetime
 from typing import Any, Optional
+
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -38,16 +39,6 @@ CASE_SEARCH_DEFAULTS = {
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
-    'qord_0': 'qop_cases.end_date',
-    'qord_0_ascending': True,
-    'qord_1': 'qop_cases.start_date',
-    'qord_1_ascending': True,
-    'qord_2': 'qop_cases.kind',
-    'qord_2_ascending': False,
-    'qord_3': 'qop_cases.is_grave',
-    'qord_3_ascending': True,
-    'qord_4': 'qop_cases.summary',
-    'qord_4_ascending': True,
 }
 
 
