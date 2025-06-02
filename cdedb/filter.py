@@ -652,7 +652,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
                         intval: bool = False,
-                        ) -> list[tuple[enum.Enum, str]]:
+                        ) -> list[tuple[enum.Enum | int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
