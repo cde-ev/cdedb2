@@ -20,7 +20,6 @@ from psycopg2.extras import Json, RealDictCursor
 import cdedb.models.event as models
 from cdedb.common import EVENT_SCHEMA_VERSION, CdEDBObject
 from cdedb.config import (
-    DEFAULT_CONFIGPATH,
     Config,
     TestConfig,
     get_configpath,
@@ -416,14 +415,7 @@ if __name__ == "__main__":
 
     data_path = pathlib.Path(args.data_path)
 
-    config: Config
-    if args.test:
-        # the configpath is already set and intended to be used here
-        config = TestConfig()
-    else:
-        # otherwise, we want to use the default configpath of the real world
-        set_configpath(DEFAULT_CONFIGPATH)
-        config = Config()
+    config: Config = TestConfig() if args.test else Config()
 
     work(
         data_path, config, is_interactive=not args.not_interactive,

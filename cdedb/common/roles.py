@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
 from cdedb.common.n_ import n_
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 
-_CONF = LazyConfig()
+_CONF = Config()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]

@@ -6,9 +6,9 @@ from typing import Callable, Optional
 
 import cdedb.models.event as models_event
 from cdedb.common import CdEDBObject, RequestState, n_
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 
-_CONF = LazyConfig()
+_CONF = Config()
 
 
 @dataclasses.dataclass

@@ -7,7 +7,6 @@ here. An exception are the default queries, which are defined in `query_defaults
 Each config object takes into account the default values found in here. They can
 be overwritten with values in an additional config file, where the path to this
 file has to be present as environment variable CDEDB_CONFIGPATH.
-Note that setting that variable is mandatory, to prevent accidental misses.
 """
 
 import abc
@@ -21,7 +20,7 @@ import pathlib
 import subprocess
 import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
-from typing import Any, NoReturn, Union
+from typing import Any, Union, NoReturn
 
 PathLike = Union[pathlib.Path, str]
 
@@ -38,7 +37,7 @@ def set_configpath(path: PathLike) -> None:
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath(fallback: bool = False) -> pathlib.Path:
+def get_configpath() -> pathlib.Path:
     """Helper to get the config path from the environment.
 
     :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
@@ -46,11 +45,7 @@ def get_configpath(fallback: bool = False) -> pathlib.Path:
     """
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    if fallback:  # TODO: coverage?
-        _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
-        set_configpath(DEFAULT_CONFIGPATH)
-        return DEFAULT_CONFIGPATH
-    raise RuntimeError("No config path set!")  # TODO: coverage
+    return DEFAULT_CONFIGPATH
 
 
 # TODO where exactly does this log?
@@ -442,19 +437,34 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
     @abc.abstractmethod
     def _process_config_overwrite(self) -> NoReturn: ...
 
+    def _update_configpath(self) -> NoReturn:
+        """Adjust config if configpath changed since last access."""
+        if (configpath := self._get_configpath()) != self._configpath:
+            old_configpath = self._configpath
+            if not pathlib.Path(configpath).is_file():
+                raise RuntimeError(  # pragma: no cover
+                    f"Config file {configpath} not found!")
+            self._configpath = configpath
+            _LOGGER.info(f"Configpath changed: {old_configpath} -> {configpath}")
+            self._process_config_overwrite()
+
     def __getitem__(self, key: str) -> Any:
+        self._update_configpath()
         return self._configchain.__getitem__(key)
 
     # The following dunder methods are required to to inheriting from `Mapping`,
     #  even though we never actually use them.
     def __iter__(self) -> Iterator[str]:  # pragma: no cover
+        self._update_configpath()
         return self._configchain.__iter__()
 
     def __len__(self) -> int:  # pragma: no cover
+        self._update_configpath()
         return self._configchain.__len__()
 
     # The repr is only relevant for debugging.
     def __repr__(self) -> str:  # pragma: no cover
+        self._update_configpath()
         name = self.__class__.__name__
         return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
 
@@ -481,55 +491,6 @@ class Config(BaseConfig):
             if key in _DEFAULTS
         }
         self._configchain = collections.ChainMap(override, _DEFAULTS)
-
-
-class LazyConfig(Config):
-    """Lazy config object for usage global namespace.
-
-    It should be avoided in general, but sometimes a Config object needs to live in the
-    global namespace of a module. If this is the case, importing from this module would
-    cause the Config object to be initialized, which is an unwanted side effect which
-    may not happen during import (f.e. importing from this module and setting the
-    config path environment variable later on will fail).
-
-    To circumvent this, the LazyConfig object may be used instead – it behaves identical
-    to a Config object, beside the initialization happens not on instantiation but on
-    first access.
-    """
-
-    # noinspection PyMissingConstructor
-
-    def __init__(self) -> None:
-        name = self.__class__.__name__
-        _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")
-        self.__initialized = False
-
-    def __init(self) -> None:
-        """Perform the initialization decoupled from the instantiation."""
-        if not self.__initialized:
-            name = self.__class__.__name__
-            _LOGGER.debug(f"Initialize {name} object from {_LOGGER.findCaller()}.")
-            super().__init__()
-            self.__initialized = True
-
-    def __getitem__(self, key: str) -> Any:
-        self.__init()
-        return super().__getitem__(key)
-
-    # The following dunder methods are required to to inheriting from `Mapping`,
-    #  even though we never actually use them.
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover
-        self.__init()
-        return super().__iter__()
-
-    def __len__(self) -> int:  # pragma: no cover
-        self.__init()
-        return super().__len__()
-
-    # The repr is only relevant for debugging.
-    def __repr__(self) -> str:  # pragma: no cover
-        self.__init()
-        return super().__repr__()
 
 
 class TestConfig(Config):

@@ -50,7 +50,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from cdedb.models.event import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]

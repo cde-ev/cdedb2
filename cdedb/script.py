@@ -64,7 +64,7 @@ class TempConfig:
 
     def __enter__(self) -> None:
         # This also sets the config path to the default one if no config path is set.
-        self._real_configpath = get_configpath(fallback=True)
+        self._real_configpath = get_configpath()
         if self._config:
             secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8")
