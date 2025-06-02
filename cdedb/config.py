@@ -20,7 +20,7 @@ import pathlib
 import subprocess
 import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
-from typing import Any, Union, NoReturn
+from typing import Any, Union
 
 PathLike = Union[pathlib.Path, str]
 
@@ -405,7 +405,7 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
 
 class BaseConfig(Mapping[str, Any], abc.ABC):
     _configpath: pathlib.Path
-    _configchain: collections.ChainMap
+    _configchain: collections.ChainMap[str, Any]
 
     def __init__(self) -> None:
         configpath = self._get_configpath()
@@ -421,9 +421,9 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
     def _get_configpath(self) -> pathlib.Path: ...
 
     @abc.abstractmethod
-    def _process_config_overwrite(self) -> NoReturn: ...
+    def _process_config_overwrite(self) -> None: ...
 
-    def _update_configpath(self) -> NoReturn:
+    def _update_configpath(self) -> None:
         """Adjust config if configpath changed since last access."""
         if (configpath := self._get_configpath()) != self._configpath:
             old_configpath = self._configpath
@@ -466,7 +466,7 @@ class Config(BaseConfig):
     def _get_configpath(self) -> pathlib.Path:
         return get_configpath()
 
-    def _process_config_overwrite(self) -> NoReturn:
+    def _process_config_overwrite(self) -> None:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow only keys which are already present in _DEFAULT.
@@ -487,7 +487,7 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> NoReturn:
+    def _process_config_overwrite(self) -> None:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow additional keys which are not present in _DEFAULT.
@@ -508,7 +508,7 @@ class SecretsConfig(BaseConfig):
         config = Config()
         return config["SECRETS_CONFIGPATH"]
 
-    def _process_config_overwrite(self) -> NoReturn:
+    def _process_config_overwrite(self) -> None:
         override = _import_from_file(self._configpath)
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}

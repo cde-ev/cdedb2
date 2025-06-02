@@ -14,11 +14,9 @@ import hmac
 import itertools
 import json
 import logging
-import logging.handlers
 import pathlib
 import re
 import string
-import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from itertools import chain

@@ -90,6 +90,7 @@ local_partial_types = true
 module = [
     # general
     "icu",
+    "systemd.*",
     # ldap
     "ldaptor.*",
     # frontend

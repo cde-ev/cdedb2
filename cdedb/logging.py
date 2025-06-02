@@ -31,7 +31,7 @@ def setup_cdedb_root_logger() -> None:
         logging.raiseExceptions = False
 
     # setup handler
-    handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
+    handler: logging.Handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
     if pathlib.Path("/CONTAINER").is_file():
         handler = logging.StreamHandler(sys.stdout)
         # imitate the information saved to the journal
@@ -53,7 +53,7 @@ def setup_cdedb_root_logger() -> None:
 class MyFormatter(logging.Formatter):
     _config = Config()
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         # to distinguish between tests
         setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
         return super().format(record)
@@ -62,7 +62,7 @@ class MyFormatter(logging.Formatter):
 class MyJournalHandler(JournalHandler):
     _config = Config()
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         # to distinguish between tests
         setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
         return super().emit(record)
