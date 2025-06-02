@@ -4,19 +4,19 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=ambience['persona']|persona_name %}
         Set Profile Picture for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Set Profile Picture"), util.persona_name(ambience['persona']),
+    {{ util.context_heading(gettext("Set Profile Picture"), ambience['persona']|persona_name,
                             'user', gettext("User")) }}
 {% endblock %}
 

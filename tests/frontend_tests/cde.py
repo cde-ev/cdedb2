@@ -2681,9 +2681,8 @@ class TestCdEFrontend(FrontendTest):
     def test_show_past_event_privacy(self) -> None:
 
         def _traverse_back() -> None:
-            self.traverse({'description': 'Mitglieder'},
-                          {'description': 'Verg. Veranstaltungen'},
-                          {'description': 'PfingstAkademie 2014'})
+            self.traverse(
+                'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
 
         _traverse_back()
         self.assertTitle("PfingstAkademie 2014")
@@ -2722,9 +2721,9 @@ class TestCdEFrontend(FrontendTest):
         # links to non-searchable users are only displayed for admins
         if self.user_in("vera"):
             # admin
-            self.traverse({'description': 'Charly Clown'})
+            self.traverse('Charly Clown')
             _traverse_back()
-            self.traverse({'description': 'Emilia Eventis'})
+            self.traverse(re.escape('Emilia (Emmy) Eventis'))
             _traverse_back()
         else:
             # normal members
@@ -2746,11 +2745,10 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'})
+        self.traverse(
+            'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': self.user['default_name_format']})
+        self.traverse(self.user['given_names'])
 
     @as_users("anton", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_orgas(self) -> None:
@@ -2768,7 +2766,7 @@ class TestCdEFrontend(FrontendTest):
             self.traverse({'description': 'Ferdinand'})
         else:
             self.assertPresence("Charly Clown", div="orgas")
-            self.assertPresence("Emilia Eventis", div="orgas")
+            self.assertPresence("Emilia (Emmy) Eventis", div="orgas")
             self.assertPresence("Ferdinand Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")
@@ -2865,11 +2863,10 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_change_past_course(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'},
-                      {'description': 'Swish -- und alles ist gut'})
-        self.assertPresence("Bertå Beispiel", div='list-participants')
+        self.traverse(
+            'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014',
+            'Swish -- und alles ist gut')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='list-participants')
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014) bearbeiten")
         f = self.response.forms['changecourseform']
@@ -2878,8 +2875,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Omph (PfingstAkademie 2014)")
         self.assertPresence("Loud and proud.", div='description', exact=True)
-        self.assertPresence(USER_DICT['berta']['default_name_format'],
-                            div='list-participants')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='list-participants')
 
     @as_users("vera")
     def test_create_past_course(self) -> None:
