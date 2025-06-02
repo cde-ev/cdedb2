@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 
-import collections
 import copy
 import datetime
-import itertools
-from collections.abc import Collection
-from typing import Any, Optional, Sequence, cast
-
+from typing import Any, Optional
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -18,11 +14,9 @@ from cdedb.common import (
     RequestState,
     determine_age_class,
     merge_dicts,
-    now,
-    unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
@@ -32,9 +26,6 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
-    periodic,
-    request_dict_extractor,
-    request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
 

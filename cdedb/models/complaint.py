@@ -123,7 +123,7 @@ class Case(CdEDataclass):
         all_entries = list(log_entries) + mutable_entries
         all_entries = xsorted(
             all_entries,
-            key=lambda e: e.all_versions[-1].timestamp  # type: ignore[union-attr]
+            key=lambda e: e.all_versions[-1].timestamp
             if isinstance(e, ComplaintEntry)
             else e['ctime'],
         )

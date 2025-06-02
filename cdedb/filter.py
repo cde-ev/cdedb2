@@ -676,7 +676,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
     if intval:
-        transform = lambda x: int(x)
+        transform = int
         sortkey = lambda x: x
     else:
         transform = lambda x: x
