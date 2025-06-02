@@ -42,7 +42,7 @@
                             <div class="col-md-2">
                                 {{- util.href(
                                     cdedblink("core/show_case", {'case_id': case.id}),
-                                    gettext("Case&nbsp;%s")|s|format(case.id)
+                                    gettext("Case %s")|s|format(case.id)
                                 ) }}
                                 {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
                                 {% if case.id in unlocked_cases %}
@@ -110,7 +110,7 @@
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
-                                                label=gettext("Beteiligte"), aclass="input-sm") }}
+                                                label=gettext("Involved"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-involved_id').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
