@@ -500,13 +500,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
-    @REQUESTdata("entry_type")
+    @REQUESTdata("entry_type", "parent_id")
     def add_entry_form(
         self,
         rs: RequestState,
         case_id: int,
-        entry_type: const.ComplaintEntryType | None,
-        entry_id: int | None = None,
+        entry_type: Optional[const.ComplaintEntryType],
+        parent_id: Optional[int],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -514,23 +514,25 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # The check that the entry belongs to the case is already done in
         #  `reconnoitre_ambience`, which raises a "404 Not Found" in this case.
         rs.ignore_validation_errors()
-        if rs.ambience['entry']:
-            available_types = rs.ambience['entry'].entry_type.possible_children - {
-                const.ComplaintEntryType.revocation_explanation
+        et = const.ComplaintEntryType
+        if parent_id:
+            parent = rs.ambience['case'].entries[parent_id]
+            available_types = parent.entry_type.possible_children - {
+                et.revocation_explanation
             }
-            if not rs.ambience['entry'].active_version:
-                rs.notify('error', n_("Can not add child for deleted parent."))
-                return self.redirect(rs, "core/show_case")
+            if not parent.active_version:
+                rs.notify('info', n_("Can not add child for deleted parent."))
+                return self.redirect(
+                    rs, "core/show_case", anchor="entry" + str(parent_id)
+                )
         else:
-            available_types = (
-                set(const.ComplaintEntryType) - const.ComplaintEntryType.all_children()
-            )
+            available_types = set(et) - et.all_children()
         return self.render(
             rs,
             "complaint/configure_entry",
             {
                 'entry_type': entry_type,
-                'parent_id': entry_id,
+                'parent_id': parent_id,
                 'available_types': available_types,
             },
         )
@@ -540,7 +542,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -548,7 +549,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
             extract_and_check_dataclass(
                 rs,
                 models.ComplaintEntry,
-                additional_data={'parent_id': entry_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
             )
@@ -565,11 +565,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs,
                 case_id,
                 entry_type=entry_data.get('entry_type') if entry_data else None,
-                entry_id=entry_id,
+                parent_id=entry_data.get('parent_id') if entry_data else None,
             )
-        if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Can not add child for deleted parent."))
-            return self.redirect(rs, "core/show_case")
+        if parent_id := entry_data.get('parent_id'):
+            if not rs.ambience['case'].entries[parent_id].active_version:
+                rs.notify('info', n_("Can not add child for deleted parent."))
+                return self.redirect(
+                    rs, "core/show_case", anchor="entry" + str(parent_id)
+                )
         entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(entry_id)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
