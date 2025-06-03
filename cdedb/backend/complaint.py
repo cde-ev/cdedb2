@@ -96,7 +96,25 @@ class ComplaintBackend(AbstractBackend):
         The full history of a case consists of both log entries and complaint entries.
         """
         log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
+        case_ids = set(log_filter.case_ids())
+
+        visible_case_ids = self.get_visible_case_ids(rs)
+
+        if case_ids:
+            case_ids &= visible_case_ids
+        elif visible_case_ids:
+            case_ids = visible_case_ids
+        log_filter.case_id = None
+        log_filter._case_ids = list(case_ids)
+
         return self.generic_retrieve_log(rs, log_filter)
+
+    @access("complaint_admin")
+    def get_visible_case_ids(self, rs: RequestState) -> set[int]:
+        query = f"SELECT id FROM {models.Case.database_table}"
+        case_ids = self.query_all(rs, query, ())
+        cases = self.get_cases(rs, [e["id"] for e in case_ids])
+        return {case.id for case in cases.values() if case.is_visible_for(rs.user)}
 
     @access("complaint_admin")
     def get_cases(

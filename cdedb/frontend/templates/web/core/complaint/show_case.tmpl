@@ -27,7 +27,7 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/change_case'), gettext("Edit"),
                      aclass="btn btn-sm btn-warning", icon="pen") }}
-        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id']}),
+        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id'], 'case_id_include_empty': enums["IncludeEmpty"].no}),
                      gettext("View Log"), aclass="btn btn-sm btn-default", icon="list") }}
     </div>
 

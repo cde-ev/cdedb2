@@ -240,7 +240,12 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.case_created,
             }
         ]
-        self.assertLogEqual(log_expectation, "complaint", case_id=new_case.id)
+        self.assertLogEqual(
+            log_expectation,
+            "complaint",
+            case_id=new_case.id,
+            case_id_include_empty="IncludeEmpty.no",
+        )
 
     @as_users("simon")
     def test_add_entry(self) -> None:

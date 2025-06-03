@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import decimal
+import enum
 from collections.abc import Collection
 from typing import Any, ClassVar, Optional, cast
 
@@ -28,6 +29,12 @@ _DEFAULT_LOG_COLUMNS = (
 _DEFAULT_PERSONA_COLUMNS = (
     "persona_id", "submitted_by",
 )
+
+
+class IncludeEmpty(enum.Enum):
+    yes = enum.auto()
+    no = enum.auto()
+    only = enum.auto()
 
 
 @dataclasses.dataclass
@@ -213,8 +220,9 @@ class ComplaintLogFilter(GenericLogFilter):
     additional_columns = ("case_id", "companion_id")
     additional_persona_columns = ("companion_id",)
 
-    case_id: Optional[int] = None
+    case_id: int | None = None
     _case_ids: list[int] = dataclasses.field(default_factory=list)
+    case_id_include_empty: IncludeEmpty | None = IncludeEmpty.yes
 
     companion_id: int | None = None
 
@@ -226,8 +234,14 @@ class ComplaintLogFilter(GenericLogFilter):
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.case_ids():
+        if self.case_id_include_empty == IncludeEmpty.only:
+            conditions.append("case_id IS NULL")
+        elif self.case_id_include_empty == IncludeEmpty.no:
+            conditions.append("case_id IS NOT NULL")
             conditions.append("case_id = ANY(%s)")
+            params.append(self.case_ids())
+        else:  # include_empty == yes or None
+            conditions.append("(case_id IS NULL OR case_id = ANY(%s))")
             params.append(self.case_ids())
         if self.companion_id:
             conditions.append("companion_id = %s")

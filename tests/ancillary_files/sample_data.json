@@ -4804,6 +4804,16 @@
             "persona_id": 2,
             "companion_id": 3,
             "change_note": ""
+        },
+        {
+            "id": 6,
+            "ctime": "---now---",
+            "code": 101,
+            "submitted_by": 1,
+            "case_id": null,
+            "persona_id": 10,
+            "companion_id": null,
+            "change_note": ""
         }
     ],
     "cde.org_period": [
