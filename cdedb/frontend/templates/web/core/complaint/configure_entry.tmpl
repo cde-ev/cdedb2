@@ -30,7 +30,7 @@
 {% endif %}
 {% set cancellinks = [] %}
 {% if new_entry and entry_type %}
-    {% do cancellinks.append((cdedblink('core/add_entry_form'), gettext("Change"), "chevron-left")) %}
+    {% do cancellinks.append((cdedblink('core/add_entry_form'), gettext("Change type"), "chevron-left")) %}
 {% endif %}
 {% do cancellinks.append((cdedblink('core/show_case') + anchor, gettext("Cancel"), "times")) %}
 
