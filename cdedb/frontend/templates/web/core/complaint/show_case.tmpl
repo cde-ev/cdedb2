@@ -245,7 +245,7 @@
                     </div>
                     <div class="button-par">
                         {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
-                            {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),
+                            {{ util.href(cdedblink('core/add_entry_form', {'entry_id': entry.id}),
                                          label="",
                                          title=gettext("Add child entry"),
                                          aclass="btn btn-xs btn-success",
