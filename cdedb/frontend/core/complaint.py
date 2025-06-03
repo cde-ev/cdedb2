@@ -167,7 +167,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not self.complaintproxy.is_unlocked(rs, case_id):
             rs.notify('error', n_("Need to unlock case first."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+            return self.redirect(rs, "core/show_case")
 
         log_filter = ComplaintLogFilter(case_id=case_id)
         _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
@@ -251,7 +251,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     rs, new_case.id, t.target, target_ids
                 )
         rs.notify_return_code(ret * bool(new_case))
-        return self.redirect(rs, "core/show_case", {'case_id': new_case.id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("involvement_type", "persona_ids")
@@ -299,7 +299,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(
             ret, info=n_("Some of these users were already involved.")
         )
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
@@ -309,7 +309,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
         rs.notify_return_code(ret, info=n_("This user was not involved."))
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
@@ -326,7 +326,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify_return_code(
                 ret, info=n_("This user was already marked as uninformed.")
             )
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
@@ -344,7 +344,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify_return_code(
                 ret, info=n_("This user was already marked as uninformed.")
             )
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
     def manage_companions_form(
@@ -399,11 +399,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(
             ret, info=n_("Some of these users were already companions.")
         )
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def remove_companion(
@@ -419,11 +415,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, case_id, persona_id, [companion_id]
         )
         rs.notify_return_code(ret, info=n_("This user was no companion."))
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def withdraw_companion(
@@ -440,11 +432,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify_return_code(
                 ret, info=n_("This companion was already marked as withdrawn.")
             )
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def reinstate_companion(
@@ -465,11 +453,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify_return_code(
                 ret, info=n_("This companion was already marked as active.")
             )
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
@@ -498,7 +482,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         _ = self.complaintproxy.unlock_case(rs, case_id)
         rs.notify_return_code(1, success=n_("Case unlocked."))
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def lock_case(self, rs: RequestState, case_id: int) -> Response:
@@ -506,7 +490,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.show_case(rs, case_id)
         code = self.complaintproxy.lock_case(rs, case_id)
         rs.notify_return_code(code, success=n_("Case locked."))
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
     @REQUESTdata("entry_type", "parent_id")
@@ -531,7 +515,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
             }
             if not parent.active_version:
                 rs.notify('info', n_("Can not add child for deleted parent."))
-                return self.redirect(rs, "core/show_case")
+                return self.redirect(
+                    rs, "core/show_case", anchor="entry" + str(parent_id)
+                )
         else:
             available_types = set(et) - et.all_children()
         return self.render(
@@ -577,7 +563,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if parent_id := entry_data.get('parent_id'):
             if not rs.ambience['case'].entries[parent_id].active_version:
                 rs.notify('info', n_("Can not add child for deleted parent."))
-                return self.redirect(rs, "core/show_case")
+                return self.redirect(
+                    rs, "core/show_case", anchor="entry" + str(parent_id)
+                )
         entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(entry_id)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
@@ -602,7 +590,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Can not replace deleted entry."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         assert rs.ambience['entry'].active_version is not None
         merge_dicts(
             rs.values,
@@ -670,10 +658,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         if rs.ambience['entry'].is_revoked:
             rs.notify('error', n_("Entry already revoked."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         return self.render(
             rs,
             "complaint/configure_entry",
@@ -693,10 +681,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         if rs.ambience['entry'].is_revoked:
             rs.notify('error', n_("Entry already revoked."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         version_data = extract_and_check_dataclass(
             rs,
             models.ComplaintEntryVersion,
@@ -720,7 +708,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         if rs.ambience['entry'].active_children:
             rs.notify('error', n_("Entry has active children."))
             return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
@@ -764,7 +752,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
             rs.notify('info', n_("Entry already deleted."))
-            return self.redirect(rs, "core/show_case")
+            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
         if rs.ambience['entry'].active_children:
             rs.notify('error', n_("Entry has active children."))
             return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
@@ -772,7 +760,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.remove_entry_form(rs, case_id, entry_id)
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case")
+        return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
 
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
