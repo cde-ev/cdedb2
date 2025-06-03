@@ -38,6 +38,12 @@
         <dd id="case-summary">
             {{ ambience['case'].summary }}
         </dd>
+        <dt title="{% trans %}is closed{% endtrans %}">
+            {% trans %}is closed{% endtrans %}
+        </dt>
+        <dd>
+            {{ not ambience['case'].is_active }}
+        </dd>
         <dt title="{% trans %}Kind{% endtrans %}">
             {% trans %}Kind{% endtrans %}
         </dt>

@@ -114,6 +114,15 @@ class Case(CdEDataclass):
             )
         return ret
 
+    @property
+    def is_active(self) -> bool:
+        return not any(
+            entry.entry_type == const.ComplaintEntryType.synthesis
+            and entry.active_version
+            and not entry.is_revoked
+            for entry in self.entries.values()
+        )
+
     def list_entries(
         self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
     ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:

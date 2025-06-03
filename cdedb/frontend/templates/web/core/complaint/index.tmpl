@@ -44,6 +44,9 @@
                                     cdedblink("core/show_case", {'case_id': case.id}),
                                     gettext("Case %s")|s|format(case.id)
                                 ) }}
+                                {% if not case.is_active %}
+                                    {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
+                                {% endif %}
                                 {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
                                 {% if case.id in unlocked_cases %}
                                     {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
