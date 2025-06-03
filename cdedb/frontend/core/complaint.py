@@ -43,7 +43,7 @@ CASE_SEARCH_DEFAULTS = {
 }
 
 
-def entry_link(rs: RequestState, entry_id: int) -> Markup:
+def entry_link(rs: RequestState, entry_id: int) -> str:
     # Unfortunately redirecting kills this link :(
     # return safe_filter(f'<a href="#entry{entry_id}">{rs.gettext("Entry")}</a>')
     return rs.gettext("Entry")
