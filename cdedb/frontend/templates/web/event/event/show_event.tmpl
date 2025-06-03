@@ -112,7 +112,7 @@
             </dt>
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
                 {% else %}
                     {% trans %}None{% endtrans %}
                 {% endfor %}
@@ -250,7 +250,7 @@
                 <ul>
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
+                            {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
                             <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
                                     id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('event/remove_orga') }}

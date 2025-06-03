@@ -110,10 +110,10 @@
                 </script>
             {% elif filter_name == "event_id" %}
                 {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
-                        entries=all_events.values()|sort|entries('id', 'title'), small=True, sort=True) }}
+                        entries=all_events|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
-                        entries=all_mailinglists|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
+                        entries=all_mailinglists|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}

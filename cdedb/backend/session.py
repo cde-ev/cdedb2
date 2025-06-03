@@ -135,7 +135,7 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        query2 = (f"SELECT id AS persona_id, given_names,"
+        query2 = (f"SELECT id AS persona_id, given_names, nickname,"
                   f" family_name, username, {', '.join(PERSONA_STATUS_FIELDS)}"
                   f" FROM core.personas WHERE id = %s")
         with self.connpool["cdb_persona"] as conn:
@@ -153,7 +153,7 @@ class SessionBackend:
             return User()
 
         vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
-                                     'family_name')}
+                                     'nickname', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
     def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:

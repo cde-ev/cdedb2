@@ -63,7 +63,7 @@
                                     {{ util.input_hidden(name="persona_id", value=persona_id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as event helper")|format(
-                                                name=util.persona_name(persona))|s) }}
+                                                name=persona|persona_name)|s) }}
                                 </form>
                             {% endif %}
                         </li>

@@ -70,7 +70,7 @@
                             {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                         </span>:
                         {% if dataset['persona'] %}
-                            {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']) %}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=dataset['persona']|persona_name %}
                                 {{ amount }} for {{ name }}
                             {% endtrans %}
                         {% else %}

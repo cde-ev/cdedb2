@@ -176,10 +176,10 @@
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
                             'id', 'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
-   use_legal_name:          see 'persona_name' macro
-   include_nickname:        see 'persona_name' macro
-   with_family_name:        see 'persona_name' macro
-   with_titles:             see 'persona_name' macro
+   use_legal_name:          see `cdedb.common.make_persona_name()`
+   include_nickname:        see `cdedb.common.make_persona_name()`
+   with_family_name:        see `cdedb.common.make_persona_name()`
+   with_titles:             see `cdedb.common.make_persona_name()`
    quote_me:                see show_user_link()
    event_id:                see show_user_link()
    ml_id:                   see show_user_link()
@@ -191,8 +191,8 @@
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-            persona_name(persona, use_legal_name, include_nickname, with_family_name),
-            aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
+             persona|persona_name(use_legal_name, include_nickname, with_family_name),
+             aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 
 {# Comma-separated list of links to personas' profile pages. #}
@@ -203,37 +203,6 @@
         {{- persona_anchor(persona, use_legal_name, include_nickname, with_family_name, with_titles,
                            quote_me, event_id, ml_id, aclass, readonly, title, icon) }}
     {% endfor %}
-{% endmacro %}
-
-{# Display the name of a given persona
-
-   This macro includes some logic to display a person's name correctly, depending on the context.
-   For a full specification, which name variant should be used in which context, see the documentation
-   page about "User Experience Conventions".
-
-   For usage in Python code, the `cdedb.common.make_persona_name()` function implements the same logic.
-
-   persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
-   use_legal_name:          If True, use legal_given_names. Can not be combined with 'include_nickname'.
-   include_nickname:        If True, the display of all given_names and the nickname (if not equal) is enforced.
-                            Should only be used for orga-facing pages.
-   with_family_name:        If True (default), the family name is included in the macro output
-   with_titles:             If True, the person's title(s) and name supplement are included in the macro output
-#}
-{% macro persona_name(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False) %}
-    {%- set nickname = persona['nickname'] or "" %}
-    {%- set given_names = persona['given_names'] %}
-    {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
-    {%- if use_legal_name -%}
-        {{ persona['legal_given_names'] or given_names }}
-    {%- elif include_nickname and nickname -%}
-        {{ given_names }} ({{ nickname }})
-    {%- else -%}
-        {{ given_names }}
-    {%- endif %}
-    {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
-    {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
@@ -1065,7 +1034,7 @@ mailto:
     {% if link %}
         {{ persona_anchor(persona, include_nickname=True) }}
     {% else %}
-        {{ persona_name(persona, include_nickname=True) }}
+        {{ persona|persona_name(include_nickname=True) }}
     {% endif %}
     {%- if persona['birth_name'] %}
         ({{ persona['birth_name'] }})

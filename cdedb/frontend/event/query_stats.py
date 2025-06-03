@@ -663,16 +663,16 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         # All queries have only a single constraint.
         return True
 
-    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: models.Event, course: models.Course, track_id: int) -> bool:  # type: ignore[override]
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
-            return track_id in course['segments']
+            return track_id in course.segments
         elif self == self.cancelled:
-            return (track_id in course['segments']
-                    and track_id not in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id not in course.active_segments)
         elif self == self.taking_place:
-            return (track_id in course['segments']
-                    and track_id in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id in course.active_segments)
         else:
             raise RuntimeError(n_("Impossible."))
 

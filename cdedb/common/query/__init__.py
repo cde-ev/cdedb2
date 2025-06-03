@@ -963,7 +963,7 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
 def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
     if courses is None:
         return {}
-    return dict((c.id, f"{c.nr} {c.shortname}") for c in xsorted(courses.values()))
+    return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
 def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:

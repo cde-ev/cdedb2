@@ -2,7 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(persona) %}
+    {% trans name=persona|persona_name %}
     	Privilege Change for {{ name }}
     {% endtrans %}
 {% endblock %}
@@ -10,11 +10,11 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
-        util.persona_name(persona), icon="user", active="True") }}
+        persona|persona_name, icon="user", active="True") }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Privilege Change"), util.persona_name(persona), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Privilege Change"), persona|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
