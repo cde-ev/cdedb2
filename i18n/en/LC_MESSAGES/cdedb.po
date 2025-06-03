@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-06-02 08:11+0000\n"
+"POT-Creation-Date: 2025-06-03 02:26+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1437,7 +1437,7 @@ msgid "Different mailinglists specified."
 msgstr ""
 
 #: cdedb/backend/ml.py:428 cdedb/frontend/cde/past_event.py:413
-#: cdedb/frontend/core/complaint.py:285 cdedb/frontend/core/complaint.py:400
+#: cdedb/frontend/core/complaint.py:278 cdedb/frontend/core/complaint.py:393
 msgid "Some of these users do not exist."
 msgstr ""
 
@@ -4736,85 +4736,85 @@ msgstr ""
 msgid "Change dropped."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:100
+#: cdedb/frontend/core/complaint.py:93
 #, python-format
 msgid "%(count)s cases not shown."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:177
+#: cdedb/frontend/core/complaint.py:170
 msgid "Need to unlock case first."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:225
+#: cdedb/frontend/core/complaint.py:218
 msgid "May not create case with own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:278
+#: cdedb/frontend/core/complaint.py:271
 msgid "May not add own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:281
+#: cdedb/frontend/core/complaint.py:274
 msgid "Some of these users were already involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:323 cdedb/frontend/core/complaint.py:348
+#: cdedb/frontend/core/complaint.py:316 cdedb/frontend/core/complaint.py:341
 msgid "This user is not involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:326 cdedb/frontend/core/complaint.py:343
+#: cdedb/frontend/core/complaint.py:319 cdedb/frontend/core/complaint.py:336
 msgid "This user is already marked as uninformed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:391
+#: cdedb/frontend/core/complaint.py:384
 msgid "Some of these users were already companions."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:395
+#: cdedb/frontend/core/complaint.py:388
 msgid "User may not be their own companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:454 cdedb/frontend/core/complaint.py:486
+#: cdedb/frontend/core/complaint.py:447 cdedb/frontend/core/complaint.py:479
 msgid "This user is no companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:457
+#: cdedb/frontend/core/complaint.py:450
 msgid "This companion is already marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:489
+#: cdedb/frontend/core/complaint.py:482
 msgid "This companion is already marked as active."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:535
+#: cdedb/frontend/core/complaint.py:528
 msgid "Case unlocked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:543
+#: cdedb/frontend/core/complaint.py:536
 msgid "Case locked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:568 cdedb/frontend/core/complaint.py:610
+#: cdedb/frontend/core/complaint.py:561 cdedb/frontend/core/complaint.py:607
 msgid "Can not add child for deleted parent."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:632
+#: cdedb/frontend/core/complaint.py:629
 msgid "Need to unlock case before replacing entry."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:636 cdedb/frontend/core/complaint.py:685
+#: cdedb/frontend/core/complaint.py:633 cdedb/frontend/core/complaint.py:682
 msgid "Can not replace deleted entry."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:705 cdedb/frontend/core/complaint.py:725
-#: cdedb/frontend/core/complaint.py:749 cdedb/frontend/core/complaint.py:795
+#: cdedb/frontend/core/complaint.py:702 cdedb/frontend/core/complaint.py:722
+#: cdedb/frontend/core/complaint.py:746 cdedb/frontend/core/complaint.py:792
 msgid "Entry already deleted."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:752 cdedb/frontend/core/complaint.py:798
+#: cdedb/frontend/core/complaint.py:749 cdedb/frontend/core/complaint.py:795
 msgid "Entry has active children."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:760
+#: cdedb/frontend/core/complaint.py:757
 msgid "Need to unlock case before removing entry."
 msgstr ""
 
