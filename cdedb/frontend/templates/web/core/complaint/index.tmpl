@@ -51,9 +51,6 @@
                                 {% if case.id in unlocked_cases %}
                                     {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
                                 {% endif %}
-                                {% if case.id in closed_cases %}
-                                    {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
-                                {% endif %}
                             </div>
                             <div class="col-md-5">
                                 {{ gettext(case.kind|string) }}

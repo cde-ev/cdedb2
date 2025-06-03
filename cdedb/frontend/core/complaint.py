@@ -60,7 +60,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         if not is_search:
             count = 0
-            cases = personas = unlocked_cases = closed_cases = None
+            cases = personas = unlocked_cases = None
         else:
             # our query facility does not allow + signs, thus special-case it here
             query = check(
@@ -78,14 +78,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
             query.fields_of_interest = [
                 'cases.id',
                 'status.is_unlocked',
-                'status.is_closed',
             ]
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)
 
             case_ids = [e['cases.id'] for e in result]
             unlocked_cases = {e['cases.id'] for e in result if e['status.is_unlocked']}
-            closed_cases = {e['cases.id'] for e in result if e['status.is_closed']}
             cases = self.complaintproxy.get_cases(rs, case_ids)
 
             # Exclude invisible cases
@@ -120,7 +118,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'count': count,
                 'personas': personas,
                 'unlocked_cases': unlocked_cases,
-                'closed_cases': closed_cases,
             },
         )
 
