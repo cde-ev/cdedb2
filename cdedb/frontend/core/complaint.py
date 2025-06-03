@@ -594,10 +594,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify(
                 'error',
-                n_(
-                    "Can not replace deleted %(entry_link)s.",
-                    {"entry_link": entry_link(rs, entry_id)},
-                ),
+                n_("Can not replace deleted %(entry_link)s."),
+                {"entry_link": entry_link(rs, entry_id)},
             )
             return self.redirect(rs, "core/show_case")
         if (
