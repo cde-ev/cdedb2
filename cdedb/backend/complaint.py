@@ -969,7 +969,7 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("complaint_admin")
-    def get_measures(
+    def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> dict[int, models.ComplaintEntryVersion]:
         query = f"""

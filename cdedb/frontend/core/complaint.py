@@ -823,7 +823,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
-        measures = self.complaintproxy.get_measures(rs, persona_id)
+        measures = self.complaintproxy.get_user_measures(rs, persona_id)
         return self.render(rs, "complaint/show_user_measures", {'measures': measures})
 
     @access("complaint_admin", "complaint.enforcer", "complaint.monitor")

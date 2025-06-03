@@ -949,17 +949,25 @@ class TestComplaintBackend(BackendTest):
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
-        self.assertEqual({}, self.complaint.get_measures(self.key, 3, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 4, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 7, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 2, is_active=False))
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 3, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 4, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 7, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 2, is_active=False)
+        )
 
         case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
             {measure.id: measure},
-            self.complaint.get_measures(self.key, active_measure_persona_id),
+            self.complaint.get_user_measures(self.key, active_measure_persona_id),
         )
 
         revoke_data: CdEDBObject = {
@@ -971,7 +979,7 @@ class TestComplaintBackend(BackendTest):
 
         self.assertEqual(
             {},
-            self.complaint.get_measures(
+            self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=True
             ),
         )
@@ -981,7 +989,7 @@ class TestComplaintBackend(BackendTest):
         assert measure is not None
         self.assertEqual(
             {measure.id: measure},
-            self.complaint.get_measures(
+            self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
         )
