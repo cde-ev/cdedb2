@@ -128,7 +128,10 @@
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}
                     </div>
                 </div>
-                {{ util.form_input_submit(label=gettext("Replace"), cancellink=cdedblink('core/show_case')) }}
+                {{ util.form_input_submit(
+                    label=gettext("Replace"),
+                    cancellink=cdedblink('core/show_case') + "#entry"|s + ambience['entry'].id|string
+                ) }}
             {% else %}
                 {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('core/show_case')) }}
             {% endif %}
