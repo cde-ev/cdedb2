@@ -394,6 +394,13 @@ class ComplaintBackend(AbstractBackend):
             ),
         )
         with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if entry.is_revoked:
+                raise ValueError(n_("Entry already revoked."))
+
             code = self.sql_update(
                 rs,
                 models.ComplaintEntry.database_table,
@@ -402,12 +409,13 @@ class ComplaintBackend(AbstractBackend):
             if not code:
                 raise RuntimeError
 
-            case_id = self._get_case_id(rs, entry_id)
-            case = self.get_case(rs, case_id)
-            entry = case.entries[entry_id]
-
             if entry.entry_type == revocation_type:
-                if entry.parent and entry.parent.is_revoked:
+                if not entry.parent:
+                    raise RuntimeError(n_("Revocation entry without parent."))
+                if entry.parent.entry_type == revocation_type:
+                    raise ValueError(n_("Cannot chain revoke."))
+
+                if entry.parent.is_revoked:
                     code = self.sql_update(
                         rs,
                         models.ComplaintEntry.database_table,

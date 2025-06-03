@@ -683,6 +683,9 @@ class TestComplaintBackend(BackendTest):
         new_entry_id = self.complaint.revoke_entry(self.key, entry_id, revoke_data)
         self.assertLessEqual(1, new_entry_id)
 
+        with self.assertRaisesRegex(ValueError, "Entry already revoked."):
+            self.complaint.revoke_entry(self.key, entry_id, revoke_data)
+
         # Check the result.
         expectation.entries[entry_id].is_revoked = True
         expectation.entries[new_entry_id] = models.ComplaintEntry(
@@ -711,6 +714,9 @@ class TestComplaintBackend(BackendTest):
             self.key, new_entry_id, revoke_data
         )
         self.assertLessEqual(1, new_new_entry_id)
+
+        with self.assertRaisesRegex(ValueError, "Cannot chain revoke."):
+            self.complaint.revoke_entry(self.key, new_new_entry_id, revoke_data)
 
         # Check the result.
         expectation.entries[entry_id].is_revoked = False
