@@ -944,16 +944,30 @@ class ComplaintBackend(AbstractBackend):
             SELECT * FROM
                 {models.Case.database_table} AS cases
                 LEFT JOIN (
-                    SELECT id AS case_id, EXISTS(
-                        SELECT case_id
-                        FROM {models.AccessLog.database_table}
-                        WHERE
-                            persona_id = {rs.user.persona_id}
-                            AND case_id = cases.id
-                            AND ctime > '{access_timeout.isoformat()}'
-                    ) AS is_unlocked
+                    SELECT
+                        id AS case_id,
+                        EXISTS(
+                            SELECT case_id
+                            FROM {models.AccessLog.database_table}
+                            WHERE
+                                persona_id = {rs.user.persona_id}
+                                AND case_id = cases.id
+                                AND ctime > '{access_timeout.isoformat()}'
+                        ) AS is_unlocked,
+                        EXISTS(
+                            SELECT entries.case_id
+                            FROM
+                                {models.ComplaintEntry.database_table} AS entries
+                                JOIN {models.ComplaintEntryVersion.database_table} AS versions
+                                    ON versions.entry_id = entries.id
+                            WHERE
+                                entries.case_id = cases.id
+                                AND entries.entry_type = {const.ComplaintEntryType.synthesis.value}
+                                AND NOT entries.is_revoked
+                                AND versions.dtime IS NULL
+                        ) AS is_closed
                     FROM {models.Case.database_table}
-                ) AS access ON access.case_id = cases.id
+                ) AS status ON status.case_id = cases.id
                 LEFT JOIN {models.ComplaintEntry.database_table}
                     AS entries ON entries.case_id = cases.id
                 LEFT JOIN {models.ComplaintEntryVersion.database_table}

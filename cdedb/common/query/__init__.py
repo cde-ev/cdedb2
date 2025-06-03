@@ -612,7 +612,8 @@ _QUERY_SPECS = {
             "cases.start_date": QuerySpecEntry("date", n_("Start Date")),
             "cases.end_date": QuerySpecEntry("date", n_("End Date")),
             "cases.kind": QuerySpecEntry("enum_int", n_("Kind")),
-            "access.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
+            "status.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
+            "status.is_closed": QuerySpecEntry("bool", n_("is closed")),
             "entries.entry_type": QuerySpecEntry("enum_int", n_("Entry Type"), choices=None),  # type: ignore[arg-type]
             "entries.concerned_id": QuerySpecEntry("id", n_("Concerned")),
             "entry_versions.length": QuerySpecEntry("int", n_("Length of Description"), title_prefix=n_("Entry Version"), translate_prefix=True),
