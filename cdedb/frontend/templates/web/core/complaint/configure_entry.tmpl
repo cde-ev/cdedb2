@@ -78,9 +78,12 @@
                 {{ util.input_hidden(name="parent_id") }}
 
                 {% call util.form_input_static(label=gettext("Entry Type")) %}
-                    {{ entry_type }}{{- nbsp -}}
-                    {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
-                                 gettext("Change"), icon="pen", aclass="btn btn-warning btn-sm") }}
+                    {{ util.make_icon(entry_type.get_icon()) }}
+                    {{ entry_type.name }}{{- nbsp -}}
+                    {% if not ambience['entry'] %}
+                        {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
+                                     gettext("Change"), icon="chevron-left", aclass="btn btn-default btn-sm") }}
+                    {% endif %}
                 {% endcall %}
             {% endif %}
             {% if entry_type.has_concerned %}

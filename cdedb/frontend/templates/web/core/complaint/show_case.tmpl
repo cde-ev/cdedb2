@@ -279,7 +279,9 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <strong>
+                    {{ util.make_icon(entry.entry_type.get_icon()) }}
                     {{ entry.entry_type.name }}
                 </strong>
                 {% if entry.concerned_id %}
