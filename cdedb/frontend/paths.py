@@ -277,6 +277,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/remove", methods=_POST,
                              endpoint="remove_entry"),
                     )),
+                    sub("/entry/<int:parent_id>", (
+                        rule("/child/add", methods=_GET,
+                             endpoint="add_entry_form"),
+                        rule("/child/add", methods=_POST,
+                             endpoint="add_entry"),
+                    )),
                 )),
             )),
         ))

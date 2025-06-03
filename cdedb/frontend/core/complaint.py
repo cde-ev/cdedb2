@@ -506,13 +506,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
-    @REQUESTdata("entry_type", "parent_id")
+    @REQUESTdata("entry_type")
     def add_entry_form(
         self,
         rs: RequestState,
         case_id: int,
-        entry_type: Optional[const.ComplaintEntryType],
-        parent_id: Optional[int],
+        entry_type: const.ComplaintEntryType | None,
+        parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -522,15 +522,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.ignore_validation_errors()
         et = const.ComplaintEntryType
         if parent_id:
-            parent = rs.ambience['case'].entries[parent_id]
+            parent = rs.ambience['entry']
             available_types = parent.entry_type.possible_children - {
                 et.revocation_explanation
             }
             if not parent.active_version:
-                rs.notify('info', n_("Can not add child for deleted parent."))
-                return self.redirect(
-                    rs, "core/show_case", anchor="entry" + str(parent_id)
-                )
+                rs.notify('error', n_("Can not add child for deleted parent."))
+                return self.redirect(rs, "core/show_case")
         else:
             available_types = set(et) - et.all_children()
         return self.render(
@@ -548,6 +546,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
+        parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -555,6 +554,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             extract_and_check_dataclass(
                 rs,
                 models.ComplaintEntry,
+                additional_data={'parent_id': parent_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
             )
@@ -571,7 +571,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs,
                 case_id,
                 entry_type=entry_data.get('entry_type') if entry_data else None,
-                parent_id=entry_data.get('parent_id') if entry_data else None,
+                parent_id=parent_id,
             )
         if parent_id := entry_data.get('parent_id'):
             if not rs.ambience['case'].entries[parent_id].active_version:
