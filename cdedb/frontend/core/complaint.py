@@ -71,22 +71,21 @@ class CoreComplaintMixin(CoreBaseFrontend):
             query.fields_of_interest = ['cases.id', 'access.is_unlocked']
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)
-            if count == 1:
+
+            case_ids = [e['cases.id'] for e in result]
+            unlocked_cases = {e['cases.id'] for e in result if e['access.is_unlocked']}
+            cases = self.complaintproxy.get_cases(rs, case_ids)
+
+            # Exclude invisible cases
+            cases = {
+                case_id: case
+                for case_id, case in cases.items()
+                if case.is_visible_for(rs.user)
+            }
+            if len(cases) == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
-                case_ids = [e['cases.id'] for e in result]
-                unlocked_cases = {
-                    e['cases.id'] for e in result if e['access.is_unlocked']
-                }
-                cases = self.complaintproxy.get_cases(rs, case_ids)
-
-                # Exclude invisible cases
-                cases = {
-                    case_id: case
-                    for case_id, case in cases.items()
-                    if case.is_visible_for(rs.user)
-                }
                 if count > len(cases):
                     rs.notify(
                         "warning",
