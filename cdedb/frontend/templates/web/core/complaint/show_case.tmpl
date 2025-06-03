@@ -243,7 +243,7 @@
                             – {{ entry.active_version.etime|datetime(lang=lang) }}
                         {% endif %}
                     </div>
-                    <div class="button-par">
+                    <div class="p button-par">
                         {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
                             {{ util.href(cdedblink('core/add_entry_form', {'entry_id': entry.id}),
                                          label="",
