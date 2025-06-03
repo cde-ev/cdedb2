@@ -258,7 +258,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     rs, new_case.id, t.target, target_ids
                 )
         rs.notify_return_code(ret * bool(new_case))
-        return self.redirect(rs, "core/show_case")
+        return self.redirect(rs, "core/show_case", {"case_id": new_case.id})
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("involvement_type", "persona_ids")
@@ -569,10 +569,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         if parent_id := entry_data.get('parent_id'):
             if not rs.ambience['case'].entries[parent_id].active_version:
-                rs.notify('info', n_("Can not add child for deleted parent."))
-                return self.redirect(
-                    rs, "core/show_case", anchor="entry" + str(parent_id)
-                )
+                rs.notify('error', n_("Can not add child for deleted parent."))
+                return self.redirect(rs, "core/show_case")
         entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(entry_id)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
