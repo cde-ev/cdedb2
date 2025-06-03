@@ -548,8 +548,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         """Render form."""
-        # the check that the entry belongs to the case is already done in
-        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        # The check that the entry belongs to the case is already done in
+        #  `reconnoitre_ambience`, which raises a "404 Not Found" in this case.
         rs.ignore_validation_errors()
         et = const.ComplaintEntryType
         if parent_id:
@@ -580,10 +580,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        # the check that the entry belongs to the case is already done in
-        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         entry_data = (
-            extract_and_check_dataclass(rs, models.ComplaintEntry, creation=True) or {}
+            extract_and_check_dataclass(
+                rs,
+                models.ComplaintEntry,
+                creation=True,
+                entries=rs.ambience['case'].entries,
+            )
+            or {}
         )
         version_data = extract_and_check_dataclass(
             rs,
