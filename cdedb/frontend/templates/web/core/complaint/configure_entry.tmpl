@@ -8,6 +8,7 @@
 {% set jshint='weak' %}
 
 {% set case_title = gettext("Case %s")|format(ambience['case'].id) %}
+{% set new_entry = False %}
 {% if ambience['entry'] %}
     {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
         {% set title = gettext("Revoke Entry") %}
@@ -15,6 +16,7 @@
     {% elif parent_id %}
         {% set title = gettext("Add Child Entry") %}
         {% set action_target = "core/add_entry" %}
+        {% set new_entry = True %}
     {% else %}
         {% set title = gettext("Replace Entry") %}
         {% set action_target = "core/replace_entry" %}
@@ -24,10 +26,11 @@
     {% set title = gettext("Add Entry") %}
     {% set anchor = "" %}
     {% set action_target = "core/add_entry" %}
+    {% set new_entry = True %}
 {% endif %}
 {% set cancellinks = [] %}
-{% if (not ambience['entry'] or parent_id) and entry_type %}
-        {% do cancellinks.append((cdedblink('core/add_entry_form'), gettext("Change"), "chevron-left")) %}
+{% if new_entry and entry_type %}
+    {% do cancellinks.append((cdedblink('core/add_entry_form'), gettext("Change"), "chevron-left")) %}
 {% endif %}
 {% do cancellinks.append((cdedblink('core/show_case') + anchor, gettext("Cancel"), "times")) %}
 
@@ -48,7 +51,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if (not ambience['entry'] or parent_id) and entry_type is none %}
+    {% if new_entry and not entry_type %}
         <form action="{{ cdedblink(action_target + '_form') }}" method="GET" id="selectentrytypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="entry_type", label=gettext("Entry Type"),
@@ -67,7 +70,7 @@
                 {% endcall %}
             {% endif %}
             {% if entry_type.has_concerned %}
-                {% if ambience['entry'] and not parent_id %}
+                {% if not new_entry %}
                     {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[ambience['entry'].concerned_id], icon='user')) }}
                 {% else %}
                     {{ util.form_input_text(name="concerned_id", label=gettext("Concerns"), anid="input-concerned_id",
@@ -102,7 +105,7 @@
                                       value=gettext("Warning: This entry will be visible to all enforcers and the user themselves. Pseudonymize other involved people here, and defer details to other entries.")) }}
             {% endif %}
             {# Add some conditional warnings here. #}
-            {% if (ambience['entry'] and not parent_id) and entry_type != enums["ComplaintEntryType"].revocation_explanation %}
+            {% if not new_entry and entry_type != enums["ComplaintEntryType"].revocation_explanation %}
                 <div class="panel panel-primary">
                     <div class="panel-body">
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}
