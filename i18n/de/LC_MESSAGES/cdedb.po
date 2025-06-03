@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-06-02 21:31+0200\n"
+"POT-Creation-Date: 2025-06-04 04:16+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -409,8 +409,8 @@ msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
 #: cdedb/backend/assembly.py:2360 cdedb/backend/cde/base.py:484
-#: cdedb/backend/cde/lastschrift.py:469 cdedb/backend/common.py:455
-#: cdedb/backend/common.py:461 cdedb/backend/core/base.py:2403
+#: cdedb/backend/cde/lastschrift.py:469 cdedb/backend/common.py:457
+#: cdedb/backend/common.py:463 cdedb/backend/core/base.py:2403
 #: cdedb/backend/event/base.py:1373 cdedb/common/__init__.py:284
 #: cdedb/frontend/assembly/ballot.py:542 cdedb/frontend/cde/base.py:753
 #: cdedb/frontend/cde/lastschrift.py:549
@@ -635,6 +635,10 @@ msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Methode %(method)s."
 #: cdedb/backend/common.py:198 cdedb/database/connection.py:242
 msgid "No contamination!"
 msgstr "Keine Kontaminierung!"
+
+#: cdedb/backend/common.py:436
+msgid "Need to specify exactly two columns."
+msgstr "Genau zwei Spalten müssen angegeben werden."
 
 #: cdedb/backend/core/base.py:377
 msgid "Given changelog generation must be committed."
@@ -18778,27 +18782,27 @@ msgid "QueryOperators.greater"
 msgstr "ist größer"
 
 #: cdedb/i18n_additional.py:325
-msgid "QueryOperators.checkedin_at"
+msgid "QueryOperators.ranged_at"
 msgstr "zum Zeitpunkt"
 
 #: cdedb/i18n_additional.py:326
-msgid "QueryOperators.checkedin_notat"
+msgid "QueryOperators.ranged_notat"
 msgstr "nicht zum Zeitpunkt"
 
 #: cdedb/i18n_additional.py:327
-msgid "QueryOperators.checkedin_oneof"
+msgid "QueryOperators.ranged_oneof"
 msgstr "zu einem der Zeitpunkte"
 
 #: cdedb/i18n_additional.py:328
-msgid "QueryOperators.checkedin_noneof"
+msgid "QueryOperators.ranged_noneof"
 msgstr "zu keinem der Zeitpunkte"
 
 #: cdedb/i18n_additional.py:329
-msgid "QueryOperators.checkedin_allof"
+msgid "QueryOperators.ranged_allof"
 msgstr "zu all den Zeitpunkten"
 
 #: cdedb/i18n_additional.py:330
-msgid "QueryOperators.checkedin_notallof"
+msgid "QueryOperators.ranged_notallof"
 msgstr "zu nicht all den Zeitpunkten"
 
 #: cdedb/i18n_additional.py:332

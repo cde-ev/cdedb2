@@ -68,12 +68,12 @@ class QueryOperators(CdEIntEnum):
     outside = 23
     greaterequal = 24
     greater = 25
-    checkedin_at = 101
-    checkedin_notat = 102
-    checkedin_oneof = 103
-    checkedin_noneof = 104
-    checkedin_allof = 105
-    checkedin_notallof = 106
+    ranged_at = 101
+    ranged_notat = 102
+    ranged_oneof = 103
+    ranged_noneof = 104
+    ranged_allof = 105
+    ranged_notallof = 106
 
 
 _ops = QueryOperators
@@ -102,10 +102,10 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
     "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
-    "checkin_datetime": (_ops.checkedin_at, _ops.checkedin_notat, _ops.checkedin_oneof,
-                         _ops.checkedin_noneof, _ops.checkedin_allof,
-                         _ops.checkedin_notallof),
+    "ranged_datetime": (_ops.ranged_at, _ops.ranged_notat, _ops.ranged_oneof,
+                        _ops.ranged_noneof, _ops.ranged_allof, _ops.ranged_notallof),
 }
+VALID_QUERY_OPERATORS["ranged_date"] = VALID_QUERY_OPERATORS["ranged_datetime"]
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
 VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
@@ -122,8 +122,8 @@ SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal,
 #: operands) and thus need to be treated differently.
 MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
                          _ops.containsnone, _ops.containssome, _ops.between,
-                         _ops.outside, _ops.checkedin_oneof, _ops.checkedin_noneof,
-                         _ops.checkedin_allof, _ops.checkedin_notallof}
+                         _ops.outside, _ops.ranged_oneof, _ops.ranged_noneof,
+                         _ops.ranged_allof, _ops.ranged_notallof}
 
 #: Some operators expect no operands need some special-casing.
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
@@ -1011,7 +1011,7 @@ def make_registration_query_spec(event: "models.Event",
         "reg.is_checked_in": QuerySpecEntry("bool", n_("Currently checked-in")),
         "reg.has_been_checked_in": QuerySpecEntry("bool", n_("Has been checked-in")),
         "checkin_at.checkin_time,checkin_at.checkout_time": QuerySpecEntry(
-            "checkin_datetime", n_("Checked in at")),
+            "ranged_datetime", n_("Checked in at")),
         "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin")),
         "checkin_periods.min_checkout_time": QuerySpecEntry("datetime", n_("First checkout")),
         "checkin_periods.max_checkin_time": QuerySpecEntry("datetime", n_("Last checkin")),
