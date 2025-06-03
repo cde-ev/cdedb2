@@ -640,7 +640,7 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.agreement_measure,
         }
 
-    def get_icon(self) -> bool:
+    def get_icon(self) -> str:
         et = ComplaintEntryType
         return {
             et.initial_information: "info",
