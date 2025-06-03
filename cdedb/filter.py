@@ -647,12 +647,12 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: Iterable[enum.Enum],
+def enum_entries_filter(enum: Iterable[enum.IntEnum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
                         intval: bool = False,
-                        ) -> list[tuple[enum.Enum | int, str]]:
+                        ) -> list[tuple[enum.IntEnum | int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -676,12 +676,10 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
     if intval:
-        transform = int
         sortkey = lambda x: x
     else:
-        transform = lambda x: x
         sortkey = lambda e: e[0].value
-    to_sort = ((transform(entry), prefix + processing(pre(entry)))
+    to_sort = ((int(entry) if intval else entry, prefix + processing(pre(entry)))
                for entry in enum if entry not in exempt)
     return xsorted(to_sort, key=sortkey)
 
