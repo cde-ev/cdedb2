@@ -1270,6 +1270,7 @@ class TestComplaintValidation(TestValidationBase):
                             2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
                         ),
                         "authors": [1],
+                        "etime": None,
                     },
                     None,
                 ),
@@ -1278,6 +1279,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": None,
                         "timestamp": now(),
                         "authors": [1, 2, 3],
+                        "etime": None,
                     },
                     INVAL,
                     None,
@@ -1291,6 +1293,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": None,
                         "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
                         "authors": [1],
+                        "etime": None,
                     },
                     None,
                 ),
@@ -1299,6 +1302,36 @@ class TestComplaintValidation(TestValidationBase):
                 "creation": True,
                 "passthrough": True,
                 "entry_type": const.ComplaintEntryType.statement_signed,
+            },
+        )
+        # Test successful creation of entry version with expiration:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "authors": [1],
+                        "timestamp": "2025-05-30 22:25:00",
+                        "etime": "2025-05-31 22:25:00",
+                    },
+                    {
+                        "description": "Test.",
+                        "authors": [1],
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                        ),
+                        "etime": datetime.datetime(
+                            2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
+                        ),
+                    },
+                    None,
+                ),
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.definite_measure,
             },
         )
         # Test successful creation of entry version with description:
@@ -1310,6 +1343,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": "Test.",
                         "timestamp": now(),
                         "authors": [1],
+                        "etime": None,
                     },
                     INVAL,
                     None,
