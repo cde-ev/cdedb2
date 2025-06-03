@@ -1,11 +1,4 @@
 {% set sidenav_active='complaint_index' %}
-{% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-    {% set action_target = "core/revoke_entry" %}
-{% elif ambience['entry'] %}
-    {% set action_target = "core/replace_entry" %}
-{% else %}
-    {% set action_target = "core/add_entry" %}
-{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
@@ -14,33 +7,40 @@
 {% endblock %}
 {% set jshint='weak' %}
 
-{% block title %}
+{% set case_title = gettext("Case %s")|format(ambience['case'].id) %}
+{% if ambience['entry'] %}
     {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
-            Revoke Entry ({{ title }})
-        {% endtrans %}
-    {% elif ambience['entry'] %}
-        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
-            Replace Entry ({{ title }})
-        {% endtrans %}
+        {% set title = gettext("Revoke Entry") %}
+        {% set action_target = "core/revoke_entry" %}
     {% else %}
-        {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
-            Add Entry ({{ title }})
-        {% endtrans %}
+        {% set title = gettext("Replace Entry") %}
+        {% set action_target = "core/replace_entry" %}
     {% endif %}
+    {% set cancellinks = [] %}
+    {% set anchor = "#entry"|s + ambience["entry"].id|string %}
+{% else %}
+    {% if values.get("parent_id") %}
+        {% set title = gettext("Add Child Entry") %}
+        {% set anchor = "#entry"|s + values.get("parent_id")|string %}
+    {% else %}
+        {% set title = gettext("Add Entry") %}
+        {% set anchor = "" %}
+    {% endif %}
+    {% set action_target = "core/add_entry" %}
+    {% if entry_type %}
+        {% set cancellinks = [(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}), gettext("Change"), "chevron-left")] %}
+    {% else %}
+        {% set cancellinks = [] %}
+    {% endif %}
+{% endif %}
+{% do cancellinks.append((cdedblink('core/show_case') + anchor, gettext("Cancel"), "times")) %}
+
+{% block title %}
+    {{ title }} ({{ case_title }})
 {% endblock %}
 
 {% block heading %}
-    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-        {{ util.context_heading(gettext("Add Entry"), gettext("Case %s")|format(ambience['case'].id),
-                                'gavel', "") }}
-    {% elif ambience['entry'] %}
-        {{ util.context_heading(gettext("Replace Entry"), gettext("Case %s")|format(ambience['case'].id),
-                                'gavel', "") }}
-    {% else %}
-        {{ util.context_heading(gettext("Revoke Entry"), gettext("Case %s")|format(ambience['case'].id),
-                                'gavel', "") }}
-    {% endif %}
+    {{ util.context_heading(title, case_title, 'gavel', "") }}
 {% endblock %}
 
 {% block breadcrumb %}
@@ -48,13 +48,7 @@
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
     {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
                             icon="gavel") }}
-    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Revoke Entry"), active=True) }}
-    {% elif ambience['entry'] %}
-        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Replace Entry"), active=True) }}
-    {% else %}
-        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Add Entry"), active=True) }}
-    {% endif %}
+    {{ util.breadcrumb_link(cdedblink(action_target), title, active=True) }}
 {% endblock %}
 
 {% block content %}
@@ -63,27 +57,19 @@
               class="form-horizontal">
             {{ util.form_input_select(name="entry_type", label=gettext("Entry Type"),
                                       entries=available_types|enum_entries(processing=gettext)) }}
-            {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("core/show_case"),
-                                      icon="chevron-right") }}
+            {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right", cancellinks=cancellinks) }}
             {{ util.input_hidden("parent_id") }}
         </form>
     {% else %}
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
             {{ util.anti_csrf_token(action_target) }}
             {% if not entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-                {% if ambience['entry'] %}
-                    {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
-                {% endif %}
                 {{ util.input_hidden(name="entry_type", value=entry_type) }}
                 {{ util.input_hidden(name="parent_id") }}
 
                 {% call util.form_input_static(label=gettext("Entry Type")) %}
                     {{ util.make_icon(entry_type.get_icon()) }}
                     {{ entry_type.name }}{{- nbsp -}}
-                    {% if not ambience['entry'] %}
-                        {{ util.href(cdedblink('core/add_entry_form', {'parent_id': values.get('parent_id')}),
-                                     gettext("Change"), icon="chevron-left", aclass="btn btn-default btn-sm") }}
-                    {% endif %}
                 {% endcall %}
             {% endif %}
             {% if entry_type.has_concerned %}
@@ -128,12 +114,9 @@
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}
                     </div>
                 </div>
-                {{ util.form_input_submit(
-                    label=gettext("Replace"),
-                    cancellink=cdedblink('core/show_case') + "#entry"|s + ambience['entry'].id|string
-                ) }}
+                {{ util.form_input_submit(label=gettext("Replace"), cancellinks=cancellinks) }}
             {% else %}
-                {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('core/show_case')) }}
+                {{ util.form_input_submit(label=gettext("Save"), cancellinks=cancellinks) }}
             {% endif %}
         </form>
     {% endif %}

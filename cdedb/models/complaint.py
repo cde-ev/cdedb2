@@ -271,7 +271,9 @@ class ComplaintEntryVersion(CdEDataclass):
     database_table = "complaint.entry_versions"
     entity_key = "entry_id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     entry_id: vtypes.ID = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}

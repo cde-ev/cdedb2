@@ -783,7 +783,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
-        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel", cancellinks=none,
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
@@ -800,9 +800,9 @@
                 </p>
             {%- endif %}
             {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
-            {%- if cancellink %}
-                &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
-            {%- endif %}
+            {%- for cancellink, cancelvalue, cancelicon in (cancellinks or []) + [(cancellink, cancelvalue, "times")] if cancellink %}
+                &emsp;{{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+            {%- endfor %}
         </div>
     </div>
 {%- endmacro %}
