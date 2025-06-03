@@ -1931,6 +1931,8 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'case_id', 'case', ()),
         Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
               'entry_id', 'entry', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'parent_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
@@ -2542,10 +2544,13 @@ def extract_and_check_dataclass_validation(
     type_: type[DC],
     name: Optional[str] = None,
     *,
+    additional_data: CdEDBObject | None = None,
     creation: bool,
     **kwargs: Any
 ) -> Optional[CdEDBObject]:
     data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
+    if additional_data:
+        data.update(additional_data)
     data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
     return cast(Optional[CdEDBObject], data)
 
