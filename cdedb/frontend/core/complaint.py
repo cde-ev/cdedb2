@@ -20,7 +20,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.filter import cdedbid_filter, safe_filter
+from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
@@ -44,7 +44,9 @@ CASE_SEARCH_DEFAULTS = {
 
 
 def entry_link(rs: RequestState, entry_id: int) -> Markup:
-    return escape_filter(f'<a href="#entry{entry_id}">{rs.gettext("Entry")}</a>')
+    # Unfortunately redirecting kills this link :(
+    # return safe_filter(f'<a href="#entry{entry_id}">{rs.gettext("Entry")}</a>')
+    return rs.gettext("Entry")
 
 
 class CoreComplaintMixin(CoreBaseFrontend):
