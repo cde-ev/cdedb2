@@ -99,9 +99,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 COPY ./pyproject.toml /tmp/
 
 # install packages
+# since this works as a dev and CI container, install dev and ldap (for running tests) too
 RUN python3 -m pip --no-cache-dir install --break-system-packages \
         $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
-                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"])')
+                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"], *f["project"]["optional-dependencies"]["ldap"])')
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
