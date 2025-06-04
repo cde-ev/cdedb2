@@ -99,7 +99,7 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries(scope, default_queries) }}
+            {{ place_default_queries(scope, default_queries, num_columns=2) }}
         </div>
     </div>
 
@@ -369,13 +369,13 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(scope, queries) %}
+{% macro place_default_queries(scope, queries, num_columns) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
-                {% for list in queries | sort | slice(2) %}
-                <div class="col-sm-6">
-                    <ul>
+                {% for list in queries | sort | slice(num_columns) %}
+                <div class="col-sm-{{ 12 // num_columns }}">
+                    <ul class="slim {% if not loop.last %}nosp{% endif %}">
                         {% for query_name in list %}
                             {% with query = queries[query_name] -%}
                                 <li>
@@ -511,6 +511,7 @@
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                               title=gettext("Ctrl+Click anywhere in this line to (un)select it"),
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
                     <td class="hidden-print">
@@ -608,6 +609,12 @@
             </tfoot>
         </table>
         </div>
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Press <code>Ctrl</code> and click anywhere in a result line to (un)select it additionally to already selected lines.
+            {% endtrans %}
+        </p>
     {% endif %}
 {% endmacro %}
 
@@ -634,4 +641,45 @@
             })(document.currentScript);
         </script>
     </button>
+{% endmacro %}
+
+{% macro tabs(anid, nav_tabs, aclass="", formid="") %}
+    <div id="{{ anid }}" class="tab-container {{ aclass }}">
+        <ul class="nav nav-tabs mosp softhide" role="tablist" id="{{ anid }}_tablist">
+            {% for nav_tab_data in nav_tabs %}
+                {{ nav_tab(nav_tab_data.target, nav_tab_data.label, nav_tab_data.icon, nav_tab_data.anid) }}
+            {% endfor %}
+        </ul>
+        <div class="tab-content" id="{{ anid }}_tabcontent">
+            {{ caller() }}
+        </div>
+        {% if formid %}
+            {{ util.input_hidden(name="nav_tab_active", form=formid) }}
+        {% endif %}
+    </div>
+    {% if not jshint %}
+        {{ util.raise_for_test("jshint not set for 'util.tabs'.") }}
+    {% endif %}
+    <script nonce="{{ csp_nonce }}">
+        $("#{{ anid }}").cdedbTabNavigation();
+    </script>
+{% endmacro %}
+
+{% macro nav_tab(target, label, icon=none, anid="") %}
+    <li role="presentation">
+        <a data-toggle="tab" role="tab" data-target="{{ target }}" id="{{ anid }}">
+            {{ util.make_icon(icon) if icon }}{{ nbsp if icon and label -}}
+            {{ label }}
+        </a>
+    </li>
+{% endmacro %}
+
+{% macro tab_pane(anid, labelid, alt_heading="", data={}) %}
+    <div class="tab-pane active" role="tabpanel" id="{{ anid }}" aria-labelledby="{{ labelid }}"
+        {%- for key, value in data.items() %} data-{{ key }}="{{ value }}"{% endfor -%}
+        style="scroll-margin-top: 100vh"
+    >
+        {{ util.h(alt_heading, aclass="tab-heading-alt") }}
+        {{ caller() }}
+    </div>
 {% endmacro %}

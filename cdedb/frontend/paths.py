@@ -381,6 +381,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="create_event"),
                 rule("/select", methods=_GET,
                      endpoint="select_event"),
+                rule("/violations", methods=_GET,
+                     endpoint="constraint_violations_summary"),
+                sub('/droid', (
+                    rule('/export', methods=_GET,
+                         endpoint="droid_partial_export_dispatch"),
+                )),
             )),
             sub('/event/<int:event_id>', (
                 rule("/show", methods=_GET,
@@ -534,6 +540,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="download_dokuteam_participant_list"),
                     rule("/partial", methods=_GET,
                          endpoint="download_partial_export"),
+                    rule("/questionnaire", methods=_GET,
+                         endpoint="download_questionnaire_export"),
                     rule("/csv_courses", methods=_GET,
                          endpoint="download_csv_courses"),
                     rule("/csv_lodgements", methods=_GET,

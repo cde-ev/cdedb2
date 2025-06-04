@@ -16,7 +16,13 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, json_serialize
+from cdedb.common import (
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    get_mandatory_form_fields,
+    json_serialize,
+)
 from cdedb.common.exceptions import PartialImportError
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
@@ -27,9 +33,8 @@ from cdedb.frontend.common import (
     REQUESTfile,
     access,
     check_validation as check,
-    event_guard,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.event import ReducedCheckinPeriod
 
 
@@ -38,7 +43,8 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
-        return self.render(rs, "import/questionnaire_import")
+        return self.render(rs, "import/questionnaire_import", {},
+                           get_mandatory_form_fields(self.questionnaire_import))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -76,13 +82,14 @@ class EventImportMixin(EventBaseFrontend):
             rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_additional_questionnaire")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
-        return self.render(rs, "import/partial_import")
+        return self.render(rs, "import/partial_import", {},
+                           get_mandatory_form_fields(self.partial_import))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.entities_write)
@@ -133,7 +140,11 @@ class EventImportMixin(EventBaseFrontend):
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        # TODO use dataclasses here
+        courses = {
+            course_id: course.as_dict()
+            for course_id, course in self.eventproxy.get_courses(rs, course_ids).items()
+            }
         persona_ids = (
             ({e['persona_id'] for e in registrations.values()}
              | {e.get('persona_id')

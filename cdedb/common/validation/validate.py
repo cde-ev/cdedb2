@@ -51,7 +51,6 @@ Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 import base64
-import collections
 import copy
 import csv
 import dataclasses
@@ -80,8 +79,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
     overload,
 )
@@ -107,7 +104,6 @@ from cdedb.common import (
     EPSILON,
     EVENT_SCHEMA_VERSION,
     INFINITE_ENUM_MAGIC_NUMBER,
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     Error,
@@ -122,6 +118,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
     MAX_QUERY_ORDERS,
     MULTI_VALUE_OPERATORS,
@@ -346,10 +343,6 @@ def validate_check_optional(
 ) -> tuple[Optional[T], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
-
-
-def is_optional(type_: type[T]) -> bool:
-    return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
 def get_errors(errors: list[Error]) -> list[Error]:
@@ -586,7 +579,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
     return ret
 
 
-def filter_none(data: dict[str, Any]) -> dict[str, Any]:
+def filter_none(data: Mapping[str, Any]) -> dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
 
@@ -891,16 +884,6 @@ def _shortname(val: Any, argname: Optional[str] = None, *,
 
 
 @_add_typed_validator
-def _shortname_identifier(val: Any, argname: Optional[str] = None, *,
-                          ignore_warnings: bool = False,
-                          **kwargs: Any) -> ShortnameIdentifier:
-    """A string used as shortname and as programmatically accessible identifier."""
-    val = _identifier(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameIdentifier(val)
-
-
-@_add_typed_validator
 def _shortname_restrictive_identifier(
         val: Any, argname: Optional[str] = None, *,
         ignore_warnings: bool = False,
@@ -908,8 +891,7 @@ def _shortname_restrictive_identifier(
     """A string used as shortname and as restrictive identifier"""
     val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
                                   **kwargs)
-    val = _shortname_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                **kwargs)
+    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     return ShortnameRestrictiveIdentifier(val)
 
 
@@ -1386,12 +1368,12 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_active': bool,
 }
 
-PERSONA_BASE_CREATION: Mapping[str, Any] = {
+PERSONA_BASE_CREATION: TypeMapping = {
     'username': Email,
-    'notes': Optional[str],
+    'notes': Optional[str],  # type: ignore[dict-item]
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': Optional[str],
+    'legal_given_names': Optional[str],  # type: ignore[dict-item]
     'show_legal_given_names': bool,
     'family_name': str,
     'title': NoneType,
@@ -1487,7 +1469,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
+PERSONA_FULL_CREATION: Mapping[str, Mapping[str, Any]] = {
     'ml': {**PERSONA_BASE_CREATION},
     'assembly': {**PERSONA_BASE_CREATION},
     'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
@@ -1495,7 +1477,7 @@ PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
             'is_member': bool, 'is_searchable': bool},
 }
 
-PERSONA_COMMON_FIELDS: dict[str, Any] = {
+PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1615,7 +1597,7 @@ def _persona(
         # promoting to cde realm may be used to grant a trial membership.
         #  since trial member implies is_member, we need to allow the latter here
         if val.get("is_cde_realm"):
-            optional_fields["is_member"] = bool
+            optional_fields |= {"is_member": bool}
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -2177,12 +2159,14 @@ def _lastschrift(
 
 
 @_add_typed_validator
-def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
-                       **kwargs: Any) -> MoneyTransferEntry:
+def _money_transfer_entry(
+        val: Any, argname: str = "money_transfer_entry", *, event_only: bool = False,
+        **kwargs: Any,
+) -> MoneyTransferEntry:
     val = _mapping(val, argname, **kwargs)
     mandatory_fields: TypeMapping = {
         'persona_id': int,
-        'registration_id': Optional[int],  # type: ignore[dict-item]
+        'registration_id': int if event_only else Optional[int],  # type: ignore[dict-item]
         'amount': decimal.Decimal,
         'date': datetime.date,
     }
@@ -2492,9 +2476,6 @@ EVENT_EXPOSED_FIELDS = {
 EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_EXPOSED_OPTIONAL_FIELDS,
     **EVENT_FREETEXT_FIELDS,
-    'offline_lock': bool,
-    'is_archived': bool,
-    'is_balanced': bool,
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
@@ -3236,20 +3217,6 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-@_add_typed_validator
-def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
-                       **kwargs: Any) -> FeeBookingEntry:
-    val = _mapping(val, argname, **kwargs)
-    mandatory_fields: dict[str, Any] = {
-        'registration_id': int,
-        'date': datetime.date,
-        'amount': decimal.Decimal,
-    }
-    optional_fields: TypeMapping = {}
-    return FeeBookingEntry(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
 LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
@@ -3520,209 +3487,6 @@ def _json(
 
 
 @_add_typed_validator
-def _serialized_event_upload(
-    val: Any, argname: str = "serialized_event_upload", **kwargs: Any,
-) -> SerializedEventUpload:
-    """Check an event data set for import after offline usage."""
-    # TODO provide docstrings in more validators
-
-    val = _input_file(val, argname, **kwargs)
-
-    val = _json(val, argname, **kwargs)
-
-    return SerializedEventUpload(_serialized_event(val, argname, **kwargs))
-
-
-@_add_typed_validator
-def _serialized_event(
-    val: Any, argname: str = "serialized_event", **kwargs: Any,
-) -> SerializedEvent:
-    """Check an event data set for import after offline usage."""
-    # TODO why does this have the same docstring as the one above
-
-    # First a basic check
-    val = _mapping(val, argname, **kwargs)
-
-    if 'kind' not in val or val['kind'] != "full":
-        raise ValidationSummary(
-            KeyError(argname, n_("Only full exports are supported.")))
-
-    mandatory_fields: TypeMapping = {
-        'EVENT_SCHEMA_VERSION': tuple[int, int],
-        'kind': str,
-        'id': ID,
-        'timestamp': datetime.datetime,
-    }
-    mandatory_tables: TypeMapping = {
-        'event.events': Mapping,
-        'event.event_parts': Mapping,
-        'event.course_tracks': Mapping,
-        'event.courses': Mapping,
-        'event.course_segments': Mapping,
-        'event.log': Mapping,
-        'event.orgas': Mapping,
-        'event.field_definitions': Mapping,
-        'event.lodgement_groups': Mapping,
-        'event.lodgements': Mapping,
-        'event.registrations': Mapping,
-        models_event.CheckinPeriod.database_table: Mapping,
-        'event.registration_parts': Mapping,
-        'event.registration_tracks': Mapping,
-        'event.course_choices': Mapping,
-        'event.questionnaire_rows': Mapping,
-        'event.event_fees': Mapping,
-        'event.personalized_fees': Mapping,
-        'event.stored_queries': Mapping,
-    }
-    optional_tables: TypeMapping = {
-        'core.personas': Mapping,
-        'event.part_groups': Mapping,
-        'event.part_group_parts': Mapping,
-        'event.track_groups': Mapping,
-        'event.track_group_tracks': Mapping,
-        models_droid.OrgaToken.database_table: Mapping,
-    }
-    val = _examine_dictionary_fields(
-        val, dict(collections.ChainMap(mandatory_fields, mandatory_tables)),
-        optional_tables, **kwargs)
-
-    if val['EVENT_SCHEMA_VERSION'] != EVENT_SCHEMA_VERSION:
-        raise ValidationSummary(ValueError(
-            argname, n_("Schema version mismatch.")))
-
-    # Second a thorough investigation
-    #
-    # We reuse the existing validators, but have to augment them since the
-    # data looks a bit different.
-    # TODO replace the functions with types
-    table_validators: Mapping[str, Callable[..., Any]] = {
-        'event.events': functools.partial(
-            _event, current={}, skip_field_validation=True),
-        'event.event_parts': _augment_dict_validator(
-            _event_part, {'id': ID, 'event_id': ID}),
-        'event.course_tracks': _augment_dict_validator(
-            _event_track, {'id': ID, 'part_id': ID}),
-        'event.courses': _augment_dict_validator(
-            _course, {'event_id': ID}),
-        'event.course_segments': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
-                          'is_active': bool}),
-        'event.log': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'ctime': datetime.datetime, 'code': int,
-                          'submitted_by': ID, 'event_id': Optional[ID],  # type: ignore[dict-item]
-                          'persona_id': Optional[ID],  # type: ignore[dict-item]
-                          'change_note': Optional[str]}),  # type: ignore[dict-item]
-        'event.orgas': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
-        'event.field_definitions': _augment_dict_validator(
-            _event_field, {'id': ID, 'event_id': ID, 'title': str,
-                           'field_name': RestrictiveIdentifier,
-                           'association': const.FieldAssociations}),
-        'event.lodgement_groups': _augment_dict_validator(
-            _lodgement_group, {'event_id': ID}),
-        'event.lodgements': _augment_dict_validator(
-            _lodgement, {'event_id': ID}),
-        'event.registrations': _augment_dict_validator(
-            _registration, {'event_id': ID, 'persona_id': ID,
-                            'is_member': bool,
-                            'amount_owed': NonNegativeDecimal,
-                            # allow amount_paid and payment for better UX, we check
-                            # inside the import that they have not changed
-                            'amount_paid': NonNegativeDecimal,
-                            'payment': Optional[datetime.date]}),   # type: ignore[dict-item]
-        'event.registration_parts': _augment_dict_validator(
-            _registration_part, {'id': ID, 'part_id': ID,
-                                 'registration_id': ID}),
-        'event.registration_tracks': _augment_dict_validator(
-            _registration_track, {'id': ID, 'track_id': ID,
-                                  'registration_id': ID}),
-        'event.course_choices': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'course_id': ID, 'track_id': ID,
-                          'registration_id': ID, 'rank': int}),
-        # Is it easier to throw away broken ones at the end of the import.
-        'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': Optional[str],  # type: ignore[dict-item]
-                          'info': Optional[str], 'input_size': Optional[str],  # type: ignore[dict-item]
-                          'readonly': Optional[bool], 'default_value': Optional[str],  # type: ignore[dict-item]
-                          'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
-                          'pos': int}),
-        'event.event_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID,
-                          'kind': const.EventFeeType, 'title': str,
-                          'notes': Optional[str],  # type: ignore[dict-item]
-                          'condition': Optional[str],  # type: ignore[dict-item]
-                          'amount': Optional[decimal.Decimal],  # type: ignore[dict-item]
-                          }),
-        'event.personalized_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'fee_id': ID, 'registration_id': ID,
-                          'amount': decimal.Decimal}),
-        'event.checkin_periods': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'registration_id': ID,
-                          'checkin_time': datetime.datetime,
-                          'checkout_time': datetime.datetime}),
-        'event.stored_queries': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
-                          'scope': QueryScope, 'serialized_query': Mapping}),
-    }
-    optional_table_validators: Mapping[str, Callable[..., Any]] = {
-        'event.part_groups': _augment_dict_validator(
-            _event_part_group, {'id': ID, 'event_id': ID}),
-        'event.part_group_parts': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'part_group_id': ID, 'part_id': ID}),
-        'event.track_groups': _augment_dict_validator(
-            _event_track_group, {'id': ID, 'event_id': ID}),
-        'event.track_group_tracks': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
-        # Ignore models_droid.OrgaToken. Do not validate and do not import.
-    }
-
-    new_val = {k: val[k] for k in mandatory_fields}
-
-    errs = ValidationSummary()
-    for table, validator in table_validators.items():
-        new_table = {}
-        for key, entry in val[table].items():
-            with errs:
-                new_entry = validator(entry, argname=table, **kwargs)
-                new_key = _int(key, argname=table, **kwargs)
-                new_table[new_key] = new_entry
-        new_val[table] = new_table
-
-    for table, validator in optional_table_validators.items():
-        if table not in val:
-            continue
-        new_table = {}
-        for key, entry in val[table].items():
-            with errs:
-                new_entry = validator(entry, argname=table, **kwargs)
-                new_key = _int(key, argname=table, **kwargs)
-                new_table[new_key] = new_entry
-        new_val[table] = new_table
-
-    if errs:
-        raise errs
-
-    # Third a consistency check
-    if len(new_val['event.events']) != 1:
-        errs.append(ValueError('event.events', n_(
-            "Only a single event is supported.")))
-    event_id = new_val['id']
-    if new_val['event.events'] and event_id != new_val['event.events'][event_id]['id']:
-        errs.append(ValueError('event.events', n_("Wrong event specified.")))
-
-    for table, entity_dict in new_val.items():
-        if table not in {'id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'}:
-            for entity in entity_dict.values():
-                if entity.get('event_id') and entity['event_id'] != event_id:
-                    errs.append(ValueError(table, n_("Mismatched event.")))
-
-    if errs:
-        raise errs
-
-    return SerializedEvent(new_val)
-
-
-@_add_typed_validator
 def _serialized_partial_event_upload(
     val: Any, argname: str = "serialized_partial_event_upload", **kwargs: Any,
 ) -> SerializedPartialEventUpload:
@@ -3955,6 +3719,20 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'checkin_periods': list[ReducedCheckinPeriod],
 }
 
+# May be present, but will be ignored:
+PARTIAL_REGISTRATION_IGNORED_FIELDS = {
+    # Ignored to ensure consistent bookkeeping:
+    'amount_paid',
+    'payment',
+    'is_member',
+    # Ignored because they are calculated, derived or external values:
+    'amount_owed',
+    'amount_owed_by_kind',
+    'persona',
+    'ctime',
+    'mtime',
+}
+
 # TODO Can we auto generate all these partial validators?
 
 
@@ -3971,14 +3749,19 @@ def _partial_registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
-        optional_fields = {**PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
-        optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
-                           **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_COMMON_FIELDS,
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
 
     # The check of fields is delegated to EventAssociatedFields.
     val = _examine_dictionary_fields(
@@ -3987,8 +3770,9 @@ def _partial_registration(
     )
 
     errs = ValidationSummary()
-    if 'amount_owed' in val:
-        del val['amount_owed']
+    for key in PARTIAL_REGISTRATION_IGNORED_FIELDS:
+        if key in val:
+            del val[key]
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
@@ -4628,8 +4412,8 @@ def _ballot(
 
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
-    'title': LegacyShortname,
-    'shortname': ShortnameIdentifier,
+    'title': str,
+    'shortname': ShortnameRestrictiveIdentifier,
 }
 
 

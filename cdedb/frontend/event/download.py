@@ -11,7 +11,6 @@ import shutil
 import tempfile
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -32,8 +31,8 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.frontend.common import REQUESTdata, access, event_guard
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.common import REQUESTdata, access
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
@@ -250,7 +249,7 @@ class EventDownloadMixin(EventBaseFrontend):
             if track.course_room_field:
                 cr_field_names[track_id] = track.course_room_field.field_name
         for c_id, course in courses.items():
-            for t_id in course['active_segments']:
+            for t_id in course.active_segments:
                 instructors[(c_id, t_id)] = [
                     r_id
                     for r_id in attendees[(c_id, t_id)]
@@ -370,8 +369,8 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
-        active_courses = filter(lambda c: c["active_segments"], courses.values())
-        sorted_courses = xsorted(active_courses, key=EntitySorter.course)
+        active_courses = filter(lambda c: c.active_segments, courses.values())
+        sorted_courses = xsorted(active_courses)
         data = self.fill_template(rs, "other", "dokuteam_courselist", {
             "sorted_courses": sorted_courses,
         })
@@ -409,7 +408,7 @@ class EventDownloadMixin(EventBaseFrontend):
                     result = tuple(
                         {
                             k if k != course_key else 'course':
-                                v if k != course_key else courses[v]['nr']
+                                v if k != course_key else courses[v].nr
                             for k, v in entry.items()
                         }
                         for entry in query_res
@@ -435,7 +434,7 @@ class EventDownloadMixin(EventBaseFrontend):
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids)
+        courses = self.eventproxy.get_courses(rs, course_ids)
 
         spec = QueryScope.event_course.get_spec(
             event=rs.ambience['event'], courses=courses)
@@ -479,7 +478,7 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create CSV file with all registrations"""
         # Get data
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids)
+        courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
@@ -500,26 +499,15 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event", modi={"GET"})
     @event_guard(EventPrivileges.all_read)
-    @REQUESTdata("agree_unlocked_download")
-    def download_export(self, rs: RequestState, event_id: int,
-                        agree_unlocked_download: Optional[bool]) -> Response:
-        """Retrieve all data for this event to initialize an offline
-        instance."""
-        if rs.has_validation_errors():
-            return self.redirect(rs, "event/show_event")
-
-        if not (agree_unlocked_download
-                or rs.ambience['event'].offline_lock):
-            rs.notify("info", n_("Please confirm to download a full export of "
-                                 "an unlocked event."))
-            return self.redirect(rs, "event/show_event")
+    def download_export(self, rs: RequestState, event_id: int) -> Response:
+        """Retrieve all data for this event to initialize an offline instance."""
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/show_event")
         json = json_serialize(data)
         return self.send_file(
-            rs, data=json, inline=False,
+            rs, mimetype="application/json", data=json, inline=False,
             filename=f"{rs.ambience['event'].shortname}_export_event.json")
 
     @access("event")
@@ -534,8 +522,24 @@ class EventDownloadMixin(EventBaseFrontend):
         json = json_serialize(data, sort_keys=True)
         return self.send_file(
             rs, mimetype="application/json", data=json, inline=False,
-            filename="{}_partial_export_event.json".format(
-                rs.ambience['event'].shortname))
+            filename=f"{rs.ambience['event'].shortname}_partial_export_event.json")
+
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    def download_questionnaire_export(self, rs: RequestState, event_id: int) -> Response:
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+        data = {
+            "fields": data["event"]["fields"],
+            "questionnaire": data["event"]["questionnaire"],
+        }
+        json = json_serialize(data, sort_keys=True)
+        return self.send_file(
+            rs, mimetype="application/json", data=json, inline=False,
+            filename=f"{rs.ambience['event'].shortname}_questionnaire_export.json",
+        )
 
     @access("droid_orga")
     @event_guard(EventPrivileges.all_read)
@@ -546,24 +550,27 @@ class EventDownloadMixin(EventBaseFrontend):
         return self.send_file(
             rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
 
+    @access("droid_orga")
+    def droid_partial_export_dispatch(self, rs: RequestState) -> Response:
+        event_id = unwrap(rs.user.orga)
+        if not event_id:
+            raise werkzeug.exceptions.Forbidden(n_("User is not a valid orga droid."))
+        return self.redirect(rs, "event/droid_partial_export", {'event_id': event_id})
+
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:
         """Retrieve data for third-party applications in offline mode.
 
         This is a zero-config variant of download_partial_export.
         """
-        ret = {
-            'message': "",
-            'export': {},
-        }
         if not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-            ret['message'] = "Not in offline mode."
-            return self.send_json(rs, ret)
+            raise werkzeug.exceptions.ImATeapot("Not in offline mode.")
         events = self.eventproxy.list_events(rs)
         if len(events) != 1:
-            ret['message'] = "Exactly one event must exist."
-            return self.send_json(rs, ret)
+            raise werkzeug.exceptions.ImATeapot("Exactly one event must exist.")
         event_id = unwrap(events.keys())
-        ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
-        ret['message'] = "success"
-        return self.send_json(rs, ret, sort_keys=True)
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
+        return self.send_file(
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))

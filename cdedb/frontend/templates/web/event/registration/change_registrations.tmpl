@@ -2,7 +2,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
@@ -86,8 +89,7 @@
         <h3 class="heading-underline">{% trans %}Registrations{% endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
-                {{ util.input_static(value=util.persona_name(
-                       personas[reg['persona_id']], include_nickname=True, with_titles=True)) }}
+                {{ util.input_static(personas[reg['persona_id']]|persona_name(include_nickname=True, with_titles=True)) }}
             {% endfor %}
         {% endcall %}
 
@@ -155,9 +157,7 @@
                 <h5 class="mosp">{{ cco['title'] }}</h5>
             {% endif %}
             {% if cco.is_complex() %}
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}',
-                                         include=courses_per_track_group[cco['id']]) %}
+                {% set course_entries = courses|entries('id', 'label', include=courses_per_track_group[cco['id']]) %}
                 {% set prefix = "group{}".format(cco['id']) %}
                 {% for track in sorted_tracks if track.id in cco['tracks'] %}
                     {% call form_input_optional("track{}.course_id".format(track.id),
@@ -168,9 +168,7 @@
                     {% endcall %}
                 {% endfor %}
             {% else %}
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}',
-                                         include=courses_per_track[cco['id']]) %}
+                {% set course_entries = courses|entries('id', 'label', include=courses_per_track[cco['id']]) %}
                 {% set prefix = "track{}".format(cco['id']) %}
                 {% call form_input_optional(prefix + ".course_id",
                                             label=gettext("Course %s")|format(cco['shortname'])

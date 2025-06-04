@@ -2,6 +2,7 @@
 
 """Basic services for the core realm."""
 
+import base64
 import collections
 import datetime
 import decimal
@@ -22,13 +23,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
     Realm,
     RequestState,
     User,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     now,
@@ -53,6 +54,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
@@ -67,6 +69,7 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_COMMON_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
@@ -127,7 +130,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     "core/login", "wants", wants,
                     persona_id=rs.user.persona_id,
                     timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
-            return self.render(rs, "login", {'meta_info': meta_info})
+            return self.render(rs, "login", {'meta_info': meta_info},
+                               get_mandatory_form_fields(self.login))
 
         else:
             # Redirect to wanted page, if user meanwhile logged in
@@ -416,7 +420,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=True)
         persona = self.coreproxy.get_persona(rs, persona_id)
         filename = sanitize_filename(make_persona_name(persona))
 
@@ -429,15 +433,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=False)
 
         buffer = io.BytesIO()
         segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
-    @staticmethod
-    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+    def _make_vcard_data(self, rs: RequestState, persona: CdEDBObject, include_foto: bool) -> str:
         """Creates a string encoding the contact information as vCard 3.0.
 
         Only a subset of available `vCard 3.0 properties
@@ -460,9 +463,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona['nickname']:
             data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
-            address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
-                       persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
-                       rs.gettext(format_country_code(persona[f'country{sub}']))]
+            if persona[f'show_address{sub}']:
+                address = [persona[f'address_supplement{sub}'], persona[f'address{sub}']]
+            else:
+                address = ["", ""]
+            address += [persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
+                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
                 if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
@@ -471,11 +477,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 data.append(prefix + ";".join(escape(e or "") for e in address))
         if persona['birthday'] != datetime.date.min:
             data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        if persona['foto'] and include_foto:
+            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
+            foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
+            if mime_type and foto_data:
+                data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
         data.append('END:VCARD')
         data.append('')
         return '\r\n'.join(data)
 
-    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+    def _create_vcard(self, rs: RequestState, persona_id: int, include_foto: bool) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
 
@@ -490,7 +501,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        vcard = self._make_vcard_data(rs, persona)
+        vcard = self._make_vcard_data(rs, persona, include_foto)
         return vcard
 
     @access("persona")
@@ -718,14 +729,15 @@ class CoreBaseFrontend(AbstractFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_membership_fee_reference(data)
-
+        mandatory_fields = get_mandatory_form_fields(
+            self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-        })
+        }, mandatory_fields)
 
     @access("member")
     def my_lastschrift(self, rs: RequestState) -> Response:
@@ -983,14 +995,14 @@ class CoreBaseFrontend(AbstractFrontend):
         search_additions = []
         scope = QueryScope.core_user
         mailinglist = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
+        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
+            if not {"core_admin", "cde_admin", "ml_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if "core_admin" not in rs.user.roles:
+            if not {"core_admin", "ml_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
@@ -1001,6 +1013,8 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            # adding archived users to past events is a common task
+            scope = QueryScope.all_core_users
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
@@ -1202,13 +1216,17 @@ class CoreBaseFrontend(AbstractFrontend):
             and not min_donation <= data["donation"] <= max_donation)
 
         merge_dicts(rs.values, data)
+        mandatory_fields = (
+            get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
+            | {'address', 'location'}  # we enforce this by hand in change_user
+        )
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
             'min_donation': min_donation,
             'max_donation': max_donation,
             'has_special_donation': has_special_donation,
-        })
+        }, mandatory_fields)
 
     @access("persona", modi={"POST"})
     @REQUESTdata("generation")
@@ -1290,7 +1308,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             del realms["assembly"]
             del realms["ml"]
-        return self.render(rs, "create_user", {'realms': realms})
+        return self.render(rs, "create_user", {'realms': realms},
+                           get_mandatory_form_fields(self.create_user))
 
     @access("core_admin")
     @REQUESTdata("realm")
@@ -1340,7 +1359,10 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
-        })
+            # We have users with an unknown birthday (this shouldn't
+            # be a blocker for admins to edit those users at all) and want to
+            # be able to correct wrong birthdays into missing ones.
+        }, get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'})
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note")
@@ -1433,8 +1455,13 @@ class CoreBaseFrontend(AbstractFrontend):
         for email, infos in email_reports.items():
             if infos.status in const.EmailStatus.notable_states():
                 grouped_reports[infos.status][email] = infos
-        return self.render(rs, "email_status_overview", {
-            'grouped_reports': grouped_reports, 'personas': personas, 'mls': mls})
+        mandatory_fields = get_mandatory_form_fields(self.set_email_status)
+        return self.render(
+            rs,
+            "email_status_overview",
+            {'grouped_reports': grouped_reports, 'personas': personas, 'mls': mls},
+            mandatory_fields,
+        )
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdata("address", "notes", "status")
@@ -1465,7 +1492,8 @@ class CoreBaseFrontend(AbstractFrontend):
         #  works with valid recipients, so no need to test validity here.
         rs.ignore_validation_errors()
         addresses = self.conf["CONTACT_ADDRESSES"]
-        return self.render(rs, "contact", {"addresses": addresses})
+        return self.render(rs, "contact", {"addresses": addresses},
+                           get_mandatory_form_fields(self.contact))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("to", "anonymous", "subject", "msg")
@@ -1555,7 +1583,8 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> Response:
         """Render the reply form. Takes a message id via GET to prefill the form."""
         rs.ignore_validation_errors()
-        return self.render(rs, "contact_reply")
+        return self.render(rs, "contact_reply",
+                           mandatory_fields=get_mandatory_form_fields(self.contact_reply))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("secret", "reply_message")
@@ -1710,7 +1739,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {"privilege_change_id": privilege_change_id})
 
         merge_dicts(rs.values, rs.ambience['persona'])
-        return self.render(rs, "change_privileges")
+        return self.render(rs, "change_privileges", {},
+                           get_mandatory_form_fields(self.change_privileges))
 
     @access("meta_admin", modi={"POST"})
     @REQUESTdata(*ADMIN_KEYS, "notes")
@@ -1864,8 +1894,12 @@ class CoreBaseFrontend(AbstractFrontend):
                         "core/do_password_reset_form", "email", email, persona_id=None,
                         timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
-            headers: Headers = {"To": {email}, "Subject": "Admin-Privilegien geändert"}
-            self.do_mail(rs, "privilege_change_finalized", headers, params)
+            if case_status == const.PrivilegeChangeStati.approved:
+                headers: Headers = {
+                    "To": {email},
+                    "Subject": "Admin-Privilegien geändert",
+                }
+                self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
@@ -1927,9 +1961,12 @@ class CoreBaseFrontend(AbstractFrontend):
         past_courses = {}
         if pevent_id := rs.values.get('pevent_id'):
             past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+
+        mandatory_fields = get_mandatory_form_fields(
+            CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
             "past_events": past_events, "past_courses": past_courses,
-        })
+        }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
@@ -2052,7 +2089,8 @@ class CoreBaseFrontend(AbstractFrontend):
         trial_member = persona['trial_member']
         return self.render(
             rs, "modify_balance",
-            {'old_balance': old_balance, 'trial_member': trial_member})
+            {'old_balance': old_balance, 'trial_member': trial_member},
+            get_mandatory_form_fields(self.modify_balance))
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("new_balance", "change_note")
@@ -2149,7 +2187,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     def change_password_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "change_password")
+        return self.render(rs, "change_password", {},
+                           get_mandatory_form_fields(self.change_password))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("old_password", "new_password", "new_password2")
@@ -2204,7 +2243,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This starts the process of anonymously resetting a password.
         """
-        return self.render(rs, "reset_password")
+        return self.render(rs, "reset_password", {},
+                           get_mandatory_form_fields(self.send_password_reset_link))
 
     @access("anonymous")
     @REQUESTdata("email")
@@ -2314,7 +2354,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email, persona_id=None)
-        return self.render(rs, "do_password_reset")
+        return self.render(rs, "do_password_reset", {},
+                           get_mandatory_form_fields(self.do_password_reset))
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata("#email", "new_password", "new_password2", "cookie")
@@ -2359,7 +2400,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     def change_username_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "change_username")
+        return self.render(rs, "change_username", {},
+                           get_mandatory_form_fields(self.send_username_change_link))
 
     @access("persona")
     @REQUESTdata("new_username")
@@ -2397,8 +2439,9 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username,
             rs.user.persona_id)
-        return self.render(rs, "do_username_change", {
-            'raw_email': new_username})
+        return self.render(
+            rs, "do_username_change", {'raw_email': new_username},
+            get_mandatory_form_fields(self.do_username_change))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("#new_username", "password")
@@ -2431,7 +2474,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
-        return self.render(rs, "admin_username_change", {'data': data})
+        return self.render(rs, "admin_username_change", {'data': data},
+                           get_mandatory_form_fields(self.admin_username_change))
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
@@ -2582,7 +2626,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         data = self.coreproxy.get_persona(rs, persona_id)
-        return self.render(rs, "dearchive_user", {'data': data})
+        return self.render(rs, "dearchive_user", {'data': data},
+                           get_mandatory_form_fields(self.dearchive_persona))
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")

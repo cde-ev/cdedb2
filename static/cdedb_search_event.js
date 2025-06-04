@@ -7,18 +7,19 @@
      *
      * @param options A list of json objects for the initial options. If not given the event shortname cannot be displayed correctly.
      */
-    $.fn.cdedbSearchEvent = function(url, options) {
+    $.fn.cdedbSearchEvent = function(url, options, multi=false) {
         $(this).selectize({
             'valueField' : 'id',
             'labelField' : 'title',
             searchField: ['title','shortname'],
             create: false,
+            createOnBlur: true,
+            closeAfterSelect: !multi,
             options: options,
-            maxItems: 1,
+            maxItems: multi ? null : 1,
             copyClassesToDropdown: false,
             render: {
                 option: function(data, escape) {
-                    console.log(data);
                     return '<div class="option"><div class="name">' + escape(data['title']) +
                         '</div><div class="meta">' + escape(data['shortname']) + '</div></div>';
                 }
@@ -35,12 +36,12 @@
                         callback();
                     },
                     success: function(res) {
-                        console.log(res.events);
                         if (!res.events) return callback();
                         return callback(res.events);
                     }
                 });
-            }
+            },
+            onChange: $(this).onChange,
         });
         return this;
     };

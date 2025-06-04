@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_register.js') }}
 {% endblock %}
@@ -49,6 +50,11 @@
                 {% trans %}
                     Because you were not a CdE-Member at registration, you might have to pay an additional fee.
                 {% endtrans %}
+                {% if persona["is cde_realm"] %}
+                    {% trans %}
+                        If you pay your membership fee before your registration fee, the additional fee will be waived.
+                    {% endtrans %}
+                {% endif %}
                 </p>
             </div>
         {% endif %}

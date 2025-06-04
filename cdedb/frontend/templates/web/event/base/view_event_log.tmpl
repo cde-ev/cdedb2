@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
@@ -38,7 +39,7 @@
                             {{ util.href(cdedblink('event/show_registration',
                                     {'registration_id': registration_map[(entry['event_id'], entry['persona_id'])],
                                      'event_id': entry['event_id']}),
-                                    label=util.persona_name(personas[entry['persona_id']])) }}
+                                    label=personas[entry['persona_id']]|persona_name(include_nickname=true)) }}
                         {% else %}
                             {{ util.persona_anchor(personas[entry['persona_id']], event_id=ambience['event']['id']) }}
                         {% endif %}

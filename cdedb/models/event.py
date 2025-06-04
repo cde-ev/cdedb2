@@ -48,7 +48,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import Accounts, User, cast_fields, now
+from cdedb.common import User, cast_fields, now
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
@@ -130,13 +131,11 @@ class Event(EventDataclass):
         metadata={'update_request_exclude': True})
 
     # Disallow setting via request altogether.
-    offline_lock: bool = dataclasses.field(
-        metadata={'request_exclude': True})
-    is_archived: bool = dataclasses.field(
-        metadata={'request_exclude': True})
+    is_locked: bool = dataclasses.field(metadata={'request_exclude': True})
+    is_archived: bool = dataclasses.field(metadata={'request_exclude': True})
+    is_balanced: bool = dataclasses.field(metadata={'request_exclude': True})
 
     is_cancelled: bool
-    is_balanced: bool
     is_visible: bool
     is_course_list_visible: bool
     is_course_state_visible: bool
@@ -300,7 +299,9 @@ class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ProtoID = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True},
+    )
 
     title: str
     shortname: str
@@ -502,7 +503,10 @@ class EventFee(EventDataclass):
             return ""
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
-            parse_result, {}, {}, {}, condition_only=True)[1]
+            parse_result,
+            data={},  # type: ignore[typeddict-item]
+            condition_only=True,
+        )
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
@@ -547,7 +551,6 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (
-            self.event,
             self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
             self.sortkey,
             self.title,
@@ -579,7 +582,7 @@ class CustomQueryFilter(EventDataclass):
         return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.event_id, self.scope, self.title)
+        return self.scope, self.title
 
     @staticmethod
     def _get_field_string(fields: Collection[str]) -> str:
@@ -650,7 +653,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return (self.constraint_type, self.title)
+        return self.constraint_type, self.title
 
 
 @dataclasses.dataclass
@@ -785,6 +788,14 @@ class Course(EventDataclass):
     notes: Optional[str]
 
     fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+
+    @property
+    def label(self) -> str:
+        return f"{self.nr}. {self.title}"
+
+    @property
+    def shortlabel(self) -> str:
+        return f"{self.nr}. {self.shortname}"
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

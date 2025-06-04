@@ -27,8 +27,8 @@ Fehler bei Anmeldungen
 
 .. _InconsistentPaymentCV:
 
-Anmeldungen mit Inkonsistentem Zahlungstatus
---------------------------------------------
+Anmeldungen mit inkonsistentem Zahlungsstatus
+---------------------------------------------
 
 Dieser Verstoß tritt auf, wenn beim Eintragen der Zahlungsdaten einer Person etwas
 schiefgelaufen ist, z.B. wenn sie einen negativen Betrag bezahlt hat oder kein
@@ -50,6 +50,21 @@ Status ``Teilnehmer`` hat, aber noch keinen Teilnahmebeitrag bezahlt hat
 
 Um den Verstoß zu beheben, erinnere die Person daran, ihren Beitrag zu überweisen,
 ändere ihren Status oder passe ggf. den Teilnahmebeitrag der Person an.
+
+
+.. _ZeroAmountOwedCV:
+
+Anmeldungen ohne zu zahlendem Beitrag
+-------------------------------------
+
+Dieser Verstoß tritt auf, wenn eine Person keinen Teilnahmebeitrag bezahlen muss,
+obwohl Teilnahmebeiträge konfiguriert wurden, außer die Person ist Orga.
+In der Regel deutet dies darauf hin, dass bei der Konfiguration der
+Teilnahmebeiträge etwas schief gelaufen ist.
+
+Um den Verstoß zu beheben, kontrolliere die für die Person aktiven Teilnahmebeiträge.
+Falls du dir nicht sicher bist, wo das Problem liegt, melde dich gerne beim
+Akademie-Finanz-Team <aka-finanzen@lists.cde-ev.de>.
 
 
 .. _NegativeAmountOwedCV:
@@ -147,7 +162,7 @@ Unterbringung zugestimmt hat. Üblicherweise tritt dies nur bei manuellem Eingri
 Orgas auf.
 
 Um den Verstoß zu beheben, bearbeite die Anmeldung und entferne den Haken für
-"Gemischte Unterbringung". Beachte allerdings, dass eine eine gemischt untergebrachte
+"Gemischte Unterbringung". Beachte allerdings, dass eine gemischt untergebrachte
 minderjährige Person ebenfalls einen Verstoß auslöst.
 
 

@@ -33,7 +33,7 @@ oder Workflows in Berührung kommen. Darüber hinaus gibt es noch drei weitere
 Seiten, die sich nicht in dieses Schema eingliedern lassen:
 
 * **Email Templates**: Hier finden sich alle Templates, die von der Datenbank
-  per Mail an ihre Benutzer geschickt werden können. Es hat sich als nütztlich
+  per Mail an ihre Benutzer geschickt werden können. Es hat sich als nützlich
   erwiesen, dort nachschlagen zu können.
 * **Markdown**: Eine kurze Einführung in die Markup-Sprache
   `Markdown <https://daringfireball.net/projects/markdown/>`_, wie sie an vielen

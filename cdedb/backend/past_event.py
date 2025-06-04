@@ -6,7 +6,7 @@ concluded events.
 
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, Union
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -662,7 +662,7 @@ class PastEventBackend(AbstractBackend):
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
         for course_id, course in courses.items():
-            pcourse = {k: v for k, v in course.items()
+            pcourse = {k: v for k, v in course.as_dict().items()
                        if k in PAST_COURSE_FIELDS}
             del pcourse['id']
             pcourse['pevent_id'] = new_id
@@ -710,15 +710,14 @@ class PastEventBackend(AbstractBackend):
         for course_id in courses.keys():
             if course_id not in courses_seen:
                 self.delete_past_course(rs, course_map[course_id])
-            elif not courses[course_id]['active_segments']:
+            elif not courses[course_id].active_segments:
                 self.logger.warning(f"Course {course_id} remains without active parts.")
         return new_id
 
     @access("cde_admin", "event_admin")
     def archive_event(self, rs: RequestState, event_id: int,
                       create_past_event: bool = True,
-                      ) -> Union[tuple[None, str],
-                                 tuple[Optional[list[int]], None]]:
+                      ) -> list[int] | None:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -743,11 +742,8 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if not event.is_cancelled and any(now().date() < part.part_end
-                                                 for part in event.parts.values()):
-                return None, "Event not concluded."
-            if event.offline_lock:
-                return None, "Event locked."
+            if not event.is_cancelled and event.end >= now().date():
+                raise ValueError(n_("Event is not concluded yet."))
             self.event.set_event_archived(rs, event_id)
             new_ids = None
             if create_past_event:
@@ -758,7 +754,7 @@ class PastEventBackend(AbstractBackend):
                         new_ids.append(new_id)
                 if not new_ids:
                     raise ValueError(n_("No event parts have any participants."))
-        return new_ids, None
+        return new_ids
 
     @access("member", "cde_admin")
     def submit_general_query(self, rs: RequestState, query: Query,

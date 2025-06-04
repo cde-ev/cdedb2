@@ -4,6 +4,7 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
+import abc
 from collections.abc import Collection
 from typing import Optional, Protocol
 
@@ -19,17 +20,15 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    cast_fields,
     glue,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
+from cdedb.common.fields import COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
@@ -38,7 +37,7 @@ from cdedb.common.privileges import (
 from cdedb.database.connection import Atomizer
 
 
-class EventCourseBackend(EventBaseBackend):
+class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
     def list_courses(self, rs: RequestState,
                         event_id: int) -> dict[int, str]:
@@ -53,44 +52,12 @@ class EventCourseBackend(EventBaseBackend):
 
     @access("anonymous")
     def get_courses(self, rs: RequestState, course_ids: Collection[int],
-                    ) -> CdEDBObjectMap:
+                        ) -> models.CdEDataclassMap[models.Course]:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm_set(vtypes.ID, course_ids)
-        with Atomizer(rs):
-            data = self.sql_select(rs, "event.courses", COURSE_FIELDS, course_ids)
-            if not data:
-                return {}
-            ret = {e['id']: e for e in data}
-            events = {e['event_id'] for e in data}
-            if len(events) > 1:
-                raise ValueError(n_("Only courses from one event allowed."))
-            event_fields = models.EventField.many_from_database(
-                self._get_event_fields(rs, unwrap(events)).values())
-            segment_data = self.sql_select(
-                rs, "event.course_segments", COURSE_SEGMENT_FIELDS, course_ids,
-                entity_key="course_id")
-            for course in ret.values():
-                course['segments'] = set()
-                course['active_segments'] = set()
-                course['fields'] = cast_fields(course['fields'], event_fields)
-            for segment in segment_data:
-                course = ret[segment['course_id']]
-                course['segments'].add(segment['track_id'])
-                if segment['is_active']:
-                    course['active_segments'].add(segment['track_id'])
-        return ret
-
-    class _GetCourseProtocol(Protocol):
-        def __call__(self, rs: RequestState, course_id: int) -> CdEDBObject: ...
-    get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
-
-    @access("event")
-    def new_get_courses(self, rs: RequestState, course_ids: Collection[int],
-                        ) -> models.CdEDataclassMap[models.Course]:
         course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):
             course_data = self.query_all(
@@ -110,10 +77,9 @@ class EventCourseBackend(EventBaseBackend):
             for course in course_data
         ])
 
-    class _NewGetCourseProtocol(Protocol):
+    class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
-    new_get_course: _NewGetCourseProtocol = singularize(
-        new_get_courses, "course_ids", "course_id")
+    get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(self, rs: RequestState,
@@ -129,7 +95,6 @@ class EventCourseBackend(EventBaseBackend):
         the course.
         """
         data = affirm(vtypes.Course, data)
-        self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
@@ -138,6 +103,7 @@ class EventCourseBackend(EventBaseBackend):
             if not is_privileged(rs, EventPrivileges.courses_write,
                                  current['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
+            self.assert_lock(rs, event_id=current['event_id'])
 
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS and k != "fields"}
@@ -237,7 +203,7 @@ class EventCourseBackend(EventBaseBackend):
         data = affirm(vtypes.Course, data, creation=True)
         # direct validation since we already have an event_id
         with Atomizer(rs):
-            self.assert_offline_lock(rs, event_id=data['event_id'])
+            self.assert_lock(rs, event_id=data['event_id'])
             event = self.get_event(rs, data['event_id'])
             # Check for existence of course tracks
             if not event.tracks:
@@ -319,17 +285,15 @@ class EventCourseBackend(EventBaseBackend):
             or ignore. If None or empty, cascade none.
         """
         course_id = affirm(vtypes.ID, course_id)
-        event_id: int = unwrap(self.sql_select_one(
-            rs, "event.courses", ("event_id",), course_id))  # type: ignore[assignment]
-        if not is_privileged(rs, EventPrivileges.courses_write, event_id):
+        current = self.sql_select_one(
+            rs, "event.courses", ("title", "event_id"), course_id)
+        assert current is not None
+        if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
             raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, course_id=course_id)
+        self.assert_lock(rs, event_id=current['event_id'])
 
         blockers = self.delete_course_blockers(rs, course_id)
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set(str, cascade)
-        cascade &= blockers.keys()
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -339,7 +303,6 @@ class EventCourseBackend(EventBaseBackend):
 
         ret = 1
         with Atomizer(rs):
-            course = self.get_course(rs, course_id)
             # cascade specified blockers
             if cascade:
                 if "attendees" in cascade:
@@ -411,8 +374,7 @@ class EventCourseBackend(EventBaseBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.courses", course_id)
                 self.event_log(rs, const.EventLogCodes.course_deleted,
-                               course['event_id'],
-                               change_note=course['title'])
+                               current['event_id'], change_note=current['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),

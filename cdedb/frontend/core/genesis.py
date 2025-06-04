@@ -11,7 +11,14 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
+from cdedb.common import (
+    CdEDBObject,
+    GenesisDecision,
+    RequestState,
+    get_mandatory_form_fields,
+    merge_dicts,
+    now,
+)
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.validation.validate import (
@@ -50,13 +57,16 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
         meta_info = self.coreproxy.get_meta_info(rs)
+        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
+        if not rs.values.get('attachment_hash'):
+            mandatory_fields.add('attachment')
         return self.render(rs, "genesis/genesis_request", {
             'max_rationale': self.conf["MAX_RATIONALE"],
             'allowed_genders': allowed_genders,
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options,
             'meta_info': meta_info,
-        })
+        }, mandatory_fields=mandatory_fields)
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
@@ -136,8 +146,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          'genesis_case_id': self.encode_parameter(
                              "core/genesis_verify", "genesis_case_id",
                              str(case_id), persona_id=None),
-                         'given_names': data['given_names'],
-                         'family_name': data['family_name'],
+                         'case': data,
                      })
         rs.notify(
             "success",
@@ -332,6 +341,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
+        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
 
         courses: dict[int, str] = {}
         if case['pevent_id']:
@@ -341,7 +351,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return self.render(rs, "genesis/genesis_modify_form", {
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
-            'realm_options': realm_options, 'choices': choices})
+            'realm_options': realm_options, 'choices': choices}, mandatory_fields)
 
     @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),

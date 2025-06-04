@@ -944,6 +944,7 @@ class CoreBaseBackend(AbstractBackend):
             raise PrivilegeError(n_("Hiding prevented."))
         if "is_archived" in data:
             if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
+                    and "ml_admin" not in rs.user.roles
                     or "archive" not in allow_specials):
                 raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
@@ -2400,7 +2401,7 @@ class CoreBaseBackend(AbstractBackend):
                                    PERSONA_CORE_FIELDS, data["id"])
         if data is None:
             raise RuntimeError(n_("Impossible."))
-        vals = {k: data[k] for k in ('username', 'given_names', 'family_name')}
+        vals = {k: data[k] for k in ('username', 'given_names', 'nickname', 'family_name')}
         vals['persona_id'] = data['id']
         rs.user = User(roles=extract_roles(data), **vals)
 

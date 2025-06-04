@@ -49,10 +49,10 @@ class SchemaDescription:
     def process_chunk(self, block: str) -> None:
         """Process a block describing a single entry of the schema."""
         if block.startswith("attributetype"):
-            asn_str = block.lstrip("attributetype").strip()
+            asn_str = block.removeprefix("attributetype").strip()
             self.attribute_types.append(AttributeTypeDescription(asn_str).toWire())
         elif block.startswith("objectclass"):
-            asn_str = block.lstrip("objectclass").strip()
+            asn_str = block.removeprefix("objectclass").strip()
             self.object_classes.append(ObjectClassDescription(asn_str).toWire())
         else:
             raise ValueError(f"Cant process the following chunk:\n{block}")

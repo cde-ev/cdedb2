@@ -2,8 +2,9 @@ LDAP
 ====
 
 We expose some (readonly) information about our users via LDAP.
-This information is meant to be used by other CdE-brewed and third-party-tools
-living in the CdE ecosystem to
+This information is consumed by our `CdE-KeyCloak <https://auth.cde-ev.de/realms/CdE/account>`_
+to provide a full-blown OID-Connect and OAuth provider, which is in turn
+used by other CdE-brewed and third-party-tools living in the CdE ecosystem to
 
 - authenticate and
 - authorize users
@@ -24,6 +25,10 @@ Our LDAP Tree looks as follows::
     │   ├── cn=test
     │   └── ...
     ├── ou=groups
+    │   ├── ou=any
+    │   │   ├── cn=moderator
+    │   │   ├── cn=orga
+    │   │   └── cn=presider
     │   ├── ou=assembly-presiders
     │   │   ├── cn=presiders-1
     │   │   └── ...

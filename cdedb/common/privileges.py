@@ -31,23 +31,40 @@ class EventPrivileges(Flag):
     registrations_stats = auto()
     # Backend only
     registrations_read_internal = auto()
+    # See the participant list whenever participants can see it
+    _participant_list_dummy = auto()
+    participant_list = _participant_list_dummy | registrations_read_internal
     # Reading registrations includes reading the associated data (in the frontend)
     _registrations_read_dummy = auto()
     registrations_read = (_registrations_read_dummy | courses_read | lodgements_read
-                          | registrations_read_internal)
+                          | registrations_read_internal | participant_list)
     registrations_write = auto()
+    payment_write = auto()
+    token = auto()
     log_read = auto()
     # send_email = auto()  #: api only? tool suggested recently
     # create = auto()
     conclude = auto()
     balance = auto()
+    lock = auto()
     delete = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
-    all_write = (basic_write | free_texts_write | entities_write | conclude | balance
-                 | delete)
+
+    # Used to determine which actions are blocked by event being locked.
+    all_write = (
+            basic_write
+            | entities_write
+            | free_texts_write
+            | payment_write  # Notably does not include writing of payments via cde realm.
+            # token  # Do not block token management via event lock, so tokens can still be revoked.
+            | conclude
+            | balance
+            # lock  # Do not block (un)locking via event lock, so event can be unlocked.
+            | delete
+    )
 
 
 def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
@@ -68,10 +85,11 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     admin_privileges = ~(EP.conclude | EP.balance)
     orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
-                               | EP.registrations_stats | EP.registrations_read_internal)
+                               | EP.registrations_stats | EP.registrations_read_internal
+                               | EP.participant_list)
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
-                                | EP.balance)
+                                | EP.payment_write | EP.balance)
 
     return (
         # Special case for conclude which requires two admin privileges.

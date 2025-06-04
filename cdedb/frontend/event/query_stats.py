@@ -516,7 +516,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 ['checkin_periods.max_checkin_time'],
                 [
                     _participant_constraint(part),
-                    ('checkin.current', QueryOperators.equal, True),
+                    ('reg.is_checked_in', QueryOperators.equal, True),
                 ],
                 [],
             )
@@ -527,11 +527,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                     'checkin_periods.min_checkout_time',
                     'checkin_periods.max_checkin_time',
                     'checkin_periods.max_checkout_time',
-                    'checkin.current',
+                    'reg.is_checked_in',
+                    'reg.has_been_checked_in',
                 ],
                 [
                     _participant_constraint(part),
-                    ('checkin_periods.min_checkin_time', QueryOperators.nonempty, None),
+                    ('reg.has_been_checked_in', QueryOperators.equal, True),
                 ],
                 [],
             )
@@ -540,7 +541,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [],
                 [
                     _participant_constraint(part),
-                    ('checkin_periods.min_checkin_time', QueryOperators.empty, None),
+                    ('reg.has_been_checked_in', QueryOperators.equal, False),
                 ],
                 [],
             )
@@ -662,16 +663,16 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         # All queries have only a single constraint.
         return True
 
-    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: models.Event, course: models.Course, track_id: int) -> bool:  # type: ignore[override]
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
-            return track_id in course['segments']
+            return track_id in course.segments
         elif self == self.cancelled:
-            return (track_id in course['segments']
-                    and track_id not in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id not in course.active_segments)
         elif self == self.taking_place:
-            return (track_id in course['segments']
-                    and track_id in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id in course.active_segments)
         else:
             raise RuntimeError(n_("Impossible."))
 

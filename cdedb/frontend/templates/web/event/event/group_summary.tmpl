@@ -2,6 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_dynamicrow.js') }}
 {% endblock %}
@@ -23,7 +24,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>
+    <div class="p button-par">
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
                                icon='plus', aclass='btn btn-success btn-sm',
                                readonly=not is_privileged_for('add_part_group')) }}
@@ -32,12 +33,13 @@
                                    icon='plus', aclass='btn btn-success btn-sm',
                                    readonly=not is_privileged_for('add_track_group')) }}
         {% endif %}
-    </p>
-    <h2>
-        {% trans %}Part Groups{% endtrans %}
+    </div>
+
+    <div>
         {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen") }}
-    </h2>
-    <table id="part-group-summary" class="table table-stats">
+        {{ util.h(_("Part Groups"), level=2) }}
+    </div>
+        <table id="part-group-summary" class="table table-stats">
         <thead>
             <tr>
                 <th>{% trans %}Type{% endtrans %}</th>
@@ -81,20 +83,23 @@
                                 {{ util.input_hidden("part_group_id", part_group.id) }}
                                 {{ util.input_submit(
                                         label=None, icon="envelope", aclass="btn btn-sm btn-success",
-                                        title=gettext("Create Mailinglist for this Part Group")) }}
+                                        title=gettext("Create Mailinglist for this Part Group"),
+                                        readonly=not is_privileged_for('create_event_mailinglist')) }}
                             </form>
                         {% endif %}
                         {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group.id}),
                                      title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
                                      label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group.id),
-                                     aclass="btn btn-sm btn-warning") }}
+                                     aclass="btn btn-sm btn-warning",
+                                     readonly=not is_privileged_for('change_part_group')) }}
                         <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group.id}) }}"
                               method="POST" id="deletepartgroupform{{ part_group.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_part_group") }}
                             {{ util.input_submit(
                                 label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
-                                title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname'])) }}
+                                title=gettext("Delete part group %(shortname)s")|format(shortname=part_group['shortname']),
+                                readonly=not is_privileged_for('delete_part_group')) }}
                         </form>
                     </td>
                 </tr>
@@ -103,10 +108,8 @@
     </table>
 
     {% if ambience['event']['tracks'] %}
-    <h2>
-        {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
-    </h2>
+        {{ util.h(_("Track Groups"), level=2) }}
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Course choice sync groups may be deleted freely, but you may not be able ro recreate them if registrations already exist.
@@ -155,22 +158,18 @@
                         {{ util.href(cdedblink("event/change_track_group", {'track_group_id': track_group.id}),
                                      title=gettext("Change track group %(shortname)s")|format(shortname=track_group['shortname']),
                                      label=util.make_icon("pen"), anid="trackgroup{}_change".format(track_group.id),
-                                     aclass="btn btn-sm btn-warning") }}
+                                     aclass="btn btn-sm btn-warning",
+                                     readonly=not is_privileged_for('change_track_group')) }}
                         <form action="{{ cdedblink("event/delete_track_group", {'track_group_id': track_group.id}) }}"
                               method="POST" id="deletetrackgroupform{{ track_group.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_track_group") }}
                             {{ util.input_submit(
                                 label=util.make_icon("trash-alt"), aclass="btn btn-sm btn-danger", icon=None,
-                                title=gettext("Delete track group %(shortname)s")|format(shortname=track_group['shortname'])) }}
-                            {% call util.output_errors("ack_delete", wrapper=True) %}
-                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                            {% endcall %}
+                                title=gettext("Delete track group %(shortname)s")|format(shortname=track_group['shortname']),
+                                readonly=not is_privileged_for('delete_track_group')) }}
+                            {{ util.ack_delete(gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.")) }}
                         </form>
-                        <script nonce="{{ csp_nonce }}">
-                            $('#deletetrackgroupform{{ track_group.id }}').cdedbProtectAction("{{ gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.") }}");
-                            $('#deletetrackgroupform{{ track_group.id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
                     </td>
                 </tr>
             {% endfor %}

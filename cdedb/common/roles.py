@@ -300,7 +300,7 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 #: every admin view with one admin role per row (except of genesis)
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
-    "core_user", "core", "user_review",
+    "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
     "event_user", "event_mgmt", "event_list", "event_orga",
@@ -314,12 +314,14 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
 }
 
 ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
-    "ml_mod_assembly"}
+    "ml_mod", "ml_mod_core", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod_assembly",
+}
 
 ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
-    "ml_mgmt_assembly"}
+    "ml_mgmt", "ml_mgmt_core", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt_assembly",
+}
 
 
 def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
@@ -328,8 +330,10 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
-        result |= {"core", "core_user", "cde_user", "event_user",
-                   "assembly_user", "ml_user", "user_review"}
+        result |= {
+            "core", "core_user", "cde_user", "event_user", "assembly_user",
+            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
+        }
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:

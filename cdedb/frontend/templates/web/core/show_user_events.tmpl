@@ -1,18 +1,18 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=ambience['persona']|persona_name %}
         {{ name }} – Event Data
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
                             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_user_events"), gettext("Show Event Data"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Event Data"), util.persona_name(ambience['persona']), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Event Data"), ambience['persona']|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% block static_notifications %}
@@ -30,7 +30,7 @@
         {% endtrans %}
     </p>
     <ul>
-        {% for event in events.values()|sort %}
+        {% for event in events.values()|sort(reverse=True) %}
             <li>
                 {% if 'event_admin' in user.roles %}
                     {{ util.href(cdedblink("event/show_registration",

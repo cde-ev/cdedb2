@@ -156,7 +156,9 @@ class QuerySpecEntry:
     title_prefix: str = ""
     title_params: dict[str, str] = dataclasses.field(default_factory=dict)
     choices: QueryChoices = dataclasses.field(default_factory=dict)
-    translate_prefix: bool = True
+    translate_prefix: bool = False
+    order_by: str = ""
+    order_type: str = ""
 
     # Mask gettext so pybabel doesn't try to extract the f-string.
     def get_title(self, g: Callable[[str], str]) -> str:
@@ -433,18 +435,23 @@ _QUERY_SPECS = {
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
-            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
-            "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
-            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"), n_("Realm")),
-            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"), n_("Realm")),
+            "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_event_realm": QuerySpecEntry("bool", n_("Events"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_assembly_realm": QuerySpecEntry("bool", n_("Assemblies"),
+                                          n_("Realm"), translate_prefix=True),
+            "is_cde_realm": QuerySpecEntry("bool", n_("cde_realm"),
+                                          n_("Realm"), translate_prefix=True),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
@@ -492,10 +499,11 @@ _QUERY_SPECS = {
             "donation": QuerySpecEntry("money", n_("Annual Donation")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "weblink": QuerySpecEntry("str", n_("WWW")),
             "specialisation": QuerySpecEntry("str", n_("Specialisation")),
             "affiliation": QuerySpecEntry("str", n_("School, University, …")),
@@ -538,10 +546,11 @@ _QUERY_SPECS = {
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
-                k: QuerySpecEntry("bool", k, n_("Admin"))
+                k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
                 for k in ADMIN_KEYS
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
+            ",".join(ADMIN_KEYS): QuerySpecEntry(
+                "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
@@ -586,9 +595,11 @@ _QUERY_SPECS = {
             "courses.title": QuerySpecEntry("str", n_("course title")),
             "courses.description": QuerySpecEntry("str", n_("course description")),
             "events.title": QuerySpecEntry(
-                "str", n_("Title_[[name of an entity]]"), n_("Past Event")),
+                "str", n_("Title_[[name of an entity]]"),
+                n_("Past Event"), translate_prefix=True,
+            ),
             "events.tempus": QuerySpecEntry(
-                "date", n_("Cutoff date"), n_("Past Event")),
+                "date", n_("Cutoff date"), n_("Past Event"), translate_prefix=True),
         },
 }
 
@@ -746,7 +757,11 @@ class Query:
     def _order_entries(self) -> list[QueryOrderEntry]:
         """Convert the order entries into the dataclass helper."""
         return [
-            QueryOrderEntry(entry.split(",")[0], ascending, self.spec[entry].type)
+            QueryOrderEntry(
+                column=self.spec[entry].order_by or entry.split(",")[0],
+                ascending=ascending,
+                type=self.spec[entry].order_type or self.spec[entry].type,
+            )
             for entry, ascending in self.order
         ]
 
@@ -921,7 +936,7 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
 def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
     if courses is None:
         return {}
-    return dict((c.id, f"{c.nr} {c.shortname}") for c in xsorted(courses.values()))
+    return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
 def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
@@ -986,14 +1001,15 @@ def make_registration_query_spec(event: "models.Event",
         "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("money", n_("Amount Paid")),
-        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.remaining_owed": QuerySpecEntry("money", n_("Remaining Owed")),
+        "reg.amount_owed": QuerySpecEntry("money", n_("Amount Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
         "reg.notes": QuerySpecEntry("str", n_("Notes")),
         "reg.orga_notes": QuerySpecEntry("str", n_("Orga-Notes")),
-        "checkin.current": QuerySpecEntry("bool", n_("Currently checked in")),
+        "reg.is_checked_in": QuerySpecEntry("bool", n_("Currently checked-in")),
+        "reg.has_been_checked_in": QuerySpecEntry("bool", n_("Has been checked-in")),
         "checkin_at.checkin_time,checkin_at.checkout_time": QuerySpecEntry(
             "checkin_datetime", n_("Checked in at")),
         "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin")),
@@ -1008,6 +1024,13 @@ def make_registration_query_spec(event: "models.Event",
                 "money", n_("Personalized Amount"), fee.title)
             for fee in event.fees.values() if fee.is_personalized()
         },
+        **{
+            f"amount_owed.{kind.name}": QuerySpecEntry(
+                "money", title_base=str(kind), title_prefix=n_("Amount Owed"),
+                translate_prefix=True,
+            )
+            for kind in const.EventFeeType
+        },
     }
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
@@ -1019,11 +1042,15 @@ def make_registration_query_spec(event: "models.Event",
             f"part{part.id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
             f"part{part.id}.lodgement_id": QuerySpecEntry(
-                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices),
+                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices,
+                order_by=f"lodgement{part.id}.title", order_type="str",
+            ),
             f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
             f"lodgement{part.id}.group_id": QuerySpecEntry(
                 "enum_int", n_("lodgement group"), prefix,
-                choices=lodgement_group_choices),
+                choices=lodgement_group_choices,
+                order_by=f"lodgement_group{part.id}.title", order_type="str",
+            ),
             f"lodgement{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement title"), prefix),
             f"lodgement{part.id}.notes": QuerySpecEntry(
@@ -1047,9 +1074,13 @@ def make_registration_query_spec(event: "models.Event",
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
             f"track{track_id}.course_id": QuerySpecEntry(
-                "enum_int", n_("course"), prefix, choices=course_choices),
+                "enum_int", n_("course"), prefix, choices=course_choices,
+                order_by=f"course{track_id}.nr_shortname", order_type="str",
+            ),
             f"track{track_id}.course_instructor": QuerySpecEntry(
-                "enum_int", n_("instructed course"), prefix, choices=course_choices),
+                "enum_int", n_("instructed course"), prefix, choices=course_choices,
+                order_by=f"course_instructor{track_id}.nr_shortname", order_type="str",
+            ),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
             f"course{track_id}.nr_shortname": QuerySpecEntry(
@@ -1208,7 +1239,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     spec = {
         "course.id": QuerySpecEntry("id", n_("course id")),
         "course.course_id": QuerySpecEntry(
-            "enum_int", n_("course"), choices=course_choices),
+            "enum_int", n_("course"), choices=course_choices,
+            order_by="course.nr_shortname", order_type="str",
+        ),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
         "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),

@@ -1,10 +1,9 @@
-
-from typing import Callable, Optional
-
 import pyparsing as pp
 
+from .evaluation import EvaluationData, evaluate
 
-def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
+
+def serialize(result: pp.ParseResults, *, part_substitutions: dict[str, str] | None = None) -> str:
     """Public serialization interface, to get a normalized condition string.
 
     :param part_substitutions: Replace each part name in the dict with it's value.
@@ -12,7 +11,7 @@ def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str,
     return _serialize(result, outer_operator=None, ps=part_substitutions or {})
 
 
-def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[str, str]) -> str:
+def _serialize(result: pp.ParseResults, outer_operator: str | None, ps: dict[str, str]) -> str:
     """Internal recursive normalizer.
 
     :param outer_operator: If given, put parentheses around current operation, if
@@ -32,6 +31,7 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
         'field': lambda x: f"field.{x[0]}",
         'part': lambda x: f"part.{ps.get(x[0], x[0])}",
         'bool': lambda x: f"{x[0]}",
+        'age': lambda x: f"age.U{x[0]}",
     }
     name = result.get_name()
     if name in {'and', 'or', 'xor'} and outer_operator is not None and name != outer_operator:
@@ -40,54 +40,57 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
         return functions[name](result)
 
 
-def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-                 other_values: dict[str, bool], *,
-                 outer_operator: Optional[str] = None, top_level: bool = True, condition_only: bool = False,
-                 ) -> tuple[Optional[bool], str]:
-    functions: dict[str, Callable[[list[tuple[Optional[bool], str]]], tuple[Optional[bool], str]]] = {
-        'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
-        'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),
-        'xor': lambda sr: (sub_results[0][0] != sub_results[1][0], f"{sub_results[0][1]} <b>xor</b> {sub_results[1][1]}"),
-        'not': lambda sr: (not sub_results[0][0], f"<b>not</b> {sub_results[0][1]}"),
-        'true': lambda sr: (True, "true"),
-        'false': lambda sr: (False, "false"),
-    }
-
+def visual_debug(
+        result: pp.ParseResults,
+        *,
+        data: EvaluationData,
+        outer_operator: str | None = None,
+        top_level: bool = True,
+        condition_only: bool = False,
+) -> str:
     name = result.get_name()
     operator = name if name in {'and', 'or', 'xor'} else ('' if name == 'not' else None)
 
     if name == "field":
-        value, text = None if condition_only else field_values[result[0]], f"field.{result[0]}"
+        text = f"field.{result[0]}"
     elif name == "part":
-        value, text = None if condition_only else part_values[result[0]], f"part.{result[0]}"
-    elif name == "bool":
-        value, text = None if condition_only else other_values[result[0]], f"{result[0]}"
+        text = f"part.{result[0]}"
+    elif name == "age":
+        text = f"age.U{result[0]}"
+    elif name in {"bool"}:
+        text = str(result[0])
+    elif name in {"false", "true"}:
+        text = name
     else:
         sub_results = [
             visual_debug(
-                token, field_values, part_values, other_values,
-                outer_operator=operator, top_level=False, condition_only=condition_only,
+                token, data=data, outer_operator=operator, top_level=False,
+                condition_only=condition_only,
             )
             for token in result
         ]
-        value, text = functions[name](sub_results)
-        if condition_only:
-            value = None
+        if name in {"and", "or", "xor"}:
+            text = f"{sub_results[0]} <b>{name}</b> {sub_results[1]}"
+        elif name == "not":
+            text = f"<b>not</b> {sub_results[0]}"
+        else:
+            raise RuntimeError()  # pragma: no cover
+
+    value = None if condition_only else evaluate(result, data)
 
     status = 'neutral' if value is None else 'true' if value else 'false'
 
     if name in {'and', 'or', 'xor'}:
         if outer_operator is not None and name != outer_operator:
-            return value, f'<span class="block {status}"><b>(</b>{text}<b>)</b></span>'
+            return f'<span class="block {status}"><b>(</b>{text}<b>)</b></span>'
         elif top_level:
-            return value, f'<span class="block {status}">{text}</span>'
+            return f'<span class="block {status}">{text}</span>'
         else:
-            return value, text
-    elif name in {'true', 'false', 'field', 'part', 'bool'}:
-        if value is None:
-            return value, f'<span class="">{text}</span>'
-        return value, f'<span class="atom {status}">{text}</span>'
+            return text
     elif name == 'not':
-        return value, f'<span class="block {status}">{text}</span>'
+        return f'<span class="block {status}">{text}</span>'
+    elif name in {'true', 'false', 'field', 'part', 'bool', 'age'}:
+        class_ = f"atom {status}" if value is not None else ""
+        return f'<span class="{class_}">{text}</span>'
     else:
         raise RuntimeError()  # pragma: no cover

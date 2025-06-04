@@ -2,14 +2,17 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {{ util.persona_name(data) }}
+    {{ data|persona_name }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
         icon="user", active=True) }}
 {% endblock %}
 
@@ -150,8 +153,9 @@
                         {% trans %}QR{% endtrans %}
                     </a>
                     <script nonce="{{ csp_nonce }}">
-                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': data|persona_name,
                                                                  'loading': gettext("Loading..."),
+                                                                 'note': "" if not data['foto'] else gettext("QR code does not include the profile photo. Consider downloading the vCard instead."),
                                                                  'close': gettext("Close") }|tojson }})
                     </script>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'],
@@ -174,7 +178,7 @@
                 {% trans %}Name{% endtrans %}
             </dt>
             <dd>
-                {{ util.persona_name(data, include_nickname=True, with_titles=True) }}
+                {{ data|persona_name(include_nickname=True, with_titles=True) }}
                 {% if data['pronouns'] and data['pronouns_profile'] %}
                     <small class="text-muted">
                         ({{ data['pronouns'] }})
@@ -185,7 +189,7 @@
                 <dt title="{% trans %}Legal Name{% endtrans %}">
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
-                <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
+                <dd>{{ data|persona_name(use_legal_name=True, with_titles=True) }}</dd>
                 {% if "show_legal_given_names" in data %}
                     <dt title="{% trans %}Show legal name in member search{% endtrans %}">
                         {% trans %}Show legal name in member search{% endtrans %}
@@ -554,7 +558,7 @@
                             {{ data['address2'] }}<br />
                         {% endif %}
                         {% if data['address_supplement2'] %}
-                            {{ data['address_supplement2'] }}<br />{
+                            {{ data['address_supplement2'] }}<br />
                         {% endif %}
                         {% if not data['show_address2'] %}</span>{% endif %}
                         {{ data['postal_code2'] }} {{ data['location2'] }}
@@ -736,16 +740,10 @@ Mitglied.</pre>
                                         {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
                                                 aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
                                                 title=gettext("Cannot archive meta admins.") if data['is_meta_admin'] else "") }}
-                                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                        {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
-                                <script nonce="{{ csp_nonce }}">
-                                    $('#archivepersonaform').cdedbProtectAction(
-                                        "{{ gettext("The Account will be archived.") }}");
-                                    $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
-                                        .parent().hide();
-                                </script>
                             </div>
                         </div>
                         <div class="col-sm-8">
@@ -804,14 +802,8 @@ Mitglied.</pre>
                                     {{ util.anti_csrf_token('core/purge_persona') }}
                                     {{ util.input_submit(label=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
-                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                    {{ util.ack_delete(gettext("The Account will be deleted.")) }}
                                 </form>
-                                <script nonce="{{ csp_nonce }}">
-                                    $('#purgepersonaform').cdedbProtectAction(
-                                        "{{ gettext("The Account will be deleted.") }}");
-                                    $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)
-                                        .parent().hide();
-                                </script>
                             </div>
                         </div>
                         <div class="col-sm-8">

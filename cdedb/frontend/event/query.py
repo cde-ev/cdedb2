@@ -19,6 +19,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     determine_age_class,
+    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -44,12 +45,11 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
     inspect_validation as inspect,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.query_stats import (
     EventCourseStatistic,
     EventRegistrationInXChoiceGrouper,
@@ -117,7 +117,7 @@ class EventQueryMixin(EventBaseFrontend):
             for course_stat in EventCourseStatistic:
                 _tracks: dict[int, set[int]] = {
                     track_id: set(
-                        course['id'] for course in courses.values()
+                        course.id for course in courses.values()
                         if course_stat.test(rs.ambience['event'], course, track_id))
                     for track_id in tracks
                 }
@@ -180,7 +180,7 @@ class EventQueryMixin(EventBaseFrontend):
         This is a pretty versatile method building on the query module.
         """
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
@@ -332,16 +332,19 @@ class EventQueryMixin(EventBaseFrontend):
     def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
 
-    def configure_custom_filter_form(self, rs: RequestState, event_id: int,
-                                     scope: QueryScope) -> Response:
+    def configure_custom_filter_form(
+        self, rs: RequestState, event_id: int, scope: QueryScope, creation: bool = True,
+    ) -> Response:
         spec = scope.get_spec(event=rs.ambience['event'])
         fields_by_kind = collections.defaultdict(list)
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
 
-        return self.render(rs, "query/configure_custom_filter", {
-            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
-        })
+        return self.render(
+            rs, "query/configure_custom_filter",
+            {'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind},
+            models.CustomQueryFilter.mandatory_form_fields(creation=creation),
+        )
 
     @staticmethod
     def _validate_custom_filter_uniqueness(rs: RequestState, data: CdEDBObject,
@@ -396,7 +399,8 @@ class EventQueryMixin(EventBaseFrontend):
         })
         merge_dicts(rs.values, values)
 
-        return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
+        return self.configure_custom_filter_form(
+            rs, event_id, custom_filter.scope, creation=False)
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -439,7 +443,7 @@ class EventQueryMixin(EventBaseFrontend):
                      ) -> Response:
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)
@@ -589,9 +593,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         search_additions: list[QueryConstraint] = []
         event = None
-        num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
-                                if {"core_admin", "meta_admin"} & rs.user.roles
-                                else self.conf["NUM_PREVIEW_PERSONAS"])
+        # higher number of previews is more convenient for orgas
+        num_preview_personas = self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
         if kind == "orga_registration":
             if aux is None:
                 return self.send_json(rs, {})
@@ -635,43 +638,26 @@ class EventQueryMixin(EventBaseFrontend):
                 spec[key] = QuerySpecEntry("str", "")
                 query = Query(
                     QueryScope.quick_registration, spec,
-                    ("registrations.id", "username", "family_name",
+                    ("persona_id", "registrations.id", "username", "family_name",
                      "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
-                data = list(self.eventproxy.submit_general_query(
-                    rs, query, event_id=aux))
+                data = list(self.eventproxy.submit_general_query(rs, query, event_id=aux))
+                # add 'id' to each object, to enable usage of EntitySorter.persona
+                for datum in data:
+                    datum["id"] = datum["persona_id"]
+                data = xsorted(data, key=EntitySorter.persona)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
-            data = xsorted(data, key=lambda e: e['id'])[:num_preview_personas]
-
-        def name(x: CdEDBObject) -> str:
-            return "{} {}".format(x['given_names'], x['family_name'])
-
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(int)
-        for entry in data:
-            counter[name(entry)] += 1
-            if 'id' not in entry:
-                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
+            data = data[:num_preview_personas]
 
         # Generate return JSON list
         ret = []
-        for entry in xsorted(data, key=EntitySorter.persona):
+        for entry in data:
             result = {
-                'id': entry['id'],
-                'name': name(entry),
+                'id': entry['registrations.id'],
+                'email': entry['username'],
+                'name': make_persona_name(entry, include_nickname=True),
             }
-            # Email/username is only delivered if we have admins
-            # rights, a search term with an @ (and more) matches the
-            # mail address, or the mail address is required to
-            # distinguish equally named users
-            searched_email = any(
-                '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
-                and entry['username'] and t in entry['username']
-                for t in terms)
-            if (counter[name(entry)] > 1 or searched_email or
-                    self.is_admin(rs)):
-                result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})

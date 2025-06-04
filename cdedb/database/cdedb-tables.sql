@@ -452,6 +452,7 @@ CREATE TABLE core.changelog (
 CREATE INDEX changelog_code_idx ON core.changelog(code);
 CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
 CREATE UNIQUE INDEX changelog_persona_id_pending ON core.changelog(persona_id) WHERE code = 1;
+GRANT SELECT (persona_id, ctime) ON core.changelog TO cdb_ldap;
 -- SELECT can not be easily restricted here due to change displacement logic
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
@@ -771,7 +772,7 @@ CREATE TABLE event.events (
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
-        offline_lock                 boolean NOT NULL DEFAULT False,
+        is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         -- show cancelled courses in course list and restrict registration to active courses
@@ -1064,6 +1065,7 @@ CREATE TABLE event.registrations (
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
+        amount_owed_by_kind     jsonb NOT NULL DEFAULT '{}'::jsonb,
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
@@ -1212,6 +1214,7 @@ CREATE TABLE event.log (
 );
 CREATE INDEX event_log_code_idx ON event.log(code);
 CREATE INDEX event_log_event_id_idx ON event.log(event_id);
+GRANT SELECT (event_id, persona_id, ctime, code) ON event.log TO cdb_ldap;
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
 GRANT UPDATE (change_note), DELETE ON event.log TO cdb_admin;
@@ -1406,6 +1409,7 @@ CREATE TABLE assembly.log (
 CREATE INDEX assembly_log_code_idx ON assembly.log(code);
 CREATE INDEX assembly_log_assembly_id_idx ON assembly.log(assembly_id);
 GRANT UPDATE (change_note), DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT (assembly_id, persona_id, ctime, code) ON assembly.log TO cdb_ldap;
 GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
@@ -1537,6 +1541,7 @@ CREATE TABLE ml.log (
 );
 CREATE INDEX ml_log_code_idx ON ml.log(code);
 CREATE INDEX ml_log_mailinglist_id_idx ON ml.log(mailinglist_id);
+GRANT SELECT (mailinglist_id, persona_id, ctime, code) ON ml.log TO cdb_ldap;
 GRANT SELECT, INSERT ON ml.log TO cdb_persona;
 GRANT UPDATE (change_note), DELETE ON ml.log TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;

@@ -9,7 +9,6 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     GenesisDecision,
     RequestState,
@@ -24,6 +23,7 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
     PERSONA_ML_FIELDS,
 )
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
@@ -107,11 +107,11 @@ class TestCoreBackend(BackendTest):
                 key = self.core.login(ANONYMOUS, user['username'], "wrong key", IP)
                 self.assertIsNone(key)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_logout(self) -> None:
         self.assertTrue(self.key)
         self.assertEqual(1, self.core.logout(self.key))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(PrivilegeError):
             self.core.logout(self.key)
 
     @as_users("anton")
@@ -154,7 +154,7 @@ class TestCoreBackend(BackendTest):
                 self.assertIn(
                     "A birthday must be in the past. (birthday)", cm.exception.args)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
@@ -162,7 +162,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_name, self.core.retrieve_persona(
             self.key, self.user['id'])['nickname'])
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_password(self) -> None:
         user = self.user
         ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
@@ -1134,7 +1134,7 @@ class TestCoreBackend(BackendTest):
             'location2': 'Foreign City',
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
-            'show_address': True,
+            'show_address': False,
             'show_address2': True,
             'show_legal_given_names': False,
             'specialisation': 'Alles\nUnd noch mehr',

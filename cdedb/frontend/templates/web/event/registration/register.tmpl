@@ -1,9 +1,10 @@
-{% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
+{% set sidenav_active = "event_register_preview" if preview else "event_register" %}
 {% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_register.js') }}
 {% endblock %}
@@ -19,19 +20,17 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{% if not preview %}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
-    {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
-{% else %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
-    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
-                            gettext("Registration Preview"), active=True) }}
-{% endif %}
+    {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
+                                gettext("Registration Preview"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+    {% endif %}
 {% endblock %}
 
 {% block heading %}
@@ -40,6 +39,12 @@
 {% endblock %}
 
 {% block content %}
+    {% if preview %}
+        <div class="p button-par">
+            {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
+                         gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
+        </div>
+    {% endif %}
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}
             {% trans %}
@@ -76,7 +81,7 @@
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
-                {{ util.persona_name(persona, include_nickname=True, with_titles=True) }}
+                {{ persona|persona_name(include_nickname=True, with_titles=True) }}
             </dd>
 
             <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
@@ -127,6 +132,11 @@
                 {% trans %}
                     Because you are not a CdE-Member, you might have to pay an additional fee.
                 {% endtrans %}
+                {% if persona["is cde_realm"] %}
+                    {% trans %}
+                        If you pay your membership fee before your registration fee, the additional fee will be waived.
+                    {% endtrans %}
+                {% endif %}
                 </p>
             </div>
         {% endif %}
@@ -137,7 +147,7 @@
         {% endif %}
 
         {{ util.h(n_("Additional Information"), underline=true) }}
-        {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
+        {{ generic_event.additional_registration_choices(age_class, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_additional_questionnaire'] %}
@@ -163,17 +173,26 @@
                 {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
                 {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
                                             defaultvalue="True") }}
+                {{ util.form_input_text("age", gettext("Age"), type="number", anid="fee-precompute-age",
+                                        defaultvalue=persona_age) }}
             {% endif %}
         {% endcall %}
 
         {% if not preview %}
-            {% if age.with_guardian() %}
+            {% if age_class.with_guardian() %}
                 {{ util.form_input_static(aclass='text-info', icon='info-circle',
                     value=gettext("I confirm that I will attend the event only under the supervision of a parent who will attend the same event.")) }}
             {% endif %}
             {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
     </form>
+
+    {% if preview %}
+        <div class="p button-par">
+            {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
+                         gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-default") }}
+        </div>
+    {% endif %}
 
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
@@ -186,6 +205,7 @@
             'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'age': {{ persona_age }},
             'part_ids': {{ (ambience['event'].parts|list if ambience['event'].parts|length <= 1 else None)|tojson }},
         }
 

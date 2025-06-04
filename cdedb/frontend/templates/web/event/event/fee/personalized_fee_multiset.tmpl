@@ -2,6 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_multiset.js') }}
 {% endblock %}
@@ -70,10 +71,10 @@
             {{ util.input_hidden('registration_ids', registration_ids|join(',')) }}
             {# Already sorted #}
             {% for reg in registrations %}
-                {{ util.form_input_text("amount" + reg['id']|string, label=util.persona_name(personas[reg['persona_id']]),
-                                        placeholder="", type="number", aclass="no-number-arrows",
-                                        attributes='style="width:6em;" step="0.01"'|s,
-                                        outerclass='multiset-input') }}
+                {{ util.form_input_text(
+                    "amount" + reg['id']|string, label=personas[reg['persona_id']]|persona_name(include_nickname=true),
+                    placeholder="", type="number", aclass="no-number-arrows", attributes='style="width:6em;" step="0.01"'|s,
+                    outerclass='multiset-input') }}
             {% endfor %}
 
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/fee_summary")) }}
@@ -108,9 +109,9 @@
                 {% set slices = 1 if registrations|length <= 5 else (2 if registrations|length <= 10 else 3) %}
                 {% for list in registrations|slice(slices) %}
                     <div class="col-sm-{{ 12 // slices }}">
-                        <ul>
+                        <ul {% if not loop.last %}class="nosp"{% endif %}>
                             {% for reg in list %}
-                                <li>{{ util.persona_name(personas[reg['persona_id']]) }}</li>
+                                <li>{{ personas[reg['persona_id']]|persona_name(include_nickname=true) }}</li>
                             {% endfor %}
                         </ul>
                     </div>

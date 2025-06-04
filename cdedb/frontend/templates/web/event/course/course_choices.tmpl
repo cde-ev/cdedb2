@@ -2,7 +2,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='weak' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Course Choices ({{ title }})
@@ -28,7 +31,7 @@
                              ('course-exactly-full' if course['max_size'] and attendees == course['max_size'] else ''))) %}
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
                        {% if filtered %}filtered_column{% endif %} {{ aclass }}">
-                <span title="{{ course['nr'] }}. {{ course['shortname'] }} {# -#}
+                <span title="{{ course.shortlabel }} {# -#}
                             {% if course['max_size'] -%}
                                 ({% trans count=attendees, max=course['max_size'] %}
                                     {{ count }} of {{ max }} Att.
@@ -53,7 +56,7 @@
 {% endmacro %}
 
 {% block content %}
-    {% set course_entries = courses|keydictsort(EntitySorter.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
+    {% set course_entries = courses|entries('id', 'shortlabel') %}
 
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
@@ -62,7 +65,7 @@
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
                         name="track_id", nulloption=gettext("— any —"),
-                        entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
+                        entries=ambience['event']['tracks']|entries('id', 'title'),
                         aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack"))) %}
                 {% else %}
                     {% set select1 = "" %}
@@ -111,7 +114,7 @@
                 {% set tracks='<label class="sr-only" id="input-track_ids-label">%s</label><div class="col-md-3 strip-inner-space">%s%s</div>'|s|format(
                     gettext("Coursetracks"), gettext("in Tracks"),
                     util.input_checkboxes(name="assign_track_ids", arialabeledby="input-track_ids-label",
-                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'))) %}
+                                          entries=ambience['event']['tracks']|entries('id', 'title'))) %}
             {% endif %}
             <div class="row">
                 {% trans assign='<div class="col-md-1">%s</div>'|s|format(gettext("Assign")),
@@ -215,12 +218,12 @@
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
-                                    arialabel=gettext("Select %s")|format(util.persona_name(persona, include_nickname=True))|s)
+                                    arialabel=gettext("Select %s")|format(persona|persona_name(include_nickname=True))|s)
                                     }}
                         </td>
                         <td>
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                         util.persona_name(persona, include_nickname=True)) }}
+                                         persona|persona_name(include_nickname=True)) }}
                         </td>
                         {% for track in ambience['event']['tracks'].values()|sort %}
                             {% set track_is_filtered = (values['track_id'] in ('', track.id)) %}
