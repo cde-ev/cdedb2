@@ -424,7 +424,7 @@ class TestEventModels(BackendTest):
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
-            iban=Accounts.Sozialbank,
+            iban=Accounts.Skatbank,
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"

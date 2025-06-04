@@ -31,6 +31,7 @@ from collections.abc import Collection, Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
 
+import cdedb.common.parse.util as parse_util
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
@@ -42,7 +43,6 @@ from cdedb.common import (
     n_,
     now,
 )
-import cdedb.common.parse.util as parse_util
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.models.common import CdEDataclassMap
@@ -2176,6 +2176,6 @@ class IncorrectIBANCV(ConstraintViolation):
     def get_translation(
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
-        msg = n_("Event fees should be collected at the Sozialbank account.")
+        msg = n_("Event fees should be collected at the Skatbank account.")
 
         return [msg], {}
