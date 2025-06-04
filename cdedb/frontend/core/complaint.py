@@ -242,15 +242,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             t = const.ComplaintInvolvementType
             if is_affected:
                 ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.appellant, [appellant_id]
+                    rs, new_case.id, t.affected, [appellant_id], is_informed=True
                 )
             else:
                 ret *= self.complaintproxy.add_involved(
-                    rs,
-                    new_case.id,
-                    t.affected,
-                    [appellant_id],
-                    is_informed=True,
+                    rs, new_case.id, t.appellant, [appellant_id]
                 )
             if affected_ids:
                 ret *= self.complaintproxy.add_involved(
