@@ -47,7 +47,9 @@
                                 {% if not case.is_active %}
                                     {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
                                 {% endif %}
-                                {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
+                                {% if case.is_grave %}
+                                    {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
+                                {% endif %}
                                 {% if case.id in unlocked_cases %}
                                     {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
                                 {% endif %}
