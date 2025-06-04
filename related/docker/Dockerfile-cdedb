@@ -76,68 +76,32 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1
 RUN /usr/local/bin/playwright install
 # RUN sudo -u cdedb /usr/local/bin/playwright install
 
-# mostly python packages and some dev tools
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-psycopg2 \
-    python3-dateutil \
-    python3-babel \
-    python3-icu \
-    python3-jinja2 \
-    python3-sphinx \
-    python3-lxml \
-    python3-pil \
-    python3-werkzeug \
-    python3-ldap3 \
-    python3-passlib \
-    python3-bleach \
-    python3-magic \
-    python3-segno \
-    python3-sphinx-rtd-theme \
-    python3-zxcvbn \
-    python3-markdown \
-    python3-requests \
-    python3-vobject \
-    python3-graphviz \
-    python3-phonenumbers \
-    python3-tabulate \
-    python3-mailmanclient \
-    python3-pyparsing \
-    python3-psycopg \
-    python3-psycopg-pool \
-    \
-    python3-click \
-    python3-freezegun \
-    python3-coverage \
-    python3-cssselect \
     wget \
     unzip \
+    python3-venv \
+    python3-dev \
+    g++ \
+    pkg-config \
+    libicu-dev \
     \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-    ldaptor==21.2.0 \
-    schulze_condorcet==2.0.1 \
-    subman==0.1.1 \
-    segno==1.5.2 \
-    webtest==3.0.6 \
-    mypy==1.14.0 \
-    ruff==0.8.4 \
-    \
-    types-python-dateutil \
-    types-bleach \
-    types-Markdown \
-    types-tabulate \
-    lxml-stubs \
-    types-Pillow \
-    types-ldap3 \
-    types-passlib \
-    types-psycopg2 \
-    types-zxcvbn
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
 COPY ./related/docker/run-all.sh /run-all.sh
 COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
+
+# copy project configuration for pip
+COPY ./pyproject.toml /tmp/
+
+# install packages
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
+        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
+                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"])')
+
+RUN yes | python3 -m mypy --install-types || true
 
 # get the configuration files from the autobuild
 COPY ./related/auto-build/files/stage3 /tmp/autobuild/
