@@ -68,7 +68,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # install playwright
-RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1.37.0'
+# make sure to bump the playwright version in pyproject.toml
+RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1.43.0'
 
 # Retrieve browser engines, but only do so for root (which runs the tests in
 # the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
@@ -76,22 +77,23 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1
 RUN /usr/local/bin/playwright install
 # RUN sudo -u cdedb /usr/local/bin/playwright install
 
+# utilities and to install packages via pip, and package dependencies
+# dependencies:
+# - graphviz for the python package with the same name
+# - libicu-dev for pyicu
+# - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     wget \
     unzip \
-    python3-venv \
     python3-dev \
     g++ \
     pkg-config \
+    \
+    graphviz \
     libicu-dev \
+    libmagic1 \
     \
     && rm -rf /var/lib/apt/lists/*
-
-
-# add startup scripts
-COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
-COPY ./related/docker/run-all.sh /run-all.sh
-COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
 
 # copy project configuration for pip
 COPY ./pyproject.toml /tmp/
@@ -101,7 +103,10 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
         $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
                       print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"])')
 
-RUN yes | python3 -m mypy --install-types || true
+# add startup scripts
+COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
+COPY ./related/docker/run-all.sh /run-all.sh
+COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
 
 # get the configuration files from the autobuild
 COPY ./related/auto-build/files/stage3 /tmp/autobuild/
