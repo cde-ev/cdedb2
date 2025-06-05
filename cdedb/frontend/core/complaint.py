@@ -151,11 +151,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         # Collect descriptions separately as a privacy precaution
         is_locked = True
+        descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
-            descriptions = self.complaintproxy.unlock_case(rs, case_id)
-        else:
-            descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
+            descriptions.update(self.complaintproxy.unlock_case(rs, case_id))
 
         return self.render(
             rs,
