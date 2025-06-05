@@ -2303,9 +2303,21 @@ class TestCdEFrontend(FrontendTest):
     def test_money_transfers_waived_fee(self) -> None:
         # TODO Make_change_persona_realms actually usable, and do that instead.
         # An upgrade from event to cde realm should not require any additional keys.
-        self.traverse("Mitglieder", "Überweisungen eintragen")
+        self.get("/event/event/1/registration/add")
+        f = self.response.forms["addregistrationform"]
+        f["persona.persona_id"] = "DB-4-3"
+        self.submit(f)
+        f["persona.persona_id"] = "DB-23-X"
+        self.submit(f)
+        self.get("/cde/transfers")
         f = self.response.forms["transfersform"]
-        f["transfers"] = "01.03.2025;461,49;DB-5-1;Eventis;Emilia;TestAka"
+        f["transfers"] = """
+            01.03.2025;461,49;DB-5-1;Eventis;Emilia;TestAka
+            02.03.2025;584,48;DB-4-3;Dino;Daniel;TestAka
+            02.03.2025;8;DB-4-3;Dino;Daniel;Mitgliedsbeitrag
+            04.03.2025;8;DB-23-X;Wahlleitung;Werner;Mitgliedsbeitrag
+            03.03.2025;584,48;DB-23-X;Wahlleitung;Werner;TestAka
+        """
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
@@ -2313,6 +2325,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("461,49 €", div='amount-owed')
         self.assertEqual(decimal.Decimal("461.49"), self.event.get_registration(self.key, 2)['amount_owed'])
+        self.get('/event/event/1/registration/1001/fee/summary')
+        self.assertNonPresence("Externenbeitrag", div='amount-owed')
+        self.assertPresence("584,48 €", div='amount-owed')
+        self.assertEqual(decimal.Decimal("584.48"), self.event.get_registration(self.key, 1001)['amount_owed'])
+        self.get('/event/event/1/registration/1002/fee/summary')
+        self.assertPresence("Externenbeitrag", div='amount-owed')
+        self.assertPresence("589,48 €", div='amount-owed')
+        self.assertEqual(decimal.Decimal("589.48"), self.event.get_registration(self.key, 1002)['amount_owed'])
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
