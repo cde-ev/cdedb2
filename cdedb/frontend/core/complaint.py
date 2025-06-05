@@ -96,6 +96,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 allow_empty=True,
                 separator=";",
             )
+
+            # Disallow search for own persona id
+            for field, _, value in query.constraints:
+                if field == 'involved.persona_id' and value == rs.user.persona_id:
+                    rs.append_validation_error(
+                        ('qval_involved.persona_id',
+                         ValueError(n_("May not search for own involvement."))))
+                    break
+
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
             assert query is not None
