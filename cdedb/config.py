@@ -35,17 +35,14 @@ DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
 #  but shortly afterwards at the first config access.
 DEFAULT_LOG_LEVEL = logging.WARNING
 
+
 def set_configpath(path: PathLike) -> None:
     """Helper to set the configpath as environment variable."""
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
 def get_configpath() -> pathlib.Path:
-    """Helper to get the config path from the environment.
-
-    :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
-        path if CDEDB_CONFIGPATH is not set. This should only be used in helper scripts.
-    """
+    """Helper to get the config path from the environment."""
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
     return DEFAULT_CONFIGPATH

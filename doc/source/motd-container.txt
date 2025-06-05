@@ -9,7 +9,7 @@ cd /cdedb2 && make reload
 docker compose exec cdb psql -U cdb -d cdb
 
 # access cdedb logs (most recently first)
-docker container logs docker-app-1
+docker compose logs
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data
