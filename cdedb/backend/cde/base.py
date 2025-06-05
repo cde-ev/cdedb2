@@ -176,6 +176,7 @@ class CdEBaseBackend(AbstractBackend):
                             code = self.core.change_membership_easy_mode(
                                 rs, persona['id'], is_member=True)
                             result.new_members += bool(code)
+                            persona['is_member'] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(models_finance.MoneyTransfer(
