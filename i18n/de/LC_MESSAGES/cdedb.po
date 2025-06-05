@@ -10751,6 +10751,10 @@ msgstr "(für %(concerned)s)"
 msgid "%(label)s at %(stamp)s"
 msgstr "%(label)s vom %(stamp)s"
 
+#, python-format
+msgid "%(label)s (deleted)"
+msgstr "%(label)s (gelöscht)"
+
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:81
 #, python-format
 msgid "Version %s"

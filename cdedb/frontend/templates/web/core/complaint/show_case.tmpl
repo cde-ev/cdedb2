@@ -352,10 +352,10 @@
                         {{ label }} at {{ stamp }}
                     {% endtrans %}
                 {% endif %}
-                {% if entry.children %}
+                {% if entry.active_children %}
                     <hr class="nosp" />
                     ▸
-                    {% for child in entry.children %}
+                    {% for child in entry.active_children %}
                         {%- if not loop.first %}, {% endif %}
                         {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}
