@@ -372,6 +372,14 @@ class ComplaintBackend(AbstractBackend):
         entry_id = affirm(vtypes.ID, entry_id)
         dreason = affirm_optional(str, dreason)
         with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            entry = self.get_case(rs, case_id).entries[entry_id]
+            if entry.entry_type == const.ComplaintEntryType.revocation_explanation:
+                self.sql_update(
+                    rs,
+                    models.ComplaintEntry.database_table,
+                    {'id': entry.parent_id, 'is_revoked': False},
+                )
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("complaint_admin")
