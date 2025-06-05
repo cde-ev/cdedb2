@@ -461,6 +461,10 @@ I18N_STRINGS = (
     n_("ViolationKind.lodgements"),
     n_("ViolationKind.other"),
 
+    n_("IncludeEmpty.yes"),
+    n_("IncludeEmpty.no"),
+    n_("IncludeEmpty.only"),
+
     #
     # Query datatypes
     #
