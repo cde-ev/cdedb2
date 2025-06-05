@@ -123,6 +123,15 @@ class Case(CdEDataclass):
             for entry in self.entries.values()
         )
 
+    @property
+    def is_confirmed(self):
+        return any(
+            entry.entry_type == const.ComplaintEntryType.statement_signed
+            and entry.active_version
+            and not entry.is_revoked
+            for entry in self.entries.values()
+        )
+
     def list_entries(
         self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
     ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:

@@ -962,6 +962,18 @@ class ComplaintBackend(AbstractBackend):
                                     ON versions.entry_id = entries.id
                             WHERE
                                 entries.case_id = cases.id
+                                AND entries.entry_type = {const.ComplaintEntryType.statement_signed.value}
+                                AND NOT entries.is_revoked
+                                AND versions.dtime IS NULL
+                        ) AS is_confirmed,
+                        EXISTS(
+                            SELECT entries.case_id
+                            FROM
+                                {models.ComplaintEntry.database_table} AS entries
+                                JOIN {models.ComplaintEntryVersion.database_table} AS versions
+                                    ON versions.entry_id = entries.id
+                            WHERE
+                                entries.case_id = cases.id
                                 AND entries.entry_type = {const.ComplaintEntryType.synthesis.value}
                                 AND NOT entries.is_revoked
                                 AND versions.dtime IS NULL

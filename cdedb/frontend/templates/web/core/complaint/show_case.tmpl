@@ -38,12 +38,6 @@
         <dd id="case-summary">
             {{ ambience['case'].summary }}
         </dd>
-        <dt title="{% trans %}is closed{% endtrans %}">
-            {% trans %}is closed{% endtrans %}
-        </dt>
-        <dd>
-            {{ not ambience['case'].is_active }}
-        </dd>
         <dt title="{% trans %}Kind{% endtrans %}">
             {% trans %}Kind{% endtrans %}
         </dt>
@@ -66,8 +60,22 @@
         <dt title="{% trans %}End Date{% endtrans %}">
             {% trans %}End Date{% endtrans %}
         </dt>
-        <dd >
+        <dd>
             {{ ambience['case'].end_date|date(lang=lang) }}
+        </dd>
+                <dt title="{% trans %}is confirmed{% endtrans %}">
+            {% trans %}is confirmed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=ambience['case'].is_confirmed,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+        <dt title="{% trans %}is closed{% endtrans %}">
+            {% trans %}is closed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=not ambience['case'].is_active,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
         </dd>
     </dl>
 
