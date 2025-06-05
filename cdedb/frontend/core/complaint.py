@@ -117,12 +117,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
             case_ids = [e['cases.id'] for e in result]
             unlocked_cases = {e['cases.id'] for e in result if e['status.is_unlocked']}
-            cases = self.complaintproxy.get_cases(rs, case_ids)
+            _cases = self.complaintproxy.get_cases(rs, case_ids)
 
             # Exclude invisible cases
             cases = {
                 case_id: case
-                for case_id, case in cases.items()
+                for case_id, case in _cases.items()
                 if case.is_visible_for(rs.user)
             }
             if len(cases) == 1:
@@ -135,7 +135,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         n_("%(count)s cases not shown."),
                         {"count": count - len(cases)},
                     )
-                    # TODO Send email to complaint admins
+                    if input.get('qval_involved.persona_id'):
+                        # This is a compromise between alertness and not spamming
+                        # the log too much: We log only if the requestee has identified
+                        # some involved people in their cases.
+                        for concealed_case_id in _cases.keys() - cases.keys():
+                            self.complaintproxy.complaint_log(
+                                rs=rs,
+                                code=const.ComplaintLogCodes.concealed_case_detected,
+                                case_id=concealed_case_id,
+                            )
 
                 persona_ids: list[int] = []
                 for case in cases.values():
