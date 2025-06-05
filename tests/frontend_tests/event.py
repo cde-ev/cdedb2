@@ -6714,6 +6714,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt (504,48 €). (Als Orga).",
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 353,99 €).",
             "Inga Iota muss eine Erstattung erhalten (116,49 €).",
+            "Teilnahmebeiträge sollten über das Skatbankkonto laufen.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6741,6 +6742,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 461,49 €).",
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.",
             "Inga Iota muss eine Erstattung erhalten",
+            "Teilnahmebeiträge sollten über das Skatbankkonto laufen.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6830,8 +6832,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
-                    self.fail(f"{text!r} not found for event {event_id}"
-                              f" at severity {filtered_severity.name}.")
+                    self.fail(
+                        f"{text!r} not found for event {event_id} at severity {filtered_severity.name}."
+                        f" I found these texts:\n" + "\n".join(node_texts),
+                    )
             if check_complete and len(nodes) > len(texts):
                 # print("\n".join(lxml.etree.tostring(node, encoding="unicode") for node in nodes))
                 self.fail(
@@ -6892,6 +6896,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
                 "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
+                "1 IncorrectIBANCV",
             ],
         )
 
