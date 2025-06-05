@@ -2,6 +2,7 @@
 
 """Sample configuration for development instances."""
 
+import logging
 import pathlib
 
 CDEDB_DEV = True
@@ -14,6 +15,10 @@ if pathlib.Path('/CONTAINER').is_file():
     LDAP_KEY_PATH = pathlib.Path("/etc/ssl/ldap/ldap.key")
     # there is no pgbouncer so the postgres port is the original one
     DB_PORT = 5432
+else:
+    # in docker, we need to print every log message to stdout, which makes it
+    # quite cumbersome to run command from the terminal.
+    LOG_LEVEL = logging.DEBUG
 
 # dPROD relevant excerpt from actual config follows:
 # SECRETS_CONFIGPATH = pathlib.Path("/etc/cdedb/secrets.py")

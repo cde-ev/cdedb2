@@ -6,7 +6,7 @@ import sys
 
 from systemd.journal import JournalHandler
 
-from cdedb.config import Config
+from cdedb.config import Config, DEFAULT_LOG_LEVEL
 
 
 def setup_root_logger() -> None:
@@ -15,17 +15,14 @@ def setup_root_logger() -> None:
     logger = logging.getLogger()
 
     # we can not rely on the config at this point, since this code will be executed
-    # while importing the cdedb module. Therefore, we only distinguish between
-    # production, CI/docker and vm.
-    loglevel = logging.INFO
-    if is_production := pathlib.Path("/PRODUCTIONVM").is_file():
-        loglevel = logging.WARNING
-    elif pathlib.Path('/CONTAINER').is_file():
-        loglevel = logging.WARNING
+    # while importing the cdedb module. Therefore, we apply the default log level
+    # specified in the config, and reapply the custom log level of the config
+    # at first config access.
+    loglevel = DEFAULT_LOG_LEVEL
     logger.setLevel(loglevel)
 
     # ignore errors inside the logging system on prod
-    if is_production:
+    if pathlib.Path("/PRODUCTIONVM").is_file():
         logging.raiseExceptions = False
 
     # setup handler

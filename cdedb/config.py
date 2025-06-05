@@ -31,6 +31,9 @@ PathLike = Union[pathlib.Path, str]
 # autobuild, docker-compose and production expect the config per default.
 DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
 
+# Default log level of our application. Note that this is applied not directly at startup,
+#  but shortly afterwards at the first config access.
+DEFAULT_LOG_LEVEL = logging.WARNING
 
 def set_configpath(path: PathLike) -> None:
     """Helper to set the configpath as environment variable."""
@@ -49,6 +52,7 @@ def get_configpath() -> pathlib.Path:
 
 
 _LOGGER = logging.getLogger(__name__)
+_ROOT_LOGGER = logging.getLogger()
 
 _currentdir = pathlib.Path(__file__).resolve().parent
 if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: no cover
@@ -136,6 +140,9 @@ _DEFAULTS = {
 
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
+
+    # log level of our application
+    "LOG_LEVEL": DEFAULT_LOG_LEVEL,
 
     # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
@@ -423,8 +430,11 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
     @abc.abstractmethod
     def _process_config_overwrite(self) -> None: ...
 
-    def _update_configpath(self) -> None:
-        """Adjust config if configpath changed since last access."""
+    def _update_configpath(self) -> bool:
+        """Adjust config if configpath changed since last access.
+
+        :return: Wheter the configpath had been updated.
+        """
         if (configpath := self._get_configpath()) != self._configpath:
             old_configpath = self._configpath
             if not pathlib.Path(configpath).is_file():
@@ -433,6 +443,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
             self._configpath = configpath
             _LOGGER.info(f"Configpath changed: {old_configpath} -> {configpath}")
             self._process_config_overwrite()
+            return True
+        return False
 
     def __getitem__(self, key: str) -> Any:
         self._update_configpath()
@@ -477,6 +489,11 @@ class Config(BaseConfig):
             if key in _DEFAULTS
         }
         self._configchain = collections.ChainMap(override, _DEFAULTS)
+
+    def _update_configpath(self) -> bool:
+        if was_updated := super()._update_configpath():
+            _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
+        return was_updated
 
 
 class TestConfig(Config):
