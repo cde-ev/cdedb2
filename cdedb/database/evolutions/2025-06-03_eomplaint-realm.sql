@@ -108,6 +108,31 @@ BEGIN;
     GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
     GRANT SELECT, UPDATE ON complaint.companions_id_seq TO cdb_admin;
 
+    -- people, who are blocked from "meeting" within the complaint process
+    CREATE TABLE complaint.companion_incompatibles (
+        id            serial PRIMARY KEY,
+        blocker_id    int NOT NULL REFERENCES core.personas(id),
+        blocked_id    int NOT NULL REFERENCES core.personas(id),
+        UNIQUE(blocker_id, blocked_id)
+    );
+    GRANT SELECT, INSERT, DELETE ON complaint.companion_incompatibles TO cdb_persona;
+
+    -- like event helpers, may access limited information on measures
+    CREATE TABLE complaint.enforcers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+    );
+    GRANT SELECT ON complaint.enforcers TO cdb_persona;
+    GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
+
+    -- like event helpers, may access limited information on involved parties
+    CREATE TABLE complaint.monitors (
+        id                      serial PRIMARY KEY,
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+    );
+    GRANT SELECT ON complaint.monitors TO cdb_persona;
+    GRANT INSERT, DELETE ON complaint.monitors TO cdb_admin;
+
     -- logs changes and decryption
     CREATE TABLE complaint.log (
             id                      bigserial PRIMARY KEY,
