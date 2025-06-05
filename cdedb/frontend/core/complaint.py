@@ -732,6 +732,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+            rs.notify('error', n_("Cannot chain revoke."))
+            return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].is_revoked:
             rs.notify(
                 'info',
@@ -766,6 +769,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.revoke_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+            rs.notify('error', n_("Cannot chain revoke."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].is_revoked:
             rs.notify(

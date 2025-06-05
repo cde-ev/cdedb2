@@ -273,7 +273,8 @@
                                      icon="pen",
                                      readonly=entry.entry_type.is_hidden and is_locked)
                         }}
-                        {% if not entry.is_revoked %}
+                        {% if not entry.is_revoked
+                                and entry.parent.entry_type != enums["ComplaintEntryType"].revocation_explanation %}
                             {{ util.href(cdedblink('core/revoke_entry_form', {'entry_id': entry.id}),
                                          label="",
                                          title=gettext("Revoke"),
