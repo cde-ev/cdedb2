@@ -121,24 +121,20 @@
                 // Initialize with display names instead of raw CdEDBIDs (as prefilled in the HTML).
                 // To do this, we have to submit every CdEDBID to the server and wait for
                 // the result containing its display name.
-                console.log("Initializing...");
                 const selectize = this;
-                const initial_values = selectize.getValue().split(", ");
+                const initial_values = selectize.getValue().split(",").map(s => s.trim());
                 let retCount = 0;
                 for (const db_id of initial_values) {
-                    console.log("entry: ", db_id);
                     // remove the old option only displayed by CdEDBID
                     selectize.removeOption(db_id);
                     submitRequest(db_id, function(res) {
                         if (!res || res.length === 0) return;
                         // add the new option with display name
-                        console.log("new option", res[0]);
                         selectize.addOption(res[0]);
                         // count how many (async) requests have returned
                         retCount += 1;
                         if (retCount === initial_values.length){
                             // all requests have returned, set the values of the selectize control, now with pretty names
-                            console.log("all have returned!");
                             selectize.setValue(initial_values);
                         }
                     });
