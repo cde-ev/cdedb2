@@ -411,6 +411,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 params.extend((value,) * len(columns))
             elif operator == _ops.less:
                 phrase = "{} < %s"
+                params.extend((value,) * len(columns))
             elif operator == _ops.lessornull:
                 phrase = "( {0} < %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
