@@ -411,9 +411,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 params.extend((value,) * len(columns))
             elif operator == _ops.less:
                 phrase = "{} < %s"
+            elif operator == _ops.lessornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
+                params.extend((value,) * len(columns))
+            elif operator == _ops.lessequalornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
             elif operator in {_ops.between, _ops.outside}:
                 if operator == _ops.between:
@@ -424,8 +429,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greaterequal:
                 phrase = "{} >= %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.greaterequalornull:
+                phrase = "( {0} >= %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             elif operator == _ops.greater:
                 phrase = "{} > %s"
+                params.extend((value,) * len(columns))
+            elif operator == _ops.greaterornull:
+                phrase = "( {0} > %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
             # These are hard coded special cases for some useful, but very specific
             # conditions. Modelling with special query operators is more flexible.

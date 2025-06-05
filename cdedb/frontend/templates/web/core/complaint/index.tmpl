@@ -114,6 +114,8 @@
                 <div class="row">
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_cases.end_date", label=gettext("Occured after"),
+                                                aclass="input-sm", type="date") }}
                         {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
                                                 label=gettext("Involved"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
@@ -135,6 +137,8 @@
                         {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
                                                   entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
                                                   nulloption=nbsp) }}
+                        {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occured before"),
+                                                aclass="input-sm", type="date") }}
                         {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
                                                 label=gettext("Companion"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">

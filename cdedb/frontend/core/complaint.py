@@ -35,6 +35,10 @@ CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
     'qop_cases.is_grave': QueryOperators.equal,
     'qop_cases.kind': QueryOperators.equal,
+    # transpired after
+    'qop_cases.end_date': QueryOperators.greaterornull,
+    # transpired before
+    'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
     'qop_involved.involvement_type': QueryOperators.equal,
     'qop_involved.is_informed': QueryOperators.equal,

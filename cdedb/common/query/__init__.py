@@ -68,6 +68,10 @@ class QueryOperators(CdEIntEnum):
     outside = 23
     greaterequal = 24
     greater = 25
+    lessornull = 30
+    lessequalornull = 31
+    greaterornull = 33
+    greaterequalornull = 34
     ranged_at = 101
     ranged_notat = 102
     ranged_oneof = 103
@@ -113,10 +117,14 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
         _ops.otherthan,
         _ops.less,
         _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
         _ops.between,
         _ops.outside,
         _ops.greaterequal,
         _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
         _ops.empty,
         _ops.nonempty,
     ),
@@ -127,10 +135,14 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
         _ops.unequalornull,
         _ops.less,
         _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
         _ops.between,
         _ops.outside,
         _ops.greaterequal,
         _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
         _ops.empty,
         _ops.nonempty,
     ),
@@ -143,10 +155,14 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
         _ops.otherthan,
         _ops.less,
         _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
         _ops.between,
         _ops.outside,
         _ops.greaterequal,
         _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
         _ops.empty,
         _ops.nonempty,
     ),
@@ -159,10 +175,14 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
         _ops.otherthan,
         _ops.less,
         _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
         _ops.between,
         _ops.outside,
         _ops.greaterequal,
         _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
         _ops.empty,
         _ops.nonempty,
     ),
