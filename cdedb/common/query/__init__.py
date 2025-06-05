@@ -80,51 +80,148 @@ _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
 VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
-    "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
-            _ops.equalornull, _ops.unequalornull, _ops.containsall,
-            _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
-            _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
-            _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
-            _ops.between, _ops.outside),
-    "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-            _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "float": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-              _ops.less, _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
-              _ops.greater, _ops.empty, _ops.nonempty),
-    "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-                 _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
-                 _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
-                 _ops.empty, _ops.nonempty),
+    "str": (
+        _ops.match,
+        _ops.unmatch,
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.containsall,
+        _ops.containsnone,
+        _ops.containssome,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.regex,
+        _ops.notregex,
+        _ops.fuzzy,
+        _ops.empty,
+        _ops.nonempty,
+        _ops.greater,
+        _ops.greaterequal,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+    ),
+    "int": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "float": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "date": (
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "datetime": (
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.empty,
+        _ops.nonempty,
+    ),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
-    "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-                 _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
-    "ranged_datetime": (_ops.ranged_at, _ops.ranged_notat, _ops.ranged_oneof,
-                        _ops.ranged_noneof, _ops.ranged_allof, _ops.ranged_notallof),
+    "enum_int": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "ranged_datetime": (
+        _ops.ranged_at,
+        _ops.ranged_notat,
+        _ops.ranged_oneof,
+        _ops.ranged_noneof,
+        _ops.ranged_allof,
+        _ops.ranged_notallof,
+    ),
 }
 VALID_QUERY_OPERATORS["ranged_date"] = VALID_QUERY_OPERATORS["ranged_datetime"]
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["cdedbid"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
-VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
-    VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["iban"] = VALID_QUERY_OPERATORS["str"]
 VALID_QUERY_OPERATORS["money"] = VALID_QUERY_OPERATORS["float"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
-SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal,
-                             _ops.unequal, _ops.equalornull,
-                             _ops.unequalornull, _ops.oneof, _ops.otherthan)
+SELECTION_VALUE_OPERATORS = (
+    _ops.empty,
+    _ops.nonempty,
+    _ops.equal,
+    _ops.unequal,
+    _ops.equalornull,
+    _ops.unequalornull,
+    _ops.oneof,
+    _ops.otherthan,
+)
 
 #: Some operators expect several operands (that is a space delimited list of
 #: operands) and thus need to be treated differently.
-MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
-                         _ops.containsnone, _ops.containssome, _ops.between,
-                         _ops.outside, _ops.ranged_oneof, _ops.ranged_noneof,
-                         _ops.ranged_allof, _ops.ranged_notallof}
+MULTI_VALUE_OPERATORS = {
+    _ops.oneof,
+    _ops.otherthan,
+    _ops.containsall,
+    _ops.containsnone,
+    _ops.containssome,
+    _ops.between,
+    _ops.outside,
+    _ops.ranged_oneof,
+    _ops.ranged_noneof,
+    _ops.ranged_allof,
+    _ops.ranged_notallof,
+}
 
 #: Some operators expect no operands need some special-casing.
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
@@ -149,6 +246,7 @@ QueryChoices = Mapping[Any, str]
 
 QUERY_VALUE_SEPARATOR = ","
 
+# fmt: off
 
 @dataclasses.dataclass
 class QuerySpecEntry:
