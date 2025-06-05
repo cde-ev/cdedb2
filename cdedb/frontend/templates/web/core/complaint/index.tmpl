@@ -116,6 +116,8 @@
                         {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_cases.end_date", label=gettext("Occured after"),
                                                 aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_after", label=gettext("Last entry after"),
+                                                aclass="input-sm", type="datetime-local") }}
                         {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
                                                 label=gettext("Involved"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
@@ -139,6 +141,8 @@
                                                   nulloption=nbsp) }}
                         {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occured before"),
                                                 aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_before", label=gettext("Last entry before"),
+                                                aclass="input-sm", type="datetime-local") }}
                         {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
                                                 label=gettext("Companion"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">

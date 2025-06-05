@@ -55,8 +55,14 @@ def entry_link(rs: RequestState, entry_id: int) -> str:
 
 class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
-    @REQUESTdata("is_search")
-    def complaint_index(self, rs: RequestState, is_search: bool) -> Response:
+    @REQUESTdata("is_search", "last_entry_after", "last_entry_before")
+    def complaint_index(
+        self,
+        rs: RequestState,
+        is_search: bool,
+        last_entry_after: datetime.datetime | None = None,
+        last_entry_before: datetime.datetime | None = None,
+    ) -> Response:
         rs.ignore_validation_errors()
         defaults = copy.deepcopy(CASE_SEARCH_DEFAULTS)
         scope = QueryScope.complaint_case
@@ -66,15 +72,29 @@ class CoreComplaintMixin(CoreBaseFrontend):
             count = 0
             cases = personas = unlocked_cases = None
         else:
+            input = scope.mangle_query_input(rs, defaults)
+            # Manually mangle the last changed information
+            if last_entry_after and last_entry_before:
+                input['qop_status.last_entry'] = QueryOperators.between
+                input['qval_status.last_entry'] = (
+                    f"{last_entry_after};{last_entry_before}"
+                )
+            elif last_entry_after:
+                input['qop_status.last_entry'] = QueryOperators.greater
+                input['qval_status.last_entry'] = last_entry_after
+            elif last_entry_before:
+                input['qop_status.last_entry'] = QueryOperators.less
+                input['qval_status.last_entry'] = last_entry_before
+
             # our query facility does not allow + signs, thus special-case it here
             query = check(
                 rs,
                 vtypes.QueryInput,
-                scope.mangle_query_input(rs, defaults),
+                input,
                 "query",
                 spec=spec,
                 allow_empty=True,
-                separator=" ",
+                separator=";",
             )
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)

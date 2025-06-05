@@ -46,6 +46,7 @@ LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
 @enum.unique
 class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
+
     empty = 1
     nonempty = 2
     equal = 3
@@ -732,6 +733,7 @@ _QUERY_SPECS = {
             "cases.kind": QuerySpecEntry("enum_int", n_("Kind")),
             "status.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
             "status.is_closed": QuerySpecEntry("bool", n_("is closed")),
+            "status.last_entry": QuerySpecEntry("datetime", n_("Last entry"), title_prefix=n_("Entry Version"), translate_prefix=True),
             "entries.entry_type": QuerySpecEntry("enum_int", n_("Entry Type"), choices=None),  # type: ignore[arg-type]
             "entries.concerned_id": QuerySpecEntry("id", n_("Concerned")),
             "entry_versions.length": QuerySpecEntry("int", n_("Length of Description"), title_prefix=n_("Entry Version"), translate_prefix=True),
