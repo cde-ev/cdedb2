@@ -9,12 +9,10 @@ from systemd.journal import JournalHandler
 from cdedb.config import Config
 
 
-def setup_cdedb_root_logger() -> None:
+def setup_root_logger() -> None:
     # loggers are hierachical - configuring handlers and setting a loglevel for logger
     # "cdedb" is sufficient to configure all child loggers, like "cdedb.backend".
-    logger = logging.getLogger("cdedb")
-    # do not propagate log messages to the root logger
-    logger.propagate = False
+    logger = logging.getLogger()
 
     # we can not rely on the config at this point, since this code will be executed
     # while importing the cdedb module. Therefore, we only distinguish between
