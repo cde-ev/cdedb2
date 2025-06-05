@@ -102,9 +102,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             # Disallow search for own persona id
             for field, _, value in query.constraints:
                 if field == 'involved.persona_id' and value == rs.user.persona_id:
-                    rs.append_validation_error(
-                        ('qval_involved.persona_id',
-                         ValueError(n_("May not search for own involvement."))))
+                    rs.append_validation_error((
+                        'qval_involved.persona_id',
+                        ValueError(n_("May not search for own involvement.")),
+                    ))
                     break
 
             if rs.has_validation_errors():
@@ -732,7 +733,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
-        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+        if (
+            rs.ambience['entry'].parent.entry_type
+            == const.ComplaintEntryType.revocation_explanation
+        ):
             rs.notify('error', n_("Cannot chain revoke."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].is_revoked:
@@ -770,7 +774,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['entry'].active_version:
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
-        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+        if (
+            rs.ambience['entry'].parent.entry_type
+            == const.ComplaintEntryType.revocation_explanation
+        ):
             rs.notify('error', n_("Cannot chain revoke."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].is_revoked:

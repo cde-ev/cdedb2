@@ -1072,8 +1072,11 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Core admins are allowed to search by raw ID or CDEDB-ID
-        if "core_admin" in rs.user.roles:
+        # Allow admins to search by (CdEDB)ID, but not moderators
+        if not (
+            kind == "ml_subscriber"
+            or kind == "ml_user" and not relevant_admin_roles & rs.user.roles
+        ):
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:

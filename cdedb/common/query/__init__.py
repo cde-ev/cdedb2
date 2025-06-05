@@ -269,6 +269,7 @@ QUERY_VALUE_SEPARATOR = ","
 
 # fmt: off
 
+
 @dataclasses.dataclass
 class QuerySpecEntry:
     type: str
