@@ -5,6 +5,7 @@ import datetime
 from typing import Any, Optional
 
 import werkzeug.exceptions
+from markupsafe import Markup
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -34,6 +35,12 @@ CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
     'qop_cases.is_grave': QueryOperators.equal,
     'qop_cases.kind': QueryOperators.equal,
+    'qop_status.is_confirmed': QueryOperators.equal,
+    'qop_status.is_closed': QueryOperators.equal,
+    # transpired after
+    'qop_cases.end_date': QueryOperators.greaterornull,
+    # transpired before
+    'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
     'qop_involved.involvement_type': QueryOperators.equal,
     'qop_involved.is_informed': QueryOperators.equal,
@@ -42,10 +49,22 @@ CASE_SEARCH_DEFAULTS = {
 }
 
 
+def entry_link(rs: RequestState, entry_id: int) -> str:
+    # Unfortunately redirecting kills this link :(
+    # return safe_filter(f'<a href="#entry{entry_id}">{rs.gettext("Entry")}</a>')
+    return rs.gettext("Entry")
+
+
 class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
-    @REQUESTdata("is_search")
-    def complaint_index(self, rs: RequestState, is_search: bool) -> Response:
+    @REQUESTdata("is_search", "last_entry_after", "last_entry_before")
+    def complaint_index(
+        self,
+        rs: RequestState,
+        is_search: bool,
+        last_entry_after: datetime.datetime | None = None,
+        last_entry_before: datetime.datetime | None = None,
+    ) -> Response:
         rs.ignore_validation_errors()
         defaults = copy.deepcopy(CASE_SEARCH_DEFAULTS)
         scope = QueryScope.complaint_case
@@ -55,45 +74,79 @@ class CoreComplaintMixin(CoreBaseFrontend):
             count = 0
             cases = personas = unlocked_cases = None
         else:
+            input = scope.mangle_query_input(rs, defaults)
+            # Manually mangle the last changed information
+            if last_entry_after and last_entry_before:
+                input['qop_status.last_entry'] = QueryOperators.between
+                input['qval_status.last_entry'] = (
+                    f"{last_entry_after};{last_entry_before}"
+                )
+            elif last_entry_after:
+                input['qop_status.last_entry'] = QueryOperators.greater
+                input['qval_status.last_entry'] = last_entry_after
+            elif last_entry_before:
+                input['qop_status.last_entry'] = QueryOperators.less
+                input['qval_status.last_entry'] = last_entry_before
+
             # our query facility does not allow + signs, thus special-case it here
             query = check(
                 rs,
                 vtypes.QueryInput,
-                scope.mangle_query_input(rs, defaults),
+                input,
                 "query",
                 spec=spec,
                 allow_empty=True,
-                separator=" ",
+                separator=";",
             )
+
+            # Disallow search for own persona id
+            for field, _, value in query.constraints:
+                if field == 'involved.persona_id' and value == rs.user.persona_id:
+                    rs.append_validation_error(
+                        ('qval_involved.persona_id',
+                         ValueError(n_("May not search for own involvement."))))
+                    break
+
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
             assert query is not None
-            query.fields_of_interest = ['cases.id', 'access.is_unlocked']
+            query.fields_of_interest = [
+                'cases.id',
+                'status.is_unlocked',
+            ]
             result = self.complaintproxy.submit_general_query(rs, query)
             count = len(result)
-            if count == 1:
+
+            case_ids = [e['cases.id'] for e in result]
+            unlocked_cases = {e['cases.id'] for e in result if e['status.is_unlocked']}
+            _cases = self.complaintproxy.get_cases(rs, case_ids)
+
+            # Exclude invisible cases
+            cases = {
+                case_id: case
+                for case_id, case in _cases.items()
+                if case.is_visible_for(rs.user)
+            }
+            if len(cases) == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
-                case_ids = [e['cases.id'] for e in result]
-                unlocked_cases = {
-                    e['cases.id'] for e in result if e['access.is_unlocked']
-                }
-                cases = self.complaintproxy.get_cases(rs, case_ids)
-
-                # Exclude invisible cases
-                cases = {
-                    case_id: case
-                    for case_id, case in cases.items()
-                    if case.is_visible_for(rs.user)
-                }
                 if count > len(cases):
                     rs.notify(
                         "warning",
                         n_("%(count)s cases not shown."),
                         {"count": count - len(cases)},
                     )
-                    # TODO Send email to complaint admins
+                    if input.get('qval_involved.persona_id'):
+                        # This is a compromise between alertness and not spamming
+                        # the log too much: We log only if the requestee has identified
+                        # some involved people in their cases.
+                        for concealed_case_id in _cases.keys() - cases.keys():
+                            self.complaintproxy.complaint_log(
+                                rs=rs,
+                                code=const.ComplaintLogCodes.concealed_case_detected,
+                                case_id=concealed_case_id,
+                            )
 
                 persona_ids: list[int] = []
                 for case in cases.values():
@@ -142,11 +195,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         # Collect descriptions separately as a privacy precaution
         is_locked = True
+        descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
-            descriptions = self.complaintproxy.unlock_case(rs, case_id)
-        else:
-            descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
+            descriptions.update(self.complaintproxy.unlock_case(rs, case_id))
 
         return self.render(
             rs,
@@ -168,7 +220,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if not self.complaintproxy.is_unlocked(rs, case_id):
             rs.notify('error', n_("Need to unlock case first."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
+            return self.redirect(rs, "core/show_case")
 
         log_filter = ComplaintLogFilter(case_id=case_id)
         _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
@@ -233,15 +285,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             t = const.ComplaintInvolvementType
             if is_affected:
                 ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.appellant, [appellant_id]
+                    rs, new_case.id, t.affected, [appellant_id], is_informed=True
                 )
             else:
                 ret *= self.complaintproxy.add_involved(
-                    rs,
-                    new_case.id,
-                    t.affected,
-                    [appellant_id],
-                    is_informed=True,
+                    rs, new_case.id, t.appellant, [appellant_id]
                 )
             if affected_ids:
                 ret *= self.complaintproxy.add_involved(
@@ -252,7 +300,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     rs, new_case.id, t.target, target_ids
                 )
         rs.notify_return_code(ret * bool(new_case))
-        return self.redirect(rs, "core/show_case", {'case_id': new_case.id})
+        return self.redirect(rs, "core/show_case", {"case_id": new_case.id})
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("involvement_type", "persona_ids")
@@ -265,25 +313,42 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        if rs.user.persona_id in persona_ids:
-            rs.notify('error', n_("May not add own involvement."))
-            return self.create_case_form(rs)
-        if set(persona_ids) & rs.ambience['case'].all_involved.keys():
-            rs.notify('info', n_("Some of these users were already involved."))
-        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+        if persona_ids:
+            if rs.user.persona_id in persona_ids:
+                rs.append_validation_error((
+                    "persona_ids",
+                    ValueError(n_("May not add own involvement.")),
+                ))
+            if any(
+                set(persona_ids) & involved
+                for inv_type, involved in rs.ambience['case'].involved.items()
+                if inv_type != involvement_type
+            ):
+                rs.append_validation_error((
+                    "persona_ids",
+                    ValueError(
+                        n_("Some of these users are already involved otherwise.")
+                    ),
+                ))
+            if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+                rs.append_validation_error((
+                    "persona_ids",
+                    ValueError(n_("Some of these users do not exist.")),
+                ))
+        elif persona_ids is not None:
             rs.append_validation_error((
                 "persona_ids",
-                ValueError(n_("Some of these users do not exist.")),
+                ValueError(n_("Must not be empty.")),
             ))
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         ret = self.complaintproxy.add_involved(
             rs, case_id, involvement_type, persona_ids
         )
-        rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        rs.notify_return_code(
+            ret, info=n_("Some of these users were already involved.")
+        )
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
@@ -291,16 +356,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        if persona_id not in rs.ambience['case'].all_involved.keys():
-            rs.notify("info", "This user is not involved.")
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
-        rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        rs.notify_return_code(ret, info=n_("This user was not involved."))
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
@@ -308,21 +366,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         if persona_id not in rs.ambience['case'].all_involved:
-            rs.append_validation_error((
-                "persona_id",
-                ValueError(n_("This user is not involved.")),
-            ))
-        if persona_id in rs.ambience['case'].informed_involved:
-            rs.notify('info', n_("This user is already marked as uninformed."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        ret = self.complaintproxy.set_involved_informed(rs, case_id, persona_id, True)
-        rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+            rs.notify("error", n_("This user is not involved."))
+        else:
+            ret = self.complaintproxy.set_involved_informed(
+                rs, case_id, persona_id, True
+            )
+            rs.notify_return_code(
+                ret, info=n_("This user was already marked as uninformed.")
+            )
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
@@ -330,22 +383,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        if persona_id not in rs.ambience['case'].informed_involved:
-            rs.notify('info', n_("This user is already marked as uninformed."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
         if persona_id not in rs.ambience['case'].all_involved:
-            rs.append_validation_error((
-                "persona_id",
-                ValueError(n_("This user is not involved.")),
-            ))
+            rs.notify("error", n_("This user is not involved."))
         # elif check informed state
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        ret = self.complaintproxy.set_involved_informed(rs, case_id, persona_id, False)
-        rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        else:
+            ret = self.complaintproxy.set_involved_informed(
+                rs, case_id, persona_id, False
+            )
+            rs.notify_return_code(
+                ret, info=n_("This user was already marked as uninformed.")
+            )
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
     def manage_companions_form(
@@ -378,29 +426,29 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        if set(companion_ids) & rs.ambience['case'].companions.keys():
-            rs.notify('info', n_("Some of these users were already companions."))
-        if persona_id in companion_ids:
+        if companion_ids:
+            if persona_id in companion_ids:
+                rs.append_validation_error((
+                    "companion_ids",
+                    ValueError(n_("User may not be their own companion.")),
+                ))
+            if not self.coreproxy.verify_ids(rs, companion_ids, is_archived=None):
+                rs.append_validation_error((
+                    "companion_ids",
+                    ValueError(n_("Some of these users do not exist.")),
+                ))
+        elif companion_ids is not None:
             rs.append_validation_error((
                 "companion_ids",
-                ValueError(n_("User may not be their own companion.")),
-            ))
-        if not self.coreproxy.verify_ids(rs, companion_ids, is_archived=None):
-            rs.append_validation_error((
-                "companion_ids",
-                ValueError(n_("Some of these users do not exist.")),
+                ValueError(n_("Must not be empty.")),
             ))
         if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
+            return self.manage_companions_form(rs, case_id, persona_id)
         ret = self.complaintproxy.add_companions(rs, case_id, persona_id, companion_ids)
-        rs.notify_return_code(ret)
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
+        rs.notify_return_code(
+            ret, info=n_("Some of these users were already companions.")
         )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def remove_companion(
@@ -412,26 +460,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        if companion_id not in rs.ambience['case'].companions:
-            rs.notify("info", "This user is no companion.")
-            return self.redirect(
-                rs,
-                "core/manage_companions_form",
-                {'case_id': case_id, 'persona_id': persona_id},
-            )
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         ret = self.complaintproxy.remove_companions(
             rs, case_id, persona_id, [companion_id]
         )
-        rs.notify_return_code(ret)
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+        rs.notify_return_code(ret, info=n_("This user was no companion."))
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def withdraw_companion(
@@ -439,27 +472,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         if companion_id not in rs.ambience['case'].companions:
-            rs.append_validation_error((
-                "persona_id",
-                ValueError(n_("This user is no companion.")),
-            ))
-        if companion_id in rs.ambience['case'].withdrawn_companions:
-            rs.notify('info', n_("This companion is already marked as withdrawn."))
-            return self.redirect(rs, "core/show_case", {'case_id': case_id})
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        ret = self.complaintproxy.set_companion_withdrawn(
-            rs, case_id, persona_id, companion_id, True
-        )
-        rs.notify_return_code(ret)
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+            rs.notify("error", n_("This user is no companion."))
+        else:
+            ret = self.complaintproxy.set_companion_withdrawn(
+                rs, case_id, persona_id, companion_id, True
+            )
+            rs.notify_return_code(
+                ret, info=n_("This companion was already marked as withdrawn.")
+            )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def reinstate_companion(
@@ -471,31 +493,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         if companion_id not in rs.ambience['case'].companions:
-            rs.append_validation_error((
-                "persona_id",
-                ValueError(n_("This user is no companion.")),
-            ))
-        if companion_id not in rs.ambience['case'].withdrawn_companions:
-            rs.notify('info', n_("This companion is already marked as active."))
-            return self.redirect(
-                rs,
-                "core/manage_companions_form",
-                {'case_id': case_id, 'persona_id': persona_id},
+            rs.notify("error", n_("This user is no companion."))
+        else:
+            ret = self.complaintproxy.set_companion_withdrawn(
+                rs, case_id, persona_id, companion_id, False
             )
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
-        ret = self.complaintproxy.set_companion_withdrawn(
-            rs, case_id, persona_id, companion_id, False
-        )
-        rs.notify_return_code(ret)
-        return self.redirect(
-            rs,
-            "core/manage_companions_form",
-            {'case_id': case_id, 'persona_id': persona_id},
-        )
+            rs.notify_return_code(
+                ret, info=n_("This companion was already marked as active.")
+            )
+        return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin")
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
@@ -522,11 +529,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def unlock_case(self, rs: RequestState, case_id: int) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if rs.has_validation_errors():
-            return self.show_case(rs, case_id)
         _ = self.complaintproxy.unlock_case(rs, case_id)
         rs.notify_return_code(1, success=n_("Case unlocked."))
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def lock_case(self, rs: RequestState, case_id: int) -> Response:
@@ -534,31 +539,31 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.show_case(rs, case_id)
         code = self.complaintproxy.lock_case(rs, case_id)
         rs.notify_return_code(code, success=n_("Case locked."))
-        return self.redirect(rs, "core/show_case", {'case_id': case_id})
+        return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin")
-    @REQUESTdata("entry_type", "parent_id")
+    @REQUESTdata("entry_type")
     def add_entry_form(
         self,
         rs: RequestState,
         case_id: int,
-        entry_type: Optional[const.ComplaintEntryType],
-        parent_id: Optional[int],
+        entry_type: const.ComplaintEntryType | None,
+        parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         """Render form."""
-        # the check that the entry belongs to the case is already done in
-        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        # The check that the entry belongs to the case is already done in
+        #  `reconnoitre_ambience`, which raises a "404 Not Found" in this case.
         rs.ignore_validation_errors()
         et = const.ComplaintEntryType
         if parent_id:
-            parent = rs.ambience['case'].entries[parent_id]
+            parent = rs.ambience['entry']
             available_types = parent.entry_type.possible_children - {
                 et.revocation_explanation
             }
             if not parent.active_version:
-                rs.notify('info', n_("Can not add child for deleted parent."))
+                rs.notify('error', n_("Can not add child for deleted parent."))
                 return self.redirect(rs, "core/show_case")
         else:
             available_types = set(et) - et.all_children()
@@ -577,13 +582,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
+        parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        # the check that the entry belongs to the case is already done in
-        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         entry_data = (
-            extract_and_check_dataclass(rs, models.ComplaintEntry, creation=True) or {}
+            extract_and_check_dataclass(
+                rs,
+                models.ComplaintEntry,
+                additional_data={'parent_id': parent_id},
+                creation=True,
+                entries=rs.ambience['case'].entries,
+            )
+            or {}
         )
         version_data = extract_and_check_dataclass(
             rs,
@@ -596,11 +607,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs,
                 case_id,
                 entry_type=entry_data.get('entry_type') if entry_data else None,
-                parent_id=entry_data.get('parent_id') if entry_data else None,
+                parent_id=parent_id,
             )
         if parent_id := entry_data.get('parent_id'):
             if not rs.ambience['case'].entries[parent_id].active_version:
-                rs.notify('info', n_("Can not add child for deleted parent."))
+                rs.notify('error', n_("Can not add child for deleted parent."))
                 return self.redirect(rs, "core/show_case")
         entry_id = self.complaintproxy.add_entry(rs, case_id, entry_data, version_data)
         rs.notify_return_code(entry_id)
@@ -612,23 +623,42 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         entry_id: int,
+        internal: bool = False,
     ) -> Response:
         """Render form."""
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+        if not rs.ambience['entry'].active_version:
+            rs.notify(
+                'error',
+                n_("Can not replace deleted %(entry_link)s."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
         if (
             rs.ambience['entry'].entry_type.is_hidden
             and not self.complaintproxy.is_unlocked(rs, case_id)
+            and not internal
         ):  # fmt: skip
-            rs.notify('error', n_("Need to unlock case before replacing entry."))
-            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
-        rs.ignore_validation_errors()
-        if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Can not replace deleted entry."))
-            self.redirect(rs, "core/show_case", {'case_id': case_id})
-        assert rs.ambience['entry'].active_version is not None
+            rs.notify(
+                'error',
+                n_("Need to unlock case before replacing %(entry_link)s."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
+
+        version_id = rs.ambience['entry'].active_version.id
+        if rs.ambience['entry'].entry_type.has_description and not internal:
+            if rs.ambience['entry'].entry_type.is_hidden:
+                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+            else:
+                description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
+                    version_id
+                ]
+            rs.values['description'] = description
+
         merge_dicts(
             rs.values,
             rs.ambience['entry'].active_version.as_dict(),
@@ -673,13 +703,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
             entry_type=rs.ambience['entry'].entry_type,
         )
         if rs.has_validation_errors() or not data:
-            return self.replace_entry_form(rs, case_id, entry_id)
+            return self.replace_entry_form(rs, case_id, entry_id, internal=True)
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Can not replace deleted entry."))
-            self.redirect(rs, "core/show_case", {'case_id': case_id})
-        ret = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
-        rs.notify_return_code(ret)
-        return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
+            rs.notify(
+                'error',
+                n_("Cannot replace deleted %(entry_link)s."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            anchor = ""
+        else:
+            ret = self.complaintproxy.replace_entry_version(rs, entry_id, data, dreason)
+            rs.notify_return_code(ret)
+            anchor = f"entry{entry_id}"
+        return self.redirect(rs, "core/show_case", anchor=anchor)
 
     @access("complaint_admin")
     def revoke_entry_form(
@@ -693,9 +729,18 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        rs.ignore_validation_errors()
         if not rs.ambience['entry'].active_version:
-            rs.notify('info', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+            rs.notify('error', n_("Cannot chain revoke."))
+            return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].is_revoked:
+            rs.notify(
+                'info',
+                n_("%(entry_link)s already revoked."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
             return self.redirect(rs, "core/show_case")
         return self.render(
             rs,
@@ -714,9 +759,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if not rs.ambience['entry'].active_version:
-            rs.notify('info', n_("Entry already deleted."))
-            return self.redirect(rs, "core/show_case")
         version_data = extract_and_check_dataclass(
             rs,
             models.ComplaintEntryVersion,
@@ -725,13 +767,26 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         if rs.has_validation_errors() or not version_data:
             return self.revoke_entry_form(rs, case_id, entry_id)
+        if not rs.ambience['entry'].active_version:
+            rs.notify('error', n_("Entry already deleted."))
+            return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+            rs.notify('error', n_("Cannot chain revoke."))
+            return self.redirect(rs, "core/show_case")
+        if rs.ambience['entry'].is_revoked:
+            rs.notify(
+                'error',
+                n_("%(entry_link)s already revoked."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
         new_entry_id = self.complaintproxy.revoke_entry(rs, entry_id, version_data)
         rs.notify_return_code(new_entry_id)
-        return self.redirect(rs, "core/show_case", anchor="entry" + str(new_entry_id))
+        return self.redirect(rs, "core/show_case", anchor=f"entry{entry_id}")
 
     @access("complaint_admin")
     def remove_entry_form(
-        self, rs: RequestState, case_id: int, entry_id: int
+        self, rs: RequestState, case_id: int, entry_id: int, internal: bool = False
     ) -> Response:
         """Render form."""
         # the check that the entry belongs to the case is already done in
@@ -742,25 +797,34 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify('info', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].active_children:
-            rs.notify('error', n_("Entry has active children."))
-            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
-
-        version_id = rs.ambience['entry'].active_version.id
+            rs.notify(
+                'error',
+                n_("%(entry_link)s has active children."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
 
         description = None
-        if rs.ambience['entry'].entry_type.is_hidden:
-            if not self.complaintproxy.is_unlocked(rs, case_id):
-                msg = n_("Need to unlock case before removing entry.")
-                rs.notify('error', msg)
-                return self.redirect(
-                    rs, "core/show_case", anchor="entry" + str(entry_id)
-                )
-            else:
+        if (
+            rs.ambience['entry'].entry_type.is_hidden
+            and not self.complaintproxy.is_unlocked(rs, case_id)
+            and not internal
+        ):
+            rs.notify(
+                'error',
+                n_("Need to unlock case before removing %(entry_link)s."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
+
+        version_id = rs.ambience['entry'].active_version.id
+        if rs.ambience['entry'].entry_type.has_description and not internal:
+            if rs.ambience['entry'].entry_type.is_hidden:
                 description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
-        elif rs.ambience['entry'].entry_type.has_description:
-            description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
-                version_id
-            ]
+            else:
+                description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
+                    version_id
+                ]
 
         concerned = None
         if concerned_id := rs.ambience['entry'].concerned_id:
@@ -783,13 +847,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if rs.has_validation_errors():
-            return self.remove_entry_form(rs, case_id, entry_id)
+            return self.remove_entry_form(rs, case_id, entry_id, internal=True)
         if not rs.ambience['entry'].active_version:
-            rs.notify('info', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].active_children:
-            rs.notify('error', n_("Entry has active children."))
-            return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
+            rs.notify(
+                'error',
+                n_("%(entry_link)s has active children."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
@@ -802,7 +870,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
-        measures = self.complaintproxy.get_measures(rs, persona_id)
+        measures = self.complaintproxy.get_user_measures(rs, persona_id)
         return self.render(rs, "complaint/show_user_measures", {'measures': measures})
 
     @access("complaint_admin", "complaint.enforcer", "complaint.monitor")

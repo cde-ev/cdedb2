@@ -9,7 +9,7 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans name=util.persona_name(persona), title=ambience['event']['title'] %}
+    {% trans name=persona|persona_name, title=ambience['event']['title'] %}
         Edit Registration by {{ name }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -17,11 +17,11 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, icon="user") }}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Edit %(name)s")|format(name=util.persona_name(persona, include_nickname=True))|s,
+    {{ util.context_heading(gettext("Edit %(name)s")|format(name=persona|persona_name(include_nickname=True))|s,
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
@@ -41,7 +41,7 @@
 
         <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
         {{ util.form_input_static(label=gettext("Full Name"),
-                                  value=util.persona_name(persona, include_nickname=True, with_titles=True))
+                                  value=persona|persona_name(include_nickname=True, with_titles=True))
                 }}
         {{ util.form_input_static(label=gettext("CdEDB-ID"), value=persona['id']|cdedbid) }}
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -74,8 +74,7 @@
             {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat")) }}
 
             {% for track in ambience['event']['tracks'].values()|sort if track['part_id'] == part.id %}
-                {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track.id]) %}
+                {% set course_entries = courses|entries('id', 'label', include=courses_per_track[track.id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track.id),
                                           label=gettext("Course %s")|format(track['shortname'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),

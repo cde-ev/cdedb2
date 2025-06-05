@@ -20,17 +20,15 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    cast_fields,
     glue,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
+from cdedb.common.fields import COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
@@ -54,44 +52,12 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("anonymous")
     def get_courses(self, rs: RequestState, course_ids: Collection[int],
-                    ) -> CdEDBObjectMap:
+                        ) -> models.CdEDataclassMap[models.Course]:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm_set(vtypes.ID, course_ids)
-        with Atomizer(rs):
-            data = self.sql_select(rs, "event.courses", COURSE_FIELDS, course_ids)
-            if not data:
-                return {}
-            ret = {e['id']: e for e in data}
-            events = {e['event_id'] for e in data}
-            if len(events) > 1:
-                raise ValueError(n_("Only courses from one event allowed."))
-            event_fields = models.EventField.many_from_database(
-                self._get_event_fields(rs, unwrap(events)).values())
-            segment_data = self.sql_select(
-                rs, "event.course_segments", COURSE_SEGMENT_FIELDS, course_ids,
-                entity_key="course_id")
-            for course in ret.values():
-                course['segments'] = set()
-                course['active_segments'] = set()
-                course['fields'] = cast_fields(course['fields'], event_fields)
-            for segment in segment_data:
-                course = ret[segment['course_id']]
-                course['segments'].add(segment['track_id'])
-                if segment['is_active']:
-                    course['active_segments'].add(segment['track_id'])
-        return ret
-
-    class _GetCourseProtocol(Protocol):
-        def __call__(self, rs: RequestState, course_id: int) -> CdEDBObject: ...
-    get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
-
-    @access("event")
-    def new_get_courses(self, rs: RequestState, course_ids: Collection[int],
-                        ) -> models.CdEDataclassMap[models.Course]:
         course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):
             course_data = self.query_all(
@@ -111,10 +77,9 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             for course in course_data
         ])
 
-    class _NewGetCourseProtocol(Protocol):
+    class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
-    new_get_course: _NewGetCourseProtocol = singularize(
-        new_get_courses, "course_ids", "course_id")
+    get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(self, rs: RequestState,

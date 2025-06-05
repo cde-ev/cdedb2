@@ -451,7 +451,7 @@ class TestEventBackend(BackendTest):
         new_course['active_segments'] = new_course['segments']
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
-            self.key, new_course_id))
+            self.key, new_course_id).as_dict())
 
         new_group = {
             'event_id': new_id,
@@ -868,24 +868,21 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
         data['fields'] = {}
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'] = {1, 3}
         data['active_segments'] = {1, 3}
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
             'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
             'id': new_id, 'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
@@ -2510,6 +2507,8 @@ class TestEventBackend(BackendTest):
             reg['mtime'] = None
             for fee_id, amount in reg['personalized_fees'].items():
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
+            for fee_kind, amount in reg['amount_owed_by_kind'].items():
+                reg['amount_owed_by_kind'][fee_kind] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2641,12 +2640,22 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1]['mtime'] = nearly_now()
         # amount_owed is recalculated
         expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
+        expectation['registrations'][2]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("584.49"),
+            "external": decimal.Decimal("5.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
         expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
         expectation['registrations'][3]['personalized_fees'][10] = decimal.Decimal(
             expectation['registrations'][3]['personalized_fees'][10],
         )
+        expectation['registrations'][3]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("534.49"),
+            "instructor_refund": decimal.Decimal("-45.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -2655,6 +2664,9 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
+        expectation['registrations'][1002]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("573.99"),
+        }
         expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)
 

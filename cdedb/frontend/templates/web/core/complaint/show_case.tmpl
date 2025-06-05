@@ -27,7 +27,7 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/change_case'), gettext("Edit"),
                      aclass="btn btn-sm btn-warning", icon="pen") }}
-        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id']}),
+        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id'], 'case_id_include_empty': enums["IncludeEmpty"].no}),
                      gettext("View Log"), aclass="btn btn-sm btn-default", icon="list") }}
     </div>
 
@@ -60,8 +60,22 @@
         <dt title="{% trans %}End Date{% endtrans %}">
             {% trans %}End Date{% endtrans %}
         </dt>
-        <dd >
+        <dd>
             {{ ambience['case'].end_date|date(lang=lang) }}
+        </dd>
+                <dt title="{% trans %}is confirmed{% endtrans %}">
+            {% trans %}is confirmed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=ambience['case'].is_confirmed,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+        <dt title="{% trans %}is closed{% endtrans %}">
+            {% trans %}is closed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=not ambience['case'].is_active,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
         </dd>
     </dl>
 
@@ -126,7 +140,7 @@
                                                 {{ util.input_submit(label="",
                                                                      title=gettext("Mark as uninformed"),
                                                                      aclass="btn btn-xs btn-danger",
-                                                                     icon="question") }}
+                                                                     icon="circle-question") }}
                                         </form>
                                     {% else %}
                                         <form
@@ -139,7 +153,7 @@
                                             {{ util.input_submit(label="",
                                                                  title=gettext("Mark as informed"),
                                                                  aclass="btn btn-xs btn-primary",
-                                                                 icon="info") }}
+                                                                 icon="circle-info") }}
                                         </form>
                                     {% endif %}
                                 {% endif %}
@@ -243,7 +257,7 @@
                             – {{ entry.active_version.etime|datetime(lang=lang) }}
                         {% endif %}
                     </div>
-                    <div class="button-par">
+                    <div class="p button-par">
                         {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
                             {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),
                                          label="",
@@ -259,7 +273,8 @@
                                      icon="pen",
                                      readonly=entry.entry_type.is_hidden and is_locked)
                         }}
-                        {% if not entry.is_revoked %}
+                        {% if not entry.is_revoked
+                                and entry.parent.entry_type != enums["ComplaintEntryType"].revocation_explanation %}
                             {{ util.href(cdedblink('core/revoke_entry_form', {'entry_id': entry.id}),
                                          label="",
                                          title=gettext("Revoke"),
@@ -279,7 +294,9 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <strong>
+                    {{ util.make_icon(entry.entry_type.get_icon()) }}
                     {{ entry.entry_type.name }}
                 </strong>
                 {% if entry.concerned_id %}
@@ -335,10 +352,10 @@
                         {{ label }} at {{ stamp }}
                     {% endtrans %}
                 {% endif %}
-                {% if entry.children %}
+                {% if entry.active_children %}
                     <hr class="nosp" />
                     ▸
-                    {% for child in entry.children %}
+                    {% for child in entry.active_children %}
                         {%- if not loop.first %}, {% endif %}
                         {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}

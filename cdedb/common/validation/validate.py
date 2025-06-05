@@ -3728,6 +3728,20 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'checkin_periods': list[ReducedCheckinPeriod],
 }
 
+# May be present, but will be ignored:
+PARTIAL_REGISTRATION_IGNORED_FIELDS = {
+    # Ignored to ensure consistent bookkeeping:
+    'amount_paid',
+    'payment',
+    'is_member',
+    # Ignored because they are calculated, derived or external values:
+    'amount_owed',
+    'amount_owed_by_kind',
+    'persona',
+    'ctime',
+    'mtime',
+}
+
 # TODO Can we auto generate all these partial validators?
 
 
@@ -3744,14 +3758,19 @@ def _partial_registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
-        optional_fields = {**PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
-        optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
-                           **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_COMMON_FIELDS,
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
 
     # The check of fields is delegated to EventAssociatedFields.
     val = _examine_dictionary_fields(
@@ -3760,8 +3779,9 @@ def _partial_registration(
     )
 
     errs = ValidationSummary()
-    if 'amount_owed' in val:
-        del val['amount_owed']
+    for key in PARTIAL_REGISTRATION_IGNORED_FIELDS:
+        if key in val:
+            del val[key]
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():

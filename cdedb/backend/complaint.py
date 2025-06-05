@@ -96,7 +96,25 @@ class ComplaintBackend(AbstractBackend):
         The full history of a case consists of both log entries and complaint entries.
         """
         log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
+        case_ids = set(log_filter.case_ids())
+
+        visible_case_ids = self.get_visible_case_ids(rs)
+
+        if case_ids:
+            case_ids &= visible_case_ids
+        elif visible_case_ids:
+            case_ids = visible_case_ids
+        log_filter.case_id = None
+        log_filter._case_ids = list(case_ids)
+
         return self.generic_retrieve_log(rs, log_filter)
+
+    @access("complaint_admin")
+    def get_visible_case_ids(self, rs: RequestState) -> set[int]:
+        query = f"SELECT id FROM {models.Case.database_table}"
+        case_ids = self.query_all(rs, query, ())
+        cases = self.get_cases(rs, [e["id"] for e in case_ids])
+        return {case.id for case in cases.values() if case.is_visible_for(rs.user)}
 
     @access("complaint_admin")
     def get_cases(
@@ -354,6 +372,14 @@ class ComplaintBackend(AbstractBackend):
         entry_id = affirm(vtypes.ID, entry_id)
         dreason = affirm_optional(str, dreason)
         with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            entry = self.get_case(rs, case_id).entries[entry_id]
+            if entry.entry_type == const.ComplaintEntryType.revocation_explanation:
+                self.sql_update(
+                    rs,
+                    models.ComplaintEntry.database_table,
+                    {'id': entry.parent_id, 'is_revoked': False},
+                )
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("complaint_admin")
@@ -376,6 +402,13 @@ class ComplaintBackend(AbstractBackend):
             ),
         )
         with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if entry.is_revoked:
+                raise ValueError(n_("Entry already revoked."))
+
             code = self.sql_update(
                 rs,
                 models.ComplaintEntry.database_table,
@@ -384,12 +417,13 @@ class ComplaintBackend(AbstractBackend):
             if not code:
                 raise RuntimeError
 
-            case_id = self._get_case_id(rs, entry_id)
-            case = self.get_case(rs, case_id)
-            entry = case.entries[entry_id]
-
             if entry.entry_type == revocation_type:
-                if entry.parent and entry.parent.is_revoked:
+                if not entry.parent:
+                    raise RuntimeError(n_("Revocation entry without parent."))
+                if entry.parent.entry_type == revocation_type:
+                    raise ValueError(n_("Cannot chain revoke."))
+
+                if entry.parent.is_revoked:
                     code = self.sql_update(
                         rs,
                         models.ComplaintEntry.database_table,
@@ -918,16 +952,50 @@ class ComplaintBackend(AbstractBackend):
             SELECT * FROM
                 {models.Case.database_table} AS cases
                 LEFT JOIN (
-                    SELECT id AS case_id, EXISTS(
-                        SELECT case_id
-                        FROM {models.AccessLog.database_table}
-                        WHERE
-                            persona_id = {rs.user.persona_id}
-                            AND case_id = cases.id
-                            AND ctime > '{access_timeout.isoformat()}'
-                    ) AS is_unlocked
+                    SELECT
+                        id AS case_id,
+                        EXISTS(
+                            SELECT case_id
+                            FROM {models.AccessLog.database_table}
+                            WHERE
+                                persona_id = {rs.user.persona_id}
+                                AND case_id = cases.id
+                                AND ctime > '{access_timeout.isoformat()}'
+                        ) AS is_unlocked,
+                        EXISTS(
+                            SELECT entries.case_id
+                            FROM
+                                {models.ComplaintEntry.database_table} AS entries
+                                JOIN {models.ComplaintEntryVersion.database_table} AS versions
+                                    ON versions.entry_id = entries.id
+                            WHERE
+                                entries.case_id = cases.id
+                                AND entries.entry_type = {const.ComplaintEntryType.statement_signed.value}
+                                AND NOT entries.is_revoked
+                                AND versions.dtime IS NULL
+                        ) AS is_confirmed,
+                        EXISTS(
+                            SELECT entries.case_id
+                            FROM
+                                {models.ComplaintEntry.database_table} AS entries
+                                JOIN {models.ComplaintEntryVersion.database_table} AS versions
+                                    ON versions.entry_id = entries.id
+                            WHERE
+                                entries.case_id = cases.id
+                                AND entries.entry_type = {const.ComplaintEntryType.synthesis.value}
+                                AND NOT entries.is_revoked
+                                AND versions.dtime IS NULL
+                        ) AS is_closed,
+                        (SELECT MAX(versions.timestamp)
+                            FROM
+                                {models.ComplaintEntry.database_table} AS entries
+                                JOIN {models.ComplaintEntryVersion.database_table} AS versions
+                                    ON versions.entry_id = entries.id
+                            WHERE
+                                entries.case_id = cases.id
+                        ) AS last_entry
                     FROM {models.Case.database_table}
-                ) AS access ON access.case_id = cases.id
+                ) AS status ON status.case_id = cases.id
                 LEFT JOIN {models.ComplaintEntry.database_table}
                     AS entries ON entries.case_id = cases.id
                 LEFT JOIN {models.ComplaintEntryVersion.database_table}
@@ -943,7 +1011,7 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("complaint_admin")
-    def get_measures(
+    def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> dict[int, models.ComplaintEntryVersion]:
         query = f"""

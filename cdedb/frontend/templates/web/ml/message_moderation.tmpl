@@ -97,22 +97,22 @@
     <script nonce="{{ csp_nonce }}">
         function mlmod_bind_modal(request_id) {
             const button = `
-               {{ util.input_submit(label=gettext('Reject with cause ...'), icon='reply', value='none',
+               {{ util.input_submit(label=gettext('Reject with reason ...'), icon='reply', value='none',
                                     name="action", aclass=("btn btn-sm btn-warning"),
-                                    anid=('mlmod-button-cause-${ request_id }')) }}
+                                    anid=('mlmod-button-reason-${ request_id }')) }}
             `;
             const hidden_input = `
                 <input type="hidden" name="reason" value="" id="mlmod-hidden-reason-${ request_id }"/>
             `
-            if (!$("#mlmod-button-cause-" + request_id).length) {
+            if (!$("#mlmod-button-reason-" + request_id).length) {
                 $("#mlmod-button-reject-" + request_id).after(button);
                 $("#mlmod-button-reject-" + request_id).after(hidden_input);
                 $("#mlmod-noscript-reason-" + request_id).remove();
-                $("#mlmod-button-cause-" + request_id).on("click", function(e) {
+                $("#mlmod-button-reason-" + request_id).on("click", function(e) {
                     return false;
                 });
             }
-            $("#mlmod-button-cause-" + request_id).on("click", function() {
+            $("#mlmod-button-reason-" + request_id).on("click", function() {
                 mlmod_show_modal(request_id);
             });
         }

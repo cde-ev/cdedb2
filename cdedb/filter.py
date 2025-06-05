@@ -13,7 +13,6 @@ from collections.abc import (
     ItemsView,
     Iterable,
     Mapping,
-    Sequence,
 )
 from typing import (
     TYPE_CHECKING,
@@ -36,7 +35,7 @@ import markupsafe
 import phonenumbers
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, compute_checkdigit
+from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
 
@@ -307,6 +306,14 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
 
     return phonenumbers.format_number(
         phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+
+
+def persona_name_filter(val: CdEDBObject | User, *args: bool, **kwargs: bool) -> str:
+    """Wrapper to format persona names."""
+    if isinstance(val, User):
+        return val.persona_name(*args, **kwargs)
+    else:
+        return make_persona_name(val, *args, **kwargs)
 
 
 @overload
@@ -647,12 +654,12 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: Iterable[enum.Enum],
+def enum_entries_filter(enum: Iterable[enum.IntEnum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
                         intval: bool = False,
-                        ) -> list[tuple[enum.Enum | int, str]]:
+                        ) -> list[tuple[enum.IntEnum | int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -676,12 +683,10 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
     if intval:
-        transform = int
         sortkey = lambda x: x
     else:
-        transform = lambda x: x
         sortkey = lambda e: e[0].value
-    to_sort = ((transform(entry), prefix + processing(pre(entry)))
+    to_sort = ((int(entry) if intval else entry, prefix + processing(pre(entry)))
                for entry in enum if entry not in exempt)
     return xsorted(to_sort, key=sortkey)
 
@@ -714,52 +719,32 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
     return [tuple(value[k] for k in args) for value in values]
 
 
-def entries_filter(items: list["CdEDataclass"], *args: str) -> list[tuple[Any, ...]]:
-    """Transform a list of dataclasses into a list of tuples of specified fields.
+def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDataclass"],
+                   *args: str, include: Optional[Container[int]] = None,
+                   ) -> list[tuple[Any, ...]]:
+    """Transform a dict of dataclasses into a list of tuples of specified fields.
 
     Example::
 
-        >>> items = [Dataclass(id=1, name=a, active=True),
-                     Dataclass(id=2, name=b, active=False)]
+        >>> entities = {1: Dataclass(id=1, name=a, active=True),
+                        2: Dataclass(id=2, name=b, active=False)}
         >>> entries_filter(items, 'name', 'active')
         [('a', True), ('b', False)]
 
-    :param items: A list of CdEDataclasses.
+    :param entities: A dict of CdEDataclasses.
     :param args: Additional positional arguments describing which keys of
       the dataclasses should be inserted in the resulting tuple
+    :param include: An iteratable to search for entities' ids. Only entities with
+      their id being in `include` are included in the results list
     :return: A list of tuples (e.g. to be used in the input_checkboxes or
-      input_select macros), built from the selected fields of the dataclasses
+      input_select macros), built from the selected fields of the dataclasses.
     """
-    return [tuple(v.to_database()[k] for k in args) for v in items]
-
-
-def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
-                         include: Optional[Container[str]] = None,
-                         ) -> list[tuple[str, ...]]:
-    """
-    Transform a list of dict items with dict-type values into a list of
-    tuples of strings with specified format. Each entry of the resulting
-    tuples is built by applying the item's value dict to a format string.
-
-    Example::
-        >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
-                     (2, {'id': 2, 'name': 'b', 'active': False})]
-        >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
-        [('1', 'a -- True'), ('2', 'b -- False')]
-
-    :param items: A list of 2-element tuples. The first element of each
-      tuple is ignored, the second must be a dict
-    :param args: Additional positional arguments, which are format strings
-      for the resulting tuples. They can use named format specifications to
-      access the dicts' fields.
-    :param include: An iteratable to search for items' keys. Only items with
-      their key being in `include` are included in the results list
-    :return: A list of tuples (e.g. to be used in the input_checkboxes or
-      input_select macros), built from the selected fields of the dicts
-    """
-    return [tuple(k.format(**value) for k in args)
-            for key, value in items
-            if (include is None or key in include)]
+    if isinstance(entities, dict):
+        entities = entities.values()
+    return [
+        tuple(getattr(entity, key) for key in args)
+        for entity in entities if (include is None or entity.id in include)
+    ]
 
 
 #: Dictionary of custom filters we make available in the templates.
@@ -773,6 +758,7 @@ JINJA_FILTERS = {
     'iban': iban_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
+    'persona_name': persona_name_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'stringIn': stringIn_filter,
@@ -792,6 +778,5 @@ JINJA_FILTERS = {
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
-    'xdict_entries': xdict_entries_filter,
     'entries': entries_filter,
 }

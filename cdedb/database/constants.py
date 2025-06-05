@@ -640,6 +640,29 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.agreement_measure,
         }
 
+    def get_icon(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.initial_information: "info",
+            et.additional_information: "info",
+            et.provisional_statement_given: "file-lines",
+            et.statement_signed: "file-signature",
+            et.statement_cleared: "file-export",
+            et.statement_sent: "envelope-open-text",
+            et.statement_received: "box-archive",
+            et.agreement: "handshake",
+            et.agreement_measure: "shield-halved",
+            et.provisional_to_arbcom: "scale-unbalanced",
+            et.provisional_measure: "bandage",
+            et.definite_to_arbcom: "scale-unbalanced",
+            et.definite_measure: "shield-halved",
+            et.measure_explanation: "scale-balanced",
+            et.measure_comment: "file-shield",
+            et.faction_summary: "clipboard-user",
+            et.synthesis: "clipboard-check",
+            et.revocation_explanation: "rotate-left",
+        }[self]
+
 
 @enum.unique
 class CoreLogCodes(CdEIntEnum):

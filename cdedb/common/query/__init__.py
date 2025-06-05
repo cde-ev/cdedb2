@@ -46,6 +46,7 @@ LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
 @enum.unique
 class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
+
     empty = 1
     nonempty = 2
     equal = 3
@@ -68,63 +69,180 @@ class QueryOperators(CdEIntEnum):
     outside = 23
     greaterequal = 24
     greater = 25
-    checkedin_at = 101
-    checkedin_notat = 102
-    checkedin_oneof = 103
-    checkedin_noneof = 104
-    checkedin_allof = 105
-    checkedin_notallof = 106
+    lessornull = 30
+    lessequalornull = 31
+    greaterornull = 33
+    greaterequalornull = 34
+    ranged_at = 101
+    ranged_notat = 102
+    ranged_oneof = 103
+    ranged_noneof = 104
+    ranged_allof = 105
+    ranged_notallof = 106
 
 
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
 VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
-    "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
-            _ops.equalornull, _ops.unequalornull, _ops.containsall,
-            _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
-            _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
-            _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
-            _ops.between, _ops.outside),
-    "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-            _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "float": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-              _ops.less, _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
-              _ops.greater, _ops.empty, _ops.nonempty),
-    "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-                 _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
-                 _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
-                 _ops.empty, _ops.nonempty),
+    "str": (
+        _ops.match,
+        _ops.unmatch,
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.containsall,
+        _ops.containsnone,
+        _ops.containssome,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.regex,
+        _ops.notregex,
+        _ops.fuzzy,
+        _ops.empty,
+        _ops.nonempty,
+        _ops.greater,
+        _ops.greaterequal,
+        _ops.less,
+        _ops.lessequal,
+        _ops.between,
+        _ops.outside,
+    ),
+    "int": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "float": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.less,
+        _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "date": (
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "datetime": (
+        _ops.equal,
+        _ops.unequal,
+        _ops.equalornull,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.less,
+        _ops.lessequal,
+        _ops.lessornull,
+        _ops.lessequalornull,
+        _ops.between,
+        _ops.outside,
+        _ops.greaterequal,
+        _ops.greater,
+        _ops.greaterequalornull,
+        _ops.greaterornull,
+        _ops.empty,
+        _ops.nonempty,
+    ),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
-    "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
-                 _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
-    "checkin_datetime": (_ops.checkedin_at, _ops.checkedin_notat, _ops.checkedin_oneof,
-                         _ops.checkedin_noneof, _ops.checkedin_allof,
-                         _ops.checkedin_notallof),
+    "enum_int": (
+        _ops.equal,
+        _ops.equalornull,
+        _ops.unequal,
+        _ops.unequalornull,
+        _ops.oneof,
+        _ops.otherthan,
+        _ops.empty,
+        _ops.nonempty,
+    ),
+    "ranged_datetime": (
+        _ops.ranged_at,
+        _ops.ranged_notat,
+        _ops.ranged_oneof,
+        _ops.ranged_noneof,
+        _ops.ranged_allof,
+        _ops.ranged_notallof,
+    ),
 }
+VALID_QUERY_OPERATORS["ranged_date"] = VALID_QUERY_OPERATORS["ranged_datetime"]
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["cdedbid"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
-VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["iban"] = \
-    VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["str"]
+VALID_QUERY_OPERATORS["iban"] = VALID_QUERY_OPERATORS["str"]
 VALID_QUERY_OPERATORS["money"] = VALID_QUERY_OPERATORS["float"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
-SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal,
-                             _ops.unequal, _ops.equalornull,
-                             _ops.unequalornull, _ops.oneof, _ops.otherthan)
+SELECTION_VALUE_OPERATORS = (
+    _ops.empty,
+    _ops.nonempty,
+    _ops.equal,
+    _ops.unequal,
+    _ops.equalornull,
+    _ops.unequalornull,
+    _ops.oneof,
+    _ops.otherthan,
+)
 
 #: Some operators expect several operands (that is a space delimited list of
 #: operands) and thus need to be treated differently.
-MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
-                         _ops.containsnone, _ops.containssome, _ops.between,
-                         _ops.outside, _ops.checkedin_oneof, _ops.checkedin_noneof,
-                         _ops.checkedin_allof, _ops.checkedin_notallof}
+MULTI_VALUE_OPERATORS = {
+    _ops.oneof,
+    _ops.otherthan,
+    _ops.containsall,
+    _ops.containsnone,
+    _ops.containssome,
+    _ops.between,
+    _ops.outside,
+    _ops.ranged_oneof,
+    _ops.ranged_noneof,
+    _ops.ranged_allof,
+    _ops.ranged_notallof,
+}
 
 #: Some operators expect no operands need some special-casing.
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
@@ -149,6 +267,7 @@ QueryChoices = Mapping[Any, str]
 
 QUERY_VALUE_SEPARATOR = ","
 
+# fmt: off
 
 @dataclasses.dataclass
 class QuerySpecEntry:
@@ -612,7 +731,10 @@ _QUERY_SPECS = {
             "cases.start_date": QuerySpecEntry("date", n_("Start Date")),
             "cases.end_date": QuerySpecEntry("date", n_("End Date")),
             "cases.kind": QuerySpecEntry("enum_int", n_("Kind")),
-            "access.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
+            "status.is_unlocked": QuerySpecEntry("bool", n_("is unlocked")),
+            "status.is_confirmed": QuerySpecEntry("bool", n_("is confirmed")),
+            "status.is_closed": QuerySpecEntry("bool", n_("is closed")),
+            "status.last_entry": QuerySpecEntry("datetime", n_("Last entry"), title_prefix=n_("Entry Version"), translate_prefix=True),
             "entries.entry_type": QuerySpecEntry("enum_int", n_("Entry Type"), choices=None),  # type: ignore[arg-type]
             "entries.concerned_id": QuerySpecEntry("id", n_("Concerned")),
             "entry_versions.length": QuerySpecEntry("int", n_("Length of Description"), title_prefix=n_("Entry Version"), translate_prefix=True),
@@ -963,7 +1085,7 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
 def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
     if courses is None:
         return {}
-    return dict((c.id, f"{c.nr} {c.shortname}") for c in xsorted(courses.values()))
+    return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
 def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
@@ -1038,7 +1160,7 @@ def make_registration_query_spec(event: "models.Event",
         "reg.is_checked_in": QuerySpecEntry("bool", n_("Currently checked-in")),
         "reg.has_been_checked_in": QuerySpecEntry("bool", n_("Has been checked-in")),
         "checkin_at.checkin_time,checkin_at.checkout_time": QuerySpecEntry(
-            "checkin_datetime", n_("Checked in at")),
+            "ranged_datetime", n_("Checked in at")),
         "checkin_periods.min_checkin_time": QuerySpecEntry("datetime", n_("First checkin")),
         "checkin_periods.min_checkout_time": QuerySpecEntry("datetime", n_("First checkout")),
         "checkin_periods.max_checkin_time": QuerySpecEntry("datetime", n_("Last checkin")),

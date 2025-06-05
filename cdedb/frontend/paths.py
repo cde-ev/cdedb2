@@ -277,6 +277,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/remove", methods=_POST,
                              endpoint="remove_entry"),
                     )),
+                    sub("/entry/<int:parent_id>", (
+                        rule("/child/add", methods=_GET,
+                             endpoint="add_entry_form"),
+                        rule("/child/add", methods=_POST,
+                             endpoint="add_entry"),
+                    )),
                 )),
             )),
         ))
@@ -611,6 +617,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="download_dokuteam_participant_list"),
                     rule("/partial", methods=_GET,
                          endpoint="download_partial_export"),
+                    rule("/questionnaire", methods=_GET,
+                         endpoint="download_questionnaire_export"),
                     rule("/csv_courses", methods=_GET,
                          endpoint="download_csv_courses"),
                     rule("/csv_lodgements", methods=_GET,

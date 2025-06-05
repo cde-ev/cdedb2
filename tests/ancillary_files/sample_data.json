@@ -4572,35 +4572,40 @@
             "case_id": 1,
             "entry_type": 101,
             "parent_id": null,
-            "concerned_id": null
+            "concerned_id": null,
+            "is_revoked": false
         },
         {
             "id": 2,
             "case_id": 1,
             "entry_type": 201,
             "parent_id": null,
-            "concerned_id": 2
+            "concerned_id": 2,
+            "is_revoked": false
         },
         {
             "id": 3,
             "case_id": 1,
             "entry_type": 211,
             "parent_id": 2,
-            "concerned_id": null
+            "concerned_id": null,
+            "is_revoked": false
         },
         {
             "id": 4,
             "case_id": 1,
             "entry_type": 301,
             "parent_id": null,
-            "concerned_id": null
+            "concerned_id": null,
+            "is_revoked": false
         },
         {
             "id": 5,
             "case_id": 1,
             "entry_type": 311,
             "parent_id": 4,
-            "concerned_id": 2
+            "concerned_id": 2,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4612,6 +4617,7 @@
             "length": 146,
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
+            "etime": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4624,6 +4630,7 @@
             "length": 258,
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
+            "etime": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4636,6 +4643,7 @@
             "length": null,
             "ctime": "---now---",
             "timestamp": "2025-05-28T15:00:00+00:00",
+            "etime": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4648,6 +4656,7 @@
             "length": 80,
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
+            "etime": null,
             "dtime": "---now---",
             "dreason": "Ungünstige Wortwahl.",
             "deleted_by": 1
@@ -4660,6 +4669,7 @@
             "length": 77,
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
+            "etime": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4672,6 +4682,7 @@
             "length": 53,
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
+            "etime": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4795,6 +4806,16 @@
             "case_id": 1,
             "persona_id": 2,
             "companion_id": 3,
+            "change_note": ""
+        },
+        {
+            "id": 6,
+            "ctime": "---now---",
+            "code": 101,
+            "submitted_by": 1,
+            "case_id": null,
+            "persona_id": 10,
+            "companion_id": null,
             "change_note": ""
         }
     ],
@@ -5209,7 +5230,7 @@
             "registration_start": "2049-12-01T00:00:00+00:00",
             "registration_soft_limit": "2049-12-31T00:00:00+00:00",
             "registration_hard_limit": "2049-12-31T00:00:00+00:00",
-            "iban": "DE26370205000008068900",
+            "iban": "DE23830654080005374499",
             "orga_address": "",
             "registration_text": null,
             "mail_text": "",
@@ -5240,7 +5261,7 @@
             "registration_start": null,
             "registration_soft_limit": null,
             "registration_hard_limit": null,
-            "iban": "DE26370205000008068900",
+            "iban": "DE23830654080005374499",
             "orga_address": null,
             "registration_text": null,
             "mail_text": null,
@@ -5271,7 +5292,7 @@
             "registration_start": "---now---",
             "registration_soft_limit": null,
             "registration_hard_limit": null,
-            "iban": "DE26370205000008068900",
+            "iban": "DE23830654080005374499",
             "orga_address": null,
             "registration_text": null,
             "mail_text": null,

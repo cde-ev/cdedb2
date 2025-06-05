@@ -83,7 +83,7 @@
                     {# Already sorted list of wished personas #}
                     {% for persona in lodgement_wishes['wished_personas'] %}
                         <li class="text-info">
-                            {{ util.persona_name(persona, include_nickname=True) }}
+                            {{ persona|persona_name(include_nickname=True) }}
                         </li>
                     {% endfor %}
                 </ul>

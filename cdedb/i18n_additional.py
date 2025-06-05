@@ -322,12 +322,12 @@ I18N_STRINGS = (
     n_("QueryOperators.outside"),
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
-    n_("QueryOperators.checkedin_at"),
-    n_("QueryOperators.checkedin_notat"),
-    n_("QueryOperators.checkedin_oneof"),
-    n_("QueryOperators.checkedin_noneof"),
-    n_("QueryOperators.checkedin_allof"),
-    n_("QueryOperators.checkedin_notallof"),
+    n_("QueryOperators.ranged_at"),
+    n_("QueryOperators.ranged_notat"),
+    n_("QueryOperators.ranged_oneof"),
+    n_("QueryOperators.ranged_noneof"),
+    n_("QueryOperators.ranged_allof"),
+    n_("QueryOperators.ranged_notallof"),
 
     n_("QueryScope.registration"),
     n_("QueryScope.event_course"),
@@ -448,6 +448,8 @@ I18N_STRINGS = (
     # Lodgement violations.
     n_("IncorrectNumInhabitantsCV"),
     n_("IllegalMixedLodgementCV"),
+    # General violations.
+    n_("IncorectIBANCV"),
 
     n_("ViolationSeverity.DEBUG"),
     n_("ViolationSeverity.INFO"),
@@ -460,6 +462,10 @@ I18N_STRINGS = (
     n_("ViolationKind.courses"),
     n_("ViolationKind.lodgements"),
     n_("ViolationKind.other"),
+
+    n_("IncludeEmpty.yes"),
+    n_("IncludeEmpty.no"),
+    n_("IncludeEmpty.only"),
 
     #
     # Query datatypes

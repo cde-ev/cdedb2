@@ -114,6 +114,24 @@ class Case(CdEDataclass):
             )
         return ret
 
+    @property
+    def is_active(self) -> bool:
+        return not any(
+            entry.entry_type == const.ComplaintEntryType.synthesis
+            and entry.active_version
+            and not entry.is_revoked
+            for entry in self.entries.values()
+        )
+
+    @property
+    def is_confirmed(self):
+        return any(
+            entry.entry_type == const.ComplaintEntryType.statement_signed
+            and entry.active_version
+            and not entry.is_revoked
+            for entry in self.entries.values()
+        )
+
     def list_entries(
         self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
     ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:
@@ -271,7 +289,9 @@ class ComplaintEntryVersion(CdEDataclass):
     database_table = "complaint.entry_versions"
     entity_key = "entry_id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(
+        metadata={"validation_exclude": True, "request_exclude": True}
+    )
 
     entry_id: vtypes.ID = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}

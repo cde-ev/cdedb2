@@ -157,7 +157,7 @@ class TestCoreFrontend(FrontendTest):
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
-        complaint = {"Fallarchiv", "Fall-Log"}
+        complaint = {"Fallarchiv", "Fall-Log", "Fall-Unterstützer", "Maßnahmenübersicht"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):

@@ -44,10 +44,24 @@
                                     cdedblink("core/show_case", {'case_id': case.id}),
                                     gettext("Case %s")|s|format(case.id)
                                 ) }}
-                                {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
-                                {% if case.id in unlocked_cases %}
-                                    {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
-                                {% endif %}
+                                <span class="nowrap" style="margin-left: .1em;">
+                                    {% if case.is_confirmed %}
+                                        {{ util.make_icon(
+                                            enums["ComplaintEntryType"].statement_signed.get_icon(),
+                                            aclass='text-muted',
+                                            title=gettext("is closed")
+                                        ) }}
+                                    {% endif %}
+                                    {% if not case.is_active %}
+                                        {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
+                                    {% endif %}
+                                    {% if case.is_grave %}
+                                        {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
+                                    {% endif %}
+                                    {% if case.id in unlocked_cases %}
+                                        {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
+                                    {% endif %}
+                                </span>
                             </div>
                             <div class="col-md-5">
                                 {{ gettext(case.kind|string) }}
@@ -109,12 +123,38 @@
                 <div class="row">
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_status.is_confirmed",
+                                                  label=gettext("is confirmed"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_text(name="qval_cases.end_date", label=gettext("Occurred after"),
+                                                aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_after", label=gettext("Last entry after"),
+                                                aclass="input-sm", type="datetime-local") }}
+                    </div>
+                    <div class="col-sm-6">
+                        {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
+                                                  entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_select(name="qval_status.is_closed",
+                                                  label=gettext("is closed_[[short]]"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occurred before"),
+                                                aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_before", label=gettext("Last entry before"),
+                                                aclass="input-sm", type="datetime-local") }}
+                    </div>
+                </div>
+                <hr class="panel-primary nosp" style="margin-bottom: 15px;" />
+                <div class="row">
+                    <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
                                                 label=gettext("Involved"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-involved_id').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
-                                [], false, false, "{{ gettext("ID, name, email") }}"
+                                [{{ user.persona_id }}], false, false, "{{ gettext("ID, name, email") }}"
                             );
                         </script>
                         {{ util.form_input_select(name="qval_involved.involvement_type",
@@ -127,9 +167,6 @@
                                                   nulloption=nbsp) }}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
-                                                  entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
-                                                  nulloption=nbsp) }}
                         {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
                                                 label=gettext("Companion"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">

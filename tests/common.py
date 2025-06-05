@@ -69,6 +69,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     PathLike,
     RequestState,
+    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -100,7 +101,6 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
     AbstractFrontend,
     Worker,
-    make_persona_name,
     setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend
@@ -894,6 +894,7 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-37-X",
         'username': "katarina@example.cde",
         'password': "secret",
+        'given_names': "Katarina",
         'legal_given_names': None,
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
@@ -1841,8 +1842,13 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name = make_persona_name(personas[entry['persona_id']])
-                self.assertPresence(name, div=f"{i}-{log_id}")
+                name1 = make_persona_name(personas[entry['persona_id']])
+                name2 = make_persona_name(
+                    personas[entry['persona_id']], include_nickname=True,
+                )
+                self.assertPresence(
+                    f'({re.escape(name1)}|{re.escape(name2)})',
+                    regex=True, div=f"{i}-{log_id}")
             if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 

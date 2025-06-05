@@ -38,6 +38,7 @@
                     {% endtrans %}
                 </div>
                 <strong>
+                    {{ util.make_icon(entry.entry_type.get_icon()) }}
                     {{ entry.entry_type.name }}
                 </strong>
                 {% if entry.concerned_id %}
@@ -58,10 +59,16 @@
                     ▸
                     {% for child in entry.children %}
                         {%- if not loop.first %}, {% endif %}
-                        {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
+                        {% if child.active_version %}
+                             {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}
-                            {{ label }} at {{ stamp }}
-                        {% endtrans %}
+                                {{ label }} at {{ stamp }}
+                            {% endtrans %}
+                        {%- else -%}
+                            {% trans label=util.href("#entry" + child.id|string, child.entry_type.name) %}
+                                {{ label }} (deleted)
+                            {% endtrans %}
+                        {%- endif -%}
                     {%- endfor %}
                 {% endif %}
                 <hr class="nosp" />

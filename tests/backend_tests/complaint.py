@@ -240,7 +240,12 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.case_created,
             }
         ]
-        self.assertLogEqual(log_expectation, "complaint", case_id=new_case.id)
+        self.assertLogEqual(
+            log_expectation,
+            "complaint",
+            case_id=new_case.id,
+            case_id_include_empty="IncludeEmpty.no",
+        )
 
     @as_users("simon")
     def test_add_entry(self) -> None:
@@ -678,6 +683,9 @@ class TestComplaintBackend(BackendTest):
         new_entry_id = self.complaint.revoke_entry(self.key, entry_id, revoke_data)
         self.assertLessEqual(1, new_entry_id)
 
+        with self.assertRaisesRegex(ValueError, "Entry already revoked."):
+            self.complaint.revoke_entry(self.key, entry_id, revoke_data)
+
         # Check the result.
         expectation.entries[entry_id].is_revoked = True
         expectation.entries[new_entry_id] = models.ComplaintEntry(
@@ -706,6 +714,9 @@ class TestComplaintBackend(BackendTest):
             self.key, new_entry_id, revoke_data
         )
         self.assertLessEqual(1, new_new_entry_id)
+
+        with self.assertRaisesRegex(ValueError, "Cannot chain revoke."):
+            self.complaint.revoke_entry(self.key, new_new_entry_id, revoke_data)
 
         # Check the result.
         expectation.entries[entry_id].is_revoked = False
@@ -938,17 +949,25 @@ class TestComplaintBackend(BackendTest):
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
-        self.assertEqual({}, self.complaint.get_measures(self.key, 3, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 4, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 7, is_active=None))
-        self.assertEqual({}, self.complaint.get_measures(self.key, 2, is_active=False))
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 3, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 4, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 7, is_active=None)
+        )
+        self.assertEqual(
+            {}, self.complaint.get_user_measures(self.key, 2, is_active=False)
+        )
 
         case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
             {measure.id: measure},
-            self.complaint.get_measures(self.key, active_measure_persona_id),
+            self.complaint.get_user_measures(self.key, active_measure_persona_id),
         )
 
         revoke_data: CdEDBObject = {
@@ -960,7 +979,7 @@ class TestComplaintBackend(BackendTest):
 
         self.assertEqual(
             {},
-            self.complaint.get_measures(
+            self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=True
             ),
         )
@@ -970,7 +989,7 @@ class TestComplaintBackend(BackendTest):
         assert measure is not None
         self.assertEqual(
             {measure.id: measure},
-            self.complaint.get_measures(
+            self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
         )
@@ -1270,6 +1289,7 @@ class TestComplaintValidation(TestValidationBase):
                             2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
                         ),
                         "authors": [1],
+                        "etime": None,
                     },
                     None,
                 ),
@@ -1278,6 +1298,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": None,
                         "timestamp": now(),
                         "authors": [1, 2, 3],
+                        "etime": None,
                     },
                     INVAL,
                     None,
@@ -1291,6 +1312,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": None,
                         "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
                         "authors": [1],
+                        "etime": None,
                     },
                     None,
                 ),
@@ -1299,6 +1321,36 @@ class TestComplaintValidation(TestValidationBase):
                 "creation": True,
                 "passthrough": True,
                 "entry_type": const.ComplaintEntryType.statement_signed,
+            },
+        )
+        # Test successful creation of entry version with expiration:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "authors": [1],
+                        "timestamp": "2025-05-30 22:25:00",
+                        "etime": "2025-05-31 22:25:00",
+                    },
+                    {
+                        "description": "Test.",
+                        "authors": [1],
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                        ),
+                        "etime": datetime.datetime(
+                            2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
+                        ),
+                    },
+                    None,
+                ),
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.definite_measure,
             },
         )
         # Test successful creation of entry version with description:
@@ -1310,6 +1362,7 @@ class TestComplaintValidation(TestValidationBase):
                         "description": "Test.",
                         "timestamp": now(),
                         "authors": [1],
+                        "etime": None,
                     },
                     INVAL,
                     None,

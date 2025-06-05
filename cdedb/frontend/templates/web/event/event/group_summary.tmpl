@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>
+    <div class="p button-par">
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
                                icon='plus', aclass='btn btn-success btn-sm',
                                readonly=not is_privileged_for('add_part_group')) }}
@@ -33,12 +33,13 @@
                                    icon='plus', aclass='btn btn-success btn-sm',
                                    readonly=not is_privileged_for('add_track_group')) }}
         {% endif %}
-    </p>
-    <h2>
-        {% trans %}Part Groups{% endtrans %}
+    </div>
+
+    <div>
         {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen") }}
-    </h2>
-    <table id="part-group-summary" class="table table-stats">
+        {{ util.h(_("Part Groups"), level=2) }}
+    </div>
+        <table id="part-group-summary" class="table table-stats">
         <thead>
             <tr>
                 <th>{% trans %}Type{% endtrans %}</th>
@@ -107,10 +108,8 @@
     </table>
 
     {% if ambience['event']['tracks'] %}
-    <h2>
-        {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
-    </h2>
+        {{ util.h(_("Track Groups"), level=2) }}
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Course choice sync groups may be deleted freely, but you may not be able ro recreate them if registrations already exist.

@@ -546,7 +546,6 @@ CREATE TABLE complaint.access_log (
 GRANT SELECT, INSERT, UPDATE(ctime, atime), DELETE ON complaint.access_log TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.access_log_id_seq TO cdb_persona;
 
--- Maybe explicitly model entry versions after all?
 CREATE TABLE complaint.entries (
     id            serial PRIMARY KEY,
     case_id       integer NOT NULL REFERENCES complaint.cases(id),

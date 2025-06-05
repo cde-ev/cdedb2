@@ -49,6 +49,7 @@ Should you see the need to manually rebuild them you can do so using
 
 .. warning:: To build the dev-container you will first need to build the non-dev
           variant as the dependency is not publicly resolvable.
+          To do this, target the docker-compose-run.yaml file.
 
 Starting the containers
 -----------------------
