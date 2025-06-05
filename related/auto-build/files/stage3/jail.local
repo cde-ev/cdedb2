@@ -16,6 +16,12 @@ port    = http,https
 filter  = cdedb-apitoken
 maxretry = 5
 
+[cdedb-contact]
+enabled = true
+port    = http,https
+filter  = cdedb-contact
+maxretry = 5
+
 [cdedb-password-reset]
 enabled = true
 port    = http,https
