@@ -8,10 +8,8 @@ cd /cdedb2 && make reload
 # access postgres database directly
 sudo -u cdb psql -U cdb -d cdb
 
-# access cdedb logs (most recently first)
-sudo journalctl --reverse --unit cdedb-app
-# access ldap logs (most recently first)
-sudo journalctl --reverse --unit cde-ldap
+# access cdedb and ldap logs (most recently first)
+sudo journalctl --reverse --unit cdedb-app --unit cde-ldap
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data
