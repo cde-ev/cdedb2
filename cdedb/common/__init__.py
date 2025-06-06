@@ -1330,6 +1330,7 @@ def parse_date(val: str) -> datetime.date:
 
     We only support a limited set of formats to avoid any surprises
     """
+    val = val.strip()
     formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
                ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
     for fmt, _ in formats:
