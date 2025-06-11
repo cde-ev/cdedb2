@@ -1156,7 +1156,7 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "", *,
+    def submit(self, form: webtest.Form, button: str = "submitform", *,
                check_notification: bool = True, check_button_attrs: bool = False,
                verbose: bool = False, value: Optional[str] = None,
                check_mandatory_filled: bool = True) -> None:
@@ -1197,6 +1197,8 @@ class FrontendTest(BackendTest):
         if value and not button:
             raise ValueError(
                 "Cannot specify button value without specifying button name.")  # pragma: no cover
+        if not form.get(button, index=0, default=None):
+            self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1268,7 +1270,7 @@ class FrontendTest(BackendTest):
         def _logout() -> None:
             f = self.response.forms['logoutform']
             self.submit(f, check_notification=False, verbose=verbose,
-                        check_mandatory_filled=False)
+                        button="submitlogout", check_mandatory_filled=False)
 
         if allow_anonymous:
             if not self.user_in("anonymous"):

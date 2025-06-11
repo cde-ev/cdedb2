@@ -86,7 +86,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-sphinx \
     python3-lxml \
     python3-pil \
-    python3-webtest \
     python3-werkzeug \
     python3-ldap3 \
     python3-passlib \
@@ -120,6 +119,7 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     schulze_condorcet==2.0.1 \
     subman==0.1.1 \
     segno==1.5.2 \
+    webtest==3.0.6 \
     mypy==1.14.0 \
     ruff==0.8.4 \
     \
