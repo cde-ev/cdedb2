@@ -61,6 +61,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS,
     ADMIN_VIEWS_COOKIE_NAME,
     ALL_ADMIN_VIEWS,
+    ALL_ADMINS,
     REALM_ADMINS,
     REALM_INHERITANCE,
     extract_roles,
@@ -1072,11 +1073,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Allow admins to search by (CdEDB)ID, but not moderators
-        if not (
-            kind == "ml_subscriber"
-            or kind == "ml_user" and not relevant_admin_roles & rs.user.roles
-        ):
+        # Allow admins to search by (CdEDB)ID
+        if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
