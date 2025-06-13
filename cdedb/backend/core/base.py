@@ -2815,7 +2815,7 @@ class CoreBaseBackend(AbstractBackend):
         :returns: A dict of possibly matching account data.
         """
         persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
-        if persona['birthday'] == datetime.date.min:
+        if persona.get('birthday') == datetime.date.min:
             persona['birthday'] = None
         scores: dict[int, int] = collections.defaultdict(lambda: 0)
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
@@ -2824,22 +2824,19 @@ class CoreBaseBackend(AbstractBackend):
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
             (10, "family_name = %s OR birth_name = %s",
-             (persona['birth_name'], persona['birth_name'])),
-            (10, "birthday = %s", (persona['birthday'],)),
-            (5, "location = %s", (persona['location'],)),
-            (5, "postal_code = %s", (persona['postal_code'],)),
+             (persona.get('birth_name'), persona.get('birth_name'))),
+            (10, "given_names = %s OR legal_given_names = %s",
+             (persona.get('legal_given_names'), persona.get('legal_given_names'))),
+            (10, "birthday = %s", (persona.get('birthday'),)),
+            (5, "location = %s", (persona.get('location'),)),
+            (5, "postal_code = %s", (persona.get('postal_code'),)),
             (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
+              (persona.get('legal_given_names'), persona.get('legal_given_names'),
+               persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
-        if 'legal_given_names' in persona and persona['legal_given_names']:
-            queries.extend([
-                (10, "given_names = %s OR legal_given_names = %s",
-                 (persona['legal_given_names'], persona['legal_given_names'])),
-                (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
-                 (persona['legal_given_names'], persona['legal_given_names'],
-                  persona['family_name'])),
-            ])
         # Omit queries where some parameters are None
         queries = tuple(e for e in queries if all(x is not None for x in e[2]))
         for score, condition, params in queries:

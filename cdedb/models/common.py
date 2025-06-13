@@ -173,7 +173,7 @@ class CdEDataclass:
                     optional[field.name] = field.type
                     continue
                 if field.name == 'id':
-                    mandatory[field.name] = vtypes.CreationID
+                    optional[field.name] = vtypes.CreationID
                 elif (
                         is_optional_type(field.type)
                         # Fields with init=False are optional, so that objects

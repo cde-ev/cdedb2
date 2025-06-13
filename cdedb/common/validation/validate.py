@@ -1833,6 +1833,7 @@ def _genesis_case(
     if val['realm'] not in models_core.GenesisCase.get_available_realms():
         raise ValidationSummary(ValueError('realm', n_("This realm is not supported for genesis.")))
     model = models_core.GenesisCase.get_model_by_realm(val['realm'])
+    # raise RuntimeError(model.validation_fields(creation=creation))
 
     mandatory, optional = model.validation_fields(creation=creation)
     # Birth name is not allowed on creation to avoid mistakes
@@ -1862,7 +1863,7 @@ def _genesis_case(
     if errs:
         raise errs
 
-    return GenesisCase(val)
+    return val
 
 
 PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {

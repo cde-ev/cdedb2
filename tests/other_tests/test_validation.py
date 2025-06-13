@@ -21,7 +21,6 @@ from cdedb.common.validation.types import (
     EmptyDict,
     EmptyList,
     EventPartGroup,
-    GenesisCase,
     LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
@@ -40,6 +39,7 @@ from cdedb.common.validation.types import (
     Vote,
 )
 from cdedb.config import Config
+from cdedb.models.core import GenesisCase
 
 T = TypeVar('T')
 

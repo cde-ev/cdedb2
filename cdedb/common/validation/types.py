@@ -95,7 +95,6 @@ ByFieldDatatype = _NewType("ByFieldDatatype", str)
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
 Persona = _NewType("Persona", _CdEDBObject)
-GenesisCase = _NewType("GenesisCase", _CdEDBObject)
 BatchAdmissionEntry = _NewType("BatchAdmissionEntry", _CdEDBObject)
 PrivilegeChange = _NewType("PrivilegeChange", _CdEDBObject)
 AnonymousMessage = _NewType("AnonymousMessage", _CdEDBObject)

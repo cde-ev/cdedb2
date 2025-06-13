@@ -231,6 +231,26 @@ class GenesisCase(CdEDataclass):
         return (self.ctime, self.family_name, self.given_names)
 
     @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        # Dispatch data to correct dataclass based on realm.
+        if (realm := data.get("realm")) is None:
+            raise RuntimeError
+        if realm == "ml":
+            return GenesisCaseMl.from_database(data)
+        elif realm == "event":
+            return GenesisCaseEvent.from_database(data)
+        elif realm == "cde":
+            return GenesisCaseCdE.from_database(data)
+        else:
+            raise NotImplementedError
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        # enable sorting of all genesis sub classes
+        if not isinstance(other, GenesisCase):
+            return NotImplemented
+        return self._lt_inner(other)
+
+    @classmethod
     def get_available_realms(cls) -> dict[vtypes.Realm, str]:
         return {
             "cde": n_("CdE membership & events"),
@@ -283,20 +303,31 @@ class GenesisCase(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
-    gender = None
-    birthday = None
-    telephone = None
-    mobile = None
-    address_supplement = None
-    address = None
-    postal_code = None
-    location = None
-    country = None
-    birth_name = None
+    gender: const.Genders | None = None
+    birthday: vtypes.Birthday | None = None
+    telephone: vtypes.Phone | None = None
+    mobile: vtypes.Phone | None = None
+    address_supplement: str | None = None
+    address: str | None = None
+    postal_code: vtypes.PrintableASCII | None = None
+    location: str | None = None
+    country: vtypes.Country | None = None
+    birth_name: str | None = None
 
-    attachment_hash = None
-    pevent_id = None
-    pcourse_id = None
+    attachment_hash: str | None = None
+    pevent_id: int | None = None
+    pcourse_id: int | None = None
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(data)
+
+    @classmethod
+    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
+        return {
+            "ml": n_("CdE mailinglist"),
+        }
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -306,9 +337,20 @@ class GenesisCaseEvent(GenesisCase):
     address: str
     location: str
 
-    attachment_hash = None
-    pevent_id = None
-    pcourse_id = None
+    attachment_hash: str | None = None
+    pevent_id: int | None = None
+    pcourse_id: int | None = None
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(data)
+
+    @classmethod
+    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
+        return {
+            "event": n_("CdE events"),
+        }
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -319,5 +361,14 @@ class GenesisCaseCdE(GenesisCase):
     location: str
 
     attachment_hash: str
-    # pevent_id = None
-    # pcourse_id = None
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(data)
+
+    @classmethod
+    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
+        return {
+            "cde": n_("CdE membership & events"),
+        }
