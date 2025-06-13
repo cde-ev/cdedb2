@@ -930,6 +930,16 @@ mailto:
     ) }}
 {%- endmacro %}
 
+{% macro username_mailto_dataclass(persona, email=none) -%}
+    {{ href(
+        mailto(
+            address=email or persona.username,
+            name="{} {}".format(persona.given_names, persona.family_name)
+        ),
+        email or persona.username
+    ) }}
+{%- endmacro %}
+
 {% macro meta_info_banner(fieldname) %}
     {% if meta_info[fieldname] %}
         {% call bootstrap_panel() %}

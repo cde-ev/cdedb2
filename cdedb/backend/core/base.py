@@ -63,7 +63,6 @@ from cdedb.common.fields import (
     PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
@@ -87,6 +86,7 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.core import EmailAddressReport
+import cdedb.models.core as models
 
 
 class CoreBaseBackend(AbstractBackend):
@@ -2802,8 +2802,7 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.

@@ -116,7 +116,7 @@ from cdedb.common import (
     parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
@@ -1821,81 +1821,25 @@ def _country(
     return Country(val)
 
 
-GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
-    'username': Email,
-    'given_names': str,
-    'family_name': str,
-    'realm': str,
-    'notes': str,
-}
-
-GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'case_status': const.GenesisStati,
-    'reviewer': ID,
-    'persona_id': Optional[ID],
-    'pevent_id': Optional[ID],
-    'pcourse_id': Optional[ID],
-}
-
-GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
-    'gender': const.Genders,
-    'birthday': Birthday,
-    'telephone': Optional[Phone],
-    'mobile': Optional[Phone],
-    'address_supplement': Optional[str],
-    'address': str,
-    'postal_code': Optional[PrintableASCII],
-    'location': str,
-    'country': Optional[Country],
-    'birth_name': Optional[str],
-    'attachment_hash': str,
-}
-
-GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_ADDITIONAL_FIELDS,
-                               'pevent_id': Optional[ID],
-                               'pcourse_id': Optional[ID]}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_core.GenesisCase, models_core.GenesisCase)
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
     creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
-) -> GenesisCase:
+) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
+    if val['realm'] not in models_core.GenesisCase.get_available_realms():
+        raise ValidationSummary(ValueError('realm', n_("This realm is not supported for genesis.")))
+    model = models_core.GenesisCase.get_model_by_realm(val['realm'])
 
-    additional_fields: TypeMapping = {}
-    if 'realm' in val:
-        if val['realm'] not in REALM_SPECIFIC_GENESIS_FIELDS:
-            raise ValidationSummary(ValueError('realm', n_(
-                "This realm is not supported for genesis.")))
-        else:
-            additional_fields = {
-                k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
-                if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
-    else:
-        raise ValidationSummary(ValueError('realm', n_("Must specify realm.")))
+    mandatory, optional = model.validation_fields(creation=creation)
+    # Birth name is not allowed on creation to avoid mistakes
+    if creation and 'birth_name' in mandatory:
+        del mandatory['birth_name']
 
-    if creation:
-        mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
-                                **additional_fields)
-        # Birth name is not allowed on creation to avoid mistakes
-        if 'birth_name' in mandatory_fields:
-            del mandatory_fields['birth_name']
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = dict(GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_OPTIONAL_FIELDS,
-                               **additional_fields)
-
-    # allow_superflous=True will result in superfluous keys being removed.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, allow_superfluous=True, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
     errs = ValidationSummary()
 

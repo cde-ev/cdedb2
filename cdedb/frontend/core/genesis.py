@@ -2,29 +2,23 @@
 
 """Genesis specific services for the core realm."""
 
-import collections
 import datetime
-from typing import Optional
+from typing import Optional, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
 
-import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
     RequestState,
-    get_mandatory_form_fields,
     merge_dicts,
     now,
 )
+import cdedb.models.core as models
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.validation.validate import (
-    GENESIS_CASE_EXPOSED_FIELDS,
-    PERSONA_COMMON_FIELDS,
-)
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
@@ -34,14 +28,6 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-
-# Name of each realm's option in the genesis form
-GenesisRealmOptionName = collections.namedtuple(
-    'GenesisRealmOptionName', ['realm', 'name'])
-GENESIS_REALM_OPTION_NAMES = (
-    GenesisRealmOptionName("cde", n_("CdE membership & events")),
-    GenesisRealmOptionName("event", n_("CdE events")),
-    GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
@@ -53,11 +39,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.ignore_validation_errors()
         allowed_genders = set(x for x in const.Genders
                               if x != const.Genders.not_specified)
-        realm_options = [(option.realm, rs.gettext(option.name))
-                         for option in GENESIS_REALM_OPTION_NAMES
-                         if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
+        realm_options = [
+            (realm, rs.gettext(description))
+            for realm, description in models.GenesisCase.get_available_realms().items()]
         meta_info = self.coreproxy.get_meta_info(rs)
-        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
+        mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
         if not rs.values.get('attachment_hash'):
             mandatory_fields.add('attachment')
         return self.render(rs, "genesis/genesis_request", {
@@ -69,7 +55,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         }, mandatory_fields=mandatory_fields)
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
+    @REQUESTdatadict(*models.GenesisCase.requestdict_fields(creation=True))
     @REQUESTfile("attachment")
     @REQUESTdata("attachment_filename")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
@@ -83,13 +69,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
             self.locate_or_store_attachment(
                 rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                 data.get('attachment_hash'), attachment_filename)
-        if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
-                and not rs.values['attachment_hash']):
+        case_fields = models.GenesisCase.fields_by_realm().get(data.get('realm'), {})
+        if ('attachment_hash' in case_fields and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
         data['attachment_hash'] = rs.values['attachment_hash']
 
-        data = check(rs, vtypes.GenesisCase, data, creation=True)
+        data = cast(CdEDBObject | None, check(rs, models.GenesisCase, data, creation=True))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         assert data is not None
@@ -101,21 +87,18 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
         # is required for the requested realm)
-        if 'gender' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
-            if data['gender'] == const.Genders.not_specified:
-                rs.append_validation_error(
-                    ("gender", ValueError(n_(
-                        "Must specify gender for %(realm)s realm."),
-                        {"realm": data["realm"]})))
-        if 'birthday' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
-            if data['birthday'] == datetime.date.min:
-                rs.append_validation_error(
-                    ("birthday", ValueError(n_("Must not be empty."))))
+        if 'gender' in case_fields and data['gender'] == const.Genders.not_specified:
+            rs.append_validation_error(
+                ("gender", ValueError(n_(
+                    "Must specify gender for %(realm)s realm."),
+                    {"realm": data["realm"]})))
+        if 'birthday' in case_fields and data['birthday'] == datetime.date.min:
+            rs.append_validation_error(
+                ("birthday", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
-            existing_id = self.coreproxy.genesis_case_by_email(
-                rs, data['username'])
+            existing_id = self.coreproxy.genesis_case_by_email(rs, data['username'])
             if existing_id and existing_id > 0:
                 # TODO this case is kind of a hack since it throws
                 # away the information entered by the user, but in
@@ -261,11 +244,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
+        realms = [realm for realm in models.GenesisCase.get_available_realms()
                   if {f"{realm}_admin", 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, realms=realms, stati={
@@ -273,38 +255,37 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 const.GenesisStati.existing_updated, const.GenesisStati.rejected})
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
         current_cases_by_realm = {
-            realm: {k: v for k, v in cases.items() if v['realm'] == realm
-                        and v['case_status'] == const.GenesisStati.to_review}
+            realm: {k: v for k, v in cases.items() if v.realm == realm
+                        and v.case_status == const.GenesisStati.to_review}
             for realm in realms}
         concluded_cases = {k: v for k, v in cases.items()
-                           if v['case_status'] != const.GenesisStati.to_review}
-        created_account_ids = [case['persona_id'] for case in concluded_cases.values()
-                               if case['persona_id']]
+                           if v.case_status != const.GenesisStati.to_review}
+        created_account_ids = [case.persona_id for case in concluded_cases.values()
+                               if case.persona_id]
         personas = self.coreproxy.get_personas(rs, created_account_ids)
         return self.render(rs, "genesis/genesis_list_cases", {
             'current_cases_by_realm': current_cases_by_realm,
             'concluded_cases': concluded_cases, 'personas': personas})
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int,
                           ) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
-        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
+        if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         persona = reviewer = pevent = pcourse = None
-        if case['persona_id']:
-            persona = self.coreproxy.get_persona(rs, case['persona_id'])
-        if case['reviewer']:
-            reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
+        if case.persona_id:
+            persona = self.coreproxy.get_persona(rs, case.persona_id)
+        if case.reviewer:
+            reviewer = self.coreproxy.get_persona(rs, case.reviewer)
         if "event" in rs.user.roles:
             # e.g. for ml-only ml admins
-            if case['pevent_id']:
-                pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
-            if case['pcourse_id']:
-                pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
-        persona_data = {k: v for k, v in case.items() if k in PERSONA_COMMON_FIELDS}
+            if case.pevent_id:
+                pevent = self.pasteventproxy.get_past_event(rs, case.pevent_id)
+            if case.pcourse_id:
+                pcourse = self.pasteventproxy.get_past_course(rs, case.pcourse_id)
+        persona_data = case.persona_data
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
         # We don't actually compare genders, so this is to make sure it is not empty.
@@ -326,26 +307,26 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int,
                             ) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
-        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
+        if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case['case_status'] != const.GenesisStati.to_review:
+        if case.case_status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        merge_dicts(rs.values, case)
-        realm_options = [(option.realm, rs.gettext(option.name))
-                         for option in GENESIS_REALM_OPTION_NAMES
-                         if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
-        mandatory_fields = get_mandatory_form_fields(GENESIS_CASE_EXPOSED_FIELDS)
+        merge_dicts(rs.values, case.as_dict())
+        realm_options = [
+            (realm, rs.gettext(description))
+            for realm, description in models.GenesisCase.get_available_realms().items()]
+        mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
+
 
         courses: dict[int, str] = {}
-        if case['pevent_id']:
-            courses = self.pasteventproxy.list_past_courses(rs, case['pevent_id'])
+        if case.pevent_id:
+            courses = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
         choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
                    "pcourse_id": courses}
 
@@ -353,22 +334,19 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options, 'choices': choices}, mandatory_fields)
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS),
-            modi={"POST"})
-    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
+    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
+    @REQUESTdatadict(*models.GenesisCase.requestdict_fields(creation=False))
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
         # In contrast to the genesis_request, the attachment can not be changed here.
         del data['attachment_hash']
-        data = check(
-            rs, vtypes.GenesisCase, data)
+        data = cast(CdEDBObject | None, check(rs, models.GenesisCase, data))
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
-        if data['username'] != rs.ambience['genesis_case']['username']:
+        if data['username'] != rs.ambience['genesis_case'].username:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
@@ -382,19 +360,16 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.genesis_modify_form(rs, genesis_case_id)
 
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+        if (not self.is_admin(rs) and case.relative_admin not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case['case_status'] != const.GenesisStati.to_review:
+        if case.case_status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS),
-            modi={"POST"})
+    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
     @REQUESTdata("decision", "persona_id")
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
                        decision: GenesisDecision, persona_id: Optional[int],
@@ -410,11 +385,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
 
         # Do privilege and sanity checks.
-        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
+        if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if decision.is_create():
             if self.coreproxy.verify_existence(
-                    rs, case['username'], include_genesis=False):
+                    rs, case.username, include_genesis=False):
                 rs.notify("error", n_("Email address already taken."))
                 return self.redirect(rs, "core/genesis_show_case")
             if persona_id:
@@ -425,12 +400,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 rs.notify("error", n_("No persona selected."))
                 return self.redirect(rs, "core/genesis_show_case")
             elif not self.coreproxy.verify_persona(
-                    rs, persona_id, (case['realm'],)):
+                    rs, persona_id, (case.realm,)):
                 rs.notify("error", n_("Invalid persona for update."
                                       " Add additional realm first: %(realm)s."),
-                          {'realm': case['realm']})
+                          {'realm': case.realm})
                 return self.redirect(rs, "core/genesis_show_case")
-        if case['case_status'] != const.GenesisStati.to_review:
+        if case.case_status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
 
@@ -441,10 +416,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
-        if ((decision.is_create() or decision.is_update()) and case['pevent_id']
-                and case['realm'] == 'cde'):
+        if ((decision.is_create() or decision.is_update()) and case.pevent_id
+                and case.realm == 'cde'):
             code = self.pasteventproxy.add_participant(
-                rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
+                rs, pevent_id=case.pevent_id, pcourse_id=case.pcourse_id,
                 persona_id=persona_id)
             if not code:  # pragma: no cover
                 rs.notify(
@@ -470,7 +445,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         else:
             self.do_mail(
                 rs, "genesis/genesis_declined",
-                {'To': (case['username'],),
+                {'To': (case.username,),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
             )
             rs.notify("info", n_("Case rejected."))

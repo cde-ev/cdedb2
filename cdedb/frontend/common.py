@@ -79,6 +79,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
+import cdedb.models.core as models_core
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -1808,7 +1809,7 @@ class Worker(threading.Thread):
 class AmbienceDict(typing.TypedDict):
     persona: NotRequired[CdEDBObject]
     privilege_change: NotRequired[CdEDBObject]
-    genesis_case: NotRequired[CdEDBObject]
+    genesis_case: NotRequired[models_core.GenesisCase]
     lastschrift: NotRequired[CdEDBObject]
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]

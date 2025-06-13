@@ -12,6 +12,7 @@ from cryptography.fernet import Fernet
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
+from cdedb.common.n_ import n_
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
@@ -188,3 +189,135 @@ class AnonymousMessageData(CdEDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.recipient, self.ctime
+
+
+@dataclasses.dataclass(kw_only=True)
+class GenesisCase(CdEDataclass):
+    database_table = "core.genesis_cases"
+
+    username: vtypes.Email
+    given_names: str
+    family_name: str
+
+    realm: vtypes.Realm
+    notes: str
+    case_status: const.GenesisStati = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True})
+    ctime: datetime.datetime = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True})
+    reviewer: vtypes.ID | None = dataclasses.field(
+        default=None, metadata={'validation_exclude': True, 'request_exclude': True})
+    persona_id: vtypes.ID | None = dataclasses.field(
+        default=None, metadata={'validation_exclude': True, 'request_exclude': True})
+
+    # event fields
+    gender: const.Genders | None
+    birthday: vtypes.Birthday | None
+    telephone: vtypes.Phone | None
+    mobile: vtypes.Phone | None
+    address_supplement: str | None
+    address: str | None
+    postal_code: vtypes.PrintableASCII | None
+    location: str | None
+    country: vtypes.Country | None
+    birth_name: str | None
+
+    # cde fields
+    attachment_hash: str | None
+    pevent_id: int | None
+    pcourse_id: int | None
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.ctime, self.family_name, self.given_names)
+
+    @classmethod
+    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
+        return {
+            "cde": n_("CdE membership & events"),
+            "event": n_("CdE events"),
+            "ml": n_("CdE mailinglist"),
+        }
+
+    @classmethod
+    def get_model_by_realm(cls, realm: str) -> "GenesisCase":
+        return {
+            "ml": GenesisCaseMl,
+            "event": GenesisCaseEvent,
+            "cde": GenesisCaseCdE,
+        }[realm]
+
+    @classmethod
+    def get_relative_admins(cls) -> set[str]:
+        return {f"{realm}_admin" for realm in cls.get_available_realms()}
+
+    @property
+    def relative_admin(self) -> str:
+        return f"{self.realm}_admin"
+
+    @classmethod
+    def fields_by_realm(cls) -> dict[str, set[str]]:
+        return {
+            "ml": {field.name for field in dataclasses.fields(GenesisCaseMl)
+                   if field.default is not None},
+            "event": {field.name for field in dataclasses.fields(GenesisCaseEvent)
+                      if field.default is not None},
+            "cde": {field.name for field in dataclasses.fields(GenesisCaseCdE)
+                    if field.default is not None},
+        }
+
+    @classmethod
+    def persona_fields_by_realm(cls) -> dict[str, set[str]]:
+        ret = {realm: fields - {"id", "realm", "notes", "case_status", "ctime"}
+               for realm, fields in cls.fields_by_realm().items()}
+        ret["cde"] -= {"attachment_hash", "pevent_id", "pcourse_id"}
+        return ret
+
+    @property
+    def persona_fields(self) -> set[str]:
+        return self.persona_fields_by_realm()[self.realm]
+
+    @property
+    def persona_data(self) -> CdEDBObject:
+        return {k: v for k, v in self.as_dict().items() if k in self.persona_fields}
+
+
+@dataclasses.dataclass(kw_only=True)
+class GenesisCaseMl(GenesisCase):
+    gender = None
+    birthday = None
+    telephone = None
+    mobile = None
+    address_supplement = None
+    address = None
+    postal_code = None
+    location = None
+    country = None
+    birth_name = None
+
+    attachment_hash = None
+    pevent_id = None
+    pcourse_id = None
+
+
+@dataclasses.dataclass(kw_only=True)
+class GenesisCaseEvent(GenesisCase):
+    gender: const.Genders
+    birthday: vtypes.Birthday
+    address: str
+    location: str
+
+    attachment_hash = None
+    pevent_id = None
+    pcourse_id = None
+
+
+@dataclasses.dataclass(kw_only=True)
+class GenesisCaseCdE(GenesisCase):
+    gender: const.Genders
+    birthday: vtypes.Birthday
+    address: str
+    location: str
+
+    attachment_hash: str
+    # pevent_id = None
+    # pcourse_id = None

@@ -5,10 +5,12 @@ The `CoreGenesisBackend` subclasses the `CoreBaseBackend` and provides functiona
 for "genesis", that is for account creation via anonymous account requests.
 """
 from collections.abc import Collection
-from typing import Any, Optional, Protocol
+from typing import Any, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
+from cdedb.models.common import CdEDataclassMap
 from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
@@ -31,12 +33,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import (
-    GENESIS_CASE_FIELDS,
-    PERSONA_CORE_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
-    REALMS_TO_FIELDS,
-)
+
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     GENESIS_REALM_OVERRIDE,
@@ -46,7 +43,6 @@ from cdedb.common.roles import (
     extract_roles,
     implied_realms,
 )
-from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.database.connection import Atomizer
 
 
@@ -61,7 +57,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm(vtypes.GenesisCase, data, creation=True)
+        data = cast(CdEDBObject | None, affirm(models.GenesisCase, data, creation=True))
 
         data['case_status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
@@ -79,6 +75,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def delete_genesis_case_blockers(self, rs: RequestState,
                                      case_id: int) -> DeletionBlockers:
         """Determine what keeps a genesis case from being deleted.
@@ -98,16 +96,18 @@ class CoreGenesisBackend(CoreBaseBackend):
         blockers: DeletionBlockers = {}
 
         case = self.genesis_get_case(rs, case_id)
-        if (case["case_status"] == const.GenesisStati.unconfirmed and
-                now() < case["ctime"] + self.conf["PARAMETER_TIMEOUT"]):
+        if (case.case_status == const.GenesisStati.unconfirmed and
+                now() < case.ctime + self.conf["PARAMETER_TIMEOUT"]):
             blockers["unconfirmed"] = [case_id]
-        if case["case_status"] in {const.GenesisStati.to_review,
-                                   const.GenesisStati.approved}:
-            blockers["case_status"] = [case["case_status"]]
+        if case.case_status in {const.GenesisStati.to_review,
+                                const.GenesisStati.approved}:
+            blockers["case_status"] = [case.case_status]
 
         return blockers
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def delete_genesis_case(self, rs: RequestState, case_id: int,
                             cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
@@ -145,7 +145,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
                 self.core_log(rs, const.CoreLogCodes.genesis_deleted,
-                              persona_id=None, change_note=case["username"])
+                              persona_id=None, change_note=case.username)
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
@@ -216,6 +216,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret, data["realm"]
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_list_cases(self, rs: RequestState,
                            stati: Optional[Collection[const.GenesisStati]] = None,
                            realms: Optional[Collection[str]] = None) -> CdEDBObjectMap:
@@ -249,56 +251,57 @@ class CoreGenesisBackend(CoreBaseBackend):
         return {e['id']: e for e in data}
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int],
-                          ) -> CdEDBObjectMap:
+                          ) -> CdEDataclassMap[models.GenesisCase]:
         """Retrieve datasets for persona creation cases."""
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
-        data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
-                               genesis_case_ids)
-        ret = {}
-        for e in data:
-            if "core_admin" not in rs.user.roles:
-                if f"{e['realm']}_admin" not in rs.user.roles:
-                    raise PrivilegeError(n_("Not privileged."))
-            e['case_status'] = const.GenesisStati(e['case_status'])
-            if e.get('gender'):
-                e['gender'] = const.Genders(e['gender'])
-            ret[e['id']] = e
-        return ret
+        cases = models.GenesisCase.many_from_database(
+            self.query_all(
+                rs, *models.GenesisCase.get_select_query(genesis_case_ids, "id")
+            )
+        )
+        for case in cases.values():
+            if {"core_admin", case.relative_admin}.isdisjoint(rs.user.roles):
+                raise PrivilegeError(n_("Not privileged."))
+        return cases
 
     class _GenesisGetCaseProtocol(Protocol):
-        def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, genesis_case_id: int) -> models.GenesisCase: ...
 
     genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
-        data = affirm(vtypes.GenesisCase, data)
+        data = cast(CdEDBObject | None, affirm(models.GenesisCase, data))
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])
             # Get case already checks privilege and existence for the current data set.
-            if not {"core_admin", f"{data['realm']}_admin"} & rs.user.roles:
+            if {"core_admin", current.relative_admin}.isdisjoint(rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
-            if current['case_status'].is_finalized():
+            if current.case_status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
-            if 'case_status' in data and data['case_status'] != current['case_status']:
+            if 'case_status' in data and data['case_status'] != current.case_status:
                 # persona_id of the account this modification is related to. Especially
                 # relevant if a new account was created or an existing account was
                 # updated. Hence, we sometimes use get and sometimes use [] here.
                 if data['case_status'] == const.GenesisStati.successful:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_approved,
-                        persona_id=data['persona_id'], change_note=current['username'])
+                        persona_id=data['persona_id'], change_note=current.username)
                 elif data['case_status'] == const.GenesisStati.rejected:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_rejected,
                         persona_id=data.get('persona_id'),
-                        change_note=current['username'])
+                        change_note=current.username)
                 elif data['case_status'] == const.GenesisStati.existing_updated:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_merged,
@@ -307,10 +310,12 @@ class CoreGenesisBackend(CoreBaseBackend):
                 # persona_id should be None in this case.
                 self.core_log(rs, const.CoreLogCodes.genesis_change,
                               persona_id=data.get('persona_id'),
-                              change_note=current['username'])
+                              change_note=current.username)
         return ret
 
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
                        persona_id: Optional[int] = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
@@ -324,7 +329,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.
             case = self.genesis_get_case(rs, case_id)
-            if case['case_status'] != const.GenesisStati.to_review:
+            if case.case_status != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
             if decision.is_create():
                 case_status = const.GenesisStati.approved
@@ -337,7 +342,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 'id': case_id,
                 'case_status': case_status,
                 'reviewer': rs.user.persona_id,
-                'realm': case['realm'],
+                'realm': case.realm,
                 'persona_id': persona_id,
             }
             if not self.genesis_modify_case(rs, update):
@@ -350,30 +355,21 @@ class CoreGenesisBackend(CoreBaseBackend):
                 if not self._is_relative_admin(rs, persona):
                     raise PrivilegeError(n_("Not privileged."))
                 if persona['is_archived']:
-                    code = self.dearchive_persona(rs, persona_id, case['username'])
+                    code = self.dearchive_persona(rs, persona_id, case.username)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Dearchival failed."))
-                elif case['username'] != persona['username']:
+                elif case.username != persona['username']:
                     code, _ = self.change_username(
-                        rs, persona_id, case['username'], None)
+                        rs, persona_id, case.username, None)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Username change failed."))
 
                 # Determine the keys of the persona that should be updated.
-                update_keys = set(GENESIS_CASE_FIELDS) & set(PERSONA_CORE_FIELDS)
-                roles = extract_roles(persona, introspection_only=True)
-                for realm, fields in REALM_SPECIFIC_GENESIS_FIELDS.items():
-                    # For every realm that the persona has, update the fields implied
-                    # by that realm if they are also genesis fields.
-                    if realm in roles:
-                        update_keys.update(set(fields) & set(REALMS_TO_FIELDS[realm]))
-                update_keys -= {'username', 'id'}
-                update = {
-                    k: case[k] for k in update_keys if case[k]
-                }
+                update_keys = case.persona_fields - {'username'}
+                update = {k: case[k] for k in update_keys if case[k]}
                 update['id'] = persona_id
                 # we grant trial membership by default for cde genesis cases
-                if "cde" in roles and not persona["is_member"]:
+                if case.realm == "cde" and not persona["is_member"]:
                     self.change_membership_easy_mode(
                         rs, persona_id, is_member=True, trial_member=True)
                 # Set force_review, so that all changes can be reviewed and adjusted
@@ -388,6 +384,8 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @internal
     @access(*REALM_ADMINS)
+    # TODO shouldn't this be
+    # @access("core_admin", *models.GenesisCase.get_relative_admins())
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 
@@ -396,22 +394,17 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
-            case = unwrap(self.genesis_get_cases(rs, (case_id,)))
-            if self.verify_existence(rs, case['username'], include_genesis=False):
+            case = self.genesis_get_case(rs, case_id)
+            if self.verify_existence(rs, case.username, include_genesis=False):
                 raise ValueError(n_("Email address already taken."))
 
             # filter out genesis information not relevant for the respective realm
-            allowed_keys = (
-                set(filter_none(PERSONA_FULL_CREATION[case['realm']])) & (
-                    set(GENESIS_CASE_FIELDS) |
-                    set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
-
-            data = {k: v for k, v in case.items() if k in allowed_keys}
+            data = case.persona_data
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
             data = affirm(vtypes.Persona, data, creation=True)
-            if case['case_status'] != const.GenesisStati.approved:
+            if case.case_status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
             if extract_realms(roles) != \

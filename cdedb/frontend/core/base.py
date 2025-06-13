@@ -50,7 +50,6 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
     PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -140,7 +139,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
             # genesis cases
             genesis_realms = []
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS:
+            for realm in models.GenesisCase.get_available_realms():
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:

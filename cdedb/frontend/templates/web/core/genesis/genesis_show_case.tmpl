@@ -97,7 +97,7 @@
         </dt>
         <dd id="username">
             {% if ambience['genesis_case']['username'] %}
-                {{ util.username_mailto(ambience['genesis_case']) }}
+                {{ util.username_mailto_dataclass(ambience['genesis_case']) }}
             {% else %}
                 —
             {% endif %}
