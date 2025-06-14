@@ -261,7 +261,8 @@ ADMIN_KEYS = {
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
 
 #: All admin roles. Have privileged access to user data.
-ALL_ADMINS = {*REALM_ADMINS, "cdelokal_admin", "complaint_admin", "auditor"}
+ALL_ADMINS = {*REALM_ADMINS, "meta_admin", "finance_admin", "cdelokal_admin",
+              "complaint_admin", "auditor"}
 
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
