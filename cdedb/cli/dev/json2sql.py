@@ -7,8 +7,10 @@ from typing import Any, Callable, Optional, TypedDict
 
 from psycopg2.extensions import cursor
 
+import cdedb.models.complaint as models_complaint
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, PsycoJson
+from cdedb.config import SecretsConfig
 from cdedb.database.conversions import to_db_input
 from cdedb.database.query import DatabaseValue_s
 
@@ -17,6 +19,7 @@ SQLCommand = tuple[str, list[DatabaseValue_s]]
 
 class AuxData(TypedDict):
     core: type[CoreBackend]
+    secrets: SecretsConfig
     seq_id_tables: list[str]
     cyclic_references: dict[str, tuple[str, ...]]
     constant_replacements: CdEDBObject
@@ -27,6 +30,8 @@ class AuxData(TypedDict):
 
 def prepare_aux(data: CdEDBObject) -> AuxData:
     core = CoreBackend  # No need to instantiate, we only use statics.
+
+    secrets = SecretsConfig()
 
     # Extract some data about the databse tables using the database connection.
 
@@ -87,6 +92,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
 
     return AuxData(
         core=core,
+        secrets=secrets,
         seq_id_tables=seq_id_tables,
         cyclic_references=cyclic_references,
         constant_replacements=constant_replacements,
@@ -153,6 +159,11 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
                         entry[k] += xss_payload
+                if table == models_complaint.ComplaintEntryVersion.database_table:
+                    if k == "description" and entry[k]:
+                        entry[k] = models_complaint.ComplaintEntryVersion.encrypt(
+                            entry[k], aux["secrets"]["COMPLAINT_SECRET"]
+                        )
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params_list.extend(entry[k] for k in keys)

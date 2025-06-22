@@ -8,6 +8,8 @@ from collections.abc import Collection
 from itertools import chain
 from typing import Self, Union
 
+from cryptography.fernet import Fernet
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, now
@@ -339,6 +341,14 @@ class ComplaintEntryVersion(CdEDataclass):
     authors: vtypes.CdedbIDList = dataclasses.field(
         metadata={"request_include": True, "database_exclude": True}
     )
+
+    @staticmethod
+    def encrypt(description: str, key: bytes) -> bytes:
+        return Fernet(key).encrypt(description.encode("utf-8"))
+
+    @staticmethod
+    def decrypt(description: bytes, key: bytes) -> str:
+        return Fernet(key).decrypt(description).decode("utf-8")
 
     def get_sortkey(self) -> Sortkey:
         return (self.timestamp, self.ctime)

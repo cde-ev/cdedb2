@@ -392,6 +392,8 @@ _SECRECTS_DEFAULTS = {
     # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
+    # encrypt complaint descriptions with this secret to prevent accidental retrieval/leaks.
+    "COMPLAINT_SECRET": b'gy81i7pj8-0WkTweXbUxBykgA38V2aSEOoPizqXWVGg=',
 
     # mailman REST API password
     "MAILMAN_PASSWORD": "secret",

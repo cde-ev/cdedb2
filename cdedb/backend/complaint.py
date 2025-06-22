@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import base64
 import datetime
 from collections.abc import Collection
 from typing import Any, Optional, Protocol, cast
+
+import psycopg2.extensions
+from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -18,6 +22,7 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
+    BytesLike,
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
@@ -32,6 +37,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
 
@@ -56,6 +62,27 @@ def _format_date_change_note(
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
+
+    def __init__(self) -> None:
+        super().__init__()
+        secrets = SecretsConfig()
+        complaint_secret = secrets["COMPLAINT_SECRET"]
+
+        def encrypt(description: str | None) -> bytes | None:
+            if description is None:
+                return None
+            return models.ComplaintEntryVersion.encrypt(description, complaint_secret)
+
+        self.encrypt = staticmethod(encrypt)
+
+        def decrypt(description: BytesLike | None) -> str | None:
+            if description is None:
+                return None
+            if not isinstance(description, bytes):
+                description = bytes(description)
+            return models.ComplaintEntryVersion.decrypt(description, complaint_secret)
+
+        self.decrypt = staticmethod(decrypt)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -237,6 +264,7 @@ class ComplaintBackend(AbstractBackend):
         self.affirm_atomized_context(rs)
         if data.get("description"):
             data["length"] = len(data["description"])
+            data["description"] = self.encrypt(data["description"])
         else:
             data["length"] = None
         authors = data.pop("authors")
@@ -820,9 +848,8 @@ class ComplaintBackend(AbstractBackend):
         if conditions:
             query += "WHERE " + " AND ".join(conditions)
 
-        decrypt = lambda x: x
         return {
-            e["id"]: decrypt(e["description"])
+            e["id"]: self.decrypt(e["description"]) or ""
             for e in self.query_all(rs, query, params)
         }
 
