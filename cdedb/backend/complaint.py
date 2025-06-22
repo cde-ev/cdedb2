@@ -872,10 +872,15 @@ class ComplaintBackend(AbstractBackend):
             rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
         )
 
-    def _log_unlock(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+    def _log_unlock(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
         ret = self.complaint_log(
-            rs=rs, code=const.ComplaintLogCodes.case_unlocked, case_id=case_id
+            rs=rs,
+            code=const.ComplaintLogCodes.case_unlocked,
+            case_id=case_id,
+            change_note=reason,
         )
         query = f"""
             INSERT INTO {models.AccessLog.database_table} (case_id, persona_id)
@@ -916,11 +921,13 @@ class ComplaintBackend(AbstractBackend):
         # Unlock has timed out.
         return False
 
-    def _unlock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+    def _unlock_case(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
 
         if not self.is_unlocked(rs, case_id):
-            ret = self._log_unlock(rs, case_id=case_id)
+            ret = self._log_unlock(rs, case_id=case_id, reason=reason)
         else:
             # Update last access time.
             query = f"""
@@ -934,14 +941,14 @@ class ComplaintBackend(AbstractBackend):
         return ret
 
     @access("complaint_admin")
-    def unlock_case(self, rs: RequestState, case_id: int) -> dict[int, str]:
+    def unlock_case(self, rs: RequestState, case_id: int, reason: str) -> dict[int, str]:
         """Log access to locked data, decrypt the descriptions and return them.
 
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
         with Atomizer(rs):
-            if not self._unlock_case(rs, case_id):
+            if not self._unlock_case(rs, case_id, reason):
                 raise RuntimeError
             return self._get_descriptions(rs, case_id=case_id, visible=False)
 

@@ -221,35 +221,41 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
                      aclass="btn btn-sm btn-success", icon="plus") }}
-        {% if is_locked %}
-            <form action="{{ cdedblink("core/unlock_case") }}"
-                method="POST"
-                id="unlockcaseform"
-                class="display-inline"
-            >
-                {{ util.anti_csrf_token('core/unlock_case') }}
-                {{ util.input_submit(label=gettext("Unlock descriptions"),
-                                     aclass="btn btn-sm btn-primary",
-                                     icon="unlock") }}
-            </form>
-        {% else %}
-            <form action="{{ cdedblink("core/lock_case") }}"
-                method="POST"
-                id="lockcaseform"
-                class="display-inline"
-            >
-                {{ util.anti_csrf_token('core/lock_case') }}
-                {{ util.input_submit(label=gettext("Lock descriptions"),
-                                     aclass="btn btn-sm btn-primary",
-                                     icon="lock") }}
-            </form>
-        {% endif %}
         {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
                      + "#Events_[[in_a_complaint]]"|s,
                      gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
         {{ util.href(cdedblink('core/case_history'), gettext("Show entry history"),
                      aclass="btn btn-sm btn-info", icon="clock", readonly=is_locked) }}
     </div>
+
+    {% if is_locked %}
+        <form action="{{ cdedblink("core/unlock_case") }}"
+            method="POST"
+            id="unlockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/unlock_case') }}
+            <div class="input-group">
+                {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
+                <div class="input-group-btn">
+                    {{ util.input_submit(label=gettext("Unlock descriptions"),
+                                         aclass="btn btn-sm btn-primary", icon="unlock")
+                    }}
+                </div>
+            </div>
+            {{ util.output_errors('unlockcaseform') }}
+        </form>
+    {% else %}
+        <form action="{{ cdedblink("core/lock_case") }}"
+            method="POST"
+            id="lockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/lock_case') }}
+            {{ util.input_submit(label=gettext("Lock descriptions"),
+                                 aclass="btn btn-sm btn-primary", icon="lock") }}
+        </form>
+    {% endif %}
 
     <div class="list-group list-group-hover">
     {% for entry in all_entries %}

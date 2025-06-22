@@ -199,7 +199,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
-            descriptions.update(self.complaintproxy.unlock_case(rs, case_id))
+            descriptions.update(self.complaintproxy.unlock_case(rs, case_id, None))
 
         return self.render(
             rs,
@@ -534,10 +534,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
-    def unlock_case(self, rs: RequestState, case_id: int) -> Response:
+    @REQUESTdata("reason")
+    def unlock_case(self, rs: RequestState, case_id: int, reason: str) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        _ = self.complaintproxy.unlock_case(rs, case_id)
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        _ = self.complaintproxy.unlock_case(rs, case_id, reason)
         rs.notify_return_code(1, success=n_("Case unlocked."))
         return self.redirect(rs, "core/show_case")
 
