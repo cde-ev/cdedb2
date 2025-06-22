@@ -110,7 +110,7 @@
     <div class="row">
     {% for list in ambience['case'].involved.items()|slice(2) %}
         {% for type, involved_ids in list %}
-            <div class="col-sm-6">
+            <div id="involved_{{ type.name }}" class="col-sm-6">
                 {% if involved_ids %}
                     {% call util.bootstrap_panel(
                         title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
@@ -120,6 +120,11 @@
                             {# assembly and ml users are missing here #}
                             {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
                                 <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
+                            {% endif %}
+                            {% if involved_id in ambience['case'].informed_involved %}
+                                <small class="text-muted">
+                                    {{ gettext("(is informed)") }}
+                                </small>
                             {% endif %}
                             <div class="list-button-float hide-hover">
                                 {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
@@ -133,7 +138,7 @@
                                         <form
                                                 action="{{ cdedblink("core/uninform_involved", {'persona_id': involved_id}) }}"
                                                 method="POST"
-                                                id="uninforminvolvedform"
+                                                id="uninforminvolvedform{{ involved_id }}"
                                                 class="display-inline"
                                             >
                                                 {{ util.anti_csrf_token('core/uninform_involved') }}
@@ -146,7 +151,7 @@
                                         <form
                                             action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
                                             method="POST"
-                                            id="informinvolvedform"
+                                            id="informinvolvedform{{ involved_id }}"
                                             class="display-inline"
                                         >
                                             {{ util.anti_csrf_token('core/inform_involved') }}
@@ -160,7 +165,7 @@
                                 <form
                                     action="{{ cdedblink("core/remove_involved", {'persona_id': involved_id}) }}"
                                     method="POST"
-                                    id="removeinvolvedform"
+                                    id="removeinvolvedform{{ involved_id }}"
                                     class="display-inline"
                                 >
                                     {{ util.anti_csrf_token('core/remove_involved') }}

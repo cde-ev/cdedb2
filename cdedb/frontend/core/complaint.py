@@ -428,10 +428,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if companion_ids:
-            if persona_id in companion_ids:
+            if companion_ids & rs.ambience['case'].all_involved.keys():
                 rs.append_validation_error((
                     "companion_ids",
-                    ValueError(n_("User may not be their own companion.")),
+                    ValueError(n_("Companion may not be involved.")),
+                ))
+            if set(companion_ids) & rs.ambience['case'].adverse_companions(
+                rs.ambience['case'].all_involved[persona_id]
+            ):
+                rs.append_validation_error((
+                    "companion_ids",
+                    ValueError(n_("Companion to the opposing party.")),
                 ))
             if not self.coreproxy.verify_ids(rs, companion_ids, is_archived=None):
                 rs.append_validation_error((

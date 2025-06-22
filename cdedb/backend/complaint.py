@@ -650,10 +650,7 @@ class ComplaintBackend(AbstractBackend):
             involved_id = involved["id"]
             involved_type = const.ComplaintInvolvementType(involved["involved_type"])
 
-            if any(
-                companion_ids & case.companions_by_involved_type.get(type_, set())
-                for type_ in involved_type.adverse()
-            ):
+            if companion_ids & case.adverse_companions(involved_type):
                 raise ValueError(n_("Adverse companion."))
             if companion_ids & case.all_involved.keys():
                 raise ValueError(n_("Involved companion."))

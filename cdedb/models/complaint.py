@@ -5,6 +5,7 @@ import datetime
 import functools
 import itertools
 from collections.abc import Collection
+from itertools import chain
 from typing import Self, Union
 
 import cdedb.common.validation.types as vtypes
@@ -90,6 +91,16 @@ class Case(CdEDataclass):
             if active_accompanied := (accompanied - withdrawn):
                 ret[companion] = active_accompanied
         return ret
+
+    def adverse_companions(
+        self, involved_type: const.ComplaintInvolvementType
+    ) -> set[int]:
+        return set(
+            chain.from_iterable(
+                self.companions_by_involved_type.get(type_, set())
+                for type_ in involved_type.adverse()
+            )
+        )
 
     def is_visible_for(self, user: User) -> bool:
         """Whether a user can see a case in principle.

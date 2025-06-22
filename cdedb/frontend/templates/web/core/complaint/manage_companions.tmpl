@@ -36,7 +36,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('core/add_companions') }}" method="POST"
-          id="addinvolvedform" class="p">
+          id="addcompanionform" class="p">
         {{ util.anti_csrf_token('core/add_companions') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
@@ -46,7 +46,9 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-involved').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
-                    {{ ambience['case'].companions_by_involved.get(involved['id'], [])|list|tojson }},
+                    {{ (ambience['case'].companions_by_involved.get(involved['id'], [])|list
+                        + ambience['case'].adverse_companions(ambience['case'].all_involved[involved['id']])|list
+                        + ambience['case'].all_involved.keys()|list)|tojson }},
                     false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
