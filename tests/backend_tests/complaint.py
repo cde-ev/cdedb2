@@ -944,7 +944,7 @@ class TestComplaintBackend(BackendTest):
         )
 
     @as_users("simon")
-    def test_get_measures(self) -> None:
+    def test_get_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
         active_measure_persona_id = 2
@@ -991,6 +991,37 @@ class TestComplaintBackend(BackendTest):
             {measure.id: measure},
             self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=False
+            ),
+        )
+
+    @as_users("simon")
+    def test_measures(self) -> None:
+        measure_ids_expectation = {6: 1}
+        self.assertEqual(
+            measure_ids_expectation,
+            self.complaint.list_measures(self.key),
+        )
+
+        measures_expectation = {
+            6: models.ComplaintEntryVersion(
+                id=6,  # type: ignore[arg-type]
+                entry_id=5,  # type: ignore[arg-type]
+                length=53,
+                ctime=nearly_now(),
+                submitted_by=1,  # type: ignore[arg-type]
+                authors={3},  # type: ignore[arg-type]
+                timestamp=datetime.datetime(
+                    2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                ),
+            ),
+        }
+        descriptions_expectation = {
+            6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+        }
+        self.assertEqual(
+            (measures_expectation, descriptions_expectation),
+            self.complaint.get_measures(
+                self.key, self.complaint.list_measures(self.key)
             ),
         )
 

@@ -776,8 +776,9 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        case_id: int,
+        case_id: int | None = None,
         entry_id: int | None = None,
+        version_ids: Collection[int] | None = None,
         visible: bool | None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
@@ -787,15 +788,24 @@ class ComplaintBackend(AbstractBackend):
                 {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON versions.entry_id = entries.id
-            WHERE
-                entries.case_id = %(case_id)s
         """
-        params: dict[str, DatabaseValue_s] = {
-            "case_id": case_id,
-        }
+        params: dict[str, DatabaseValue_s] = {}
+        conditions = []
+
+        if case_id is not None:
+            conditions.append("entries.case_id = %(case_id)s")
+            params["case_id"] = case_id
+
+        if entry_id is not None:
+            conditions.append("entry_id = %(entry_id)s")
+            params['entry_id'] = entry_id
+
+        if version_ids is not None:
+            conditions.append("versions.id = ANY(%(version_ids)s)")
+            params['version_ids'] = version_ids
 
         if visible is not None:
-            query += " AND entries.entry_type = ANY(%(entry_types)s)"
+            conditions.append("entries.entry_type = ANY(%(entry_types)s)")
             if visible:
                 params["entry_types"] = const.ComplaintEntryType.visible_types()
             else:
@@ -803,13 +813,12 @@ class ComplaintBackend(AbstractBackend):
 
         if deleted is not None:
             if deleted:
-                query += " AND versions.dtime IS NOT NULL"
+                conditions.append("versions.dtime IS NOT NULL")
             else:
-                query += " AND versions.dtime IS NULL"
+                conditions.append("versions.dtime IS NULL")
 
-        if entry_id is not None:
-            query += " AND entry_id = %(entry_id)s"
-            params['entry_id'] = entry_id
+        if conditions:
+            query += "WHERE " + " AND ".join(conditions)
 
         decrypt = lambda x: x
         return {
@@ -1043,3 +1052,57 @@ class ComplaintBackend(AbstractBackend):
             ),
         )
         return models.ComplaintEntryVersion.many_from_database(entry_version_data)
+
+    @access("complaint_admin")
+    def list_measures(
+        self,
+        rs: RequestState,
+        entry_types: set[const.ComplaintEntryType] | None = None,
+        is_active: bool | None = True,
+    ) -> dict[int, int]:
+        if entry_types is None:
+            entry_types = const.ComplaintEntryType.measure_types()
+        else:
+            entry_types = affirm_set(const.ComplaintEntryType, entry_types)
+            if not entry_types <= const.ComplaintEntryType.measure_types():
+                raise ValueError(n_("Can only list measures."))
+
+        query = f"""
+            SELECT versions.id, entries.case_id
+            FROM {models.ComplaintEntryVersion.database_table} AS versions
+                JOIN {models.ComplaintEntry.database_table} AS entries
+                    ON entries.id = versions.entry_id
+            WHERE
+                entries.entry_type = ANY(%(entry_types)s)
+                AND versions.dtime IS NULL
+        """
+        params: dict[str, DatabaseValue_s] = {
+            "entry_types": entry_types,
+        }
+
+        if is_active is not None:
+            query += """
+                AND (
+                    NOT entries.is_revoked
+                    AND versions.etime IS NULL
+                ) = %(is_active)s
+            """
+            params["is_active"] = is_active
+
+        return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
+
+    @access("complaint_admin")
+    def get_measures(
+        self, rs: RequestState, measure_ids: Collection[int]
+    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntryVersion], dict[int, str]]:
+        measure_ids = affirm_set(vtypes.ID, measure_ids)
+        version_data = self.query_all(
+            rs,
+            *models.ComplaintEntryVersion.get_select_query(
+                measure_ids, entity_key="id"
+            ),
+        )
+        versions = models.ComplaintEntryVersion.many_from_database(version_data)
+        descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
+
+        return versions, descriptions
