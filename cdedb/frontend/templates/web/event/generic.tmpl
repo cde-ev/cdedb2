@@ -631,7 +631,7 @@
                                   method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
-                                        icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                        icon='trash-alt' if fee.amount is not none else 'dumpster-fire',
                                         label=None, aclass="btn btn-sm btn-danger",
                                         readonly=not is_privileged_for('delete_fee') or ambience['event'].is_balanced,
                                         title=(
