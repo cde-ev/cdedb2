@@ -116,6 +116,7 @@ class Case(CdEDataclass):
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
             ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
+            ret.update(e['companion_id'] for e in log_entries if e['companion_id'])
         for entry in self.entries.values():
             if entry.concerned_id:
                 ret.add(entry.concerned_id)

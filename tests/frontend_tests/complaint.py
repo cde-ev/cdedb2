@@ -23,7 +23,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
-from cdedb.filter import iban_filter
+from cdedb.filter import iban_filter, date_filter
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -113,12 +113,95 @@ class TestComplaintFrontend(FrontendTest):
             "Fallbegleitung: Emilia Eventis",
             div='involved_appellant'
         )
+        f = self.response.forms['removeinvolvedform1']
+        self.submit(f)
+        self.assertNonPresence(
+            "Anton Administrator",
+            div='involved_appellant',
+            check_div=False
+        )
+        self.assertNonPresence("Emilia")
+
 
         ### 2. Check sample case: entries ###
+        # when locked
         self.assertNonPresence("Philosophiekurs")
+        self.assertPresence(f"53 Zeichen. Erstellt am ", div='entry5')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div='entry5'
+        )
+        self.assertNonPresence("Beteiligten hinzugefügt")
+        self.traverse("Zeige Log-Einträge")
+        self.assertPresence("Beteiligten hinzugefügt: Anton Administrator",
+                            div='logentry1003')
+        self.assertPresence("von Simon Struktur; Beschwerdeführer",
+                            div='logentry1003')
+        # self.assertPresence(date_filter(now().date(), lang="de"), div='logentry1001')
+        self.assertNoLink('/core/complaint/case/1/history')
 
-        ### 3. Check sample data: history ###
+        # Entry creation and change
+        self.assertNoLink("entry/4/replace")
+        self.assertNoLink("entry/4/remove")
+        self.assertNoLink("entry/2/replace")
+        self.assertNoLink("entry/2/remove")
+        self.traverse({'href': "entry/2/child/add"})
+        f = self.response.forms['selectentrytypeform']
+        f['entry_type'] = const.ComplaintEntryType.statement_received
+        self.submit(f)
+        # self.assertPresence("Aussage angekommen")
+        self.traverse({'href': "entry/2/child/add"})
+        f = self.response.forms['selectentrytypeform']
+        f['entry_type'] = const.ComplaintEntryType.statement_cleared
+        self.submit(f)
+        # self.assertPresence("Aussage freigegeben")
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-3-5"
+        f['description'] = "Aussage darf verwendet werden, um \"einen ruhigen Schlaf im CdE\" zu fördern."
+        self.submit(f)
+        self.assertPresence("75 Zeichen.", div='entry1001')
+
+        # Entry revocation
+        self.assertNoLink("entry/4/revoke")
+        self.traverse({'href': "entry/5/revoke"})
+        f = self.response.forms['configureentryform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('authors', "Darf nicht leer sein.")
+        self.assertValidationError('description', " Muss eine Zeichenkette sein.")
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-19-1"
+        f['description'] = "Berta hat herausgefunden, dass sie nicht schnarcht, wenn sie eine Wäscheklammer auf der Nase trägt."
+        self.submit(f)
+        self.assertPresence(f"99 Zeichen. Erstellt am ", div='entry1002')
+        self.assertNonPresence("Wäscheklammer")
+        self.assertNoLink("entry/4/revoke")
+        self.assertNoLink("entry/1002/revoke")
+
+        # when unlocked
+        # TODO unlock
+        # self.assertNoLink("entry/2/remove")
+        # self.assertNoLink("entry/4/remove")
+        # self.traverse(
+        #    {'href': "entry/4/revoke"},
+        #    {'description': "Fall 1"},
+        #    {'href': "entry/4/replace"},
+        # )
+        # TODO replace
+        # TODO revoke 1002 and check
+        # Try deletion
 
         ### 4. Create new case and check ###
+        self.traverse("Fallarchiv", "Fall anlegen")
+        f = self.response.forms['configurecaseform']
+        f['summary'] = "Die Texte von Schorsch Recklich verstören Menschen."
+        f['kind'] = const.ComplaintKind.nonphysical_sexual_transgression
+        f['start_date'] = "2222-01-03"
+        f['end_date'] = "2222-01-06"
+        f['appellant_id'] = "DB-1-5"
+        f['is_affected'] = True
+        f['timestamp'] = "2222-03-13"
+        f['info'] = "Beschreibung folgt, zwischen Tür und Angel…"
+        self.submit(f)
 
         ### 5. Check case query ###
+        # TODO Test date search in particular
