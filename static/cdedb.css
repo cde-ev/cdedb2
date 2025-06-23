@@ -144,6 +144,9 @@ ul.slim {
 .details-list > li > details >  summary {
     margin-left: -15px;
 }
+.list-group.nosp {
+    margin-bottom: 5px;
+}
 .list-group-item {
     padding: 7px 8px;
 }

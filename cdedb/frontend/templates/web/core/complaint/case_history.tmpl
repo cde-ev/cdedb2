@@ -28,8 +28,9 @@
 {% endblock %}
 
 {% block content %}
-    <div class="list-group list-group-hover">
+    <div>
     {% for entry in all_entries %}
+        <div class="list-group list-group-hover nosp">
         {% if entry.entry_type %}
             <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked or not entry.active_version %} list-group-item-muted{% endif %}">
                 <div class="float-right text-right">
@@ -162,6 +163,7 @@
                 {% endif %}
             </div>
         {% endif %}
+        </div>
     {% endfor %}
     </div>
 {% endblock %}
