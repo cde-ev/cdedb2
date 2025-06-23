@@ -651,7 +651,7 @@ class ComplaintEntryType(CdEIntEnum):
             et.statement_sent: "envelope-open-text",
             et.statement_received: "box-archive",
             et.agreement: "handshake",
-            et.agreement_measure: "shield-halved",
+            et.agreement_measure: "shield-heart",
             et.provisional_to_arbcom: "scale-unbalanced",
             et.provisional_measure: "bandage",
             et.definite_to_arbcom: "scale-unbalanced",

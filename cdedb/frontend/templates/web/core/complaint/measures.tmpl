@@ -26,6 +26,7 @@
                     {% endif %}
                 </div>
                 <strong>
+                    {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
                     {% trans concerned=util.persona_anchor(personas[entry['concerned_id']], icon='user') %}
                         Measure against {{ concerned }}
                     {% endtrans %}

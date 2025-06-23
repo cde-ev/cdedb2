@@ -1158,6 +1158,8 @@ class ComplaintBackend(AbstractBackend):
             ['id', 'concerned_id', 'entry_type', 'case_id'],
             entry_ids,
         )
+        for e in entry_data:
+            e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
         entries = {e['id']: e for e in entry_data}
 
         return versions, descriptions, entries
