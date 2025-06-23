@@ -1050,7 +1050,7 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("complaint_admin")
+    @access("complaint_admin", "complaint.enforcer")
     def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> dict[int, models.ComplaintEntryVersion]:
@@ -1087,7 +1087,7 @@ class ComplaintBackend(AbstractBackend):
         )
         return models.ComplaintEntryVersion.many_from_database(entry_version_data)
 
-    @access("complaint_admin")
+    @access("complaint_admin", "complaint.enforcer")
     def list_measures(
         self,
         rs: RequestState,
@@ -1125,10 +1125,14 @@ class ComplaintBackend(AbstractBackend):
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
 
-    @access("complaint_admin")
+    @access("complaint_admin", "complaint.enforcer")
     def get_measures(
         self, rs: RequestState, measure_ids: Collection[int]
-    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntryVersion], dict[int, str]]:
+    ) -> tuple[
+        models.CdEDataclassMap[models.ComplaintEntryVersion],
+        dict[int, str],
+        dict[int, int],
+    ]:
         measure_ids = affirm_set(vtypes.ID, measure_ids)
         version_data = self.query_all(
             rs,
@@ -1138,5 +1142,13 @@ class ComplaintBackend(AbstractBackend):
         )
         versions = models.ComplaintEntryVersion.many_from_database(version_data)
         descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
+        entry_version_ids = {e.entry_id for e in versions.values()}
+        concerned_data = self.sql_select(
+            rs,
+            models.ComplaintEntry.database_table,
+            ['id', 'concerned_id'],
+            entry_version_ids
+        )
+        concerned_ids = {e['id']: e['concerned_id'] for e in concerned_data}
 
-        return versions, descriptions
+        return versions, descriptions, concerned_ids

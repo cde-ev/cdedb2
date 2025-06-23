@@ -1,0 +1,54 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% trans %}
+        Measure Overview
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/measures"), gettext("Measure Overview")) }}
+{% endblock %}
+
+{% block content %}
+    <div>
+    {% for measure in measures.values() %}
+        <div class="list-group list-group-hover nosp">
+            <div id="entry{{ measure.id }}" class="list-group-item">
+                <div class="float-right text-right">
+                    {{ measure.timestamp|datetime(lang=lang) -}}
+                    {% if measure.etime %}
+                        – {{ measure.etime|datetime(lang=lang) }}
+                    {% endif %}
+                </div>
+                <strong>
+                    {% trans concerned=util.persona_anchor(personas[concerned_ids[measure.entry_id]], icon='user') %}
+                        Measure against {{ concerned }}
+                    {% endtrans %}
+                </strong>
+                <br />
+                <span class="text-muted">
+                    {{ gettext("by") }}
+                    {% for author_id in measure.authors -%}
+                        {%- if not loop.first -%}, {% endif -%}
+                        {{ util.persona_anchor(personas[author_id]) -}}
+                    {% endfor %}
+                    –
+                    {% trans case=util.href(
+                            cdedblink("core/show_case", {'case_id': case_ids[measure.id]}),
+                            gettext("Case %s")|s|format(case_ids[measure.id]),
+                            active='complaint_admin' in user.roles)
+                    %}
+                        from {{ case }}
+                    {% endtrans %}
+                </span>
+                <hr class="nosp" />
+                {{ descriptions[measure.id] }}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}

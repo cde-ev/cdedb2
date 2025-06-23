@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from itertools import chain
 
 import copy
 import datetime
@@ -882,7 +883,22 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
-        return self.render(rs, "complaint/measures")
+        measure_ids = self.complaintproxy.list_measures(rs)
+        measures, descriptions, concerned_ids = self.complaintproxy.get_measures(
+            rs, measure_ids
+        )
+        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
+        personas = self.coreproxy.get_personas(
+            rs, author_ids | set(concerned_ids.values())
+        )
+        params = {
+            'measures': measures,
+            'descriptions': descriptions,
+            'concerned_ids': concerned_ids,
+            'case_ids': measure_ids,
+            'personas': personas,
+        }
+        return self.render(rs, "complaint/measures", params)
 
     @access("complaint_admin", "complaint.enforcer")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
