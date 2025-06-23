@@ -1070,12 +1070,13 @@ class ComplaintBackend(AbstractBackend):
         }
 
         if is_active is not None:
-            query += """
+            query += f"""
                 AND (
                     NOT entries.is_revoked
-                    AND versions.etime IS NULL
+                    AND (versions.etime > %(reference_time)s OR versions.etime IS NULL)
                 ) = %(is_active)s
             """
+            params["reference_time"] = now()
             params["is_active"] = is_active
 
         entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
@@ -1115,12 +1116,13 @@ class ComplaintBackend(AbstractBackend):
         }
 
         if is_active is not None:
-            query += """
+            query += f"""
                 AND (
                     NOT entries.is_revoked
-                    AND versions.etime IS NULL
+                    AND (versions.etime > %(reference_time)s OR versions.etime IS NULL)
                 ) = %(is_active)s
             """
+            params["reference_time"] = now()
             params["is_active"] = is_active
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
@@ -1131,8 +1133,13 @@ class ComplaintBackend(AbstractBackend):
     ) -> tuple[
         models.CdEDataclassMap[models.ComplaintEntryVersion],
         dict[int, str],
-        dict[int, int],
+        dict[int, CdEDBObject],
     ]:
+        """Get relevant information on specified measures
+
+        :returns: the associated entry versions, their descriptions, and
+            some keys on the respective entries.
+        """
         measure_ids = affirm_set(vtypes.ID, measure_ids)
         version_data = self.query_all(
             rs,
@@ -1142,13 +1149,13 @@ class ComplaintBackend(AbstractBackend):
         )
         versions = models.ComplaintEntryVersion.many_from_database(version_data)
         descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
-        entry_version_ids = {e.entry_id for e in versions.values()}
-        concerned_data = self.sql_select(
+        entry_ids = {e.entry_id for e in versions.values()}
+        entry_data = self.sql_select(
             rs,
             models.ComplaintEntry.database_table,
-            ['id', 'concerned_id'],
-            entry_version_ids
+            ['id', 'concerned_id', 'entry_type', 'case_id'],
+            entry_ids,
         )
-        concerned_ids = {e['id']: e['concerned_id'] for e in concerned_data}
+        entries = {e['id']: e for e in entry_data}
 
-        return versions, descriptions, concerned_ids
+        return versions, descriptions, entries

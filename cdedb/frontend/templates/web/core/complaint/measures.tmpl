@@ -1,4 +1,4 @@
-{% set sidenav_active='complaint_index' %}
+{% set sidenav_active='show_measures' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
@@ -16,6 +16,7 @@
 {% block content %}
     <div>
     {% for measure in measures.values() %}
+        {% set entry = entries[measure.entry_id] %}
         <div class="list-group list-group-hover nosp">
             <div id="entry{{ measure.id }}" class="list-group-item">
                 <div class="float-right text-right">
@@ -25,7 +26,7 @@
                     {% endif %}
                 </div>
                 <strong>
-                    {% trans concerned=util.persona_anchor(personas[concerned_ids[measure.entry_id]], icon='user') %}
+                    {% trans concerned=util.persona_anchor(personas[entry['concerned_id']], icon='user') %}
                         Measure against {{ concerned }}
                     {% endtrans %}
                 </strong>
@@ -38,8 +39,8 @@
                     {% endfor %}
                     –
                     {% trans case=util.href(
-                            cdedblink("core/show_case", {'case_id': case_ids[measure.id]}),
-                            gettext("Case %s")|s|format(case_ids[measure.id]),
+                            cdedblink("core/show_case", {'case_id': entry['case_id']}),
+                            gettext("Case %s")|s|format(entry['case_id']),
                             active='complaint_admin' in user.roles)
                     %}
                         from {{ case }}

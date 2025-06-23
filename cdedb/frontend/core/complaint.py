@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from itertools import chain
-
 import copy
 import datetime
+from itertools import chain
 from typing import Any, Optional
 
 import werkzeug.exceptions
@@ -884,18 +883,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
         measure_ids = self.complaintproxy.list_measures(rs)
-        measures, descriptions, concerned_ids = self.complaintproxy.get_measures(
+        measures, descriptions, entries = self.complaintproxy.get_measures(
             rs, measure_ids
         )
         author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
-        personas = self.coreproxy.get_personas(
-            rs, author_ids | set(concerned_ids.values())
-        )
+        concerned_ids = {e['concerned_id'] for e in entries.values()}
+        personas = self.coreproxy.get_personas(rs, author_ids | concerned_ids)
         params = {
             'measures': measures,
             'descriptions': descriptions,
-            'concerned_ids': concerned_ids,
-            'case_ids': measure_ids,
+            'entries': entries,
             'personas': personas,
         }
         return self.render(rs, "complaint/measures", params)
