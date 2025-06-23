@@ -941,7 +941,9 @@ class ComplaintBackend(AbstractBackend):
         return ret
 
     @access("complaint_admin")
-    def unlock_case(self, rs: RequestState, case_id: int, reason: str) -> dict[int, str]:
+    def unlock_case(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> dict[int, str]:
         """Log access to locked data, decrypt the descriptions and return them.
 
         :returns: Mapping of entry *version* ids to descriptions.

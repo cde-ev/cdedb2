@@ -74,7 +74,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             count = 0
             cases = personas = unlocked_cases = None
         else:
-            input = scope.mangle_query_input(rs, defaults)
+            input: dict[str, Any] = scope.mangle_query_input(rs, defaults)
             # Manually mangle the last changed information
             if last_entry_after and last_entry_before:
                 input['qop_status.last_entry'] = QueryOperators.between
@@ -100,13 +100,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
 
             # Disallow search for own persona id
-            for field, _, value in query.constraints:
-                if field == 'involved.persona_id' and value == rs.user.persona_id:
-                    rs.append_validation_error((
-                        'qval_involved.persona_id',
-                        ValueError(n_("May not search for own involvement.")),
-                    ))
-                    break
+            if query:
+                for field, _, value in query.constraints:
+                    if field == 'involved.persona_id' and value == rs.user.persona_id:
+                        rs.append_validation_error((
+                            'qval_involved.persona_id',
+                            ValueError(n_("May not search for own involvement.")),
+                        ))
+                        break
 
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
@@ -744,7 +745,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
         if (
-            rs.ambience['entry'].parent.entry_type
+            rs.ambience['entry'].parent
+            and rs.ambience['entry'].parent.entry_type
             == const.ComplaintEntryType.revocation_explanation
         ):
             rs.notify('error', n_("Cannot chain revoke."))
@@ -785,7 +787,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
         if (
-            rs.ambience['entry'].parent.entry_type
+            rs.ambience['entry'].parent
+            and rs.ambience['entry'].parent.entry_type
             == const.ComplaintEntryType.revocation_explanation
         ):
             rs.notify('error', n_("Cannot chain revoke."))

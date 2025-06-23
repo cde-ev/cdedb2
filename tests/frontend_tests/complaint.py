@@ -23,7 +23,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
-from cdedb.filter import iban_filter, date_filter
+from cdedb.filter import date_filter, iban_filter
 from tests.common import (
     USER_DICT,
     FrontendTest,
