@@ -138,7 +138,7 @@ class Case(CdEDataclass):
         )
 
     @property
-    def is_confirmed(self):
+    def is_confirmed(self) -> bool:
         return any(
             entry.entry_type == const.ComplaintEntryType.statement_signed
             and entry.active_version
