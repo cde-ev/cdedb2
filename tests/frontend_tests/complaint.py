@@ -43,8 +43,7 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fallarchiv")
         self.assertTitle("Fallarchiv")
 
-
-        ### 1. Check sample case: involved ###
+        # 1. Check sample case: involved ###
         f = self.response.forms['complaintsearchform']
         self.submit(f)
         self.assertTitle("Fall 1")
@@ -122,9 +121,9 @@ class TestComplaintFrontend(FrontendTest):
         )
         self.assertNonPresence("Emilia")
 
-        ### 3. Check sample case: entries when locked
+        # 3. Check sample case: entries when locked
         self.assertNonPresence("Philosophiekurs")
-        self.assertPresence(f"53 Zeichen. Erstellt am ", div='entry5')
+        self.assertPresence("53 Zeichen. Erstellt am ", div='entry5')
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
             div='entry5'
@@ -180,7 +179,7 @@ class TestComplaintFrontend(FrontendTest):
         f['authors'] = "DB-19-1"
         f['description'] = "Berta hat herausgefunden, dass sie nicht schnarcht, wenn sie eine Wäscheklammer auf der Nase trägt."
         self.submit(f)
-        self.assertPresence(f"99 Zeichen. Erstellt am ", div='entry1002')
+        self.assertPresence("99 Zeichen. Erstellt am ", div='entry1002')
         self.assertNonPresence("Wäscheklammer")
         self.assertNoLink("entry/4/revoke")
         self.assertNoLink("entry/1002/revoke")
@@ -192,8 +191,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("von")
         self.response = saved_response
 
-
-        ### 4. Check sample case: entries when unlocked
+        # 4. Check sample case: entries when unlocked
         # TODO unlock
         # self.assertNoLink("entry/2/remove")
         # self.assertNoLink("entry/4/remove")
@@ -207,8 +205,7 @@ class TestComplaintFrontend(FrontendTest):
         # TODO Excursion part 3: Check revoked measure revocation leads to display
         # Try deletion
 
-
-        ### 5. Create new case and check ###
+        # 5. Create new case and check ###
         self.traverse("Fallarchiv", "Fall anlegen")
         f = self.response.forms['configurecaseform']
         f['summary'] = "Die Texte von Schorsch Recklich verstören Menschen."
@@ -235,7 +232,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("43 Zeichen", div='entry1003')
         self.assertNonPresence("Tür und Angel")
 
-        ### 6. Check case query ###
+        # 6. Check case query ###
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
         self.submit(f)
@@ -298,4 +295,3 @@ class TestComplaintFrontend(FrontendTest):
             self.assertPresence("2 Fälle gefunden")
             self.assertNonPresence("Fall 1001")
             self.assertPresence("Fall 1", div='case1')
-
