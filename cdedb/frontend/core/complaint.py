@@ -201,7 +201,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
             descriptions.update(
-                self.complaintproxy.get_hidden_descriptions(rs, case_id, None)
+                self.complaintproxy.get_hidden_descriptions(rs, case_id)
             )
 
         return self.render(
@@ -666,7 +666,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         version_id = rs.ambience['entry'].active_version.id
         if rs.ambience['entry'].entry_type.has_description and not internal:
             if rs.ambience['entry'].entry_type.is_hidden:
-                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+                description = self.complaintproxy.get_hidden_descriptions(rs, case_id)[
+                    version_id
+                ]
             else:
                 description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
                     version_id
@@ -842,7 +844,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         version_id = rs.ambience['entry'].active_version.id
         if rs.ambience['entry'].entry_type.has_description and not internal:
             if rs.ambience['entry'].entry_type.is_hidden:
-                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+                description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
+                    version_id
+                ]
             else:
                 description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
                     version_id
