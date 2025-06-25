@@ -661,6 +661,36 @@ class ComplaintEntryType(CdEIntEnum):
             et.revocation_explanation: "rotate-left",
         }[self]
 
+    @property
+    def right_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.statement_signed: n_("signed"),
+            et.statement_cleared: n_("cleared"),
+            et.statement_sent: n_("sent"),
+            et.statement_received: n_("received"),
+            et.agreement_measure: n_("measure"),
+            et.provisional_measure: n_("measure"),
+            et.definite_measure: n_("measure"),
+            et.measure_explanation: n_("explanation"),
+            et.measure_comment: n_("comment"),
+            et.revocation_explanation: n_("revoked"),
+        }.get(self, self.name)
+
+    @property
+    def left_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.provisional_statement_given: n_("Statement_[[in a case]]"),
+            et.agreement: n_("Agreement"),
+            et.agreement_measure: n_("Measure"),
+            et.provisional_to_arbcom: n_("Arbcom"),
+            et.provisional_measure: n_("Provisional measure"),
+            et.definite_to_arbcom: n_("Arbcom"),
+            et.definite_measure: n_("Measure"),
+            et.revocation_explanation: n_("Revocation"),
+        }.get(self, self.name)
+
 
 @enum.unique
 class CoreLogCodes(CdEIntEnum):

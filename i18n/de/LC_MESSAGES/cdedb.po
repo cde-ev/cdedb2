@@ -10740,7 +10740,7 @@ msgstr "Historie"
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:36
 #, python-format
 msgid "%(count)s versions"
-msgstr "%(count)s Versionen."
+msgstr "%(count)s Versionen"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:45
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:308
@@ -11117,7 +11117,7 @@ msgstr "Widerrufen"
 
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:328
 #, python-format
-msgid "%s previous versions"
+msgid "%s previous versions."
 msgstr "%s vorherige Versionen."
 
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:332

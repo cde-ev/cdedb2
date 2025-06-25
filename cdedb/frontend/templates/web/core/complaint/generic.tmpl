@@ -1,0 +1,18 @@
+{% import "web/util.tmpl" as util with context %}
+
+{% macro pretty_entry_heading(entry) %}
+    <strong>
+        {{ util.make_icon(entry.entry_type.get_icon()) }}
+        {% if entry.parent %}
+            {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
+            {{ gettext(entry.entry_type.left_shortname) }}
+        {% else %}
+            {{ gettext(entry.entry_type|string) }}
+        {% endif %}
+    </strong>
+    {% if entry.concerned_id %}
+        {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
+             (for {{ concerned }})
+        {% endtrans %}
+    {% endif %}
+{% endmacro %}

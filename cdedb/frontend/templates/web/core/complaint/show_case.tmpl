@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
@@ -307,15 +308,7 @@
                     </div>
                 </div>
 
-                <strong>
-                    {{ util.make_icon(entry.entry_type.get_icon()) }}
-                    {{ entry.entry_type.name }}
-                </strong>
-                {% if entry.concerned_id %}
-                    {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
-                         (for {{ concerned }})
-                    {% endtrans %}
-                {% endif %}
+                {{ generic_complaint.pretty_entry_heading(entry) }}
                 <br />
                 {{ gettext("by") }}
                 {% for author_id in entry.active_version.authors -%}
@@ -332,7 +325,7 @@
                 {% if entry.all_versions|length > 1 %}
                     {{ util.href(
                         cdedblink("core/case_history", {'case_id': ambience['case'].id}) + "#entry"|s + entry.id|string,
-                        gettext("%s previous versions")|format(entry.all_versions|length - 1),
+                        gettext("%s previous versions.")|format(entry.all_versions|length - 1),
                         readonly=is_locked
                     ) }}
                     <br />
@@ -356,20 +349,12 @@
                         {{ descriptions[entry.active_version.id]|md }}
                     </p>
                 {% endif %}
-                {% if entry.parent %}
-                    <hr class="nosp" />
-                    ◂
-                    {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
-                             stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
-                        {{ label }} at {{ stamp }}
-                    {% endtrans %}
-                {% endif %}
                 {% if entry.active_children %}
                     <hr class="nosp" />
                     ▸
                     {% for child in entry.active_children %}
                         {%- if not loop.first %}, {% endif %}
-                        {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
+                        {% trans label=util.href("#entry" + child.id|string, gettext(child.entry_type.right_shortname)),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}
                             {{ label }} at {{ stamp }}
                         {% endtrans %}

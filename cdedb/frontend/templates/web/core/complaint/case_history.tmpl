@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
@@ -38,31 +39,20 @@
                         {{ count }} versions
                     {% endtrans %}
                 </div>
-                <strong>
-                    {{ util.make_icon(entry.entry_type.get_icon()) }}
-                    {{ entry.entry_type.name }}
-                </strong>
-                {% if entry.concerned_id %}
-                    {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
-                         (for {{ concerned }})
-                    {% endtrans %}
-                {% endif %}
-                {% if entry.parent %}
-                    <hr class="nosp" />
-                    ◂
-                    {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
-                             stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
-                        {{ label }} at {{ stamp }}
-                    {% endtrans %}
-                {% endif %}
+                {{ generic_complaint.pretty_entry_heading(entry) }}
                 {% if entry.children %}
                     <hr class="nosp" />
                     ▸
                     {% for child in entry.children %}
                         {%- if not loop.first %}, {% endif %}
                         {% if child.active_version %}
-                             {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
-                                 stamp=child.active_version.timestamp|date(lang=lang) %}
+                            {% trans
+                                label=util.href(
+                                    "#entry" + child.id|string,
+                                    gettext(child.entry_type.right_shortname)
+                                ),
+                                stamp=child.active_version.timestamp|date(lang=lang)
+                            %}
                                 {{ label }} at {{ stamp }}
                             {% endtrans %}
                         {%- else -%}
