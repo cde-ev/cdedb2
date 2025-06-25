@@ -129,7 +129,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 for case_id, case in _cases.items()
                 if case.is_visible_for(rs.user)
             }
-            if len(cases) == 1:
+            if count == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:

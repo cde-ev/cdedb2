@@ -122,9 +122,7 @@ class TestComplaintFrontend(FrontendTest):
         )
         self.assertNonPresence("Emilia")
 
-
-        ### 2. Check sample case: entries ###
-        # when locked
+        ### 3. Check sample case: entries when locked
         self.assertNonPresence("Philosophiekurs")
         self.assertPresence(f"53 Zeichen. Erstellt am ", div='entry5')
         self.assertPresence(
@@ -161,6 +159,16 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("75 Zeichen.", div='entry1001')
 
+        # Excursion part 1: Check measure is displayed in overview
+        self.traverse("Maßnahmenübersicht")
+        self.assertTitle("Maßnahmenübersicht")
+        # self.assertPresence("Maßnahme gegen Berta Beispiel", div='entry6')
+        self.assertPresence("von Charly Clown", div='entry6')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div='entry6')
+        self.traverse("Fall 1")
+
         # Entry revocation
         self.assertNoLink("entry/4/revoke")
         self.traverse({'href': "entry/5/revoke"})
@@ -177,7 +185,15 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNoLink("entry/4/revoke")
         self.assertNoLink("entry/1002/revoke")
 
-        # when unlocked
+        # Excursion part 2: Check measure is no longer displayed in overview
+        saved_response = self.response
+        self.traverse("Maßnahmenübersicht")
+        self.assertNonPresence("Beispiel")
+        self.assertNonPresence("von")
+        self.response = saved_response
+
+
+        ### 4. Check sample case: entries when unlocked
         # TODO unlock
         # self.assertNoLink("entry/2/remove")
         # self.assertNoLink("entry/4/remove")
@@ -188,20 +204,98 @@ class TestComplaintFrontend(FrontendTest):
         # )
         # TODO replace
         # TODO revoke 1002 and check
+        # TODO Excursion part 3: Check revoked measure revocation leads to display
         # Try deletion
 
-        ### 4. Create new case and check ###
+
+        ### 5. Create new case and check ###
         self.traverse("Fallarchiv", "Fall anlegen")
         f = self.response.forms['configurecaseform']
         f['summary'] = "Die Texte von Schorsch Recklich verstören Menschen."
         f['kind'] = const.ComplaintKind.nonphysical_sexual_transgression
-        f['start_date'] = "2222-01-03"
+        f['start_date'] = "2222-01-02"
         f['end_date'] = "2222-01-06"
-        f['appellant_id'] = "DB-1-5"
+        f['appellant_id'] = "DB-19-1"
         f['is_affected'] = True
         f['timestamp'] = "2222-03-13"
         f['info'] = "Beschreibung folgt, zwischen Tür und Angel…"
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Du darfst keinen Fall mit eigener Beteiligung erstellen.",
+            'error',
+        )
+        f['appellant_id'] = "DB-1-9"
+        self.submit(f)
+        self.assertPresence("Zusammenfassung Die Texte von Schorsch")
+        self.assertPresence("Art Sexuelle Belästigung")
+        self.assertPresence("Startdatum 02.01.2222")
+        self.assertPresence("Enddatum 06.01.2222")
+        self.assertPresence("Anton", div='involved_affected')
+        # self.assertPresence("initial_information", div='entry1003')
+        self.assertPresence("43 Zeichen", div='entry1003')
+        self.assertNonPresence("Tür und Angel")
+
+        ### 6. Check case query ###
+        self.traverse("Fallarchiv")
+        f = self.response.forms['complaintsearchform']
+        self.submit(f)
+        self.assertPresence("2 Fälle gefunden")
+        self.assertPresence("Fall 1 ist bestätigt", div='case1')
+        self.assertNonPresence("schwerwiegend")
+        self.assertPresence("Zielpersonen Zp: Bertå Beispiel", div='case1')
+        self.assertPresence("Betroffene Bt: Daniel Dino", div='case1')
+        self.assertPresence("Jemand schnarcht ganz furchtbar.", div='case1')
+        self.assertPresence("Fall 1001", div='case1001')
+        self.assertPresence("02.01.2222–06.01.2222", div='case1001')
+
+        # Check that one may not search for own involevement
+        f = self.response.forms['complaintsearchform']
+        f['qval_involved.persona_id'] = "DB-19-1"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'qval_involved.persona_id',
+            "Du darfst nicht nach eigener Beteiligung suchen."
+        )
+
+        # Check date search
+        f = self.response.forms['complaintsearchform']
+        f['qval_involved.persona_id'] = ""
+        f['qval_cases.start_date'] = "2222-01-05"
+        self.submit(f)
+        self.assertPresence("2 Fälle gefunden")
+
+        f = self.response.forms['complaintsearchform']
+        f['qval_cases.end_date'] = "2200-01-01"
+        self.submit(f)
+        self.assertPresence("2 Fälle gefunden")
+
+        # Excursion: Change case
+        self.traverse("Fall 1", "Bearbeiten")
+        f = self.response.forms['configurecaseform']
+        f['summary'] = str(f['summary']) + " Wirklich!"
+        f['is_grave'] = True
+        f['end_date'] = "2222-01-04"
+        self.assertNonPresence("etroffen")
+        self.assertNonPresence("Initiale Angaben")
         self.submit(f)
 
-        ### 5. Check case query ###
-        # TODO Test date search in particular
+        self.traverse("Fallarchiv")
+        f = self.response.forms['complaintsearchform']
+        self.submit(f)
+        self.assertPresence("ist schwerwiegend", div='case1')
+
+        f = self.response.forms['complaintsearchform']
+        f['qval_cases.end_date'] = "2222-01-05"
+        self.submit(f)
+        self.assertTitle("Fall 1001")
+
+        with self.switch_user("anton"):
+            self.traverse("Fallarchiv")
+            f = self.response.forms['complaintsearchform']
+            self.submit(f)
+            self.assertTitle("Fallarchiv")
+            self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
+            self.assertPresence("2 Fälle gefunden")
+            self.assertNonPresence("Fall 1001")
+            self.assertPresence("Fall 1", div='case1')
+

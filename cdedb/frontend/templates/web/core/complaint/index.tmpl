@@ -37,7 +37,7 @@
             </h2>
             <div id="result" class="list-group list-group-hover list-group-condensed">
                 {% for case in cases.values() %}
-                    <div class="list-group-item">
+                    <div id="case{{ case.id }}" class="list-group-item">
                         <div class="row">
                             <div class="col-md-2">
                                 {{- util.href(
@@ -49,7 +49,7 @@
                                         {{ util.make_icon(
                                             enums["ComplaintEntryType"].statement_signed.get_icon(),
                                             aclass='text-muted',
-                                            title=gettext("is closed")
+                                            title=gettext("is confirmed")
                                         ) }}
                                     {% endif %}
                                     {% if not case.is_active %}
