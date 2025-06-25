@@ -19,11 +19,6 @@ In Pycharm, this is possible via the `File Watchers` plugin, using the following
 configuration. Depending on your :doc:`Development_Environment` there are
 different ways to invoke ``make``:
 
-- run ``make`` in the VM:
-    - command: ``ssh``
-
-    - arguments: ``-p 20022 cdedb@localhost make autoformat``
-
 - run ``make`` on your host machine (needs ``ruff`` available in the python path):
     - program ``make``
 
