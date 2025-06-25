@@ -200,7 +200,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
-            descriptions.update(self.complaintproxy.unlock_case(rs, case_id, None))
+            descriptions.update(
+                self.complaintproxy.get_hidden_descriptions(rs, case_id, None)
+            )
 
         return self.render(
             rs,
@@ -230,7 +232,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         all_entries = rs.ambience['case'].list_entries(
             log_entries, include_deleted=True
         )
-        descriptions = self.complaintproxy.get_all_descriptions(rs, case_id)
+        descriptions = self.complaintproxy.get_hidden_descriptions(rs, case_id)
         # Collect all persona data which may be displayed.
         persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
         personas = self.coreproxy.get_personas(rs, persona_ids)

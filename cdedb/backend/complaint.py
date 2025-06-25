@@ -943,19 +943,17 @@ class ComplaintBackend(AbstractBackend):
     @access("complaint_admin")
     def unlock_case(
         self, rs: RequestState, case_id: int, reason: str
-    ) -> dict[int, str]:
+    ) -> DefaultReturnCode:
         """Log access to locked data, decrypt the descriptions and return them.
 
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
         with Atomizer(rs):
-            if not self._unlock_case(rs, case_id, reason):
-                raise RuntimeError
-            return self._get_descriptions(rs, case_id=case_id, visible=False)
+            return self._unlock_case(rs, case_id, reason)
 
     @access("complaint_admin")
-    def get_all_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
+    def get_hidden_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
         """Return all descriptions if case already unlocked.
 
         :returns: Mapping of entry *version* ids to descriptions.
