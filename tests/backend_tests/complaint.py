@@ -572,7 +572,7 @@ class TestComplaintBackend(BackendTest):
     def test_lock_unlock_case(self) -> None:
         case_id = 1
         self.assertIsNone(self.complaint.is_unlocked(self.key, case_id))
-        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id, "Why not?"))
         self.assertIs(True, self.complaint.is_unlocked(self.key, case_id))
         self.assertEqual(1, self.complaint.lock_case(self.key, case_id))
         self.assertEqual(-1, self.complaint.lock_case(self.key, case_id))
@@ -586,14 +586,16 @@ class TestComplaintBackend(BackendTest):
             verbose=1,
         )
         self.assertIs(False, self.complaint.is_unlocked(self.key, case_id))
-        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id, "Once more."))
 
         log_expectation: list[CdEDBObject] = [
             {
                 "code": const.ComplaintLogCodes.case_unlocked,
+                "change_note": "Why not?",
             },
             {
                 "code": const.ComplaintLogCodes.case_unlocked,
+                "change_note": "Once more.",
             },
         ]
         self.assertLogEqual(
@@ -1018,8 +1020,16 @@ class TestComplaintBackend(BackendTest):
         descriptions_expectation = {
             6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
         }
+        entries_expectation = {
+            5: {
+                "case_id": 1,
+                "concerned_id": 2,
+                "entry_type": const.ComplaintEntryType.agreement_measure,
+                "id": 5,
+            }
+        }
         self.assertEqual(
-            (measures_expectation, descriptions_expectation),
+            (measures_expectation, descriptions_expectation, entries_expectation),
             self.complaint.get_measures(
                 self.key, self.complaint.list_measures(self.key)
             ),
