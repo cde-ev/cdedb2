@@ -39,7 +39,7 @@ class TestComplaintBackend(BackendTest):
                 1: models.ComplaintEntry(
                     id=1,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
-                    entry_type=const.ComplaintEntryType.initial_information,
+                    entry_type=const.ComplaintEntryType.generic_information,
                     parent_id=None,
                     concerned_id=None,
                     all_versions=[
@@ -1206,10 +1206,10 @@ class TestComplaintValidation(TestValidationBase):
             [
                 (
                     {
-                        "entry_type": str(const.ComplaintEntryType.initial_information),
+                        "entry_type": str(const.ComplaintEntryType.generic_information),
                     },
                     {
-                        "entry_type": const.ComplaintEntryType.initial_information,
+                        "entry_type": const.ComplaintEntryType.generic_information,
                         "concerned_id": None,
                         "parent_id": None,
                     },
@@ -1412,6 +1412,6 @@ class TestComplaintValidation(TestValidationBase):
             {
                 "creation": True,
                 "passthrough": True,
-                "entry_type": const.ComplaintEntryType.initial_information,
+                "entry_type": const.ComplaintEntryType.generic_information,
             },
         )

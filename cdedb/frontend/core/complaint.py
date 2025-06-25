@@ -276,7 +276,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         with TransactionObserver(rs, self, "create_complaint_case"):
             new_case = self.complaintproxy.create_case(rs, data)
             entry_data = {
-                'entry_type': const.ComplaintEntryType.initial_information,
+                'entry_type': const.ComplaintEntryType.generic_information,
             }
             version_data = {
                 'timestamp': timestamp,

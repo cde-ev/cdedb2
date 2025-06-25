@@ -523,8 +523,7 @@ class ComplaintEntryType(CdEIntEnum):
     from the logs instead. Those can not be replaced later on.
     """
     # Initial
-    initial_information = 101  #:
-    additional_information = 151  #:
+    generic_information = 101  #:
 
     # Statements
     provisional_statement_given = 201  #:
@@ -643,8 +642,7 @@ class ComplaintEntryType(CdEIntEnum):
     def get_icon(self) -> str:
         et = ComplaintEntryType
         return {
-            et.initial_information: "info",
-            et.additional_information: "info",
+            et.generic_information: "info",
             et.provisional_statement_given: "file-lines",
             et.statement_signed: "file-signature",
             et.statement_cleared: "file-export",

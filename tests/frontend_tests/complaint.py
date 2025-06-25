@@ -228,7 +228,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
         self.assertPresence("Anton", div='involved_affected')
-        # self.assertPresence("initial_information", div='entry1003')
+        # self.assertPresence("generic_information", div='entry1003')
         self.assertPresence("43 Zeichen", div='entry1003')
         self.assertNonPresence("Tür und Angel")
 
