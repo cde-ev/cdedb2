@@ -1070,13 +1070,12 @@ class ComplaintBackend(AbstractBackend):
         }
 
         if is_active is not None:
-            query += f"""
+            query += """
                 AND (
                     NOT entries.is_revoked
-                    AND (versions.etime > %(reference_time)s OR versions.etime IS NULL)
+                    AND (versions.etime > now() OR versions.etime IS NULL)
                 ) = %(is_active)s
             """
-            params["reference_time"] = now()
             params["is_active"] = is_active
 
         entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
@@ -1116,13 +1115,12 @@ class ComplaintBackend(AbstractBackend):
         }
 
         if is_active is not None:
-            query += f"""
+            query += """
                 AND (
                     NOT entries.is_revoked
-                    AND (versions.etime > %(reference_time)s OR versions.etime IS NULL)
+                    AND (versions.etime > now() OR versions.etime IS NULL)
                 ) = %(is_active)s
             """
-            params["reference_time"] = now()
             params["is_active"] = is_active
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
