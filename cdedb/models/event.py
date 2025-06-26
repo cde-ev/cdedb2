@@ -597,7 +597,7 @@ class CustomQueryFilter(EventDataclass):
             return
         type_ = spec[next(iter(self.fields))].type
         spec[self.get_field_string()] = QuerySpecEntry(
-            type_, self.title, group=n_("Custom Filters"),
+            type_, self.title, group_base=n_("Custom Filters"),
         )
 
     def is_valid(self, spec: QuerySpec) -> bool:

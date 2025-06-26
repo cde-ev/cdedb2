@@ -158,7 +158,7 @@
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
                                                {% if field == scope.get_primary_key() %}id-field{% endif %}"
                                             data-type="{{ spec[field].type }}" data-id="{{ field }}"
-                                            data-group="{{ spec[field].group }}" data-group-label="{{ gettext(spec[field].group) }}">
+                                            data-group="{{ spec[field].get_group() }}" data-group-label="{{ spec[field].get_group_label(gettext) }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
                                             {% if ',' not in field and field not in selection_blacklist %}
