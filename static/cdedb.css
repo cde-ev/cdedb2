@@ -561,6 +561,9 @@ input[type=number].no-number-arrows {
     font-size: 85%;
     color: #777;
 }
+.selectize-dropdown-content {
+    max-height: max(50vh, 300px);
+}
 .selectize-dropdown .optgroup-header {
     color: revert;
     font-weight: bold;
