@@ -341,7 +341,9 @@ class TestComplaintBackend(BackendTest):
         case_id = 1
         new_involved = 1
         _case = self.complaint.get_case(self.key, case_id)
-        original_involved = list(_case.all_involved)[0]
+        original_involved = sorted(
+            _case.involved[const.ComplaintInvolvementType.target]
+        )[0]
         original_companions = sorted(_case.companions_by_involved[original_involved])
         self.assertNotIn(
             new_involved, _case.all_involved, "Sample data changed. Review test setup."
