@@ -420,7 +420,11 @@ class ComplaintBackend(AbstractBackend):
                     models.ComplaintEntry.database_table,
                     {'id': entry.parent_id, 'is_revoked': False},
                 )
-                if entry.parent and entry.parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+                if (
+                    entry.parent
+                    and entry.parent.entry_type
+                    == const.ComplaintEntryType.revocation_explanation
+                ):
                     self.sql_update(
                         rs,
                         models.ComplaintEntry.database_table,

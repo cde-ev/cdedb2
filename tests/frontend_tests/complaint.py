@@ -238,11 +238,14 @@ class TestComplaintFrontend(FrontendTest):
         msg = "Eintrag ist bereits gelöscht."
         self.assertNotification(msg, 'info')
         self.get("/core/complaint/case/1/show")
-        self.post("/core/complaint/case/1/entry/1003/remove", {}, evade_anti_csrf=True)
+        self.post(
+            "/core/complaint/case/1/entry/1003/remove",
+            {'dreason': "Piep."},
+            evade_anti_csrf=True
+        )
         self.follow()
         self.assertTitle("Fall 1")
-        # TODO This should be an error. Why is it an info???
-        self.assertNotification(msg)
+        self.assertNotification(msg, 'error')
 
         # Excursion part 4: Check revocation deletion leads to display
         saved_response = self.response
@@ -251,8 +254,13 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("Beispiel")
         self.response = saved_response
 
-        # TODO Check case history
+        # Case history
         self.traverse("Eintragshistorie zeigen")
+        # TODO Actually check history
+        self.traverse("Fall 1")
+        f = self.response.forms['lockcaseform']
+        self.submit(f)
+        self.assertNonPresence("Philosophie")
 
         # ##
         # ## 4. Create new case and check ##

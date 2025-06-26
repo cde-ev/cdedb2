@@ -866,7 +866,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("entry_id", "dreason")
+    @REQUESTdata("dreason")
     def remove_entry(
         self, rs: RequestState, case_id: int, entry_id: int, dreason: str
     ) -> Response:
