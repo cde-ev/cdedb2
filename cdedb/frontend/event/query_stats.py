@@ -254,12 +254,15 @@ class StatisticPartMixin(StatisticMixin):
     def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
+        queries = [self.get_query(event, part_id) for part_id
+                   in self.get_part_ids(event, part_group_id=part_group_id)]
         if self.is_mergeable():
-            queries = [self.get_query(event, part_id) for part_id
-                       in self.get_part_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
-        return self.get_query_by_ids(event, registration_ids)
+        ret = self.get_query_by_ids(event, registration_ids)
+        for q in queries:
+            ret.fields_of_interest.extend(q.fields_of_interest)
+        return ret
 
     def get_link_id(self, *, track_id: Optional[int] = None,
                     part_id: Optional[int] = None, part_group_id: Optional[int] = None,
