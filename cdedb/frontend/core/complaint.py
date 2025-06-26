@@ -537,23 +537,30 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("reason")
-    def unlock_case(self, rs: RequestState, case_id: int, reason: str) -> Response:
-        if not rs.ambience['case'].is_visible_for(rs.user):
-            raise werkzeug.exceptions.Forbidden()
+    @REQUESTdata("reason", "show_log_entries")
+    def unlock_case(
+        self, rs: RequestState, case_id: int, reason: str, show_log_entries: bool
+    ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        _ = self.complaintproxy.unlock_case(rs, case_id, reason)
-        rs.notify_return_code(1, success=n_("Case unlocked."))
-        return self.redirect(rs, "core/show_case")
+        code = self.complaintproxy.unlock_case(rs, case_id, reason)
+        rs.notify_return_code(code, success=n_("Case unlocked."))
+        return self.redirect(
+            rs, "core/show_case", {"show_log_entries": show_log_entries}
+        )
 
     @access("complaint_admin", modi={"POST"})
-    def lock_case(self, rs: RequestState, case_id: int) -> Response:
+    @REQUESTdata("show_log_entries")
+    def lock_case(
+        self, rs: RequestState, case_id: int, show_log_entries: bool
+    ) -> Response:
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
         code = self.complaintproxy.lock_case(rs, case_id)
         rs.notify_return_code(code, success=n_("Case locked."))
-        return self.redirect(rs, "core/show_case")
+        return self.redirect(
+            rs, "core/show_case", {"show_log_entries": show_log_entries}
+        )
 
     @access("complaint_admin")
     @REQUESTdata("entry_type")

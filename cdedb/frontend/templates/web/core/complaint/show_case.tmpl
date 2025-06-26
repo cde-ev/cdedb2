@@ -236,6 +236,7 @@
             class="p"
         >
             {{ util.anti_csrf_token('core/unlock_case') }}
+            {{ util.input_hidden("show_log_entries", show_log_entries) }}
             <div class="input-group">
                 {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
                 <div class="input-group-btn">
@@ -253,6 +254,7 @@
             class="p"
         >
             {{ util.anti_csrf_token('core/lock_case') }}
+            {{ util.input_hidden("show_log_entries", show_log_entries) }}
             {{ util.input_submit(label=gettext("Lock descriptions"),
                                  aclass="btn btn-sm btn-primary", icon="lock") }}
         </form>
