@@ -108,7 +108,7 @@
         </div>
         {{ util.output_errors('persona_ids', wrapper=True) }}
     </form>
-    {% for list in ambience['case'].involved.items()|slice(2) %}
+    {% for list in ambience['case'].involved.items()|batch(2) %}
         <div class="row">
         {% for type, involved_ids in list %}
             <div id="involved_{{ type.name }}" class="col-sm-6">
