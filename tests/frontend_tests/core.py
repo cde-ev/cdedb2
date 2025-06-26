@@ -683,12 +683,14 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("quintus")
+    @as_users("inga")
     def test_selectpersona_ids_unprivileged(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
+        # search by ID only for admins, not moderators
+        self.get('/core/persona/select?kind=ml_user&phrase=DB-2-7')
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(tuple(), reality)
-        self.get('/core/persona/select?kind=cde_user&phrase=14')
+        # too short search phrase
+        self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
         self.assertEqual({}, self.response.json)
 
     @as_users("vera")
