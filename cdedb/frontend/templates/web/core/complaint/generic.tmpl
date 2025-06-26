@@ -5,7 +5,7 @@
         {{ util.make_icon(entry.entry_type.get_icon()) }}
         {% if entry.parent %}
             {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
-            {{ gettext(entry.entry_type.left_shortname) }}
+            {{ gettext(entry.entry_type.right_shortname) }}
         {% else %}
             {{ gettext(entry.entry_type|string) }}
         {% endif %}

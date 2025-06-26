@@ -788,7 +788,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors() or not version_data:
             return self.revoke_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Entry already revoked."))
+            rs.notify('error', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if (
             rs.ambience['entry'].parent
@@ -844,7 +844,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         version_id = rs.ambience['entry'].active_version.id
         if rs.ambience['entry'].entry_type.has_description and not internal:
             if rs.ambience['entry'].entry_type.is_hidden:
-                description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
+                description = self.complaintproxy.get_hidden_descriptions(rs, case_id)[
                     version_id
                 ]
             else:

@@ -128,22 +128,23 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.statement_received
         self.submit(f)
-        # self.assertPresence("Aussage angekommen")
+        self.assertPresence("Aussage empfangen")
         self.traverse({'href': "entry/2/child/add"})
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.statement_cleared
         self.submit(f)
-        # self.assertPresence("Aussage freigegeben")
+        self.assertPresence("Aussage freigegeben")
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-3-5"
         f['description'] = "Aussage darf verwendet werden, um \"einen ruhigen Schlaf im CdE\" zu fördern."
         self.submit(f)
         self.assertPresence("75 Zeichen.", div='entry1001')
+        self.assertNonPresence("Versionen", div='entry1001')
 
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        # self.assertPresence("Maßnahme gegen Berta Beispiel", div='entry6')
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
         self.assertPresence("von Charly Clown", div='entry6')
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
@@ -162,6 +163,7 @@ class TestComplaintFrontend(FrontendTest):
         f['description'] = "Berta hat herausgefunden, dass sie nicht schnarcht, wenn sie eine Wäscheklammer auf der Nase trägt."
         pre_submit_response = self.response
         self.submit(f)
+        self.assertPresence("Maßnahme: widerrufen", div='entry1002')
         self.assertPresence("99 Zeichen. Erstellt am ", div='entry1002')
         self.assertNonPresence("Wäscheklammer")
         self.assertNoLink("entry/4/revoke")
@@ -181,18 +183,76 @@ class TestComplaintFrontend(FrontendTest):
 
         # ##
         # ## 3. Check sample case: entries when unlocked ##
-        # TODO unlock
-        # self.assertNoLink("entry/2/remove")
-        # self.assertNoLink("entry/4/remove")
-        # self.traverse(
-        #    {'href': "entry/4/revoke"},
-        #    {'description': "Fall 1"},
-        #    {'href': "entry/4/replace"},
-        # )
-        # TODO replace
-        # TODO revoke 1002 and check, try revoking 1003
-        # TODO Excursion part 3: Check revoked measure revocation leads to display
-        # TODO Try deletion (twice) and adding child to deleted parent
+        f = self.response.forms['unlockcaseform']
+        f['reason'] = "Ich bin halt leider viel zu neugierig."
+        self.submit(f)
+        self.assertNoLink("entry/2/remove")
+        self.assertNoLink("entry/4/remove")
+        self.traverse(
+            {'href': "entry/4/revoke"},
+            {'description': "Fall 1"},
+            {'href': "entry/4/replace"},
+        )
+        f = self.response.forms['configureentryform']
+        f['description'] = "Berta wird ab jetzt immer ein Schnarchzimmer zu beantragen."
+        self.submit(f, check_notification=False)
+        self.assertValidationError('dreason', "Darf nicht leer sein.")
+        f['dreason'] = "Ist fairer."
+        self.submit(f)
+        self.assertPresence("59 Zeichen. 2 vorherige Versionen.", div='entry4')
+        self.assertPresence("zuletzt geändert", div='entry4')
+        self.assertPresence("Schnarchzimmer", div='entry4')
+
+        # Revoke recovation
+        self.traverse({'href': "entry/1002/revoke"})
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-19-1"
+        f['description'] = "Hat leider nicht geklappt…"
+        self.submit(f)
+        self.assertNoLink("entry/1003/revoke")
+        self.get("/core/complaint/case/1/entry/1003/revoke")
+        self.follow()
+        self.assertTitle("Fall 1")
+        msg = "Widerruf eines Widerrufs kann nicht widerrufen werden."
+        self.assertNotification(msg, 'error')
+        self.post("/core/complaint/case/1/entry/1003/revoke", {}, evade_anti_csrf=True)
+        self.follow()
+        self.assertTitle("Fall 1")
+        self.assertNotification(msg, 'error')
+
+        # Excursion part 3: Check revoked measure revocation leads to display
+        self.traverse("Maßnahmenübersicht")
+        self.assertTitle("Maßnahmenübersicht")
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
+        self.traverse("Fall 1")
+
+        # Remove entry
+        self.traverse({'href': "entry/1003/remove"})
+        f = self.response.forms['removeentryform']
+        f['dreason'] = "War ein Versehen."
+        self.submit(f)
+        self.assertNonPresence("Widerruf: widerrufen")
+        self.get("/core/complaint/case/1/entry/1003/remove")
+        self.follow()
+        self.assertTitle("Fall 1")
+        msg = "Eintrag ist bereits gelöscht."
+        self.assertNotification(msg, 'info')
+        self.get("/core/complaint/case/1/show")
+        self.post("/core/complaint/case/1/entry/1003/remove", {}, evade_anti_csrf=True)
+        self.follow()
+        self.assertTitle("Fall 1")
+        # TODO This should be an error. Why is it an info???
+        self.assertNotification(msg)
+
+        # Excursion part 4: Check revocation deletion leads to display
+        saved_response = self.response
+        self.traverse("Maßnahmenübersicht")
+        self.assertTitle("Maßnahmenübersicht")
+        self.assertNonPresence("Beispiel")
+        self.response = saved_response
+
+        # TODO Check case history
+        self.traverse("Eintragshistorie zeigen")
 
         # ##
         # ## 4. Create new case and check ##
@@ -218,8 +278,8 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
         self.assertPresence("Anton", div='involved_affected')
-        # self.assertPresence("generic_information", div='entry1003')
-        self.assertPresence("43 Zeichen", div='entry1003')
+        self.assertPresence("Information", div='entry1004')
+        self.assertPresence("43 Zeichen", div='entry1004')
         self.assertNonPresence("Tür und Angel")
 
         # ##
@@ -285,18 +345,20 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.synthesis
         self.submit(f)
-        # self.assertPresence("Synthese")
+        self.assertPresence("Synthese")
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-19-1"
         f['description'] = "Hat sich nie wieder gemeldet."
         self.submit(f)
-        self.assertPresence("29 Zeichen.", div='entry1004')
+        self.assertPresence("29 Zeichen.", div='entry1005')
         self.assertNonPresence("Hat sich nie wieder gemeldet.")
 
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
         self.submit(f)
         self.assertPresence("ist abgeschlossen", div='case1001')
+
+        # TODO Test logging
 
         # ##
         # ## 6. Check protection ##
@@ -327,8 +389,8 @@ class TestComplaintFrontend(FrontendTest):
 
             urls = {
                 "/core/complaint/case/1001/change",
-                "/core/complaint/case/1001/entry/1003/remove",
-                "/core/complaint/case/1001/entry/1003/revoke",
+                "/core/complaint/case/1001/entry/1004/remove",
+                "/core/complaint/case/1001/entry/1004/revoke",
                 "/core/complaint/case/1001/entry/add",
             }
             for url in urls:

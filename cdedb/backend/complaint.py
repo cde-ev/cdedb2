@@ -420,6 +420,12 @@ class ComplaintBackend(AbstractBackend):
                     models.ComplaintEntry.database_table,
                     {'id': entry.parent_id, 'is_revoked': False},
                 )
+                if entry.parent and entry.parent.entry_type == const.ComplaintEntryType.revocation_explanation:
+                    self.sql_update(
+                        rs,
+                        models.ComplaintEntry.database_table,
+                        {'id': entry.parent.parent_id, 'is_revoked': True},
+                    )
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("complaint_admin")

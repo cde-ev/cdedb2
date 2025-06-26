@@ -675,7 +675,7 @@ class ComplaintEntryType(CdEIntEnum):
             et.measure_explanation: n_("explanation"),
             et.measure_comment: n_("comment"),
             et.revocation_explanation: n_("revoked"),
-        }.get(self, self.name)
+        }.get(self, str(self))
 
     @property
     def left_shortname(self) -> str:
@@ -689,7 +689,7 @@ class ComplaintEntryType(CdEIntEnum):
             et.definite_to_arbcom: n_("Arbcom"),
             et.definite_measure: n_("Measure"),
             et.revocation_explanation: n_("Revocation"),
-        }.get(self, self.name)
+        }.get(self, str(self))
 
 
 @enum.unique
