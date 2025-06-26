@@ -182,7 +182,7 @@ class Case(CdEDataclass):
             new_involved[involved_type].add(involved[0])
             if involved[2]:
                 data["informed_involved"].add(involved[0])
-        data["involved"] = new_involved
+        data["involved"] = dict(sorted(new_involved.items()))
 
         new_companions: dict[int, set[int]] = {}
         withdrawn_companions: dict[int, set[int]] = {}

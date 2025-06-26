@@ -108,8 +108,8 @@
         </div>
         {{ util.output_errors('persona_ids', wrapper=True) }}
     </form>
-    <div class="row">
     {% for list in ambience['case'].involved.items()|slice(2) %}
+        <div class="row">
         {% for type, involved_ids in list %}
             <div id="involved_{{ type.name }}" class="col-sm-6">
                 {% if involved_ids %}
@@ -215,8 +215,8 @@
                 {% endif %}
             </div>
         {% endfor %}
+        </div>
     {% endfor %}
-    </div>
 
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
