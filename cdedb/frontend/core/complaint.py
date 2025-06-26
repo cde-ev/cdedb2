@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-
 import copy
 import datetime
+from itertools import chain
 from typing import Any, Optional
 
 import werkzeug.exceptions
@@ -74,7 +74,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             count = 0
             cases = personas = unlocked_cases = None
         else:
-            input = scope.mangle_query_input(rs, defaults)
+            input: dict[str, Any] = scope.mangle_query_input(rs, defaults)
             # Manually mangle the last changed information
             if last_entry_after and last_entry_before:
                 input['qop_status.last_entry'] = QueryOperators.between
@@ -100,13 +100,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
 
             # Disallow search for own persona id
-            for field, _, value in query.constraints:
-                if field == 'involved.persona_id' and value == rs.user.persona_id:
-                    rs.append_validation_error((
-                        'qval_involved.persona_id',
-                        ValueError(n_("May not search for own involvement.")),
-                    ))
-                    break
+            if query:
+                for field, _, value in query.constraints:
+                    if field == 'involved.persona_id' and value == rs.user.persona_id:
+                        rs.append_validation_error((
+                            'qval_involved.persona_id',
+                            ValueError(n_("May not search for own involvement.")),
+                        ))
+                        break
 
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
@@ -128,7 +129,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 for case_id, case in _cases.items()
                 if case.is_visible_for(rs.user)
             }
-            if len(cases) == 1:
+            if count == len(cases) == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
@@ -143,10 +144,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         # the log too much: We log only if the requestee has identified
                         # some involved people in their cases.
                         for concealed_case_id in _cases.keys() - cases.keys():
-                            self.complaintproxy.complaint_log(
+                            self.complaintproxy.complaint_log_case_detected(
                                 rs=rs,
-                                code=const.ComplaintLogCodes.concealed_case_detected,
                                 case_id=concealed_case_id,
+                                persona_id=input['qval_involved.persona_id'],
                             )
 
                 persona_ids: list[int] = []
@@ -199,7 +200,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
         if self.complaintproxy.is_unlocked(rs, case_id):
             is_locked = False
-            descriptions.update(self.complaintproxy.unlock_case(rs, case_id))
+            descriptions.update(
+                self.complaintproxy.get_hidden_descriptions(rs, case_id)
+            )
 
         return self.render(
             rs,
@@ -229,7 +232,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         all_entries = rs.ambience['case'].list_entries(
             log_entries, include_deleted=True
         )
-        descriptions = self.complaintproxy.get_all_descriptions(rs, case_id)
+        descriptions = self.complaintproxy.get_hidden_descriptions(rs, case_id)
         # Collect all persona data which may be displayed.
         persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -273,7 +276,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         with TransactionObserver(rs, self, "create_complaint_case"):
             new_case = self.complaintproxy.create_case(rs, data)
             entry_data = {
-                'entry_type': const.ComplaintEntryType.initial_information,
+                'entry_type': const.ComplaintEntryType.generic_information,
             }
             version_data = {
                 'timestamp': timestamp,
@@ -428,10 +431,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if companion_ids:
-            if persona_id in companion_ids:
+            if companion_ids & rs.ambience['case'].all_involved.keys():
                 rs.append_validation_error((
                     "companion_ids",
-                    ValueError(n_("User may not be their own companion.")),
+                    ValueError(n_("Companion may not be involved.")),
+                ))
+            if set(companion_ids) & rs.ambience['case'].adverse_companions(
+                rs.ambience['case'].all_involved[persona_id]
+            ):
+                rs.append_validation_error((
+                    "companion_ids",
+                    ValueError(n_("Companion to the opposing party.")),
                 ))
             if not self.coreproxy.verify_ids(rs, companion_ids, is_archived=None):
                 rs.append_validation_error((
@@ -527,10 +537,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
-    def unlock_case(self, rs: RequestState, case_id: int) -> Response:
+    @REQUESTdata("reason")
+    def unlock_case(self, rs: RequestState, case_id: int, reason: str) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        _ = self.complaintproxy.unlock_case(rs, case_id)
+        if rs.has_validation_errors():
+            return self.show_case(rs, case_id)
+        _ = self.complaintproxy.unlock_case(rs, case_id, reason)
         rs.notify_return_code(1, success=n_("Case unlocked."))
         return self.redirect(rs, "core/show_case")
 
@@ -653,7 +666,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         version_id = rs.ambience['entry'].active_version.id
         if rs.ambience['entry'].entry_type.has_description and not internal:
             if rs.ambience['entry'].entry_type.is_hidden:
-                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+                description = self.complaintproxy.get_hidden_descriptions(rs, case_id)[
+                    version_id
+                ]
             else:
                 description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
                     version_id
@@ -734,7 +749,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify('error', n_("Entry already deleted."))
             return self.redirect(rs, "core/show_case")
         if (
-            rs.ambience['entry'].parent.entry_type
+            rs.ambience['entry'].parent
+            and rs.ambience['entry'].parent.entry_type
             == const.ComplaintEntryType.revocation_explanation
         ):
             rs.notify('error', n_("Cannot chain revoke."))
@@ -772,10 +788,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors() or not version_data:
             return self.revoke_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if (
-            rs.ambience['entry'].parent.entry_type
+            rs.ambience['entry'].parent
+            and rs.ambience['entry'].parent.entry_type
             == const.ComplaintEntryType.revocation_explanation
         ):
             rs.notify('error', n_("Cannot chain revoke."))
@@ -827,7 +844,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         version_id = rs.ambience['entry'].active_version.id
         if rs.ambience['entry'].entry_type.has_description and not internal:
             if rs.ambience['entry'].entry_type.is_hidden:
-                description = self.complaintproxy.unlock_case(rs, case_id)[version_id]
+                description = self.complaintproxy.get_hidden_descriptions(rs, case_id)[
+                    version_id
+                ]
             else:
                 description = self.complaintproxy.get_visible_descriptions(rs, case_id)[
                     version_id
@@ -847,7 +866,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("entry_id", "dreason")
+    @REQUESTdata("dreason")
     def remove_entry(
         self, rs: RequestState, case_id: int, entry_id: int, dreason: str
     ) -> Response:
@@ -872,7 +891,20 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
-        return self.render(rs, "complaint/measures")
+        measure_ids = self.complaintproxy.list_measures(rs)
+        measures, descriptions, entries = self.complaintproxy.get_measures(
+            rs, measure_ids
+        )
+        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
+        concerned_ids = {e['concerned_id'] for e in entries.values()}
+        personas = self.coreproxy.get_personas(rs, author_ids | concerned_ids)
+        params = {
+            'measures': measures,
+            'descriptions': descriptions,
+            'entries': entries,
+            'personas': personas,
+        }
+        return self.render(rs, "complaint/measures", params)
 
     @access("complaint_admin", "complaint.enforcer")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:

@@ -10,6 +10,7 @@ from tests.frontend_tests.assembly import (
 )
 from tests.frontend_tests.cde import TestCdEFrontend
 from tests.frontend_tests.common import TestFrontendCommon
+from tests.frontend_tests.complaint import TestComplaintFrontend
 from tests.frontend_tests.core import TestCoreFrontend
 from tests.frontend_tests.cron import TestCron
 from tests.frontend_tests.event import TestEventFrontend

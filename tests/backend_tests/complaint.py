@@ -39,7 +39,7 @@ class TestComplaintBackend(BackendTest):
                 1: models.ComplaintEntry(
                     id=1,  # type: ignore[arg-type]
                     case_id=1,  # type: ignore[arg-type]
-                    entry_type=const.ComplaintEntryType.initial_information,
+                    entry_type=const.ComplaintEntryType.generic_information,
                     parent_id=None,
                     concerned_id=None,
                     all_versions=[
@@ -341,7 +341,9 @@ class TestComplaintBackend(BackendTest):
         case_id = 1
         new_involved = 1
         _case = self.complaint.get_case(self.key, case_id)
-        original_involved = list(_case.all_involved)[0]
+        original_involved = sorted(
+            _case.involved[const.ComplaintInvolvementType.target]
+        )[0]
         original_companions = sorted(_case.companions_by_involved[original_involved])
         self.assertNotIn(
             new_involved, _case.all_involved, "Sample data changed. Review test setup."
@@ -418,12 +420,10 @@ class TestComplaintBackend(BackendTest):
 
         original_case.involved.pop(const.ComplaintInvolvementType.target)
         for companion_id in original_companions:
-            if len(original_case.companions[companion_id]) == 1:
-                del original_case.companions[companion_id]
-            else:
-                original_case.companions[companion_id].remove(original_involved)
-            if companion_id in original_case.withdrawn_companions:
-                del original_case.withdrawn_companions[companion_id]
+            original_case.companions[companion_id].remove(original_involved)
+            if not original_case.companions[companion_id]:
+                del original_case.companions[companion_id]  # pragma: no cover
+            original_case.withdrawn_companions.pop(companion_id, None)
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -572,7 +572,7 @@ class TestComplaintBackend(BackendTest):
     def test_lock_unlock_case(self) -> None:
         case_id = 1
         self.assertIsNone(self.complaint.is_unlocked(self.key, case_id))
-        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id, "Why not?"))
         self.assertIs(True, self.complaint.is_unlocked(self.key, case_id))
         self.assertEqual(1, self.complaint.lock_case(self.key, case_id))
         self.assertEqual(-1, self.complaint.lock_case(self.key, case_id))
@@ -586,14 +586,16 @@ class TestComplaintBackend(BackendTest):
             verbose=1,
         )
         self.assertIs(False, self.complaint.is_unlocked(self.key, case_id))
-        self.assertTrue(self.complaint.unlock_case(self.key, case_id))
+        self.assertTrue(self.complaint.unlock_case(self.key, case_id, "Once more."))
 
         log_expectation: list[CdEDBObject] = [
             {
                 "code": const.ComplaintLogCodes.case_unlocked,
+                "change_note": "Why not?",
             },
             {
                 "code": const.ComplaintLogCodes.case_unlocked,
+                "change_note": "Once more.",
             },
         ]
         self.assertLogEqual(
@@ -944,7 +946,7 @@ class TestComplaintBackend(BackendTest):
         )
 
     @as_users("simon")
-    def test_get_measures(self) -> None:
+    def test_get_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
         active_measure_persona_id = 2
@@ -991,6 +993,45 @@ class TestComplaintBackend(BackendTest):
             {measure.id: measure},
             self.complaint.get_user_measures(
                 self.key, active_measure_persona_id, is_active=False
+            ),
+        )
+
+    @as_users("simon")
+    def test_measures(self) -> None:
+        measure_ids_expectation = {6: 1}
+        self.assertEqual(
+            measure_ids_expectation,
+            self.complaint.list_measures(self.key),
+        )
+
+        measures_expectation = {
+            6: models.ComplaintEntryVersion(
+                id=6,  # type: ignore[arg-type]
+                entry_id=5,  # type: ignore[arg-type]
+                length=53,
+                ctime=nearly_now(),
+                submitted_by=1,  # type: ignore[arg-type]
+                authors={3},  # type: ignore[arg-type]
+                timestamp=datetime.datetime(
+                    2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                ),
+            ),
+        }
+        descriptions_expectation = {
+            6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+        }
+        entries_expectation = {
+            5: {
+                "case_id": 1,
+                "concerned_id": 2,
+                "entry_type": const.ComplaintEntryType.agreement_measure,
+                "id": 5,
+            }
+        }
+        self.assertEqual(
+            (measures_expectation, descriptions_expectation, entries_expectation),
+            self.complaint.get_measures(
+                self.key, self.complaint.list_measures(self.key)
             ),
         )
 
@@ -1165,10 +1206,10 @@ class TestComplaintValidation(TestValidationBase):
             [
                 (
                     {
-                        "entry_type": str(const.ComplaintEntryType.initial_information),
+                        "entry_type": str(const.ComplaintEntryType.generic_information),
                     },
                     {
-                        "entry_type": const.ComplaintEntryType.initial_information,
+                        "entry_type": const.ComplaintEntryType.generic_information,
                         "concerned_id": None,
                         "parent_id": None,
                     },
@@ -1371,6 +1412,6 @@ class TestComplaintValidation(TestValidationBase):
             {
                 "creation": True,
                 "passthrough": True,
-                "entry_type": const.ComplaintEntryType.initial_information,
+                "entry_type": const.ComplaintEntryType.generic_information,
             },
         )

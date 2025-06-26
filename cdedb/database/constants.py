@@ -523,8 +523,7 @@ class ComplaintEntryType(CdEIntEnum):
     from the logs instead. Those can not be replaced later on.
     """
     # Initial
-    initial_information = 101  #:
-    additional_information = 151  #:
+    generic_information = 101  #:
 
     # Statements
     provisional_statement_given = 201  #:
@@ -643,15 +642,14 @@ class ComplaintEntryType(CdEIntEnum):
     def get_icon(self) -> str:
         et = ComplaintEntryType
         return {
-            et.initial_information: "info",
-            et.additional_information: "info",
+            et.generic_information: "info",
             et.provisional_statement_given: "file-lines",
             et.statement_signed: "file-signature",
             et.statement_cleared: "file-export",
             et.statement_sent: "envelope-open-text",
             et.statement_received: "box-archive",
             et.agreement: "handshake",
-            et.agreement_measure: "shield-halved",
+            et.agreement_measure: "shield-heart",
             et.provisional_to_arbcom: "scale-unbalanced",
             et.provisional_measure: "bandage",
             et.definite_to_arbcom: "scale-unbalanced",
@@ -662,6 +660,36 @@ class ComplaintEntryType(CdEIntEnum):
             et.synthesis: "clipboard-check",
             et.revocation_explanation: "rotate-left",
         }[self]
+
+    @property
+    def right_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.statement_signed: n_("signed"),
+            et.statement_cleared: n_("cleared"),
+            et.statement_sent: n_("sent"),
+            et.statement_received: n_("received"),
+            et.agreement_measure: n_("measure"),
+            et.provisional_measure: n_("measure"),
+            et.definite_measure: n_("measure"),
+            et.measure_explanation: n_("explanation"),
+            et.measure_comment: n_("comment"),
+            et.revocation_explanation: n_("revoked"),
+        }.get(self, str(self))
+
+    @property
+    def left_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.provisional_statement_given: n_("Statement_[[in a case]]"),
+            et.agreement: n_("Agreement"),
+            et.agreement_measure: n_("Measure"),
+            et.provisional_to_arbcom: n_("Arbcom"),
+            et.provisional_measure: n_("Provisional measure"),
+            et.definite_to_arbcom: n_("Arbcom"),
+            et.definite_measure: n_("Measure"),
+            et.revocation_explanation: n_("Revocation"),
+        }.get(self, str(self))
 
 
 @enum.unique

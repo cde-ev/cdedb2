@@ -561,7 +561,7 @@ CREATE TABLE complaint.entry_versions (
     id            serial PRIMARY KEY,
     entry_id      integer NOT NULL REFERENCES complaint.entries(id),
     submitted_by  integer NOT NULL REFERENCES core.personas(id),
-    description   varchar, -- encrypted
+    description   bytea, -- encrypted
     length        integer,
     CONSTRAINT complaint_entry_empty_description_length
         CHECK ((description IS NULL) = (length IS NULL)),

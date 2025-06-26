@@ -1,0 +1,56 @@
+{% set sidenav_active='show_measures' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% trans %}
+        Measure Overview
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/measures"), gettext("Measure Overview")) }}
+{% endblock %}
+
+{% block content %}
+    <div>
+    {% for measure in measures.values() %}
+        {% set entry = entries[measure.entry_id] %}
+        <div class="list-group list-group-hover nosp">
+            <div id="entry{{ measure.id }}" class="list-group-item">
+                <div class="float-right text-right">
+                    {{ measure.timestamp|datetime(lang=lang) -}}
+                    {% if measure.etime %}
+                        – {{ measure.etime|datetime(lang=lang) }}
+                    {% endif %}
+                </div>
+                <strong>
+                    {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
+                    {% trans concerned=util.persona_anchor(personas[entry['concerned_id']], icon='user') %}
+                        Measure against {{ concerned }}
+                    {% endtrans %}
+                </strong>
+                <br />
+                <span class="text-muted">
+                    {{ gettext("by") }}
+                    {% for author_id in measure.authors -%}
+                        {%- if not loop.first -%}, {% endif -%}
+                        {{ util.persona_anchor(personas[author_id]) -}}
+                    {% endfor %}
+                    –
+                    {% trans case=util.href(
+                            cdedblink("core/show_case", {'case_id': entry['case_id']}),
+                            gettext("Case %s")|s|format(entry['case_id']),
+                            active='complaint_admin' in user.roles)
+                    %}
+                        from {{ case }}
+                    {% endtrans %}
+                </span>
+                <hr class="nosp" />
+                {{ descriptions[measure.id] }}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}

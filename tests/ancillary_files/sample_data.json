@@ -4776,7 +4776,7 @@
             "case_id": 1,
             "persona_id": 4,
             "companion_id": null,
-            "change_note": "ComplaintInvolvedType.affected"
+            "change_note": "Betroffene"
         },
         {
             "id": 3,
@@ -4786,7 +4786,7 @@
             "case_id": 1,
             "persona_id": 2,
             "companion_id": null,
-            "change_note": "ComplaintInvolvedType.target"
+            "change_note": "Zielpersonen"
         },
         {
             "id": 4,

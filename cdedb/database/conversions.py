@@ -44,7 +44,7 @@ def to_db_input(obj: Any) -> Union[Any, list[Any]]:
     like integers, but here they have to be handled explicitly.
     """
     if (isinstance(obj, collections.abc.Iterable)
-            and not isinstance(obj, (str, collections.abc.Mapping))):
+            and not isinstance(obj, (str, bytes, collections.abc.Mapping))):
         return [to_db_input(x) for x in obj]
     elif isinstance(obj, enum.Enum):
         return obj.value

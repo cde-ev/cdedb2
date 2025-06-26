@@ -59,6 +59,7 @@ ignore = [
 "tests/other_tests/__init__.py" = ["F401"]
 "cdedb/backend/complaint.py" = ["F401"]
 "cdedb/frontend/core/complaint.py" = ["F401"]
+"tests/frontend_tests/complaint.py" = ["F401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

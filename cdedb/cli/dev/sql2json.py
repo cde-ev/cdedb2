@@ -7,6 +7,7 @@ import logging
 import re
 from typing import Any
 
+import cdedb.models.complaint as models_complaint
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import CdEDBObject, nearly_now
 from cdedb.common.sorting import xsorted
@@ -125,6 +126,11 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
                     sorted_entity[field] = {k: value[k] for k in xsorted(value)}
                 else:
                     sorted_entity[field] = value
+                if table == models_complaint.ComplaintEntryVersion.database_table:
+                    if field == "description" and value:
+                        sorted_entity[field] = models_complaint.ComplaintEntryVersion.decrypt(
+                            bytes(value), secrets["COMPLAINT_SECRET"]
+                        )
             sorted_entities.append(sorted_entity)
 
         full_sample_data[table] = sorted_entities

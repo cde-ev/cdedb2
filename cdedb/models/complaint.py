@@ -5,7 +5,10 @@ import datetime
 import functools
 import itertools
 from collections.abc import Collection
+from itertools import chain
 from typing import Self, Union
+
+from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -91,6 +94,16 @@ class Case(CdEDataclass):
                 ret[companion] = active_accompanied
         return ret
 
+    def adverse_companions(
+        self, involved_type: const.ComplaintInvolvementType
+    ) -> set[int]:
+        return set(
+            chain.from_iterable(
+                self.companions_by_involved_type.get(type_, set())
+                for type_ in involved_type.adverse()
+            )
+        )
+
     def is_visible_for(self, user: User) -> bool:
         """Whether a user can see a case in principle.
 
@@ -103,6 +116,7 @@ class Case(CdEDataclass):
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
             ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
+            ret.update(e['companion_id'] for e in log_entries if e['companion_id'])
         for entry in self.entries.values():
             if entry.concerned_id:
                 ret.add(entry.concerned_id)
@@ -124,7 +138,7 @@ class Case(CdEDataclass):
         )
 
     @property
-    def is_confirmed(self):
+    def is_confirmed(self) -> bool:
         return any(
             entry.entry_type == const.ComplaintEntryType.statement_signed
             and entry.active_version
@@ -168,7 +182,7 @@ class Case(CdEDataclass):
             new_involved[involved_type].add(involved[0])
             if involved[2]:
                 data["informed_involved"].add(involved[0])
-        data["involved"] = new_involved
+        data["involved"] = dict(sorted(new_involved.items()))
 
         new_companions: dict[int, set[int]] = {}
         withdrawn_companions: dict[int, set[int]] = {}
@@ -328,6 +342,14 @@ class ComplaintEntryVersion(CdEDataclass):
     authors: vtypes.CdedbIDList = dataclasses.field(
         metadata={"request_include": True, "database_exclude": True}
     )
+
+    @staticmethod
+    def encrypt(description: str, key: bytes) -> bytes:
+        return Fernet(key).encrypt(description.encode("utf-8"))
+
+    @staticmethod
+    def decrypt(description: bytes, key: bytes) -> str:
+        return Fernet(key).decrypt(description).decode("utf-8")
 
     def get_sortkey(self) -> Sortkey:
         return (self.timestamp, self.ctime)

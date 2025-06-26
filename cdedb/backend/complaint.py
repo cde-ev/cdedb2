@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import base64
 import datetime
 from collections.abc import Collection
 from typing import Any, Optional, Protocol, cast
+
+import psycopg2.extensions
+from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -18,6 +22,7 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
+    BytesLike,
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
@@ -32,6 +37,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
 
@@ -56,6 +62,27 @@ def _format_date_change_note(
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
+
+    def __init__(self) -> None:
+        super().__init__()
+        secrets = SecretsConfig()
+        complaint_secret = secrets["COMPLAINT_SECRET"]
+
+        def encrypt(description: str | None) -> bytes | None:
+            if description is None:
+                return None
+            return models.ComplaintEntryVersion.encrypt(description, complaint_secret)
+
+        self.encrypt = staticmethod(encrypt)
+
+        def decrypt(description: BytesLike | None) -> str | None:
+            if description is None:
+                return None
+            if not isinstance(description, bytes):
+                description = bytes(description)
+            return models.ComplaintEntryVersion.decrypt(description, complaint_secret)
+
+        self.decrypt = staticmethod(decrypt)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -84,6 +111,18 @@ class ComplaintBackend(AbstractBackend):
             "change_note": change_note,
         }
         return self.sql_insert(rs, "complaint.log", data)
+
+    @access("complaint_admin")
+    def complaint_log_case_detected(
+        self, rs: RequestState, *, case_id: int, persona_id: int
+    ) -> int:
+        with Atomizer(rs):
+            return self.complaint_log(
+                rs=rs,
+                code=const.ComplaintLogCodes.concealed_case_detected,
+                case_id=case_id,
+                persona_id=persona_id,
+            )
 
     @access("complaint_admin")
     def retrieve_log(
@@ -237,6 +276,7 @@ class ComplaintBackend(AbstractBackend):
         self.affirm_atomized_context(rs)
         if data.get("description"):
             data["length"] = len(data["description"])
+            data["description"] = self.encrypt(data["description"])
         else:
             data["length"] = None
         authors = data.pop("authors")
@@ -374,12 +414,24 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
             entry = self.get_case(rs, case_id).entries[entry_id]
+            if entry.active_children:
+                raise ValueError("Cannot delete entry with active children.")
             if entry.entry_type == const.ComplaintEntryType.revocation_explanation:
                 self.sql_update(
                     rs,
                     models.ComplaintEntry.database_table,
                     {'id': entry.parent_id, 'is_revoked': False},
                 )
+                if (
+                    entry.parent
+                    and entry.parent.entry_type
+                    == const.ComplaintEntryType.revocation_explanation
+                ):
+                    self.sql_update(
+                        rs,
+                        models.ComplaintEntry.database_table,
+                        {'id': entry.parent.parent_id, 'is_revoked': True},
+                    )
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
     @access("complaint_admin")
@@ -408,6 +460,8 @@ class ComplaintBackend(AbstractBackend):
 
             if entry.is_revoked:
                 raise ValueError(n_("Entry already revoked."))
+            if not entry.active_version:
+                raise ValueError(n_("Entry has no active version."))
 
             code = self.sql_update(
                 rs,
@@ -650,10 +704,7 @@ class ComplaintBackend(AbstractBackend):
             involved_id = involved["id"]
             involved_type = const.ComplaintInvolvementType(involved["involved_type"])
 
-            if any(
-                companion_ids & case.companions_by_involved_type.get(type_, set())
-                for type_ in involved_type.adverse()
-            ):
+            if companion_ids & case.adverse_companions(involved_type):
                 raise ValueError(n_("Adverse companion."))
             if companion_ids & case.all_involved.keys():
                 raise ValueError(n_("Involved companion."))
@@ -779,8 +830,9 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        case_id: int,
+        case_id: int | None = None,
         entry_id: int | None = None,
+        version_ids: Collection[int] | None = None,
         visible: bool | None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
@@ -790,15 +842,24 @@ class ComplaintBackend(AbstractBackend):
                 {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON versions.entry_id = entries.id
-            WHERE
-                entries.case_id = %(case_id)s
         """
-        params: dict[str, DatabaseValue_s] = {
-            "case_id": case_id,
-        }
+        params: dict[str, DatabaseValue_s] = {}
+        conditions = []
+
+        if case_id is not None:
+            conditions.append("entries.case_id = %(case_id)s")
+            params["case_id"] = case_id
+
+        if entry_id is not None:
+            conditions.append("entry_id = %(entry_id)s")
+            params['entry_id'] = entry_id
+
+        if version_ids is not None:
+            conditions.append("versions.id = ANY(%(version_ids)s)")
+            params['version_ids'] = version_ids
 
         if visible is not None:
-            query += " AND entries.entry_type = ANY(%(entry_types)s)"
+            conditions.append("entries.entry_type = ANY(%(entry_types)s)")
             if visible:
                 params["entry_types"] = const.ComplaintEntryType.visible_types()
             else:
@@ -806,17 +867,15 @@ class ComplaintBackend(AbstractBackend):
 
         if deleted is not None:
             if deleted:
-                query += " AND versions.dtime IS NOT NULL"
+                conditions.append("versions.dtime IS NOT NULL")
             else:
-                query += " AND versions.dtime IS NULL"
+                conditions.append("versions.dtime IS NULL")
 
-        if entry_id is not None:
-            query += " AND entry_id = %(entry_id)s"
-            params['entry_id'] = entry_id
+        if conditions:
+            query += "WHERE " + " AND ".join(conditions)
 
-        decrypt = lambda x: x
         return {
-            e["id"]: decrypt(e["description"])
+            e["id"]: self.decrypt(e["description"]) or ""
             for e in self.query_all(rs, query, params)
         }
 
@@ -839,10 +898,15 @@ class ComplaintBackend(AbstractBackend):
             rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
         )
 
-    def _log_unlock(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+    def _log_unlock(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
         ret = self.complaint_log(
-            rs=rs, code=const.ComplaintLogCodes.case_unlocked, case_id=case_id
+            rs=rs,
+            code=const.ComplaintLogCodes.case_unlocked,
+            case_id=case_id,
+            change_note=reason,
         )
         query = f"""
             INSERT INTO {models.AccessLog.database_table} (case_id, persona_id)
@@ -883,11 +947,13 @@ class ComplaintBackend(AbstractBackend):
         # Unlock has timed out.
         return False
 
-    def _unlock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
+    def _unlock_case(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> DefaultReturnCode:
         self.affirm_atomized_context(rs)
 
         if not self.is_unlocked(rs, case_id):
-            ret = self._log_unlock(rs, case_id=case_id)
+            ret = self._log_unlock(rs, case_id=case_id, reason=reason)
         else:
             # Update last access time.
             query = f"""
@@ -901,19 +967,19 @@ class ComplaintBackend(AbstractBackend):
         return ret
 
     @access("complaint_admin")
-    def unlock_case(self, rs: RequestState, case_id: int) -> dict[int, str]:
+    def unlock_case(
+        self, rs: RequestState, case_id: int, reason: str
+    ) -> DefaultReturnCode:
         """Log access to locked data, decrypt the descriptions and return them.
 
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
         with Atomizer(rs):
-            if not self._unlock_case(rs, case_id):
-                raise RuntimeError
-            return self._get_descriptions(rs, case_id=case_id, visible=False)
+            return self._unlock_case(rs, case_id, reason)
 
     @access("complaint_admin")
-    def get_all_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
+    def get_hidden_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
         """Return all descriptions if case already unlocked.
 
         :returns: Mapping of entry *version* ids to descriptions.
@@ -1010,7 +1076,7 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("complaint_admin")
+    @access("complaint_admin", "complaint.enforcer")
     def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> dict[int, models.ComplaintEntryVersion]:
@@ -1033,7 +1099,7 @@ class ComplaintBackend(AbstractBackend):
             query += """
                 AND (
                     NOT entries.is_revoked
-                    AND versions.etime IS NULL
+                    AND (versions.etime > now() OR versions.etime IS NULL)
                 ) = %(is_active)s
             """
             params["is_active"] = is_active
@@ -1046,3 +1112,76 @@ class ComplaintBackend(AbstractBackend):
             ),
         )
         return models.ComplaintEntryVersion.many_from_database(entry_version_data)
+
+    @access("complaint_admin", "complaint.enforcer")
+    def list_measures(
+        self,
+        rs: RequestState,
+        entry_types: set[const.ComplaintEntryType] | None = None,
+        is_active: bool | None = True,
+    ) -> dict[int, int]:
+        if entry_types is None:
+            entry_types = const.ComplaintEntryType.measure_types()
+        else:
+            entry_types = affirm_set(const.ComplaintEntryType, entry_types)
+            if not entry_types <= const.ComplaintEntryType.measure_types():
+                raise ValueError(n_("Can only list measures."))
+
+        query = f"""
+            SELECT versions.id, entries.case_id
+            FROM {models.ComplaintEntryVersion.database_table} AS versions
+                JOIN {models.ComplaintEntry.database_table} AS entries
+                    ON entries.id = versions.entry_id
+            WHERE
+                entries.entry_type = ANY(%(entry_types)s)
+                AND versions.dtime IS NULL
+        """
+        params: dict[str, DatabaseValue_s] = {
+            "entry_types": entry_types,
+        }
+
+        if is_active is not None:
+            query += """
+                AND (
+                    NOT entries.is_revoked
+                    AND (versions.etime > now() OR versions.etime IS NULL)
+                ) = %(is_active)s
+            """
+            params["is_active"] = is_active
+
+        return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
+
+    @access("complaint_admin", "complaint.enforcer")
+    def get_measures(
+        self, rs: RequestState, measure_ids: Collection[int]
+    ) -> tuple[
+        models.CdEDataclassMap[models.ComplaintEntryVersion],
+        dict[int, str],
+        dict[int, CdEDBObject],
+    ]:
+        """Get relevant information on specified measures
+
+        :returns: the associated entry versions, their descriptions, and
+            some keys on the respective entries.
+        """
+        measure_ids = affirm_set(vtypes.ID, measure_ids)
+        version_data = self.query_all(
+            rs,
+            *models.ComplaintEntryVersion.get_select_query(
+                measure_ids, entity_key="id"
+            ),
+        )
+        versions = models.ComplaintEntryVersion.many_from_database(version_data)
+        descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
+        entry_ids = {e.entry_id for e in versions.values()}
+        entry_data = self.sql_select(
+            rs,
+            models.ComplaintEntry.database_table,
+            ['id', 'concerned_id', 'entry_type', 'case_id'],
+            entry_ids,
+        )
+        for e in entry_data:
+            e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
+        entries = {e['id']: e for e in entry_data}
+
+        return versions, descriptions, entries

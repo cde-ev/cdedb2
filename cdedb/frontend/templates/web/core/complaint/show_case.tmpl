@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
@@ -107,10 +108,10 @@
         </div>
         {{ util.output_errors('persona_ids', wrapper=True) }}
     </form>
-    <div class="row">
     {% for list in ambience['case'].involved.items()|slice(2) %}
+        <div class="row">
         {% for type, involved_ids in list %}
-            <div class="col-sm-6">
+            <div id="involved_{{ type.name }}" class="col-sm-6">
                 {% if involved_ids %}
                     {% call util.bootstrap_panel(
                         title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
@@ -120,6 +121,11 @@
                             {# assembly and ml users are missing here #}
                             {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
                                 <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
+                            {% endif %}
+                            {% if involved_id in ambience['case'].informed_involved %}
+                                <small class="text-muted">
+                                    {{ gettext("(is informed)") }}
+                                </small>
                             {% endif %}
                             <div class="list-button-float hide-hover">
                                 {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
@@ -133,7 +139,7 @@
                                         <form
                                                 action="{{ cdedblink("core/uninform_involved", {'persona_id': involved_id}) }}"
                                                 method="POST"
-                                                id="uninforminvolvedform"
+                                                id="uninforminvolvedform{{ involved_id }}"
                                                 class="display-inline"
                                             >
                                                 {{ util.anti_csrf_token('core/uninform_involved') }}
@@ -146,7 +152,7 @@
                                         <form
                                             action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
                                             method="POST"
-                                            id="informinvolvedform"
+                                            id="informinvolvedform{{ involved_id }}"
                                             class="display-inline"
                                         >
                                             {{ util.anti_csrf_token('core/inform_involved') }}
@@ -160,7 +166,7 @@
                                 <form
                                     action="{{ cdedblink("core/remove_involved", {'persona_id': involved_id}) }}"
                                     method="POST"
-                                    id="removeinvolvedform"
+                                    id="removeinvolvedform{{ involved_id }}"
                                     class="display-inline"
                                 >
                                     {{ util.anti_csrf_token('core/remove_involved') }}
@@ -209,36 +215,13 @@
                 {% endif %}
             </div>
         {% endfor %}
+        </div>
     {% endfor %}
-    </div>
 
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
         {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
                      aclass="btn btn-sm btn-success", icon="plus") }}
-        {% if is_locked %}
-            <form action="{{ cdedblink("core/unlock_case") }}"
-                method="POST"
-                id="unlockcaseform"
-                class="display-inline"
-            >
-                {{ util.anti_csrf_token('core/unlock_case') }}
-                {{ util.input_submit(label=gettext("Unlock descriptions"),
-                                     aclass="btn btn-sm btn-primary",
-                                     icon="unlock") }}
-            </form>
-        {% else %}
-            <form action="{{ cdedblink("core/lock_case") }}"
-                method="POST"
-                id="lockcaseform"
-                class="display-inline"
-            >
-                {{ util.anti_csrf_token('core/lock_case') }}
-                {{ util.input_submit(label=gettext("Lock descriptions"),
-                                     aclass="btn btn-sm btn-primary",
-                                     icon="lock") }}
-            </form>
-        {% endif %}
         {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
                      + "#Events_[[in_a_complaint]]"|s,
                      gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
@@ -246,8 +229,38 @@
                      aclass="btn btn-sm btn-info", icon="clock", readonly=is_locked) }}
     </div>
 
-    <div class="list-group list-group-hover">
+    {% if is_locked %}
+        <form action="{{ cdedblink("core/unlock_case") }}"
+            method="POST"
+            id="unlockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/unlock_case') }}
+            <div class="input-group">
+                {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
+                <div class="input-group-btn">
+                    {{ util.input_submit(label=gettext("Unlock descriptions"),
+                                         aclass="btn btn-sm btn-primary", icon="unlock")
+                    }}
+                </div>
+            </div>
+            {{ util.output_errors('unlockcaseform') }}
+        </form>
+    {% else %}
+        <form action="{{ cdedblink("core/lock_case") }}"
+            method="POST"
+            id="lockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/lock_case') }}
+            {{ util.input_submit(label=gettext("Lock descriptions"),
+                                 aclass="btn btn-sm btn-primary", icon="lock") }}
+        </form>
+    {% endif %}
+
+    <div>
     {% for entry in all_entries %}
+        <div class="list-group list-group-hover nosp">
         {% if entry.entry_type %}
             <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked %} list-group-item-muted{% endif %}">
                 <div class="float-right text-right">
@@ -295,15 +308,7 @@
                     </div>
                 </div>
 
-                <strong>
-                    {{ util.make_icon(entry.entry_type.get_icon()) }}
-                    {{ entry.entry_type.name }}
-                </strong>
-                {% if entry.concerned_id %}
-                    {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
-                         (for {{ concerned }})
-                    {% endtrans %}
-                {% endif %}
+                {{ generic_complaint.pretty_entry_heading(entry) }}
                 <br />
                 {{ gettext("by") }}
                 {% for author_id in entry.active_version.authors -%}
@@ -320,7 +325,7 @@
                 {% if entry.all_versions|length > 1 %}
                     {{ util.href(
                         cdedblink("core/case_history", {'case_id': ambience['case'].id}) + "#entry"|s + entry.id|string,
-                        gettext("%s previous versions")|format(entry.all_versions|length - 1),
+                        gettext("%s previous versions.")|format(entry.all_versions|length - 1),
                         readonly=is_locked
                     ) }}
                     <br />
@@ -344,20 +349,12 @@
                         {{ descriptions[entry.active_version.id]|md }}
                     </p>
                 {% endif %}
-                {% if entry.parent %}
-                    <hr class="nosp" />
-                    ◂
-                    {% trans label=util.href("#entry" + entry.parent.id|string, entry.parent.entry_type.name),
-                             stamp=entry.parent.active_version.timestamp|date(lang=lang) %}
-                        {{ label }} at {{ stamp }}
-                    {% endtrans %}
-                {% endif %}
                 {% if entry.active_children %}
                     <hr class="nosp" />
                     ▸
                     {% for child in entry.active_children %}
                         {%- if not loop.first %}, {% endif %}
-                        {% trans label=util.href("#entry" + child.id|string, child.entry_type.name),
+                        {% trans label=util.href("#entry" + child.id|string, gettext(child.entry_type.right_shortname)),
                                  stamp=child.active_version.timestamp|date(lang=lang) %}
                             {{ label }} at {{ stamp }}
                         {% endtrans %}
@@ -392,6 +389,7 @@
                 {% endif %}
             </div>
         {% endif %}
+        </div>
     {% endfor %}
     </div>
 {% endblock %}

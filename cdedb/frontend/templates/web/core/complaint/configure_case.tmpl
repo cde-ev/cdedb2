@@ -55,7 +55,7 @@
                     [], false, false, "{{ gettext("ID, name, email") }}"
                 );
             </script>
-            {{ util.form_input_checkbox(name="is_grave", label=gettext("is affected")) }}
+            {{ util.form_input_checkbox(name="is_affected", label=gettext("is affected")) }}
             {{ util.form_input_text(name="affected_ids", label=gettext("Further Affected"), anid="input-affected_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">
