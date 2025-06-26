@@ -658,7 +658,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
-                        ) -> list[tuple[enum.Enum, str]] | dict[str, list[tuple[enum.Enum, str]]]:
+                        ) -> list[tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -691,7 +691,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         grouped[group_label].append((value, label))
     if len(grouped) == 1:
         return list(grouped.values())[0]
-    return grouped
+    return grouped  # type: ignore[return-value]
 
 
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
