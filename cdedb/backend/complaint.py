@@ -414,6 +414,8 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
             entry = self.get_case(rs, case_id).entries[entry_id]
+            if entry.active_children:
+                raise ValueError("Cannot delete entry with active children.")
             if entry.entry_type == const.ComplaintEntryType.revocation_explanation:
                 self.sql_update(
                     rs,
@@ -458,6 +460,8 @@ class ComplaintBackend(AbstractBackend):
 
             if entry.is_revoked:
                 raise ValueError(n_("Entry already revoked."))
+            if not entry.active_version:
+                raise ValueError(n_("Entry has no active version."))
 
             code = self.sql_update(
                 rs,
