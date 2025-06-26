@@ -624,6 +624,18 @@
 {%- endmacro %}
 
 
+{% macro _select_options(options, former_value, defaultvalue) %}
+    {% for value, label in options %}
+        <option value="{{ value }}"
+            {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
+                selected="selected"
+            {% endif %}>
+            {{- label -}}
+        </option>
+    {% endfor %}
+{% endmacro %}
+
+
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
         aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
     <select{{ dict(
@@ -639,22 +651,27 @@
                 {{- nulloption -}}
             </option>
         {%- endif %}
-        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# Relevant for default: Use default value if key is unset or empty string or none #}
         {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
-        {%- for value, label in entries %}
-            {% if value in ("", none) and defaultvalue %}
-                {# This leads to problems regarding defaultvalues. #}
-                {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
-                    |format(defaultvalue|string, value|string)) }}
-            {% endif %}
-            <option value="{{ value }}"
-                {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
-                    selected="selected"
-                {% endif %}>
-                {{- label -}}
-            </option>
-        {%- endfor %}
+        {% if value in ("", none) and defaultvalue %}
+            {# This leads to problems regarding defaultvalues. #}
+            {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
+                |format(defaultvalue|string, value|string)) }}
+        {% endif %}
+        {%- if entries is mapping %}
+            {%- for group_label, options in entries.items() %}
+                {% if group_label %}
+                    <optgroup label="{{ group_label }}">
+                        {{ _select_options(options, former_value, defaultvalue) }}
+                    </optgroup>
+                {% else %}
+                    {{ _select_options(options, former_value, defaultvalue) }}
+                {% endif %}
+            {%- endfor %}
+        {%- else -%}
+            {% set entries = entries|sort(attribute=1) if sort else entries %}
+            {{ _select_options(entries, former_value, defaultvalue) }}
+        {% endif %}
     </select>
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
