@@ -1,5 +1,5 @@
 """Filter definitions for jinja templates"""
-
+import collections
 import datetime
 import decimal
 import enum
@@ -658,7 +658,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
-                        ) -> list[tuple[enum.Enum, str]]:
+                        ) -> list[tuple[enum.Enum, str]] | dict[str, list[tuple[enum.Enum, str]]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -682,7 +682,16 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
     to_sort = ((entry, prefix + processing(pre(entry)))
                for entry in enum if entry not in exempt)
-    return xsorted(to_sort, key=lambda e: e[0].value)
+    ret = xsorted(to_sort, key=lambda e: e[0].value)
+    grouped = collections.defaultdict(list)
+    for value, label in ret:
+        group_label = value.optgroup_label() if hasattr(value, "optgroup_label") else ""
+        if group_label:
+            group_label = processing(group_label)
+        grouped[group_label].append((value, label))
+    if len(grouped) == 1:
+        return list(grouped.values())[0]
+    return grouped
 
 
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
