@@ -1038,13 +1038,13 @@ def make_registration_query_spec(event: "models.Event",
             QuerySpecEntry("datetime", n_("Last Modification Time"), group_base=n_("Registration")),
         **{
             f"fee{fee.id}.amount": QuerySpecEntry(
-                "money", n_("Personalized Amount"), fee.title, group_base=n_("Participation Fee"))
+                "money", n_("Personalized Amount"), fee.title, group_base=n_("Fee"))
             for fee in event.fees.values() if fee.is_personalized()
         },
         **{
             f"amount_owed.{kind.name}": QuerySpecEntry(
                 "money", title_base=str(kind), title_prefix=n_("Amount Owed"),
-                translate_prefix=True, group_base=n_("Participation Fee"),
+                translate_prefix=True, group_base=n_("Fee"),
             )
             for kind in const.EventFeeType
         },
