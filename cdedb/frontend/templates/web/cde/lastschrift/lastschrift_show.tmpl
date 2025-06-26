@@ -12,7 +12,7 @@
 
 {% block title -%}
     {% trans %}Direct Debit Authorization{% endtrans %}
-    {{ util.persona_name(ambience['persona']) }}
+    {{ ambience['persona']|persona_name }}
 {%- endblock %}
 
 {% block breadcrumb %}
@@ -21,13 +21,13 @@
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-                            util.persona_name(ambience['persona']), active=True,
+                            ambience['persona']|persona_name, active=True,
                             icon="euro-sign") }}
 {% endblock %}
 
 {% block heading %}
     {{ util.context_heading(gettext("Direct Debit Authorization"),
-                            util.persona_name(ambience['persona']), 'user', gettext("User")) }}
+                            ambience['persona']|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% macro print_permit(lastschrift) %}
@@ -39,7 +39,7 @@
     {% if main_persona['legal_given_names'] %}
         <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
         <dd>
-            {{ util.persona_name(main_persona, use_legal_name=True, with_titles=True) }}
+            {{ main_persona|persona_name(use_legal_name=True, with_titles=True) }}
         </dd>
     {% endif %}
     {% if "finance" in user.admin_views %}

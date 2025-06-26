@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         19,
-        2
+        3
     ],
     "core.personas": {
         "1": {

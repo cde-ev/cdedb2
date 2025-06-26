@@ -88,8 +88,8 @@
                 {% trans %}
                     Your fee consists of:
                 {% endtrans %}
-            </p>
             {{ generic_event.fee_breakdown_by_kind() }}
+            </p>
         {% else %}
             <p>
                 {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}

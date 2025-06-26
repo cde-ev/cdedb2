@@ -168,11 +168,11 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
-            entities = self.eventproxy.get_courses(rs, ids)
-            labels = {course_id: f"{course['nr']} {course['shortname']}"
-                      for course_id, course in entities.items()}
-            ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
+            courses = self.eventproxy.get_courses(rs, ids)
+            # TODO remove after migrating lodgements and registrations to dataclasses
+            entities = {course.id: course.as_dict() for course in courses.values()}
+            labels = {course.id: course.shortlabel for course in courses.values()}
+            ordered_ids = list(courses.keys())
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)

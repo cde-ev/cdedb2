@@ -8,7 +8,7 @@
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
-    {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
+    {% trans name=persona|persona_name, title=ambience['event']['title'] -%}
     	Registration by {{ name }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -16,10 +16,10 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), active=True, icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, active=True, icon="user") }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(util.persona_name(persona, include_nickname=True), ambience['event']['title'],
+    {{ util.context_heading(persona|persona_name(include_nickname=True), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
@@ -38,12 +38,12 @@
     <dl class="dl-horizontal">
         <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
         <dd>
-            {{ util.persona_name(persona, include_nickname=True) }}
+            {{ persona|persona_name(include_nickname=True) }}
         </dd>
         {% if persona['legal_given_names'] %}
             <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
             <dd>
-                {{ util.persona_name(persona, use_legal_name=True, with_titles=True) }}
+                {{ persona|persona_name(use_legal_name=True, with_titles=True) }}
             </dd>
         {% endif %}
         <dt title="{% trans %}CdEDB-ID{% endtrans %}">{% trans %}CdEDB-ID{% endtrans %}</dt>
@@ -88,7 +88,7 @@
     </dl>
     {% if persona['id'] in ambience['event']['orgas'] %}
     <p class="text-info">
-        {% trans given_names=util.persona_name(persona, with_family_name=False) %}
+        {% trans given_names=persona|persona_name(with_family_name=False) %}
         	{{ given_names }} is Orga of this event.
         {% endtrans %}
     </p>
@@ -102,10 +102,10 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set violations = constraint_violations['violations'] %}
+    {% set violations = constraint_violations['violations'].get(registration_id=ambience['registration']['id']) %}
     {% if violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(violations.max_severity) %}
-            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration") }}
+            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration", min_severity=min_severity) }}
         {% endcall %}
     {% endif %}
 

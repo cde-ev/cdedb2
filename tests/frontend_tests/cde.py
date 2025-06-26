@@ -2303,9 +2303,21 @@ class TestCdEFrontend(FrontendTest):
     def test_money_transfers_waived_fee(self) -> None:
         # TODO Make_change_persona_realms actually usable, and do that instead.
         # An upgrade from event to cde realm should not require any additional keys.
-        self.traverse("Mitglieder", "Überweisungen eintragen")
+        self.get("/event/event/1/registration/add")
+        f = self.response.forms["addregistrationform"]
+        f["persona.persona_id"] = "DB-4-3"
+        self.submit(f)
+        f["persona.persona_id"] = "DB-23-X"
+        self.submit(f)
+        self.get("/cde/transfers")
         f = self.response.forms["transfersform"]
-        f["transfers"] = "01.03.2025;461,49;DB-5-1;Eventis;Emilia;TestAka"
+        f["transfers"] = """
+            01.03.2025;461,49;DB-5-1;Eventis;Emilia;TestAka
+            02.03.2025;584,48;DB-4-3;Dino;Daniel;TestAka
+            02.03.2025;8;DB-4-3;Dino;Daniel;Mitgliedsbeitrag
+            04.03.2025;8;DB-23-X;Wahlleitung;Werner;Mitgliedsbeitrag
+            03.03.2025;584,48;DB-23-X;Wahlleitung;Werner;TestAka
+        """
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
@@ -2313,6 +2325,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("461,49 €", div='amount-owed')
         self.assertEqual(decimal.Decimal("461.49"), self.event.get_registration(self.key, 2)['amount_owed'])
+        self.get('/event/event/1/registration/1001/fee/summary')
+        self.assertNonPresence("Externenbeitrag", div='amount-owed')
+        self.assertPresence("584,48 €", div='amount-owed')
+        self.assertEqual(decimal.Decimal("584.48"), self.event.get_registration(self.key, 1001)['amount_owed'])
+        self.get('/event/event/1/registration/1002/fee/summary')
+        self.assertPresence("Externenbeitrag", div='amount-owed')
+        self.assertPresence("589,48 €", div='amount-owed')
+        self.assertEqual(decimal.Decimal("589.48"), self.event.get_registration(self.key, 1002)['amount_owed'])
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
@@ -2681,9 +2701,8 @@ class TestCdEFrontend(FrontendTest):
     def test_show_past_event_privacy(self) -> None:
 
         def _traverse_back() -> None:
-            self.traverse({'description': 'Mitglieder'},
-                          {'description': 'Verg. Veranstaltungen'},
-                          {'description': 'PfingstAkademie 2014'})
+            self.traverse(
+                'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
 
         _traverse_back()
         self.assertTitle("PfingstAkademie 2014")
@@ -2722,9 +2741,9 @@ class TestCdEFrontend(FrontendTest):
         # links to non-searchable users are only displayed for admins
         if self.user_in("vera"):
             # admin
-            self.traverse({'description': 'Charly Clown'})
+            self.traverse('Charly Clown')
             _traverse_back()
-            self.traverse({'description': 'Emilia Eventis'})
+            self.traverse(re.escape('Emilia (Emmy) Eventis'))
             _traverse_back()
         else:
             # normal members
@@ -2746,11 +2765,10 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'})
+        self.traverse(
+            'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': self.user['default_name_format']})
+        self.traverse(self.user['given_names'])
 
     @as_users("anton", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_orgas(self) -> None:
@@ -2768,7 +2786,7 @@ class TestCdEFrontend(FrontendTest):
             self.traverse({'description': 'Ferdinand'})
         else:
             self.assertPresence("Charly Clown", div="orgas")
-            self.assertPresence("Emilia Eventis", div="orgas")
+            self.assertPresence("Emilia (Emmy) Eventis", div="orgas")
             self.assertPresence("Ferdinand Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")
@@ -2865,11 +2883,10 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_change_past_course(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'},
-                      {'description': 'Swish -- und alles ist gut'})
-        self.assertPresence("Bertå Beispiel", div='list-participants')
+        self.traverse(
+            'Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014',
+            'Swish -- und alles ist gut')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='list-participants')
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014) bearbeiten")
         f = self.response.forms['changecourseform']
@@ -2878,8 +2895,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Omph (PfingstAkademie 2014)")
         self.assertPresence("Loud and proud.", div='description', exact=True)
-        self.assertPresence(USER_DICT['berta']['default_name_format'],
-                            div='list-participants')
+        self.assertPresence("Bertå (Bindi) Beispiel", div='list-participants')
 
     @as_users("vera")
     def test_create_past_course(self) -> None:

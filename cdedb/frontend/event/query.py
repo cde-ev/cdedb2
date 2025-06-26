@@ -117,7 +117,7 @@ class EventQueryMixin(EventBaseFrontend):
             for course_stat in EventCourseStatistic:
                 _tracks: dict[int, set[int]] = {
                     track_id: set(
-                        course['id'] for course in courses.values()
+                        course.id for course in courses.values()
                         if course_stat.test(rs.ambience['event'], course, track_id))
                     for track_id in tracks
                 }
@@ -180,7 +180,7 @@ class EventQueryMixin(EventBaseFrontend):
         This is a pretty versatile method building on the query module.
         """
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
@@ -443,7 +443,7 @@ class EventQueryMixin(EventBaseFrontend):
                      ) -> Response:
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)

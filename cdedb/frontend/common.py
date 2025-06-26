@@ -110,7 +110,6 @@ from cdedb.common import (
     get_mandatory_form_fields,
     glue,
     json_serialize,
-    make_persona_name,
     make_proxy,
     merge_dicts,
     now,
@@ -435,7 +434,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
-        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -1421,7 +1419,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+            vtypes.CdedbID, (datum['raw']['cdedbid'] or "").strip(), argname="persona_id")
         problems.extend(p)
 
         family_name, p = inspect_validation(
@@ -1495,7 +1493,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         total = amount_paid + amount
                         fee = registration['amount_owed']
 
-                        if (registration['ctime']
+                        if (registration['ctime'] and date
                                 and date < registration['ctime'].date()):
                             infos.append((
                                 'date',
@@ -1815,7 +1813,7 @@ class AmbienceDict(typing.TypedDict):
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
     pevent: NotRequired[CdEDBObject]
-    course: NotRequired[CdEDBObject]
+    course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
@@ -1867,7 +1865,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
