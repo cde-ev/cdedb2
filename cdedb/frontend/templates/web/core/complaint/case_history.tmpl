@@ -88,11 +88,6 @@
                                 {% endtrans %}
                             {% endif %}
                             <br />
-                            {% if version.length %}
-                                {% trans length=version.length %}
-                                    {{ length }} characters.
-                                {% endtrans %}
-                            {% endif %}
                             {% trans ctime=version.ctime|datetime(lang=lang),
                                      submitted_by=util.persona_anchor(personas[version.submitted_by]) %}
                                 Created at {{ ctime }} by {{ submitted_by }}.
