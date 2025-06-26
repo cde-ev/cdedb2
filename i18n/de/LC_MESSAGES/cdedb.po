@@ -659,7 +659,7 @@ msgstr "Unbekannter Eintrag."
 
 #: cdedb/backend/complaint.py:410
 msgid "Entry already revoked."
-msgstr "Eintrag ist bereits gelöscht."
+msgstr "Eintrag ist bereits widerrufen."
 
 #: cdedb/backend/complaint.py:422
 msgid "Revocation entry without parent."
@@ -4919,7 +4919,7 @@ msgstr "Du darfst keine eigene Beteiligung hinzufügen."
 
 #: cdedb/frontend/core/complaint.py:331
 msgid "Some of these users are already involved otherwise."
-msgstr "Einige dieser Nutzer sind andersweitig beteiligt."
+msgstr "Einige dieser Nutzer sind bereits anderweitig beteiligt."
 
 #: cdedb/frontend/core/complaint.py:350
 msgid "Some of these users were already involved."

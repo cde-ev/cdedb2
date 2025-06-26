@@ -788,7 +788,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors() or not version_data:
             return self.revoke_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already revoked."))
             return self.redirect(rs, "core/show_case")
         if (
             rs.ambience['entry'].parent

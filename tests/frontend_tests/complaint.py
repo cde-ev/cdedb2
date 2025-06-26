@@ -1,38 +1,8 @@
 #!/usr/bin/env python3
-import datetime
-import random
-import re
-import urllib.parse
-from typing import Optional, Union
-
-import webtest
-
 import cdedb.database.constants as const
-import cdedb.models.core as models_core
-import cdedb.models.droid as model_droid
-from cdedb.common import (
-    IGNORE_WARNINGS_NAME,
-    CdEDBObject,
-    GenesisDecision,
-    PrivilegeError,
-    get_hash,
-    make_persona_name,
-    now,
-)
-from cdedb.common.exceptions import CryptographyError
-from cdedb.common.query import QueryOperators
-from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
-from cdedb.filter import date_filter, iban_filter
 from tests.common import (
-    USER_DICT,
     FrontendTest,
-    UserIdentifier,
-    UserObject,
     as_users,
-    execsql,
-    get_user,
-    prepsql,
 )
 
 
@@ -43,7 +13,8 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fallarchiv")
         self.assertTitle("Fallarchiv")
 
-        # 1. Check sample case: involved ###
+        # ##
+        # ## 1. Check sample case: involved ##
         f = self.response.forms['complaintsearchform']
         self.submit(f)
         self.assertTitle("Fall 1")
@@ -71,6 +42,16 @@ class TestComplaintFrontend(FrontendTest):
             div='involved_appellant',
             check_div=False
         )
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-4-3"
+        f['involvement_type'] = "ComplaintInvolvementType.appellant"
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Einige dieser Nutzer sind bereits anderweitig beteiligt.",
+            div='addinvolvedform'
+        )
+
+        # TODO Ensure one can add withdrawn companions as involved, but can not reinstate them…
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-1-9"
         f['involvement_type'] = "ComplaintInvolvementType.appellant"
@@ -121,7 +102,8 @@ class TestComplaintFrontend(FrontendTest):
         )
         self.assertNonPresence("Emilia")
 
-        # 3. Check sample case: entries when locked
+        # ##
+        # ## 2. Check sample case: entries when locked ##
         self.assertNonPresence("Philosophiekurs")
         self.assertPresence("53 Zeichen. Erstellt am ", div='entry5')
         self.assertPresence(
@@ -178,11 +160,17 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-19-1"
         f['description'] = "Berta hat herausgefunden, dass sie nicht schnarcht, wenn sie eine Wäscheklammer auf der Nase trägt."
+        pre_submit_response = self.response
         self.submit(f)
         self.assertPresence("99 Zeichen. Erstellt am ", div='entry1002')
         self.assertNonPresence("Wäscheklammer")
         self.assertNoLink("entry/4/revoke")
         self.assertNoLink("entry/1002/revoke")
+
+        # Try revocation once more
+        self.response = pre_submit_response
+        self.submit(f, check_notification=False)
+        self.assertNotification("Eintrag bereits widerrufen.", 'error')
 
         # Excursion part 2: Check measure is no longer displayed in overview
         saved_response = self.response
@@ -191,7 +179,8 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("von")
         self.response = saved_response
 
-        # 4. Check sample case: entries when unlocked
+        # ##
+        # ## 3. Check sample case: entries when unlocked ##
         # TODO unlock
         # self.assertNoLink("entry/2/remove")
         # self.assertNoLink("entry/4/remove")
@@ -201,11 +190,12 @@ class TestComplaintFrontend(FrontendTest):
         #    {'href': "entry/4/replace"},
         # )
         # TODO replace
-        # TODO revoke 1002 and check
+        # TODO revoke 1002 and check, try revoking 1003
         # TODO Excursion part 3: Check revoked measure revocation leads to display
-        # Try deletion
+        # TODO Try deletion (twice) and adding child to deleted parent
 
-        # 5. Create new case and check ###
+        # ##
+        # ## 4. Create new case and check ##
         self.traverse("Fallarchiv", "Fall anlegen")
         f = self.response.forms['configurecaseform']
         f['summary'] = "Die Texte von Schorsch Recklich verstören Menschen."
@@ -232,13 +222,15 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("43 Zeichen", div='entry1003')
         self.assertNonPresence("Tür und Angel")
 
-        # 6. Check case query ###
+        # ##
+        # ## 5. Check case query ##
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
         self.submit(f)
         self.assertPresence("2 Fälle gefunden")
         self.assertPresence("Fall 1 ist bestätigt", div='case1')
         self.assertNonPresence("schwerwiegend")
+        self.assertNonPresence("abgeschlossen")
         self.assertPresence("Zielpersonen Zp: Bertå Beispiel", div='case1')
         self.assertPresence("Betroffene Bt: Daniel Dino", div='case1')
         self.assertPresence("Jemand schnarcht ganz furchtbar.", div='case1')
@@ -253,6 +245,8 @@ class TestComplaintFrontend(FrontendTest):
             'qval_involved.persona_id',
             "Du darfst nicht nach eigener Beteiligung suchen."
         )
+
+        # TODO Test last changed
 
         # Check date search
         f = self.response.forms['complaintsearchform']
@@ -286,6 +280,26 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Fall 1001")
 
+        # Excursion: Add entry without parent
+        self.traverse("Eigenständigen Eintrag hinzufügen")
+        f = self.response.forms['selectentrytypeform']
+        f['entry_type'] = const.ComplaintEntryType.synthesis
+        self.submit(f)
+        # self.assertPresence("Synthese")
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-19-1"
+        f['description'] = "Hat sich nie wieder gemeldet."
+        self.submit(f)
+        self.assertPresence("29 Zeichen.", div='entry1004')
+        self.assertNonPresence("Hat sich nie wieder gemeldet.")
+
+        self.traverse("Fallarchiv")
+        f = self.response.forms['complaintsearchform']
+        self.submit(f)
+        self.assertPresence("ist abgeschlossen", div='case1001')
+
+        # ##
+        # ## 6. Check protection ##
         with self.switch_user("anton"):
             self.traverse("Fallarchiv")
             f = self.response.forms['complaintsearchform']
@@ -295,3 +309,27 @@ class TestComplaintFrontend(FrontendTest):
             self.assertPresence("2 Fälle gefunden")
             self.assertNonPresence("Fall 1001")
             self.assertPresence("Fall 1", div='case1')
+
+            # TODO test logged case
+
+            def _test_forbidden(url: str) -> None:
+                self.get(url, status=403)
+                self.post(url, {}, status=403, evade_anti_csrf=True)
+
+            self.get("/core/complaint/case/1001/show", status=403)
+            self.get("/core/complaint/case/1001/history", status=403)
+            self.get(
+                "/core/complaint/case/1001/involved/1/companions/change", status=403
+            )
+            self.get(
+                "/core/complaint/case/1001/involved/23/companions/change", status=403
+            )
+
+            urls = {
+                "/core/complaint/case/1001/change",
+                "/core/complaint/case/1001/entry/1003/remove",
+                "/core/complaint/case/1001/entry/1003/revoke",
+                "/core/complaint/case/1001/entry/add",
+            }
+            for url in urls:
+                _test_forbidden(url)
