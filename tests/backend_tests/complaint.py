@@ -418,12 +418,10 @@ class TestComplaintBackend(BackendTest):
 
         original_case.involved.pop(const.ComplaintInvolvementType.target)
         for companion_id in original_companions:
-            if len(original_case.companions[companion_id]) == 1:
-                del original_case.companions[companion_id]
-            else:
-                original_case.companions[companion_id].remove(original_involved)
-            if companion_id in original_case.withdrawn_companions:
-                del original_case.withdrawn_companions[companion_id]
+            original_case.companions[companion_id].remove(original_involved)
+            if not original_case.companions[companion_id]:
+                del original_case.companions[companion_id]  # pragma: no cover
+            original_case.withdrawn_companions.pop(companion_id, None)
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
