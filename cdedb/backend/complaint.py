@@ -113,6 +113,18 @@ class ComplaintBackend(AbstractBackend):
         return self.sql_insert(rs, "complaint.log", data)
 
     @access("complaint_admin")
+    def complaint_log_case_detected(
+        self, rs: RequestState, *, case_id: int, persona_id: int
+    ) -> int:
+        with Atomizer(rs):
+            return self.complaint_log(
+                rs=rs,
+                code=const.ComplaintLogCodes.concealed_case_detected,
+                case_id=case_id,
+                persona_id=persona_id,
+            )
+
+    @access("complaint_admin")
     def retrieve_log(
         self,
         rs: RequestState,

@@ -129,7 +129,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 for case_id, case in _cases.items()
                 if case.is_visible_for(rs.user)
             }
-            if count == 1:
+            if count == len(cases) == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
             else:
@@ -144,10 +144,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         # the log too much: We log only if the requestee has identified
                         # some involved people in their cases.
                         for concealed_case_id in _cases.keys() - cases.keys():
-                            self.complaintproxy.complaint_log(
+                            self.complaintproxy.complaint_log_case_detected(
                                 rs=rs,
-                                code=const.ComplaintLogCodes.concealed_case_detected,
                                 case_id=concealed_case_id,
+                                persona_id=input['qval_involved.persona_id'],
                             )
 
                 persona_ids: list[int] = []
