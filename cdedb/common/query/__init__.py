@@ -1283,52 +1283,54 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     course_choices = _get_course_choices(courses)
 
     spec = {
-        "course.id": QuerySpecEntry("id", n_("course id")),
+        "course.id": QuerySpecEntry("id", n_("course id"), group_base=n_("Course")),
         "course.course_id": QuerySpecEntry(
             "enum_int", n_("course"), choices=course_choices,
-            order_by="course.nr_shortname", order_type="str",
+            order_by="course.nr_shortname", order_type="str", group_base=n_("Course"),
         ),
-        "course.nr": QuerySpecEntry("str", n_("course nr")),
-        "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
-        "course.title": QuerySpecEntry("str", n_("course title")),
-        "course.description": QuerySpecEntry("str", n_("course description")),
-        "course.shortname": QuerySpecEntry("str", n_("course shortname")),
-        "course.instructors": QuerySpecEntry("str", n_("course instructors")),
-        "course.min_size": QuerySpecEntry("int", n_("course min size")),
-        "course.max_size": QuerySpecEntry("int", n_("course max size")),
-        "course.is_visible": QuerySpecEntry("bool", n_("visibility on courselist")),
-        "course.notes": QuerySpecEntry("str", n_("course notes")),
+        "course.nr": QuerySpecEntry("str", n_("course nr"), group_base=n_("Course")),
+        "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname"), group_base=n_("Course")),
+        "course.title": QuerySpecEntry("str", n_("course title"), group_base=n_("Course")),
+        "course.description": QuerySpecEntry("str", n_("course description"), group_base=n_("Course")),
+        "course.shortname": QuerySpecEntry("str", n_("course shortname"), group_base=n_("Course")),
+        "course.instructors": QuerySpecEntry("str", n_("course instructors"), group_base=n_("Course")),
+        "course.min_size": QuerySpecEntry("int", n_("course min size"), group_base=n_("Course")),
+        "course.max_size": QuerySpecEntry("int", n_("course max size"), group_base=n_("Course")),
+        "course.is_visible": QuerySpecEntry("bool", n_("visibility on courselist"), group_base=n_("Course")),
+        "course.notes": QuerySpecEntry("str", n_("course notes"), group_base=n_("Course")),
         # This will be augmented with additional fields in the fly.
     }
 
     def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
+        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         return {
             f"track{track.id}.is_offered": QuerySpecEntry(
-                "bool", n_("is offered"), prefix),
+                "bool", n_("is offered"), prefix, **group_data),
             f"track{track.id}.takes_place": QuerySpecEntry(
-                "bool", n_("takes place"), prefix),
+                "bool", n_("takes place"), prefix, **group_data),
             f"track{track.id}.is_cancelled": QuerySpecEntry(
-                "bool", n_("is cancelled"), prefix),
+                "bool", n_("is cancelled"), prefix, **group_data),
             f"track{track.id}.attendees": QuerySpecEntry(
-                "int", n_("attendee count"), prefix),
+                "int", n_("attendee count"), prefix, **group_data),
             f"track{track.id}.remaining_capacity": QuerySpecEntry(
-                "int", n_("remaining capacity"), prefix),
+                "int", n_("remaining capacity"), prefix, **group_data),
             f"track{track.id}.attendees_and_guests": QuerySpecEntry(
-                "int", n_("attendee count (incl. guests)"), prefix),
+                "int", n_("attendee count (incl. guests)"), prefix, **group_data),
             f"track{track.id}.instructors": QuerySpecEntry(
-                "int", n_("instructor count"), prefix),
+                "int", n_("instructor count"), prefix, **group_data),
             f"track{track.id}.assigned_instructors": QuerySpecEntry(
-                "int", n_("assigned instructor count"), prefix),
+                "int", n_("assigned instructor count"), prefix, **group_data),
             f"track{track.id}.potential_instructors": QuerySpecEntry(
-                "int", n_("potential instructor count (incl. open)"), prefix),
+                "int", n_("potential instructor count (incl. open)"), prefix, **group_data),
         }
 
     def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
+        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         return {
             f"track{track.id}.num_choices{i}": QuerySpecEntry(
-                "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
+                "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)}, **group_data)
             for i in range(track.num_choices)
         }
 
@@ -1343,6 +1345,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     # Add entries for individual tracks.
     for track_id, track_spec in track_specs.items():
         spec.update(track_spec)
+        prefix = ("" if len(event.tracks) <= 1 else event.tracks[track_id].shortname)
+        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
 
         course_choice_spec = course_choice_specs[track_id]
         # If there are course choices for the track, add an entry for any choice.
@@ -1350,9 +1354,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
             # Don't overwrite a potential existing spec.
             # This happens if there is exactly one choice.
             if key not in course_choice_spec:
-                prefix = ("" if len(event.tracks) <= 1
-                          else event.tracks[track_id].shortname)
-                spec[key] = QuerySpecEntry("int", n_("total choices"), prefix)
+                spec[key] = QuerySpecEntry(
+                    "int", n_("total choices"), prefix, **group_data)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
@@ -1378,17 +1381,24 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     for track_group in track_groups:
         track_ids = track_group['track_ids']
         prefix = track_group['shortname']
+        group_data = {"group_base": prefix, "translate_group": False}
         spec.update(_combine_specs(
             track_specs, track_ids, prefix or n_("any track"),
-            translate_prefix=not prefix))
+            translate_prefix=not prefix, **group_data,
+        ))
         spec.update(_combine_specs(
             course_choice_specs, track_ids, prefix or n_("any track"),
-            translate_prefix=not prefix))
+            translate_prefix=not prefix, **group_data,
+        ))
 
     spec.update({
         f"course_fields.xfield_{field.field_name}": QuerySpecEntry(
             field.kind.spec_type, field.title,
-            choices=field_choices[field.field_name])
+            choices=field_choices[field.field_name],
+            group_prefix=n_("Custom Fields"),
+            group_base=field.sort_group or n_("Other Fields"),
+            translate_group=not field.sort_group,
+        )
         for field in sorted_course_fields
     })
 
@@ -1419,43 +1429,53 @@ def make_lodgement_query_spec(event: "models.Event",
     lodgement_group_choices = _get_lodgement_group_choices(lodgement_groups)
 
     spec = {
-        "lodgement.id": QuerySpecEntry("id", n_("lodgement ID")),
+        "lodgement.id": QuerySpecEntry("id", n_("lodgement ID"), group_base=n_("Lodgement")),
         "lodgement.lodgement_id": QuerySpecEntry(
-            "enum_int", n_("lodgement"), choices=lodgement_choices),
-        "lodgement.title": QuerySpecEntry("str", n_("Title_[[name of an entity]]")),
-        "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
+            "enum_int", n_("lodgement"), choices=lodgement_choices, group_base=n_("Lodgement")),
+        "lodgement.title": QuerySpecEntry("str", n_("Title_[[name of an entity]]"), group_base=n_("Lodgement")),
+        "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity"), group_base=n_("Lodgement")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
-            "int", n_("Camping Mat Capacity")),
-        "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity")),
-        "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes")),
+            "int", n_("Camping Mat Capacity"), group_base=n_("Lodgement")),
+        "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity"), group_base=n_("Lodgement")),
+        "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes"), group_base=n_("Lodgement")),
         "lodgement.group_id": QuerySpecEntry(
-            "enum_int", n_("Lodgement Group"), choices=lodgement_group_choices),
-        "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
-        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
+            "enum_int", n_("Lodgement Group"), choices=lodgement_group_choices, group_base=n_("Lodgement Group")),
+        "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID"), group_base=n_("Lodgement Group")),
+        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title"), group_base=n_("Lodgement Group")),
         # This will be augmented with additional fields in the fly.
     }
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
         prefix = "" if len(event.parts) <= 1 else part.shortname
+        group_data = {"group_base": prefix or n_("Event Part"), "translate_group": not prefix}
         return {
             f"part{part.id}.regular_inhabitants": QuerySpecEntry(
-                "int", n_("Regular Inhabitants"), prefix),
+                "int", n_("Regular Inhabitants"), prefix, **group_data,
+            ),
             f"part{part.id}.camping_mat_inhabitants": QuerySpecEntry(
-                "int", n_("Camping Mat Inhabitants"), prefix),
+                "int", n_("Camping Mat Inhabitants"), prefix, **group_data,
+            ),
             f"part{part.id}.total_inhabitants": QuerySpecEntry(
-                "int", n_("Total Inhabitants"), prefix),
+                "int", n_("Total Inhabitants"), prefix, **group_data,
+            ),
             f"part{part.id}.regular_remaining": QuerySpecEntry(
-                "int", n_("Regular Remaining"), prefix),
+                "int", n_("Regular Remaining"), prefix, **group_data,
+            ),
             f"part{part.id}.camping_mat_remaining": QuerySpecEntry(
-                "int", n_("Camping Mat Remaining"), prefix),
+                "int", n_("Camping Mat Remaining"), prefix, **group_data,
+            ),
             f"part{part.id}.total_remaining": QuerySpecEntry(
-                "int", n_("Total Remaining"), prefix),
+                "int", n_("Total Remaining"), prefix, **group_data,
+            ),
             f"part{part.id}.group_regular_inhabitants": QuerySpecEntry(
-                "int", n_("Group Regular Inhabitants"), prefix),
+                "int", n_("Group Regular Inhabitants"), prefix, **group_data,
+            ),
             f"part{part.id}.group_camping_mat_inhabitants": QuerySpecEntry(
-                "int", n_("Group Camping Mat Inhabitants"), prefix),
+                "int", n_("Group Camping Mat Inhabitants"), prefix, **group_data,
+            ),
             f"part{part.id}.group_total_inhabitants": QuerySpecEntry(
-                "int", n_("Group Total Inhabitants"), prefix),
+                "int", n_("Group Total Inhabitants"), prefix, **group_data,
+            ),
         }
 
     # Presort part specs so we can iterate over them in order.
@@ -1472,12 +1492,18 @@ def make_lodgement_query_spec(event: "models.Event",
         part_ids = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
-            part_specs, part_ids, prefix=prefix or n_("any part"),
-            translate_prefix=not prefix))
+            part_specs, part_ids,
+            prefix=prefix or n_("any part"), translate_prefix=not prefix,
+            group_base=prefix or n_("any part"), translate_group=not prefix,
+        ))
 
     spec.update({
         f"lodgement_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name],
+            group_prefix=n_("Custom Fields"),
+            group_base=f.sort_group or n_("Other Fields"),
+            translate_group=not f.sort_group,
+        )
         for f in sorted_lodgement_fields
     })
 
