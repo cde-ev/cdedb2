@@ -392,7 +392,8 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Fall 1001")
 
-        # Excursion: Add entry without parent
+        # Excursion: Add entries without parent
+        # without concerned_id
         self.traverse("Eigenständigen Eintrag hinzufügen")
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.synthesis
@@ -404,6 +405,21 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("29 Zeichen.", div='entry1005')
         self.assertNonPresence("Hat sich nie wieder gemeldet.")
+        # with concerned_id
+        self.traverse("Eigenständigen Eintrag hinzufügen")
+        f = self.response.forms['selectentrytypeform']
+        f['entry_type'] = const.ComplaintEntryType.provisional_statement_given
+        self.submit(f)
+        self.assertPresence("Vorläufige Aussage getätigt")
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-19-1"
+        f['description'] = "Ich will auch was sagen!"
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError('concerned_id')
+        f['concerned_id'] = "DB-6-X"
+        self.submit(f, verbose=True)
+        self.assertPresence("24 Zeichen", div='entry1006')
+        self.assertNonPresence("Ich will auch was sagen!")
 
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']

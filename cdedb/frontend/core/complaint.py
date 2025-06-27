@@ -641,6 +641,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 additional_data={'parent_id': parent_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
+                passthrough=True,
             )
             or {}
         )
