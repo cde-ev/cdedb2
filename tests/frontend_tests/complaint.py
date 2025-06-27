@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import datetime
+
 import cdedb.database.constants as const
+from cdedb.common.query.log_filter import ComplaintLogFilter
 from tests.common import (
     FrontendTest,
     as_users,
@@ -421,8 +424,6 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("ist abgeschlossen", div='case1001')
 
-        # TODO Test logging
-
         # ##
         # ## 6. Check protection ##
         with self.switch_user("anton"):
@@ -466,3 +467,138 @@ class TestComplaintFrontend(FrontendTest):
             }
             for url in urls:
                 _test_forbidden(url)
+
+        # ##
+        # ## 7. Test logging ##
+        log_expectation = (
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.involved_informed,
+                'persona_id': 2,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.involved_uninformed,
+                'persona_id': 2,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.involved_informed,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_added,
+                'companion_id': 5,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_added,
+                'companion_id': 9,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_withdrawn,
+                'companion_id': 9,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_reinstated,
+                'companion_id': 9,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_removed,
+                'companion_id': 9,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_removed,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_removed,
+                'companion_id': 5,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.companion_withdrawn,
+                'companion_id': 7,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Versteckt vor',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 7,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Ich bin halt leider viel zu neugierig.',
+                'code': const.ComplaintLogCodes.case_unlocked,
+            },
+            {
+                'case_id': 1001,
+                'code': const.ComplaintLogCodes.case_created,
+            },
+            {
+                'case_id': 1001,
+                'change_note': 'Betroffene',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1001,
+                'code': const.ComplaintLogCodes.involved_informed,
+                'persona_id': 1,
+            },
+            {
+                'case_id': 1001,
+                'change_note': 'Zielpersonen',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 10,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Ist jetzt schwerwiegend.',
+                'code': const.ComplaintLogCodes.case_changed_grave,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Jemand schnarcht ganz furchtbar. -> Jemand schnarcht ganz furchtbar. Wirklich!',
+                'code': const.ComplaintLogCodes.case_changed_summary,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Hinzugefügt (04.01.2222)',
+                'code': const.ComplaintLogCodes.case_changed_end_date,
+            },
+            {
+                'case_id': 1001,
+                'code': const.ComplaintLogCodes.concealed_case_detected,
+                'persona_id': 10,
+                'submitted_by': 1,
+            },
+            {
+                'case_id': 1001,
+                'code': const.ComplaintLogCodes.concealed_case_detected,
+                'persona_id': 10,
+                'submitted_by': 1,
+            },
+        )
+
+        self.assertLogEqual(log_expectation, realm='complaint', offset=6)

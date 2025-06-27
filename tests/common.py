@@ -1792,7 +1792,13 @@ class FrontendTest(BackendTest):
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
         personas = self.core.get_personas(self.key, persona_ids)
-        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+
+        if realm == "ml":
+            entity_key = "mailinglist_id"
+        elif realm == "complaint":
+            entity_key = "case_id"
+        else:
+            entity_key = f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
@@ -1824,6 +1830,10 @@ class FrontendTest(BackendTest):
         elif realm == "changelog":
             self.get("/core/changelog/view")
             entities = {}
+        elif realm == "complaint":
+            entities = {case_id: {'title': f"Fall {case_id}"} for case_id in entity_ids}
+            self.get("/core/complaint/log")
+
         else:
             self.get(f"/{realm}/log")
             entities = {}

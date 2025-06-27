@@ -4796,7 +4796,7 @@
             "case_id": 1,
             "persona_id": 4,
             "companion_id": 7,
-            "change_note": ""
+            "change_note": null
         },
         {
             "id": 5,
@@ -4806,7 +4806,7 @@
             "case_id": 1,
             "persona_id": 2,
             "companion_id": 3,
-            "change_note": ""
+            "change_note": null
         },
         {
             "id": 6,
@@ -4816,7 +4816,7 @@
             "case_id": null,
             "persona_id": 10,
             "companion_id": null,
-            "change_note": ""
+            "change_note": null
         }
     ],
     "cde.org_period": [
