@@ -708,7 +708,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs,
             "complaint/configure_entry",
             {'entry_type': rs.ambience['entry'].entry_type, 'personas': personas},
-            models.ComplaintEntry.mandatory_form_fields(creation=False)
+            models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
 
     @access("complaint_admin", modi={"POST"})
@@ -779,9 +779,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
             "complaint/configure_entry",
             {
                 'entry_type': const.ComplaintEntryType.revocation_explanation,
-                'is_revocation': True
+                'is_revocation': True,
             },
-            models.ComplaintEntry.mandatory_form_fields(creation=False)
+            models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
 
     @access("complaint_admin", modi={"POST"})
