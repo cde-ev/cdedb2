@@ -319,7 +319,7 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_delete_entry(self) -> None:
         case_id = 1
-        entry_id = 4
+        entry_id = 3
 
         original_case = self.complaint.get_case(self.key, case_id)
 
