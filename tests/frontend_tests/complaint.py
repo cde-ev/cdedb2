@@ -155,7 +155,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNoLink("entry/4/revoke")
         self.traverse({'href': "entry/5/revoke"})
         f = self.response.forms['configureentryform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('authors', "Darf nicht leer sein.")
         self.assertValidationError('description', " Muss eine Zeichenkette sein.")
         f = self.response.forms['configureentryform']
@@ -195,7 +195,7 @@ class TestComplaintFrontend(FrontendTest):
         )
         f = self.response.forms['configureentryform']
         f['description'] = "Berta wird ab jetzt immer ein Schnarchzimmer zu beantragen."
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('dreason', "Darf nicht leer sein.")
         f['dreason'] = "Ist fairer."
         self.submit(f)

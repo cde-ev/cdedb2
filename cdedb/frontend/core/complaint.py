@@ -250,7 +250,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "complaint/configure_case", {})
+        mandatory_fields = models.Case.mandatory_form_fields(creation=True)
+        return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
@@ -521,7 +522,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         merge_dicts(rs.values, rs.ambience['case'].as_dict())
-        return self.render(rs, "complaint/configure_case")
+        mandatory_fields = models.Case.mandatory_form_fields(creation=False)
+        return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=False))
@@ -596,6 +598,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'parent_id': parent_id,
                 'available_types': available_types,
             },
+            models.ComplaintEntry.mandatory_form_fields(creation=True),
         )
 
     @access("complaint_admin", modi={"POST"})
@@ -700,10 +703,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
             personas = self.coreproxy.get_personas(
                 rs, {rs.ambience['entry'].concerned_id}
             )
+
         return self.render(
             rs,
             "complaint/configure_entry",
             {'entry_type': rs.ambience['entry'].entry_type, 'personas': personas},
+            models.ComplaintEntry.mandatory_form_fields(creation=False)
         )
 
     @access("complaint_admin", modi={"POST"})
@@ -773,6 +778,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs,
             "complaint/configure_entry",
             {'entry_type': const.ComplaintEntryType.revocation_explanation},
+            models.ComplaintEntry.mandatory_form_fields(creation=False)
         )
 
     @access("complaint_admin", modi={"POST"})
@@ -870,6 +876,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs,
             "complaint/remove_entry",
             {'authors': authors, 'concerned': concerned, 'description': description},
+            {"dreason"},
         )
 
     @access("complaint_admin", modi={"POST"})

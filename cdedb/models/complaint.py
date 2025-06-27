@@ -297,6 +297,14 @@ class ComplaintEntry(CdEDataclass):
         )
         return super().from_database(data)
 
+    @classmethod
+    def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
+        # This includes field which must be set for each version.
+        ret = {'entry_type', 'concerned_id', 'authors', 'description', 'timestamp'}
+        if not creation:
+            ret.add('dreason')
+        return ret
+
 
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntryVersion(CdEDataclass):
