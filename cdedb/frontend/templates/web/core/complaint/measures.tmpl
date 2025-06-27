@@ -51,6 +51,13 @@
                 {{ descriptions[measure.id] }}
             </div>
         </div>
+    {% else %}
+        <p class="text-muted">
+            {% trans %}
+                Currently, there are no active measures.
+            {% endtrans %}
+        </p>
     {% endfor %}
+
     </div>
 {% endblock %}

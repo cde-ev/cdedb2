@@ -41,8 +41,10 @@
         {{ util.form_input_select(name="kind", label=gettext("Kind"),
                                   entries=enums['ComplaintKind']|enum_entries(processing=gettext)) }}
         {{ util.form_input_checkbox(name="is_grave", label=gettext("is extraordinarily grave")) }}
-        {{ util.form_input_text(name="start_date", label=gettext("Start Date"), type="date") }}
-        {{ util.form_input_text(name="end_date", label=gettext("End Date"), type="date") }}
+        {{ util.form_input_text(name="start_date", label=gettext("Start Date"), type="date",
+                                info=gettext("All events covered by this complaint are known to have happened after this date.")) }}
+        {{ util.form_input_text(name="end_date", label=gettext("End Date"), type="date",
+                                info=gettext("All events covered by this complaint are known to have happened before this date.")) }}
 
         {% if ambience["case"] %}
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
@@ -77,7 +79,7 @@
             {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
                                     placeholder=now().strftime("%b %d %Y %H:%M:%S")) }}
             {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True,
-                                        info=gettext("Avoid using names of further affected individuals in this field.")) }}
+                                        info=gettext("Avoid using names of affected individuals in this field.")) }}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}
         {% endif %}
     </form>

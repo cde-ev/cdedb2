@@ -84,12 +84,14 @@
                 {% endif %}
             {% endif %}
             {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
-                                    defaultvalue=now()) }}
+                                    defaultvalue=now(),
+                                    info=gettext("When did the event you describe here occur?")) }}
             {% if entry_type.is_measure %}
                 {{ util.form_input_text(name="etime", label=gettext("Expiration"), type="datetime-local") }}
             {% endif %}
             {{ util.form_input_text(name="authors", label=gettext("Authors"), anid="input-authors",
-                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
+                                    info=gettext("The companions, arbcom members, coordinators responsible for this entry. Do not specify involved people here.")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-authors').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},

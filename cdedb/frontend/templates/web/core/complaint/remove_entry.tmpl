@@ -43,7 +43,8 @@
                 {{ util.form_input_text(name="dreason", label=gettext("Deletion Reason")) }}
             </div>
         </div>
-        {{ util.form_input_submit(label=gettext("Remove"), cancellink=cdedblink('core/show_case'), aclass="btn btn-primary btn-danger", icon="eye-slash") }}
+        {{ util.form_input_submit(label=gettext("Remove"), cancellink=cdedblink('core/show_case'), aclass="btn btn-primary btn-danger", icon="eye-slash",
+                                  info=gettext("Only remove entries if they are erroneous. If they are no longer valid or have been rescinded, revoke them instead.")) }}
     </form>
 
     <script nonce="{{ csp_nonce }}">
