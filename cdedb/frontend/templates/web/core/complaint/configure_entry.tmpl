@@ -9,11 +9,13 @@
 
 {% set case_title = gettext("Case %s")|format(ambience['case'].id) %}
 {% set new_entry = False %}
-{% if ambience['entry'] %}
-    {% if entry_type == enums["ComplaintEntryType"].revocation_explanation %}
-        {% set title = gettext("Revoke Entry") %}
-        {% set action_target = "core/revoke_entry" %}
-    {% elif parent_id %}
+{% set anchor = "" %}
+{% if is_revocation %}
+    {% set title = gettext("Revoke Entry") %}
+    {% set action_target = "core/revoke_entry" %}
+    {% set new_entry = True %}
+{% elif ambience['entry'] %}
+    {% if parent_id %}
         {% set title = gettext("Add Child Entry") %}
         {% set action_target = "core/add_entry" %}
         {% set new_entry = True %}
@@ -24,7 +26,6 @@
     {% set anchor = "#entry"|s + ambience["entry"].id|string %}
 {% else %}
     {% set title = gettext("Add Entry") %}
-    {% set anchor = "" %}
     {% set action_target = "core/add_entry" %}
     {% set new_entry = True %}
 {% endif %}
@@ -107,7 +108,10 @@
                                       value=gettext("Warning: This entry will be visible to all enforcers and the user themselves. Pseudonymize other involved people here, and defer details to other entries.")) }}
             {% endif %}
             {# Add some conditional warnings here. #}
-            {% if not new_entry and entry_type != enums["ComplaintEntryType"].revocation_explanation %}
+            {% if is_revocation %}
+                {{ util.form_input_submit(label=gettext("Revoke"), cancellink=cdedblink('core/show_case'), aclass="btn btn-primary btn-danger", icon="rotate-left",
+                                          info=gettext("Only revoke entries if they are no longer valid or have been rescinded. If you made a mistake specifying an entry, remove it instead.")) }}
+            {% elif not new_entry %}
                 <div class="panel panel-primary">
                     <div class="panel-body">
                         {{ util.form_input_text(name="dreason", label=gettext("Changenotes")) }}

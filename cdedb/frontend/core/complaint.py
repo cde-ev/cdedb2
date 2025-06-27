@@ -777,7 +777,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(
             rs,
             "complaint/configure_entry",
-            {'entry_type': const.ComplaintEntryType.revocation_explanation},
+            {
+                'entry_type': const.ComplaintEntryType.revocation_explanation,
+                'is_revocation': True
+            },
             models.ComplaintEntry.mandatory_form_fields(creation=False)
         )
 
