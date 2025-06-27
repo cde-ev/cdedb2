@@ -184,6 +184,9 @@ class TestComplaintFrontend(FrontendTest):
         # ##
         # ## 3. Check sample case: entries when unlocked ##
         f = self.response.forms['unlockcaseform']
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError('reason', "Darf nicht leer sein.")
+        f = self.response.forms['unlockcaseform']
         f['reason'] = "Ich bin halt leider viel zu neugierig."
         self.submit(f)
         self.assertNoLink("entry/2/remove")

@@ -237,15 +237,16 @@
         >
             {{ util.anti_csrf_token('core/unlock_case') }}
             {{ util.input_hidden("show_log_entries", show_log_entries) }}
-            <div class="input-group">
-                {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
-                <div class="input-group-btn">
-                    {{ util.input_submit(label=gettext("Unlock descriptions"),
-                                         aclass="btn btn-sm btn-primary", icon="unlock")
-                    }}
+            {% call util.output_errors('reason', wrapper=True) %}
+                <div class="input-group">
+                    {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(label=gettext("Unlock descriptions"),
+                                             aclass="btn btn-sm btn-primary", icon="unlock")
+                        }}
+                    </div>
                 </div>
-            </div>
-            {{ util.output_errors('unlockcaseform') }}
+            {% endcall %}
         </form>
     {% else %}
         <form action="{{ cdedblink("core/lock_case") }}"
