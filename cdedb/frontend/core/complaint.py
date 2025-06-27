@@ -929,10 +929,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         measures = self.complaintproxy.get_user_measures(rs, persona_id)
         return self.render(rs, "complaint/show_user_measures", {'measures': measures})
 
-    @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
-    def list_complaint_helpers(self, rs: RequestState) -> Response:
-        """View list of enforcers and monitors."""
-        return self.render(rs, "complaint/list_complaint_helpers")
+    # @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
+    # def list_complaint_helpers(self, rs: RequestState) -> Response:
+    #    """View list of enforcers and monitors."""
+    #    return self.render(rs, "complaint/list_complaint_helpers")
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")
