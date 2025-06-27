@@ -602,10 +602,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("entry_type")
     def add_entry(
         self,
         rs: RequestState,
         case_id: int,
+        entry_type: const.ComplaintEntryType,
         parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
@@ -624,13 +626,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs,
             models.ComplaintEntryVersion,
             creation=True,
-            entry_type=entry_data.get('entry_type'),
+            entry_type=entry_type,
         )
         if rs.has_validation_errors() or not entry_data or not version_data:
             return self.add_entry_form(
                 rs,
                 case_id,
-                entry_type=entry_data.get('entry_type') if entry_data else None,
+                entry_type=entry_type,
                 parent_id=parent_id,
             )
         if parent_id := entry_data.get('parent_id'):
