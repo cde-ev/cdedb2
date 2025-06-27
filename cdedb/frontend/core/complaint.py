@@ -141,10 +141,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         {"count": count - len(cases)},
                     )
                     persona_id = check(
-                        rs, vtypes.CdedbID, input['qval_involved.persona_id']
+                        rs,
+                        vtypes.CdedbID,
+                        input['qval_involved.persona_id'],
+                        passthrough=True,
                     )
                     rs.ignore_validation_errors()
-                    if input.get('qval_involved.persona_id'):
+                    if persona_id:
                         # This is a compromise between alertness and not spamming
                         # the log too much: We log only if the requestee has identified
                         # some involved people in their cases.
