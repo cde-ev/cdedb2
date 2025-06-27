@@ -276,7 +276,30 @@ class TestComplaintFrontend(FrontendTest):
 
         # Case history
         self.traverse("Eintragshistorie zeigen")
-        # TODO Actually check history
+        self.assertPresence("unterzeichnet am 28.05.2025, freigegeben", div='entry2')
+        self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div='entry4')
+        self.assertPresence("Ersetzt am ", div='entry4')
+        self.assertNonPresence("Gelöscht am ", div='entry4')
+        self.assertPresence("Anton Administrator: Ungünstige Wortwahl", div='entry4')
+        self.assertPresence("lang und breit", div='entry4')
+        self.assertPresence("Version 2 von Charly Clown. 77 Zeichen.", div='entry4')
+        self.assertPresence("Version 3 von Charly Clown. 59 Zeichen.", div='entry4')
+        self.assertPresence("Schnarchzimmer", div='entry4')
+        self.assertPresence("Widerruf: widerrufen", div='entry1003')
+        self.assertPresence("Version 1 von Simon Struktur. 26 Zeichen.")
+        self.assertPresence("Gelöscht am", div='entry1003')
+        self.assertNonPresence("Ersetzt am",div='entry1003')
+        self.assertNoLink("/entry/")
+        self.assertPresence(
+            "Beteiligten hinzugefügt: Daniel Dino von Anton Administrator; Betroffene",
+            div='logentry2'
+        )
+        self.assertPresence(
+            "Fallbegleitung zurückgezogen: Garcia Generalis (für Daniel Dino)",
+            div='logentry1012'
+        )
+
+        # Lock case
         self.traverse("Fall 1")
         f = self.response.forms['lockcaseform']
         self.submit(f)
