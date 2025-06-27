@@ -758,7 +758,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if (
             rs.ambience['entry'].parent
@@ -834,7 +834,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if not rs.ambience['entry'].active_version:
-            rs.notify('info', n_("Entry already deleted."))
+            rs.notify('info', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].active_children:
             rs.notify(
@@ -892,7 +892,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.remove_entry_form(rs, case_id, entry_id, internal=True)
         if not rs.ambience['entry'].active_version:
-            rs.notify('error', n_("Entry already deleted."))
+            rs.notify('error', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if rs.ambience['entry'].active_children:
             rs.notify(
