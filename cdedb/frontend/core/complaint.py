@@ -15,6 +15,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     determine_age_class,
+    make_persona_name,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -335,6 +336,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         n_("Some of these users are already involved otherwise.")
                     ),
                 ))
+
             if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
                 rs.append_validation_error((
                     "persona_ids",
@@ -347,6 +349,21 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
+
+        active_companions = rs.ambience['case'].active_companions
+        ex_companions_ids = set(persona_ids) & active_companions.keys()
+        ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
+        for companion_id, companion in ex_companions.items():
+            rs.notify(
+                'warning',
+                n_("%(companion)s was a companion and is now marked as withdrawn."),
+                {'companion': make_persona_name(companion)},
+            )
+            for persona_id in active_companions[companion_id]:
+                self.complaintproxy.set_companion_withdrawn(
+                    rs, case_id, persona_id, companion_id, is_withdrawn=True
+                )
+
         ret = self.complaintproxy.add_involved(
             rs, case_id, involvement_type, persona_ids
         )
@@ -507,6 +524,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if companion_id not in rs.ambience['case'].companions:
             rs.notify("error", n_("This user is no companion."))
+        elif companion_id in rs.ambience['case'].all_involved.keys():
+            rs.notify("error", n_("Active companion may not be involved."))
         else:
             ret = self.complaintproxy.set_companion_withdrawn(
                 rs, case_id, persona_id, companion_id, False

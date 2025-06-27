@@ -5006,6 +5006,10 @@ msgstr "Dieser Nutzer war bereits uninformiert."
 msgid "Companion may not be involved."
 msgstr "Fallbegleitung kann nicht selbst beteiligt sein."
 
+#: cdedb/frontend/core/complaint.py:438
+msgid "Active companion may not be involved."
+msgstr "Aktive Fallbegleitung kann nicht selbst beteiligt sein."
+
 #: cdedb/frontend/core/complaint.py:445
 msgid "Companion to the opposing party."
 msgstr "Fallbegleitung auf Gegenseite."

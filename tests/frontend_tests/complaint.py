@@ -51,7 +51,6 @@ class TestComplaintFrontend(FrontendTest):
             div='addinvolvedform'
         )
 
-        # TODO Ensure one can add withdrawn companions as involved, but can not reinstate them…
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-1-9"
         f['involvement_type'] = "ComplaintInvolvementType.appellant"
@@ -101,6 +100,22 @@ class TestComplaintFrontend(FrontendTest):
             check_div=False
         )
         self.assertNonPresence("Emilia")
+
+        # Ensure one can add withdrawn companions as involved, but can not reinstate them…
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-7-8"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.withheld)
+        self.submit(f)
+        self.assertNotification(
+            "Garcia Generalis was a companion and is now marked as withdrawn.",
+            'warning'
+        )
+        self.traverse({'href': 'involved/4/companions/change'})
+        f = self.response.forms['reinstatecompanionform7']
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Aktive Fallbegleitung kann nicht selbst beteiligt sein.",'error'
+        )
 
         # ##
         # ## 2. Check sample case: entries when locked ##
