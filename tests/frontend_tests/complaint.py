@@ -44,7 +44,7 @@ class TestComplaintFrontend(FrontendTest):
         )
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-4-3"
-        f['involvement_type'] = "ComplaintInvolvementType.appellant"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
         self.submit(f, check_notification=False)
         self.assertPresence(
             "Einige dieser Nutzer sind bereits anderweitig beteiligt.",
@@ -53,7 +53,7 @@ class TestComplaintFrontend(FrontendTest):
 
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-1-9"
-        f['involvement_type'] = "ComplaintInvolvementType.appellant"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
         self.submit(f)
         self.assertPresence("Anton Administrator (ist informiert)",
                             div="involved_appellant")
@@ -64,10 +64,10 @@ class TestComplaintFrontend(FrontendTest):
         self.assertTitle("Fallbegleitung für Anton Administrator verwalten (Fall 1)")
         f = self.response.forms['addcompanionform']
         f['companion_ids'] = "DB-1-9"
-        self.submit(f, check_notification=False, verbose=True)
+        self.submit(f, check_notification=False)
         self.assertPresence("Fallbegleitung kann nicht selbst beteiligt sein.")
         f['companion_ids'] = "DB-4-3"
-        self.submit(f, check_notification=False, verbose=True)
+        self.submit(f, check_notification=False)
         self.assertPresence("Fallbegleitung kann nicht selbst beteiligt sein.")
         f = self.response.forms['addcompanionform']
         f['companion_ids'] = "DB-3-5"
@@ -116,6 +116,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNotification(
             "Aktive Fallbegleitung kann nicht selbst beteiligt sein.",'error'
         )
+        self.traverse("Fall 1")
 
         # ##
         # ## 2. Check sample case: entries when locked ##
@@ -192,6 +193,7 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 2: Check measure is no longer displayed in overview
         saved_response = self.response
         self.traverse("Maßnahmenübersicht")
+        self.assertPresence("Derzeit sind keine Maßnahmen in Kraft.")
         self.assertNonPresence("Beispiel")
         self.assertNonPresence("von")
         self.response = saved_response
@@ -253,7 +255,7 @@ class TestComplaintFrontend(FrontendTest):
         self.get("/core/complaint/case/1/entry/1003/remove")
         self.follow()
         self.assertTitle("Fall 1")
-        msg = "Eintrag ist bereits gelöscht."
+        msg = "Eintrag ist bereits entfernt."
         self.assertNotification(msg, 'info')
         self.get("/core/complaint/case/1/show")
         self.post(
@@ -289,6 +291,7 @@ class TestComplaintFrontend(FrontendTest):
         f['start_date'] = "2222-01-02"
         f['end_date'] = "2222-01-06"
         f['appellant_id'] = "DB-19-1"
+        f['target_ids'] = "DB-10-8"
         f['is_affected'] = True
         f['timestamp'] = "2222-03-13"
         f['info'] = "Beschreibung folgt, zwischen Tür und Angel…"
@@ -398,7 +401,13 @@ class TestComplaintFrontend(FrontendTest):
             self.assertNonPresence("Fall 1001")
             self.assertPresence("Fall 1", div='case1')
 
-            # TODO test logged case
+            f = self.response.forms['complaintsearchform']
+            f['qval_involved.persona_id'] = "DB-10-8"
+            self.submit(f)
+            self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
+            f['qval_involved.involved_type'] = const.ComplaintInvolvementType.target.value
+            self.submit(f)
+            self.assertNonPresence("nnicht angezeigt", div='notifications')
 
             def _test_forbidden(url: str) -> None:
                 self.get(url, status=403)

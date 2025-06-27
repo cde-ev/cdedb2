@@ -157,7 +157,7 @@
                                 [{{ user.persona_id }}], false, false, "{{ gettext("ID, name, email") }}"
                             );
                         </script>
-                        {{ util.form_input_select(name="qval_involved.involvement_type",
+                        {{ util.form_input_select(name="qval_involved.involved_type",
                                                   label=gettext("Involvement"), aclass="input-sm",
                                                   entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
                                                   nulloption=nbsp) }}

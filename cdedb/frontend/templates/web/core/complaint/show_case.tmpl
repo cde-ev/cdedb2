@@ -84,6 +84,7 @@
     <form action="{{ cdedblink('core/add_involved') }}" method="POST"
           id="addinvolvedform" class="p">
         {{ util.anti_csrf_token('core/add_involved') }}
+
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="persona_ids", anid="input-add-involved",

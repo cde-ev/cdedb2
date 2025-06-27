@@ -10819,7 +10819,7 @@ msgstr "%(count)s Versionen"
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:361
 #, python-format
 msgid "%(label)s at %(stamp)s"
-msgstr "%(label)s vom %(stamp)s"
+msgstr "%(label)s am %(stamp)s"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:59
 #, python-format

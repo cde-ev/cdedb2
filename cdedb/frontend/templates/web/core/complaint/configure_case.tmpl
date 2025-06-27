@@ -77,7 +77,8 @@
             </script>
             <hr />
             {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
-                                    placeholder=now().strftime("%b %d %Y %H:%M:%S")) }}
+                                    placeholder=now().strftime("%b %d %Y %H:%M:%S"),
+                                    info=gettext("When did you first receive this case?")) }}
             {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True,
                                         info=gettext("Avoid using names of affected individuals in this field.")) }}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}

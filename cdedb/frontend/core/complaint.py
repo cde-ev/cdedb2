@@ -43,7 +43,7 @@ CASE_SEARCH_DEFAULTS = {
     # transpired before
     'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
-    'qop_involved.involvement_type': QueryOperators.equal,
+    'qop_involved.involved_type': QueryOperators.equal,
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
@@ -140,15 +140,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         n_("%(count)s cases not shown."),
                         {"count": count - len(cases)},
                     )
+                    persona_id = check(
+                        rs, vtypes.CdedbID, input['qval_involved.persona_id']
+                    )
+                    rs.ignore_validation_errors()
                     if input.get('qval_involved.persona_id'):
                         # This is a compromise between alertness and not spamming
                         # the log too much: We log only if the requestee has identified
                         # some involved people in their cases.
                         for concealed_case_id in _cases.keys() - cases.keys():
                             self.complaintproxy.complaint_log_case_detected(
-                                rs=rs,
-                                case_id=concealed_case_id,
-                                persona_id=input['qval_involved.persona_id'],
+                                rs, case_id=concealed_case_id, persona_id=persona_id
                             )
 
                 persona_ids: list[int] = []
@@ -252,6 +254,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
         mandatory_fields = models.Case.mandatory_form_fields(creation=True)
+        mandatory_fields |= {'timestamp', 'info'}
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
     @access("complaint_admin", modi={"POST"})
