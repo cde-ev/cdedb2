@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-06-27 05:46+0200\n"
+"POT-Creation-Date: 2025-06-29 14:29+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -669,8 +669,8 @@ msgstr "Eintrag hat keine aktive Version."
 msgid "Revocation entry without parent."
 msgstr "Widerruf ohne Eltern-Eintrag."
 
-#: cdedb/backend/complaint.py:478 cdedb/frontend/core/complaint.py:793
-#: cdedb/frontend/core/complaint.py:839
+#: cdedb/backend/complaint.py:478 cdedb/frontend/core/complaint.py:824
+#: cdedb/frontend/core/complaint.py:872
 msgid "Cannot chain revoke."
 msgstr "Widerruf eines Widerrufs kann nicht widerrufen werden."
 
@@ -1506,7 +1506,7 @@ msgid "Different mailinglists specified."
 msgstr "Unterschiedliche Mailinglisten angegeben."
 
 #: cdedb/backend/ml.py:428 cdedb/frontend/cde/past_event.py:413
-#: cdedb/frontend/core/complaint.py:346 cdedb/frontend/core/complaint.py:470
+#: cdedb/frontend/core/complaint.py:364 cdedb/frontend/core/complaint.py:488
 msgid "Some of these users do not exist."
 msgstr "Einige dieser Nutzer existieren nicht."
 
@@ -3190,8 +3190,8 @@ msgstr "Darf nicht null sein."
 #: cdedb/common/validation/validate.py:4842
 #: cdedb/common/validation/validate.py:5032 cdedb/frontend/cde/base.py:265
 #: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:654
-#: cdedb/frontend/core/base.py:1274 cdedb/frontend/core/complaint.py:351
-#: cdedb/frontend/core/complaint.py:475 cdedb/frontend/core/genesis.py:113
+#: cdedb/frontend/core/base.py:1274 cdedb/frontend/core/complaint.py:369
+#: cdedb/frontend/core/complaint.py:493 cdedb/frontend/core/genesis.py:113
 #: cdedb/frontend/event/event.py:316 cdedb/frontend/event/registration.py:685
 #: cdedb/frontend/event/registration.py:1732
 msgid "Must not be empty."
@@ -4957,132 +4957,140 @@ msgstr "Account hat keine zu begutachtenden Änderungen."
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
-#: cdedb/frontend/core/complaint.py:56
+#: cdedb/frontend/core/complaint.py:57
 msgid "Entry"
 msgstr "Eintrag"
 
-#: cdedb/frontend/core/complaint.py:109
+#: cdedb/frontend/core/complaint.py:110
 msgid "May not search for own involvement."
 msgstr "Du darfst nicht nach eigener Beteiligung suchen."
 
-#: cdedb/frontend/core/complaint.py:140
+#: cdedb/frontend/core/complaint.py:141
 #, python-format
 msgid "%(count)s cases not shown."
 msgstr "%(count)s Fälle nicht angezeigt."
 
-#: cdedb/frontend/core/complaint.py:229
+#: cdedb/frontend/core/complaint.py:233
 msgid "Need to unlock case first."
 msgstr "Fall muss zuerst entsperrt werden."
 
-#: cdedb/frontend/core/complaint.py:279
+#: cdedb/frontend/core/complaint.py:283
 msgid "May not create case with own involvement."
 msgstr "Du darfst keinen Fall mit eigener Beteiligung erstellen."
 
-#: cdedb/frontend/core/complaint.py:329
+#: cdedb/frontend/core/complaint.py:286
+msgid "May not be involved in multiple ways."
+msgstr "Darf nicht auf mehrere Weisen beteiligt sein."
+
+#: cdedb/frontend/core/complaint.py:347
 msgid "May not add own involvement."
 msgstr "Du darfst keine eigene Beteiligung hinzufügen."
 
-#: cdedb/frontend/core/complaint.py:339
+#: cdedb/frontend/core/complaint.py:357
 msgid "Some of these users are already involved otherwise."
 msgstr "Einige dieser Nutzer sind bereits anderweitig beteiligt."
 
-#: cdedb/frontend/core/complaint.py:362
+#: cdedb/frontend/core/complaint.py:380
 #, python-format
 msgid "%(companion)s was a companion and is now marked as withdrawn."
 msgstr ""
 "%(companion)s war Fallbegleitung und ist nun als zurückgezogen markiert."
 
-#: cdedb/frontend/core/complaint.py:374
+#: cdedb/frontend/core/complaint.py:392
 msgid "Some of these users were already involved."
 msgstr "Einige dieser Nutzer waren bereits beteiligt."
 
-#: cdedb/frontend/core/complaint.py:385
+#: cdedb/frontend/core/complaint.py:403
 msgid "This user was not involved."
 msgstr "Dieser Nutzer war nicht beteiligt."
 
-#: cdedb/frontend/core/complaint.py:395 cdedb/frontend/core/complaint.py:412
+#: cdedb/frontend/core/complaint.py:413 cdedb/frontend/core/complaint.py:430
 msgid "This user is not involved."
 msgstr "Dieser Nutzer ist nicht beteiligt."
 
-#: cdedb/frontend/core/complaint.py:401 cdedb/frontend/core/complaint.py:419
+#: cdedb/frontend/core/complaint.py:419 cdedb/frontend/core/complaint.py:437
 msgid "This user was already marked as uninformed."
 msgstr "Dieser Nutzer war bereits uninformiert."
 
-#: cdedb/frontend/core/complaint.py:458
+#: cdedb/frontend/core/complaint.py:476
 msgid "Companion may not be involved."
 msgstr "Fallbegleitung kann nicht selbst beteiligt sein."
 
-#: cdedb/frontend/core/complaint.py:465
+#: cdedb/frontend/core/complaint.py:483
 msgid "Companion to the opposing party."
 msgstr "Fallbegleitung auf Gegenseite."
 
-#: cdedb/frontend/core/complaint.py:481
+#: cdedb/frontend/core/complaint.py:499
 msgid "Some of these users were already companions."
 msgstr "Einige dieser Nutzer waren bereits Fallbegleitung."
 
-#: cdedb/frontend/core/complaint.py:498
+#: cdedb/frontend/core/complaint.py:516
 msgid "This user was no companion."
 msgstr "Dieser Nutzer war keine Fallbegleitung."
 
-#: cdedb/frontend/core/complaint.py:508 cdedb/frontend/core/complaint.py:529
+#: cdedb/frontend/core/complaint.py:526 cdedb/frontend/core/complaint.py:547
 msgid "This user is no companion."
 msgstr "Dieser Nutzer ist keine Fallbegleitung."
 
-#: cdedb/frontend/core/complaint.py:514
+#: cdedb/frontend/core/complaint.py:532
 msgid "This companion was already marked as withdrawn."
 msgstr "Diese Fallbegleitung hatte sich bereits zurückgezogen."
 
-#: cdedb/frontend/core/complaint.py:531
+#: cdedb/frontend/core/complaint.py:549
 msgid "Active companion may not be involved."
 msgstr "Aktive Fallbegleitung kann nicht selbst beteiligt sein."
 
-#: cdedb/frontend/core/complaint.py:537
+#: cdedb/frontend/core/complaint.py:555
 msgid "This companion was already marked as active."
 msgstr "Diese Fallbegleitung war bereits nicht zurückgezogen."
 
-#: cdedb/frontend/core/complaint.py:571
+#: cdedb/frontend/core/complaint.py:589
 msgid "Case unlocked."
 msgstr "Fall entsperrt."
 
-#: cdedb/frontend/core/complaint.py:584
+#: cdedb/frontend/core/complaint.py:602
 msgid "Case locked."
 msgstr "Fall gesperrt."
 
-#: cdedb/frontend/core/complaint.py:611 cdedb/frontend/core/complaint.py:663
+#: cdedb/frontend/core/complaint.py:629 cdedb/frontend/core/complaint.py:694
 msgid "Can not add child for deleted parent."
 msgstr "Du kannst keinen Kindeintrag für einen gelöschten Eintrag erstellen."
 
-#: cdedb/frontend/core/complaint.py:685
+#: cdedb/frontend/core/complaint.py:651
+msgid "Should not include involved people."
+msgstr "Soll keine Beteiligten enthalten."
+
+#: cdedb/frontend/core/complaint.py:716
 #, python-format
 msgid "Can not replace deleted %(entry_link)s."
 msgstr "Gelöschter %(entry_link)s kann nicht ersetzt werden."
 
-#: cdedb/frontend/core/complaint.py:696
+#: cdedb/frontend/core/complaint.py:727
 #, python-format
 msgid "Need to unlock case before replacing %(entry_link)s."
 msgstr "Fall muss entsperrt sein um einen %(entry_link)s zu ersetzen."
 
-#: cdedb/frontend/core/complaint.py:763
+#: cdedb/frontend/core/complaint.py:794
 #, python-format
 msgid "Cannot replace deleted %(entry_link)s."
 msgstr "Gelöschter %(entry_link)s kann nicht ersetzt werden."
 
-#: cdedb/frontend/core/complaint.py:786 cdedb/frontend/core/complaint.py:832
-#: cdedb/frontend/core/complaint.py:862 cdedb/frontend/core/complaint.py:920
+#: cdedb/frontend/core/complaint.py:817 cdedb/frontend/core/complaint.py:865
+#: cdedb/frontend/core/complaint.py:895 cdedb/frontend/core/complaint.py:953
 msgid "Entry already removed."
 msgstr "Eintrag ist bereits entfernt."
 
-#: cdedb/frontend/core/complaint.py:798 cdedb/frontend/core/complaint.py:844
+#: cdedb/frontend/core/complaint.py:829 cdedb/frontend/core/complaint.py:877
 #, python-format
 msgid "%(entry_link)s already revoked."
 msgstr "%(entry_link)s bereits widerrufen."
 
-#: cdedb/frontend/core/complaint.py:867 cdedb/frontend/core/complaint.py:925
+#: cdedb/frontend/core/complaint.py:900 cdedb/frontend/core/complaint.py:958
 #, python-format
 msgid "%(entry_link)s has active children."
 msgstr "%(entry_link)s hat aktive Kindeinträge."
 
-#: cdedb/frontend/core/complaint.py:880
+#: cdedb/frontend/core/complaint.py:913
 #, python-format
 msgid "Need to unlock case before removing %(entry_link)s."
 msgstr "Fall muss entsperrt sein um einen %(entry_link)s zu löschen."
@@ -10941,7 +10949,7 @@ msgstr "Du kannst später weitere Beteiligte hinzufügen."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:81
 msgid "When did you first receive this case?"
-msgstr "Warum ist dieser Fall erstmals eingegangen?"
+msgstr "Wann ist dieser Fall erstmals eingegangen?"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:82
 msgid "Initial Information"
