@@ -1054,7 +1054,7 @@ def make_registration_query_spec(event: "models.Event",
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
         prefix = "" if len(event.parts) <= 1 else part.shortname
-        group_data = {"group_base": prefix or n_("Event Part"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Event Part"), "translate_group": not prefix}
         return {
             # Choices for the status will be manually set.
             f"part{part.id}.status": QuerySpecEntry(
@@ -1095,7 +1095,7 @@ def make_registration_query_spec(event: "models.Event",
     def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
         track_id = track.id
         prefix = "" if len(event.tracks) <= 1 else track.shortname
-        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix, **group_data),
@@ -1151,7 +1151,7 @@ def make_registration_query_spec(event: "models.Event",
 
     def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else cco.shortname
-        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
             f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
@@ -1303,7 +1303,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
     def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
-        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         return {
             f"track{track.id}.is_offered": QuerySpecEntry(
                 "bool", n_("is offered"), prefix, **group_data),
@@ -1327,7 +1327,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
     def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
-        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
         return {
             f"track{track.id}.num_choices{i}": QuerySpecEntry(
                 "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)}, **group_data)
@@ -1346,7 +1346,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     for track_id, track_spec in track_specs.items():
         spec.update(track_spec)
         prefix = ("" if len(event.tracks) <= 1 else event.tracks[track_id].shortname)
-        group_data = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Track"), "translate_group": not prefix}
 
         course_choice_spec = course_choice_specs[track_id]
         # If there are course choices for the track, add an entry for any choice.
@@ -1447,7 +1447,7 @@ def make_lodgement_query_spec(event: "models.Event",
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
         prefix = "" if len(event.parts) <= 1 else part.shortname
-        group_data = {"group_base": prefix or n_("Event Part"), "translate_group": not prefix}
+        group_data: CdEDBObject = {"group_base": prefix or n_("Event Part"), "translate_group": not prefix}
         return {
             f"part{part.id}.regular_inhabitants": QuerySpecEntry(
                 "int", n_("Regular Inhabitants"), prefix, **group_data,
