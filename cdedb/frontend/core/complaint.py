@@ -281,6 +281,20 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:  # type: ignore[arg-type]
             rs.notify('error', n_("May not create case with own involvement."))
             return self.create_case_form(rs)
+
+        error = ValueError(n_("May not be involved in multiple ways."))
+        if affected_ids and appellant_id in affected_ids:
+            rs.append_validation_error(('appellant_id', error))
+            rs.append_validation_error(('affected_ids', error))
+        if target_ids and appellant_id in target_ids:
+            rs.append_validation_error(('appellant_id', error))
+            rs.append_validation_error(('target_ids', error))
+        if affected_ids and target_ids and set(affected_ids) & set(target_ids):
+            rs.append_validation_error(('affected_ids', error))
+            rs.append_validation_error(('target_ids', error))
+        if rs.has_validation_errors():
+            return self.create_case_form(rs)
+
         with TransactionObserver(rs, self, "create_complaint_case"):
             new_case = self.complaintproxy.create_case(rs, data)
             entry_data = {

@@ -321,6 +321,14 @@ class TestComplaintFrontend(FrontendTest):
             "Du darfst keinen Fall mit eigener Beteiligung erstellen.",
             'error',
         )
+        f = self.response.forms['configurecaseform']
+        f['appellant_id'] = "DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('target_ids')
+        self.assertValidationError('appellant_id')
+        with self.assertRaises(AssertionError):
+            self.assertValidationError('affected_ids')
+        f = self.response.forms['configurecaseform']
         f['appellant_id'] = "DB-1-9"
         self.submit(f)
         self.assertPresence("Zusammenfassung Die Texte von Schorsch")
