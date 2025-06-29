@@ -145,10 +145,14 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Aussage freigegeben")
         f = self.response.forms['configureentryform']
-        f['authors'] = "DB-3-5"
+        f['authors'] = "DB-2-7"
         f['description'] = (
             "Aussage darf verwendet werden, um \"einen ruhigen Schlaf im CdE\" zu fördern."
         )
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning('authors')
+        f = self.response.forms['configureentryform']
+        f['authors'] = "DB-3-5"
         self.submit(f)
         self.assertPresence("75 Zeichen.", div='entry1001')
         self.assertNonPresence("Versionen", div='entry1001')

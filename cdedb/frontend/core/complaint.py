@@ -14,6 +14,7 @@ import cdedb.models.complaint as models
 from cdedb.common import (
     CdEDBObject,
     RequestState,
+    ValidationWarning,
     determine_age_class,
     make_persona_name,
     merge_dicts,
@@ -640,6 +641,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
             models.ComplaintEntry.mandatory_form_fields(creation=True),
         )
 
+    def _append_author_validation_warning(
+        self, rs: RequestState, authors: set[int]
+    ) -> None:
+        """Warn to not misuse author field.
+
+        This check is intentionally omitted on replacement, to not be too annoying"""
+        if authors & rs.ambience['case'].all_involved.keys() and not rs.ignore_warnings:
+            msg = n_("Should not include involved people.")
+            rs.append_validation_error(('authors', ValidationWarning(msg)))
+
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("entry_type")
     def add_entry(
@@ -668,6 +679,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
             creation=True,
             entry_type=entry_type,
         )
+        if version_data:
+            self._append_author_validation_warning(rs, version_data.get('authors', {}))
+
         if rs.has_validation_errors() or not entry_data or not version_data:
             return self.add_entry_form(
                 rs,
@@ -843,6 +857,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             creation=True,
             entry_type=const.ComplaintEntryType.revocation_explanation,
         )
+        if version_data:
+            self._append_author_validation_warning(rs, version_data.get('authors', {}))
         if rs.has_validation_errors() or not version_data:
             return self.revoke_entry_form(rs, case_id, entry_id)
         if not rs.ambience['entry'].active_version:
