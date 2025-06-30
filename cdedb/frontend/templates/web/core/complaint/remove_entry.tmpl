@@ -28,7 +28,10 @@
             {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
         {% endif %}
         {{ util.anti_csrf_token("core/remove_entry") }}
-        {{ util.form_input_static(label=gettext("Entry Type"), value=gettext(entry_type)) }}
+        {% call util.form_input_static(label=gettext("Entry Type")) %}
+            {{ util.make_icon(entry_type.get_icon()) }}
+            {{ gettext(entry_type|string) }}
+        {% endcall %}
         {% if entry_type.has_concerned %}
             {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(concerned, icon='user')) }}
         {% endif %}
