@@ -76,25 +76,24 @@ class CoreComplaintMixin(CoreBaseFrontend):
             count = 0
             cases = personas = unlocked_cases = None
         else:
-            input: dict[str, Any] = scope.mangle_query_input(rs, defaults)
+            query_input: dict[str, Any] = scope.mangle_query_input(rs, defaults)
             # Manually mangle the last changed information
             if last_entry_after and last_entry_before:
-                input['qop_status.last_entry'] = QueryOperators.between
-                input['qval_status.last_entry'] = (
+                query_input['qop_status.last_entry'] = QueryOperators.between
+                query_input['qval_status.last_entry'] = (
                     f"{last_entry_after};{last_entry_before}"
                 )
             elif last_entry_after:
-                input['qop_status.last_entry'] = QueryOperators.greater
-                input['qval_status.last_entry'] = last_entry_after
+                query_input['qop_status.last_entry'] = QueryOperators.greater
+                query_input['qval_status.last_entry'] = last_entry_after
             elif last_entry_before:
-                input['qop_status.last_entry'] = QueryOperators.less
-                input['qval_status.last_entry'] = last_entry_before
+                query_input['qop_status.last_entry'] = QueryOperators.less
+                query_input['qval_status.last_entry'] = last_entry_before
 
-            # our query facility does not allow + signs, thus special-case it here
             query = check(
                 rs,
                 vtypes.QueryInput,
-                input,
+                query_input,
                 "query",
                 spec=spec,
                 allow_empty=True,
@@ -109,6 +108,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                             'qval_involved.persona_id',
                             ValueError(n_("May not search for own involvement.")),
                         ))
+                        # Change this for continue once there are multiple such checks
                         break
 
             if rs.has_validation_errors():
@@ -144,7 +144,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     persona_id = check(
                         rs,
                         vtypes.CdedbID,
-                        input['qval_involved.persona_id'],
+                        query_input['qval_involved.persona_id'],
                         passthrough=True,
                     )
                     rs.ignore_validation_errors()
@@ -157,9 +157,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
                                 rs, case_id=concealed_case_id, persona_id=persona_id
                             )
 
-                persona_ids: list[int] = []
+                persona_ids: set[int] = set()
                 for case in cases.values():
-                    persona_ids.extend(case.all_involved.keys())
+                    persona_ids.update(case.all_involved.keys())
                 personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(
