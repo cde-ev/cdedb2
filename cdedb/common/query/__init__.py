@@ -163,12 +163,11 @@ class QuerySpecEntry:
     group_prefix: str = ""
     translate_group: bool = True
 
-    # Mask gettext so pybabel doesn't try to extract the f-string.
-    def get_title(self, g: Callable[[str], str]) -> str:
-        ret = g(self.title_base).format(**self.title_params)
+    def get_title(self, gettext: Callable[[str], str]) -> str:
+        ret = gettext(self.title_base).format(**self.title_params)
         if self.title_prefix:
             if self.translate_prefix:
-                ret = f"{g(self.title_prefix)}: {ret}"
+                ret = f"{gettext(self.title_prefix)}: {ret}"
             else:
                 ret = f"{self.title_prefix}: {ret}"
         return ret
@@ -178,13 +177,13 @@ class QuerySpecEntry:
             return f"{self.group_prefix}: {self.group_base}"
         return self.group_base
 
-    def get_group_label(self, g: Callable[[str], str]) -> str:
+    def get_group_label(self, gettext: Callable[[str], str]) -> str:
         if self.translate_group:
-            ret = g(self.group_base)
+            ret = gettext(self.group_base)
         else:
             ret = self.group_base
         if self.group_prefix:
-            ret = f"{g(self.group_prefix)}: {ret}"
+            ret = f"{gettext(self.group_prefix)}: {ret}"
         return ret
 
 
