@@ -1423,7 +1423,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+            vtypes.CdedbID, (datum['raw']['cdedbid'] or "").strip(), argname="persona_id")
         problems.extend(p)
 
         family_name, p = inspect_validation(
@@ -1497,7 +1497,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         total = amount_paid + amount
                         fee = registration['amount_owed']
 
-                        if (registration['ctime']
+                        if (registration['ctime'] and date
                                 and date < registration['ctime'].date()):
                             infos.append((
                                 'date',

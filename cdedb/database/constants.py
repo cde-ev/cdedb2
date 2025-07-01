@@ -338,6 +338,12 @@ class MailinglistTypes(CdEIntEnum):
 
     complaint_admin_implicit = 80
 
+    def optgroup_label(self) -> str:
+        from cdedb.models.ml import ML_TYPE_MAP  # noqa: PLC0415
+        if self in ML_TYPE_MAP:
+            return str(ML_TYPE_MAP[self].sortkey)
+        return ""
+
 
 @enum.unique
 class MailinglistDomain(CdEIntEnum):

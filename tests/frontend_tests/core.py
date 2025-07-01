@@ -67,7 +67,7 @@ class TestCoreFrontend(FrontendTest):
     def test_logout(self) -> None:
         self.assertPresence(self.user['given_names'], div='displayname', exact=True)
         f = self.response.forms['logoutform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, button="submitlogout")
         self.assertNonPresence(self.user['given_names'])
         self.assertIn('loginform', self.response.forms)
 

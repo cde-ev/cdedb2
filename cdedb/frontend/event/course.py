@@ -503,10 +503,9 @@ class EventCourseMixin(EventBaseFrontend):
         corresponding_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
-            ["reg.id", "persona.given_names", "persona.family_name",
-             "persona.username"] + [
-                f"course{track_id}.id"
-                for track_id in tracks],
+            ["persona.given_names", "persona.family_name", "persona.username"] + [
+                f"track{track_id}.course_id" for track_id in tracks
+            ],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True)),
         )

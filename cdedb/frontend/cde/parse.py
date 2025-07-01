@@ -297,9 +297,10 @@ class CdEParseMixin(CdEBaseFrontend):
             rs.notify("warning", n_("Only one input method allowed."))
             return self.money_transfers_form(rs)
         elif transfers_file:
-            rs.values["transfers"] = transfers = transfers_file
+            rs.values["transfers"] = transfers = transfers_file.strip()
             transferlines = transfers_file.splitlines()
         elif transfers:
+            transfers = transfers.strip()
             transferlines = transfers.splitlines()
         else:
             rs.notify("error", n_("No input provided."))
