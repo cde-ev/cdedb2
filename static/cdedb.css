@@ -561,6 +561,27 @@ input[type=number].no-number-arrows {
     font-size: 85%;
     color: #777;
 }
+.selectize-dropdown-content {
+    max-height: max(50vh, 300px);
+}
+.selectize-dropdown .optgroup-header {
+    color: revert;
+    font-weight: bold;
+    font-size: revert;
+}
+.selectize-dropdown .optgroup .option {
+    padding-left: 24px;
+}
+.selectize-dropdown .optgroup::before {
+    margin: 2px 0;
+}
+.selectize-dropdown .optgroup:has(+ .option)::after {
+    content: ' ';
+    display: block;
+    height: 1px;
+    margin: 2px -12px;
+    background-color: #e5e5e5;
+}
 
 /* ************* *
  * Extra styling *
