@@ -62,7 +62,7 @@
     {% else %}
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
             {{ util.anti_csrf_token(action_target) }}
-            {% if not entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+            {% if not is_revocation %}
                 {{ util.input_hidden(name="entry_type", value=entry_type) }}
 
                 {% call util.form_input_static(label=gettext("Entry Type")) %}
