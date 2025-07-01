@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-06-26 21:42+0200\n"
+"POT-Creation-Date: 2025-06-26 22:39+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2046,7 +2046,7 @@ msgstr "Land"
 #: cdedb/frontend/templates/web/ml/base.tmpl:35
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
-#: cdedb/frontend/templates/web/util.tmpl:1041
+#: cdedb/frontend/templates/web/util.tmpl:1058
 msgid "Mailinglists"
 msgstr "Mailinglisten"
 
@@ -2066,7 +2066,7 @@ msgstr "Bereich"
 #: cdedb/frontend/templates/web/event/base.tmpl:233
 #: cdedb/frontend/templates/web/event/event/index.tmpl:5
 #: cdedb/frontend/templates/web/event/event/index.tmpl:10
-#: cdedb/frontend/templates/web/util.tmpl:1040
+#: cdedb/frontend/templates/web/util.tmpl:1057
 msgid "Events"
 msgstr "Veranstaltungen"
 
@@ -2076,13 +2076,13 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:5
 #: cdedb/frontend/templates/web/base.tmpl:174
-#: cdedb/frontend/templates/web/util.tmpl:1042
+#: cdedb/frontend/templates/web/util.tmpl:1059
 msgid "Assemblies"
 msgstr "Versammlungen"
 
 #: cdedb/common/query/__init__.py:461
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:25
-#: cdedb/frontend/templates/web/util.tmpl:1039
+#: cdedb/frontend/templates/web/util.tmpl:1056
 msgid "cde_realm"
 msgstr "CdE"
 
@@ -3678,7 +3678,7 @@ msgstr "Verbindung bereits in Benutzung!"
 msgid "Suppressed exception detected"
 msgstr "Unterdrückte Exception gefunden."
 
-#: cdedb/database/constants.py:355
+#: cdedb/database/constants.py:361
 msgid "This domain is not supported."
 msgstr "Diese Domain wird nicht unterstützt."
 
@@ -6032,8 +6032,8 @@ msgstr "sicher?"
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:232
 #: cdedb/frontend/templates/web/generic.tmpl:318
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:214
-#: cdedb/frontend/templates/web/util.tmpl:739
-#: cdedb/frontend/templates/web/util.tmpl:763 cdedb/i18n_additional.py:528
+#: cdedb/frontend/templates/web/util.tmpl:756
+#: cdedb/frontend/templates/web/util.tmpl:780 cdedb/i18n_additional.py:528
 msgid "Save"
 msgstr "Speichern"
 
@@ -7279,7 +7279,7 @@ msgstr "Benutzer-Administration"
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:282
 #: cdedb/frontend/templates/web/ml/base.tmpl:120
-#: cdedb/frontend/templates/web/util.tmpl:1063
+#: cdedb/frontend/templates/web/util.tmpl:1080
 msgid "Auditor"
 msgstr "Kassenprüfer"
 
@@ -8009,13 +8009,13 @@ msgid "Line %(lineno)s"
 msgstr "Zeile %(lineno)s"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:95
-#: cdedb/frontend/templates/web/util.tmpl:1026
+#: cdedb/frontend/templates/web/util.tmpl:1043
 msgid "born"
 msgstr "geb. am"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:111
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:85
-#: cdedb/frontend/templates/web/util.tmpl:1094
+#: cdedb/frontend/templates/web/util.tmpl:1111
 msgid "Error"
 msgstr "Fehler"
 
@@ -9216,8 +9216,8 @@ msgid "Go to first Error."
 msgstr "Gehe zum ersten Fehler"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:216
-#: cdedb/frontend/templates/web/util.tmpl:735
-#: cdedb/frontend/templates/web/util.tmpl:767
+#: cdedb/frontend/templates/web/util.tmpl:752
+#: cdedb/frontend/templates/web/util.tmpl:784
 msgid "Ignore Warnings"
 msgstr "Warnungen ignorieren"
 
@@ -10244,42 +10244,42 @@ msgstr ""
 "bestötigt werden."
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
-#: cdedb/frontend/templates/web/util.tmpl:1055
+#: cdedb/frontend/templates/web/util.tmpl:1072
 msgid "Meta-Admin"
 msgstr "Meta-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:1056
+#: cdedb/frontend/templates/web/util.tmpl:1073
 msgid "Core-Admin"
 msgstr "Core-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
-#: cdedb/frontend/templates/web/util.tmpl:1057
+#: cdedb/frontend/templates/web/util.tmpl:1074
 msgid "CdE-Admin"
 msgstr "CdE-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
-#: cdedb/frontend/templates/web/util.tmpl:1058
+#: cdedb/frontend/templates/web/util.tmpl:1075
 msgid "Finance-Admin"
 msgstr "Finanz-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
-#: cdedb/frontend/templates/web/util.tmpl:1059
+#: cdedb/frontend/templates/web/util.tmpl:1076
 msgid "Event-Admin"
 msgstr "Veranstaltungs-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:43
-#: cdedb/frontend/templates/web/util.tmpl:1060
+#: cdedb/frontend/templates/web/util.tmpl:1077
 msgid "Mailinglist-Admin"
 msgstr "Mailinglisten-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
-#: cdedb/frontend/templates/web/util.tmpl:1061
+#: cdedb/frontend/templates/web/util.tmpl:1078
 msgid "CdElokal-Admin"
 msgstr "CdElokal-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:47
-#: cdedb/frontend/templates/web/util.tmpl:1062
+#: cdedb/frontend/templates/web/util.tmpl:1079
 msgid "Assembly-Admin"
 msgstr "Versammlungs-Admin"
 
@@ -16397,7 +16397,7 @@ msgstr "Dauer"
 
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:248
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:277
-#: cdedb/frontend/templates/web/util.tmpl:803
+#: cdedb/frontend/templates/web/util.tmpl:820
 msgid "to"
 msgstr "bis"
 
@@ -16742,12 +16742,12 @@ msgid "First"
 msgstr "Erste"
 
 #: cdedb/frontend/templates/web/logging.tmpl:173
-#: cdedb/frontend/templates/web/util.tmpl:1078
+#: cdedb/frontend/templates/web/util.tmpl:1095
 msgid "Previous"
 msgstr "Vorherige"
 
 #: cdedb/frontend/templates/web/logging.tmpl:201
-#: cdedb/frontend/templates/web/util.tmpl:1082
+#: cdedb/frontend/templates/web/util.tmpl:1099
 msgid "Next"
 msgstr "Nächste"
 
@@ -17582,74 +17582,74 @@ msgstr ""
 "Dein Upload wurde bereits gespeichert, aber du kannst unten nochmal eine "
 "alternative Datei hochladen."
 
-#: cdedb/frontend/templates/web/util.tmpl:648
+#: cdedb/frontend/templates/web/util.tmpl:658
 msgid ""
 "Empty string values with defaultvalue not supported. default: {} value: {}"
 msgstr ""
 "Leere Zeichenketten-Werte mit Standardwert werden nicht unterstützt. "
 "Standard: {} Wert: {}"
 
-#: cdedb/frontend/templates/web/util.tmpl:801
+#: cdedb/frontend/templates/web/util.tmpl:818
 msgid "from"
 msgstr "von"
 
-#: cdedb/frontend/templates/web/util.tmpl:802
+#: cdedb/frontend/templates/web/util.tmpl:819
 #, python-format
 msgid "%s from"
 msgstr "%s von"
 
-#: cdedb/frontend/templates/web/util.tmpl:804
+#: cdedb/frontend/templates/web/util.tmpl:821
 #, python-format
 msgid "%s to"
 msgstr "%s bis"
 
-#: cdedb/frontend/templates/web/util.tmpl:901
+#: cdedb/frontend/templates/web/util.tmpl:918
 #, python-format
 msgid "Hide %(label)s"
 msgstr "%(label)s ausblenden"
 
-#: cdedb/frontend/templates/web/util.tmpl:901
+#: cdedb/frontend/templates/web/util.tmpl:918
 #, python-format
 msgid "Show %(label)s"
 msgstr "%(label)s anzeigen"
 
-#: cdedb/frontend/templates/web/util.tmpl:904
+#: cdedb/frontend/templates/web/util.tmpl:921
 msgid "(enabled)"
 msgstr "(aktiv)"
 
-#: cdedb/frontend/templates/web/util.tmpl:945
+#: cdedb/frontend/templates/web/util.tmpl:962
 msgid "Info!"
 msgstr "Info!"
 
-#: cdedb/frontend/templates/web/util.tmpl:945
+#: cdedb/frontend/templates/web/util.tmpl:962
 msgid "Success!"
 msgstr "Erfolg!"
 
-#: cdedb/frontend/templates/web/util.tmpl:946
+#: cdedb/frontend/templates/web/util.tmpl:963
 msgid "Error!"
 msgstr "Fehler!"
 
-#: cdedb/frontend/templates/web/util.tmpl:946
+#: cdedb/frontend/templates/web/util.tmpl:963
 msgid "Warning!"
 msgstr "Warnung!"
 
-#: cdedb/frontend/templates/web/util.tmpl:985
+#: cdedb/frontend/templates/web/util.tmpl:1002
 msgid "Permanent link"
 msgstr "Direktlink"
 
-#: cdedb/frontend/templates/web/util.tmpl:1021
+#: cdedb/frontend/templates/web/util.tmpl:1038
 msgid "archived"
 msgstr "archiviert"
 
-#: cdedb/frontend/templates/web/util.tmpl:1031
+#: cdedb/frontend/templates/web/util.tmpl:1048
 msgid "(not a member)"
 msgstr "(kein Mitglied)"
 
-#: cdedb/frontend/templates/web/util.tmpl:1033
+#: cdedb/frontend/templates/web/util.tmpl:1050
 msgid "(trial member)"
 msgstr "(Probemitglied)"
 
-#: cdedb/frontend/templates/web/util.tmpl:1108
+#: cdedb/frontend/templates/web/util.tmpl:1125
 msgid "Info"
 msgstr "Info"
 
@@ -19130,7 +19130,7 @@ msgid "IllegalMixedLodgementCV"
 msgstr "Unzulässige gemischte Unterkünfte"
 
 #: cdedb/i18n_additional.py:415
-msgid "IncorectIBANCV"
+msgid "IncorrectIBANCV"
 msgstr "Falsche IBAN-Konfiguration"
 
 #: cdedb/i18n_additional.py:417

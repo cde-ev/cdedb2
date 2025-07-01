@@ -18092,8 +18092,8 @@ msgid "IllegalMixedLodgementCV"
 msgstr "Illegally Mixed Lodgements"
 
 #: cdedb/i18n_additional.py:415
-msgid "IncorectIBANCV"
-msgstr ""
+msgid "IncorrectIBANCV"
+msgstr "Incorrectly configured IBAN"
 
 #: cdedb/i18n_additional.py:417
 msgid "ViolationSeverity.DEBUG"
