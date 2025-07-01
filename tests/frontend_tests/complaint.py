@@ -170,6 +170,7 @@ class TestComplaintFrontend(FrontendTest):
         # Entry revocation
         self.assertNoLink("entry/4/revoke")
         self.traverse({'href': "entry/5/revoke"})
+        self.assertPresence("53 Zeichen", div='entry5')
         f = self.response.forms['configureentryform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('authors', "Darf nicht leer sein.")
@@ -215,6 +216,7 @@ class TestComplaintFrontend(FrontendTest):
             {'description': "Fall 1"},
             {'href': "entry/4/replace"},
         )
+        self.assertNonPresence("Zeichen")
         f = self.response.forms['configureentryform']
         f['description'] = "Berta wird ab jetzt immer ein Schnarchzimmer zu beantragen."
         self.submit(f, check_notification=False, check_mandatory_filled=False)

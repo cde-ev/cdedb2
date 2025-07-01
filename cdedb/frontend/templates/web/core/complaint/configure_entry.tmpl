@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
@@ -60,6 +61,19 @@
             {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right", cancellinks=cancellinks) }}
         </form>
     {% else %}
+        {% if is_revocation %}
+            <div class="list-group list-group-hover form-group">
+                <div id="entry{{ ambience['entry'].id }}" class="list-group-item">
+                    <div class="float-right text-right">
+                        {{ ambience['entry'].active_version.timestamp|datetime(lang=lang) -}}
+                        {% if ambience['entry'].active_version.etime %}
+                            – {{ ambience['entry'].active_version.etime|datetime(lang=lang) }}
+                        {% endif %}
+                    </div>
+                    {{ generic_complaint.entry_status(ambience['entry']) }}
+                </div>
+            </div>
+        {% endif %}
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
             {{ util.anti_csrf_token(action_target) }}
             {% if not is_revocation %}
