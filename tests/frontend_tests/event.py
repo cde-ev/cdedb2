@@ -45,6 +45,7 @@ from cdedb.frontend.event.query_stats import (
     StatisticTrackMixin,
     get_id_constraint,
 )
+from cdedb.models.complaint import ComplaintInvolved
 from cdedb.models.droid import OrgaToken
 from cdedb.models.ml import (
     EventAssociatedExclusiveMailinglist,
@@ -6029,6 +6030,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         f = self.response.forms['purgepersonaform']
         f['ack_delete'].checked = True
+        with self.assertRaises(RuntimeError):
+            self.submit(f)
+        execsql(f"DELETE FROM {ComplaintInvolved.database_table} WHERE persona_id = 4", 1)
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertPresence("Der Benutzer wurde geleert.", div='purged')

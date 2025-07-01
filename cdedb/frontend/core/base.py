@@ -61,6 +61,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS,
     ADMIN_VIEWS_COOKIE_NAME,
     ALL_ADMIN_VIEWS,
+    ALL_ADMINS,
     REALM_ADMINS,
     REALM_INHERITANCE,
     extract_roles,
@@ -966,8 +967,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
+        - ``admin_persona``: Search for users as
+          (core|cde|complaint|ml)_admin or auditor.
+        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -999,10 +1001,13 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "ml_admin", "auditor"} & rs.user.roles:
+            if not (
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if not {"core_admin", "ml_admin"} & rs.user.roles:
+            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
@@ -1068,8 +1073,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Core admins are allowed to search by raw ID or CDEDB-ID
-        if "core_admin" in rs.user.roles:
+        # Allow admins to search by (CdEDB)ID
+        if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
@@ -1749,7 +1754,8 @@ class CoreBaseFrontend(AbstractFrontend):
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          is_auditor: bool, notes: str) -> Response:
+                          is_complaint_admin: bool, is_auditor: bool, notes: str,
+                          ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)

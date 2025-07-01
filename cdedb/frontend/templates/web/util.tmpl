@@ -79,6 +79,17 @@
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
 {%- endmacro %}
 
+{# Strike-through a value if parameter is false #}
+{% macro strike(value, valid=False, striketitle="") -%}
+    {%- if not valid -%}
+        <s title="{{ striketitle }}">
+    {% endif %}
+    {{ value }}
+    {%- if not valid -%}
+        </s>
+    {% endif %}
+{% endmacro %}
+
 {% macro gettext_country(country) -%}
     {%- if country %}
         {{- gettext("CountryCodes." + country) -}}
@@ -92,16 +103,16 @@
 
 {% macro bootstrap_panel(
         title="", aclass="panel-default", icon=none, anid=none, button=none,
-        footer_text=none, footer_class="", footer_icon=none
+        footer_text=none, footer_class="", footer_icon=none, level=3
 ) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon or button %}
             <div class="panel-heading">
                 {{- button -}}
-                <h3 class="panel-title">
+                <h{{ level }} class="panel-title">
                     {{- make_icon(icon) + nbsp if icon }}
                     {{- title -}}
-                </h3>
+                </h{{ level }}>
                 <div style="clear:both;"></div>
             </div>
         {%- endif %}
@@ -175,12 +186,23 @@
    aclass:                  see 'href' macro
    readonly:                see 'href' macro
    title:                   see 'href' macro
+   icon:                    see 'href' macro
 #}
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
-                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
+                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
              persona|persona_name(use_legal_name, include_nickname, with_family_name),
-             aclass=aclass, readonly=readonly, title=title) -}}
+             aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
+{% endmacro %}
+
+{# Comma-separated list of links to personas' profile pages. #}
+{% macro persona_anchors(personas, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
+                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
+    {%- for persona in personas -%}
+        {%- if not loop.first -%}, {% endif %}
+        {{- persona_anchor(persona, use_legal_name, include_nickname, with_family_name, with_titles,
+                           quote_me, event_id, ml_id, aclass, readonly, title, icon) }}
+    {% endfor %}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
@@ -778,7 +800,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
-        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel", cancellinks=none,
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
@@ -795,9 +817,9 @@
                 </p>
             {%- endif %}
             {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
-            {%- if cancellink %}
-                &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
-            {%- endif %}
+            {%- for cancellink, cancelvalue, cancelicon in (cancellinks or []) + [(cancellink, cancelvalue, "times")] if cancellink %}
+                &emsp;{{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+            {%- endfor %}
         </div>
     </div>
 {%- endmacro %}
@@ -1077,6 +1099,7 @@ mailto:
         "is_ml_admin": (gettext("Mailinglist-Admin"), "envelope"),
         "is_cdelokal_admin": (gettext("CdElokal-Admin"), "city"),
         "is_assembly_admin": (gettext("Assembly-Admin"), "bullhorn"),
+        "is_complaint_admin": (gettext("Complaint-Admin"), "gavel"),
         "is_auditor": (gettext("Auditor"), "search-dollar"),
         } %}
         {% set description, icon = title_icon_map[privilege] %}

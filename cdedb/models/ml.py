@@ -848,6 +848,16 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
     pass
 
 
+@dataclass
+class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, GeneralMailinglist):
+    allow_unsub = False
+
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+                                 ) -> set[int]:
+        """Return a set of all complaint admins."""
+        return set(bc.core.list_admins(rs, realm="complaint"))
+
+
 MLType = type[Mailinglist]
 
 
@@ -878,6 +888,7 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
+    MailinglistTypes.complaint_admin_implicit: ComplaintAdminImplicitMailinglist,
 }
 
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}

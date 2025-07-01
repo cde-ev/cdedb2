@@ -15,7 +15,7 @@
     {{ util.breadcrumb_link(cdedblink("event/view_log"), gettext("Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% call logging.table(log, keytitle='Event') %}
+    {% call logging.table(log, ['Event']) %}
         {% for entry in log %}
             {% set link = None %}
             {% if entry['event_id'] %}
@@ -29,7 +29,7 @@
                     label=personas[entry['persona_id']]|persona_name(include_nickname=true))
                 %}
             {% endif %}
-            {{ logging.row(entry, enums['EventLogCodes'], loop.index, 'event_id', link, personalink) }}
+            {{ logging.row(entry, enums['EventLogCodes'], loop.index, [link], personalink) }}
         {% endfor %}
     {% endcall %}
 

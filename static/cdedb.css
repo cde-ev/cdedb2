@@ -144,6 +144,9 @@ ul.slim {
 .details-list > li > details >  summary {
     margin-left: -15px;
 }
+.list-group.nosp {
+    margin-bottom: 5px;
+}
 .list-group-item {
     padding: 7px 8px;
 }
@@ -151,7 +154,7 @@ ul.slim {
     color: #777;
     background-color: #eee;
 }
-.list-group-item-muted a, .text-muted a, a.text-muted {
+.list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;
 }
 
@@ -198,7 +201,8 @@ h4, .h4, h5, .h5, h6, .h6 {
     margin-top: 12px;
     margin-bottom: 6px;
 }
-h4.heading-underline, h5.heading-underline, h6.heading-underline {
+h4.heading-underline, h5.heading-underline, h6.heading-underline,
+h4.panel-title, h5.panel-title, h6.panel-title {
     font-weight: inherit;
 }
 @media (max-width: 767px) {
@@ -298,7 +302,7 @@ summary.btn {
 }
 
 /* no-space and more-space classes */
-p.nosp {
+p.nosp, .form-group.nosp {
     margin-bottom: 0;
 }
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
@@ -739,7 +743,8 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td, tr:target td{
+tr.ls-selected td, tr:target td, .list-group-item:target
+{
     background: #d9edf7;
 }
 .ls-item {

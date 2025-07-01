@@ -170,6 +170,10 @@ else
 endif
 	@echo ""
 
+.PHONY: ruff-fix
+ruff-fix:
+	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
+
 .PHONY: template-line-length
 template-line-length:
 	@echo $(BANNERLINE)
