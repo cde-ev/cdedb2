@@ -222,16 +222,25 @@
     {{ util.h(n_("Related Cases")) }}
     {% if related_cases %}
         <ul>
-        {% for case in related_cases.values() if ambience['case'].is_strongly_related(case) %}
-            <li>
-                {{ print_related_case(case) }}
-            </li>
-        {% endfor %}
-        {% for case in related_cases.values() if not ambience['case'].is_strongly_related(case) %}
-            <li>
-                {{ print_related_case(case) }}
-            </li>
-        {% endfor %}
+            {% for case in related_cases.values() if case and ambience['case'].is_strongly_related(case) %}
+                <li>
+                    {{ print_related_case(case_id, case) }}
+                </li>
+            {% endfor %}
+            {% for case in related_cases.values() if case and not ambience['case'].is_strongly_related(case) %}
+                <li>
+                    {{ print_related_case(case) }}
+                </li>
+            {% endfor %}
+            {% for case_id, case in related_cases.items() if not case %}
+                <li>
+                    {{ gettext("Case %s")|s|format(case_id) }}:
+                    <strong class="text-warning">
+                        {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
+                        {{ gettext("Not shown due to own involvement.") }}
+                    </strong>
+                </li>
+            {% endfor %}
         </ul>
     {% else %}
         <p class="text-muted">
