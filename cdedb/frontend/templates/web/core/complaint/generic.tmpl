@@ -1,5 +1,26 @@
 {% import "web/util.tmpl" as util with context %}
 
+{# Print collection of status flags for a case #}
+{% macro case_status_flags(case) %}
+    <span class="nowrap text-muted" style="margin-left: .1em;">
+        {% if case.is_confirmed %}
+            {{ util.make_icon(
+                enums["ComplaintEntryType"].statement_signed.get_icon(),
+                title=gettext("is confirmed")
+            ) }}
+        {% endif %}
+        {% if not case.is_active %}
+            {{ util.make_icon('check', title=gettext("is closed")) }}
+        {% endif %}
+        {% if case.is_grave %}
+            {{ util.make_icon('meteor', title=gettext("is grave")) }}
+        {% endif %}
+        {% if unlocked_cases and case.id in unlocked_cases %}
+            {{ util.make_icon('lock-open', title=gettext("is unlocked")) }}
+        {% endif %}
+    </span>
+{% endmacro %}
+
 {% macro pretty_entry_heading(entry) %}
     <strong>
         {{ util.make_icon(entry.entry_type.get_icon()) }}
