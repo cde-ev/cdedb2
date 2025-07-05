@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-07-01 22:51+0200\n"
+"POT-Creation-Date: 2025-07-05 17:59+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2500,7 +2500,7 @@ msgid "Summary"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:747
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:59
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:64
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:48
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:49
 msgid "is grave"
@@ -2531,13 +2531,13 @@ msgid "Kind"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:751
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:62
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:67
 #, fuzzy
 msgid "is unlocked"
 msgstr "mensura pecuniae"
 
 #: cdedb/common/query/__init__.py:752
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:52
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:57
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:127
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:67
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:68
@@ -2546,7 +2546,7 @@ msgid "is confirmed"
 msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/common/query/__init__.py:753
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:56
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:61
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:74
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:75
 msgid "is closed"
@@ -10827,7 +10827,7 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:28
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:10
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:45
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:50
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
@@ -11064,8 +11064,9 @@ msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:95
 msgid ""
-"The companions, arbcom members, coordinators responsible for this entry. Do "
-"not specify involved people here."
+"The companions, arbcom members, coordinators responsible for this entry. In "
+"a later update, the may get access to this entry. Do not specify involved "
+"people here."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:108

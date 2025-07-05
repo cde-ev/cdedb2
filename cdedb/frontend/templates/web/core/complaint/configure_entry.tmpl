@@ -92,7 +92,7 @@
             {% endif %}
             {{ util.form_input_text(name="authors", label=gettext("Authors"), anid="input-authors",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
-                                    info=gettext("The companions, arbcom members, coordinators responsible for this entry. Do not specify involved people here.")) }}
+                                    info=gettext("The companions, arbcom members, coordinators responsible for this entry. In a later update, the may get access to this entry. Do not specify involved people here.")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-authors').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
