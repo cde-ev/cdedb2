@@ -22119,3 +22119,6 @@ msgstr "%(num)s Teilnahmebeiträge verbucht für %(event)s."
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr "%(num)s Erstattungen eingetragen für %(event)s."
+
+msgid "Need to fill out at least one field."
+msgstr "Wenigstens ein Feld muss ausgefüllt sein."

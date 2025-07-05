@@ -100,8 +100,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 separator=";",
             )
 
-            # Disallow search for own persona id
             if query:
+                # Disallow empty search to encourage restrictive search
+                if not query.constraints:
+                    rs.notify('error', n_("Need to fill out at least one field."))
+                    return self.complaint_index(rs, is_search=False)
+                # Disallow search for own persona id
                 for field, _, value in query.constraints:
                     if field == 'involved.persona_id' and value == rs.user.persona_id:
                         rs.append_validation_error((
