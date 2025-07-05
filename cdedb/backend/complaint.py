@@ -194,15 +194,16 @@ class ComplaintBackend(AbstractBackend):
     @access("complaint_admin")
     def get_related_cases(
         self, rs: RequestState, case_id: int
-    ) -> models.CdEDataclassMap[models.Case | None]:
+    ) -> dict[int, models.Case | None]:
         """Collect related cases."""
         case_id = affirm(vtypes.ID, case_id)
         query = f"SELECT id FROM {models.Case.database_table}"
         case_ids = self.query_all(rs, query, ())
+        _cases = self.get_cases(rs, [e["id"] for e in case_ids])
         _related_cases = {
-            case_id: case
-            for case_id, case in self.get_cases(rs, [e["id"] for e in case_ids]).items()
-            if rs.ambience['case'].all_properly_involved.keys()
+            maybe_related_case_id: case
+            for maybe_related_case_id, case in _cases.items()
+            if _cases[case_id].all_properly_involved.keys()
             & case.all_properly_involved.keys()
         }
         del _related_cases[case_id]
