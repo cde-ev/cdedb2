@@ -39,6 +39,11 @@
                 {% for case in cases.values() %}
                     <div id="case{{ case.id }}" class="list-group-item">
                         <div class="row">
+                            <div class="col-md-4 float-right text-right">
+                                {% if case.start_date or case.end_date %}
+                                    {{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }}
+                                {% endif %}
+                           </div>
                             <div class="col-md-2">
                                 {{- util.href(
                                     cdedblink("core/show_case", {'case_id': case.id}),
@@ -63,14 +68,9 @@
                                     {% endif %}
                                 </span>
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-md-6">
                                 {{ gettext(case.kind|string) }}
                             </div>
-                            <div class="col-md-5 text-right">
-                                {% if case.start_date or case.end_date %}
-                                    {{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }}
-                                {% endif %}
-                           </div>
                         </div>
                         <div class="row">
                             <div class="col-md-10 col-md-offset-2">
