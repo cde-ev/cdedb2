@@ -54,3 +54,17 @@
     {% endif %}
     </span>
 {% endmacro %}
+
+{% macro entry_parent(entry) %}
+    <div class="list-group list-group-hover form-group">
+        <div id="entry{{ entry.id }}" class="list-group-item">
+            <div class="float-right text-right">
+                {{ entry.active_version.timestamp|datetime(lang=lang) -}}
+                {% if entry.active_version.etime %}
+                    – {{ entry.active_version.etime|datetime(lang=lang) }}
+                {% endif %}
+            </div>
+            {{ entry_status(entry) }}
+        </div>
+    </div>
+{% endmacro %}
