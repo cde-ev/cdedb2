@@ -20,7 +20,7 @@
                             icon="gavel") }}
     {{ util.breadcrumb_link(cdedblink("core/remove_entry"), gettext("Remove Entry"), active=True) }}
 {% endblock %}
-+
+
 {% block content %}
     {% set entry_type = ambience['entry'].entry_type %}
     <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal">

@@ -10,7 +10,7 @@
 
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/measures"), gettext("Measure Overview")) }}
+    {{ util.breadcrumb_link(cdedblink("core/measures"), gettext("Measure Overview"), active=True) }}
 {% endblock %}
 
 {% block content %}

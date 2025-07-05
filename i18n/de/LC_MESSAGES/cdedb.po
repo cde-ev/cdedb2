@@ -11105,12 +11105,21 @@ msgstr "Ablaufdatum"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:95
 msgid ""
+"The companions, arbcom members, coordinators responsible for this entry. Do "
+"not specify involved people here."
+msgstr ""
+"Die Fallbegleitungen, Schiedsrichter, Koordinatoren, die für diesen Eintrag "
+"verantwortlich sind. Trage hier keine Beteiligten ein."
+
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:95
+msgid ""
 "The companions, arbcom members, coordinators responsible for this entry. In "
 "a later update, the may get access to this entry. Do not specify involved "
 "people here."
 msgstr ""
 "Die Fallbegleitungen, Schiedsrichter, Koordinatoren, die für diesen Eintrag "
-"verantwortlich sind. Zu einem späteren Zeitpunkt erhalten diese Personen möglicherweise Zugang zu diesem Eintrag. Trage hier keine Beteiligten ein."
+"verantwortlich sind. Zu einem späteren Zeitpunkt erhalten diese Personen "
+"möglicherweise Zugang zu diesem Eintrag. Trage hier keine Beteiligten ein."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:108
 msgid ""
@@ -11255,7 +11264,7 @@ msgstr "%(name)s als Fallbegleitung entfernen"
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:30
 #, python-format
 msgid "Measure against %(concerned)s"
-msgstr "Maßnahme gegen %(concerned)s)"
+msgstr "Maßnahme gegen %(concerned)s"
 
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:42
 #, python-format
