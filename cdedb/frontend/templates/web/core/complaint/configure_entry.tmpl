@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
@@ -53,6 +54,9 @@
 
 {% block content %}
     {% if new_entry and not entry_type %}
+        {% if parent_id %}
+            {{ generic_complaint.entry_parent(ambience['entry']) }}
+        {% endif %}
         <form action="{{ cdedblink(action_target + '_form') }}" method="GET" id="selectentrytypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="entry_type", label=gettext("Entry Type"),
@@ -60,9 +64,12 @@
             {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right", cancellinks=cancellinks) }}
         </form>
     {% else %}
+        {% if is_revocation or parent_id %}
+            {{ generic_complaint.entry_parent(ambience['entry']) }}
+        {% endif %}
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal">
             {{ util.anti_csrf_token(action_target) }}
-            {% if not entry_type == enums["ComplaintEntryType"].revocation_explanation %}
+            {% if not is_revocation %}
                 {{ util.input_hidden(name="entry_type", value=entry_type) }}
 
                 {% call util.form_input_static(label=gettext("Entry Type")) %}

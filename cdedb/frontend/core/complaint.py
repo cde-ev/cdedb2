@@ -13,6 +13,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import (
     CdEDBObject,
+    CdEDBObjectMap,
     RequestState,
     ValidationWarning,
     determine_age_class,
@@ -604,6 +605,18 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, "core/show_case", {"show_log_entries": show_log_entries}
         )
 
+    def _get_entry_personas(
+        self, rs: RequestState, entry: models.ComplaintEntry
+    ) -> CdEDBObjectMap:
+        """Get any personas associated to a given entry."""
+        persona_ids: set[int] = set()
+        if entry.active_version:
+            persona_ids.update(entry.active_version.authors)
+            persona_ids.add(entry.active_version.submitted_by)
+        if entry.concerned_id:
+            persona_ids.add(entry.concerned_id)
+        return self.coreproxy.get_personas(rs, persona_ids)
+
     @access("complaint_admin")
     @REQUESTdata("entry_type")
     def add_entry_form(
@@ -622,14 +635,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         et = const.ComplaintEntryType
         if parent_id:
             parent = rs.ambience['entry']
-            available_types = parent.entry_type.possible_children - {
-                et.revocation_explanation
-            }
             if not parent.active_version:
                 rs.notify('error', n_("Can not add child for deleted parent."))
                 return self.redirect(rs, "core/show_case")
+            available_types = parent.entry_type.possible_children - {
+                et.revocation_explanation
+            }
+            personas = self._get_entry_personas(rs, parent)
         else:
             available_types = set(et) - et.all_children()
+            personas = {}
         return self.render(
             rs,
             "complaint/configure_entry",
@@ -637,6 +652,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'entry_type': entry_type,
                 'parent_id': parent_id,
                 'available_types': available_types,
+                'personas': personas,
             },
             models.ComplaintEntry.mandatory_form_fields(creation=True),
         )
@@ -813,29 +829,32 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if not rs.ambience['entry'].active_version:
+        entry = rs.ambience['entry']
+        if not entry.active_version:
             rs.notify('error', n_("Entry already removed."))
             return self.redirect(rs, "core/show_case")
         if (
-            rs.ambience['entry'].parent
-            and rs.ambience['entry'].parent.entry_type
+            entry.parent
+            and entry.parent.entry_type
             == const.ComplaintEntryType.revocation_explanation
         ):
             rs.notify('error', n_("Cannot chain revoke."))
             return self.redirect(rs, "core/show_case")
-        if rs.ambience['entry'].is_revoked:
+        if entry.is_revoked:
             rs.notify(
                 'info',
                 n_("%(entry_link)s already revoked."),
                 {"entry_link": entry_link(rs, entry_id)},
             )
             return self.redirect(rs, "core/show_case")
+
         return self.render(
             rs,
             "complaint/configure_entry",
             {
                 'entry_type': const.ComplaintEntryType.revocation_explanation,
                 'is_revocation': True,
+                'personas': self._get_entry_personas(rs, entry),
             },
             models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
