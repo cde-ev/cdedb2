@@ -946,30 +946,30 @@ class TestComplaintBackend(BackendTest):
         )
 
     @as_users("simon")
-    def test_get_user_measures(self) -> None:
+    def test_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 3, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 4, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 4, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 7, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 2, is_active=False)
+            set(), self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
         case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id: measure},
-            self.complaint.get_user_measures(self.key, active_measure_persona_id),
+            {measure.id},
+            self.complaint.list_user_measures(self.key, active_measure_persona_id),
         )
 
         revoke_data: CdEDBObject = {
@@ -980,8 +980,8 @@ class TestComplaintBackend(BackendTest):
         self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
         self.assertEqual(
-            {},
-            self.complaint.get_user_measures(
+            set(),
+            self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=True
             ),
         )
@@ -990,8 +990,8 @@ class TestComplaintBackend(BackendTest):
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id: measure},
-            self.complaint.get_user_measures(
+            {measure.id},
+            self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
         )

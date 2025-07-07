@@ -26,6 +26,7 @@
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
     {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
+    {{ views.append((gettext("Complaints"), ["complaint"], None)) }}
     {% if "moderator" in access_mode %}
         {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
     {% endif %}
@@ -94,7 +95,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["event_user", "ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -116,6 +117,11 @@
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
                 {% endif %}
+            {% endif %}
+            {# independently of quoteable, since complaint admins may be event-only users #}
+            {% if "complaint" in user.admin_views %}
+                {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
+                             gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
             {% endif %}
         </div>
     {% endif %}

@@ -1077,9 +1077,9 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("complaint_admin", "complaint.enforcer")
-    def get_user_measures(
+    def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
-    ) -> dict[int, models.ComplaintEntryVersion]:
+    ) -> set[vtypes.ID]:
         query = f"""
             SELECT versions.id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
@@ -1104,14 +1104,7 @@ class ComplaintBackend(AbstractBackend):
             """
             params["is_active"] = is_active
 
-        entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
-        entry_version_data = self.query_all(
-            rs,
-            *models.ComplaintEntryVersion.get_select_query(
-                entry_version_ids, entity_key="id"
-            ),
-        )
-        return models.ComplaintEntryVersion.many_from_database(entry_version_data)
+        return {e['id'] for e in self.query_all(rs, query, params)}
 
     @access("complaint_admin", "complaint.enforcer")
     def list_measures(

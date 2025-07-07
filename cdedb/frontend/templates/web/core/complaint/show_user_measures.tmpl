@@ -1,0 +1,73 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans name=ambience['persona']|persona_name %}
+        {{ name }} – Measures
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
+                            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_measures"), gettext("Measures"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Measures"), ambience['persona']|persona_name,
+                            'user', gettext("User")) }}
+{% endblock %}
+
+{% block content %}
+    {{ util.h(n_("Global information"), level=4, underline=True) }}
+        <dl class="dl-horizontal">
+            <dt title="{% trans %}Name{% endtrans %}">
+                {% trans %}Name{% endtrans %}
+            </dt>
+            <dd>
+                {{ ambience['persona']|persona_name(with_titles=True) }}
+            </dd>
+            <dt title="{% trans %}CdEDB-ID{% endtrans %}">
+                {% trans %}CdEDB-ID{% endtrans %}
+            </dt>
+            <dd id="cdedb-id">
+                {{ ambience['persona']['id']|cdedbid }}
+            </dd>
+            <dt title="{% trans %}E-Mail{% endtrans %}">
+                {% trans %}E-Mail{% endtrans %}
+            </dt>
+            <dd id="contact-email">
+                {{ util.username_mailto(ambience['persona']) }}
+            </dd>
+        </dl>
+
+    {{ util.h(n_("Measures"), level=4, underline=True) }}
+    {% trans %}
+        This lists all measures targeting this persona.
+    {% endtrans %}
+    <ul>
+        {% for measure in measures.values() %}
+            <li {% if measure.etime and now() > measure.etime %}class="text-muted"{% endif %}>
+                {% set entry = entries[measure.entry_id] %}
+                {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
+                {% trans %}by{% endtrans %}
+                {% for author_id in measure.authors -%}
+                    {{ util.persona_anchor(authors[author_id]) -}}
+                    {%- if not loop.last -%}, {% endif -%}
+                {% endfor %}:
+                {{ measure.timestamp|datetime(lang=lang) -}}
+                {% if measure.etime %}
+                    – {{ measure.etime|datetime(lang=lang) }}
+                {% endif -%}
+                :<br>
+                {{ descriptions[measure.id] }}
+            </li>
+        {% endfor %}
+    </ul>
+    {% if not measures %}
+        <p class="text-muted">
+            {% trans %}
+                Currently, there are no active measures.
+            {% endtrans %}
+        </p>
+    {% endif %}
+{% endblock %}
