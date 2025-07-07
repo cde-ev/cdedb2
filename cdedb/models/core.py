@@ -194,15 +194,40 @@ class AnonymousMessageData(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class Persona(CdEDataclass):
-    # This does not include the ``password_hash`` for security reasons.
     username: vtypes.Email = dataclasses.field(metadata={'genesis_exposed': True})
-    given_names: str = dataclasses.field(metadata={'genesis_exposed': True})
-    family_name: str = dataclasses.field(metadata={'genesis_exposed': True})
+    # This does not include the ``password_hash`` for security reasons.
+
+    # status flags
+    is_active: bool = True
+    is_meta_admin: bool = False
+    is_core_admin: bool = False
+    is_cde_admin: bool = False
+    is_finance_admin: bool = False
+    is_event_admin: bool = False
+    is_ml_admin: bool = False
+    is_assembly_admin: bool = False
+    is_complaint_admin: bool = False
+    is_cde_realm: bool = False
+    is_event_realm: bool = False
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_cdelokal_admin: bool = False
+    is_auditor: bool = False
+    is_member: bool = False
+    is_searchable: bool = False
+    is_archived: bool = False
+    is_purged: bool = False
+
+    title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
-    title: str | None = None
+    given_names: str = dataclasses.field(metadata={'genesis_exposed': True})
+    family_name: str = dataclasses.field(metadata={'genesis_exposed': True})
     name_supplement: str | None = None
     show_legal_given_names: bool = False
+
+    # admin notes
+    notes: str | None = None
 
 
 @dataclasses.dataclass(kw_only=True)
