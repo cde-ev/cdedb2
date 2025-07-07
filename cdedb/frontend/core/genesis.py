@@ -9,6 +9,7 @@ import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
@@ -16,7 +17,6 @@ from cdedb.common import (
     merge_dicts,
     now,
 )
-import cdedb.models.core as models
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.frontend.common import (
@@ -323,7 +323,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
             (realm, rs.gettext(description))
             for realm, description in models.GenesisCase.get_available_realms().items()]
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
-
 
         courses: dict[int, str] = {}
         if case.pevent_id:

@@ -87,7 +87,6 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.core import EmailAddressReport
-import cdedb.models.core as models
 
 
 class CoreBaseBackend(AbstractBackend):

@@ -10,7 +10,6 @@ from typing import Any, Optional, Protocol, cast
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
-from cdedb.models.common import CdEDataclassMap
 from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
@@ -33,17 +32,13 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
-    GENESIS_REALM_OVERRIDE,
+    ADMIN_KEYS,
     PERSONA_DEFAULTS,
-    REALM_ADMINS,
-    extract_realms,
-    extract_roles,
-    implied_realms,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.models.common import CdEDataclassMap
 
 
 class CoreGenesisBackend(CoreBaseBackend):
@@ -338,8 +333,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise ValueError(n_("Case not to review."))
             if decision.is_create():
                 case_status = const.GenesisStati.approved
-                persona_id = None
             elif decision.is_update():
+                case.persona_id = persona_id
                 case_status = const.GenesisStati.existing_updated
             else:
                 case_status = const.GenesisStati.rejected
@@ -351,37 +346,31 @@ class CoreGenesisBackend(CoreBaseBackend):
             if decision.is_create():
                 return self.genesis(rs, case_id)
             elif decision.is_update():
-                assert persona_id is not None
-                persona = self.get_persona(rs, persona_id)
+                assert case.persona_id is not None
+                persona = self.get_persona(rs, case.persona_id)
                 if not self._is_relative_admin(rs, persona):
                     raise PrivilegeError(n_("Not privileged."))
                 if persona['is_archived']:
-                    code = self.dearchive_persona(rs, persona_id, case.persona.username)
+                    code = self.dearchive_persona(
+                        rs, case.persona_id, case.persona.username)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Dearchival failed."))
                 elif case.persona.username != persona['username']:
                     code, _ = self.change_username(
-                        rs, persona_id, case.persona.username, None)
+                        rs, case.persona_id, case.persona.username, None)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Username change failed."))
 
-                # Determine the keys of the persona that should be updated.
-                update_keys = {field.name for field in case.persona_dataclass_fields()}
-                update_keys -= {'username'}
-                proto_persona = case.persona.as_dict()
-                update = {key: proto_persona[key] for key in update_keys
-                          if proto_persona[key]}
-                update['id'] = persona_id
                 # we grant trial membership by default for cde genesis cases
                 if case.realm == "cde" and not persona["is_member"]:
                     self.change_membership_easy_mode(
-                        rs, persona_id, is_member=True, trial_member=True)
+                        rs, case.persona_id, is_member=True, trial_member=True)
                 # Set force_review, so that all changes can be reviewed and adjusted
                 # manually and we don't just overwrite existing data blindly.
                 self.change_persona(
-                    rs, update, change_note="Daten aus Accountanfrage übernommen.",
-                    force_review=True)
-                return persona_id
+                    rs, case.get_persona_upgrade(), force_review=True,
+                    change_note="Daten aus Accountanfrage übernommen.")
+                return case.persona_id
             # Special return value for rejected cases.
             else:
                 return -1
@@ -400,19 +389,19 @@ class CoreGenesisBackend(CoreBaseBackend):
             if self.verify_existence(rs, case.persona.username, include_genesis=False):
                 raise ValueError(n_("Email address already taken."))
 
-            # filter out genesis information not relevant for the respective realm
-            keys = {field.name for field in case.persona_dataclass_fields()}
-            proto_persona = case.persona.as_dict()
-            data = {key: proto_persona[key] for key in keys if proto_persona[key]}
+            data = case.get_persona_creation().as_dict()
+            data.pop("id")
+            # TODO remove those after adjusting the validation of personas for dataclasses
             merge_dicts(data, PERSONA_DEFAULTS)
-            # Fix realms, so that the persona validator does the correct thing
-            data.update(GENESIS_REALM_OVERRIDE[case['realm']])
+            for admin_bit in ADMIN_KEYS:
+                del data[admin_bit]
+            del data["is_archived"]
+            del data["is_purged"]
+            if "balance" in data:
+                del data["balance"]
             data = affirm(vtypes.Persona, data, creation=True)
             if case.case_status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
-            roles = extract_roles(data)
-            if extract_realms(roles) != ({case.realm} | implied_realms(case.realm)):
-                raise PrivilegeError(n_("Wrong target realm."))
             new_id = self.create_persona(rs, data, submitted_by=case.reviewer)
             self.genesis_modify_case_meta(rs, case_id, case_status=const.GenesisStati.successful,
                                           persona_id=new_id)

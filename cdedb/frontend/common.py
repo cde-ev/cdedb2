@@ -78,9 +78,9 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
+import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
-import cdedb.models.core as models_core
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend

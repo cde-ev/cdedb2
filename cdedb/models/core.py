@@ -1,20 +1,21 @@
 """Dataclass definitions for core realm."""
 
+import abc
 import base64
 import dataclasses
 import datetime
 import decimal
 import re
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional
 
 from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
-from cdedb.common.n_ import n_
 from cdedb.common.exceptions import CryptographyError
+from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
@@ -277,7 +278,6 @@ class CdEPersona(EventPersona):
     honorary_member: bool = False
 
 
-
 @dataclasses.dataclass(kw_only=True)
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
@@ -304,8 +304,8 @@ class GenesisCase(CdEDataclass):
     @classmethod
     def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
         genesis_fields = [field for field in dataclasses.fields(cls)]
-        persona_class =  {field.type for field in dataclasses.fields(cls)
-                          if field.name == "persona"}.pop()
+        persona_class = {field.type for field in dataclasses.fields(cls)
+                         if field.name == "persona"}.pop()
         # use CdEPersona to gain all potential fields before realm is known
         # TODO remove once we use extract_and_check, and use below helper here
         if persona_class == Persona:
@@ -316,7 +316,7 @@ class GenesisCase(CdEDataclass):
 
     @classmethod
     def persona_dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
-        persona_class: Type[Persona] = {
+        persona_class: type[Persona] = {
             field.type for field in dataclasses.fields(cls)
             if field.name == "persona"}.pop()
         return tuple([field for field in dataclasses.fields(persona_class)
@@ -368,6 +368,19 @@ class GenesisCase(CdEDataclass):
     def relative_admin(self) -> str:
         return f"{self.realm}_admin"
 
+    def get_persona_upgrade(self) -> dict[str, Any]:
+        """Dict to upgrade an existing persona as the final stage of a genesis case."""
+        keys = {field.name for field in self.persona_dataclass_fields()} - {'username'}
+        proto_persona = self.persona.as_dict()
+        ret = {key: proto_persona[key] for key in keys if proto_persona[key]}
+        ret['id'] = self.persona_id
+        return ret
+
+    @abc.abstractmethod
+    def get_persona_creation(self) -> Persona:
+        """Dataclass to create a new persona as the final stage of a genesis case."""
+        ...
+
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
@@ -388,6 +401,10 @@ class GenesisCaseMl(GenesisCase):
 
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(genesis_data)
+
+    def get_persona_creation(self) -> MlPersona:
+        self.persona.is_ml_realm = True
+        return self.persona
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -410,6 +427,11 @@ class GenesisCaseEvent(GenesisCase):
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(genesis_data)
 
+    def get_persona_creation(self) -> EventPersona:
+        self.persona.is_ml_realm = True
+        self.persona.is_event_realm = True
+        return self.persona
+
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
@@ -431,3 +453,12 @@ class GenesisCaseCdE(GenesisCase):
 
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(genesis_data)
+
+    def get_persona_creation(self) -> EventPersona:
+        self.persona.is_ml_realm = True
+        self.persona.is_event_realm = True
+        self.persona.is_assembly_realm = True
+        self.persona.is_cde_realm = True
+        self.persona.is_member = True
+        self.persona.trial_member = True
+        return self.persona
