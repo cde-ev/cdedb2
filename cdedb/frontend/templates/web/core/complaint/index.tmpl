@@ -1,0 +1,191 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}
+    	Case Archive
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases"), active=True) }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/create_case'), gettext("Create Case"),
+                     aclass="btn btn-sm btn-success", icon="plus") }}
+        {% if cases %}
+            {{ util.href("#casesearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+        {% endif %}
+    </div>
+
+    {% if values['is_search'] %}
+        {% if cases %}
+            <h2 id="result-count">
+                {% trans %}Result{% endtrans %}
+                <small>
+                {% trans count=count %}
+                    {{ count }} Cases found
+                {% endtrans %}
+                </small>
+            </h2>
+            <div id="result" class="list-group list-group-hover list-group-condensed">
+                {% for case in cases.values() %}
+                    <div id="case{{ case.id }}" class="list-group-item">
+                        <div class="row">
+                            <div class="col-md-4 float-right text-right">
+                                {% if case.start_date or case.end_date %}
+                                    {{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }}
+                                {% endif %}
+                           </div>
+                            <div class="col-md-2">
+                                {{- util.href(
+                                    cdedblink("core/show_case", {'case_id': case.id}),
+                                    gettext("Case %s")|s|format(case.id)
+                                ) }}
+                                <span class="nowrap" style="margin-left: .1em;">
+                                    {% if case.is_confirmed %}
+                                        {{ util.make_icon(
+                                            enums["ComplaintEntryType"].statement_signed.get_icon(),
+                                            aclass='text-muted',
+                                            title=gettext("is confirmed")
+                                        ) }}
+                                    {% endif %}
+                                    {% if not case.is_active %}
+                                        {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
+                                    {% endif %}
+                                    {% if case.is_grave %}
+                                        {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
+                                    {% endif %}
+                                    {% if case.id in unlocked_cases %}
+                                        {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                {{ gettext(case.kind|string) }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-10 col-md-offset-2">
+                            <hr class="nosp" />
+                                {% for involvement_type, involved_ids in case.involved.items() %}
+                                    {% if not involvement_type == enums["ComplaintInvolvementType"].withheld %}
+                                        {% if not loop.first %}
+                                            <br />
+                                        {% endif %}
+                                        <span class="text-muted">
+                                        {{ util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
+                                        <span aria-hidden="true">{{ gettext(involvement_type.shortname) }}</span>:
+                                        </span>
+                                        {% for persona_id in involved_ids %}
+                                            {{ util.persona_anchor(personas[persona_id]) -}}
+                                            {%- if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                <hr class="nosp" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-10 col-md-offset-2">
+                                {{ case.summary|md }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h2 id="result-count">
+                {% trans %}Result{% endtrans %}
+            </h2>
+            <p class="text-muted">
+                {% trans %}
+                    No cases found.
+                {% endtrans %}
+            </p>
+        {% endif %}
+    {% endif %}
+
+    <form action="{{ cdedblink('core/complaint_index') }}" method="GET" id="complaintsearchform" class="form-horizontal">
+        {{ util.input_hidden(name="is_search", value=True) }}
+        <div class="panel panel-primary mosp">
+            <div class="panel-heading">
+                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h2>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_status.is_confirmed",
+                                                  label=gettext("is confirmed"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_text(name="qval_cases.end_date", label=gettext("Occurred after"),
+                                                aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_after", label=gettext("Last entry after"),
+                                                aclass="input-sm", type="datetime-local") }}
+                    </div>
+                    <div class="col-sm-6">
+                        {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
+                                                  entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_select(name="qval_status.is_closed",
+                                                  label=gettext("is closed_[[short]]"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occurred before"),
+                                                aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_before", label=gettext("Last entry before"),
+                                                aclass="input-sm", type="datetime-local") }}
+                    </div>
+                </div>
+                <hr class="panel-primary nosp" style="margin-bottom: 15px;" />
+                <div class="row">
+                    <div class="col-sm-6">
+                        {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
+                                                label=gettext("Involved"), aclass="input-sm") }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-involved_id').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                                [{{ user.persona_id }}], false, false, "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        {{ util.form_input_select(name="qval_involved.involved_type",
+                                                  label=gettext("Involvement"), aclass="input-sm",
+                                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
+                                                  nulloption=nbsp) }}
+                        {{ util.form_input_select(name="qval_involved.is_informed",
+                                                  label=gettext("is informed"), aclass="input-sm",
+                                                  entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                  nulloption=nbsp) }}
+                    </div>
+                    <div class="col-sm-6">
+                        {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
+                                                label=gettext("Companion"), aclass="input-sm") }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-companion_id').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                                [], false, false, "{{ gettext("ID, name, email") }}"
+                            );
+                        </script>
+                        {{ util.form_input_select(name="qval_companion.is_withdrawn",
+                                                   label=gettext("is withdrawn"), aclass="input-sm",
+                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],
+                                                   nulloption=nbsp) }}
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer text-right">
+                {{ util.input_submit(gettext("Search"), icon='search') }}
+            </div>
+        </div>
+    </form>
+
+{% endblock %}

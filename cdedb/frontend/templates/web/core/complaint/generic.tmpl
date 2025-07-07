@@ -1,0 +1,70 @@
+{% import "web/util.tmpl" as util with context %}
+
+{% macro pretty_entry_heading(entry) %}
+    <strong>
+        {{ util.make_icon(entry.entry_type.get_icon()) }}
+        {% if entry.parent %}
+            {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
+            {{ gettext(entry.entry_type.right_shortname) }}
+        {% else %}
+            {{ gettext(entry.entry_type|string) }}
+        {% endif %}
+    </strong>
+    {% if entry.concerned_id %}
+        {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
+             (for {{ concerned }})
+        {% endtrans %}
+    {% endif %}
+{% endmacro %}
+
+{% macro entry_status(entry) %}
+    {{ pretty_entry_heading(entry) }}
+    <br />
+    {{ gettext("by") }}
+    {% for author_id in entry.active_version.authors -%}
+        {%- if not loop.first -%}, {% endif -%}
+        {{ util.persona_anchor(personas[author_id]) -}}
+    {% endfor %}
+    <br />
+    <span class="text-muted">
+    {% if entry.active_version.length %}
+        {% trans length=entry.active_version.length %}
+            {{ length }} characters.
+        {% endtrans %}
+    {% endif %}
+    {% if entry.all_versions|length > 1 %}
+        {{ util.href(
+            cdedblink("core/case_history", {'case_id': ambience['case'].id}) + "#entry"|s + entry.id|string,
+            gettext("%s previous versions.")|format(entry.all_versions|length - 1),
+            readonly=is_locked
+        ) }}
+        <br />
+        {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
+                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
+                 ctime=entry.all_versions[0].ctime|datetime(lang=lang),
+                 first_submitted_by=util.persona_anchor(personas[entry.all_versions[0].submitted_by]) %}
+            Created at {{ ctime }} by {{ first_submitted_by }};
+            last changed at {{ mtime }} by {{ submitted_by }}.
+        {% endtrans %}
+    {% else %}
+        {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
+                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
+            Created at {{ ctime }} by {{ submitted_by }}.
+        {% endtrans %}
+    {% endif %}
+    </span>
+{% endmacro %}
+
+{% macro entry_parent(entry) %}
+    <div class="list-group list-group-hover form-group">
+        <div id="entry{{ entry.id }}" class="list-group-item">
+            <div class="float-right text-right">
+                {{ entry.active_version.timestamp|datetime(lang=lang) -}}
+                {% if entry.active_version.etime %}
+                    – {{ entry.active_version.etime|datetime(lang=lang) }}
+                {% endif %}
+            </div>
+            {{ entry_status(entry) }}
+        </div>
+    </div>
+{% endmacro %}

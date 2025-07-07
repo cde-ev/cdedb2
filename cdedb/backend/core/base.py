@@ -20,6 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend,
@@ -1280,6 +1281,7 @@ class CoreBaseBackend(AbstractBackend):
             "ml": "is_ml_admin = TRUE",
             "assembly": "is_assembly_admin = TRUE",
             "cdelokal": "is_cdelokal_admin = TRUE",
+            "complaint": "is_complaint_admin = TRUE",
             "auditor": "is_auditor = TRUE",
         }
         constraint = constraints.get(realm)
@@ -1717,6 +1719,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_complaint_admin': False,
                 'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
@@ -1945,6 +1948,10 @@ class CoreBaseBackend(AbstractBackend):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
+            if self.sql_select(
+                rs, models_complaint.ComplaintInvolved.database_table, ("id",), (persona_id,), entity_key="persona_id"
+            ):
+                raise RuntimeError(n_("Persona may not be purged."))
             #
             # 1. Zap information
             #
@@ -2072,7 +2079,10 @@ class CoreBaseBackend(AbstractBackend):
         event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin",
+                                          "complaint_admin", "core_admin"}
+            )
+        ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """

@@ -81,6 +81,8 @@
                 id: id,
                 type: settings.choices[id] ? 'list' : $(this).attr('data-type'),
                 name: $(this).find('.name').text(),
+                group: $(this).data('group'),
+                group_label: $(this).data('group-label'),
                 choices: choices,
                 sortable : false,
                 input_select: input_select.length ? input_select : null,
@@ -130,7 +132,13 @@
             });
             $viewFieldSelect.selectize({
                 'placeholder': settings.labels['add_field'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             $filterFieldSelect.change(function() {
@@ -141,7 +149,13 @@
             });
             $filterFieldSelect.selectize({
                 'placeholder': settings.labels['add_filter'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             $sortFieldSelect.change(function() {
@@ -153,7 +167,13 @@
             });
             $sortFieldSelect.selectize({
                 'placeholder': settings.labels['add_sort'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             this.refreshViewFieldSelect();
@@ -501,15 +521,22 @@
 
             // Add not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (!currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $filterFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 
@@ -525,15 +552,22 @@
 
             // Add all valid and not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.input_select !== null && !currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $viewFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 
@@ -559,15 +593,22 @@
 
             // Add all valid and not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.sortable && !currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $sortFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 

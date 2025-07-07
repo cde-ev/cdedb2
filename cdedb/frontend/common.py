@@ -77,6 +77,7 @@ import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.core as models_core
@@ -84,6 +85,7 @@ import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -149,6 +151,7 @@ from cdedb.filter import (
     safe_filter,
     sanitize_None,
 )
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
@@ -447,6 +450,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.pasteventproxy = make_proxy(PastEventBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         # Provide mailman access
         secrets = SecretsConfig()
         # local variables to prevent closure over secrets
@@ -1829,6 +1833,8 @@ class AmbienceDict(typing.TypedDict):
     assembly: NotRequired[CdEDBObject]
     ballot: NotRequired[CdEDBObject]
     mailinglist: NotRequired[models_ml.Mailinglist]
+    case: NotRequired[models_complaint.Case]
+    entry: NotRequired[models_complaint.ComplaintEntry]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1922,6 +1928,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                                     in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
               'mailinglist_id', 'mailinglist', ()),
+        Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
+              'case_id', 'case', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'entry_id', 'entry', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'parent_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
@@ -2523,6 +2535,25 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+DC = TypeVar('DC', bound=CdEDataclass)
+
+
+def extract_and_check_dataclass_validation(
+    rs: RequestState,
+    type_: type[DC],
+    name: Optional[str] = None,
+    *,
+    additional_data: CdEDBObject | None = None,
+    creation: bool,
+    **kwargs: Any
+) -> Optional[CdEDBObject]:
+    data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
+    if additional_data:
+        data.update(additional_data)
+    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    return cast(Optional[CdEDBObject], data)
 
 
 def inspect_validation(

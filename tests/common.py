@@ -48,6 +48,7 @@ from psycopg2.extras import RealDictCursor
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -80,6 +81,7 @@ from cdedb.common.query.log_filter import (
     AssemblyLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     CoreLogFilter,
     EventLogFilter,
     FinanceLogFilter,
@@ -452,6 +454,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
@@ -467,6 +470,7 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.complaint = cls.initialize_backend(ComplaintBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
@@ -538,6 +542,7 @@ class BackendTest(CdEDBTest):
             'event': (self.event.retrieve_log, EventLogFilter),
             'ml': (self.ml.retrieve_log, MlLogFilter),
             'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+            'complaint': (self.complaint.retrieve_log, ComplaintLogFilter),
         }
         log_retriever, log_filter_class = logs[realm]
         _, log = log_retriever(self.key, log_filter_class(**kwargs))
@@ -549,13 +554,13 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
                 if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date', 'companion_id'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -833,6 +838,16 @@ USER_DICT: dict[str, UserObject] = {
         'legal_given_names': None,
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
+    },
+    "simon": {
+        'id': 19,
+        'DB-ID': "DB-19-1",
+        'username': "simon@example.cde",
+        'password': "secret",
+        'given_names': "Simon",
+        'legal_given_names': None,
+        'family_name': "Struktur",
+        'default_name_format': "Simon Struktur",
     },
     "vera": {
         'id': 22,
@@ -1779,7 +1794,13 @@ class FrontendTest(BackendTest):
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
         personas = self.core.get_personas(self.key, persona_ids)
-        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+
+        if realm == "ml":
+            entity_key = "mailinglist_id"
+        elif realm == "complaint":
+            entity_key = "case_id"
+        else:
+            entity_key = f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
@@ -1811,6 +1832,10 @@ class FrontendTest(BackendTest):
         elif realm == "changelog":
             self.get("/core/changelog/view")
             entities = {}
+        elif realm == "complaint":
+            entities = {case_id: {'title': f"Fall {case_id}"} for case_id in entity_ids}
+            self.get("/core/complaint/log")
+
         else:
             self.get(f"/{realm}/log")
             entities = {}

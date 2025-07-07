@@ -1,0 +1,40 @@
+{% set sidenav_active='complaint_log' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}Case Log{% endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/view_complaint_log"), gettext("Case Log"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% call logging.table(log, ['Case', 'Companion']) %}
+        {% for entry in log %}
+            {% set additional = [] %}
+            {% if entry['case_id'] %}
+                {% set link = util.href(cdedblink("core/show_case", {"case_id": entry['case_id']}),
+                                        gettext("Case %s")|format(entry['case_id'])) %}
+                {% do additional.append(link) %}
+            {% else %}
+                {% do additional.append(None) %}
+            {% endif %}
+            {% if entry['companion_id'] %}
+                {% set link = util.persona_anchor(personas[entry['companion_id']]) %}
+                {% do additional.append(link) %}
+            {% else %}
+                {% do additional.append(None) %}
+            {% endif %}
+
+            {{ logging.row(entry, enums['ComplaintLogCodes'], loop.index, additional) }}
+        {% endfor %}
+    {% endcall %}
+
+    {{ logging.navigation('core/view_complaint_log', total, length, loglinks) }}
+    {{ logging.filter('core/view_complaint_log', enums['ComplaintLogCodes'], 'admin_all_users', 'case_id') }}
+{% endblock %}

@@ -1,0 +1,365 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+
+{% set jshint = 'weak' %}
+
+{% block title %}
+    {% trans id=ambience['case'].id|string %}
+        Case {{ id }}
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+                            icon="gavel", active=True) }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/change_case'), gettext("Edit"),
+                     aclass="btn btn-sm btn-warning", icon="pen") }}
+        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id'], 'case_id_include_empty': enums["IncludeEmpty"].no}),
+                     gettext("View Log"), aclass="btn btn-sm btn-default", icon="list") }}
+    </div>
+
+    <dl class="dl-horizontal">
+        <dt title="{% trans %}Summary{% endtrans %}">
+            {% trans %}Summary{% endtrans %}
+        </dt>
+        <dd id="case-summary">
+            {{ ambience['case'].summary }}
+        </dd>
+        <dt title="{% trans %}Kind{% endtrans %}">
+            {% trans %}Kind{% endtrans %}
+        </dt>
+        <dd id="case-kind">
+            {{ gettext(ambience['case'].kind|string) }}
+        </dd>
+        <dt title="{% trans %}is grave{% endtrans %}">
+            {% trans %}is grave{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=ambience['case'].is_grave,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+        <dt title="{% trans %}Start Date{% endtrans %}">
+        {% trans %}Start Date{% endtrans %}
+        </dt>
+        <dd>
+            {{ ambience['case'].start_date|date(lang=lang) }}
+        </dd>
+        <dt title="{% trans %}End Date{% endtrans %}">
+            {% trans %}End Date{% endtrans %}
+        </dt>
+        <dd>
+            {{ ambience['case'].end_date|date(lang=lang) }}
+        </dd>
+                <dt title="{% trans %}is confirmed{% endtrans %}">
+            {% trans %}is confirmed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=ambience['case'].is_confirmed,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+        <dt title="{% trans %}is closed{% endtrans %}">
+            {% trans %}is closed{% endtrans %}
+        </dt>
+        <dd>
+            {{ util.deko_checkbox(checked=not ambience['case'].is_active,
+                                  titles=[gettext("No"),gettext("Yes")]) }}
+        </dd>
+    </dl>
+
+    {{ util.h(n_("Relevant Individuals")) }}
+    <form action="{{ cdedblink('core/add_involved') }}" method="POST"
+          id="addinvolvedform" class="p">
+        {{ util.anti_csrf_token('core/add_involved') }}
+
+        <div class="input-group has-success">
+            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+            {{ util.input_text(name="persona_ids", anid="input-add-involved",
+                               placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                               arialabel=gettext("IDs of the new involved people"),
+                               attributes="style=width:75%;") }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-add-involved').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
+                    {{ ambience['case'].all_involved|list|tojson }},
+                    false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                );
+            </script>
+            {{ util.input_select(
+                name="involvement_type",
+                entries=enums['ComplaintInvolvementType']|enum_entries(processing=gettext),
+                attributes='style="width:25%; height:100%; border-left:0;"'|s
+            ) }}
+            <div class="input-group-btn">
+                {{ util.input_submit(label=gettext("Add"), icon="user-plus", aclass="btn btn-success ") }}
+            </div>
+        </div>
+        {{ util.output_errors('persona_ids', wrapper=True) }}
+    </form>
+    {% for list in ambience['case'].involved.items()|batch(2) %}
+        <div class="row">
+        {% for type, involved_ids in list %}
+            <div id="involved_{{ type.name }}" class="col-sm-6">
+                {% if involved_ids %}
+                    {% call util.bootstrap_panel(
+                        title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
+                    {% for involved_id in involved_ids %}
+                        <div class="hide-hover-container">
+                            {{ util.persona_anchor(personas[involved_id]) }}
+                            {# assembly and ml users are missing here #}
+                            {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
+                                <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
+                            {% endif %}
+                            {% if involved_id in ambience['case'].informed_involved %}
+                                <small class="text-muted">
+                                    {{ gettext("(is informed)") }}
+                                </small>
+                            {% endif %}
+                            <div class="list-button-float hide-hover">
+                                {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
+                                     label="",
+                                     title=gettext("Manage Companions"),
+                                     aclass="btn btn-xs btn-warning",
+                                     icon="people-group")
+                                }}
+                                {% if not type == enums['ComplaintInvolvementType'].appellant %}
+                                    {% if involved_id in ambience['case'].informed_involved %}
+                                        <form
+                                                action="{{ cdedblink("core/uninform_involved", {'persona_id': involved_id}) }}"
+                                                method="POST"
+                                                id="uninforminvolvedform{{ involved_id }}"
+                                                class="display-inline"
+                                            >
+                                                {{ util.anti_csrf_token('core/uninform_involved') }}
+                                                {{ util.input_submit(label="",
+                                                                     title=gettext("Mark as uninformed"),
+                                                                     aclass="btn btn-xs btn-danger",
+                                                                     icon="circle-question") }}
+                                        </form>
+                                    {% else %}
+                                        <form
+                                            action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
+                                            method="POST"
+                                            id="informinvolvedform{{ involved_id }}"
+                                            class="display-inline"
+                                        >
+                                            {{ util.anti_csrf_token('core/inform_involved') }}
+                                            {{ util.input_submit(label="",
+                                                                 title=gettext("Mark as informed"),
+                                                                 aclass="btn btn-xs btn-primary",
+                                                                 icon="circle-info") }}
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                                <form
+                                    action="{{ cdedblink("core/remove_involved", {'persona_id': involved_id}) }}"
+                                    method="POST"
+                                    id="removeinvolvedform{{ involved_id }}"
+                                    class="display-inline"
+                                >
+                                    {{ util.anti_csrf_token('core/remove_involved') }}
+                                    {{ util.input_submit(label="",
+                                                         title=gettext("Remove"),
+                                                         aclass="btn btn-xs btn-danger",
+                                                         icon="minus") }}
+                                </form>
+                            </div>
+                            {% if ambience['case'].companions_by_involved[involved_id] %}
+                                <br />
+                                <span class="hide-hover">
+                                    {{ gettext("Companions") }}:
+                                    {% if ambience['case'].companions_by_involved[involved_id]|length == 1 %}
+                                        {% set companion_id = (ambience['case'].companions_by_involved[involved_id]|list)[0] %}
+                                        {{ util.strike(util.persona_anchor(personas[companion_id]),
+                                                       companion_id not in ambience['case'].withdrawn_companions,
+                                                       gettext("has withdrawn")) }}
+                                    {% else %}
+                                        <ul class="slim">
+                                        {% for companion_id in ambience['case'].companions_by_involved[involved_id] %}
+                                            <li>
+                                                {{ util.strike(
+                                                    util.persona_anchor(personas[companion_id]),
+                                                    companion_id not in ambience['case'].withdrawn_companions,
+                                                    gettext("has withdrawn")
+                                                ) }}
+                                            </li>
+                                        {% endfor %}
+                                        </ul>
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                            {% if not loop.last %}
+                                <hr class="nosp" />
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    {% endcall %}
+                {% else %}
+                    <span class="text-muted">
+                        {% trans %}
+                            There are no involved individuals yet.
+                        {% endtrans %}
+                    </span>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+    {% endfor %}
+
+    {{ util.h(n_("Events_[[in a complaint]]")) }}
+    <div class="p button-par">
+        {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
+                     aclass="btn btn-sm btn-success", icon="plus") }}
+        {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
+                     + "#Events_[[in_a_complaint]]"|s,
+                     gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
+        {{ util.href(cdedblink('core/case_history'), gettext("Show entry history"),
+                     aclass="btn btn-sm btn-info", icon="clock", readonly=is_locked) }}
+    </div>
+
+    {% if is_locked %}
+        <form action="{{ cdedblink("core/unlock_case") }}"
+            method="POST"
+            id="unlockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/unlock_case') }}
+            {{ util.input_hidden("show_log_entries", show_log_entries) }}
+            {% call util.output_errors('reason', wrapper=True) %}
+                <div class="input-group">
+                    {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(label=gettext("Unlock descriptions"),
+                                             aclass="btn btn-sm btn-primary", icon="unlock")
+                        }}
+                    </div>
+                </div>
+            {% endcall %}
+        </form>
+    {% else %}
+        <form action="{{ cdedblink("core/lock_case") }}"
+            method="POST"
+            id="lockcaseform"
+            class="p"
+        >
+            {{ util.anti_csrf_token('core/lock_case') }}
+            {{ util.input_hidden("show_log_entries", show_log_entries) }}
+            {{ util.input_submit(label=gettext("Lock descriptions"),
+                                 aclass="btn btn-sm btn-primary", icon="lock") }}
+        </form>
+    {% endif %}
+
+    <div>
+    {% for entry in all_entries %}
+        <div class="list-group list-group-hover nosp">
+        {% if entry.entry_type %}
+            <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked %} list-group-item-muted{% endif %}">
+                <div class="float-right text-right">
+                    <div style="margin-bottom: 5px;">
+                        {{ entry.active_version.timestamp|datetime(lang=lang) -}}
+                        {% if entry.active_version.etime %}
+                            – {{ entry.active_version.etime|datetime(lang=lang) }}
+                        {% endif %}
+                    </div>
+                    <div class="p button-par">
+                        {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
+                            {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),
+                                         label="",
+                                         title=gettext("Add child entry"),
+                                         aclass="btn btn-xs btn-success",
+                                         icon="forward-fast")
+                            }}
+                        {% endif %}
+                        {{ util.href(cdedblink('core/replace_entry_form', {'entry_id': entry.id}),
+                                     label="",
+                                     title=gettext("Replace"),
+                                     aclass="btn btn-xs btn-warning",
+                                     icon="pen",
+                                     readonly=entry.entry_type.is_hidden and is_locked)
+                        }}
+                        {% if not entry.is_revoked
+                                and entry.parent.entry_type != enums["ComplaintEntryType"].revocation_explanation %}
+                            {{ util.href(cdedblink('core/revoke_entry_form', {'entry_id': entry.id}),
+                                         label="",
+                                         title=gettext("Revoke"),
+                                         aclass="btn btn-xs btn-danger",
+                                         icon="rotate-left",
+                                         readonly=entry.entry_type.is_hidden and is_locked)
+                            }}
+                        {% endif %}
+                        {% if not entry.active_children %}
+                            {{ util.href(cdedblink('core/remove_entry_form', {'entry_id': entry.id}),
+                                         label="",
+                                         title=gettext("Remove"),
+                                         aclass="btn btn-xs btn-danger",
+                                         icon="eye-slash",
+                                         readonly=entry.entry_type.is_hidden and is_locked)
+                            }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {{ generic_complaint.entry_status(entry) }}
+                {% if descriptions.get(entry.active_version.id) %}
+                    <hr class="nosp" />
+                    <p>
+                        {{ descriptions[entry.active_version.id]|md }}
+                    </p>
+                {% endif %}
+                {% if entry.active_children %}
+                    <hr class="nosp" />
+                    ▸
+                    {% for child in entry.active_children %}
+                        {%- if not loop.first %}, {% endif %}
+                        {% trans label=util.href("#entry" + child.id|string, gettext(child.entry_type.right_shortname)),
+                                 stamp=child.active_version.timestamp|date(lang=lang) %}
+                            {{ label }} at {{ stamp }}
+                        {% endtrans %}
+                    {%- endfor %}
+                {% endif %}
+            </div>
+        {% elif entry['code'].is_historic %}
+            <div id="logentry{{ entry.id }}" class="list-group-item">
+                <div class="float-right text-right">
+                    {{ entry['ctime']|datetime(lang=lang) }}
+                </div>
+                <strong>
+                    {{ gettext(entry['code']|string) -}}
+                </strong>
+                {%- if entry['companion_id'] -%}
+                    : {{ util.persona_anchor(personas[entry['companion_id']]) }}
+                    {% trans involved=util.persona_anchor(personas[entry['persona_id']], icon='user') %}
+                         (for {{ involved }})
+                    {% endtrans %}
+                {%- elif entry['persona_id'] -%}
+                    : {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                {% endif %}
+                <br />
+                {{ gettext("by") }}
+                {{ util.persona_anchor(personas[entry['submitted_by']]) -}}
+                {%- if entry['change_note'] -%}
+                    <span class="text-muted">
+                        {%- trans change_note=entry['change_note'] %}
+                             ; {{ change_note }}
+                        {% endtrans %}
+                    </span>
+                {% endif %}
+            </div>
+        {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}
