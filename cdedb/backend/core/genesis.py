@@ -279,29 +279,45 @@ class CoreGenesisBackend(CoreBaseBackend):
             if current.case_status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
-            if 'case_status' in data and data['case_status'] != current.case_status:
-                # persona_id of the account this modification is related to. Especially
-                # relevant if a new account was created or an existing account was
-                # updated. Hence, we sometimes use get and sometimes use [] here.
-                if data['case_status'] == const.GenesisStati.successful:
-                    self.core_log(
-                        rs, const.CoreLogCodes.genesis_approved,
-                        persona_id=data['persona_id'],
-                        change_note=current.persona.username)
-                elif data['case_status'] == const.GenesisStati.rejected:
-                    self.core_log(
-                        rs, const.CoreLogCodes.genesis_rejected,
-                        persona_id=data.get('persona_id'),
-                        change_note=current.persona.username)
-                elif data['case_status'] == const.GenesisStati.existing_updated:
-                    self.core_log(
-                        rs, const.CoreLogCodes.genesis_merged,
-                        persona_id=data['persona_id'])
-            else:
-                # persona_id should be None in this case.
-                self.core_log(rs, const.CoreLogCodes.genesis_change,
-                              persona_id=data.get('persona_id'),
-                              change_note=current.persona.username)
+            self.core_log(rs, const.CoreLogCodes.genesis_change,
+                          change_note=current.persona.username)
+        return ret
+
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @internal
+    def genesis_modify_case_meta(
+        self, rs: RequestState, case_id: int, *,
+        case_status: const.GenesisStati | None = None,
+        reviewer_id: int | None = None,
+        persona_id: int | None = None,
+    ) -> DefaultReturnCode:
+        """Modify some meta data of a persona creation case."""
+        update = {"id": case_id}
+        if case_status:
+            update["case_status"] = case_status
+        if reviewer_id:
+            update["reviewer"] = reviewer_id
+        if persona_id:
+            update["persona_id"] = persona_id
+        with Atomizer(rs):
+            current = self.genesis_get_case(rs, case_id)
+            # Get case already checks privilege and existence for the current data set.
+            if {"core_admin", current.relative_admin}.isdisjoint(rs.user.roles):
+                raise PrivilegeError(n_("Not privileged."))
+            if current.case_status.is_finalized():
+                raise ValueError(n_("Genesis case already finalized."))
+            ret = self.sql_update(rs, "core.genesis_cases", update)
+
+            log_code = const.CoreLogCodes.genesis_change
+            if case_status and case_status != current.case_status:
+                if case_status == const.GenesisStati.successful:
+                    log_code = const.CoreLogCodes.genesis_approved
+                elif case_status == const.GenesisStati.rejected:
+                    log_code = const.CoreLogCodes.genesis_rejected
+                elif case_status == const.GenesisStati.existing_updated:
+                    log_code = const.CoreLogCodes.genesis_merged
+            self.core_log(rs, log_code, persona_id=persona_id,
+                          change_note=current.persona.username)
         return ret
 
     @access("core_admin", *models.GenesisCase.get_relative_admins())
@@ -327,14 +343,10 @@ class CoreGenesisBackend(CoreBaseBackend):
                 case_status = const.GenesisStati.existing_updated
             else:
                 case_status = const.GenesisStati.rejected
-            update = {
-                'id': case_id,
-                'case_status': case_status,
-                'reviewer': rs.user.persona_id,
-                'realm': case.realm,
-                'persona_id': persona_id,
-            }
-            if not self.genesis_modify_case(rs, update):
+            ret_code = self.genesis_modify_case_meta(
+                rs, case_id, case_status=case_status,
+                reviewer_id=rs.user.persona_id, persona_id=persona_id)
+            if not ret_code:
                 raise RuntimeError(n_("Genesis modification failed."))
             if decision.is_create():
                 return self.genesis(rs, case_id)
@@ -402,11 +414,6 @@ class CoreGenesisBackend(CoreBaseBackend):
             if extract_realms(roles) != ({case.realm} | implied_realms(case.realm)):
                 raise PrivilegeError(n_("Wrong target realm."))
             new_id = self.create_persona(rs, data, submitted_by=case.reviewer)
-            update = {
-                'id': case_id,
-                'case_status': const.GenesisStati.successful,
-                'realm': case.realm,
-                'persona_id': new_id,
-            }
-            self.genesis_modify_case(rs, update)
+            self.genesis_modify_case_meta(rs, case_id, case_status=const.GenesisStati.successful,
+                                          persona_id=new_id)
         return new_id
