@@ -463,8 +463,7 @@ class QueryScope(CdEIntEnum):
                 if name in rs.request.values:
                     param = rs.request.values.getlist(name)
                     if len(param) == 1:
-                        assert (p := unwrap(param)) is not None
-                        params[name] = rs.values[name] = p
+                        params[name] = rs.values[name] = unwrap(param)
                     else:
                         params[name] = ",".join(param)
                         rs.values[name] = param
