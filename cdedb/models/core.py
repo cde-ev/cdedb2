@@ -294,24 +294,19 @@ class GenesisCase(CdEDataclass):
         default=None, metadata={'validation_exclude': True, 'request_exclude': True})
 
     persona: Persona = dataclasses.field(
-        metadata={'database_exclude': True, 'request_exclude': True})
+        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
 
     # further information tied to the genesis case but not to persona dataclass
-    attachment_hash: str | None
+    attachment_hash: str | None = dataclasses.field(metadata={'update_exclude': True})
     pevent_id: int | None
     pcourse_id: int | None
 
     @classmethod
     def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
         genesis_fields = [field for field in dataclasses.fields(cls)]
-        persona_class = {field.type for field in dataclasses.fields(cls)
-                         if field.name == "persona"}.pop()
-        # use CdEPersona to gain all potential fields before realm is known
-        # TODO remove once we use extract_and_check, and use below helper here
-        if persona_class == Persona:
-            persona_class = CdEPersona
-        persona_fields = [field for field in dataclasses.fields(persona_class)
-                          if field.metadata.get("genesis_exposed")]
+        # use always CdE persona as reference, to make sure we fetch
+        # all data from the database and from requests
+        persona_fields = GenesisCaseCdE.persona_dataclass_fields()
         return tuple([*genesis_fields, *persona_fields])
 
     @classmethod
@@ -384,7 +379,8 @@ class GenesisCase(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
-    persona: MlPersona
+    persona: MlPersona = dataclasses.field(
+        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -409,7 +405,8 @@ class GenesisCaseMl(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
-    persona: EventPersona
+    persona: EventPersona = dataclasses.field(
+        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -435,7 +432,8 @@ class GenesisCaseEvent(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
-    persona: CdEPersona
+    persona: CdEPersona = dataclasses.field(
+        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
     attachment_hash: str
 
     @classmethod

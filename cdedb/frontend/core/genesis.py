@@ -3,7 +3,7 @@
 """Genesis specific services for the core realm."""
 
 import datetime
-from typing import Optional, cast
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -21,10 +21,9 @@ from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.frontend.common import (
     REQUESTdata,
-    REQUESTdatadict,
     REQUESTfile,
     access,
-    check_validation as check,
+    extract_and_check_dataclass_validation as extract_and_check_dataclass,
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
@@ -55,31 +54,40 @@ class CoreGenesisMixin(CoreBaseFrontend):
         }, mandatory_fields=mandatory_fields)
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(*models.GenesisCase.requestdict_fields(creation=True))
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_filename")
-    def genesis_request(self, rs: RequestState, data: CdEDBObject,
+    @REQUESTdata("attachment_filename", "attachment_hash")
+    def genesis_request(self, rs: RequestState,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
-                        attachment_filename: Optional[str] = None) -> Response:
+                        attachment_filename: Optional[str] = None,
+                        attachment_hash: Optional[str] = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
+        if attachment or attachment_hash:
+            # Take care that the call to extract_and_check does not overwrite them
+            #  in rs.values. Therefore, we stash them in between.
+            attachment_hash, attachment_filename =\
+                self.locate_or_store_attachment(
+                    rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
+                    attachment_hash, attachment_filename)
+
+        data = extract_and_check_dataclass(rs, models.GenesisCase, creation=True)
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
-            self.locate_or_store_attachment(
-                rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
-                data.get('attachment_hash'), attachment_filename)
-        case_model = models.GenesisCase.get_model_by_realm(data.get('realm'))
+            attachment_hash, attachment_filename
+        if rs.has_validation_errors():
+            return self.genesis_request_form(rs)
+
+        case_model = models.GenesisCase.get_model_by_realm(data["realm"])
         mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
         if ('attachment_hash' in mandatory_case_fields and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
         data['attachment_hash'] = rs.values['attachment_hash']
-
-        data = cast(CdEDBObject | None, check(rs, case_model, data, creation=True))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         assert data is not None
+
         # past events and courses may not be set here
         data['pevent_id'] = None
         data['pcourse_id'] = None
@@ -335,17 +343,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'realm_options': realm_options, 'choices': choices}, mandatory_fields)
 
     @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
-    @REQUESTdatadict(*models.GenesisCase.requestdict_fields(creation=False))
-    def genesis_modify(self, rs: RequestState, genesis_case_id: int,
-                       data: CdEDBObject) -> Response:
+    def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
-        data['id'] = genesis_case_id
-        # In contrast to the genesis_request, the attachment can not be changed here.
-        del data['attachment_hash']
-        data = cast(CdEDBObject | None, check(rs, models.GenesisCase, data))
+        data = extract_and_check_dataclass(rs, models.GenesisCase, creation=False,
+                                           additional_data={"id": genesis_case_id})
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
+
         if data['username'] != rs.ambience['genesis_case'].persona.username:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
