@@ -6,7 +6,7 @@ import datetime
 import decimal
 import re
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from cryptography.fernet import Fernet
 
@@ -257,10 +257,6 @@ class CdEPersona(EventPersona):
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
 
-    username: vtypes.Email
-    given_names: str
-    family_name: str
-
     realm: vtypes.Realm
     notes: str
     case_status: const.GenesisStati = dataclasses.field(
@@ -272,31 +268,42 @@ class GenesisCase(CdEDataclass):
     persona_id: vtypes.ID | None = dataclasses.field(
         default=None, metadata={'validation_exclude': True, 'request_exclude': True})
 
-    # event fields
-    gender: const.Genders | None
-    birthday: vtypes.Birthday | None
-    telephone: vtypes.Phone | None
-    mobile: vtypes.Phone | None
-    address_supplement: str | None
-    address: str | None
-    postal_code: vtypes.PrintableASCII | None
-    location: str | None
-    country: vtypes.Country | None
-    birth_name: str | None
+    persona: Persona = dataclasses.field(
+        metadata={'database_exclude': True, 'request_exclude': True})
 
-    # cde fields
+    # further information tied to the genesis case but not to persona dataclass
     attachment_hash: str | None
     pevent_id: int | None
     pcourse_id: int | None
 
+    @classmethod
+    def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
+        genesis_fields = [field for field in dataclasses.fields(cls)]
+        persona_class =  {field.type for field in dataclasses.fields(cls)
+                          if field.name == "persona"}.pop()
+        # use CdEPersona to gain all potential fields before realm is known
+        # TODO remove once we use extract_and_check, and use below helper here
+        if persona_class == Persona:
+            persona_class = CdEPersona
+        persona_fields = [field for field in dataclasses.fields(persona_class)
+                          if field.metadata.get("genesis_exposed")]
+        return tuple([*genesis_fields, *persona_fields])
+
+    @classmethod
+    def persona_dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
+        persona_class: Type[Persona] = {
+            field.type for field in dataclasses.fields(cls)
+            if field.name == "persona"}.pop()
+        return tuple([field for field in dataclasses.fields(persona_class)
+                      if field.metadata.get("genesis_exposed")])
+
     def get_sortkey(self) -> Sortkey:
-        return (self.ctime, self.family_name, self.given_names)
+        return (self.ctime, self.persona.family_name, self.persona.given_names)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
+        realm = data.get("realm")
         # Dispatch data to correct dataclass based on realm.
-        if (realm := data.get("realm")) is None:
-            raise RuntimeError
         if realm == "ml":
             return GenesisCaseMl.from_database(data)
         elif realm == "event":
@@ -304,7 +311,7 @@ class GenesisCase(CdEDataclass):
         elif realm == "cde":
             return GenesisCaseCdE.from_database(data)
         else:
-            raise NotImplementedError
+            raise RuntimeError
 
     def __lt__(self, other: "CdEDataclass") -> bool:
         # enable sorting of all genesis sub classes
@@ -336,101 +343,66 @@ class GenesisCase(CdEDataclass):
     def relative_admin(self) -> str:
         return f"{self.realm}_admin"
 
-    @classmethod
-    def fields_by_realm(cls) -> dict[str, set[str]]:
-        return {
-            "ml": {field.name for field in dataclasses.fields(GenesisCaseMl)
-                   if field.default is not None},
-            "event": {field.name for field in dataclasses.fields(GenesisCaseEvent)
-                      if field.default is not None},
-            "cde": {field.name for field in dataclasses.fields(GenesisCaseCdE)
-                    if field.default is not None},
-        }
-
-    @classmethod
-    def persona_fields_by_realm(cls) -> dict[str, set[str]]:
-        ret = {realm: fields - {"id", "realm", "notes", "case_status", "ctime"}
-               for realm, fields in cls.fields_by_realm().items()}
-        ret["cde"] -= {"attachment_hash", "pevent_id", "pcourse_id"}
-        return ret
-
-    @property
-    def persona_fields(self) -> set[str]:
-        return self.persona_fields_by_realm()[self.realm]
-
-    @property
-    def persona_data(self) -> CdEDBObject:
-        return {k: v for k, v in self.as_dict().items() if k in self.persona_fields}
-
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
-    gender: const.Genders | None = None
-    birthday: vtypes.Birthday | None = None
-    telephone: vtypes.Phone | None = None
-    mobile: vtypes.Phone | None = None
-    address_supplement: str | None = None
-    address: str | None = None
-    postal_code: vtypes.PrintableASCII | None = None
-    location: str | None = None
-    country: vtypes.Country | None = None
-    birth_name: str | None = None
-
-    attachment_hash: str | None = None
-    pevent_id: int | None = None
-    pcourse_id: int | None = None
+    persona: MlPersona
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(data)
+        persona_class = MlPersona
+        persona_data = {k: v for k, v in data.items() if k in persona_class.database_fields()}
+        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
+        #  database fields.
+        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
+                                   if not field.metadata.get("database_exclude")}
+        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
+        genesis_data["persona"] = persona_class.from_database(persona_data)
+        # unset the persona's id, since this is the genesis case id
+        genesis_data["persona"].id = None
 
-    @classmethod
-    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
-        return {
-            "ml": n_("CdE mailinglist"),
-        }
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(genesis_data)
 
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
-    gender: const.Genders
-    birthday: vtypes.Birthday
-    address: str
-    location: str
-
-    attachment_hash: str | None = None
-    pevent_id: int | None = None
-    pcourse_id: int | None = None
+    persona: EventPersona
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(data)
+        persona_class = EventPersona
+        persona_data = {k: v for k, v in data.items() if k in persona_class.database_fields()}
+        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
+        #  database fields.
+        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
+                                   if not field.metadata.get("database_exclude")}
+        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
+        genesis_data["persona"] = persona_class.from_database(persona_data)
+        # unset the persona's id, since this is the genesis case id
+        genesis_data["persona"].id = None
 
-    @classmethod
-    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
-        return {
-            "event": n_("CdE events"),
-        }
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(genesis_data)
 
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
-    gender: const.Genders
-    birthday: vtypes.Birthday
-    address: str
-    location: str
-
+    persona: CdEPersona
     attachment_hash: str
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(data)
+        persona_class = CdEPersona
+        persona_data = {k: v for k, v in data.items() if k in persona_class.database_fields()}
+        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
+        #  database fields.
+        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
+                                   if not field.metadata.get("database_exclude")}
+        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
+        genesis_data["persona"] = persona_class.from_database(persona_data)
+        # unset the persona's id, since this is the genesis case id
+        genesis_data["persona"].id = None
 
-    @classmethod
-    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
-        return {
-            "cde": n_("CdE membership & events"),
-        }
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(genesis_data)

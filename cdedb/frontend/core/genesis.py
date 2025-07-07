@@ -69,13 +69,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
             self.locate_or_store_attachment(
                 rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                 data.get('attachment_hash'), attachment_filename)
-        case_fields = models.GenesisCase.fields_by_realm().get(data.get('realm'), {})
-        if ('attachment_hash' in case_fields and not rs.values['attachment_hash']):
+        case_model = models.GenesisCase.get_model_by_realm(data.get('realm'))
+        mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
+        if ('attachment_hash' in mandatory_case_fields and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
         data['attachment_hash'] = rs.values['attachment_hash']
 
-        data = cast(CdEDBObject | None, check(rs, models.GenesisCase, data, creation=True))
+        data = cast(CdEDBObject | None, check(rs, case_model, data, creation=True))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         assert data is not None
@@ -87,12 +88,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
         # is required for the requested realm)
-        if 'gender' in case_fields and data['gender'] == const.Genders.not_specified:
+        if 'gender' in mandatory_case_fields and data['gender'] == const.Genders.not_specified:
             rs.append_validation_error(
                 ("gender", ValueError(n_(
                     "Must specify gender for %(realm)s realm."),
                     {"realm": data["realm"]})))
-        if 'birthday' in case_fields and data['birthday'] == datetime.date.min:
+        if 'birthday' in mandatory_case_fields and data['birthday'] == datetime.date.min:
             rs.append_validation_error(
                 ("birthday", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
@@ -285,7 +286,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 pevent = self.pasteventproxy.get_past_event(rs, case.pevent_id)
             if case.pcourse_id:
                 pcourse = self.pasteventproxy.get_past_course(rs, case.pcourse_id)
-        persona_data = case.persona_data
+        persona_data = case.persona.as_dict()
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
         # We don't actually compare genders, so this is to make sure it is not empty.
@@ -317,7 +318,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if case.case_status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        merge_dicts(rs.values, case.as_dict())
+        merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
         realm_options = [
             (realm, rs.gettext(description))
             for realm, description in models.GenesisCase.get_available_realms().items()]
@@ -346,7 +347,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
-        if data['username'] != rs.ambience['genesis_case'].username:
+        if data['username'] != rs.ambience['genesis_case'].persona.username:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
@@ -389,7 +390,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if decision.is_create():
             if self.coreproxy.verify_existence(
-                    rs, case.username, include_genesis=False):
+                    rs, case.persona.username, include_genesis=False):
                 rs.notify("error", n_("Email address already taken."))
                 return self.redirect(rs, "core/genesis_show_case")
             if persona_id:
@@ -445,7 +446,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         else:
             self.do_mail(
                 rs, "genesis/genesis_declined",
-                {'To': (case.username,),
+                {'To': (case.persona.username,),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
             )
             rs.notify("info", n_("Case rejected."))

@@ -286,12 +286,13 @@ class CoreGenesisBackend(CoreBaseBackend):
                 if data['case_status'] == const.GenesisStati.successful:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_approved,
-                        persona_id=data['persona_id'], change_note=current.username)
+                        persona_id=data['persona_id'],
+                        change_note=current.persona.username)
                 elif data['case_status'] == const.GenesisStati.rejected:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_rejected,
                         persona_id=data.get('persona_id'),
-                        change_note=current.username)
+                        change_note=current.persona.username)
                 elif data['case_status'] == const.GenesisStati.existing_updated:
                     self.core_log(
                         rs, const.CoreLogCodes.genesis_merged,
@@ -300,7 +301,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 # persona_id should be None in this case.
                 self.core_log(rs, const.CoreLogCodes.genesis_change,
                               persona_id=data.get('persona_id'),
-                              change_note=current.username)
+                              change_note=current.persona.username)
         return ret
 
     @access("core_admin", *models.GenesisCase.get_relative_admins())
@@ -343,18 +344,21 @@ class CoreGenesisBackend(CoreBaseBackend):
                 if not self._is_relative_admin(rs, persona):
                     raise PrivilegeError(n_("Not privileged."))
                 if persona['is_archived']:
-                    code = self.dearchive_persona(rs, persona_id, case.username)
+                    code = self.dearchive_persona(rs, persona_id, case.persona.username)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Dearchival failed."))
-                elif case.username != persona['username']:
+                elif case.persona.username != persona['username']:
                     code, _ = self.change_username(
-                        rs, persona_id, case.username, None)
+                        rs, persona_id, case.persona.username, None)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Username change failed."))
 
                 # Determine the keys of the persona that should be updated.
-                update_keys = case.persona_fields - {'username'}
-                update = {k: case[k] for k in update_keys if case[k]}
+                update_keys = {field.name for field in case.persona_dataclass_fields()}
+                update_keys -= {'username'}
+                proto_persona = case.persona.as_dict()
+                update = {key: proto_persona[key] for key in update_keys
+                          if proto_persona[key]}
                 update['id'] = persona_id
                 # we grant trial membership by default for cde genesis cases
                 if case.realm == "cde" and not persona["is_member"]:
@@ -381,11 +385,13 @@ class CoreGenesisBackend(CoreBaseBackend):
         case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             case = self.genesis_get_case(rs, case_id)
-            if self.verify_existence(rs, case.username, include_genesis=False):
+            if self.verify_existence(rs, case.persona.username, include_genesis=False):
                 raise ValueError(n_("Email address already taken."))
 
             # filter out genesis information not relevant for the respective realm
-            data = case.persona_data
+            keys = {field.name for field in case.persona_dataclass_fields()}
+            proto_persona = case.persona.as_dict()
+            data = {key: proto_persona[key] for key in keys if proto_persona[key]}
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
@@ -393,14 +399,13 @@ class CoreGenesisBackend(CoreBaseBackend):
             if case.case_status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
-            if extract_realms(roles) != \
-                    ({case['realm']} | implied_realms(case['realm'])):
+            if extract_realms(roles) != ({case.realm} | implied_realms(case.realm)):
                 raise PrivilegeError(n_("Wrong target realm."))
-            new_id = self.create_persona(rs, data, submitted_by=case['reviewer'])
+            new_id = self.create_persona(rs, data, submitted_by=case.reviewer)
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
-                'realm': case['realm'],
+                'realm': case.realm,
                 'persona_id': new_id,
             }
             self.genesis_modify_case(rs, update)
