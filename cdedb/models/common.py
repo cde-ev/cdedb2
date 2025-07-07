@@ -98,7 +98,7 @@ class CdEDataclass:
         # Exclude fields marked as init=False.
         data = {
             field.name: values[field.name]
-            for field in self.dataclass_fields(self)
+            for field in self.dataclass_fields()
             if field.name in database_fields and field.init
         }
 
