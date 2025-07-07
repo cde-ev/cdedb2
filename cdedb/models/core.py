@@ -3,6 +3,7 @@
 import base64
 import dataclasses
 import datetime
+import decimal
 import re
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Optional
@@ -189,6 +190,67 @@ class AnonymousMessageData(CdEDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.recipient, self.ctime
+
+
+@dataclasses.dataclass(kw_only=True)
+class Persona(CdEDataclass):
+    # This does not include the ``password_hash`` for security reasons.
+    username: vtypes.Email = dataclasses.field(metadata={'genesis_exposed': True})
+    given_names: str = dataclasses.field(metadata={'genesis_exposed': True})
+    family_name: str = dataclasses.field(metadata={'genesis_exposed': True})
+    nickname: str | None = None
+    legal_given_names: str | None = None
+    title: str | None = None
+    name_supplement: str | None = None
+    show_legal_given_names: bool = False
+
+
+@dataclasses.dataclass(kw_only=True)
+class MlPersona(Persona):
+    ...
+
+
+@dataclasses.dataclass(kw_only=True)
+class EventPersona(MlPersona):
+    gender: const.Genders = dataclasses.field(metadata={'genesis_exposed': True})
+    birthday: vtypes.Birthday = dataclasses.field(metadata={'genesis_exposed': True})
+    telephone: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    mobile: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    address_supplement: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    address: str = dataclasses.field(metadata={'genesis_exposed': True})
+    postal_code: vtypes.GermanPostalCode | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    location: str = dataclasses.field(metadata={'genesis_exposed': True})
+    country: vtypes.Country = dataclasses.field(metadata={'genesis_exposed': True})
+    pronouns: str | None = None
+    pronouns_nametag: bool = False
+    pronouns_profile: bool = False
+
+
+@dataclasses.dataclass(kw_only=True)
+class CdEPersona(EventPersona):
+    show_address: bool = True
+    show_address2: bool = True
+    address_supplement2: str | None = None
+    address2: str | None = None
+    postal_code2: vtypes.GermanPostalCode | None = None
+    location2: str | None = None
+    country2: vtypes.Country | None = None
+    weblink: str | None = None
+    specialisation: str | None = None
+    affiliation: str | None = None
+    timeline: str | None = None
+    interests: str | None = None
+    free_form: str | None = None
+    balance: decimal.Decimal = decimal.Decimal()
+    decided_search: bool = False
+    trial_member: bool = False
+    bub_search: bool = False
+    foto: bytes | None = None
+    paper_expuls: bool = True
+    birth_name: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    donation: decimal.Decimal = decimal.Decimal()
+    honorary_member: bool = False
+
 
 
 @dataclasses.dataclass(kw_only=True)
