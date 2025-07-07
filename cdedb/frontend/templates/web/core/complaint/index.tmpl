@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
 {% endblock %}
 {% block title %}
     {% trans %}
@@ -133,9 +134,14 @@
                                                 aclass="input-sm", type="datetime-local") }}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
-                                                  entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
-                                                  nulloption=nbsp) }}
+                        {{ util.form_input_multi_select(
+                                name="qval_cases.kind", label=gettext("Kind"), anid="input-case_kind", aclass="input-sm",
+                                entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
+                                nulloption=nbsp) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $("#input-case_kind").cdedbMultiSelect(
+                                {{ enums["ComplaintKind"]|enum_selectize(processing=gettext)|tojson }});
+                        </script>
                         {{ util.form_input_select(name="qval_status.is_closed",
                                                   label=gettext("is closed_[[short]]"), aclass="input-sm",
                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],
@@ -157,10 +163,15 @@
                                 [{{ user.persona_id }}], false, false, "{{ gettext("ID, name, email") }}"
                             );
                         </script>
-                        {{ util.form_input_select(name="qval_involved.involved_type",
-                                                  label=gettext("Involvement"), aclass="input-sm",
-                                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
-                                                  nulloption=nbsp) }}
+                        {{ util.form_input_multi_select(
+                                name="qval_involved.involved_type", label=gettext("Involvement"),
+                                 anid="input-involved_type", aclass="input-sm",
+                                 entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
+                                 nulloption=nbsp) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $("#input-involved_type").cdedbMultiSelect(
+                                {{ enums["ComplaintInvolvementType"]|enum_selectize(processing=gettext)|tojson }});
+                        </script>
                         {{ util.form_input_select(name="qval_involved.is_informed",
                                                   label=gettext("is informed"), aclass="input-sm",
                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],

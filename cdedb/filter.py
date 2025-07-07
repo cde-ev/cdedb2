@@ -36,6 +36,7 @@ import phonenumbers
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
 
@@ -700,6 +701,15 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
     return grouped  # type: ignore[return-value]
 
 
+def enum_selectize_filter(enum: Iterable[enum.IntEnum],
+                          processing: Optional[Callable[[Any], str]] = None,
+                          ) -> list[CdEDBObject]:
+    res = enum_entries_filter(enum, processing=processing)
+    if isinstance(res, dict):  # type: ignore[unreachable]
+        raise RuntimeError(n_("Grouped enums not supported yet."))
+    return [{'id': e[0], 'name': e[1]} for e in res]
+
+
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
                         *args: str) -> list[tuple[S, ...]]:
     """
@@ -786,6 +796,7 @@ JINJA_FILTERS = {
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
+    'enum_selectize': enum_selectize_filter,
     'dict_entries': dict_entries_filter,
     'entries': entries_filter,
 }

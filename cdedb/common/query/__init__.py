@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
 from typing_extensions import TypeAlias
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState
+from cdedb.common import CdEDBObject, RequestState, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import LOCALE, xsorted
@@ -461,7 +461,13 @@ class QueryScope(CdEIntEnum):
             for prefix in ("qval_", "qsel_", "qop_"):
                 name = prefix + field
                 if name in rs.request.values:
-                    params[name] = rs.values[name] = rs.request.values[name]
+                    param = rs.request.values.getlist(name)
+                    if len(param) == 1:
+                        assert (p := unwrap(param)) is not None
+                        params[name] = rs.values[name] = p
+                    else:
+                        params[name] = ",".join(param)
+                        rs.values[name] = param
         for postfix in range(MAX_QUERY_ORDERS):
             name = f"qord_{postfix}"
             if name in rs.request.values:
