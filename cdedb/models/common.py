@@ -81,6 +81,15 @@ class CdEDataclass:
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
 
+    @classmethod
+    def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
+        """Determine the fields of this class.
+
+        Should be overwritten if multiple dataclasses are nested in each other.
+        Then, also from_database needs to be adjusted.
+        """
+        return dataclasses.fields(cls)
+
     def to_database(self) -> CdEDBObject:
         """Generate a dict representation of this entity to be saved to the database."""
         database_fields = self.database_fields()
@@ -89,7 +98,7 @@ class CdEDataclass:
         # Exclude fields marked as init=False.
         data = {
             field.name: values[field.name]
-            for field in dataclasses.fields(self)
+            for field in self.dataclass_fields(self)
             if field.name in database_fields and field.init
         }
 
@@ -100,7 +109,7 @@ class CdEDataclass:
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             # Convert enum fields into enum members.
             if isinstance(field.type, type):
                 if issubclass(field.type, (CdEEnum, CdEIntEnum)):
@@ -161,7 +170,7 @@ class CdEDataclass:
         """
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             field.type = cast(type[Any], field.type)
             if field.metadata.get('validation_exclude'):
                 continue
@@ -219,7 +228,7 @@ class CdEDataclass:
         field_names = set(cls.database_fields())
         field_names.discard("id")
         fields = []
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             if not field.metadata.get('request_include'):
                 if field.name not in field_names:
                     continue
@@ -244,7 +253,7 @@ class CdEDataclass:
     def database_fields(cls) -> list[str]:
         """List all fields of this entity which are saved to the database."""
         return [
-            field.name for field in dataclasses.fields(cls)
+            field.name for field in cls.dataclass_fields()
             if field.init
                and get_origin(field.type) is not dict
                and get_origin(field.type) is not set
