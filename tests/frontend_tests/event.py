@@ -6896,7 +6896,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
                 "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
-                "1 IncorrectIBANCV",
+                "1 Falsche IBAN-Konfiguration",
             ],
         )
 
