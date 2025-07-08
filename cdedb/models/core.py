@@ -243,10 +243,17 @@ class EventPersona(MlPersona):
     telephone: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
     mobile: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
     address_supplement: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    # TODO make mandatory?
+    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
+    # its mandatory here.
     address: str = dataclasses.field(metadata={'genesis_exposed': True})
-    postal_code: vtypes.GermanPostalCode | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    postal_code: vtypes.PrintableASCII | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    # TODO make mandatory?
+    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
+    # its mandatory here.
     location: str = dataclasses.field(metadata={'genesis_exposed': True})
-    country: vtypes.Country = dataclasses.field(metadata={'genesis_exposed': True})
+    # TODO make mandatory?
+    country: vtypes.Country | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
@@ -258,7 +265,7 @@ class CdEPersona(EventPersona):
     show_address2: bool = True
     address_supplement2: str | None = None
     address2: str | None = None
-    postal_code2: vtypes.GermanPostalCode | None = None
+    postal_code2: vtypes.PrintableASCII | None = None
     location2: str | None = None
     country2: vtypes.Country | None = None
     weblink: str | None = None
@@ -271,7 +278,7 @@ class CdEPersona(EventPersona):
     decided_search: bool = False
     trial_member: bool = False
     bub_search: bool = False
-    foto: bytes | None = None
+    foto: str | None = None
     paper_expuls: bool = True
     birth_name: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
     donation: decimal.Decimal = decimal.Decimal()
