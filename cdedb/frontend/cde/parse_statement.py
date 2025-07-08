@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import decimal
+import functools
 import json
 import re
 from typing import TYPE_CHECKING, Callable
@@ -528,6 +529,7 @@ class Transaction:
             self.warnings.extend(best_match.warnings)
 
     @staticmethod
+    @functools.lru_cache(512)
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
         s = "|".join(map(
             re.escape,
