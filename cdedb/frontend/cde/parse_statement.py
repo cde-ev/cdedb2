@@ -528,8 +528,9 @@ class Transaction:
             self.errors.extend(best_match.errors)
             self.warnings.extend(best_match.warnings)
 
+    # The cache needs to be able to hold all patterns for all events, so (4 * num events).
     @staticmethod
-    @functools.lru_cache(512)
+    @functools.lru_cache(1024)
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
         s = "|".join(map(
             re.escape,
