@@ -3,7 +3,7 @@ import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import CdEDBObject, nearly_now, now
+from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
@@ -995,6 +995,33 @@ class TestComplaintBackend(BackendTest):
                 self.key, active_measure_persona_id, is_active=False
             ),
         )
+
+    @as_users("berta")
+    def test_user_measures_unprivileged(self) -> None:
+        measure_entry_id = 6
+        measure_persona_id = 2
+        # access own measures
+        self.assertEqual(
+            {measure_entry_id},
+            self.complaint.list_user_measures(self.key, measure_persona_id),
+        )
+
+        measures, descriptions, entries = self.complaint.get_measures(
+            self.key, {measure_entry_id}
+        )
+        self.assertEqual({measure_entry_id}, measures.keys())
+        self.assertEqual({measure_entry_id}, descriptions.keys())
+        self.assertEqual({measures[measure_entry_id].entry_id}, entries.keys())
+
+        with self.assertRaises(PrivilegeError):
+            self.complaint.list_measures(self.key)
+
+        # non-affected user
+        with self.switch_user("inga"):
+            with self.assertRaises(PrivilegeError):
+                self.complaint.list_user_measures(self.key, measure_persona_id)
+            with self.assertRaises(PrivilegeError):
+                self.complaint.get_measures(self.key, {measure_entry_id})
 
     @as_users("simon")
     def test_measures(self) -> None:

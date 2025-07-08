@@ -1004,9 +1004,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/measures", params)
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
+        if (
+            not {"complaint_admin", "complaint.enforcer"} & rs.user.roles
+            and persona_id != rs.user.persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+
         measure_ids = self.complaintproxy.list_user_measures(
             rs, persona_id, is_active=None
         )

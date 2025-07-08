@@ -1076,10 +1076,15 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
+        if (
+            not {"complaint_admin", "complaint.enforcer"} & rs.user.roles
+            and concerned_id != rs.user.persona_id
+        ):
+            raise PrivilegeError
         query = f"""
             SELECT versions.id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
@@ -1144,7 +1149,7 @@ class ComplaintBackend(AbstractBackend):
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def get_measures(
         self, rs: RequestState, measure_ids: Collection[int]
     ) -> tuple[
@@ -1173,6 +1178,10 @@ class ComplaintBackend(AbstractBackend):
             ['id', 'concerned_id', 'entry_type', 'case_id'],
             entry_ids,
         )
+        if not {"complaint_admin", "complaint.enforcer"} & rs.user.roles and any(
+            entry['concerned_id'] != rs.user.persona_id for entry in entry_data
+        ):
+            raise PrivilegeError
         for e in entry_data:
             e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
         entries = {e['id']: e for e in entry_data}
