@@ -26,6 +26,7 @@ from cdedb.common.fields import (
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
+import cdedb.models.core as models
 from tests.common import (
     ANONYMOUS,
     USER_DICT,
@@ -688,13 +689,9 @@ class TestCoreBackend(BackendTest):
         self.assertIn("case_status", blockers)
 
         # Reject the case.
-        modify_data = {
-            'id': case_id,
-            'realm': 'ml',
-            'reviewer': self.user['id'],
-            'case_status': const.GenesisStati.rejected,
-        }
-        self.core.genesis_modify_case(self.key, modify_data)
+        self.core.genesis_modify_case_meta(
+            self.key, case_id=case_id, reviewer_id=self.user['id'],
+            case_status=const.GenesisStati.rejected)
 
         # Should be deletable now.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -716,12 +713,10 @@ class TestCoreBackend(BackendTest):
 
     @as_users("annika", "vera")
     def test_genesis_event(self) -> None:
-        data = {
+        persona_data = {
             'family_name': "Zeruda-Hime",
             'given_names': "Zelda",
             'username': 'zelda@example.cde',
-            'realm': "event",
-            'notes': "Some blah",
             'gender': const.Genders.female,
             'birthday': datetime.date(1987, 6, 5),
             'telephone': None,
@@ -732,27 +727,30 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
+        expectation_persona = models.EventPersona(id=None, **persona_data)
+        case_data = {
+            'realm': "event",
+            'notes': "Some blah",
+            'attachment_hash': None,
+            'pevent_id': None,
+            'pcourse_id': None,
+        }
+        ctime = now()
+        expectation = models.GenesisCaseEvent(
+            id=-1, **case_data,
+            case_status=const.GenesisStati.to_review,
+            ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
-        case_id = self.core.genesis_request(ANONYMOUS, data)
+        case_id = self.core.genesis_request(ANONYMOUS, {**case_data, **persona_data})
         assert case_id is not None
+        expectation.id = case_id
         self.assertGreater(case_id, 0)
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
-        expectation = data
-        expectation.update({
-            'id': case_id,
-            'case_status': const.GenesisStati.to_review,
-            'reviewer': None,
-            'attachment_hash': None,
-            'birth_name': None,
-            'persona_id': None,
-            'pevent_id': None,
-            'pcourse_id': None,
-        })
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
 
         # Just update the genesis request
@@ -762,13 +760,13 @@ class TestCoreBackend(BackendTest):
             'address': "An dem Elche",
         }
         self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
-        expectation.update(update)
+        expectation.persona.address = "An dem Elche"
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
         if self.user_in("vera"):
             log_entry_expectation = {
-                'change_note': expectation['username'],
+                'change_note': expectation.persona.username,
                 'code': const.CoreLogCodes.genesis_change,
                 'persona_id': None,
                 'submitted_by': self.user['id'],
@@ -776,21 +774,22 @@ class TestCoreBackend(BackendTest):
             self.assertLogEqual([log_entry_expectation], realm='core', offset=2)
 
         update = {
-            'id': case_id,
-            'realm': "event",
             'case_status': const.GenesisStati.approved,
-            'reviewer': 1,
+            'reviewer_id': 1,
         }
-        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
-        expectation.update(update)
+        self.assertEqual(1, self.core.genesis_modify_case_meta(
+            self.key, case_id=case_id, **update))
+        expectation.case_status = const.GenesisStati.approved
+        expectation.reviewer = 1
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        expectation = {k: v for k, v in expectation.items()
-                       if k in PERSONA_EVENT_FIELDS}
+        expectation = {
+            k: v for k, v in expectation.persona.as_dict().items()
+            if k in PERSONA_EVENT_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -825,59 +824,53 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_genesis_ml(self) -> None:
-        data: CdEDBObject = {
+        persona_data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
-            "realm": "ml",
-            "notes": "Some blah",
         }
+        expectation_persona = models.MlPersona(id=None, **persona_data)
+        case_data = {
+            'realm': "ml",
+            'notes': "Some blah",
+            'attachment_hash': None,
+            'pevent_id': None,
+            'pcourse_id': None,
+        }
+        ctime = now()
+        expectation = models.GenesisCaseMl(
+            id=-1, **case_data,
+            case_status=const.GenesisStati.to_review,
+            ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
-        case_id = self.core.genesis_request(ANONYMOUS, data)
+        case_id = self.core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
         assert case_id is not None
+        expectation.id = case_id
         self.assertGreater(case_id, 0)
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
-        expectation = data
-        expectation.update({
-            'id': case_id,
-            'case_status': const.GenesisStati.to_review,
-            'reviewer': None,
-            'address': None,
-            'address_supplement': None,
-            'birthday': None,
-            'country': None,
-            'gender': None,
-            'location': None,
-            'mobile': None,
-            'postal_code': None,
-            'telephone': None,
-            'attachment_hash': None,
-            'birth_name': None,
-            'persona_id': None,
-            'pevent_id': None,
-            'pcourse_id': None,
-        })
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
         update = {
-            'id': case_id,
-            'realm': "ml",
             'case_status': const.GenesisStati.approved,
-            'reviewer': 1,
+            'reviewer_id': 1,
         }
-        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
-        expectation.update(update)
+        self.assertEqual(1, self.core.genesis_modify_case_meta(
+            self.key, case_id=case_id, **update))
+        expectation.case_status = const.GenesisStati.approved
+        expectation.reviewer = 1
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
-        expectation = {k: v for k, v in expectation.items() if k in PERSONA_ML_FIELDS}
+        expectation = {
+            k: v for k, v in expectation.persona.as_dict().items()
+            if k in PERSONA_ML_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -910,13 +903,10 @@ class TestCoreBackend(BackendTest):
     @storage
     @as_users("vera")
     def test_genesis_cde(self) -> None:
-        attachment_hash = "really_cool_filename"
-        data = {
+        persona_data = {
             'family_name': "Zeruda-Hime",
             'given_names': "Zelda",
             'username': 'zelda@example.cde',
-            'realm': "cde",
-            'notes': "Some blah",
             'gender': const.Genders.female,
             'birthday': datetime.date(1987, 6, 5),
             'telephone': None,
@@ -926,48 +916,55 @@ class TestCoreBackend(BackendTest):
             'postal_code': "12345",
             'location': "Marcuria",
             'country': "AQ",
-            'attachment_hash': attachment_hash,
-            'persona_id': None,
+        }
+        expectation_persona = models.CdEPersona(id=None, **persona_data)
+        case_data = {
+            'realm': "cde",
+            'notes': "Some blah",
+            'attachment_hash': "really_cool_filename",
             'pevent_id': None,
             'pcourse_id': None,
         }
+        ctime = now()
+        expectation = models.GenesisCaseCdE(
+            id=-1, **case_data,
+            case_status=const.GenesisStati.to_review,
+            ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         with self.assertRaises(RuntimeError) as e:
-            self.core.genesis_request(ANONYMOUS, data)
+            self.core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
         self.assertEqual("File has been lost.", str(e.exception))
 
         attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
         attachment = attachment_content.encode('ascii')
-        data['attachment_hash'] = self.core.get_genesis_attachment_store(
+        case_data['attachment_hash'] = self.core.get_genesis_attachment_store(
             self.key).store(attachment)
-        case_id = self.core.genesis_request(ANONYMOUS, data)
+        case_id = self.core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
         assert case_id is not None
+        expectation.id = case_id
+        expectation.attachment_hash = case_data['attachment_hash']
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
-        expectation = data
-        expectation.update({
-            'id': case_id,
-            'birth_name': None,
-            'case_status': const.GenesisStati.to_review,
-            'reviewer': None,
-        })
+        expectation.case_status = const.GenesisStati.to_review
         value = self.core.genesis_get_case(self.key, case_id)
-        del value['ctime']
+        value.ctime = ctime
         self.assertEqual(expectation, value)
         update = {
-            'id': case_id,
             'case_status': const.GenesisStati.approved,
-            'reviewer': self.user['id'],
-            'realm': "cde",
+            'reviewer_id': self.user['id'],
         }
-        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
-        expectation.update(update)
+        self.assertEqual(1, self.core.genesis_modify_case_meta(
+            self.key, case_id=case_id, **update))
+        expectation.case_status = const.GenesisStati.approved
+        expectation.reviewer = self.user['id']
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        expectation = {k: v for k, v in expectation.items() if k in PERSONA_CDE_FIELDS}
+        expectation = {
+            k: v for k, v in expectation.persona.as_dict().items()
+            if k in PERSONA_CDE_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,

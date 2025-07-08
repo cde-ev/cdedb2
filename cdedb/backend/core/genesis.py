@@ -136,7 +136,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
                 self.core_log(rs, const.CoreLogCodes.genesis_deleted,
-                              persona_id=None, change_note=case.username)
+                              persona_id=None, change_note=case.persona.username)
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
