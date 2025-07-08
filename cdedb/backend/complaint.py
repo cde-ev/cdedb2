@@ -88,6 +88,18 @@ class ComplaintBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    @access("persona")
+    def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all enforcers."""
+        data = self.query_all(rs, "SELECT persona_id FROM complaint.enforcers", [])
+        return {e['persona_id'] for e in data}
+
+    @access("persona")
+    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all monitors."""
+        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
+        return {e['persona_id'] for e in data}
+
     def complaint_log(
         self,
         *,

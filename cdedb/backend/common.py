@@ -165,7 +165,12 @@ def access(*roles: Role) -> Callable[[F], F]:
         @functools.wraps(function)
         def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if rs.user.roles.isdisjoint(roles):
+            user_roles = rs.user.roles.union(
+                f"{realm}.{realm_role}"
+                for realm, realm_roles in rs.user.realm_roles.items()
+                for realm_role in realm_roles
+            )
+            if user_roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),

@@ -4833,7 +4833,12 @@
         }
     ],
     "complaint.companion_incompatibles": [],
-    "complaint.enforcers": [],
+    "complaint.enforcers": [
+        {
+            "id": 1,
+            "persona_id": 10
+        }
+    ],
     "complaint.monitors": [],
     "complaint.log": [
         {
