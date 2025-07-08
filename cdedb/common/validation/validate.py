@@ -423,7 +423,10 @@ def _create_dataclass_validator(type_: type[DC], return_type: type[T],
         else:
             raise RuntimeError("Impossible.")
 
-        val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+        # genesis case fields are dependent on their target realm, so we can not
+        # check them here, but postponed it to the validator function.
+        if not issubclass(type_, models_core.GenesisCase):
+            val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
         return cast(T, val)
 

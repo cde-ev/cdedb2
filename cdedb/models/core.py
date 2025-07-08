@@ -304,9 +304,12 @@ class GenesisCase(CdEDataclass):
     @classmethod
     def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
         genesis_fields = [field for field in dataclasses.fields(cls)]
+        class_ = cls
         # use always CdE persona as reference, to make sure we fetch
         # all data from the database and from requests
-        persona_fields = GenesisCaseCdE.persona_dataclass_fields()
+        if cls == GenesisCase:
+            class_ = GenesisCaseCdE
+        persona_fields = class_.persona_dataclass_fields()
         return tuple([*genesis_fields, *persona_fields])
 
     @classmethod
