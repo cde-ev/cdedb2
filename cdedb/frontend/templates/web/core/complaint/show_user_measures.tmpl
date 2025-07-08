@@ -41,33 +41,58 @@
         </dl>
 
     {{ util.h(n_("Measures"), level=4, underline=True) }}
-    {% trans %}
-        This lists all measures targeting this persona.
-    {% endtrans %}
-    <ul>
-        {% for measure in measures.values() %}
-            <li {% if measure.etime and now() > measure.etime %}class="text-muted"{% endif %}>
-                {% set entry = entries[measure.entry_id] %}
-                {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
-                {% trans %}by{% endtrans %}
-                {% for author_id in measure.authors -%}
-                    {{ util.persona_anchor(authors[author_id]) -}}
-                    {%- if not loop.last -%}, {% endif -%}
-                {% endfor %}:
+    <p>
+        {% trans %}
+            This lists all measures targeting this persona.
+        {% endtrans %}
+    </p>
+    <div class="list-group list-group-hover">
+    {% for measure in measures.values() %}
+        {% set entry = entries[measure.entry_id] %}
+        <div id="entry{{ measure.id }}" class="list-group-item
+                {%- if entry.is_revoked or measure.etime and now() > measure.etime%} text-muted{% endif %}">
+            <div class="float-right text-right">
                 {{ measure.timestamp|datetime(lang=lang) -}}
                 {% if measure.etime %}
                     – {{ measure.etime|datetime(lang=lang) }}
-                {% endif -%}
-                :<br>
-                {{ descriptions[measure.id] }}
-            </li>
-        {% endfor %}
-    </ul>
-    {% if not measures %}
+                {% endif %}
+            </div>
+            <strong>
+                {% if entry.is_revoked %}<s>{% endif %}
+                {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
+                {{- gettext(entry.entry_type|string) -}}
+                {% if entry.is_revoked -%}
+                    </s>
+                    {% trans %}revoked{% endtrans %}
+                {% endif %}
+            </strong>
+            <br>
+            <span class="text-muted">
+                {% trans %}by{% endtrans %}
+                {% for author_id in measure.authors -%}
+                    {%- if not loop.first -%}, {% endif -%}
+                    {{ util.persona_anchor(authors[author_id]) -}}
+                {% endfor %}
+                {% if user.roles.intersection(["complaint_admin", "complaint.enforcer"]|set) %}
+                    –
+                    {% trans case=util.href(
+                            cdedblink("core/show_case", {'case_id': entry['case_id']}),
+                            gettext("Case %s")|s|format(entry['case_id']),
+                            active='complaint_admin' in user.roles)
+                    %}
+                        from {{ case }}
+                    {% endtrans %}
+                {% endif %}
+            </span>
+            <hr class="nosp" />
+            {{ descriptions[measure.id] }}
+        </div>
+    {% else %}
         <p class="text-muted">
             {% trans %}
                 Currently, there are no active measures.
             {% endtrans %}
         </p>
-    {% endif %}
+    {% endfor %}
+    </div>
 {% endblock %}

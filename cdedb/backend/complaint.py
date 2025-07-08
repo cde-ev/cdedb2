@@ -1175,7 +1175,7 @@ class ComplaintBackend(AbstractBackend):
         entry_data = self.sql_select(
             rs,
             models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id'],
+            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
             entry_ids,
         )
         if not {"complaint_admin", "complaint.enforcer"} & rs.user.roles and any(

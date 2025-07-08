@@ -1053,6 +1053,7 @@ class TestComplaintBackend(BackendTest):
                 "concerned_id": 2,
                 "entry_type": const.ComplaintEntryType.agreement_measure,
                 "id": 5,
+                "is_revoked": False,
             }
         }
         self.assertEqual(
