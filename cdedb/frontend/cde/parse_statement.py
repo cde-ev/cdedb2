@@ -496,7 +496,7 @@ class Transaction:
         if persona_matches:
             best_persona_id = max(
                 persona_matches, key=lambda p_id: persona_matches[p_id])
-            self.persona = personas[best_persona_id]
+            self.persona = personas.get(best_persona_id)
             self.persona_confidence = persona_matches[best_persona_id]
 
     def _match_event(self, rs: RequestState, event_backend: "EventBackend") -> None:
