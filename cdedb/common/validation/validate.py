@@ -413,12 +413,14 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
 def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
     """Takes a function and creates one validator per given dataclass."""
 
-    def the_decorator(fun: F) -> None:
+    def the_decorator(fun: F) -> F:
 
         for type_ in types:
 
-            def new_validator(val: Any, argname: str = type_.__qualname__, *,
-                              type_: T, creation: bool = False, **kwargs: Any) -> T:
+            def new_validator_template(
+                val: Any, argname: str = type_.__qualname__, *,
+                type_: T, creation: bool = False, **kwargs: Any
+            ) -> T:
                 val = _mapping(val, argname, **kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()
@@ -432,7 +434,11 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
 
             # note that we use functools.partial to ensure the enclosure variable type_
             # is set to the correct value
-            _add_typed_validator(functools.partial(new_validator, type_=type_), type_)
+            new_validator = functools.update_wrapper(
+                functools.partial(new_validator_template, type_=type_), fun)
+            _add_typed_validator(new_validator, type_)
+
+        return fun
 
     return the_decorator
 
