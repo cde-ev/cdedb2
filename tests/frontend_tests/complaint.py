@@ -18,6 +18,7 @@ class TestComplaintFrontend(FrontendTest):
         # ##
         # ## 1. Check sample case: involved ##
         f = self.response.forms['complaintsearchform']
+        f['qval_status.is_closed'] = False
         self.submit(f)
         self.assertTitle("Fall 1")
         self.assertPresence("Zielpersonen", div='involved_target')
@@ -140,11 +141,13 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNoLink("entry/2/replace")
         self.assertNoLink("entry/2/remove")
         self.traverse({'href': "entry/2/child/add"})
+        self.assertPresence("258 Zeichen")
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.statement_received
         self.submit(f)
         self.assertPresence("Aussage empfangen")
         self.traverse({'href': "entry/2/child/add"})
+        self.assertPresence("258 Zeichen")
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.statement_cleared
         self.submit(f)
@@ -175,6 +178,7 @@ class TestComplaintFrontend(FrontendTest):
         # Entry revocation
         self.assertNoLink("entry/4/revoke")
         self.traverse({'href': "entry/5/revoke"})
+        self.assertPresence("53 Zeichen", div='entry5')
         f = self.response.forms['configureentryform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('authors', "Darf nicht leer sein.")
@@ -220,6 +224,7 @@ class TestComplaintFrontend(FrontendTest):
             {'description': "Fall 1"},
             {'href': "entry/4/replace"},
         )
+        self.assertNonPresence("Zeichen")
         f = self.response.forms['configureentryform']
         f['description'] = "Berta wird ab jetzt immer ein Schnarchzimmer zu beantragen."
         self.submit(f, check_notification=False, check_mandatory_filled=False)
@@ -353,6 +358,10 @@ class TestComplaintFrontend(FrontendTest):
         # ## 5. Check case query ##
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
+        self.submit(f, check_notification=False)
+        self.assertNotification("Wenigstens ein Feld muss ausgefüllt sein.", 'error')
+        f = self.response.forms['complaintsearchform']
+        f['qval_status.is_closed'] = False
         self.submit(f)
         self.assertPresence("2 Fälle gefunden")
         self.assertPresence("Fall 1 ist bestätigt", div='case1')
@@ -399,6 +408,7 @@ class TestComplaintFrontend(FrontendTest):
 
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
+        f['qval_status.is_closed'] = False
         self.submit(f)
         self.assertPresence("ist schwerwiegend", div='case1')
 
@@ -410,9 +420,11 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion: Add entries without parent
         # without concerned_id
         self.traverse("Eigenständigen Eintrag hinzufügen")
+        self.assertNonPresence("Zeichen")
         f = self.response.forms['selectentrytypeform']
         f['entry_type'] = const.ComplaintEntryType.synthesis
         self.submit(f)
+        self.assertNonPresence("Zeichen")
         self.assertPresence("Synthese")
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-19-1"
@@ -438,7 +450,9 @@ class TestComplaintFrontend(FrontendTest):
 
         self.traverse("Fallarchiv")
         f = self.response.forms['complaintsearchform']
+        f['qval_cases.end_date'] = "1900-01-01"
         self.submit(f)
+        self.assertPresence("2 Fälle gefunden")
         self.assertPresence("ist abgeschlossen", div='case1001')
 
         # ##
@@ -446,6 +460,7 @@ class TestComplaintFrontend(FrontendTest):
         with self.switch_user("anton"):
             self.traverse("Fallarchiv")
             f = self.response.forms['complaintsearchform']
+            f['qval_cases.end_date'] = "1900-01-01"
             self.submit(f)
             self.assertTitle("Fallarchiv")
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')

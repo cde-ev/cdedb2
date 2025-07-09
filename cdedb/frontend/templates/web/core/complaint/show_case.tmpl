@@ -343,41 +343,7 @@
                     </div>
                 </div>
 
-                {{ generic_complaint.pretty_entry_heading(entry) }}
-                <br />
-                {{ gettext("by") }}
-                {% for author_id in entry.active_version.authors -%}
-                    {%- if not loop.first -%}, {% endif -%}
-                    {{ util.persona_anchor(personas[author_id]) -}}
-                {% endfor %}
-                <br />
-                <span class="text-muted">
-                {% if entry.active_version.length %}
-                    {% trans length=entry.active_version.length %}
-                        {{ length }} characters.
-                    {% endtrans %}
-                {% endif %}
-                {% if entry.all_versions|length > 1 %}
-                    {{ util.href(
-                        cdedblink("core/case_history", {'case_id': ambience['case'].id}) + "#entry"|s + entry.id|string,
-                        gettext("%s previous versions.")|format(entry.all_versions|length - 1),
-                        readonly=is_locked
-                    ) }}
-                    <br />
-                    {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
-                             submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
-                             ctime=entry.all_versions[0].ctime|datetime(lang=lang),
-                             first_submitted_by=util.persona_anchor(personas[entry.all_versions[0].submitted_by]) %}
-                        Created at {{ ctime }} by {{ first_submitted_by }};
-                        last changed at {{ mtime }} by {{ submitted_by }}.
-                    {% endtrans %}
-                {% else %}
-                    {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
-                             submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
-                        Created at {{ ctime }} by {{ submitted_by }}.
-                    {% endtrans %}
-                {% endif %}
-                </span>
+                {{ generic_complaint.entry_status(entry) }}
                 {% if descriptions.get(entry.active_version.id) %}
                     <hr class="nosp" />
                     <p>

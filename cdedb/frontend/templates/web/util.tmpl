@@ -952,7 +952,7 @@ attribute to each field of a dynamic row. #}
 #}
 {% macro mailto(address, name=none) -%}
 mailto:
-{%- if name is not none %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if name is not none %}{{ "{} %3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
