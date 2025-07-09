@@ -410,7 +410,7 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
     _add_typed_validator(the_validator, return_type)
 
 
-def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
+def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass."""
 
     def the_decorator(fun: F) -> F:
@@ -419,8 +419,8 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
 
             def new_validator_template(
                 val: Any, argname: str = type_.__qualname__, *,
-                type_: T, creation: bool = False, **kwargs: Any
-            ) -> T:
+                type_: type[DC], creation: bool = False, **kwargs: Any
+            ) -> CdEDBObject:
                 val = _mapping(val, argname, **kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()
@@ -430,7 +430,7 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
                     raise RuntimeError("Impossible.")
                 val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
                 val = fun(val, argname, creation=creation, **kwargs)
-                return cast(T, val)
+                return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
             # is set to the correct value
@@ -4901,7 +4901,7 @@ def _log_filter(
 
 
 @_create_dataclass_validator(models_complaint.Case)
-def _case(val: CdEDBObject, **kwargs) -> CdEDBObject:
+def _case(val: CdEDBObject, **kwargs: Any) -> CdEDBObject:
     return val
 
 

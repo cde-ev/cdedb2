@@ -13,7 +13,7 @@ from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, make_persona_forename, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
@@ -230,6 +230,15 @@ class Persona(CdEDataclass):
     # admin notes
     notes: str | None = None
 
+    # TODO implement this properly
+    def get_sortkey(self) -> Sortkey:
+        persona = self.as_dict()
+        forename = make_persona_forename(persona)
+
+        forename = forename.lower()
+        family_name = persona["family_name"].lower()
+        return (family_name, forename, persona["id"])
+
 
 @dataclasses.dataclass(kw_only=True)
 class MlPersona(Persona):
@@ -321,7 +330,7 @@ class GenesisCase(CdEDataclass):
 
     @classmethod
     def persona_dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
-        persona_class: type[Persona] = {
+        persona_class: type[Persona] = {  # type: ignore[assignment]
             field.type for field in dataclasses.fields(cls)
             if field.name == "persona"}.pop()
         return tuple([field for field in dataclasses.fields(persona_class)
@@ -335,11 +344,11 @@ class GenesisCase(CdEDataclass):
         realm = data.get("realm")
         # Dispatch data to correct dataclass based on realm.
         if realm == "ml":
-            return GenesisCaseMl.from_database(data)
+            return GenesisCaseMl.from_database(data)  # type: ignore[return-value]
         elif realm == "event":
-            return GenesisCaseEvent.from_database(data)
+            return GenesisCaseEvent.from_database(data)  # type: ignore[return-value]
         elif realm == "cde":
-            return GenesisCaseCdE.from_database(data)
+            return GenesisCaseCdE.from_database(data)  # type: ignore[return-value]
         else:
             raise RuntimeError
 
@@ -352,13 +361,13 @@ class GenesisCase(CdEDataclass):
     @classmethod
     def get_available_realms(cls) -> dict[vtypes.Realm, str]:
         return {
-            "cde": n_("CdE membership & events"),
-            "event": n_("CdE events"),
-            "ml": n_("CdE mailinglist"),
+            vtypes.Realm("cde"): n_("CdE membership & events"),
+            vtypes.Realm("event"): n_("CdE events"),
+            vtypes.Realm("ml"): n_("CdE mailinglist"),
         }
 
     @classmethod
-    def get_model_by_realm(cls, realm: str) -> "GenesisCase":
+    def get_model_by_realm(cls, realm: str) -> type["GenesisCase"]:
         return {
             "ml": GenesisCaseMl,
             "event": GenesisCaseEvent,

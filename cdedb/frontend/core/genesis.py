@@ -8,6 +8,7 @@ from typing import Optional
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
@@ -59,7 +60,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     def genesis_request(self, rs: RequestState, realm: str,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
                         attachment_filename: Optional[str] = None,
-                        attachment_hash: Optional[str] = None) -> Response:
+                        attachment_hash: Optional[vtypes.Identifier] = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.

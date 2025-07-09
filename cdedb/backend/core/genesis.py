@@ -53,7 +53,7 @@ class CoreGenesisBackend(CoreBaseBackend):
           taken
         """
         case_model = models.GenesisCase.get_model_by_realm(data["realm"])
-        data = cast(CdEDBObject | None, affirm(case_model, data, creation=True))
+        data = cast(CdEDBObject, affirm(case_model, data, creation=True))
 
         data['case_status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
@@ -266,7 +266,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
         case_model = models.GenesisCase.get_model_by_realm(data['realm'])
-        data = cast(CdEDBObject | None, affirm(case_model, data))
+        data = cast(CdEDBObject, affirm(case_model, data))
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])

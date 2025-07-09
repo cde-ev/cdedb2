@@ -727,7 +727,7 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.EventPersona(id=None, **persona_data)
+        expectation_persona = models.EventPersona(id=None, **persona_data)  # type: ignore[arg-type]
         case_data = {
             'realm': "event",
             'notes': "Some blah",
@@ -737,14 +737,14 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseEvent(
-            id=-1, **case_data,
+            id=-1, **case_data,  # type: ignore[arg-type]
             case_status=const.GenesisStati.to_review,
             ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, {**case_data, **persona_data})
         assert case_id is not None
-        expectation.id = case_id
+        expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
@@ -778,9 +778,9 @@ class TestCoreBackend(BackendTest):
             'reviewer_id': 1,
         }
         self.assertEqual(1, self.core.genesis_modify_case_meta(
-            self.key, case_id=case_id, **update))
+            self.key, case_id=case_id, **update))  # type: ignore[arg-type]
         expectation.case_status = const.GenesisStati.approved
-        expectation.reviewer = 1
+        expectation.reviewer = 1  # type: ignore[assignment]
         value = self.core.genesis_get_case(self.key, case_id)
         value.ctime = ctime
         self.assertEqual(expectation, value)
@@ -829,7 +829,7 @@ class TestCoreBackend(BackendTest):
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
         }
-        expectation_persona = models.MlPersona(id=None, **persona_data)
+        expectation_persona = models.MlPersona(id=None, **persona_data)  # type: ignore[arg-type]
         case_data = {
             'realm': "ml",
             'notes': "Some blah",
@@ -839,14 +839,14 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseMl(
-            id=-1, **case_data,
+            id=-1, **case_data,  # type: ignore[arg-type]
             case_status=const.GenesisStati.to_review,
             ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
         assert case_id is not None
-        expectation.id = case_id
+        expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
@@ -859,9 +859,9 @@ class TestCoreBackend(BackendTest):
             'reviewer_id': 1,
         }
         self.assertEqual(1, self.core.genesis_modify_case_meta(
-            self.key, case_id=case_id, **update))
+            self.key, case_id=case_id, **update))  # type: ignore[arg-type]
         expectation.case_status = const.GenesisStati.approved
-        expectation.reviewer = 1
+        expectation.reviewer = 1  # type: ignore[assignment]
         value = self.core.genesis_get_case(self.key, case_id)
         value.ctime = ctime
         self.assertEqual(expectation, value)
@@ -917,7 +917,7 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.CdEPersona(id=None, **persona_data)
+        expectation_persona = models.CdEPersona(id=None, **persona_data)  # type: ignore[arg-type]
         case_data = {
             'realm': "cde",
             'notes': "Some blah",
@@ -927,7 +927,7 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseCdE(
-            id=-1, **case_data,
+            id=-1, **case_data,  # type: ignore[arg-type]
             case_status=const.GenesisStati.to_review,
             ctime=ctime, persona=expectation_persona)
         self.assertEqual(1, len(self.core.genesis_list_cases(
@@ -942,8 +942,8 @@ class TestCoreBackend(BackendTest):
             self.key).store(attachment)
         case_id = self.core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
         assert case_id is not None
-        expectation.id = case_id
-        expectation.attachment_hash = case_data['attachment_hash']
+        expectation.id = case_id  # type: ignore[assignment]
+        expectation.attachment_hash = case_data['attachment_hash']  # type: ignore[assignment]
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
