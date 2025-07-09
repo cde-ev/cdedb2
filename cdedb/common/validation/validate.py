@@ -2526,8 +2526,8 @@ def _event(
     if 'fees' in val:
         with errs:
             val['fees'] = _optional_object_mapping_helper(
-                val['fees'], EventFee, 'fees', creation_only=creation, event=val,
-                questionnaire={}, **kwargs)
+                val['fees'], models_event.EventFee, 'fees', creation_only=creation,
+                event=val, questionnaire={}, **kwargs)
 
     if errs:
         raise errs
@@ -2798,7 +2798,7 @@ def _event_field(
     return EventField(val)
 
 
-_create_optional_mapping_validator(EventFee, EventFeeSetter)
+_create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
 
 
 @_create_dataclass_validator(models_event.EventFee)

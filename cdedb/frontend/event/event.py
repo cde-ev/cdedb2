@@ -862,7 +862,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
-            rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
+            rs, models.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
             event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
             personalized=personalized,
         )

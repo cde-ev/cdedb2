@@ -39,7 +39,7 @@ from cdedb.common.validation.types import (
     Vote,
 )
 from cdedb.config import Config
-from cdedb.models.core import GenesisCase
+from cdedb.models.core import GenesisCaseEvent
 
 T = TypeVar('T')
 
@@ -650,7 +650,7 @@ class TestValidation(TestValidationBase):
                         self.assertIsInstance(e, error)
 
     def test_german_postal_code(self) -> None:
-        for assertion in (Persona, GenesisCase):
+        for assertion in (Persona, GenesisCaseEvent):
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
                 ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
@@ -670,7 +670,7 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCaseEvent:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -697,7 +697,7 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCaseEvent:
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:

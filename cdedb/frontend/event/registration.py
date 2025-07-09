@@ -1108,7 +1108,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         data['amount'] = None
         fee_data = check(
-            rs, vtypes.EventFee, data, creation=True, id_=-1,
+            rs, models.EventFee, data, creation=True, id_=-1,
             event=rs.ambience['event'].as_dict(), questionnaire={}, personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:
