@@ -446,7 +446,7 @@ class GenesisCaseEvent(GenesisCase):
 class GenesisCaseCdE(GenesisCase):
     persona: CdEPersona = dataclasses.field(
         metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
-    attachment_hash: str
+    attachment_hash: str = dataclasses.field(metadata={'update_exclude': True})
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":

@@ -1838,8 +1838,8 @@ def _genesis_case(
 
     mandatory, optional = model.validation_fields(creation=creation)
     # Birth name is not allowed on creation to avoid mistakes
-    if creation and 'birth_name' in mandatory:
-        del mandatory['birth_name']
+    if creation and 'birth_name' in val:
+        del val['birth_name']
 
     val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 

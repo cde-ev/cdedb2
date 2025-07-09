@@ -51,7 +51,7 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
 def genesis_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'ctime': now(),
-        'realm': "event",
+        'realm': "ml",
         # This seems like a mypy bug:
         'case_status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
