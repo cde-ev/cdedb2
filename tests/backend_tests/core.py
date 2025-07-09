@@ -7,6 +7,7 @@ from typing import Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import (
     CdEDBObject,
@@ -26,7 +27,6 @@ from cdedb.common.fields import (
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
-import cdedb.models.core as models
 from tests.common import (
     ANONYMOUS,
     USER_DICT,

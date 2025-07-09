@@ -409,6 +409,7 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
         return cast(T, val)
     _add_typed_validator(the_validator, return_type)
 
+
 def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
     """Takes a function and creates one validator per given dataclass."""
 
@@ -432,7 +433,6 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
             # note that we use functools.partial to ensure the enclosure variable type_
             # is set to the correct value
             _add_typed_validator(functools.partial(new_validator, type_=type_), type_)
-        return None
 
     return the_decorator
 
@@ -4910,6 +4910,7 @@ def _case(
     val: Any, argname: str, **kwargs
 ) -> CdEDBObject:
     return val
+
 
 @_create_dataclass_validator(models_complaint.ComplaintEntry)
 def _complaint_entry(
