@@ -1832,23 +1832,12 @@ def _country(
 @_create_dataclass_validator(models_core.GenesisCaseMl, models_core.GenesisCaseEvent, models_core.GenesisCaseCdE)
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
+    ignore_warnings: bool = False, **kwargs: Any,
 ) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    if val['realm'] not in models_core.GenesisCase.get_available_realms():
-        raise ValidationSummary(ValueError('realm', n_("This realm is not supported for genesis.")))
-    model = models_core.GenesisCase.get_model_by_realm(val['realm'])
-
-    mandatory, optional = model.validation_fields(creation=creation)
-    # Birth name is not allowed on creation to avoid mistakes
-    if creation and 'birth_name' in val:
-        del val['birth_name']
-
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
     errs = ValidationSummary()
 
     with errs:
@@ -4912,9 +4901,7 @@ def _log_filter(
 
 
 @_create_dataclass_validator(models_complaint.Case)
-def _case(
-    val: Any, argname: str, **kwargs
-) -> CdEDBObject:
+def _case(val: CdEDBObject, **kwargs) -> CdEDBObject:
     return val
 
 
