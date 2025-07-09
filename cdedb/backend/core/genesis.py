@@ -307,7 +307,11 @@ class CoreGenesisBackend(CoreBaseBackend):
 
             log_code = const.CoreLogCodes.genesis_change
             if case_status and case_status != current.case_status:
-                if case_status == const.GenesisStati.successful:
+                if case_status == const.GenesisStati.approved:
+                    # TODO this case was not logged until now, and there is
+                    #  no meaningful log code for this.
+                    pass
+                elif case_status == const.GenesisStati.successful:
                     log_code = const.CoreLogCodes.genesis_approved
                 elif case_status == const.GenesisStati.rejected:
                     log_code = const.CoreLogCodes.genesis_rejected
