@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-07-01 22:51+0200\n"
+"POT-Creation-Date: 2025-07-09 01:08+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -90,7 +90,7 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:351 cdedb/backend/cde/base.py:589
-#: cdedb/backend/complaint.py:1013 cdedb/backend/core/base.py:3018
+#: cdedb/backend/complaint.py:1037 cdedb/backend/core/base.py:3018
 #: cdedb/backend/event/query.py:715 cdedb/backend/ml.py:323
 #: cdedb/backend/past_event.py:770
 msgid "Bad scope."
@@ -634,87 +634,87 @@ msgstr "documentatio"
 msgid "Need to specify exactly two columns."
 msgstr ""
 
-#: cdedb/backend/complaint.py:284
+#: cdedb/backend/complaint.py:308
 #, fuzzy
 msgid "No authors specified."
 msgstr "nihil praeitum."
 
-#: cdedb/backend/complaint.py:286
+#: cdedb/backend/complaint.py:310
 #, fuzzy
 msgid "Unknown authors."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:317
+#: cdedb/backend/complaint.py:341
 msgid "Deletion reason given, but entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:336
+#: cdedb/backend/complaint.py:360
 #, fuzzy
 msgid "Unknown entry."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:462
+#: cdedb/backend/complaint.py:486
 #, fuzzy
 msgid "Entry already revoked."
 msgstr "eventus"
 
-#: cdedb/backend/complaint.py:464
+#: cdedb/backend/complaint.py:488
 msgid "Entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:476
+#: cdedb/backend/complaint.py:500
 msgid "Revocation entry without parent."
 msgstr ""
 
-#: cdedb/backend/complaint.py:478 cdedb/frontend/core/complaint.py:824
-#: cdedb/frontend/core/complaint.py:872
+#: cdedb/backend/complaint.py:502 cdedb/frontend/core/complaint.py:827
+#: cdedb/frontend/core/complaint.py:875
 msgid "Cannot chain revoke."
 msgstr ""
 
-#: cdedb/backend/complaint.py:522
+#: cdedb/backend/complaint.py:546
 msgid "Appellant cannot be uninformed."
 msgstr ""
 
-#: cdedb/backend/complaint.py:529 cdedb/backend/complaint.py:597
+#: cdedb/backend/complaint.py:553 cdedb/backend/complaint.py:621
 #, fuzzy
 msgid "Unknown users."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:538
+#: cdedb/backend/complaint.py:562
 #, fuzzy
 msgid "Already involved otherwise."
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
-#: cdedb/backend/complaint.py:540
+#: cdedb/backend/complaint.py:564
 #, fuzzy
 msgid "Already active companions."
 msgstr "tabellae epistularum electronicarum moderatae"
 
-#: cdedb/backend/complaint.py:647 cdedb/backend/complaint.py:703
-#: cdedb/backend/complaint.py:795
+#: cdedb/backend/complaint.py:671 cdedb/backend/complaint.py:727
+#: cdedb/backend/complaint.py:819
 msgid "Uninvolved user."
 msgstr ""
 
-#: cdedb/backend/complaint.py:688
+#: cdedb/backend/complaint.py:712
 #, fuzzy
 msgid "Unknown companions."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:708
+#: cdedb/backend/complaint.py:732
 #, fuzzy
 msgid "Adverse companion."
 msgstr "Annuntiationes"
 
-#: cdedb/backend/complaint.py:710
+#: cdedb/backend/complaint.py:734
 #, fuzzy
 msgid "Involved companion."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:797
+#: cdedb/backend/complaint.py:821
 msgid "Not a companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:1128
+#: cdedb/backend/complaint.py:1152
 msgid "Can only list measures."
 msgstr ""
 
@@ -1533,7 +1533,7 @@ msgid "Different mailinglists specified."
 msgstr ""
 
 #: cdedb/backend/ml.py:428 cdedb/frontend/cde/past_event.py:413
-#: cdedb/frontend/core/complaint.py:364 cdedb/frontend/core/complaint.py:488
+#: cdedb/frontend/core/complaint.py:367 cdedb/frontend/core/complaint.py:491
 msgid "Some of these users do not exist."
 msgstr ""
 
@@ -2493,14 +2493,14 @@ msgstr "quaesitio curriculorum"
 #: cdedb/frontend/templates/web/assembly/ballot/summary_ballots.tmpl:13
 #: cdedb/frontend/templates/web/assembly/base.tmpl:16
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:39
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:125
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:109
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:36
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:37
 msgid "Summary"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:747
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:59
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:16
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:48
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:49
 msgid "is grave"
@@ -2524,21 +2524,21 @@ msgstr "eventus"
 
 #: cdedb/common/query/__init__.py:750
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:41
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:136
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:120
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:42
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:43
 msgid "Kind"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:751
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:62
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:19
 #, fuzzy
 msgid "is unlocked"
 msgstr "mensura pecuniae"
 
 #: cdedb/common/query/__init__.py:752
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:52
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:127
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:9
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:111
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:67
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:68
 #, fuzzy
@@ -2546,7 +2546,7 @@ msgid "is confirmed"
 msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/common/query/__init__.py:753
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:56
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:13
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:74
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:75
 msgid "is closed"
@@ -2614,7 +2614,7 @@ msgstr ""
 
 #: cdedb/common/query/__init__.py:763 cdedb/common/query/__init__.py:764
 #: cdedb/common/query/__init__.py:765
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:153
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:137
 msgid "Involved"
 msgstr ""
 
@@ -2627,7 +2627,7 @@ msgid "Is Informed"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:766 cdedb/common/query/__init__.py:767
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:171
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:155
 #: cdedb/frontend/templates/web/logging.tmpl:104
 msgid "Companion"
 msgstr ""
@@ -3422,8 +3422,8 @@ msgstr ""
 #: cdedb/common/validation/validate.py:4842
 #: cdedb/common/validation/validate.py:5032 cdedb/frontend/cde/base.py:265
 #: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:654
-#: cdedb/frontend/core/base.py:1274 cdedb/frontend/core/complaint.py:369
-#: cdedb/frontend/core/complaint.py:493 cdedb/frontend/core/genesis.py:113
+#: cdedb/frontend/core/base.py:1274 cdedb/frontend/core/complaint.py:372
+#: cdedb/frontend/core/complaint.py:496 cdedb/frontend/core/genesis.py:113
 #: cdedb/frontend/event/event.py:316 cdedb/frontend/event/registration.py:685
 #: cdedb/frontend/event/registration.py:1732
 msgid "Must not be empty."
@@ -5226,135 +5226,135 @@ msgstr "vestigium novum crea"
 msgid "%(count)s cases not shown."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/complaint.py:233
+#: cdedb/frontend/core/complaint.py:236
 msgid "Need to unlock case first."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:283
+#: cdedb/frontend/core/complaint.py:286
 msgid "May not create case with own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:286
+#: cdedb/frontend/core/complaint.py:289
 msgid "May not be involved in multiple ways."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:347
+#: cdedb/frontend/core/complaint.py:350
 msgid "May not add own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:357
+#: cdedb/frontend/core/complaint.py:360
 #, fuzzy
 msgid "Some of these users are already involved otherwise."
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
-#: cdedb/frontend/core/complaint.py:380
+#: cdedb/frontend/core/complaint.py:383
 #, python-format
 msgid "%(companion)s was a companion and is now marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:392
+#: cdedb/frontend/core/complaint.py:395
 msgid "Some of these users were already involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:403
+#: cdedb/frontend/core/complaint.py:406
 #, fuzzy
 msgid "This user was not involved."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/complaint.py:413 cdedb/frontend/core/complaint.py:430
+#: cdedb/frontend/core/complaint.py:416 cdedb/frontend/core/complaint.py:433
 #, fuzzy
 msgid "This user is not involved."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/complaint.py:419 cdedb/frontend/core/complaint.py:437
+#: cdedb/frontend/core/complaint.py:422 cdedb/frontend/core/complaint.py:440
 msgid "This user was already marked as uninformed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:476
+#: cdedb/frontend/core/complaint.py:479
 msgid "Companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:483
+#: cdedb/frontend/core/complaint.py:486
 msgid "Companion to the opposing party."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:499
+#: cdedb/frontend/core/complaint.py:502
 msgid "Some of these users were already companions."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:516
+#: cdedb/frontend/core/complaint.py:519
 #, fuzzy
 msgid "This user was no companion."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/complaint.py:526 cdedb/frontend/core/complaint.py:547
+#: cdedb/frontend/core/complaint.py:529 cdedb/frontend/core/complaint.py:550
 #, fuzzy
 msgid "This user is no companion."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/complaint.py:532
+#: cdedb/frontend/core/complaint.py:535
 msgid "This companion was already marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:549
+#: cdedb/frontend/core/complaint.py:552
 msgid "Active companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:555
+#: cdedb/frontend/core/complaint.py:558
 msgid "This companion was already marked as active."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:589
+#: cdedb/frontend/core/complaint.py:592
 #, fuzzy
 msgid "Case unlocked."
 msgstr "eventus"
 
-#: cdedb/frontend/core/complaint.py:602
+#: cdedb/frontend/core/complaint.py:605
 #, fuzzy
 msgid "Case locked."
 msgstr "eventus"
 
-#: cdedb/frontend/core/complaint.py:629 cdedb/frontend/core/complaint.py:694
+#: cdedb/frontend/core/complaint.py:632 cdedb/frontend/core/complaint.py:697
 msgid "Can not add child for deleted parent."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:651
+#: cdedb/frontend/core/complaint.py:654
 #, fuzzy
 msgid "Should not include involved people."
 msgstr "ID novi adiutoris eventuum"
 
-#: cdedb/frontend/core/complaint.py:716
+#: cdedb/frontend/core/complaint.py:719
 #, python-format
 msgid "Can not replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:727
+#: cdedb/frontend/core/complaint.py:730
 #, python-format
 msgid "Need to unlock case before replacing %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:794
+#: cdedb/frontend/core/complaint.py:797
 #, python-format
 msgid "Cannot replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:817 cdedb/frontend/core/complaint.py:865
-#: cdedb/frontend/core/complaint.py:895 cdedb/frontend/core/complaint.py:953
+#: cdedb/frontend/core/complaint.py:820 cdedb/frontend/core/complaint.py:868
+#: cdedb/frontend/core/complaint.py:898 cdedb/frontend/core/complaint.py:956
 #, fuzzy
 msgid "Entry already removed."
 msgstr "eventus"
 
-#: cdedb/frontend/core/complaint.py:829 cdedb/frontend/core/complaint.py:877
+#: cdedb/frontend/core/complaint.py:832 cdedb/frontend/core/complaint.py:880
 #, fuzzy, python-format
 msgid "%(entry_link)s already revoked."
 msgstr "eventus"
 
-#: cdedb/frontend/core/complaint.py:900 cdedb/frontend/core/complaint.py:958
+#: cdedb/frontend/core/complaint.py:903 cdedb/frontend/core/complaint.py:961
 #, python-format
 msgid "%(entry_link)s has active children."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:913
+#: cdedb/frontend/core/complaint.py:916
 #, python-format
 msgid "Need to unlock case before removing %(entry_link)s."
 msgstr ""
@@ -7451,8 +7451,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:43
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:31
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:106
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:32
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:90
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:40
 #: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:41
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:41
@@ -7833,8 +7833,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:75
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:82
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:99
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:157
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:175
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:141
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:159
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:277
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:67
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:126
@@ -8176,8 +8176,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:79
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:140
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:317
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:385
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:348
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:416
 msgid "by"
 msgstr ""
 
@@ -8552,6 +8552,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:123
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:94
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:239
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:185
 msgid "Warning"
 msgstr ""
@@ -8718,7 +8719,7 @@ msgstr "visibilitas"
 #: cdedb/frontend/templates/web/cde/index.tmpl:29
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:123
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:82
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:186
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:170
 #: cdedb/frontend/templates/web/core/index.tmpl:39
 #: cdedb/frontend/templates/web/event/base.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:299
@@ -9368,7 +9369,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:31
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:18
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:24
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:25
 #, fuzzy
 msgid "Go to Search."
 msgstr "quaesitio curriculorum"
@@ -9391,7 +9392,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:74
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:57
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:120
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:104
 #: cdedb/frontend/templates/web/generic.tmpl:126
 #, fuzzy
 msgid "Search Mask"
@@ -9888,7 +9889,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:182
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:49
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:175
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:306
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:337
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:58
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:131
 #: cdedb/frontend/templates/web/event/generic.tmpl:334
@@ -10618,7 +10619,7 @@ msgid "Userdata Log"
 msgstr "data utentis tracta"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:52
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:8
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:9
 #, fuzzy
 msgid "Case Archive"
 msgstr "vestigium novum crea"
@@ -10827,7 +10828,7 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:28
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:10
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:45
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:46
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
@@ -10836,6 +10837,8 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:19
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:237
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:436
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:22
 #, fuzzy, python-format
 msgid "Case %s"
@@ -10854,7 +10857,7 @@ msgstr "signum arcanum muta"
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:25
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:26
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:48
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:15
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:16
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:26
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:18
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:21
@@ -10872,7 +10875,7 @@ msgid "%(count)s versions"
 msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:361
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:392
 #, python-format
 msgid "%(label)s at %(stamp)s"
 msgstr ""
@@ -10888,13 +10891,13 @@ msgid "Version %s"
 msgstr "editio"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:86
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:325
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:356
 #, python-format
 msgid "%(length)s characters."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:91
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:344
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:375
 #, python-format
 msgid "Created at %(ctime)s by %(submitted_by)s."
 msgstr ""
@@ -10910,13 +10913,13 @@ msgid "Replaced at %(dtime)s by %(deleted_by)s: %(dreason)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:133
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:378
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:409
 #, python-format
 msgid "(for %(involved)s)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:144
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:389
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:420
 #, fuzzy, python-format
 msgid "; %(change_note)s"
 msgstr "commentarium mutationis"
@@ -10928,7 +10931,7 @@ msgstr "commentarium mutationis"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:21
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:32
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:21
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:22
 #, fuzzy
 msgid "Create Case"
 msgstr "tabellae epistularum electronicarum moderatae"
@@ -11076,7 +11079,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:112
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:297
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:328
 msgid "Revoke"
 msgstr ""
 
@@ -11087,29 +11090,29 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:120
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:288
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:319
 msgid "Replace"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:14
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:35
 #, python-format
 msgid "(for %(concerned)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:33
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:34
 #, fuzzy, python-format
 msgid "%(count)s Cases found"
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:109
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:93
 #, fuzzy
 msgid "No cases found."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:128
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:141
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:166
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:180
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:112
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:125
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:150
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:164
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:72
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:79
@@ -11123,10 +11126,10 @@ msgstr "Annuntiationes"
 msgid "No"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:128
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:141
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:166
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:180
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:112
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:125
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:150
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:164
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:72
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:79
@@ -11140,35 +11143,35 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:130
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:114
 msgid "Occurred after"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:132
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:116
 msgid "Last entry after"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:140
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:124
 msgid "is closed_[[short]]"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:143
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:127
 msgid "Occurred before"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:145
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:129
 msgid "Last entry before"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:161
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:145
 msgid "Involvement"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:165
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:149
 msgid "is informed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/index.tmpl:179
+#: cdedb/frontend/templates/web/core/complaint/index.tmpl:163
 msgid "is withdrawn"
 msgstr ""
 
@@ -11278,51 +11281,74 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:222
 #, fuzzy
+msgid "Related Cases"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:240
+#, fuzzy
+msgid "Not shown due to own involvement."
+msgstr "vestigium novum crea"
+
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:247
+msgid "There are no related cases"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:253
+#, fuzzy
 msgid "Events_[[in a complaint]]"
 msgstr "eventus praeteriti"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:224
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:255
 msgid "Add standalone entry"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:228
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:259
 msgid "Show log entries"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:229
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:260
 #, fuzzy
 msgid "Show entry history"
 msgstr "eventus"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:243
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:274
 msgid "Why do you need to unlock this case?"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:245
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:276
 #, fuzzy
 msgid "Unlock descriptions"
 msgstr "documentatio"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:260
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:291
 #, fuzzy
 msgid "Lock descriptions"
 msgstr "documentatio"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:281
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:312
 #, fuzzy
 msgid "Add child entry"
 msgstr "administrator coetuum"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:332
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:363
 #, fuzzy, python-format
 msgid "%s previous versions."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:336
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:367
 #, python-format
 msgid ""
 "Created at %(ctime)s by %(first_submitted_by)s; last changed at %(mtime)s by "
 "%(submitted_by)s."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:438
+#, fuzzy
+msgid "strongly related"
+msgstr "epistula electronica ad verificandum mitte"
+
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:445
+msgid "Intersecting involved"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:9

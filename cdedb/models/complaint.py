@@ -122,8 +122,11 @@ class Case(CdEDataclass):
         return bool(
             case.all_properly_involved.keys() & self.involved.get(it.target, set())
         ) and bool(
-            case.all_properly_involved.keys() & (self.involved.get(it.affected, set())
-            | self.involved.get(it.appellant, set()))
+            case.all_properly_involved.keys()
+            & (
+                self.involved.get(it.affected, set())
+                | self.involved.get(it.appellant, set())
+            )
         )
 
     def is_visible_for(self, user: User) -> bool:

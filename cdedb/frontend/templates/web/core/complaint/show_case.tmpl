@@ -221,10 +221,10 @@
 
     {{ util.h(n_("Related Cases")) }}
     {% if related_cases %}
-        <ul>
+        <ul id="related-cases">
             {% for case in related_cases.values() if case and ambience['case'].is_strongly_related(case) %}
                 <li>
-                    {{ print_related_case(case_id, case) }}
+                    {{ print_related_case(case) }}
                 </li>
             {% endfor %}
             {% for case in related_cases.values() if case and not ambience['case'].is_strongly_related(case) %}
@@ -237,7 +237,7 @@
                     {{ gettext("Case %s")|s|format(case_id) }}:
                     <strong class="text-warning">
                         {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
-                        {{ gettext("Not shown due to own involvement.") }}
+                        {{ gettext("Not shown due to own involvement or potential bias.") }}
                     </strong>
                 </li>
             {% endfor %}
@@ -435,7 +435,10 @@
             cdedblink("core/show_case", {'case_id': case.id}),
             gettext("Case %s")|s|format(case.id)
         ) }}
-    {%- if ambience['case'].is_strongly_related(case) %}</strong>{% endif -%}
+    {%- if ambience['case'].is_strongly_related(case) %}
+        </strong>
+        {{ util.make_icon("bolt-lightning", title=gettext("strongly related")) }}
+    {% endif %}
     {{ generic_complaint.case_status_flags(case) }}
     {%- if case.start_date or case.end_date %}
         ({{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }})
@@ -443,14 +446,12 @@
     {{ case.summary }}
     <br />
     {{ gettext("Intersecting involved") }}:
-    {% for involved_id, involvement_type in case.all_involved.items() %}
-        {% if involved_id in ambience['case'].all_properly_involved %}
-            {{ util.persona_anchor(personas[involved_id]) }}
-            <span class="text-muted">(
-                {{- util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
-                <span aria-hidden="true">{{ gettext(involvement_type.shortname) -}}</span></span>)
-            {%- if not loop.last %}, {% endif %}
-        {% endif %}
+    {% for involved_id, involvement_type in case.all_involved.items() if involved_id in ambience['case'].all_properly_involved %}
+        {{ util.persona_anchor(personas[involved_id]) }}
+        <span class="text-muted">(
+            {{- util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
+            <span aria-hidden="true">{{ gettext(involvement_type.shortname) -}}</span></span>)
+        {%- if not loop.last %}, {% endif %}
     {% endfor %}
 
 {% endmacro %}
