@@ -409,40 +409,30 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
         return cast(T, val)
     _add_typed_validator(the_validator, return_type)
 
+def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], None]:
+    """Takes a function and creates one validator per given dataclass."""
 
-def _create_dataclass_validator(type_: type[DC], return_type: type[T],
-                                ) -> Callable[[F], F]:
-    def the_validator(val: Any, argname: str = type_.__qualname__, *,
-                      creation: bool = False, **kwargs: Any) -> T:
-        val = _mapping(val, argname, **kwargs)
+    def the_decorator(fun: F) -> None:
 
-        if issubclass(type_, GenericLogFilter):
-            mandatory, optional = type_.validation_fields()
-        elif issubclass(type_, CdEDataclass):
-            mandatory, optional = type_.validation_fields(creation=creation)
-        else:
-            raise RuntimeError("Impossible.")
+        for type_ in types:
 
-        # genesis case fields are dependent on their target realm, so we can not
-        # check them here, but postponed it to the validator function.
-        if not issubclass(type_, models_core.GenesisCase):
-            val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+            def new_validator(val: Any, argname: str = type_.__qualname__, *,
+                              type_: T, creation: bool = False, **kwargs: Any) -> T:
+                val = _mapping(val, argname, **kwargs)
+                if issubclass(type_, GenericLogFilter):
+                    mandatory, optional = type_.validation_fields()
+                elif issubclass(type_, CdEDataclass):
+                    mandatory, optional = type_.validation_fields(creation=creation)
+                else:
+                    raise RuntimeError("Impossible.")
+                val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+                val = fun(val, argname, creation=creation, **kwargs)
+                return cast(T, val)
 
-        return cast(T, val)
-
-    _add_typed_validator(the_validator, return_type)
-
-    def the_decorator(fun: F) -> F:
-        del _ALL_TYPED[return_type]
-
-        @functools.wraps(fun)
-        def wrapper(val: Any, argname: str = type_.__qualname__, **kwargs: Any) -> T:
-            val = the_validator(val, argname, **kwargs)
-            val = fun(val, argname, **kwargs)
-            return cast(T, val)
-
-        _add_typed_validator(wrapper, return_type)
-        return cast(F, wrapper)
+            # note that we use functools.partial to ensure the enclosure variable type_
+            # is set to the correct value
+            _add_typed_validator(functools.partial(new_validator, type_=type_), type_)
+        return None
 
     return the_decorator
 
@@ -1833,7 +1823,7 @@ def _country(
     return Country(val)
 
 
-@_create_dataclass_validator(models_core.GenesisCase, models_core.GenesisCase)
+@_create_dataclass_validator(models_core.GenesisCaseMl, models_core.GenesisCaseEvent, models_core.GenesisCaseCdE)
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
     creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
@@ -2811,14 +2801,14 @@ def _event_field(
 _create_optional_mapping_validator(EventFee, EventFeeSetter)
 
 
-@_create_dataclass_validator(models_event.EventFee, EventFee)
+@_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
         id_: ProtoID,
         event: CdEDBObject,
         personalized: Optional[bool] = None,
         **kwargs: Any,
-) -> EventFee:
+) -> CdEDBObject:
     errs = ValidationSummary()
     current = event['fees'].get(id_)
     if current is not None and personalized is None:
@@ -2846,7 +2836,7 @@ def _event_fee(
     if errs:
         raise errs
 
-    return cast(EventFee, val)
+    return val
 
 
 @_add_typed_validator
@@ -4915,13 +4905,13 @@ def _log_filter(
     return LogFilter(val)
 
 
-_create_dataclass_validator(models_complaint.Case, models_complaint.Case)
+@_create_dataclass_validator(models_complaint.Case)
+def _case(
+    val: Any, argname: str, **kwargs
+) -> CdEDBObject:
+    return val
 
-
-@_create_dataclass_validator(
-    models_complaint.ComplaintEntry,
-    models_complaint.ComplaintEntry
-)
+@_create_dataclass_validator(models_complaint.ComplaintEntry)
 def _complaint_entry(
     val: Any, argname: str, *, entries: dict[int, models_complaint.ComplaintEntry],
     **kwargs: Any,
@@ -4954,10 +4944,7 @@ def _complaint_entry(
     return val
 
 
-@_create_dataclass_validator(
-    models_complaint.ComplaintEntryVersion,
-    models_complaint.ComplaintEntryVersion,
-)
+@_create_dataclass_validator(models_complaint.ComplaintEntryVersion)
 def _complaint_entry_version(
     val: Any, argname: str, entry_type: const.ComplaintEntryType | None, **kwargs: Any
 ) -> CdEDBObject:
