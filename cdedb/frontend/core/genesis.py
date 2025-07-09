@@ -55,8 +55,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
     @access("anonymous", modi={"POST"})
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_filename", "attachment_hash")
-    def genesis_request(self, rs: RequestState,
+    @REQUESTdata("realm", "attachment_filename", "attachment_hash")
+    def genesis_request(self, rs: RequestState, realm: str,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
                         attachment_filename: Optional[str] = None,
                         attachment_hash: Optional[str] = None) -> Response:
@@ -65,28 +65,26 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This initiates the genesis process.
         """
         if attachment or attachment_hash:
-            # Take care that the call to extract_and_check does not overwrite them
-            #  in rs.values. Therefore, we stash them in between.
+            # We need to extract the hash before, and save it to rs.values after the
+            #  call to extract_and_check, so we stash them in between.
             attachment_hash, attachment_filename =\
                 self.locate_or_store_attachment(
                     rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                     attachment_hash, attachment_filename)
 
-        data = extract_and_check_dataclass(rs, models.GenesisCase, creation=True)
+        case_model = models.GenesisCase.get_model_by_realm(realm)
+        mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
+        data = extract_and_check_dataclass(
+            rs, case_model, additional_data={'attachment_hash': attachment_hash},
+            creation=True) or {}
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
             attachment_hash, attachment_filename
-        if rs.has_validation_errors():
-            return self.genesis_request_form(rs)
-
-        case_model = models.GenesisCase.get_model_by_realm(data["realm"])
-        mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
         if ('attachment_hash' in mandatory_case_fields and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
         data['attachment_hash'] = rs.values['attachment_hash']
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        assert data is not None
 
         # past events and courses may not be set here
         data['pevent_id'] = None
@@ -343,9 +341,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'realm_options': realm_options, 'choices': choices}, mandatory_fields)
 
     @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
-    def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
+    @REQUESTdata("realm")
+    def genesis_modify(self, rs: RequestState, genesis_case_id: int,
+                       realm: str) -> Response:
         """Edit a case to fix potential issues before creation."""
-        data = extract_and_check_dataclass(rs, models.GenesisCase, creation=False,
+        case_model = models.GenesisCase.get_model_by_realm(realm)
+        data = extract_and_check_dataclass(rs, case_model, creation=False,
                                            additional_data={"id": genesis_case_id})
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)

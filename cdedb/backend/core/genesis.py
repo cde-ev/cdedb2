@@ -52,7 +52,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = cast(CdEDBObject | None, affirm(models.GenesisCase, data, creation=True))
+        case_model = models.GenesisCase.get_model_by_realm(data["realm"])
+        data = cast(CdEDBObject | None, affirm(case_model, data, creation=True))
 
         data['case_status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
@@ -264,7 +265,8 @@ class CoreGenesisBackend(CoreBaseBackend):
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
-        data = cast(CdEDBObject | None, affirm(models.GenesisCase, data))
+        case_model = models.GenesisCase.get_model_by_realm(data['realm'])
+        data = cast(CdEDBObject | None, affirm(case_model, data))
 
         with Atomizer(rs):
             current = self.genesis_get_case(rs, data['id'])
