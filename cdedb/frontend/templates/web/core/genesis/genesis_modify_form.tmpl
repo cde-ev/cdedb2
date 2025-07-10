@@ -28,16 +28,10 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
-            {% if "core_admin" in user.roles %}
-                {{ util.form_input_select(
-                    name="realm", small=True, entries=realm_options,
-                    label=gettext("Realm"), anid="realm-select") }}
-            {% else %}
-                {{ util.form_input_static(label=gettext("Realm"), small=True,
-                    value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}) }}
-                {# id is required for js script to work #}
-                {{ util.input_hidden(name="realm", anid="realm-select") }}
-            {% endif %}
+            {{ util.form_input_static(label=gettext("Realm"), small=True,
+                value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}
+            {# id is required for js script to work #}
+            {{ util.input_hidden(name="realm", anid="realm-select") }}
             {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
 
              <noscript>

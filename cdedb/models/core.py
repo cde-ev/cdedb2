@@ -298,7 +298,8 @@ class CdEPersona(EventPersona):
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
 
-    realm: vtypes.Realm
+    # only changable via separate frontend endpoint
+    realm: vtypes.Realm = dataclasses.field(metadata={'update_exclude': True})
     notes: str
     case_status: const.GenesisStati = dataclasses.field(
         metadata={'validation_exclude': True, 'request_exclude': True})
@@ -375,8 +376,12 @@ class GenesisCase(CdEDataclass):
         }[realm]
 
     @classmethod
-    def get_relative_admins(cls) -> set[str]:
-        return {f"{realm}_admin" for realm in cls.get_available_realms()}
+    def get_relative_admins(cls, realm: vtypes.Realm | None = None) -> set[str]:
+        relative_admins = {
+            realm: f"{realm}_admin" for realm in cls.get_available_realms()}
+        if realm:
+            return {relative_admins[realm]}  # vty
+        return set(relative_admins.values())
 
     @property
     def relative_admin(self) -> str:

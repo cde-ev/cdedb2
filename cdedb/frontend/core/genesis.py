@@ -24,6 +24,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
     access,
+    check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
     periodic,
 )
@@ -73,6 +74,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                     attachment_hash, attachment_filename)
 
+        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
+        if rs.has_validation_errors():
+            return self.genesis_request_form(rs)
+        assert realm is not None
         case_model = models.GenesisCase.get_model_by_realm(realm)
         mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
         data = extract_and_check_dataclass(
@@ -326,9 +331,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
-        realm_options = [
-            (realm, rs.gettext(description))
-            for realm, description in models.GenesisCase.get_available_realms().items()]
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
 
         courses: dict[int, str] = {}
@@ -339,14 +341,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return self.render(rs, "genesis/genesis_modify_form", {
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
-            'realm_options': realm_options, 'choices': choices}, mandatory_fields)
+            'choices': choices}, mandatory_fields)
 
     @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
-    @REQUESTdata("realm")
-    def genesis_modify(self, rs: RequestState, genesis_case_id: int,
-                       realm: str) -> Response:
+    def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
-        case_model = models.GenesisCase.get_model_by_realm(realm)
+        case_model = models.GenesisCase.get_model_by_realm(
+            rs.ambience['genesis_case'].realm)
         data = extract_and_check_dataclass(rs, case_model, creation=False,
                                            additional_data={"id": genesis_case_id})
         if rs.has_validation_errors():
@@ -373,6 +374,47 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(rs, data)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/genesis_show_case")
+
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    def genesis_modify_realm_form(
+        self, rs: RequestState, genesis_case_id: int,
+    ) -> Response:
+        """Change the realm of a specific genesis case."""
+        model = models.GenesisCase
+        case = rs.ambience['genesis_case']
+        if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if case.case_status != const.GenesisStati.to_review:
+            rs.notify("error", n_("Case not to review."))
+            return self.genesis_list_cases(rs)
+        realm_options = [
+            (realm, rs.gettext(description))
+            for realm, description in model.get_available_realms().items()
+            if self.is_admin(rs) or rs.user.roles & model.get_relative_admins(realm)]
+        return self.render(rs, "genesis/genesis_change_realm", {
+            'realm_options': realm_options}, {"realm"})
+
+    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
+    @REQUESTdata("realm")
+    def genesis_modify_realm(self, rs: RequestState, genesis_case_id: int,
+                       realm: str) -> Response:
+        """Edit a case to fix potential issues before creation."""
+        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
+        if rs.has_validation_errors():
+            return self.genesis_modify_form(rs, genesis_case_id)
+        assert realm is not None
+
+        case = rs.ambience['genesis_case']
+        relative_admins = rs.user.roles & {
+            case.relative_admin, *models.GenesisCase.get_relative_admins(realm)}
+        if not (self.is_admin(rs) or relative_admins):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if case.case_status != const.GenesisStati.to_review:
+            rs.notify("error", n_("Case not to review."))
+            return self.genesis_list_cases(rs)
+        code = self.coreproxy.genesis_modify_case_realm(rs, genesis_case_id, realm)
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 

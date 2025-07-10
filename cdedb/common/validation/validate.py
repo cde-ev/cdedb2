@@ -1001,12 +1001,17 @@ def _empty_list(
 
 @_add_typed_validator  # TODO use Union of Literal
 def _realm(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, supports_genesis: bool = False, **kwargs: Any,
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
-    if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
-        raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
+    errs = ValidationSummary()
+    with errs:
+        if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
+            raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
+        if supports_genesis and val not in models_core.GenesisCase.get_available_realms():
+            raise ValidationSummary(
+                ValueError(n_("This realm is not supported for genesis.")))
     return Realm(val)
 
 

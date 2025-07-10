@@ -52,7 +52,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         :returns: id of the new request or None if the username is already
           taken
         """
-        case_model = models.GenesisCase.get_model_by_realm(data["realm"])
+        realm = affirm(vtypes.Realm, data["realm"], supports_genesis=True)
+        case_model = models.GenesisCase.get_model_by_realm(realm)
         data = cast(CdEDBObject, affirm(case_model, data, creation=True))
 
         data['case_status'] = const.GenesisStati.unconfirmed
@@ -265,17 +266,34 @@ class CoreGenesisBackend(CoreBaseBackend):
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
-        case_model = models.GenesisCase.get_model_by_realm(data['realm'])
-        data = cast(CdEDBObject, affirm(case_model, data))
-
         with Atomizer(rs):
-            current = self.genesis_get_case(rs, data['id'])
             # Get case already checks privilege and existence for the current data set.
-            if {"core_admin", current.relative_admin}.isdisjoint(rs.user.roles):
+            current = self.genesis_get_case(rs, data['id'])
+            if current.case_status.is_finalized():
+                raise ValueError(n_("Genesis case already finalized."))
+            case_model = models.GenesisCase.get_model_by_realm(current.realm)
+            data = cast(CdEDBObject, affirm(case_model, data))
+            ret = self.sql_update(rs, "core.genesis_cases", data)
+            self.core_log(rs, const.CoreLogCodes.genesis_change,
+                          change_note=current.persona.username)
+        return ret
+
+    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    def genesis_modify_case_realm(
+            self, rs: RequestState, case_id: int, realm: str,
+    ) -> DefaultReturnCode:
+        """Modify a the realm of a persona creation case."""
+        realm = affirm(vtypes.Realm, realm, supports_genesis=True)
+        update = {"id": case_id, "realm": realm}
+        with Atomizer(rs):
+            # Get case already checks privilege and existence for the current data set.
+            current = self.genesis_get_case(rs, case_id)
+            relative_admins = models.GenesisCase.get_relative_admins(realm)
+            if {"core_admin", *relative_admins}.isdisjoint(rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             if current.case_status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
-            ret = self.sql_update(rs, "core.genesis_cases", data)
+            ret = self.sql_update(rs, "core.genesis_cases", update)
             self.core_log(rs, const.CoreLogCodes.genesis_change,
                           change_note=current.persona.username)
         return ret
@@ -297,10 +315,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         if persona_id:
             update["persona_id"] = persona_id
         with Atomizer(rs):
-            current = self.genesis_get_case(rs, case_id)
             # Get case already checks privilege and existence for the current data set.
-            if {"core_admin", current.relative_admin}.isdisjoint(rs.user.roles):
-                raise PrivilegeError(n_("Not privileged."))
+            current = self.genesis_get_case(rs, case_id)
             if current.case_status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", update)

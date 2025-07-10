@@ -1,0 +1,30 @@
+{% set sidenav_active='core_genesis_list' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans name=ambience['genesis_case'].persona|persona_name %}
+        Change Realm of Account Request ({{ name }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Change Realm of Account Request"), ambience['genesis_case'].persona|persona_name, 'door-open', gettext("Account Request")) }}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_show_case"), ambience['genesis_case'].persona|persona_name, icon="door-open") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['genesis_case_id']}),
+                        gettext("Change Realm"), active="True") }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" id="genesismodifyrealmform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/genesis_modify_realm') }}
+        <div>
+            {{ util.form_input_select(
+                name="realm", small=True, entries=realm_options, defaultvalue=ambience["genesis_case"].realm,
+                label=gettext("Realm"), anid="realm-select") }}
+            {{ util.form_input_submit(label=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case")) }}
+        </div>
+    </form>
+{% endblock %}
