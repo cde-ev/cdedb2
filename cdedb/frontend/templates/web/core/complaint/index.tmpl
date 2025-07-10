@@ -1,6 +1,7 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
@@ -49,24 +50,7 @@
                                     cdedblink("core/show_case", {'case_id': case.id}),
                                     gettext("Case %s")|s|format(case.id)
                                 ) }}
-                                <span class="nowrap" style="margin-left: .1em;">
-                                    {% if case.is_confirmed %}
-                                        {{ util.make_icon(
-                                            enums["ComplaintEntryType"].statement_signed.get_icon(),
-                                            aclass='text-muted',
-                                            title=gettext("is confirmed")
-                                        ) }}
-                                    {% endif %}
-                                    {% if not case.is_active %}
-                                        {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
-                                    {% endif %}
-                                    {% if case.is_grave %}
-                                        {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
-                                    {% endif %}
-                                    {% if case.id in unlocked_cases %}
-                                        {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
-                                    {% endif %}
-                                </span>
+                                {{ generic_complaint.case_status_flags(case) }}
                             </div>
                             <div class="col-md-6">
                                 {{ gettext(case.kind|string) }}

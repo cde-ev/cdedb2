@@ -49,6 +49,16 @@ class Case(CdEDataclass):
             for persona_id in involved
         }
 
+    @functools.cached_property
+    def all_properly_involved(self) -> dict[int, const.ComplaintInvolvementType]:
+        """This ignores the withheld type."""
+        return {
+            persona_id: involved_type
+            for involved_type, involved in self.involved.items()
+            if involved_type != const.ComplaintInvolvementType.withheld
+            for persona_id in involved
+        }
+
     # Companions to set of involved personas they accompany
     companions: dict[int, set[int]] = dataclasses.field(
         metadata={"validation_exclude": True, "request_exclude": True}
@@ -101,6 +111,21 @@ class Case(CdEDataclass):
             chain.from_iterable(
                 self.companions_by_involved_type.get(type_, set())
                 for type_ in involved_type.adverse()
+            )
+        )
+
+    def is_strongly_related(self, case: Self) -> bool:
+        """Return whether another case features involved people who are adverse here.
+
+        Beware that his is not symmetric."""
+        it = const.ComplaintInvolvementType
+        return bool(
+            case.all_properly_involved.keys() & self.involved.get(it.target, set())
+        ) and bool(
+            case.all_properly_involved.keys()
+            & (
+                self.involved.get(it.affected, set())
+                | self.involved.get(it.appellant, set())
             )
         )
 
