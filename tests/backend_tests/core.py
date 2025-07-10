@@ -851,6 +851,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
+        with self.assertRaises(RuntimeError):
+            self.core.genesis_modify_case_realm(self.key, case_id, "event")
         value = self.core.genesis_get_case(self.key, case_id)
         value.ctime = ctime
         self.assertEqual(expectation, value)

@@ -1012,6 +1012,8 @@ def _realm(
         if supports_genesis and val not in models_core.GenesisCase.get_available_realms():
             raise ValidationSummary(
                 ValueError(n_("This realm is not supported for genesis.")))
+    if errs:
+        raise errs
     return Realm(val)
 
 

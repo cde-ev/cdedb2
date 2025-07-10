@@ -288,6 +288,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Get case already checks privilege and existence for the current data set.
             current = self.genesis_get_case(rs, case_id)
+            if current.realm == "ml" or realm == "ml":
+                raise RuntimeError("Realm modification forbidden.")
             relative_admins = models.GenesisCase.get_relative_admins(realm)
             if {"core_admin", *relative_admins}.isdisjoint(rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))

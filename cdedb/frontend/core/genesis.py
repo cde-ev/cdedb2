@@ -384,6 +384,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """Change the realm of a specific genesis case."""
         model = models.GenesisCase
         case = rs.ambience['genesis_case']
+        if case.realm == "ml":
+            rs.notify("info", n_("Realm of mailinglist genesis requests can not be changed."))
+            return self.redirect(rs, "core/genesis_show_case")
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.case_status != const.GenesisStati.to_review:
@@ -392,7 +395,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realm_options = [
             (realm, rs.gettext(description))
             for realm, description in model.get_available_realms().items()
-            if self.is_admin(rs) or rs.user.roles & model.get_relative_admins(realm)]
+            if realm != "ml" and (
+                self.is_admin(rs) or rs.user.roles & model.get_relative_admins(realm))]
         return self.render(rs, "genesis/genesis_change_realm", {
             'realm_options': realm_options}, {"realm"})
 

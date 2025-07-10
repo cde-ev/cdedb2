@@ -222,8 +222,10 @@
                 {% endif %}
                 {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit Account Request"),
                     aclass="btn btn-warning", icon="pen") }}
-                {{ util.href(cdedblink('core/genesis_modify_realm_form'), gettext("Change Realm"),
-                    aclass="btn btn-warning", icon="pen") }}
+                {% if ambience["genesis_case"].realm != "ml" %}
+                    {{ util.href(cdedblink('core/genesis_modify_realm_form'), gettext("Change Realm"),
+                        aclass="btn btn-warning", icon="pen") }}
+                {% endif %}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}

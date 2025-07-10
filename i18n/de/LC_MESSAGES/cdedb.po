@@ -18,6 +18,15 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Change Realm of Account Request"
+msgstr "Bereich der Accountanfrage ändern"
+
+msgid "Change Realm"
+msgstr "Bereich ändern"
+
+msgid "Realm of mailinglist genesis requests can not be changed."
+msgstr "Der Bereich von Mailinglisten-Accountanfragen kann nicht geändert werden."
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
