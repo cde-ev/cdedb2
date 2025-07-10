@@ -670,11 +670,6 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCaseEvent:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, None, ignore_warnings=False)
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
@@ -697,11 +692,6 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCaseEvent:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, ignore_warnings=True)
 
     def test_encoding(self) -> None:

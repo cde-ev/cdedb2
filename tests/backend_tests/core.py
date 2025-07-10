@@ -756,7 +756,6 @@ class TestCoreBackend(BackendTest):
         # Just update the genesis request
         update = {
             'id': case_id,
-            'realm': "event",
             'address': "An dem Elche",
         }
         self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
