@@ -473,7 +473,7 @@ class TestComplaintFrontend(FrontendTest):
             self.submit(f)
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
             f['qval_involved.involved_type'] = (
-                const.ComplaintInvolvementType.target.value
+                const.ComplaintInvolvementType.target.value,
             )
             self.submit(f)
             self.assertNonPresence("nnicht angezeigt", div='notifications')
