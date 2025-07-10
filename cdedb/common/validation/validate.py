@@ -4901,7 +4901,7 @@ def _log_filter(
 
 
 @_create_dataclass_validator(models_complaint.Case)
-def _case(val: CdEDBObject, **kwargs: Any) -> CdEDBObject:
+def _case(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
