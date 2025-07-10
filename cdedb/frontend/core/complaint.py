@@ -215,6 +215,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 self.complaintproxy.get_hidden_descriptions(rs, case_id)
             )
 
+        related_cases = self.complaintproxy.get_related_cases(rs, case_id)
+
         return self.render(
             rs,
             "complaint/show_case",
@@ -225,6 +227,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'all_entries': all_entries,
                 'is_locked': is_locked,
                 'show_log_entries': show_log_entries,
+                'related_cases': related_cases,
             },
         )
 

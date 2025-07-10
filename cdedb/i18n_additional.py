@@ -471,7 +471,7 @@ I18N_STRINGS = (
     n_("IncorrectNumInhabitantsCV"),
     n_("IllegalMixedLodgementCV"),
     # General violations.
-    n_("IncorectIBANCV"),
+    n_("IncorrectIBANCV"),
 
     n_("ViolationSeverity.DEBUG"),
     n_("ViolationSeverity.INFO"),
