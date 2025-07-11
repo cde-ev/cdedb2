@@ -49,8 +49,8 @@
     <div class="list-group list-group-hover">
     {% for measure in measures.values() %}
         {% set entry = entries[measure.entry_id] %}
-        <div id="entry{{ measure.id }}" class="list-group-item
-                {%- if entry.is_revoked or measure.etime and now() > measure.etime%} text-muted{% endif %}">
+        {% set inactive = entry.is_revoked or measure.etime and now() > measure.etime %}
+        <div id="entry{{ measure.id }}" class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
             <div class="float-right text-right">
                 {{ measure.timestamp|datetime(lang=lang) -}}
                 {% if measure.etime %}
@@ -58,12 +58,17 @@
                 {% endif %}
             </div>
             <strong>
-                {% if entry.is_revoked %}<s>{% endif %}
+                {% if inactive %}<s>{% endif %}
                 {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
                 {{- gettext(entry.entry_type|string) -}}
-                {% if entry.is_revoked -%}
-                    </s>
-                    {% trans %}revoked{% endtrans %}
+                {% if inactive -%}
+                    </s> <span class="text-unmuted">
+                    {%- if- entry.is_revoked -%}
+                        {% trans %}(revoked){% endtrans %}
+                    {%- else -%}
+                        {% trans %}(expired){% endtrans %}
+                    {%- endif -%}
+                    </span>
                 {% endif %}
             </strong>
             <br>
