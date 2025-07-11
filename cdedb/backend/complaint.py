@@ -1080,9 +1080,10 @@ class ComplaintBackend(AbstractBackend):
     def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
-        if (
-            not {"complaint_admin", "complaint.enforcer"} & rs.user.roles
-            and concerned_id != rs.user.persona_id
+        if not (
+            "complaint_admin" in rs.user.roles
+            or "complaint.enforcer" in rs.user.realm_roles
+            or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
         query = f"""
