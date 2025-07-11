@@ -37,7 +37,7 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
     'qop_cases.is_grave': QueryOperators.equal,
-    'qop_cases.kind': QueryOperators.equal,
+    'qop_cases.kind': QueryOperators.oneof,
     'qop_status.is_confirmed': QueryOperators.equal,
     'qop_status.is_closed': QueryOperators.equal,
     # transpired after
@@ -45,7 +45,7 @@ CASE_SEARCH_DEFAULTS = {
     # transpired before
     'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
-    'qop_involved.involved_type': QueryOperators.equal,
+    'qop_involved.involved_type': QueryOperators.oneof,
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
@@ -82,7 +82,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             if last_entry_after and last_entry_before:
                 query_input['qop_status.last_entry'] = QueryOperators.between
                 query_input['qval_status.last_entry'] = (
-                    f"{last_entry_after};{last_entry_before}"
+                    f"{last_entry_after},{last_entry_before}"
                 )
             elif last_entry_after:
                 query_input['qop_status.last_entry'] = QueryOperators.greater
@@ -98,7 +98,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 "query",
                 spec=spec,
                 allow_empty=True,
-                separator=";",
             )
 
             if query:
@@ -216,6 +215,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 self.complaintproxy.get_hidden_descriptions(rs, case_id)
             )
 
+        related_cases = self.complaintproxy.get_related_cases(rs, case_id)
+
         return self.render(
             rs,
             "complaint/show_case",
@@ -226,6 +227,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'all_entries': all_entries,
                 'is_locked': is_locked,
                 'show_log_entries': show_log_entries,
+                'related_cases': related_cases,
             },
         )
 

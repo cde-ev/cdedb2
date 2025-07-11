@@ -114,6 +114,11 @@ class TestComplaintFrontend(FrontendTest):
         )
         self.traverse("Fall 1")
 
+        # Check there are no related cases
+        self.assertPresence("Zusammenhängende Fälle")
+        self.assertPresence("Es gibt keine hiermit zusammenhängenden Fälle.")
+        self.assertNonPresence("Überlappend")
+
         # ##
         # ## 2. Check sample case: entries when locked ##
         self.assertNonPresence("Philosophiekurs")
@@ -468,7 +473,7 @@ class TestComplaintFrontend(FrontendTest):
             self.submit(f)
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
             f['qval_involved.involved_type'] = (
-                const.ComplaintInvolvementType.target.value
+                const.ComplaintInvolvementType.target.value,
             )
             self.submit(f)
             self.assertNonPresence("nnicht angezeigt", div='notifications')
@@ -629,6 +634,50 @@ class TestComplaintFrontend(FrontendTest):
         )
 
         self.assertLogEqual(log_expectation, realm='complaint', offset=6)
+
+        # ##
+        # ## 8. Test related cases
+        self.get("/core/complaint/case/1001/show")
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-4-3"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
+        self.submit(f)
+        self.assertPresence(
+            "Fall 1 ist bestätigt ist schwerwiegend"
+            " (28.05.2025–04.01.2222): Jemand schnarcht ganz furchtbar. Wirklich!"
+            " Überlappende Beteiligte: Daniel Dino (Betroffene Bt)",
+            div='related-cases',
+            exact=True,
+        )
+        self.assertNonPresence("1001", div='related-cases')
+
+        def _assertHidden() -> None:
+            self.get("/core/complaint/case/1/show")
+            self.assertPresence(
+                "Fall 1001: Warnung Wegen eigener Beteiligung"
+                " oder möglicher Befangenheit nicht angezeigt.",
+                div='related-cases',
+                exact=True,
+            )
+
+        with self.switch_user("anton"):
+            _assertHidden()
+
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-2-7"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.target)
+        self.submit(f)
+        self.assertPresence(
+            "Fall 1 eng zusammenhängend ist bestätigt ist schwerwiegend"
+            " (28.05.2025–04.01.2222): Jemand schnarcht ganz furchtbar. Wirklich!"
+            " Überlappende Beteiligte:"
+            " Daniel Dino (Betroffene Bt), Bertå Beispiel (Zielpersonen Zp)",
+            div='related-cases',
+            exact=True,
+        )
+
+        with self.switch_user("anton"):
+            _assertHidden()
 
     @as_users("simon", maintain_data=True)
     def test_user_measures(self) -> None:

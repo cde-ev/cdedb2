@@ -192,6 +192,30 @@ class ComplaintBackend(AbstractBackend):
     get_case = singularize(get_cases, 'case_ids', 'case_id')
 
     @access("complaint_admin")
+    def get_related_cases(
+        self, rs: RequestState, case_id: int
+    ) -> dict[int, models.Case | None]:
+        """Collect related cases."""
+        case_id = affirm(vtypes.ID, case_id)
+        query = f"SELECT id FROM {models.Case.database_table}"
+        case_ids = self.query_all(rs, query, ())
+        _cases = self.get_cases(rs, [e["id"] for e in case_ids])
+        _related_cases = {
+            maybe_related_case_id: case
+            for maybe_related_case_id, case in _cases.items()
+            if _cases[case_id].all_properly_involved.keys()
+            & case.all_properly_involved.keys()
+        }
+        del _related_cases[case_id]
+
+        # Show no information on invisible cases
+        related_cases: dict[int, models.Case | None] = {}
+        for case_id_, case_ in _related_cases.items():
+            related_cases[case_id_] = case_ if case_.is_visible_for(rs.user) else None
+
+        return related_cases
+
+    @access("complaint_admin")
     def set_case(
         self, rs: RequestState, case_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
