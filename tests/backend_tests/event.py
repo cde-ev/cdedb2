@@ -862,26 +862,25 @@ class TestEventBackend(BackendTest):
             'segments': {
                 2: {
                     "is_active": True,
-                    # "instructors": set(),
                 },
                 3: {
                     "is_active": False,
-                    # "instructors": set(),
                 },
             },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
+            'fields': {
+                'room': "outside",
+            },
         }
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
-        data['fields'] = {}
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'][2] = None
         data['segments'][1] = {
             "is_active": True,
-            # "instructors": set(),
         }
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
@@ -945,8 +944,14 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": False,
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
@@ -964,8 +969,11 @@ class TestEventBackend(BackendTest):
         for course_id in (1, 2, 3, 4):
             cdata = {
                 "id": course_id,
-                "segments": [1, 2, 3],
-                "active_segments": [1, 2, 3],
+                "segments": {
+                    1: {"is_active": True},
+                    2: {"is_active": True},
+                    3: {"is_active": True},
+                },
             }
             self.event.set_course(self.key, cdata)
         for reg_id in (1, 2, 3, 4):

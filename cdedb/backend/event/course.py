@@ -20,11 +20,11 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
+    CdEDBOptionalMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    glue,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -34,7 +34,9 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s
 
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
@@ -103,103 +105,113 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         data = affirm(vtypes.Course, data)
         ret = 1
         with Atomizer(rs):
-            current = self.sql_select_one(rs, "event.courses",
-                                          ("title", "event_id"), data['id'])
-            assert current is not None
-            if not is_privileged(rs, EventPrivileges.courses_write,
-                                 current['event_id']):
-                raise PrivilegeError(n_("Not privileged."))
-            self.assert_lock(rs, event_id=current['event_id'])
+            current = self.get_course(rs, data['id'])
+            current_dict = current.as_dict()
+            if not is_privileged(rs, EventPrivileges.courses_write, current.event_id):
+                raise PrivilegeError
+            self.assert_lock(rs, event_id=current.event_id)
 
-            cdata = {k: v for k, v in data.items()
-                     if k in COURSE_FIELDS and k != "fields"}
+            course_fields = models.Course.database_fields()
+
             changed = False
-            if len(cdata) > 1:
-                ret *= self.sql_update(rs, "event.courses", cdata)
+            changed_data = {
+                k: v for k, v in data.items()
+                if k in course_fields and v != current_dict[k]
+            }
+            if changed_data:
+                changed_data["id"] = current.id
+                ret *= self.sql_update(rs, "event.courses", changed_data)
                 changed = True
+
             if 'fields' in data:
                 # delayed validation since we need additional info
-                event_fields = self._get_event_fields(rs, current['event_id'])
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=models.EventField.many_from_database(event_fields.values()),
+                    fields=current.event.fields,
                     association=const.FieldAssociations.course,
                 )
 
-                fupdate = {
-                    'id': data['id'],
-                    'fields': fdata,
+                fdata = {
+                    k: v for k, v in fdata.items()
+                    if k not in current.fields or v != current.fields[k]
                 }
-                ret *= self.sql_json_inplace_update(rs, "event.courses",
-                                                    fupdate)
-                changed = True
+                if fdata:
+                    fupdate = {'id': current.id, 'fields': fdata}
+                    ret *= self.sql_json_inplace_update(
+                        rs, models.Course.database_table, fupdate
+                    )
+                    changed = True
+
             if changed:
                 self.event_log(
-                    rs, const.EventLogCodes.course_changed, current['event_id'],
-                    change_note=current['title'])
-            if 'segments' in data:
-                current_segments = self.sql_select(
-                    rs, "event.course_segments", ("track_id",),
-                    (data['id'],), entity_key="course_id")
-                existing = {e['track_id'] for e in current_segments}
-                new = data['segments'] - existing
-                deleted = existing - data['segments']
-                if new:
-                    # check, that all new tracks belong to the event of the
-                    # course
-                    tracks = self.sql_select(
-                        rs, "event.course_tracks", ("part_id",), new)
-                    associated_parts = list(unwrap(e) for e in tracks)
-                    associated_events = self.sql_select(
-                        rs, "event.event_parts", ("event_id",),
-                        associated_parts)
-                    event_ids = {e['event_id'] for e in associated_events}
-                    if {current['event_id']} != event_ids:
-                        raise ValueError(n_("Non-associated tracks found."))
+                    rs, const.EventLogCodes.course_changed, current.event_id,
+                    change_note=current.title
+                )
 
-                    for anid in new:
-                        insert = {
-                            'course_id': data['id'],
-                            'track_id': anid,
-                            'is_active': True,
-                        }
-                        ret *= self.sql_insert(rs, "event.course_segments",
-                                               insert)
-                if deleted:
-                    query = ("DELETE FROM event.course_segments"
-                             " WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], deleted))
-                if new or deleted:
-                    self.event_log(
-                        rs, const.EventLogCodes.course_segments_changed,
-                        current['event_id'], change_note=current['title'])
-            if 'active_segments' in data:
-                current_segments = self.sql_select(
-                    rs, "event.course_segments", ("track_id", "is_active"),
-                    (data['id'],), entity_key="course_id")
-                existing = {e['track_id'] for e in current_segments}
-                # check that all active segments are actual segments of this
-                # course
-                if not existing >= data['active_segments']:
-                    raise ValueError(n_("Wrong-associated segments found."))
-                active = {e['track_id'] for e in current_segments
-                          if e['is_active']}
-                activated = data['active_segments'] - active
-                deactivated = active - data['active_segments']
-                if activated:
-                    query = glue(
-                        "UPDATE event.course_segments SET is_active = True",
-                        "WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], activated))
-                if deactivated:
-                    query = glue(
-                        "UPDATE event.course_segments SET is_active = False",
-                        "WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], deactivated))
-                if activated or deactivated:
-                    self.event_log(
-                        rs, const.EventLogCodes.course_segment_activity_changed,
-                        current['event_id'], change_note=current['title'])
+            if 'segments' in data:
+                ret *= self._set_course_segments(rs, data['segments'], current)
+
+        return ret
+
+    def _set_course_segments(self, rs: RequestState, segment_data: CdEDBOptionalMap, course: models.Course) -> DefaultReturnCode:
+        """Uninlined code from set_course."""
+
+        self.affirm_atomized_context(rs)
+        ret = 1
+
+        if not segment_data.keys() <= course.event.tracks.keys():
+            raise ValueError(n_("Invalid tracks specified."))
+
+        deleted = {
+            track_id for track_id, segment in segment_data.items()
+            if segment is None and track_id in course.segments
+        }
+        new = {
+            track_id: segment for track_id, segment in segment_data.items()
+            if segment is not None and track_id not in course.segments
+        }
+        changed = {
+            track_id: segment for track_id, segment in segment_data.items()
+            if segment is not None and track_id in course.segments
+               and segment != course.segments[track_id].as_dict()
+        }
+
+        if deleted:
+            params: dict[str, DatabaseValue_s] = {
+                "course_id": course.id, "track_ids": deleted
+            }
+            query = f"""
+                DELETE FROM {models.CourseSegment.database_table}
+                WHERE course_id = %(course_id)s AND track_id = ANY(%(track_ids)s)
+            """
+            ret *= self.query_exec(rs, query, params)
+
+        for track_id, segment in xsorted((changed | new).items()):
+            _metadata = {"course_id": course.id, "track_id": track_id}
+            segment = {**segment, **_metadata}
+            ret *= self.sql_insert(
+                rs, models.CourseSegment.database_table, segment,
+                update_on_conflict=True, conflict_target="course_id, track_id",
+            )
+
+        if new or deleted:
+            self.event_log(
+                rs, const.EventLogCodes.course_segments_changed,
+                course.event_id, change_note=course.title,
+            )
+
+        if (
+            any(course.segments[track_id].is_active for track_id in deleted)
+            or any(new_segment["is_active"] for new_segment in new.values())
+            or any(
+                changed_segment["is_active"] != course.segments[t_id].is_active
+            for t_id, changed_segment in changed.items()
+            )
+        ):
+            self.event_log(
+                rs, const.EventLogCodes.course_segment_activity_changed,
+                course.event_id, change_note=course.title,
+            )
         return ret
 
     @access("event")
@@ -220,20 +232,15 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             data['fields'] = PsycoJson(fdata)
             if not is_privileged(rs, EventPrivileges.courses_write, data['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
-            cdata = {k: v for k, v in data.items()
-                     if k in COURSE_FIELDS}
-            new_id = self.sql_insert(rs, "event.courses", cdata)
+            course_fields = set(models.Course.database_fields())
+            course_data = {
+                k: v for k, v in data.items() if k in course_fields
+            }
+            new_id = self.sql_insert(rs, "event.courses", course_data)
             self.event_log(rs, const.EventLogCodes.course_created,
                            data['event_id'], change_note=data['title'])
-            if 'segments' in data or 'active_segments' in data:
-                pdata = {
-                    'id': new_id,
-                }
-                if 'segments' in data:
-                    pdata['segments'] = data['segments']
-                if 'active_segments' in data:
-                    pdata['active_segments'] = data['active_segments']
-                self.set_course(rs, pdata)
+            course = self.get_course(rs, new_id)
+            self._set_course_segments(rs, data['segments'], course)
         return new_id
 
     @access("event")
