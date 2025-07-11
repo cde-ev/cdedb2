@@ -769,10 +769,13 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
+    id: vtypes.ProtoID = dataclasses.field(metadata={"creation_exclude": True})
+
     event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, default=cast(Event, None)
+        init=False, compare=False, repr=False, default=cast(Event, None),
+        metadata={"validation_exclude": False},
     )
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata={"update_exclude": False})
 
     segments: CdEDataclassMap["CourseSegment"]
 
@@ -785,17 +788,18 @@ class Course(EventDataclass):
     nr: str
     title: str
     shortname: str
-    description: str
+    description: str | None
 
-    instructors: Optional[str]
+    instructors: str | None
 
-    min_size: int
-    max_size: int
+    min_size: vtypes.NonNegativeInt | None
+    max_size: vtypes.NonNegativeInt | None
 
     is_visible: bool
 
-    notes: Optional[str]
+    notes: str | None
 
+    # Should be vtypes.EventAssociatedFields, but needs additional context.
     fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
@@ -829,9 +833,22 @@ class Course(EventDataclass):
 
     def as_dict(self) -> dict[str, Any]:
         ret = super().as_dict()
-        ret["segments"] = set(self.segments)
-        ret["active_segments"] = self.active_segments
+        for segment in ret["segments"].values():
+            del segment["course_id"]
+            del segment["track_id"]
         return ret
+
+    @classmethod
+    def validation_fields(
+            cls, *, creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        for ret in (mandatory, optional):
+            if "segments" in ret:
+                ret["segments"] = Mapping
+            if "fields" in ret:
+                ret["fields"] = Mapping
+        return mandatory, optional
 
 
 @dataclasses.dataclass
@@ -839,12 +856,12 @@ class CourseSegment(EventDataclass):
     database_table = "event.course_segments"
     entity_key = "course_id"
 
-    id: vtypes.ProtoID = dataclasses.field(compare=False, repr=False)
+    id: vtypes.ProtoID = dataclasses.field(compare=False, repr=False, metadata={"validation_exclude": True})
 
     course: Course = dataclasses.field(init=False, compare=False, repr=False)
-    course_id: vtypes.ProtoID
+    course_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
 
-    track_id: vtypes.ProtoID
+    track_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
 
     is_active: bool
 

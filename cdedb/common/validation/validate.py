@@ -2987,65 +2987,35 @@ COURSE_OPTIONAL_FIELDS: TypeMapping = {
 }
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.Course, Course)
 def _course(
     val: Any, argname: str = "course", *,
     creation: bool = False, **kwargs: Any,
 ) -> Course:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    # TODO where is creation actually set and can it be places inside kwargs?
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(COURSE_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**COURSE_OPTIONAL_FIELDS}
-        # TODO make dict(field, ...) vs {**fields, ...} consistent
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
-
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
 
     errs = ValidationSummary()
-    if 'segments' in val:
-        # TODO why use intermediate set?
-        segments = set()
-        for anid in val['segments']:
-            # TODO replace these internal calls with calls to the public functions?
+
+    if "segments" in val:
+        new_segments = {}
+        for track_id, segment in val["segments"].items():
             try:
-                v = _id(anid, 'segments', **kwargs)
+                track_id = _ALL_TYPED[ID](track_id, "segments", **kwargs)
+                segment = _ALL_TYPED[models_event.CourseSegment | None](
+                    segment, "segments", **kwargs, creation=creation
+                )
             except ValidationSummary as e:
                 errs.extend(e)
             else:
-                segments.add(v)
-        val['segments'] = segments
-    if 'active_segments' in val:
-        active_segments = set()
-        for anid in val['active_segments']:
-            try:
-                v = _id(anid, 'active_segments', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                active_segments.add(v)
-        val['active_segments'] = active_segments
-    if 'segments' in val and 'active_segments' in val:
-        if not val['active_segments'] <= val['segments']:
-            errs.append(ValueError('segments', n_(
-                "Must be a superset of active segments.")))
+                new_segments[track_id] = segment
+        val["segments"] = new_segments
 
     if errs:
         raise errs
 
     return Course(val)
+
+
+_create_dataclass_validator(models_event.CourseSegment, models_event.CourseSegment)
 
 
 REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {

@@ -849,9 +849,9 @@ class TestEventBackend(BackendTest):
     def test_entity_course(self) -> None:
         event_id = 1
         old_courses = self.event.list_courses(self.key, event_id)
-        data = {
+        data: CdEDBObject = {
             'event_id': event_id,
-            'title': "Topos theory for the kindergarden",
+            'title': (original_title := "Topos theory for the kindergarden"),
             'description': """This is an interesting topic
 
             which will be treated.""",
@@ -859,8 +859,16 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                    # "instructors": set(),
+                },
+                3: {
+                    "is_active": False,
+                    # "instructors": set(),
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
@@ -870,19 +878,55 @@ class TestEventBackend(BackendTest):
         data['fields'] = {}
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
-        data['active_segments'] = {1, 3}
+        data['segments'][2] = None
+        data['segments'][1] = {
+            "is_active": True,
+            # "instructors": set(),
+        }
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
-            'active_segments': data['active_segments']})
+        })
+        del data["segments"][2]
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
-        data['active_segments'] = {1}
-        self.event.set_course(self.key, {
-            'id': new_id, 'active_segments': data['active_segments']})
+        data["segments"][3]["is_active"] = True
+        self.event.set_course(self.key, data)
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
+
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.course_created,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segments_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activity_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segments_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activity_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activity_changed,
+                "change_note": data["title"],
+            },
+        ]
+        offset = len(self.get_sample_data("event.log"))
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=offset)
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
