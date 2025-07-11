@@ -629,3 +629,54 @@ class TestComplaintFrontend(FrontendTest):
         )
 
         self.assertLogEqual(log_expectation, realm='complaint', offset=6)
+
+    @as_users("simon", maintain_data=True)
+    def test_user_measures(self) -> None:
+        self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        self.assertPresence("Dr. Bertå Beispiel MdB", div="global-information")
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft von Charly Clown – aus Fall 1"
+            " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div="entry6",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (abgelaufen) von Charly Clown – aus Fall 1"
+            " Quarantäne für eine Woche!",
+            div="entry7",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
+            " – aus Fall 1 Sollte Berta noch einmal die Vögel aus dem Schlaf",
+            div="entry8",
+        )
+        self.traverse("Fall 1")
+        self.assertTitle("Fall 1")
+
+        self.traverse("Anton Administrator", "Maßnahmen$")
+        self.assertTitle("Anton Administrator – Maßnahmen")
+        self.assertPresence("Derzeit sind keine Maßnahmen in Kraft.")
+
+    @as_users("berta", maintain_data=True)
+    def test_user_measures_unprivileged(self) -> None:
+        self.get("/core/persona/1/measures", status=403)
+        self.get("/core/persona/9/measures", status=403)
+        self.get("/core/persona/2/measures")
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        self.assertPresence("Dr. Bertå Beispiel MdB", div="global-information")
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft von Charly Clown"
+            " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div="entry6",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (abgelaufen)"
+            " von Charly Clown Quarantäne für eine Woche!",
+            div="entry7",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
+            " Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen",
+            div="entry8",
+        )
+        self.assertNonPresence("aus Fall 1")

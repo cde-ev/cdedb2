@@ -19,7 +19,7 @@
 
 {% block content %}
     {{ util.h(n_("Global information"), level=4, underline=True) }}
-        <dl class="dl-horizontal">
+        <dl class="dl-horizontal" id="global-information">
             <dt title="{% trans %}Name{% endtrans %}">
                 {% trans %}Name{% endtrans %}
             </dt>
@@ -64,9 +64,9 @@
                 {% if inactive -%}
                     </s> <span class="text-unmuted">
                     {%- if- entry.is_revoked -%}
-                        {% trans %}(revoked){% endtrans %}
+                        ({% trans %}revoked{% endtrans %})
                     {%- else -%}
-                        {% trans %}(expired){% endtrans %}
+                        ({% trans %}expired{% endtrans %})
                     {%- endif -%}
                     </span>
                 {% endif %}
