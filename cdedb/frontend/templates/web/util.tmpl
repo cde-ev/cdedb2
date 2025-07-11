@@ -744,6 +744,7 @@
         {{ input_hidden(name) }}
     {% endif %}
     {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for multiselect selectize.") }}{% endif %}
         <script nonce="{{ csp_nonce }}">
             $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
         </script>
