@@ -191,31 +191,29 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
-    def __setitem__(self, type_: type[T], validator: Callable[..., T]) -> None:
+class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
+    def __setitem__(self, type_: type[T] | UnionType, validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: type[T]) -> Callable[..., T]:
+    def __getitem__(self, type_: type[T] | UnionType) -> Callable[..., T]:
         origin = typing.get_origin(type_)
         if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
-            validator = self[inner_type]
-            return _allow_None(validator)  # type: ignore[return-value]
+            return cast(Callable[..., T], _allow_None(self[inner_type]))
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
-            return make_list_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_list_validator(inner_type))
         elif typing.get_origin(type_) is set:
             [inner_type] = typing.get_args(type_)
-            return make_set_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_set_validator(inner_type))
         elif typing.get_origin(type_) is tuple:
             args = typing.get_args(type_)
             if len(args) == 2:
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
-        # TODO more container types like tuple
         return super().__getitem__(type_)
 
 
@@ -484,6 +482,9 @@ def _examine_dictionary_fields(
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
+            except KeyError as e:
+                e.args += (key,)
+                raise
         elif not allow_superfluous:
             errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
 
@@ -4894,7 +4895,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment]
         except ValidationSummary as e:
             errs.extend(e)
             continue
