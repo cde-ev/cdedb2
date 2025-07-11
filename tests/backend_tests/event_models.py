@@ -710,13 +710,26 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = 1
+        course_id = vtypes.ProtoID(1)
+        event_id = vtypes.ID(vtypes.ProtoID(1))
 
         expectation = models.Course(
-            id=course_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
-            segments={1, 3},  # type: ignore[arg-type]
-            active_segments={1, 3},  # type: ignore[arg-type]
+            id=course_id,
+            event_id=event_id,
+            segments={
+                1: models.CourseSegment(
+                    id=vtypes.ProtoID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ProtoID(1),
+                    is_active=True,
+                ),
+                3: models.CourseSegment(
+                    id=vtypes.ProtoID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ProtoID(3),
+                    is_active=True,
+                )
+            },
             nr='α',
             title='Planetenretten für Anfänger',
             shortname='Heldentum',
@@ -730,20 +743,36 @@ class TestEventModels(BackendTest):
         )
         reality = self.event.get_course(self.key, course_id)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
         course_ids = [1, 2]
 
         expectation = {
             1: expectation,
             2: models.Course(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
-                segments={1, 2, 3},  # type: ignore[arg-type]
-                active_segments={1, 3},  # type: ignore[arg-type]
+                id=vtypes.ProtoID(2),
+                event_id=event_id,
+                segments={
+                    1: models.CourseSegment(
+                        id=vtypes.ProtoID(-1),
+                        course_id=vtypes.ProtoID(2),
+                        track_id=vtypes.ProtoID(1),
+                        is_active=True,
+                    ),
+                    2: models.CourseSegment(
+                        id=vtypes.ProtoID(-1),
+                        course_id=vtypes.ProtoID(2),
+                        track_id=vtypes.ProtoID(2),
+                        is_active=False,
+                    ),
+                    3: models.CourseSegment(
+                        id=vtypes.ProtoID(-1),
+                        course_id=vtypes.ProtoID(2),
+                        track_id=vtypes.ProtoID(3),
+                        is_active=True,
+                    )
+                },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',
                 shortname='Kabarett',

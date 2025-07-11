@@ -40,6 +40,7 @@ from typing import (
     ForwardRef,
     Optional,
     Self,
+    cast,
     get_args,
     get_origin,
 )
@@ -48,7 +49,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import User, cast_fields, n_, now
+from cdedb.common import CdEDBObject, User, cast_fields, n_, now
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
@@ -65,7 +66,6 @@ from cdedb.models.common import CdEDataclass, CdEDataclassMap
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from cdedb.common import CdEDBObject
     from cdedb.database.query import (
         DatabaseValue_s,
     )
@@ -769,11 +769,18 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    # event: Event
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, default=cast(Event, None)
+    )
     event_id: vtypes.ID
 
-    segments: set[vtypes.ID]
-    active_segments: set[vtypes.ID]
+    segments: CdEDataclassMap["CourseSegment"]
+
+    @property
+    def active_segments(self) -> set[int]:
+        return {
+            segment.track_id for segment in self.segments.values() if segment.is_active
+        }
 
     nr: str
     title: str
@@ -800,40 +807,58 @@ class Course(EventDataclass):
         return f"{self.nr}. {self.shortname}"
 
     @classmethod
-    def get_select_query(cls, entities: Collection[int],
-                         entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
-        query = f"""
-                SELECT
-                    {', '.join(cls.database_fields())},
-                    array(
-                        SELECT track_id
-                        FROM event.course_segments
-                        WHERE course_id = event.courses.id
-                    ) AS segments,
-                    array(
-                        SELECT track_id
-                        FROM event.course_segments
-                        WHERE course_id = event.courses.id AND is_active = True
-                    ) AS active_segments
-                FROM
-                    event.courses
-                WHERE
-                    {entity_key or cls.entity_key} = ANY(%s)
-            """
-        params = (entities,)
-        return query, params
-
-    @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['fields'] = cast_fields(
-            data['fields'], EventField.many_from_database(data.pop('event_fields')))
-        data['segments'] = set(data['segments'])
-        data['active_segments'] = set(data['active_segments'])
-        return super().from_database(data)
+        event = data.pop("event")
+        data['fields'] = cast_fields(data['fields'], event.fields)
+        data['segments'] = CourseSegment.many_from_database(
+            data['segments'], sort=False
+        )
+        ret = super().from_database(data)
+        ret.event = event
+        return ret
+
+    def __post_init__(self) -> None:
+        for segment in self.segments.values():
+            segment.course = self
+        self.segments = {
+            segment.track_id: segment for segment in xsorted(self.segments.values())
+        }
 
     def get_sortkey(self) -> Sortkey:
         return self.nr, self.shortname
+
+    def as_dict(self) -> dict[str, Any]:
+        ret = super().as_dict()
+        ret["segments"] = set(self.segments)
+        ret["active_segments"] = self.active_segments
+        return ret
+
+
+@dataclasses.dataclass
+class CourseSegment(EventDataclass):
+    database_table = "event.course_segments"
+    entity_key = "course_id"
+
+    id: vtypes.ProtoID = dataclasses.field(compare=False, repr=False)
+
+    course: Course = dataclasses.field(init=False, compare=False, repr=False)
+    course_id: vtypes.ProtoID
+
+    track_id: vtypes.ProtoID
+
+    is_active: bool
+
+    def get_sortkey(self) -> Sortkey:
+        ret = self.course.get_sortkey()
+        if self.course.event:
+            ret += self.course.event.tracks[self.track_id].get_sortkey()
+        return ret
+
+
+@dataclasses.dataclass
+class CourseInstructors:
+    database_table = "event.course_instructors"
+
 
 #
 # get_lodgement_group + get_lodgement

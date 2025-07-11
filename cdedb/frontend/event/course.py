@@ -218,7 +218,7 @@ class EventCourseMixin(EventBaseFrontend):
             courses = {
                 course_id: course for course_id, course in courses.items()
                 if (course.active_segments if active_only and show_course_state
-                    else course.segments).intersection(track_ids)
+                    else course.segments.keys()) & set(track_ids)
             }
             visible_courses = {
                 course_id: course for course_id, course in courses.items()

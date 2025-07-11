@@ -127,10 +127,11 @@ class CdEDataclass:
         return cls(**data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject],
+    def many_from_database(cls, list_of_data: Collection[CdEDBObject], sort: bool = True,
                            ) -> CdEDataclassMap["Self"]:
+        sort = xsorted if sort else list
         return {
-            obj.id: obj for obj in xsorted(map(cls.from_database, list_of_data))
+            obj.id: obj for obj in sort(map(cls.from_database, list_of_data))
         }
 
     @classmethod

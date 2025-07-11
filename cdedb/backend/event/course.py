@@ -60,22 +60,28 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         """
         course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):
-            course_data = self.query_all(
-                rs, *models.Course.get_select_query(course_ids))
+            course_data = {
+                e["id"]: e
+                for e in self.query_all(rs, *models.Course.get_select_query(course_ids))
+            }
             if not course_data:
                 return {}
-            events = {e['event_id'] for e in course_data}
+            events = {e['event_id'] for e in course_data.values()}
             if len(events) > 1:
                 raise ValueError(n_("Only courses from one event allowed."))
             event_id = unwrap(events)
-            event_fields = self._get_event_fields(rs, event_id)
-        return models.Course.many_from_database([
-            {
-                **course,
-                'event_fields': event_fields.values(),
-            }
-            for course in course_data
-        ])
+            event = self.get_event(rs, event_id)
+
+            segment_data = self.query_all(
+                rs, *models.CourseSegment.get_select_query(course_ids))
+
+            for course in course_data.values():
+                course['event'] = event
+                course["segments"] = []
+            for segment in segment_data:
+                course_data[segment["course_id"]]["segments"].append(segment)
+
+        return models.Course.many_from_database(course_data.values())
 
     class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...

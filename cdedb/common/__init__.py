@@ -56,7 +56,7 @@ from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
-    from cdedb.models.event import CdEDataclassMap
+    from cdedb.models.common import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
