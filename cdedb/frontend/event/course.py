@@ -310,7 +310,7 @@ class EventCourseMixin(EventBaseFrontend):
                            ) -> Response:
         """Render form."""
         if 'segments' not in rs.values:
-            rs.values.setlist('segments', rs.ambience['course'].segments)
+            rs.values.setlist('segments', rs.ambience['course'].segments.keys())
         if 'active_segments' not in rs.values:
             rs.values.setlist('active_segments', rs.ambience['course'].active_segments)
         field_values = {
@@ -339,8 +339,12 @@ class EventCourseMixin(EventBaseFrontend):
                       ) -> Response:
         """Modify a course associated to an event organized via DB."""
         data['id'] = course_id
-        data['segments'] = segments
-        data['active_segments'] = active_segments
+        data['segments'] = {
+            track_id: {
+                "is_active": track_id in active_segments
+            } if track_id in segments else None
+            for track_id in rs.ambience['event'].tracks
+        }
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
                 FIELD_DATATYPE_VALIDATORS[field.kind]]
@@ -388,7 +392,10 @@ class EventCourseMixin(EventBaseFrontend):
                       segments: Collection[int], data: CdEDBObject) -> Response:
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
-        data['segments'] = segments
+        data['segments'] = {
+            track_id: {"is_active": True}
+            for track_id in segments
+        }
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
                 FIELD_DATATYPE_VALIDATORS[field.kind]]

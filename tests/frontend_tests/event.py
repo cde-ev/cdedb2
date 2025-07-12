@@ -7472,7 +7472,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                           'is_participant_list_visible': True,
                           'is_course_assignment_visible': True})
         course_id = 9
-        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+        course = self.event.get_course(self.key, course_id)
+        self.event.set_course(
+            self.key,
+            {
+                'id': course_id,
+                'segments': {
+                    track_id: {"is_active": False}
+                    for track_id in course.segments
+                },
+            },
+        )
 
         self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
         f = self.response.forms['amendregistrationform']
