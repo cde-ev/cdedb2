@@ -2980,12 +2980,6 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'notes': Optional[str],
 }
 
-COURSE_OPTIONAL_FIELDS: TypeMapping = {
-    'segments': Iterable,
-    'active_segments': Iterable,
-    'fields': Mapping,
-}
-
 
 @_create_dataclass_validator(models_event.Course, Course)
 def _course(

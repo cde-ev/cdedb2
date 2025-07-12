@@ -54,8 +54,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS,
-    COURSE_SEGMENT_FIELDS,
     COURSE_TRACK_FIELDS,
     EVENT_FEE_FIELDS,
     EVENT_PART_FIELDS,
@@ -1338,7 +1336,7 @@ class EventBaseBackend(EventLowLevelBackend):
                      "track_id",
                      ("track_group_id", "track_id"),
                 ),
-                ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
+                models.CourseSegment.full_export_spec("track_id"),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 models.CheckinPeriod.full_export_spec(),
@@ -1404,7 +1402,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             courses = list_to_dict(self.sql_select(
-                rs, 'event.courses', COURSE_FIELDS, (event_id,),
+                rs, 'event.courses', models.Course.database_fields(), (event_id,),
                 entity_key='event_id'))
             course_segments = self.sql_select(
                 rs, 'event.course_segments',

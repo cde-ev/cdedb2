@@ -28,7 +28,6 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
@@ -111,7 +110,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 raise PrivilegeError
             self.assert_lock(rs, event_id=current.event_id)
 
-            course_fields = models.Course.database_fields()
+            course_fields = set(models.Course.database_fields()) - {"fields"}
 
             changed = False
             changed_data = {
