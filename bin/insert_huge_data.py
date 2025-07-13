@@ -253,7 +253,11 @@ def event(context: argparse.Namespace) -> int:
                                      'max_size': 12,
                                      'min_size': None,
                                      'notes': '',
-                                     'segments': {t},
+                                     'segments': {
+                                         t: {
+                                             "is_active": True,
+                                         },
+                                     },
                                      'is_visible': True,
                                      })
             for _ in range(1 if context.quick else 10)]

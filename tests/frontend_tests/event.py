@@ -6680,13 +6680,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
-        course_ids = self.event.list_courses(self.key, 4)
+        event = self.event.get_event(self.key, 4)
+        course_ids = self.event.list_courses(self.key, event.id)
         for course_id, title in course_ids.items():
             if title == "Akrobatik für Anfangende":
                 continue
             data = {
                 'id': course_id,
-                'active_segments': [],
+                'segments': {
+                    track_id: None
+                    for track_id in event.tracks
+                }
             }
             self.event.set_course(self.key, data)
 

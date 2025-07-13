@@ -443,7 +443,11 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {1002},
+            'segments': {
+                1002: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
         new_course_id = self.event.create_course(self.key, new_course)
@@ -3603,12 +3607,24 @@ class TestEventBackend(BackendTest):
             'max_size': 14,
             'min_size': 5,
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
         new_id = self.event.create_course(self.key, data)
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
+        data['segments'] = {
+            1: {
+                "is_active": True,
+            },
+            2: None,
+        }
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments']})
         new_reg = {
@@ -3868,12 +3884,22 @@ class TestEventBackend(BackendTest):
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
                 'code': const.EventLogCodes.course_changed,
                 'event_id': 1,
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
                 'code': const.EventLogCodes.course_segments_changed,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden',
+                'code': const.EventLogCodes.course_segment_activity_changed,
                 'event_id': 1,
             },
             {
