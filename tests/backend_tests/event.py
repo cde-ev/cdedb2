@@ -452,7 +452,6 @@ class TestEventBackend(BackendTest):
         }
         new_course_id = self.event.create_course(self.key, new_course)
         new_course['id'] = new_course_id
-        new_course['active_segments'] = new_course['segments']
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
@@ -2779,6 +2778,10 @@ class TestEventBackend(BackendTest):
             {
                 'change_note': 'Langer Kurs',
                 'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Langer Kurs',
+                'code': const.EventLogCodes.course_segment_activity_changed,
             },
             {
                 'change_note': 'Backup-Kurs',

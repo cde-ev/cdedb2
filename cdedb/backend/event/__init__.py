@@ -587,10 +587,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     if not dryrun:
                         new = copy.deepcopy(new_course)
                         new['event_id'] = event_id
-                        segments = new.pop('segments')
-                        new['segments'] = list(segments.keys())
-                        new['active_segments'] = [key for key in segments
-                                                  if segments[key]]
+                        new['segments'] = {
+                            k: {"is_active": v} for k, v in new['segments'].items()
+                        }
                         new_id = self.create_course(rs, new)
                         cmap[course_id] = new_id
                 else:
@@ -600,20 +599,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         cprevious[course_id] = previous
                         if not dryrun:
                             changed_course = copy.deepcopy(delta)
-                            segments = changed_course.pop('segments', None)
+                            segments: CdEDBObjectMap = changed_course.pop('segments', None)
                             if segments:
-                                orig_seg = current['segments']
-                                new_segments = [
-                                    x for x in event.tracks
-                                    if check_seg(x, segments, orig_seg)]
-                                changed_course['segments'] = new_segments
-                                orig_active = [
-                                    s for s, a in current['segments'].items()
-                                    if a]
-                                new_active = [
-                                    x for x in event.tracks
-                                    if segments.get(x, x in orig_active)]
-                                changed_course['active_segments'] = new_active
+                                changed_course['segments'] = {
+                                    track_id: {
+                                        "is_active": status
+                                    } if status is not None else None
+                                    for track_id, status in segments.items()
+                                }
                             changed_course['id'] = course_id
                             self.set_course(rs, changed_course)
             if cdelta:

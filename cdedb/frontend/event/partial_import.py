@@ -175,8 +175,8 @@ class EventImportMixin(EventBaseFrontend):
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
             course['segments'] = {
-                id: id in course['active_segments']
-                for id in course['segments']
+                id: segment["is_active"]
+                for id, segment in course['segments'].items()
             }
 
         # Fifth prepare summary
