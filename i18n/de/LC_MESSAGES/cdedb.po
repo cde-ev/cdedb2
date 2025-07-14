@@ -18,9 +18,6 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
-msgid "Change Realm of Account Request"
-msgstr "Bereich der Accountanfrage ändern"
-
 msgid "Change Realm"
 msgstr "Bereich ändern"
 
@@ -38,6 +35,10 @@ msgstr "Konnte keine Eintrag finden."
 #: cdedb/backend/assembly.py:318
 msgid "Must be admin to access global log."
 msgstr "Nur Admins dürfen auf das globale Log zugreifen."
+
+#, python-format
+msgid "Change Realm (%(name)s)"
+msgstr "Bereich ändern (%(name)s)"
 
 #: cdedb/backend/assembly.py:322 cdedb/backend/assembly.py:469
 #: cdedb/backend/assembly.py:574 cdedb/backend/assembly.py:857

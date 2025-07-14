@@ -3,11 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans name=ambience['genesis_case'].persona|persona_name %}
-        Change Realm of Account Request ({{ name }})
+        Change Realm ({{ name }})
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Change Realm of Account Request"), ambience['genesis_case'].persona|persona_name, 'door-open', gettext("Account Request")) }}
+    {{ util.context_heading(gettext("Change Realm"), ambience['genesis_case'].persona|persona_name, 'door-open', gettext("Account Request")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
