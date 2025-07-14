@@ -15,7 +15,7 @@ from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
-from cdedb.models.common import CdEDataclass
+from cdedb.models.common import CdEDataclass, MetaFlag as F
 
 __all__ = ["AnonymousMessageData"]
 
@@ -28,7 +28,7 @@ class MetaInfo(CdEDataclass):
     database_table = "core.meta_info"
 
     id: vtypes.ProtoID = dataclasses.field(
-        init=False, default=vtypes.ProtoID(1), metadata={'update_exclude': True},
+        init=False, default=vtypes.ProtoID(1), metadata={'cdedb': F.update_exclude},
     )
 
     Finanzvorstand_Name: str | None = None

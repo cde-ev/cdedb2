@@ -15,14 +15,14 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, now
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as F
 
 
 @dataclasses.dataclass(kw_only=True)
 class Case(CdEDataclass):
     database_table = "complaint.cases"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(metadata={"cdedb": F.validation_exclude})
 
     kind: const.ComplaintKind
     is_grave: bool = False
@@ -32,13 +32,13 @@ class Case(CdEDataclass):
     end_date: datetime.date | None = None
 
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
-        metadata={"validation_exclude": True}
+        metadata={"cdedb": F.validation_exclude},
     )
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     informed_involved: set[int] = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     @functools.cached_property
@@ -61,7 +61,7 @@ class Case(CdEDataclass):
 
     # Companions to set of involved personas they accompany
     companions: dict[int, set[int]] = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     @functools.cached_property
@@ -84,7 +84,7 @@ class Case(CdEDataclass):
         return ret
 
     withdrawn_companions: dict[int, set[int]] = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     @functools.cached_property
@@ -265,11 +265,11 @@ class ComplaintEntry(CdEDataclass):
     database_table = "complaint.entries"
     entity_key = "case_id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(metadata={"cdedb": F.validation_exclude})
 
     case: Case = dataclasses.field(init=False, compare=False, repr=False)
     case_id: vtypes.ID = dataclasses.field(
-        metadata={"validation_exclude": True, 'request_exclude': True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     entry_type: const.ComplaintEntryType
 
@@ -278,7 +278,8 @@ class ComplaintEntry(CdEDataclass):
     concerned_id: vtypes.CdedbID | None = None
 
     is_revoked: bool = dataclasses.field(
-        default=False, metadata={"validation_exclude": True, "request_exclude": True}
+        default=False,
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
@@ -337,43 +338,47 @@ class ComplaintEntryVersion(CdEDataclass):
     entity_key = "entry_id"
 
     id: vtypes.ProtoID = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     entry_id: vtypes.ID = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     description: str | None = dataclasses.field(
         init=False,
         default=None,
-        metadata={"database_exclude": True, "request_include": True},
+        metadata={"cdedb": F.database_exclude | F.request_exclude},
     )
     length: int | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     timestamp: datetime.datetime
     etime: datetime.datetime | None = None
 
     ctime: datetime.datetime = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     submitted_by: vtypes.ID = dataclasses.field(
-        metadata={"validation_exclude": True, "request_exclude": True}
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     dtime: datetime.datetime | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True, "request_exclude": True}
+        default=None,
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     deleted_by: vtypes.ID | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True, "request_exclude": True}
+        default=None,
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     dreason: str | None = dataclasses.field(
-        default=None, metadata={"validation_exclude": True, "request_exclude": True}
+        default=None,
+        metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(
-        metadata={"request_include": True, "database_exclude": True}
+        # TODO request_include is never used as metadata key
+        metadata={"cdedb": F.database_exclude},
     )
 
     @staticmethod
