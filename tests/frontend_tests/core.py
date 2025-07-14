@@ -2325,13 +2325,13 @@ class TestCoreFrontend(FrontendTest):
         f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        self.assertPresence("Mailinglisten", div="realm")
+        self.assertPresence("CdE", div="realm")
         self.assertPresence("verg. Veranstaltung")
 
         # change realm back to previous value
         self.traverse("Bereich ändern")
         f = self.response.forms['genesismodifyrealmform']
-        self.assertEqual(f['realm'].value, "ml")
+        self.assertEqual(f['realm'].value, "cde")
         f['realm'] = "event"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
