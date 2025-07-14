@@ -13,11 +13,11 @@ from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, make_persona_forename, now
+from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.models.common import CdEDataclass
 
 __all__ = ["AnonymousMessageData"]
@@ -232,12 +232,7 @@ class Persona(CdEDataclass):
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
-        persona = self.as_dict()
-        forename = make_persona_forename(persona)
-
-        forename = forename.lower()
-        family_name = persona["family_name"].lower()
-        return (family_name, forename, persona["id"])
+        return EntitySorter.persona(self.as_dict())
 
 
 @dataclasses.dataclass(kw_only=True)
