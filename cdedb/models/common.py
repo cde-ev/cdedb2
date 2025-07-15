@@ -51,29 +51,29 @@ class MetaFlag(Flag):
     # validation
 
     # TODO is is currently also used in request_fields
-    creation_exclude = auto()
+    validate_creation_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=True)`.\\
     Can be used to make use of SQL default values."""
     # TODO is is currently also used in request_fields
-    update_exclude = auto()
+    validate_update_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=False)`.\\
     Can be used to make a field immutable."""
-    validation_exclude = creation_exclude | update_exclude
+    validate_exclude = validate_creation_exclude | validate_update_exclude
     """Omit this field from `cls.validation_fields()`.\\
     Can be used for fields that are magically inserted elsewhere."""
-    creation_optional = auto()
+    validate_creation_optional = auto()
     """Make this field optional in `cls.validation_fields(creation=True)`.\\
     Can be used to make use of SQL default values, while also allowing overrides."""
 
     # request
 
-    creation_request_exclude = auto()
+    request_creation_exclude = auto()
     """Omit this field from `cls.requestdict_fields(creation=True)`.\\
     """
-    update_request_exclude = auto()
+    request_update_exclude = auto()
     """Omit this field from `cls.requestdict_fields(creation=False)`.\\
     """
-    request_exclude = creation_request_exclude | update_request_exclude
+    request_exclude = request_creation_exclude | request_update_exclude
     """Exclude the field from `cls.requestdict_fields()`.\\
     Can be used for fields that are not submitted via form, but taken from URL."""
     request_include = auto()
@@ -198,12 +198,12 @@ class CdEDataclass:
         optional: vtypes.MutableTypeMapping = {}
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
-            if MetaFlag.validation_exclude in field.metadata.get('cdedb', MetaFlag.none):
+            if MetaFlag.validate_exclude in field.metadata.get('cdedb', MetaFlag.none):
                 continue
             if creation:
-                if MetaFlag.creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
                     continue
-                if MetaFlag.creation_optional in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_creation_optional in field.metadata.get('cdedb', MetaFlag.none):
                     optional[field.name] = field.type
                     continue
                 if field.name == 'id':
@@ -221,7 +221,7 @@ class CdEDataclass:
                 else:
                     mandatory[field.name] = field.type
             else:
-                if MetaFlag.update_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
                     continue
                 if field.name == 'id':
                     mandatory[field.name] = vtypes.ID
@@ -263,14 +263,14 @@ class CdEDataclass:
                 if not field.init:
                     continue
                 if creation is True:
-                    if MetaFlag.creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.validate_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
-                    if MetaFlag.creation_request_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.request_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
                 if creation is False:
-                    if MetaFlag.update_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.validate_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
-                    if MetaFlag.update_request_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.request_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
             fields.append((field.name, requestdict_field_spec(field)))
         return fields
