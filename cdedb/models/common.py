@@ -51,12 +51,12 @@ class MetaFlag(Flag):
 
     # TODO is is currently also used in request_fields
     creation_exclude = auto()
-    """Omit this field from `cls.validation_fields(creation=False)`.\\
-    Can be used to make a field immutable."""
-    # TODO is is currently also used in request_fields
-    update_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=True)`.\\
     Can be used to make use of SQL default values."""
+    # TODO is is currently also used in request_fields
+    update_exclude = auto()
+    """Omit this field from `cls.validation_fields(creation=False)`.\\
+    Can be used to make a field immutable."""
     validation_exclude = creation_exclude | update_exclude
     """Omit this field from `cls.validation_fields()`.\\
     Can be used for fields that are magically inserted elsewhere."""
@@ -67,10 +67,10 @@ class MetaFlag(Flag):
     # request
 
     creation_request_exclude = auto()
-    """Omit this field from `cls.requestdict_fields(creation=False)`.\\
+    """Omit this field from `cls.requestdict_fields(creation=True)`.\\
     """
     update_request_exclude = auto()
-    """Omit this field from `cls.requestdict_fields(creation=True)`.\\
+    """Omit this field from `cls.requestdict_fields(creation=False)`.\\
     """
     request_exclude = creation_request_exclude | update_request_exclude
     """Exclude the field from `cls.requestdict_fields()`.\\
