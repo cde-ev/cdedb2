@@ -283,7 +283,7 @@ class ComplaintEntry(CdEDataclass):
     )
 
     all_versions: list["ComplaintEntryVersion"] = dataclasses.field(
-        metadata={"validation_exclude": True, "database_exclude": True},
+        metadata={"cdedb": F.validation_exclude | F.database_exclude},
     )
 
     @functools.cached_property
@@ -348,9 +348,11 @@ class ComplaintEntryVersion(CdEDataclass):
     description: str | None = dataclasses.field(
         init=False,
         default=None,
-        metadata={"cdedb": F.database_exclude | F.request_exclude},
+        # TODO request_include is never used as metadata key
+        metadata={"cdedb": F.database_exclude},
     )
     length: int | None = dataclasses.field(
+        default=None,
         metadata={"cdedb": F.validation_exclude | F.request_exclude},
     )
     timestamp: datetime.datetime
