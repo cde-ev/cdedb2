@@ -348,8 +348,7 @@ class ComplaintEntryVersion(CdEDataclass):
     description: str | None = dataclasses.field(
         init=False,
         default=None,
-        # TODO request_include is never used as metadata key
-        metadata={"cdedb": F.database_exclude},
+        metadata={"cdedb": F.database_exclude | F.request_include},
     )
     length: int | None = dataclasses.field(
         default=None,
@@ -379,8 +378,7 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(
-        # TODO request_include is never used as metadata key
-        metadata={"cdedb": F.database_exclude},
+        metadata={"cdedb": F.database_exclude | F.request_include},
     )
 
     @staticmethod
