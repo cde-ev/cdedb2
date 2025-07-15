@@ -92,7 +92,7 @@ class Mailinglist(CdEDataclass):
 
     moderators: set[vtypes.ID]
     whitelist: set[vtypes.Email] = dataclasses.field(
-        metadata={'cdedb': F.creation_optional})
+        metadata=F.creation_optional.as_dict)
 
     description: Optional[str]
     additional_footer: Optional[str]

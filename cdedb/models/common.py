@@ -10,6 +10,7 @@ from typing import (
     Any,
     ClassVar,
     Literal,
+    Self,
     TypeVar,
     cast,
     get_args,
@@ -96,6 +97,11 @@ class MetaFlag(Flag):
     asdict_exclude = auto()
     """If True, exclude the field from `self.asdict()`.\\
     Can be used to avoid read-only fields being validated."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclass.field`."""
+        return {"cdedb": self}
 
 
 @dataclass
