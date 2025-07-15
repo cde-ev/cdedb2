@@ -528,10 +528,10 @@ class EventField(EventDataclass):
 
     # Internal metadata.
     field_name: vtypes.RestrictiveIdentifier = dataclasses.field(
-        metadata=F.validate_update_exclude.as_dict)
+        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
     kind: const.FieldDatatypes
     association: const.FieldAssociations = dataclasses.field(
-        metadata=F.validate_update_exclude.as_dict)
+        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
@@ -565,9 +565,11 @@ class CustomQueryFilter(EventDataclass):
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=F.validate_exclude.as_dict,
     )
-    event_id: vtypes.ProtoID = dataclasses.field(metadata=F.validate_update_exclude.as_dict)
+    event_id: vtypes.ProtoID = dataclasses.field(
+        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
 
-    scope: QueryScope = dataclasses.field(metadata=F.validate_update_exclude.as_dict)
+    scope: QueryScope = dataclasses.field(
+        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
     title: str
     notes: Optional[str]
     fields: set[str] = dataclasses.field(metadata=F.database_include.as_dict)

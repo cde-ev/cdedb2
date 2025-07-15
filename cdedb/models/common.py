@@ -50,11 +50,9 @@ class MetaFlag(Flag):
 
     # validation
 
-    # TODO is is currently also used in request_fields
     validate_creation_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=True)`.\\
     Can be used to make use of SQL default values."""
-    # TODO is is currently also used in request_fields
     validate_update_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=False)`.\\
     Can be used to make a field immutable."""
@@ -93,10 +91,9 @@ class MetaFlag(Flag):
 
     # asdict
 
-    # TODO is this necessary? the stated purpose should be achieved via validation_exclude
     asdict_exclude = auto()
-    """If True, exclude the field from `self.asdict()`.\\
-    Can be used to avoid read-only fields being validated."""
+    """Exclude the field from `self.asdict()`.\\
+    """
 
     @property
     def as_dict(self) -> dict[str, Self]:
@@ -198,8 +195,6 @@ class CdEDataclass:
         optional: vtypes.MutableTypeMapping = {}
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
-            if MetaFlag.validate_exclude in field.metadata.get('cdedb', MetaFlag.none):
-                continue
             if creation:
                 if MetaFlag.validate_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
                     continue
@@ -263,13 +258,9 @@ class CdEDataclass:
                 if not field.init:
                     continue
                 if creation is True:
-                    if MetaFlag.validate_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
-                        continue
                     if MetaFlag.request_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
                 if creation is False:
-                    if MetaFlag.validate_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
-                        continue
                     if MetaFlag.request_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
                         continue
             fields.append((field.name, requestdict_field_spec(field)))
