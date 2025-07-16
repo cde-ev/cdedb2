@@ -47,6 +47,7 @@ class MetaFlag(Flag):
     """Flags representing metadata of CdEDataclass fields."""
 
     none = 0
+    """Named 'no flags' flag."""
 
     # validation
 
@@ -97,8 +98,12 @@ class MetaFlag(Flag):
 
     @property
     def as_dict(self) -> dict[str, Self]:
-        """Hide boilerplate of turning the flag into a dict expected by `dataclass.field`."""
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
         return {"cdedb": self}
+
+    def in_field(self, field: dataclasses.Field[T]) -> bool:
+        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
+        return self in field.metadata.get("cdedb", MetaFlag.none)
 
 
 @dataclass
@@ -196,9 +201,9 @@ class CdEDataclass:
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
             if creation:
-                if MetaFlag.validate_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_creation_exclude.in_field(field):
                     continue
-                if MetaFlag.validate_creation_optional in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_creation_optional.in_field(field):
                     optional[field.name] = field.type
                     continue
                 if field.name == 'id':
@@ -216,7 +221,7 @@ class CdEDataclass:
                 else:
                     mandatory[field.name] = field.type
             else:
-                if MetaFlag.validate_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.validate_update_exclude.in_field(field):
                     continue
                 if field.name == 'id':
                     mandatory[field.name] = vtypes.ID
@@ -250,18 +255,18 @@ class CdEDataclass:
         field_names.discard("id")
         fields = []
         for field in dataclasses.fields(cls):
-            if MetaFlag.request_include not in field.metadata.get('cdedb', MetaFlag.none):
+            if not MetaFlag.request_include.in_field(field):
                 if field.name not in field_names:
                     continue
-                if MetaFlag.request_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                if MetaFlag.request_exclude.in_field(field):
                     continue
                 if not field.init:
                     continue
                 if creation is True:
-                    if MetaFlag.request_creation_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.request_creation_exclude.in_field(field):
                         continue
                 if creation is False:
-                    if MetaFlag.request_update_exclude in field.metadata.get('cdedb', MetaFlag.none):
+                    if MetaFlag.request_update_exclude.in_field(field):
                         continue
             fields.append((field.name, requestdict_field_spec(field)))
         return fields
@@ -274,8 +279,8 @@ class CdEDataclass:
             if field.init
                and get_origin(field.type) is not dict
                and get_origin(field.type) is not set
-               and MetaFlag.database_exclude not in field.metadata.get('cdedb', MetaFlag.none)
-            or MetaFlag.database_include in field.metadata.get('cdedb', MetaFlag.none)
+               and not MetaFlag.database_exclude.in_field(field)
+            or MetaFlag.database_include.in_field(field)
         ]
 
     def as_dict(self) -> dict[str, Any]:
@@ -338,7 +343,7 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        if MetaFlag.asdict_exclude in field.metadata.get('cdedb', MetaFlag.none):
+        if MetaFlag.asdict_exclude.in_field(field):
             return False
         # TODO: do not use the repr for this.
         return field.repr
