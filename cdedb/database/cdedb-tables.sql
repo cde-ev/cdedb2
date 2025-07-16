@@ -636,6 +636,7 @@ CREATE TABLE complaint.enforcers (
 );
 GRANT SELECT ON complaint.enforcers TO cdb_persona;
 GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.enforcers_id_seq TO cdb_admin;
 
 -- like event helpers, may access limited information on involved parties
 CREATE TABLE complaint.monitors (
@@ -644,6 +645,7 @@ CREATE TABLE complaint.monitors (
 );
 GRANT SELECT ON complaint.monitors TO cdb_persona;
 GRANT INSERT, DELETE ON complaint.monitors TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.monitors_id_seq TO cdb_admin;
 
 -- logs changes and decryption
 CREATE TABLE complaint.log (

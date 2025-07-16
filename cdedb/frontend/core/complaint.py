@@ -23,6 +23,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -1031,10 +1032,71 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/show_user_measures", params)
 
-    # @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
-    # def list_complaint_helpers(self, rs: RequestState) -> Response:
-    #    """View list of enforcers and monitors."""
-    #    return self.render(rs, "complaint/list_complaint_helpers")
+    @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
+    def list_complaint_helpers(self, rs: RequestState) -> Response:
+        """View list of enforcers and monitors."""
+        enforcer_ids = self.complaintproxy.list_enforcers(rs)
+        monitor_ids = self.complaintproxy.list_monitors(rs)
+        personas = self.coreproxy.get_personas(rs, enforcer_ids | monitor_ids)
+        enforcer_ids = xsorted(
+            enforcer_ids, key=lambda e_id: EntitySorter.persona(personas[e_id])
+        )
+        monitor_ids = xsorted(
+            monitor_ids, key=lambda m_id: EntitySorter.persona(personas[m_id])
+        )
+        return self.render(
+            rs,
+            "complaint/list_complaint_helpers",
+            {
+                "enforcer_ids": enforcer_ids,
+                "monitor_ids": monitor_ids,
+                "personas": personas,
+            },
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("persona_id", "kind")
+    def add_complaint_helper(
+        self, rs: RequestState, persona_id: vtypes.CdedbID, kind: str
+    ) -> Response:
+        """Grant enforcer or monitor privileges to a persona.
+
+        :param kind: "enforcer" or "monitor
+        """
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+        try:
+            self.coreproxy.verify_persona(rs, persona_id)
+        except ValueError as e:
+            rs.append_validation_error(("persona_id", e))
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+
+        ret = self.complaintproxy.add_helper(rs, persona_id, kind)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/list_complaint_helpers")
+
+    @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("persona_id", "kind")
+    def remove_complaint_helper(
+        self, rs: RequestState, persona_id: vtypes.ID, kind: str
+    ) -> Response:
+        """Remove enforcer or monitor privileges to a persona.
+
+        :param kind: "enforcer" or "monitor
+        """
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+        try:
+            self.coreproxy.verify_persona(rs, persona_id)
+        except ValueError as e:
+            rs.append_validation_error(("persona_id", e))
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+
+        ret = self.complaintproxy.remove_helper(rs, persona_id, kind)
+        rs.notify_return_code(ret)
+        return self.redirect(rs, "core/list_complaint_helpers")
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")

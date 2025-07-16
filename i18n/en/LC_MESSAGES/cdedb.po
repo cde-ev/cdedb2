@@ -91,9 +91,9 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:351 cdedb/backend/cde/base.py:589
-#: cdedb/backend/complaint.py:1037 cdedb/backend/core/base.py:3018
-#: cdedb/backend/event/query.py:715 cdedb/backend/ml.py:323
-#: cdedb/backend/past_event.py:770
+#: cdedb/backend/complaint.py:1037 cdedb/backend/complaint.py:1116
+#: cdedb/backend/core/base.py:3018 cdedb/backend/event/query.py:715
+#: cdedb/backend/ml.py:323 cdedb/backend/past_event.py:770
 msgid "Bad scope."
 msgstr ""
 
@@ -617,77 +617,92 @@ msgstr ""
 msgid "Need to specify exactly two columns."
 msgstr ""
 
-#: cdedb/backend/complaint.py:308
+#: cdedb/backend/complaint.py:109 cdedb/backend/complaint.py:141
+msgid "Unknown helper kind."
+msgstr ""
+
+#: cdedb/backend/complaint.py:111 cdedb/backend/complaint.py:143
+msgid "Unknown user."
+msgstr ""
+
+#: cdedb/backend/complaint.py:113 cdedb/backend/complaint.py:145
+msgid "This persona is not an event user."
+msgstr ""
+
+#: cdedb/backend/complaint.py:308 cdedb/backend/complaint.py:387
 msgid "No authors specified."
 msgstr ""
 
-#: cdedb/backend/complaint.py:310
+#: cdedb/backend/complaint.py:310 cdedb/backend/complaint.py:389
 msgid "Unknown authors."
 msgstr ""
 
-#: cdedb/backend/complaint.py:341
+#: cdedb/backend/complaint.py:341 cdedb/backend/complaint.py:420
 msgid "Deletion reason given, but entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:360
+#: cdedb/backend/complaint.py:360 cdedb/backend/complaint.py:439
 msgid "Unknown entry."
 msgstr ""
 
-#: cdedb/backend/complaint.py:486
+#: cdedb/backend/complaint.py:486 cdedb/backend/complaint.py:565
 msgid "Entry already revoked."
 msgstr ""
 
-#: cdedb/backend/complaint.py:488
+#: cdedb/backend/complaint.py:488 cdedb/backend/complaint.py:567
 msgid "Entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:500
+#: cdedb/backend/complaint.py:500 cdedb/backend/complaint.py:579
 msgid "Revocation entry without parent."
 msgstr ""
 
-#: cdedb/backend/complaint.py:502 cdedb/frontend/core/complaint.py:847
-#: cdedb/frontend/core/complaint.py:897
+#: cdedb/backend/complaint.py:502 cdedb/backend/complaint.py:581
+#: cdedb/frontend/core/complaint.py:847 cdedb/frontend/core/complaint.py:848
+#: cdedb/frontend/core/complaint.py:897 cdedb/frontend/core/complaint.py:898
 msgid "Cannot chain revoke."
 msgstr ""
 
-#: cdedb/backend/complaint.py:546
+#: cdedb/backend/complaint.py:546 cdedb/backend/complaint.py:625
 msgid "Appellant cannot be uninformed."
 msgstr ""
 
 #: cdedb/backend/complaint.py:553 cdedb/backend/complaint.py:621
+#: cdedb/backend/complaint.py:632 cdedb/backend/complaint.py:700
 msgid "Unknown users."
 msgstr ""
 
-#: cdedb/backend/complaint.py:562
+#: cdedb/backend/complaint.py:562 cdedb/backend/complaint.py:641
 msgid "Already involved otherwise."
 msgstr ""
 
-#: cdedb/backend/complaint.py:564
+#: cdedb/backend/complaint.py:564 cdedb/backend/complaint.py:643
 msgid "Already active companions."
 msgstr ""
 
 #: cdedb/backend/complaint.py:671 cdedb/backend/complaint.py:727
-#: cdedb/backend/complaint.py:819
+#: cdedb/backend/complaint.py:750 cdedb/backend/complaint.py:806
+#: cdedb/backend/complaint.py:819 cdedb/backend/complaint.py:898
 msgid "Uninvolved user."
 msgstr ""
 
-#: cdedb/backend/complaint.py:712
+#: cdedb/backend/complaint.py:712 cdedb/backend/complaint.py:791
 msgid "Unknown companions."
 msgstr ""
 
-#: cdedb/backend/complaint.py:732
+#: cdedb/backend/complaint.py:732 cdedb/backend/complaint.py:811
 msgid "Adverse companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:734
+#: cdedb/backend/complaint.py:734 cdedb/backend/complaint.py:813
 msgid "Involved companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:821
+#: cdedb/backend/complaint.py:821 cdedb/backend/complaint.py:900
 msgid "Not a companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:1150
+#: cdedb/backend/complaint.py:1150 cdedb/backend/complaint.py:1231
 msgid "Can only list measures."
 msgstr ""
 
@@ -963,7 +978,8 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2608 cdedb/frontend/common.py:2248
+#: cdedb/backend/core/base.py:2608 cdedb/frontend/common.py:2243
+#: cdedb/frontend/common.py:2248
 msgid "Link expired."
 msgstr ""
 
@@ -1463,7 +1479,8 @@ msgid "Different mailinglists specified."
 msgstr ""
 
 #: cdedb/backend/ml.py:428 cdedb/frontend/cde/past_event.py:413
-#: cdedb/frontend/core/complaint.py:371 cdedb/frontend/core/complaint.py:495
+#: cdedb/frontend/core/complaint.py:371 cdedb/frontend/core/complaint.py:372
+#: cdedb/frontend/core/complaint.py:495 cdedb/frontend/core/complaint.py:496
 msgid "Some of these users do not exist."
 msgstr ""
 
@@ -1806,6 +1823,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/login.tmpl:26
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:24
 #: cdedb/frontend/templates/web/core/show_history.tmpl:274
+#: cdedb/frontend/templates/web/core/show_user.tmpl:461
+#: cdedb/frontend/templates/web/core/show_user.tmpl:462
 #: cdedb/frontend/templates/web/core/show_user.tmpl:465
 #: cdedb/frontend/templates/web/core/show_user.tmpl:466
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:35
@@ -1834,6 +1853,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:116
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:79
 #: cdedb/frontend/templates/web/core/show_history.tmpl:265
+#: cdedb/frontend/templates/web/core/show_user.tmpl:321
+#: cdedb/frontend/templates/web/core/show_user.tmpl:322
 #: cdedb/frontend/templates/web/core/show_user.tmpl:325
 #: cdedb/frontend/templates/web/core/show_user.tmpl:326
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:111
@@ -1861,6 +1882,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:79
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:91
 #: cdedb/frontend/templates/web/core/show_history.tmpl:170
+#: cdedb/frontend/templates/web/core/show_user.tmpl:204
+#: cdedb/frontend/templates/web/core/show_user.tmpl:205
 #: cdedb/frontend/templates/web/core/show_user.tmpl:208
 #: cdedb/frontend/templates/web/core/show_user.tmpl:209
 #: cdedb/frontend/templates/web/generic.tmpl:16
@@ -1879,6 +1902,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:93
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:85
 #: cdedb/frontend/templates/web/core/show_history.tmpl:181
+#: cdedb/frontend/templates/web/core/show_user.tmpl:216
+#: cdedb/frontend/templates/web/core/show_user.tmpl:217
 #: cdedb/frontend/templates/web/core/show_user.tmpl:220
 #: cdedb/frontend/templates/web/core/show_user.tmpl:221
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:51
@@ -1896,6 +1921,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:55
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
 #: cdedb/frontend/templates/web/core/show_history.tmpl:192
+#: cdedb/frontend/templates/web/core/show_user.tmpl:224
+#: cdedb/frontend/templates/web/core/show_user.tmpl:225
 #: cdedb/frontend/templates/web/core/show_user.tmpl:228
 #: cdedb/frontend/templates/web/core/show_user.tmpl:229
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:91
@@ -1914,6 +1941,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:92
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:83
 #: cdedb/frontend/templates/web/core/show_history.tmpl:175
+#: cdedb/frontend/templates/web/core/show_user.tmpl:210
+#: cdedb/frontend/templates/web/core/show_user.tmpl:211
 #: cdedb/frontend/templates/web/core/show_user.tmpl:214
 #: cdedb/frontend/templates/web/core/show_user.tmpl:215
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:50
@@ -1936,6 +1965,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:106
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:88
 #: cdedb/frontend/templates/web/core/show_history.tmpl:275
+#: cdedb/frontend/templates/web/core/show_user.tmpl:498
+#: cdedb/frontend/templates/web/core/show_user.tmpl:499
 #: cdedb/frontend/templates/web/core/show_user.tmpl:502
 #: cdedb/frontend/templates/web/core/show_user.tmpl:503
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:97
@@ -1955,6 +1986,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:107
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:89
 #: cdedb/frontend/templates/web/core/show_history.tmpl:276
+#: cdedb/frontend/templates/web/core/show_user.tmpl:506
+#: cdedb/frontend/templates/web/core/show_user.tmpl:507
 #: cdedb/frontend/templates/web/core/show_user.tmpl:510
 #: cdedb/frontend/templates/web/core/show_user.tmpl:511
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:99
@@ -1974,6 +2007,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:132
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:110
 #: cdedb/frontend/templates/web/core/show_history.tmpl:290
+#: cdedb/frontend/templates/web/core/show_user.tmpl:529
+#: cdedb/frontend/templates/web/core/show_user.tmpl:530
 #: cdedb/frontend/templates/web/core/show_user.tmpl:533
 #: cdedb/frontend/templates/web/core/show_user.tmpl:534
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:101
@@ -2114,6 +2149,7 @@ msgstr "CdE"
 #: cdedb/common/query/__init__.py:590 cdedb/common/query/__init__.py:636
 #: cdedb/common/query/__init__.py:690 cdedb/common/query/__init__.py:1157
 #: cdedb/frontend/templates/web/core/show_history.tmpl:240
+#: cdedb/frontend/templates/web/core/show_user.tmpl:346
 #: cdedb/frontend/templates/web/core/show_user.tmpl:350
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:55
 #: cdedb/frontend/templates/web/generic.tmpl:63
@@ -2205,6 +2241,7 @@ msgstr ""
 
 #: cdedb/common/query/__init__.py:637
 #: cdedb/frontend/templates/web/core/show_history.tmpl:238
+#: cdedb/frontend/templates/web/core/show_user.tmpl:344
 #: cdedb/frontend/templates/web/core/show_user.tmpl:348
 #: cdedb/frontend/templates/web/generic.tmpl:65
 msgid "Trial Member"
@@ -2212,8 +2249,11 @@ msgstr ""
 
 #: cdedb/common/query/__init__.py:638
 #: cdedb/frontend/templates/web/core/show_history.tmpl:236
+#: cdedb/frontend/templates/web/core/show_user.tmpl:260
+#: cdedb/frontend/templates/web/core/show_user.tmpl:261
 #: cdedb/frontend/templates/web/core/show_user.tmpl:264
 #: cdedb/frontend/templates/web/core/show_user.tmpl:265
+#: cdedb/frontend/templates/web/core/show_user.tmpl:342
 #: cdedb/frontend/templates/web/core/show_user.tmpl:346
 #: cdedb/frontend/templates/web/generic.tmpl:67
 msgid "Honorary Member"
@@ -2223,6 +2263,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:76
 #: cdedb/frontend/templates/web/core/change_user.tmpl:80
 #: cdedb/frontend/templates/web/core/show_history.tmpl:263
+#: cdedb/frontend/templates/web/core/show_user.tmpl:442
+#: cdedb/frontend/templates/web/core/show_user.tmpl:443
 #: cdedb/frontend/templates/web/core/show_user.tmpl:446
 #: cdedb/frontend/templates/web/core/show_user.tmpl:447
 #: cdedb/frontend/templates/web/generic.tmpl:71
@@ -2243,6 +2285,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:73
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:102
 #: cdedb/frontend/templates/web/core/show_history.tmpl:262
+#: cdedb/frontend/templates/web/core/show_user.tmpl:407
+#: cdedb/frontend/templates/web/core/show_user.tmpl:408
 #: cdedb/frontend/templates/web/core/show_user.tmpl:411
 #: cdedb/frontend/templates/web/core/show_user.tmpl:412
 #: cdedb/frontend/templates/web/generic.tmpl:73
@@ -2254,6 +2298,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:96
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:108
 #: cdedb/frontend/templates/web/core/show_history.tmpl:277
+#: cdedb/frontend/templates/web/core/show_user.tmpl:514
+#: cdedb/frontend/templates/web/core/show_user.tmpl:515
 #: cdedb/frontend/templates/web/core/show_user.tmpl:518
 #: cdedb/frontend/templates/web/core/show_user.tmpl:519
 #: cdedb/frontend/templates/web/generic.tmpl:39
@@ -2265,6 +2311,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:138
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:127
 #: cdedb/frontend/templates/web/core/show_history.tmpl:324
+#: cdedb/frontend/templates/web/core/show_user.tmpl:578
+#: cdedb/frontend/templates/web/core/show_user.tmpl:579
 #: cdedb/frontend/templates/web/core/show_user.tmpl:582
 #: cdedb/frontend/templates/web/core/show_user.tmpl:583
 #: cdedb/frontend/templates/web/generic.tmpl:20
@@ -2276,6 +2324,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:139
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:128
 #: cdedb/frontend/templates/web/core/show_history.tmpl:325
+#: cdedb/frontend/templates/web/core/show_user.tmpl:584
+#: cdedb/frontend/templates/web/core/show_user.tmpl:585
 #: cdedb/frontend/templates/web/core/show_user.tmpl:588
 #: cdedb/frontend/templates/web/core/show_user.tmpl:589
 #: cdedb/frontend/templates/web/generic.tmpl:21
@@ -2287,6 +2337,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:140
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:129
 #: cdedb/frontend/templates/web/core/show_history.tmpl:326
+#: cdedb/frontend/templates/web/core/show_user.tmpl:590
+#: cdedb/frontend/templates/web/core/show_user.tmpl:591
 #: cdedb/frontend/templates/web/core/show_user.tmpl:594
 #: cdedb/frontend/templates/web/core/show_user.tmpl:595
 #: cdedb/frontend/templates/web/generic.tmpl:22
@@ -2299,6 +2351,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:141
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:130
 #: cdedb/frontend/templates/web/core/show_history.tmpl:327
+#: cdedb/frontend/templates/web/core/show_user.tmpl:596
+#: cdedb/frontend/templates/web/core/show_user.tmpl:597
 #: cdedb/frontend/templates/web/core/show_user.tmpl:600
 #: cdedb/frontend/templates/web/core/show_user.tmpl:601
 #: cdedb/frontend/templates/web/generic.tmpl:23
@@ -2318,8 +2372,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:131
 #: cdedb/frontend/templates/web/core/show_history.tmpl:322
 #: cdedb/frontend/templates/web/core/show_history.tmpl:328
+#: cdedb/frontend/templates/web/core/show_user.tmpl:452
 #: cdedb/frontend/templates/web/core/show_user.tmpl:456
+#: cdedb/frontend/templates/web/core/show_user.tmpl:575
 #: cdedb/frontend/templates/web/core/show_user.tmpl:579
+#: cdedb/frontend/templates/web/core/show_user.tmpl:602
+#: cdedb/frontend/templates/web/core/show_user.tmpl:603
 #: cdedb/frontend/templates/web/core/show_user.tmpl:606
 #: cdedb/frontend/templates/web/core/show_user.tmpl:607
 #: cdedb/frontend/templates/web/generic.tmpl:24
@@ -2555,6 +2613,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:29
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:30
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:99
+#: cdedb/frontend/templates/web/core/show_user.tmpl:243
+#: cdedb/frontend/templates/web/core/show_user.tmpl:244
 #: cdedb/frontend/templates/web/core/show_user.tmpl:247
 #: cdedb/frontend/templates/web/core/show_user.tmpl:248
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:29
@@ -3284,7 +3344,8 @@ msgstr ""
 #: cdedb/common/validation/validate.py:5032 cdedb/frontend/cde/base.py:265
 #: cdedb/frontend/cde/base.py:269 cdedb/frontend/common.py:654
 #: cdedb/frontend/core/base.py:1274 cdedb/frontend/core/complaint.py:376
-#: cdedb/frontend/core/complaint.py:500 cdedb/frontend/core/genesis.py:113
+#: cdedb/frontend/core/complaint.py:377 cdedb/frontend/core/complaint.py:500
+#: cdedb/frontend/core/complaint.py:501 cdedb/frontend/core/genesis.py:113
 #: cdedb/frontend/event/event.py:316 cdedb/frontend/event/registration.py:685
 #: cdedb/frontend/event/registration.py:1732
 msgid "Must not be empty."
@@ -4005,19 +4066,20 @@ msgstr ""
 msgid "Grouped enums not supported yet."
 msgstr ""
 
-#: cdedb/frontend/application.py:128 cdedb/frontend/cron.py:51
+#: cdedb/frontend/application.py:128 cdedb/frontend/application.py:130
+#: cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr ""
 
-#: cdedb/frontend/application.py:219
+#: cdedb/frontend/application.py:219 cdedb/frontend/application.py:221
 msgid "Used a non-trusted http host header. Refuse to proceed."
 msgstr ""
 
-#: cdedb/frontend/application.py:255
+#: cdedb/frontend/application.py:255 cdedb/frontend/application.py:257
 msgid "Session expired."
 msgstr ""
 
-#: cdedb/frontend/application.py:358
+#: cdedb/frontend/application.py:358 cdedb/frontend/application.py:364
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -4025,7 +4087,7 @@ msgid ""
 "reset in the next days."
 msgstr ""
 
-#: cdedb/frontend/application.py:377
+#: cdedb/frontend/application.py:377 cdedb/frontend/application.py:383
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -4728,40 +4790,40 @@ msgstr ""
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:2025
+#: cdedb/frontend/common.py:2020 cdedb/frontend/common.py:2025
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:2028
+#: cdedb/frontend/common.py:2023 cdedb/frontend/common.py:2028
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:2094
+#: cdedb/frontend/common.py:2089 cdedb/frontend/common.py:2094
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:2250
+#: cdedb/frontend/common.py:2245 cdedb/frontend/common.py:2250
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:2330
+#: cdedb/frontend/common.py:2325 cdedb/frontend/common.py:2330
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-#: cdedb/frontend/common.py:2454
+#: cdedb/frontend/common.py:2449 cdedb/frontend/common.py:2454
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:2459
+#: cdedb/frontend/common.py:2454 cdedb/frontend/common.py:2459
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:2463
+#: cdedb/frontend/common.py:2458 cdedb/frontend/common.py:2463
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2485
+#: cdedb/frontend/common.py:2480 cdedb/frontend/common.py:2485
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -4995,143 +5057,151 @@ msgstr ""
 msgid "Change dropped."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:58
+#: cdedb/frontend/core/complaint.py:58 cdedb/frontend/core/complaint.py:59
 msgid "Entry"
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:106
+#: cdedb/frontend/core/complaint.py:106 cdedb/frontend/core/complaint.py:107
 msgid "Need to fill out at least one field."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:113
+#: cdedb/frontend/core/complaint.py:113 cdedb/frontend/core/complaint.py:114
 msgid "May not search for own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:145
+#: cdedb/frontend/core/complaint.py:145 cdedb/frontend/core/complaint.py:146
 #, python-format
 msgid "%(count)s cases not shown."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:240
+#: cdedb/frontend/core/complaint.py:240 cdedb/frontend/core/complaint.py:241
 msgid "Need to unlock case first."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:290
+#: cdedb/frontend/core/complaint.py:290 cdedb/frontend/core/complaint.py:291
 msgid "May not create case with own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:293
+#: cdedb/frontend/core/complaint.py:293 cdedb/frontend/core/complaint.py:294
 msgid "May not be involved in multiple ways."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:354
+#: cdedb/frontend/core/complaint.py:354 cdedb/frontend/core/complaint.py:355
 msgid "May not add own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:364
+#: cdedb/frontend/core/complaint.py:364 cdedb/frontend/core/complaint.py:365
 msgid "Some of these users are already involved otherwise."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:387
+#: cdedb/frontend/core/complaint.py:387 cdedb/frontend/core/complaint.py:388
 #, python-format
 msgid "%(companion)s was a companion and is now marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:399
+#: cdedb/frontend/core/complaint.py:399 cdedb/frontend/core/complaint.py:400
 msgid "Some of these users were already involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:410
+#: cdedb/frontend/core/complaint.py:410 cdedb/frontend/core/complaint.py:411
 msgid "This user was not involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:420 cdedb/frontend/core/complaint.py:437
+#: cdedb/frontend/core/complaint.py:420 cdedb/frontend/core/complaint.py:421
+#: cdedb/frontend/core/complaint.py:437 cdedb/frontend/core/complaint.py:438
 msgid "This user is not involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:426 cdedb/frontend/core/complaint.py:444
+#: cdedb/frontend/core/complaint.py:426 cdedb/frontend/core/complaint.py:427
+#: cdedb/frontend/core/complaint.py:444 cdedb/frontend/core/complaint.py:445
 msgid "This user was already marked as uninformed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:483
+#: cdedb/frontend/core/complaint.py:483 cdedb/frontend/core/complaint.py:484
 msgid "Companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:490
+#: cdedb/frontend/core/complaint.py:490 cdedb/frontend/core/complaint.py:491
 msgid "Companion to the opposing party."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:506
+#: cdedb/frontend/core/complaint.py:506 cdedb/frontend/core/complaint.py:507
 msgid "Some of these users were already companions."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:523
+#: cdedb/frontend/core/complaint.py:523 cdedb/frontend/core/complaint.py:524
 msgid "This user was no companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:533 cdedb/frontend/core/complaint.py:554
+#: cdedb/frontend/core/complaint.py:533 cdedb/frontend/core/complaint.py:534
+#: cdedb/frontend/core/complaint.py:554 cdedb/frontend/core/complaint.py:555
 msgid "This user is no companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:539
+#: cdedb/frontend/core/complaint.py:539 cdedb/frontend/core/complaint.py:540
 msgid "This companion was already marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:556
+#: cdedb/frontend/core/complaint.py:556 cdedb/frontend/core/complaint.py:557
 msgid "Active companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:562
+#: cdedb/frontend/core/complaint.py:562 cdedb/frontend/core/complaint.py:563
 msgid "This companion was already marked as active."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:596
+#: cdedb/frontend/core/complaint.py:596 cdedb/frontend/core/complaint.py:597
 msgid "Case unlocked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:609
+#: cdedb/frontend/core/complaint.py:609 cdedb/frontend/core/complaint.py:610
 msgid "Case locked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:645 cdedb/frontend/core/complaint.py:716
+#: cdedb/frontend/core/complaint.py:645 cdedb/frontend/core/complaint.py:646
+#: cdedb/frontend/core/complaint.py:716 cdedb/frontend/core/complaint.py:717
 msgid "Can not add child for deleted parent."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:673
+#: cdedb/frontend/core/complaint.py:673 cdedb/frontend/core/complaint.py:674
 msgid "Should not include involved people."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:738
+#: cdedb/frontend/core/complaint.py:738 cdedb/frontend/core/complaint.py:739
 #, python-format
 msgid "Can not replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:749
+#: cdedb/frontend/core/complaint.py:749 cdedb/frontend/core/complaint.py:750
 #, python-format
 msgid "Need to unlock case before replacing %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:816
+#: cdedb/frontend/core/complaint.py:816 cdedb/frontend/core/complaint.py:817
 #, python-format
 msgid "Cannot replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:840 cdedb/frontend/core/complaint.py:890
-#: cdedb/frontend/core/complaint.py:920 cdedb/frontend/core/complaint.py:978
+#: cdedb/frontend/core/complaint.py:840 cdedb/frontend/core/complaint.py:841
+#: cdedb/frontend/core/complaint.py:890 cdedb/frontend/core/complaint.py:891
+#: cdedb/frontend/core/complaint.py:920 cdedb/frontend/core/complaint.py:921
+#: cdedb/frontend/core/complaint.py:978 cdedb/frontend/core/complaint.py:979
 msgid "Entry already removed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:852 cdedb/frontend/core/complaint.py:902
+#: cdedb/frontend/core/complaint.py:852 cdedb/frontend/core/complaint.py:853
+#: cdedb/frontend/core/complaint.py:902 cdedb/frontend/core/complaint.py:903
 #, python-format
 msgid "%(entry_link)s already revoked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:925 cdedb/frontend/core/complaint.py:983
+#: cdedb/frontend/core/complaint.py:925 cdedb/frontend/core/complaint.py:926
+#: cdedb/frontend/core/complaint.py:983 cdedb/frontend/core/complaint.py:984
 #, python-format
 msgid "%(entry_link)s has active children."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:938
+#: cdedb/frontend/core/complaint.py:938 cdedb/frontend/core/complaint.py:939
 #, python-format
 msgid "Need to unlock case before removing %(entry_link)s."
 msgstr ""
@@ -6371,6 +6441,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:148
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:132
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:214
+#: cdedb/frontend/templates/web/core/show_user.tmpl:668
 #: cdedb/frontend/templates/web/core/show_user.tmpl:672
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:204
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:303
@@ -6873,6 +6944,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:71
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:72
 #: cdedb/frontend/templates/web/core/show_history.tmpl:155
+#: cdedb/frontend/templates/web/core/show_user.tmpl:178
+#: cdedb/frontend/templates/web/core/show_user.tmpl:179
 #: cdedb/frontend/templates/web/core/show_user.tmpl:182
 #: cdedb/frontend/templates/web/core/show_user.tmpl:183
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:23
@@ -6888,10 +6961,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:104
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:70
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:137
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:41
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:56
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:107
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:137
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:42
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:43
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:281
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:127
@@ -6977,7 +7052,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:19
 #: cdedb/frontend/templates/web/core/show_user.tmpl:70
 #: cdedb/frontend/templates/web/core/show_user.tmpl:74
+#: cdedb/frontend/templates/web/core/show_user.tmpl:315
 #: cdedb/frontend/templates/web/core/show_user.tmpl:319
+#: cdedb/frontend/templates/web/core/show_user.tmpl:490
+#: cdedb/frontend/templates/web/core/show_user.tmpl:493
 #: cdedb/frontend/templates/web/core/show_user.tmpl:494
 #: cdedb/frontend/templates/web/core/show_user.tmpl:497
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:27
@@ -7468,6 +7546,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base.tmpl:85
 #: cdedb/frontend/templates/web/cde/base.tmpl:80
 #: cdedb/frontend/templates/web/core/base.tmpl:74
+#: cdedb/frontend/templates/web/core/base.tmpl:80
 #: cdedb/frontend/templates/web/core/show_user.tmpl:24
 #: cdedb/frontend/templates/web/event/base.tmpl:280
 #: cdedb/frontend/templates/web/ml/base.tmpl:118
@@ -7477,6 +7556,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base.tmpl:87
 #: cdedb/frontend/templates/web/cde/base.tmpl:83
 #: cdedb/frontend/templates/web/core/base.tmpl:78
+#: cdedb/frontend/templates/web/core/base.tmpl:84
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:282
 #: cdedb/frontend/templates/web/ml/base.tmpl:120
@@ -7655,11 +7735,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:122
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:54
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:126
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:37
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:52
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:98
 #: cdedb/frontend/templates/web/core/index.tmpl:37
 #: cdedb/frontend/templates/web/core/index.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:53
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:38
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:39
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
 #: cdedb/frontend/templates/web/logging.tmpl:87
@@ -7941,6 +8023,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:9
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:29
 #: cdedb/frontend/templates/web/core/change_user.tmpl:84
+#: cdedb/frontend/templates/web/core/show_user.tmpl:452
 #: cdedb/frontend/templates/web/core/show_user.tmpl:456
 #: cdedb/frontend/templates/web/logging.tmpl:141
 msgid "Members"
@@ -8054,6 +8137,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/list_past_events.tmpl:7
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:20
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:19
+#: cdedb/frontend/templates/web/core/show_user.tmpl:612
 #: cdedb/frontend/templates/web/core/show_user.tmpl:616
 msgid "Past Events"
 msgstr ""
@@ -8234,6 +8318,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:160
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:165
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:114
+#: cdedb/frontend/templates/web/core/show_user.tmpl:632
 #: cdedb/frontend/templates/web/core/show_user.tmpl:636
 msgid "Instructor"
 msgstr ""
@@ -8621,6 +8706,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:34
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:40
+#: cdedb/frontend/templates/web/core/show_user.tmpl:190
+#: cdedb/frontend/templates/web/core/show_user.tmpl:191
 #: cdedb/frontend/templates/web/core/show_user.tmpl:194
 #: cdedb/frontend/templates/web/core/show_user.tmpl:195
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:44
@@ -8772,6 +8859,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:131
 #: cdedb/frontend/templates/web/core/show_history.tmpl:224
+#: cdedb/frontend/templates/web/core/show_user.tmpl:312
 #: cdedb/frontend/templates/web/core/show_user.tmpl:316
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:161
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:117
@@ -8870,7 +8958,9 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:14
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:29
+#: cdedb/frontend/templates/web/core/show_user.tmpl:421
 #: cdedb/frontend/templates/web/core/show_user.tmpl:425
+#: cdedb/frontend/templates/web/core/show_user.tmpl:432
 #: cdedb/frontend/templates/web/core/show_user.tmpl:436
 msgid "Direct Debit Authorization"
 msgstr ""
@@ -8957,6 +9047,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:32
 #: cdedb/frontend/templates/web/core/change_user.tmpl:27
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:82
+#: cdedb/frontend/templates/web/core/show_user.tmpl:176
 #: cdedb/frontend/templates/web/core/show_user.tmpl:180
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:40
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:42
@@ -9961,8 +10052,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:26
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:101
 #: cdedb/frontend/templates/web/core/show_history.tmpl:262
+#: cdedb/frontend/templates/web/core/show_user.tmpl:392
+#: cdedb/frontend/templates/web/core/show_user.tmpl:393
 #: cdedb/frontend/templates/web/core/show_user.tmpl:396
 #: cdedb/frontend/templates/web/core/show_user.tmpl:397
+#: cdedb/frontend/templates/web/core/show_user.tmpl:424
 #: cdedb/frontend/templates/web/core/show_user.tmpl:428
 #: cdedb/frontend/templates/web/logging.tmpl:132
 msgid "Balance"
@@ -10071,6 +10165,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:98
 #: cdedb/frontend/templates/web/core/show_history.tmpl:204
+#: cdedb/frontend/templates/web/core/show_user.tmpl:240
 #: cdedb/frontend/templates/web/core/show_user.tmpl:244
 #: cdedb/frontend/templates/web/generic.tmpl:61
 msgid "Account & Membership"
@@ -10084,6 +10179,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:88
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:104
 #: cdedb/frontend/templates/web/core/show_history.tmpl:272
+#: cdedb/frontend/templates/web/core/show_user.tmpl:458
 #: cdedb/frontend/templates/web/core/show_user.tmpl:462
 #: cdedb/frontend/templates/web/generic.tmpl:32
 msgid "Contact Information"
@@ -10105,6 +10201,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:119
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:118
 #: cdedb/frontend/templates/web/core/show_history.tmpl:306
+#: cdedb/frontend/templates/web/core/show_user.tmpl:551
+#: cdedb/frontend/templates/web/core/show_user.tmpl:552
 #: cdedb/frontend/templates/web/core/show_user.tmpl:555
 #: cdedb/frontend/templates/web/core/show_user.tmpl:556
 #: cdedb/frontend/templates/web/generic.tmpl:52
@@ -10207,41 +10305,55 @@ msgid "Userdata Log"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:52
+#: cdedb/frontend/templates/web/core/base.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:10
 msgid "Case Archive"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:54
+#: cdedb/frontend/templates/web/core/base.tmpl:57
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:13
 msgid "Measure Overview"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:58
+#: cdedb/frontend/templates/web/core/base.tmpl:63
 msgid "Complaint Log"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/base.tmpl:60
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:9
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:14
+msgid "Complaint Helpers"
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/base.tmpl:64
+#: cdedb/frontend/templates/web/core/base.tmpl:70
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:7
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:13
 msgid "Metadata"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:75
+#: cdedb/frontend/templates/web/core/base.tmpl:81
 msgid "User Review"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:76
+#: cdedb/frontend/templates/web/core/base.tmpl:82
 #: cdedb/frontend/templates/web/core/show_user.tmpl:26
 msgid "Admin Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:77
+#: cdedb/frontend/templates/web/core/base.tmpl:83
 #: cdedb/frontend/templates/web/core/show_user.tmpl:27
 msgid "Core Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:79
+#: cdedb/frontend/templates/web/core/base.tmpl:85
 #: cdedb/frontend/templates/web/core/show_user.tmpl:29
 msgid "Complaints"
 msgstr ""
@@ -10344,6 +10456,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_user.tmpl:61
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:118
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:119
+#: cdedb/frontend/templates/web/core/show_user.tmpl:333
+#: cdedb/frontend/templates/web/core/show_user.tmpl:334
 #: cdedb/frontend/templates/web/core/show_user.tmpl:337
 #: cdedb/frontend/templates/web/core/show_user.tmpl:338
 msgid "Membership"
@@ -10364,6 +10478,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:81
+#: cdedb/frontend/templates/web/core/show_user.tmpl:449
 #: cdedb/frontend/templates/web/core/show_user.tmpl:453
 #, python-format
 msgid ""
@@ -10405,6 +10520,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:44
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:45
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:19
@@ -10690,10 +10806,15 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:72
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:79
+#: cdedb/frontend/templates/web/core/show_user.tmpl:199
 #: cdedb/frontend/templates/web/core/show_user.tmpl:203
+#: cdedb/frontend/templates/web/core/show_user.tmpl:235
 #: cdedb/frontend/templates/web/core/show_user.tmpl:239
+#: cdedb/frontend/templates/web/core/show_user.tmpl:255
 #: cdedb/frontend/templates/web/core/show_user.tmpl:259
+#: cdedb/frontend/templates/web/core/show_user.tmpl:265
 #: cdedb/frontend/templates/web/core/show_user.tmpl:269
+#: cdedb/frontend/templates/web/core/show_user.tmpl:447
 #: cdedb/frontend/templates/web/core/show_user.tmpl:451
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:137
 #: cdedb/frontend/templates/web/generic.tmpl:205
@@ -10707,10 +10828,15 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:72
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:79
+#: cdedb/frontend/templates/web/core/show_user.tmpl:199
 #: cdedb/frontend/templates/web/core/show_user.tmpl:203
+#: cdedb/frontend/templates/web/core/show_user.tmpl:235
 #: cdedb/frontend/templates/web/core/show_user.tmpl:239
+#: cdedb/frontend/templates/web/core/show_user.tmpl:255
 #: cdedb/frontend/templates/web/core/show_user.tmpl:259
+#: cdedb/frontend/templates/web/core/show_user.tmpl:265
 #: cdedb/frontend/templates/web/core/show_user.tmpl:269
+#: cdedb/frontend/templates/web/core/show_user.tmpl:447
 #: cdedb/frontend/templates/web/core/show_user.tmpl:451
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:137
 #: cdedb/frontend/templates/web/generic.tmpl:205
@@ -10747,6 +10873,25 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:196
 msgid "is withdrawn"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:17
+msgid "Enforcers"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:19
+msgid ""
+"Enforcers have access to all, active and past, measures from the case "
+"archive."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:31
+msgid "ID of the new enforcer"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:65
+#, python-format
+msgid "Remove %(name)s as enforcer"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
@@ -10786,12 +10931,14 @@ msgid "Measure against %(concerned)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:42
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:83
 #, python-format
 msgid "from %(case)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:56
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:58
 msgid "Currently, there are no active measures."
 msgstr ""
 
@@ -11554,6 +11701,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:95
 #: cdedb/frontend/templates/web/core/show_history.tmpl:196
+#: cdedb/frontend/templates/web/core/show_user.tmpl:231
+#: cdedb/frontend/templates/web/core/show_user.tmpl:232
 #: cdedb/frontend/templates/web/core/show_user.tmpl:235
 #: cdedb/frontend/templates/web/core/show_user.tmpl:236
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:93
@@ -11612,6 +11761,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:12
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:16
+#: cdedb/frontend/templates/web/core/show_user.tmpl:400
 #: cdedb/frontend/templates/web/core/show_user.tmpl:404
 msgid "Modify Balance"
 msgstr ""
@@ -11714,6 +11864,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:12
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:20
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:131
+#: cdedb/frontend/templates/web/core/show_user.tmpl:291
 #: cdedb/frontend/templates/web/core/show_user.tmpl:295
 msgid "Add Realm"
 msgstr ""
@@ -11897,6 +12048,8 @@ msgid "Active"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:210
+#: cdedb/frontend/templates/web/core/show_user.tmpl:274
+#: cdedb/frontend/templates/web/core/show_user.tmpl:275
 #: cdedb/frontend/templates/web/core/show_user.tmpl:278
 #: cdedb/frontend/templates/web/core/show_user.tmpl:279
 msgid "Realms"
@@ -11904,12 +12057,15 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:219
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:26
+#: cdedb/frontend/templates/web/core/show_user.tmpl:305
+#: cdedb/frontend/templates/web/core/show_user.tmpl:306
 #: cdedb/frontend/templates/web/core/show_user.tmpl:309
 #: cdedb/frontend/templates/web/core/show_user.tmpl:310
 msgid "Admin Privileges"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:234
+#: cdedb/frontend/templates/web/core/show_user.tmpl:340
 #: cdedb/frontend/templates/web/core/show_user.tmpl:344
 msgid "Honorary & Trial Member"
 msgstr ""
@@ -11919,6 +12075,8 @@ msgid "Not a Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:248
+#: cdedb/frontend/templates/web/core/show_user.tmpl:357
+#: cdedb/frontend/templates/web/core/show_user.tmpl:358
 #: cdedb/frontend/templates/web/core/show_user.tmpl:361
 #: cdedb/frontend/templates/web/core/show_user.tmpl:362
 msgid "Searchability"
@@ -12043,133 +12201,166 @@ msgstr ""
 msgid "Show Measures"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:133
 #: cdedb/frontend/templates/web/core/show_user.tmpl:137
 msgid "Profile Picture"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:135
 #: cdedb/frontend/templates/web/core/show_user.tmpl:139
 msgid "Default Profile Picture"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:140
 #: cdedb/frontend/templates/web/core/show_user.tmpl:144
 msgid "Change Profile Picture"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:154
 #: cdedb/frontend/templates/web/core/show_user.tmpl:158
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:124
 msgid "QR"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:158
 #: cdedb/frontend/templates/web/core/show_user.tmpl:162
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:131
 #: cdedb/frontend/templates/web/util.tmpl:355
 msgid "Loading..."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:159
 #: cdedb/frontend/templates/web/core/show_user.tmpl:163
 msgid ""
 "QR code does not include the profile photo. Consider downloading the vCard "
 "instead."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:160
 #: cdedb/frontend/templates/web/core/show_user.tmpl:164
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:133
 #: cdedb/frontend/templates/web/util.tmpl:357
 msgid "Close"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:168
 #: cdedb/frontend/templates/web/core/show_user.tmpl:172
 msgid "VCard"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:195
+#: cdedb/frontend/templates/web/core/show_user.tmpl:196
 #: cdedb/frontend/templates/web/core/show_user.tmpl:199
 #: cdedb/frontend/templates/web/core/show_user.tmpl:200
 msgid "Show legal name in member search"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:250
+#: cdedb/frontend/templates/web/core/show_user.tmpl:251
 #: cdedb/frontend/templates/web/core/show_user.tmpl:254
 #: cdedb/frontend/templates/web/core/show_user.tmpl:255
 msgid "Account active"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:299
 #: cdedb/frontend/templates/web/core/show_user.tmpl:303
 #, python-format
 msgid "To request an upgrade to a member account, contact %(mailto)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:350
 #: cdedb/frontend/templates/web/core/show_user.tmpl:354
 msgid "Change Status"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:363
 #: cdedb/frontend/templates/web/core/show_user.tmpl:367
 msgid "Data is visible for other Members."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:365
 #: cdedb/frontend/templates/web/core/show_user.tmpl:369
 msgid "(except for precise address and secondary address)"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:369
 #: cdedb/frontend/templates/web/core/show_user.tmpl:373
 msgid "(except for precise address)"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:373
 #: cdedb/frontend/templates/web/core/show_user.tmpl:377
 msgid "(except for precise secondary address)"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:379
 #: cdedb/frontend/templates/web/core/show_user.tmpl:383
 msgid "Not yet decided. (Data is not visible)"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:381
 #: cdedb/frontend/templates/web/core/show_user.tmpl:385
 msgid "Give Consent"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:385
 #: cdedb/frontend/templates/web/core/show_user.tmpl:389
 msgid "Data is not visible."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:414
+#: cdedb/frontend/templates/web/core/show_user.tmpl:415
 #: cdedb/frontend/templates/web/core/show_user.tmpl:418
 #: cdedb/frontend/templates/web/core/show_user.tmpl:419
 msgid "Method of Payment"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:427
 #: cdedb/frontend/templates/web/core/show_user.tmpl:431
 msgid "New Direct Debit Authorization …"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:430
 #: cdedb/frontend/templates/web/core/show_user.tmpl:434
 #, python-format
 msgid "You may issue a new %(direct_debit_link)s instead."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:478
 #: cdedb/frontend/templates/web/core/show_user.tmpl:482
 #: cdedb/frontend/templates/web/ml/index.tmpl:17
 msgid "Manage"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:485
 #: cdedb/frontend/templates/web/core/show_user.tmpl:489
 msgid "Mark defect"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:527
 #: cdedb/frontend/templates/web/core/show_user.tmpl:531
 msgid "Address Information"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:534
 #: cdedb/frontend/templates/web/core/show_user.tmpl:538
+#: cdedb/frontend/templates/web/core/show_user.tmpl:556
 #: cdedb/frontend/templates/web/core/show_user.tmpl:560
 msgid "Address hidden for member search"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:647
 #: cdedb/frontend/templates/web/core/show_user.tmpl:651
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:484
 msgid "Copy-Paste Template"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:677
 #: cdedb/frontend/templates/web/core/show_user.tmpl:681
 msgid "Send Password Reset Link"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:686
 #: cdedb/frontend/templates/web/core/show_user.tmpl:690
 msgid ""
 "Sends an email to this user, which contains a password reset link. This is "
@@ -12177,14 +12368,17 @@ msgid ""
 "Password” form on the login page."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:702
 #: cdedb/frontend/templates/web/core/show_user.tmpl:706
 msgid "Deactivate Account"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:709
 #: cdedb/frontend/templates/web/core/show_user.tmpl:713
 msgid "Reactivate Account"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:718
 #: cdedb/frontend/templates/web/core/show_user.tmpl:722
 msgid ""
 "Deactivates the account, so the user can no longer log in. This is intended "
@@ -12192,28 +12386,34 @@ msgid ""
 "be reversed at any time."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:725
 #: cdedb/frontend/templates/web/core/show_user.tmpl:729
 msgid ""
 "Reactivates the account, so the user can log in again. Make sure that the "
 "cause of the deactivation was removed."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:741
 #: cdedb/frontend/templates/web/core/show_user.tmpl:745
 msgid "Archive Account"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:743
 #: cdedb/frontend/templates/web/core/show_user.tmpl:747
 msgid "Cannot archive meta admins."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:744
 #: cdedb/frontend/templates/web/core/show_user.tmpl:748
 msgid "The Account will be archived."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:746
 #: cdedb/frontend/templates/web/core/show_user.tmpl:750
 msgid "Note"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:752
 #: cdedb/frontend/templates/web/core/show_user.tmpl:756
 msgid ""
 "Archives the Account. The User can no longer login and most Information is "
@@ -12222,37 +12422,45 @@ msgid ""
 "Account."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:770
 #: cdedb/frontend/templates/web/core/show_user.tmpl:774
 msgid "Invalidate Password"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:774
 #: cdedb/frontend/templates/web/core/show_user.tmpl:778
 msgid "Provide the user's email address for confirmation."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:780
 #: cdedb/frontend/templates/web/core/show_user.tmpl:784
 msgid ""
 "Invalidates the users password and terminates their sessions. They will have "
 "to set a new password."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:784
 #: cdedb/frontend/templates/web/core/show_user.tmpl:788
 msgid ""
 "If the user is an admin, you will need to send them a reset link to do that."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:787
 #: cdedb/frontend/templates/web/core/show_user.tmpl:791
 msgid "Please enter the user's email address to confirm this action."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:804
 #: cdedb/frontend/templates/web/core/show_user.tmpl:808
 msgid "Delete Account"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:806
 #: cdedb/frontend/templates/web/core/show_user.tmpl:810
 msgid "The Account will be deleted."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/show_user.tmpl:812
 #: cdedb/frontend/templates/web/core/show_user.tmpl:816
 msgid ""
 "Deletes all remaining Information associated with the Account. The Name will "
@@ -12689,7 +12897,9 @@ msgid "All Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:244
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:9
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:10
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:14
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:15
 msgid "Event Helpers"
 msgstr ""
@@ -13032,25 +13242,30 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:283
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:193
 #: cdedb/models/event_constraint_violations.py:1894
+#: cdedb/models/event_constraint_violations.py:1895
 msgid "Not enough Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:284
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:194
 #: cdedb/models/event_constraint_violations.py:1899
+#: cdedb/models/event_constraint_violations.py:1900
 msgid "Too many Attendees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:285
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:195
 #: cdedb/models/event_constraint_violations.py:1902
+#: cdedb/models/event_constraint_violations.py:1903
 msgid "Exactly full"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:286
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:196
 #: cdedb/models/event_constraint_violations.py:1784
+#: cdedb/models/event_constraint_violations.py:1785
 #: cdedb/models/event_constraint_violations.py:1798
+#: cdedb/models/event_constraint_violations.py:1799
 msgid "Course cancelled"
 msgstr ""
 
@@ -13208,6 +13423,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:197
 #: cdedb/models/event_constraint_violations.py:1797
+#: cdedb/models/event_constraint_violations.py:1798
 msgid "Course cancelled, has Attendees"
 msgstr ""
 
@@ -13267,6 +13483,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:56
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
 #: cdedb/models/event_constraint_violations.py:1680
+#: cdedb/models/event_constraint_violations.py:1681
 msgid "not visible"
 msgstr ""
 
@@ -14325,6 +14542,7 @@ msgid ""
 "not been cleansed yet."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:19
 #, python-format
 msgid ""
@@ -14335,14 +14553,17 @@ msgid ""
 "full access to all event data."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:19
 msgid "event admins"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:32
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:33
 msgid "ID of the new event helper"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:64
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:65
 #, python-format
 msgid "Remove %(name)s as event helper"
@@ -20906,22 +21127,27 @@ msgid "%(registration)s is too young for mixed lodging."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1525
+#: cdedb/models/event_constraint_violations.py:1526
 #, python-format
 msgid "Assigned to, but may not sleep on a camping mat in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1528
+#: cdedb/models/event_constraint_violations.py:1529
 #: cdedb/models/event_constraint_violations.py:1539
+#: cdedb/models/event_constraint_violations.py:1540
 #, python-format
 msgid "(Lodgement: %(lodgement)s)"
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1531
+#: cdedb/models/event_constraint_violations.py:1532
 #, python-format
 msgid "%(registration)s is assigned to, but may not sleep on a camping mat."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1535
+#: cdedb/models/event_constraint_violations.py:1536
 #, python-format
 msgid ""
 "%(registration)s is assigned to, but may not sleep on a camping mat in "
@@ -20929,147 +21155,180 @@ msgid ""
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1553
+#: cdedb/models/event_constraint_violations.py:1554
 msgid "An inhabitant is assigned to, but may not sleep on a camping mat."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1608
+#: cdedb/models/event_constraint_violations.py:1609
 #, python-format
 msgid "Has no lodgement in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1610
+#: cdedb/models/event_constraint_violations.py:1611
 #, python-format
 msgid "%(registration)s has no lodgement in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1670
+#: cdedb/models/event_constraint_violations.py:1671
 msgid "Is hidden and registration is open or about to start."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1672
+#: cdedb/models/event_constraint_violations.py:1673
 #, python-format
 msgid "%(course)s is hidden and registration is open or about to start."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1712
+#: cdedb/models/event_constraint_violations.py:1713
 #, python-format
 msgid "Taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1714
+#: cdedb/models/event_constraint_violations.py:1715
 #, python-format
 msgid ""
 "%(course)s is taking place in mutually exclusive tracks (%(track_list)s)."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1775
+#: cdedb/models/event_constraint_violations.py:1776
 #, python-format
 msgid "Not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1777
+#: cdedb/models/event_constraint_violations.py:1778
 #, python-format
 msgid "%(course)s is not offered in %(track)s but has %(num)s attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1782
+#: cdedb/models/event_constraint_violations.py:1783
 #, python-format
 msgid "Cancelled but has %(num)s attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1786
+#: cdedb/models/event_constraint_violations.py:1787
 #, python-format
 msgid "%(course)s is cancelled in %(track)s but has %(num)s attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1866
+#: cdedb/models/event_constraint_violations.py:1867
 #, python-format
 msgid "Too few attendees (%(num)s < %(min_size)s)."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1868
+#: cdedb/models/event_constraint_violations.py:1869
 #, python-format
 msgid "%(course)s has too few attendees (%(num)s < %(min_size)s) in %(track)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1874
+#: cdedb/models/event_constraint_violations.py:1875
 #, python-format
 msgid "Too many attendees (%(num)s > %(max_size)s)."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1876
+#: cdedb/models/event_constraint_violations.py:1877
 #, python-format
 msgid ""
 "%(course)s has too many attendees (%(num)s > %(max_size)s) in %(track)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1941
+#: cdedb/models/event_constraint_violations.py:1942
 #, python-format
 msgid "%(num)s attendees but no instructors."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1943
+#: cdedb/models/event_constraint_violations.py:1944
 #, python-format
 msgid "%(course)s has %(num)s attendees but no instructors in %(track)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1945
+#: cdedb/models/event_constraint_violations.py:1946
 #, python-format
 msgid "%(num)s instructors but no attendees."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1947
+#: cdedb/models/event_constraint_violations.py:1948
 #, python-format
 msgid "%(course)s has %(num)s instructors but no attendees in %(track)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1957
+#: cdedb/models/event_constraint_violations.py:1958
 msgid "Lonely attendees"
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:1957
+#: cdedb/models/event_constraint_violations.py:1958
 msgid "Lonely instructors"
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2040
+#: cdedb/models/event_constraint_violations.py:2041
 #: cdedb/models/event_constraint_violations.py:2063
+#: cdedb/models/event_constraint_violations.py:2064
 msgid "Overfull lodgement."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2042
+#: cdedb/models/event_constraint_violations.py:2043
 #, python-format
 msgid "%(lodgement)s is overfull in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2044
+#: cdedb/models/event_constraint_violations.py:2045
 #: cdedb/models/event_constraint_violations.py:2071
+#: cdedb/models/event_constraint_violations.py:2072
 msgid "Underfull lodgement."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2046
+#: cdedb/models/event_constraint_violations.py:2047
 #, python-format
 msgid "%(lodgement)s is underfull in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2084
+#: cdedb/models/event_constraint_violations.py:2085
 msgid "Too many camping mats."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2092
+#: cdedb/models/event_constraint_violations.py:2093
 msgid "Not enough camping mats."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2143
+#: cdedb/models/event_constraint_violations.py:2144
 #: cdedb/models/event_constraint_violations.py:2157
+#: cdedb/models/event_constraint_violations.py:2158
 msgid "Mixed with non-mixing inhabitants."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2145
+#: cdedb/models/event_constraint_violations.py:2146
 #, python-format
 msgid "%(lodgement)s is mixed with non-mixing inhabitants in %(part)s."
 msgstr ""
 
 #: cdedb/models/event_constraint_violations.py:2179
+#: cdedb/models/event_constraint_violations.py:2180
 msgid "Event fees should be collected at the Skatbank account."
 msgstr ""
 

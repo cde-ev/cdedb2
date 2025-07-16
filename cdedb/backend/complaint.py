@@ -39,6 +39,7 @@ from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
+from cdedb.database.constants import ComplaintLogCodes
 from cdedb.database.query import DatabaseValue_s
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -93,6 +94,72 @@ class ComplaintBackend(AbstractBackend):
         """List all enforcers."""
         data = self.query_all(rs, "SELECT persona_id FROM complaint.enforcers", [])
         return {e['persona_id'] for e in data}
+
+    @access("complaint_admin")
+    def add_helper(
+        self, rs: RequestState, persona_id: vtypes.ID, kind: str
+    ) -> DefaultReturnCode:
+        """Add a new enforcer or monitor.
+
+        :param kind: "enforcer" or "monitor"
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+        kind = affirm(str, kind)
+        if kind not in {"enforcer", "monitor"}:
+            raise ValueError(n_("Unknown helper kind."))
+        if not self.core.verify_id(rs, persona_id):
+            raise ValueError(n_("Unknown user."))
+        if not self.core.verify_persona(rs, persona_id, {"event"}):
+            raise ValueError(n_("This persona is not an event user."))
+
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, f"complaint.{kind}s", {'persona_id': persona_id})
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=(
+                        ComplaintLogCodes.enforcer_added
+                        if kind == "enforcer"
+                        else ComplaintLogCodes.monitor_added
+                    ),
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
+
+    @access("complaint_admin")
+    def remove_helper(
+        self, rs: RequestState, persona_id: vtypes.ID, kind: str
+    ) -> DefaultReturnCode:
+        """Remove enforcer or monitor privileges for a persona.
+
+        :param kind: "enforcer" or "monitor"
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+        kind = affirm(str, kind)
+        if kind not in {"enforcer", "monitor"}:
+            raise ValueError(n_("Unknown helper kind."))
+        if not self.core.verify_id(rs, persona_id):
+            raise ValueError(n_("Unknown user."))
+        if not self.core.verify_persona(rs, persona_id, {"event"}):
+            raise ValueError(n_("This persona is not an event user."))
+
+        with Atomizer(rs):
+            ret = self.sql_delete(
+                rs, f"complaint.{kind}s", {persona_id}, entity_key="persona_id"
+            )
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=(
+                        ComplaintLogCodes.enforcer_removed
+                        if kind == "enforcer"
+                        else ComplaintLogCodes.monitor_removed
+                    ),
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
 
     @access("persona")
     def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
