@@ -47,23 +47,16 @@
             {% endif %}
             </div>
         {% endif %}
-        {% if user.admin_views.intersection(("complaint_admin", "complaint_measures")) %}
+        {% if "complaint" in user.admin_views %}
             <div class="list-group tear-down">
-                {% if "complaint_admin" in user.admin_views %}
-                    {{ util.href(cdedblink("core/complaint_index"), gettext("Case Archive"), aclass="list-group-item",
-                                 icon="gavel", active=(sidenav_active=='complaint_index')) }}
-                {% endif %}
-                {% if "complaint_measures" in user.admin_views %}
-                    {{ util.href(cdedblink("core/measures"), gettext("Measure Overview"), aclass="list-group-item",
-                                 icon="shield-halved", active=(sidenav_active=='show_measures')) }}
-                {% endif %}
-                {% if "complaint_admin" in user.admin_views %}
-                    {# TODO: who should see this list? Only admins, or monitors and enforcers too? Or public to everyone, like event helpers? #}
-                    {# util.href(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), aclass="list-group-item",
-                                 icon="handshake-angle", active=(sidenav_active=='complaint_helpers')) #}
-                    {{ util.href(cdedblink("core/view_complaint_log"), gettext("Complaint Log"), aclass="list-group-item",
-                            icon="far fa-list-alt", active=(sidenav_active=='complaint_log')) }}
-                {% endif %}
+                {{ util.href(cdedblink("core/complaint_index"), gettext("Case Archive"), aclass="list-group-item",
+                             icon="gavel", active=(sidenav_active=='complaint_index')) }}
+                {{ util.href(cdedblink("core/measures"), gettext("Measure Overview"), aclass="list-group-item",
+                             icon="shield-halved", active=(sidenav_active=='show_measures')) }}
+                {# util.href(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), aclass="list-group-item",
+                             icon="handshake-angle", active=(sidenav_active=='complaint_helpers')) #}
+                {{ util.href(cdedblink("core/view_complaint_log"), gettext("Complaint Log"), aclass="list-group-item",
+                        icon="far fa-list-alt", active=(sidenav_active=='complaint_log')) }}
             </div>
         {% endif %}
         {% if "core" in user.admin_views %}
@@ -83,6 +76,6 @@
             (gettext("Admin Administration"), ["meta_admin"], None),
             (gettext("Core Administration"), ["core"], None),
             (gettext("Auditor"), ["auditor"], None),
-            (gettext("Complaints"), ["complaint_measures", "complaint_admin"], None),
+            (gettext("Complaints"), ["complaint"], None),
         )) }}
 {% endblock %}
