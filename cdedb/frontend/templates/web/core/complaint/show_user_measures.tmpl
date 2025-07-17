@@ -78,7 +78,7 @@
                     {%- if not loop.first -%}, {% endif -%}
                     {{ util.persona_anchor(authors[author_id]) -}}
                 {% endfor %}
-                {% if "complaint_admin" in user.roles %}
+                {% if "complaint" in user.admin_views %}
                     –
                     {% trans case=util.href(
                             cdedblink("core/show_case", {'case_id': entry['case_id']}),

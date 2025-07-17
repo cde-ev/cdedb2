@@ -1105,6 +1105,7 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
         concerned_id = affirm(vtypes.ID, concerned_id)
+        is_active = affirm_optional(bool, is_active)
         if not (
             {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             or concerned_id == rs.user.persona_id
@@ -1143,6 +1144,7 @@ class ComplaintBackend(AbstractBackend):
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
     ) -> dict[int, int]:
+        is_active = affirm_optional(bool, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
         else:
