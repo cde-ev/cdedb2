@@ -188,17 +188,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
-        selectize_data = [
-            {'id': version['attachment_id'], 'name': version['title']}
-            for version in xsorted(
-                attachment_versions.values(),
-                key=EntitySorter.attachment)
-        ]
 
-        return self.render(rs, "ballot/configure_ballot", {
-            'attachment_entries': attachment_entries,
-            'selectize_data': selectize_data,
-        }, get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS))
+        return self.render(
+            rs,
+            "ballot/configure_ballot",
+            {'attachment_entries': attachment_entries},
+            get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS)
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -657,12 +653,6 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
-        selectize_data = [
-            {'id': version['attachment_id'], 'name': version['title']}
-            for version in xsorted(
-                attachment_versions.values(),
-                key=EntitySorter.attachment)
-        ]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
@@ -671,10 +661,12 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
-        return self.render(rs, "ballot/configure_ballot", {
-            "attachment_entries": attachment_entries,
-            "selectize_data": selectize_data,
-        }, get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS))
+        return self.render(
+            rs,
+            "ballot/configure_ballot",
+            {"attachment_entries": attachment_entries},
+            get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS)
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
