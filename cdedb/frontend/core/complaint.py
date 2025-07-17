@@ -1010,7 +1010,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
         if (
-            not {"complaint_admin", "complaint.enforcer"} & rs.user.roles
+            not {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             and persona_id != rs.user.persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))

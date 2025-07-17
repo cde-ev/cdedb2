@@ -117,11 +117,10 @@
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
                 {% endif %}
-            {% endif %}
-            {# independently of quoteable, since complaint admins may be event-only users #}
-            {% if "complaint" in user.admin_views %}
-                {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
-                             gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
+                {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
+                    {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
+                                 gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
+                {% endif %}
             {% endif %}
         </div>
     {% endif %}

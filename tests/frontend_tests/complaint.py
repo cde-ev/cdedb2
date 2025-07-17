@@ -679,7 +679,7 @@ class TestComplaintFrontend(FrontendTest):
         with self.switch_user("anton"):
             _assertHidden()
 
-    @as_users("simon", maintain_data=True)
+    @as_users("simon")
     def test_user_measures(self) -> None:
         self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
         self.assertTitle("Bertå Beispiel – Maßnahmen")
@@ -704,13 +704,20 @@ class TestComplaintFrontend(FrontendTest):
 
         self.traverse("Anton Administrator", "Maßnahmen$")
         self.assertTitle("Anton Administrator – Maßnahmen")
-        self.assertPresence("Derzeit sind keine Maßnahmen in Kraft.")
+        self.assertPresence("Es gibt keine Maßnahmen gegen diese Person.")
 
-    @as_users("berta", maintain_data=True)
+    @as_users("berta")
     def test_user_measures_unprivileged(self) -> None:
         self.get("/core/persona/1/measures", status=403)
         self.get("/core/persona/9/measures", status=403)
-        self.get("/core/persona/2/measures")
+
+        self.traverse("Bertå")
+        self.assertTitle("Bertå Beispiel")
+        measure_link = "/core/persona/2/measures"
+        self.assertNonPresence("Maßnahmen")
+        self.assertNoLink(measure_link)
+
+        self.get(measure_link)
         self.assertTitle("Bertå Beispiel – Maßnahmen")
         self.assertPresence("Dr. Bertå Beispiel MdB", div="global-information")
         self.assertPresence(

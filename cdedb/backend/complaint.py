@@ -1104,9 +1104,9 @@ class ComplaintBackend(AbstractBackend):
     def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
+        concerned_id = affirm(vtypes.ID, concerned_id)
         if not (
-            "complaint_admin" in rs.user.roles
-            or "complaint.enforcer" in rs.user.realm_roles
+            {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
@@ -1203,8 +1203,11 @@ class ComplaintBackend(AbstractBackend):
             ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
             entry_ids,
         )
-        if not {"complaint_admin", "complaint.enforcer"} & rs.user.roles and any(
-            entry['concerned_id'] != rs.user.persona_id for entry in entry_data
+        if not {
+            "complaint_admin",
+            "complaint.enforcer",
+        } & rs.user.all_roles and not all(
+            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
         ):
             raise PrivilegeError
         for e in entry_data:

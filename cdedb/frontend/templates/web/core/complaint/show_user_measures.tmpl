@@ -78,7 +78,7 @@
                     {%- if not loop.first -%}, {% endif -%}
                     {{ util.persona_anchor(authors[author_id]) -}}
                 {% endfor %}
-                {% if user.roles.intersection(["complaint_admin", "complaint.enforcer"]|set) %}
+                {% if "complaint_admin" in user.roles %}
                     –
                     {% trans case=util.href(
                             cdedblink("core/show_case", {'case_id': entry['case_id']}),
@@ -95,7 +95,7 @@
     {% else %}
         <p class="text-muted">
             {% trans %}
-                Currently, there are no active measures.
+                There are no measures targeting this persona.
             {% endtrans %}
         </p>
     {% endfor %}

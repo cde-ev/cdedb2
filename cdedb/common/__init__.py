@@ -140,6 +140,14 @@ class User:
         self.admin_views: set[AdminView] = set()
 
     @property
+    def all_roles(self) -> set[Role]:
+        return self.roles.union(
+            f"{realm}.{realm_role}"
+            for realm, realm_roles in self.realm_roles.items()
+            for realm_role in realm_roles
+        )
+
+    @property
     def available_admin_views(self) -> set[AdminView]:
         return roles_to_admin_views(self.roles | set(chain(*self.realm_roles.values())))
 
