@@ -22,7 +22,7 @@ from cdedb.database.constants import (
     MailinglistTypes,
 )
 from cdedb.database.query import DatabaseValue_s
-from cdedb.models.common import CdEDataclass, MetaFlag as F, requestdict_field_spec
+from cdedb.models.common import CdEDataclass, MetaFlag as Meta, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class Mailinglist(CdEDataclass):
 
     moderators: set[vtypes.ID]
     whitelist: set[vtypes.Email] = dataclasses.field(
-        metadata=F.validate_creation_optional.as_dict)
+        metadata=Meta.validate_creation_optional.as_dict)
 
     description: Optional[str]
     additional_footer: Optional[str]

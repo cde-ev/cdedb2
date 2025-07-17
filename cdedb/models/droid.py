@@ -99,7 +99,7 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
-from cdedb.models.common import CdEDataclass, MetaFlag as F
+from cdedb.models.common import CdEDataclass, MetaFlag as Meta
 from cdedb.models.event import EventDataclass
 
 
@@ -259,25 +259,25 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     notes: str | None  #: Configurable notes field.
     #: Expiration time. Set once during creation.
     etime: datetime.datetime = field(
-        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
+        metadata=(Meta.validate_update_exclude | Meta.request_update_exclude).as_dict)
 
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime = field(
         default_factory=now, kw_only=True,
-        metadata=(F.validate_exclude | F.request_exclude | F.asdict_exclude).as_dict,
+        metadata=(Meta.validate_exclude | Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
     #: Revocation time. Automatically set by event backend on revocation.
     rtime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(F.validate_exclude | F.request_exclude | F.asdict_exclude).as_dict,
+        metadata=(Meta.validate_exclude | Meta.request_exclude | Meta.asdict_exclude).as_dict,
 
     )
     #: Last access time. Automatically updated by session backend on every request.
     atime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(F.validate_exclude | F.request_exclude | F.asdict_exclude).as_dict,
+        metadata=(Meta.validate_exclude | Meta.request_exclude | Meta.asdict_exclude).as_dict,
 )
 
     # Implementations of inherited methods.
@@ -319,7 +319,7 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
 
     #: ID of the event this token is linked to. May not change.
     event_id: vtypes.ID = field(
-        metadata=(F.validate_update_exclude | F.request_update_exclude).as_dict)
+        metadata=(Meta.validate_update_exclude | Meta.request_update_exclude).as_dict)
 
     #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"
