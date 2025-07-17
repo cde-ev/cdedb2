@@ -1027,7 +1027,8 @@ class TestComplaintBackend(BackendTest):
             {7, 8}, self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
-        case = self.complaint.get_case(self.key, case_id)
+        with self.switch_user("simon"):
+            case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
@@ -1040,7 +1041,8 @@ class TestComplaintBackend(BackendTest):
             "description": "Oops!... I Did It Again",
             "authors": {3},
         }
-        self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
+        with self.switch_user("simon"):
+            self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
         self.assertEqual(
             set(),
@@ -1049,7 +1051,8 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
-        case = self.complaint.get_case(self.key, case_id)
+        with self.switch_user("simon"):
+            case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
