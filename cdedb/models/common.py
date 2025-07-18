@@ -52,49 +52,44 @@ class MetaFlag(Flag):
     # validation
 
     validate_creation_exclude = auto()
-    """Omit this field from `cls.validation_fields(creation=True)`.\\
+    """Omit this field from `cls.validation_fields(creation=True)`.
     Can be used to make use of SQL default values."""
     validate_update_exclude = auto()
-    """Omit this field from `cls.validation_fields(creation=False)`.\\
+    """Omit this field from `cls.validation_fields(creation=False)`.
     Can be used to make a field immutable."""
     validate_exclude = validate_creation_exclude | validate_update_exclude
-    """Omit this field from `cls.validation_fields()`.\\
+    """Omit this field from `cls.validation_fields()`.
     Can be used for fields that are magically inserted elsewhere."""
     validate_creation_optional = auto()
-    """Make this field optional in `cls.validation_fields(creation=True)`.\\
+    """Make this field optional in `cls.validation_fields(creation=True)`.
     Can be used to make use of SQL default values, while also allowing overrides."""
 
     # request
 
     request_creation_exclude = auto()
-    """Omit this field from `cls.requestdict_fields(creation=True)`.\\
-    """
+    """Omit this field from `cls.requestdict_fields(creation=True)`."""
     request_update_exclude = auto()
-    """Omit this field from `cls.requestdict_fields(creation=False)`.\\
-    """
+    """Omit this field from `cls.requestdict_fields(creation=False)`."""
     request_exclude = request_creation_exclude | request_update_exclude
-    """Exclude the field from `cls.requestdict_fields()`.\\
+    """Exclude the field from `cls.requestdict_fields()`.
     Can be used for fields that are not submitted via form, but taken from URL."""
     request_include = auto()
-    """Include the field in `cls.requestdict_fields()` even if it would otherwise not be.\\
-    """
+    """Include the field in `cls.requestdict_fields()` even if it would otherwise not be."""
 
     # database
 
     database_exclude = auto()
     """Exclude the field from `cls.database_fields()`, which excludes it from
-    being written to or read from the database.\\
+    being written to or read from the database.
     Can be used for fields that are specifically calculated or magically inserted."""
-
     database_include = auto()
-    """Include the field in `cls.database_fields()` even if it would otherwise not be.\\
+    """Include the field in `cls.database_fields()` even if it would otherwise not be.
     Can be used to select fields with type list or set from the database."""
 
     # asdict
 
     asdict_exclude = auto()
-    """Exclude the field from `self.asdict()`.\\
-    """
+    """Exclude the field from `self.asdict()`."""
 
     @property
     def as_dict(self) -> dict[str, Self]:
