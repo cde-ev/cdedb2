@@ -1014,6 +1014,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
             and persona_id != rs.user.persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if (
+            "complaint_admin" not in rs.user.roles
+            and not self.coreproxy.is_relative_admin(rs, persona_id)
+            and persona_id != rs.user.persona_id
+        ):
+            del rs.ambience['persona']['username']
 
         measure_ids = self.complaintproxy.list_user_measures(
             rs, persona_id, is_active=None
