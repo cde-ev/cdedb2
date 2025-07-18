@@ -2,6 +2,7 @@
 
 import abc
 import base64
+import copy
 import dataclasses
 import datetime
 import decimal
@@ -423,8 +424,9 @@ class GenesisCaseMl(GenesisCase):
         return super(GenesisCase, cls).from_database(genesis_data)
 
     def get_persona_creation(self) -> MlPersona:
-        self.persona.is_ml_realm = True
-        return self.persona
+        persona = copy.deepcopy(self.persona)
+        persona.is_ml_realm = True
+        return persona
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -450,9 +452,10 @@ class GenesisCaseEvent(GenesisCase):
         return super(GenesisCase, cls).from_database(genesis_data)
 
     def get_persona_creation(self) -> EventPersona:
-        self.persona.is_ml_realm = True
-        self.persona.is_event_realm = True
-        return self.persona
+        persona = copy.deepcopy(self.persona)
+        persona.is_ml_realm = True
+        persona.is_event_realm = True
+        return persona
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -479,10 +482,11 @@ class GenesisCaseCdE(GenesisCase):
         return super(GenesisCase, cls).from_database(genesis_data)
 
     def get_persona_creation(self) -> EventPersona:
-        self.persona.is_ml_realm = True
-        self.persona.is_event_realm = True
-        self.persona.is_assembly_realm = True
-        self.persona.is_cde_realm = True
-        self.persona.is_member = True
-        self.persona.trial_member = True
-        return self.persona
+        persona = copy.deepcopy(self.persona)
+        persona.is_ml_realm = True
+        persona.is_event_realm = True
+        persona.is_assembly_realm = True
+        persona.is_cde_realm = True
+        persona.is_member = True
+        persona.trial_member = True
+        return persona
