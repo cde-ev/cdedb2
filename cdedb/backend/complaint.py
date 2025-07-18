@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-import base64
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, cast
-
-import psycopg2.extensions
-from cryptography.fernet import Fernet
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
-    Silencer,
     access,
     affirm_dataclass,
     affirm_set_validation as affirm_set,
@@ -20,23 +15,19 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional,
     singularize,
 )
-from cdedb.backend.event import EventBackend
 from cdedb.common import (
     BytesLike,
     CdEDBLog,
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
-    DeletionBlockers,
     RequestState,
     now,
-    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import ComplaintLogCodes

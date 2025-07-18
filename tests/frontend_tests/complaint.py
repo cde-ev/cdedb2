@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-import datetime
 
 import cdedb.database.constants as const
-from cdedb.common.query.log_filter import ComplaintLogFilter
 from tests.common import (
     FrontendTest,
     as_users,

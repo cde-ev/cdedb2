@@ -5,7 +5,6 @@ from itertools import chain
 from typing import Any, Optional
 
 import werkzeug.exceptions
-from markupsafe import Markup
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
