@@ -258,8 +258,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     title: str  #: Configurable title.
     notes: str | None  #: Configurable notes field.
     #: Expiration time. Set once during creation.
-    etime: datetime.datetime = field(
-        metadata=(Meta.validate_update_exclude | Meta.request_update_exclude).as_dict)
+    etime: datetime.datetime = field(metadata=Meta.input_update_exclude.as_dict)
 
     # Special logging fields.
 
@@ -318,8 +317,7 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
     name = "orga"
 
     #: ID of the event this token is linked to. May not change.
-    event_id: vtypes.ID = field(
-        metadata=(Meta.validate_update_exclude | Meta.request_update_exclude).as_dict)
+    event_id: vtypes.ID = field(metadata=Meta.input_update_exclude.as_dict)
 
     #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"

@@ -78,6 +78,8 @@ class MetaFlag(Flag):
 
     # validation + request
 
+    input_update_exclude = validate_update_exclude | request_update_exclude
+    """Omit this field from request extraction and validation during entity updates."""
     input_exclude = validate_exclude | request_exclude
     """Omit this field from request extraction and validation."""
 
