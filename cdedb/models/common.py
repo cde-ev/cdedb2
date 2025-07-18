@@ -76,6 +76,11 @@ class MetaFlag(Flag):
     request_include = auto()
     """Include the field in `cls.requestdict_fields()` even if it would otherwise not be."""
 
+    # validation + request
+
+    input_exclude = validate_exclude | request_exclude
+    """Omit this field from request extraction and validation."""
+
     # database
 
     database_exclude = auto()

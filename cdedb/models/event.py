@@ -300,7 +300,7 @@ class EventPart(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID = dataclasses.field(
-        metadata=(Meta.validate_exclude | Meta.request_exclude).as_dict,
+        metadata=Meta.input_exclude.as_dict,
     )
 
     title: str
@@ -460,7 +460,7 @@ class EventFee(EventDataclass):
     )
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata=(Meta.validate_exclude | Meta.request_exclude).as_dict,
+        metadata=Meta.input_exclude.as_dict,
     )
 
     kind: const.EventFeeType
@@ -523,7 +523,7 @@ class EventField(EventDataclass):
     )
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata=(Meta.validate_exclude | Meta.request_exclude).as_dict,
+        metadata=Meta.input_exclude.as_dict,
     )
 
     # Internal metadata.
