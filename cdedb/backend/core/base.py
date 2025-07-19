@@ -1480,7 +1480,7 @@ class CoreBaseBackend(AbstractBackend):
             eligible for archival in between.
 
         Things that prevent such automated archival:
-            * The persona having any admin bit.
+            * The persona having any admin bit or realm helper role.
             * The persona being a member.
             * The persona already being archived.
             * The persona having logged in in the last two years.
@@ -1501,6 +1501,18 @@ class CoreBaseBackend(AbstractBackend):
 
             # Do some basic sanity checks.
             if any(persona[admin_key] for admin_key in ADMIN_KEYS):
+                return False
+
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
                 return False
 
             if persona['is_member'] or persona['is_archived']:
@@ -1666,6 +1678,18 @@ class CoreBaseBackend(AbstractBackend):
             # by two meta admins before.
             if any(persona[key] for key in ADMIN_KEYS):
                 raise ArchiveError(n_("Cannot archive admins."))
+
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
+                raise ArchiveError(n_("Cannot archive complaint and event helpers."))
 
             #
             # 2. Handle lastschrift
