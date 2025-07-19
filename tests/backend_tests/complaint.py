@@ -1008,7 +1008,7 @@ class TestComplaintBackend(BackendTest):
             log_expecation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
         )
 
-    @as_users("simon")
+    @as_users("simon", "janis")
     def test_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
@@ -1086,7 +1086,7 @@ class TestComplaintBackend(BackendTest):
             with self.assertRaises(PrivilegeError):
                 self.complaint.get_measures(self.key, {measure_entry_id})
 
-    @as_users("simon")
+    @as_users("simon", "janis")
     def test_measures(self) -> None:
         measure_ids_expectation = {6: 1}
         self.assertEqual(

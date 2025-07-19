@@ -736,3 +736,17 @@ class TestComplaintFrontend(FrontendTest):
             div="entry8",
         )
         self.assertNonPresence("aus Fall 1")
+
+    @as_users("simon", "janis", maintain_data=True)
+    def test_measure_overview(self) -> None:
+        self.traverse("Maßnahmenübersicht")
+        self.assertTitle("Maßnahmenübersicht")
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
+        self.assertPresence("von Charly Clown", div='entry6')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+        )
+        if self.user_in("simon"):
+            self.traverse("Fall 1")
+        else:
+            self.assertNonPresence("Fall 1")
