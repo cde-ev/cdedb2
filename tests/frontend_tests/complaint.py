@@ -749,4 +749,5 @@ class TestComplaintFrontend(FrontendTest):
         if self.user_in("simon"):
             self.traverse("Fall 1")
         else:
-            self.assertNonPresence("Fall 1")
+            self.assertPresence("Fall 1")
+            self.assertNoLink("case/1/show")

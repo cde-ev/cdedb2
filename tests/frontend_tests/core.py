@@ -157,9 +157,8 @@ class TestCoreFrontend(FrontendTest):
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
-        # TODO: Add Fall-Unterstützer
         complaint_admin = {"Fallarchiv", "Fall-Log"}
-        complaint_enforcer = {"Maßnahmenübersicht"}
+        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer"}
         complaint = complaint_admin | complaint_enforcer
 
         # admin of a realm without genesis cases

@@ -38,12 +38,12 @@
                         {%- if not loop.first -%}, {% endif -%}
                         {{ util.persona_anchor(personas[author_id]) -}}
                     {% endfor %}
-                    {% if 'complaint_admin' in user.roles -%}
+                    {% if 'complaint' in user.admin_views -%}
                         –
                         {% trans case=util.href(
                                 cdedblink("core/show_case", {'case_id': entry['case_id']}),
                                 gettext("Case %s")|s|format(entry['case_id']),
-                                active='complaint_admin' in user.roles)
+                                readonly='complaint_admin' not in user.roles)
                         %}
                             from {{ case }}
                         {% endtrans %}

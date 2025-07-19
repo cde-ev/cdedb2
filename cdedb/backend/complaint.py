@@ -95,6 +95,12 @@ class ComplaintBackend(AbstractBackend):
         data = self.query_all(rs, "SELECT persona_id FROM complaint.enforcers", [])
         return {e['persona_id'] for e in data}
 
+    @access("persona")
+    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all monitors."""
+        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
+        return {e['persona_id'] for e in data}
+
     @access("complaint_admin")
     def add_helper(
         self, rs: RequestState, persona_id: vtypes.ID, kind: str
@@ -160,12 +166,6 @@ class ComplaintBackend(AbstractBackend):
                     persona_id=persona_id,
                 )
         return ret
-
-    @access("persona")
-    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
-        """List all monitors."""
-        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
-        return {e['persona_id'] for e in data}
 
     def complaint_log(
         self,
