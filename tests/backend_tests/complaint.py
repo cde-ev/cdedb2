@@ -1132,12 +1132,8 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_enforcers(self) -> None:
         janis_id = USER_DICT['janis']['id']
-        rowena_id = USER_DICT['rowena']['id']
+        rowena_id = USER_DICT['kalif']['id']
         self.assertEqual({janis_id}, self.complaint.list_enforcers(self.key))
-
-        with self.assertRaises(ValueError) as cm:
-            self.complaint.add_enforcer(self.key, janis_id)
-        self.assertIn("is not an event user.", cm.exception.args[0])
 
         self.assertEqual(1001, self.complaint.add_enforcer(self.key, rowena_id))
         self.assertEqual(0, self.complaint.add_enforcer(self.key, rowena_id))

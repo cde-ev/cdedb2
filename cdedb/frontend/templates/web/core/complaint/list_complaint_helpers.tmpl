@@ -31,7 +31,7 @@
                 <script nonce="{{ csp_nonce }}">
                     $('#input-add-enforcer').cdedbSearchPerson(
                         '{{ cdedblink('core/select_persona') }}',
-                        {{ {'kind': 'event_user'}|tojson }},
+                        {{ {'kind': 'admin_persona'}|tojson }},
                         {{ enforcer_ids|list|tojson }},
                         false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                     );

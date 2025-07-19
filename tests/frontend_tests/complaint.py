@@ -756,7 +756,7 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fall-Unterstützer")
         self.assertTitle("Fall-Unterstützer")
         self.assertPresence("Janis", div="enforcer-list")
-        self.assertNonPresence("Rowena", div="enforcer-list")
+        self.assertNonPresence("Kalif", div="enforcer-list")
 
         f = self.response.forms['addenforcerform']
         f['persona_id'] = "DB-999-X"
@@ -765,10 +765,10 @@ class TestComplaintFrontend(FrontendTest):
         f['persona_id'] = "DB-999-7"
         self.submit(f, check_notification=False)
         self.assertPresence("Benutzer existiert nicht", div='addenforcerform')
-        f['persona_id'] = USER_DICT['rowena']['DB-ID']
+        f['persona_id'] = USER_DICT['kalif']['DB-ID']
         self.submit(f)
         self.assertPresence("Janis", div="enforcer-list")
-        self.assertPresence("Rowena", div="enforcer-list")
+        self.assertPresence("Kalif", div="enforcer-list")
 
         remove_form_id = f'removeenforcerform{USER_DICT["janis"]["id"]}'
         f = self.response.forms[remove_form_id]
@@ -779,5 +779,5 @@ class TestComplaintFrontend(FrontendTest):
         )
         f = self.response.forms[remove_form_id]
         self.submit(f)
-        self.assertPresence("Rowena", div="enforcer-list")
+        self.assertPresence("Kalif", div="enforcer-list")
         self.assertNonPresence("Janis", div="enforcer-list")

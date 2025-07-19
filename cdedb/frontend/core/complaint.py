@@ -1065,7 +1065,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """Grant enforcer privileges to a persona."""
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
-        if not self.coreproxy.verify_persona(rs, persona_id):
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.append_validation_error((
                 "persona_id",
                 ValueError(n_("This user does not exist or is archived.")),

@@ -92,10 +92,8 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a new enforcer."""
         persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id):
-            raise ValueError(n_("Unknown user."))
-        if not self.core.verify_persona(rs, persona_id, {"event"}):
-            raise ValueError(n_("This persona is not an event user."))
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
 
         with Atomizer(rs):
             if persona_id in self.list_enforcers(rs):
@@ -116,8 +114,8 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Remove enforcer privileges for a persona."""
         persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id):
-            raise ValueError(n_("Unknown user."))
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
 
         with Atomizer(rs):
             if persona_id not in self.list_enforcers(rs):
@@ -144,10 +142,8 @@ class ComplaintBackend(AbstractBackend):
     def add_monitor(self, rs: RequestState, persona_id: vtypes.ID) -> DefaultReturnCode:
         """Add a new monitor."""
         persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id):
-            raise ValueError(n_("Unknown user."))
-        if not self.core.verify_persona(rs, persona_id, {"event"}):
-            raise ValueError(n_("This persona is not an event user."))
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
 
         with Atomizer(rs):
             if persona_id in self.list_monitors(rs):
@@ -168,8 +164,8 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Remove monitor privileges for a persona."""
         persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id):
-            raise ValueError(n_("Unknown user."))
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
 
         with Atomizer(rs):
             if persona_id not in self.list_monitors(rs):
