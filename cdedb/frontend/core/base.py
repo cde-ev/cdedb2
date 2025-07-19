@@ -1413,6 +1413,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # meta admins
             "meta": self.coreproxy.list_admins(rs, "meta"),
             "core": self.coreproxy.list_admins(rs, "core"),
+            "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
