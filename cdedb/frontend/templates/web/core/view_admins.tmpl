@@ -18,11 +18,11 @@
     </p>
 
     {# Everyone can see meta admins #}
-    {{ util.h(n_("Meta-Admins")) }}
+    {{ util.h(n_("Meta admins")) }}
     <div class="p">
         {% trans %}
-            Meta-Admins may modify admin privileges of other users based on a
-            four-eye principle. One Meta-Admin may initiate a change, another has to
+            Meta admins may modify admin privileges of other users based on a
+            four-eye principle. One meta admin may initiate a change, another has to
             approve that change.
         {% endtrans %}
     </div>
@@ -31,10 +31,10 @@
     </div>
 
     {# Everyone can see core and complaint admins #}
-    {{ util.h(n_("Core-Admins")) }}
+    {{ util.h(n_("Core admins")) }}
     <div class="p">
         {% trans %}
-            Core-Admins may view and edit any other user account.
+            Core admins may view and edit any other user account.
             They may also approve account requests for all realms and they may
             approve pending changes of data fields needing review (address, birthday and name).
         {% endtrans %}
@@ -45,10 +45,10 @@
 
     {# Temporary, as a "feature switch": The realm becomes only active once there are associated admins. #}
     {% if admins["complaint"] %}
-    {{ util.h(n_("Complaint-Admins")) }}
+    {{ util.h(n_("Case archive admins")) }}
     <div class="p">
         {% trans %}
-            Complaint-Admins manage a repository for personal complaints and similar crises.
+            Case Archive Admins manage a repository for personal complaints and similar crises.
             As the case coordination, they form the control center of our complaints procedure.
             Additionally, they give advice and assign companions to involved individuals.
             Their privileges are restricted such that they may not access any complaints concerning themselves.
@@ -60,10 +60,10 @@
     {% endif %}
 
     {% if "cde" in user.roles %}
-        {{ util.h(n_("CdE-Admins")) }}
+        {{ util.h(n_("CdE admins")) }}
         <div class="p">
             {% trans %}
-                CdE-Admins may create, view and edit CdE-Users.
+                CdE admins may create, view and edit CdE-Users.
                 They may also manage past events that are displayed on profiles.
             {% endtrans %}
         </div>
@@ -71,10 +71,10 @@
             {{ slice_admins(admins["cde"]) }}
         </div>
 
-       {{ util.h(n_("Finance-Admins")) }}
+       {{ util.h(n_("Finance admins")) }}
         <div class="p">
             {% trans %}
-                Finance-Admins may manage direct debit authorizations and membership fee transactions.
+                Finance admins may manage direct debit authorizations and membership fee transactions.
                 They also handle semester management, i.e. the sending of payment notifications, as well
                 as the removal of inactive members and the updating of balances.
             {% endtrans %}
@@ -85,12 +85,12 @@
     {% endif %}
 
     {% if "event" in user.roles %}
-        {{ util.h(n_("Event-Admins")) }}
+        {{ util.h(n_("Event admins")) }}
         <div class="p">
             {% trans %}
-                Event-Admins may create DB-organized events and add and remove orgas to these events.
+                Event admins may create DB-organized events and add and remove orgas to these events.
                 They can also access the configuration as well as all registration data of these events.
-                Event-Admins may create and manage Event-Users, i.e. users with access to the event realm but not the CdE realm.
+                Event admins may create and manage Event-Users, i.e. users with access to the event realm but not the CdE realm.
                 This includes the approval of account requests.
                 They may manage and create event related mailinglists.
             {% endtrans %}
@@ -101,10 +101,10 @@
     {% endif %}
 
     {% if "ml" in user.roles %}
-        {{ util.h(n_("Mailinglist-Admins")) }}
+        {{ util.h(n_("Mailinglist admins")) }}
         <div class="p">
             {% trans %}
-                Mailinglist-Admins may manage and create all types of mailinglists.
+                Mailinglist admins may manage and create all types of mailinglists.
                 They may create, manage and approve requests for Mailinglist-Users, i.e. users that may only access mailinglists.
             {% endtrans %}
         </div>
@@ -112,10 +112,10 @@
             {{ slice_admins(admins["ml"]) }}
         </div>
 
-        {{ util.h(n_("CdElokal-Admins")) }}
+        {{ util.h(n_("CdElokal admins")) }}
         <div class="p">
             {% trans %}
-                CdElokal-Admins may manage and create CdElokal mailinglists.
+                CdElokal admins may manage and create CdElokal mailinglists.
                 They do not automatically have access to any user management, like creating and managing accounts.
             {% endtrans %}
         </div>
@@ -125,10 +125,10 @@
     {% endif %}
 
     {% if "assembly" in user.roles %}
-        {{ util.h(n_("Assembly-Admins")) }}
+        {{ util.h(n_("Assembly admins")) }}
         <div class="p">
             {% trans %}
-                Assembly-Admins may create and manage assemblies and ballots.
+                Assembly admins may create and manage assemblies and ballots.
                 They may create and manage Assembly-Users, i.e. users with access to assemblies, that are not CdE members.
                 They may also add these users as participants of assemblies.
             {% endtrans %}

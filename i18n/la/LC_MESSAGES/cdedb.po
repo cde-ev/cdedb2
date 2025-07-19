@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-07-06 16:24+0200\n"
+"POT-Creation-Date: 2025-07-19 16:41+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5108,7 +5108,7 @@ msgid "this user"
 msgstr ""
 
 #: cdedb/frontend/core/base.py:1804
-msgid "Privilege change waiting for approval by another Meta-Admin."
+msgid "Privilege change waiting for approval by another meta admin."
 msgstr ""
 
 #: cdedb/frontend/core/base.py:1809
@@ -5121,14 +5121,14 @@ msgstr ""
 
 #: cdedb/frontend/core/base.py:1842
 msgid ""
-"This privilege change is affecting your Meta-Admin privileges, so it has to "
-"be approved by another Meta-Admin."
+"This privilege change is affecting your meta admin privileges, so it has to "
+"be approved by another meta admin."
 msgstr ""
 
 #: cdedb/frontend/core/base.py:1847
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
-"another Meta-Admin."
+"another meta admin."
 msgstr ""
 
 #: cdedb/frontend/core/base.py:1883
@@ -10713,53 +10713,61 @@ msgid "Change Privileges"
 msgstr "signum arcanum muta"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:22
-msgid "Privilege changes will have to be approved by another Meta-Admin."
+msgid "Privilege changes will have to be approved by another meta admin."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
 #: cdedb/frontend/templates/web/util.tmpl:1094
-msgid "Meta-Admin"
+#, fuzzy
+msgid "Meta admin"
 msgstr "administrator administratorum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
 #: cdedb/frontend/templates/web/util.tmpl:1095
-msgid "Core-Admin"
+#, fuzzy
+msgid "Core admin"
 msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
 #: cdedb/frontend/templates/web/util.tmpl:1096
-msgid "CdE-Admin"
+#, fuzzy
+msgid "CdE admin"
 msgstr "administrator CdEi"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
 #: cdedb/frontend/templates/web/util.tmpl:1097
-msgid "Finance-Admin"
+#, fuzzy
+msgid "Finance admin"
 msgstr "administrator pecuniae"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
 #: cdedb/frontend/templates/web/util.tmpl:1098
-msgid "Event-Admin"
-msgstr "administrator eventuum"
+#, fuzzy
+msgid "Event admin"
+msgstr "administratores eventuum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:41
 #: cdedb/frontend/templates/web/util.tmpl:1102
 #, fuzzy
-msgid "Complaint-Admin"
-msgstr "administrator capitis"
+msgid "Case archive admin"
+msgstr "vestigium novum crea"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
 #: cdedb/frontend/templates/web/util.tmpl:1099
-msgid "Mailinglist-Admin"
+#, fuzzy
+msgid "Mailinglist admin"
 msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:45
 #: cdedb/frontend/templates/web/util.tmpl:1100
-msgid "CdElokal-Admin"
+#, fuzzy
+msgid "CdElokal admin"
 msgstr "administrator CdElocalis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:48
 #: cdedb/frontend/templates/web/util.tmpl:1101
-msgid "Assembly-Admin"
+#, fuzzy
+msgid "Assembly admin"
 msgstr "administrator coetuum"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:7
@@ -12817,36 +12825,36 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:21
 #, fuzzy
-msgid "Meta-Admins"
+msgid "Meta admins"
 msgstr "administrator administratorum"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:23
 msgid ""
-"Meta-Admins may modify admin privileges of other users based on a four-eye "
-"principle. One Meta-Admin may initiate a change, another has to approve that "
+"Meta admins may modify admin privileges of other users based on a four-eye "
+"principle. One meta admin may initiate a change, another has to approve that "
 "change."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:34
 #, fuzzy
-msgid "Core-Admins"
+msgid "Core admins"
 msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:36
 msgid ""
-"Core-Admins may view and edit any other user account. They may also approve "
+"Core admins may view and edit any other user account. They may also approve "
 "account requests for all realms and they may approve pending changes of data "
 "fields needing review (address, birthday and name)."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:48
 #, fuzzy
-msgid "Complaint-Admins"
-msgstr "administrator capitis"
+msgid "Case archive admins"
+msgstr "vestigium novum crea"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:50
 msgid ""
-"Complaint-Admins manage a repository for personal complaints and similar "
+"Case Archive Admins manage a repository for personal complaints and similar "
 "crises. As the case coordination, they form the control center of our "
 "complaints procedure. Additionally, they give advice and assign companions "
 "to involved individuals. Their privileges are restricted such that they may "
@@ -12855,23 +12863,23 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:63
 #, fuzzy
-msgid "CdE-Admins"
+msgid "CdE admins"
 msgstr "administrator CdEi"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:65
 msgid ""
-"CdE-Admins may create, view and edit CdE-Users. They may also manage past "
+"CdE admins may create, view and edit CdE-Users. They may also manage past "
 "events that are displayed on profiles."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:74
 #, fuzzy
-msgid "Finance-Admins"
+msgid "Finance admins"
 msgstr "administrator pecuniae"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:76
 msgid ""
-"Finance-Admins may manage direct debit authorizations and membership fee "
+"Finance admins may manage direct debit authorizations and membership fee "
 "transactions. They also handle semester management, i.e. the sending of "
 "payment notifications, as well as the removal of inactive members and the "
 "updating of balances."
@@ -12879,14 +12887,14 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
 #, fuzzy
-msgid "Event-Admins"
-msgstr "administrator eventuum"
+msgid "Event admins"
+msgstr "administratores eventuum"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:90
 msgid ""
-"Event-Admins may create DB-organized events and add and remove orgas to "
+"Event admins may create DB-organized events and add and remove orgas to "
 "these events. They can also access the configuration as well as all "
-"registration data of these events. Event-Admins may create and manage Event-"
+"registration data of these events. Event admins may create and manage Event-"
 "Users, i.e. users with access to the event realm but not the CdE realm. This "
 "includes the approval of account requests. They may manage and create event "
 "related mailinglists."
@@ -12894,36 +12902,36 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:104
 #, fuzzy
-msgid "Mailinglist-Admins"
+msgid "Mailinglist admins"
 msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:106
 msgid ""
-"Mailinglist-Admins may manage and create all types of mailinglists. They may "
+"Mailinglist admins may manage and create all types of mailinglists. They may "
 "create, manage and approve requests for Mailinglist-Users, i.e. users that "
 "may only access mailinglists."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:115
 #, fuzzy
-msgid "CdElokal-Admins"
+msgid "CdElokal admins"
 msgstr "administrator CdElocalis"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:117
 msgid ""
-"CdElokal-Admins may manage and create CdElokal mailinglists. They do not "
+"CdElokal admins may manage and create CdElokal mailinglists. They do not "
 "automatically have access to any user management, like creating and managing "
 "accounts."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
 #, fuzzy
-msgid "Assembly-Admins"
+msgid "Assembly admins"
 msgstr "administrator coetuum"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:130
 msgid ""
-"Assembly-Admins may create and manage assemblies and ballots. They may "
+"Assembly admins may create and manage assemblies and ballots. They may "
 "create and manage Assembly-Users, i.e. users with access to assemblies, that "
 "are not CdE members. They may also add these users as participants of "
 "assemblies."

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-07-06 16:24+0200\n"
+"POT-Creation-Date: 2025-07-19 16:41+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4998,7 +4998,7 @@ msgid "this user"
 msgstr "diesen Nutzer"
 
 #: cdedb/frontend/core/base.py:1804
-msgid "Privilege change waiting for approval by another Meta-Admin."
+msgid "Privilege change waiting for approval by another meta admin."
 msgstr ""
 "Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen "
 "Meta-Admin."
@@ -5013,8 +5013,8 @@ msgstr "Änderung der Admin-Privilegien nicht ausstehend."
 
 #: cdedb/frontend/core/base.py:1842
 msgid ""
-"This privilege change is affecting your Meta-Admin privileges, so it has to "
-"be approved by another Meta-Admin."
+"This privilege change is affecting your meta admin privileges, so it has to "
+"be approved by another meta admin."
 msgstr ""
 "Diese Änderung betrifft Deine Meta-Admin-Privilegien und muss daher von "
 "einem anderen Meta-Admin bestätigt werden."
@@ -5022,7 +5022,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1847
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
-"another Meta-Admin."
+"another meta admin."
 msgstr ""
 "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen und muss daher "
 "von einem anderen Meta-Admin bestätigt werden."
@@ -10754,55 +10754,55 @@ msgid "Change Privileges"
 msgstr "Privilegien ändern"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:22
-msgid "Privilege changes will have to be approved by another Meta-Admin."
+msgid "Privilege changes will have to be approved by another meta admin."
 msgstr ""
 "Änderungen der Admin-Privilegien müssen durch einen anderen Meta-Admin "
 "bestötigt werden."
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
 #: cdedb/frontend/templates/web/util.tmpl:1094
-msgid "Meta-Admin"
-msgstr "Meta-Admin"
+msgid "Meta admin"
+msgstr "Meta-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
 #: cdedb/frontend/templates/web/util.tmpl:1095
-msgid "Core-Admin"
-msgstr "Core-Admin"
+msgid "Core admin"
+msgstr "Core-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
 #: cdedb/frontend/templates/web/util.tmpl:1096
-msgid "CdE-Admin"
-msgstr "CdE-Admin"
+msgid "CdE admin"
+msgstr "CdE-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
 #: cdedb/frontend/templates/web/util.tmpl:1097
-msgid "Finance-Admin"
-msgstr "Finanz-Admin"
+msgid "Finance admin"
+msgstr "Finanz-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
 #: cdedb/frontend/templates/web/util.tmpl:1098
-msgid "Event-Admin"
-msgstr "Veranstaltungs-Admin"
+msgid "Event admin"
+msgstr "Veranstaltungs-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:41
 #: cdedb/frontend/templates/web/util.tmpl:1102
-msgid "Complaint-Admin"
-msgstr "Fallarchiv-Admin"
+msgid "Case archive admin"
+msgstr "Fallarchiv-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
 #: cdedb/frontend/templates/web/util.tmpl:1099
-msgid "Mailinglist-Admin"
-msgstr "Mailinglisten-Admin"
+msgid "Mailinglist admin"
+msgstr "Mailinglisten-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:45
 #: cdedb/frontend/templates/web/util.tmpl:1100
-msgid "CdElokal-Admin"
-msgstr "CdElokal-Admin"
+msgid "CdElokal admin"
+msgstr "CdElokal-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:48
 #: cdedb/frontend/templates/web/util.tmpl:1101
-msgid "Assembly-Admin"
-msgstr "Versammlungs-Admin"
+msgid "Assembly admin"
+msgstr "Versammlungs-Admins"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:7
 #: cdedb/frontend/templates/web/core/change_user.tmpl:15
@@ -12869,13 +12869,13 @@ msgstr ""
 "Daten haben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:21
-msgid "Meta-Admins"
+msgid "Meta admins"
 msgstr "Meta-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:23
 msgid ""
-"Meta-Admins may modify admin privileges of other users based on a four-eye "
-"principle. One Meta-Admin may initiate a change, another has to approve that "
+"Meta admins may modify admin privileges of other users based on a four-eye "
+"principle. One meta admin may initiate a change, another has to approve that "
 "change."
 msgstr ""
 "Meta-Admins können Adminprivilegien anderer Nutzer nach einem Vier-Augen-"
@@ -12883,12 +12883,12 @@ msgstr ""
 "muss sie bestätigen."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:34
-msgid "Core-Admins"
+msgid "Core admins"
 msgstr "Core-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:36
 msgid ""
-"Core-Admins may view and edit any other user account. They may also approve "
+"Core admins may view and edit any other user account. They may also approve "
 "account requests for all realms and they may approve pending changes of data "
 "fields needing review (address, birthday and name)."
 msgstr ""
@@ -12898,13 +12898,12 @@ msgstr ""
 "Geburtsdatum und Name), bestätigen."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:48
-#, fuzzy
-msgid "Complaint-Admins"
-msgstr "Fallarchiv-Admin"
+msgid "Case archive admins"
+msgstr "Fallarchiv-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:50
 msgid ""
-"Complaint-Admins manage a repository for personal complaints and similar "
+"Case Archive Admins manage a repository for personal complaints and similar "
 "crises. As the case coordination, they form the control center of our "
 "complaints procedure. Additionally, they give advice and assign companions "
 "to involved individuals. Their privileges are restricted such that they may "
@@ -12918,12 +12917,12 @@ msgstr ""
 "sie selbst beteiligt sind."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:63
-msgid "CdE-Admins"
+msgid "CdE admins"
 msgstr "CdE-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:65
 msgid ""
-"CdE-Admins may create, view and edit CdE-Users. They may also manage past "
+"CdE admins may create, view and edit CdE-Users. They may also manage past "
 "events that are displayed on profiles."
 msgstr ""
 "CdE-Admins können CdE-Nutzer einsehen, anlegen und verwalten. Außerdem "
@@ -12931,12 +12930,12 @@ msgstr ""
 "angezeigt werden."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:74
-msgid "Finance-Admins"
+msgid "Finance admins"
 msgstr "Finanz-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:76
 msgid ""
-"Finance-Admins may manage direct debit authorizations and membership fee "
+"Finance admins may manage direct debit authorizations and membership fee "
 "transactions. They also handle semester management, i.e. the sending of "
 "payment notifications, as well as the removal of inactive members and the "
 "updating of balances."
@@ -12947,14 +12946,14 @@ msgstr ""
 "Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
-msgid "Event-Admins"
+msgid "Event admins"
 msgstr "Veranstaltungs-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:90
 msgid ""
-"Event-Admins may create DB-organized events and add and remove orgas to "
+"Event admins may create DB-organized events and add and remove orgas to "
 "these events. They can also access the configuration as well as all "
-"registration data of these events. Event-Admins may create and manage Event-"
+"registration data of these events. Event admins may create and manage Event-"
 "Users, i.e. users with access to the event realm but not the CdE realm. This "
 "includes the approval of account requests. They may manage and create event "
 "related mailinglists."
@@ -12967,12 +12966,12 @@ msgstr ""
 "Veranstaltungsbezogene Mailinglisten anlegen und verwalten."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:104
-msgid "Mailinglist-Admins"
+msgid "Mailinglist admins"
 msgstr "Mailinglisten-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:106
 msgid ""
-"Mailinglist-Admins may manage and create all types of mailinglists. They may "
+"Mailinglist admins may manage and create all types of mailinglists. They may "
 "create, manage and approve requests for Mailinglist-Users, i.e. users that "
 "may only access mailinglists."
 msgstr ""
@@ -12981,12 +12980,12 @@ msgstr ""
 "verwalten, sowie entsprechende Accountanfragen bearbeiten."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:115
-msgid "CdElokal-Admins"
+msgid "CdElokal admins"
 msgstr "CdElokal-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:117
 msgid ""
-"CdElokal-Admins may manage and create CdElokal mailinglists. They do not "
+"CdElokal admins may manage and create CdElokal mailinglists. They do not "
 "automatically have access to any user management, like creating and managing "
 "accounts."
 msgstr ""
@@ -12995,12 +12994,12 @@ msgstr ""
 "Bearbeiten von Accounts."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
-msgid "Assembly-Admins"
+msgid "Assembly admins"
 msgstr "Versammlungs-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:130
 msgid ""
-"Assembly-Admins may create and manage assemblies and ballots. They may "
+"Assembly admins may create and manage assemblies and ballots. They may "
 "create and manage Assembly-Users, i.e. users with access to assemblies, that "
 "are not CdE members. They may also add these users as participants of "
 "assemblies."
