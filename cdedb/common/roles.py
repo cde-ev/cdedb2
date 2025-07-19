@@ -310,7 +310,7 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
     "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
-    "complaint",
+    "complaint_measures", "complaint_admin",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
     "event_user", "event_mgmt", "event_list", "event_orga",
@@ -345,7 +345,9 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
             "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
         }
     if "complaint_admin" in roles:
-        result |= {"complaint"}
+        result |= {"complaint_measures", "complaint_admin"}
+    if "enforcer" in roles:
+        result |= {"complaint_measures"}
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
