@@ -5,6 +5,7 @@
     {{ super() }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
+{% set jshint='weak' %}
 {% block title %}
     {% trans %}Complaint Helpers{% endtrans %}
 {% endblock %}

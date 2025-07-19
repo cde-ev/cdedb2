@@ -110,6 +110,8 @@ class ComplaintBackend(AbstractBackend):
             raise ValueError(n_("This persona is not an event user."))
 
         with Atomizer(rs):
+            if persona_id in self.list_enforcers(rs):
+                return 0
             ret = self.sql_insert(rs, f"complaint.{kind}s", {'persona_id': persona_id})
             if ret:
                 self.complaint_log(
@@ -138,10 +140,10 @@ class ComplaintBackend(AbstractBackend):
             raise ValueError(n_("Unknown helper kind."))
         if not self.core.verify_id(rs, persona_id):
             raise ValueError(n_("Unknown user."))
-        if not self.core.verify_persona(rs, persona_id, {"event"}):
-            raise ValueError(n_("This persona is not an event user."))
 
         with Atomizer(rs):
+            if persona_id not in self.list_enforcers(rs):
+                return 0
             ret = self.sql_delete(
                 rs, f"complaint.{kind}s", {persona_id}, entity_key="persona_id"
             )

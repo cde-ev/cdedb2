@@ -1064,10 +1064,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
-        try:
-            self.coreproxy.verify_persona(rs, persona_id)
-        except ValueError as e:
-            rs.append_validation_error(("persona_id", e))
+        if not self.coreproxy.verify_persona(rs, persona_id):
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user does not exist or is archived.")),
+            ))
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
 
@@ -1086,11 +1087,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
-        try:
-            self.coreproxy.verify_persona(rs, persona_id)
-        except ValueError as e:
-            rs.append_validation_error(("persona_id", e))
-        if rs.has_validation_errors():
+        if persona_id not in self.complaintproxy.list_enforcers(rs):
+            rs.notify('error', n_("This user does not exist or is no enforcer."))
             return self.list_complaint_helpers(rs)
 
         ret = self.complaintproxy.remove_helper(rs, persona_id, kind)

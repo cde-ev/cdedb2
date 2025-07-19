@@ -2,6 +2,7 @@
 
 import cdedb.database.constants as const
 from tests.common import (
+    USER_DICT,
     FrontendTest,
     as_users,
 )
@@ -749,3 +750,34 @@ class TestComplaintFrontend(FrontendTest):
         else:
             self.assertPresence("Fall 1")
             self.assertNoLink("case/1/show")
+
+    @as_users("simon")
+    def test_enforcers(self) -> None:
+        self.traverse("Fall-Unterstützer")
+        self.assertTitle("Fall-Unterstützer")
+        self.assertPresence("Janis", div="enforcer-list")
+        self.assertNonPresence("Rowena", div="enforcer-list")
+
+        f = self.response.forms['addenforcerform']
+        f['persona_id'] = "DB-999-X"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Checksumme stimmt nicht", div='addenforcerform')
+        f['persona_id'] = "DB-999-7"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Benutzer existiert nicht", div='addenforcerform')
+        f['persona_id'] = USER_DICT['rowena']['DB-ID']
+        self.submit(f)
+        self.assertPresence("Janis", div="enforcer-list")
+        self.assertPresence("Rowena", div="enforcer-list")
+
+        remove_form_id = f'removeenforcerform{USER_DICT["janis"]["id"]}'
+        f = self.response.forms[remove_form_id]
+        f['persona_id'] = "999"
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+        )
+        f = self.response.forms[remove_form_id]
+        self.submit(f)
+        self.assertPresence("Rowena", div="enforcer-list")
+        self.assertNonPresence("Janis", div="enforcer-list")

@@ -5,7 +5,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import BackendTest, as_users, execsql
+from tests.common import USER_DICT, BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -1127,6 +1127,36 @@ class TestComplaintBackend(BackendTest):
             self.complaint.get_measures(
                 self.key, self.complaint.list_measures(self.key)
             ),
+        )
+
+    @as_users("simon")
+    def test_enforcers(self) -> None:
+        janis_id = USER_DICT['janis']['id']
+        rowena_id = USER_DICT['rowena']['id']
+        self.assertEqual({janis_id}, self.complaint.list_enforcers(self.key))
+
+        with self.assertRaises(ValueError) as cm:
+            self.complaint.add_helper(self.key, rowena_id, "invalidr")
+        self.assertIn("Unknown helper kind.", cm.exception.args[0])
+        with self.assertRaises(ValueError) as cm:
+            self.complaint.add_helper(self.key, janis_id, "enforcer")
+        self.assertIn("is not an event user.", cm.exception.args[0])
+
+        self.assertEqual(
+            1001, self.complaint.add_helper(self.key, rowena_id, "enforcer")
+        )
+        self.assertEqual(0, self.complaint.add_helper(self.key, rowena_id, "enforcer"))
+
+        self.assertEqual({janis_id, rowena_id}, self.complaint.list_enforcers(self.key))
+
+        with self.assertRaises(ValueError) as cm:
+            self.complaint.remove_helper(self.key, janis_id, "invalid")
+        self.assertIn("Unknown helper kind.", cm.exception.args[0])
+        self.assertEqual(
+            1, self.complaint.remove_helper(self.key, janis_id, "enforcer")
+        )
+        self.assertEqual(
+            0, self.complaint.remove_helper(self.key, janis_id, "enforcer")
         )
 
 
