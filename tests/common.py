@@ -523,13 +523,11 @@ class BackendTest(CdEDBTest):
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
         new_user = get_user(new_user)
-        if old_user != new_user:
-            self.logout(allow_anonymous=True)
-            self.login(new_user)
+        self.logout(allow_anonymous=True)
+        self.login(new_user)
         yield
-        if old_user != new_user:
-            self.logout(allow_anonymous=True)
-            self.login(old_user)
+        self.logout(allow_anonymous=True)
+        self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
