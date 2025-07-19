@@ -192,6 +192,30 @@ class ComplaintBackend(AbstractBackend):
     get_case = singularize(get_cases, 'case_ids', 'case_id')
 
     @access("complaint_admin")
+    def get_related_cases(
+        self, rs: RequestState, case_id: int
+    ) -> dict[int, models.Case | None]:
+        """Collect related cases."""
+        case_id = affirm(vtypes.ID, case_id)
+        query = f"SELECT id FROM {models.Case.database_table}"
+        case_ids = self.query_all(rs, query, ())
+        _cases = self.get_cases(rs, [e["id"] for e in case_ids])
+        _related_cases = {
+            maybe_related_case_id: case
+            for maybe_related_case_id, case in _cases.items()
+            if _cases[case_id].all_properly_involved.keys()
+            & case.all_properly_involved.keys()
+        }
+        del _related_cases[case_id]
+
+        # Show no information on invisible cases
+        related_cases: dict[int, models.Case | None] = {}
+        for case_id_, case_ in _related_cases.items():
+            related_cases[case_id_] = case_ if case_.is_visible_for(rs.user) else None
+
+        return related_cases
+
+    @access("complaint_admin")
     def set_case(
         self, rs: RequestState, case_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1076,10 +1100,17 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("complaint_admin", "complaint.enforcer")
-    def get_user_measures(
+    @access("persona")
+    def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
-    ) -> dict[int, models.ComplaintEntryVersion]:
+    ) -> set[vtypes.ID]:
+        concerned_id = affirm(vtypes.ID, concerned_id)
+        is_active = affirm_optional(bool, is_active)
+        if not (
+            {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            or concerned_id == rs.user.persona_id
+        ):
+            raise PrivilegeError
         query = f"""
             SELECT versions.id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
@@ -1104,14 +1135,7 @@ class ComplaintBackend(AbstractBackend):
             """
             params["is_active"] = is_active
 
-        entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
-        entry_version_data = self.query_all(
-            rs,
-            *models.ComplaintEntryVersion.get_select_query(
-                entry_version_ids, entity_key="id"
-            ),
-        )
-        return models.ComplaintEntryVersion.many_from_database(entry_version_data)
+        return {e['id'] for e in self.query_all(rs, query, params)}
 
     @access("complaint_admin", "complaint.enforcer")
     def list_measures(
@@ -1120,6 +1144,7 @@ class ComplaintBackend(AbstractBackend):
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
     ) -> dict[int, int]:
+        is_active = affirm_optional(bool, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
         else:
@@ -1151,7 +1176,7 @@ class ComplaintBackend(AbstractBackend):
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def get_measures(
         self, rs: RequestState, measure_ids: Collection[int]
     ) -> tuple[
@@ -1177,9 +1202,16 @@ class ComplaintBackend(AbstractBackend):
         entry_data = self.sql_select(
             rs,
             models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id'],
+            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
             entry_ids,
         )
+        if not {
+            "complaint_admin",
+            "complaint.enforcer",
+        } & rs.user.all_roles and not all(
+            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
+        ):
+            raise PrivilegeError
         for e in entry_data:
             e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
         entries = {e['id']: e for e in entry_data}

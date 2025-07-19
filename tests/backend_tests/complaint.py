@@ -3,7 +3,7 @@ import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import CdEDBObject, nearly_now, now
+from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
@@ -150,6 +150,69 @@ class TestComplaintBackend(BackendTest):
                         ),
                     ],
                 ),
+                6: models.ComplaintEntry(
+                    id=6,  # type: ignore[arg-type]
+                    case_id=1,  # type: ignore[arg-type]
+                    entry_type=const.ComplaintEntryType.agreement_measure,
+                    parent_id=4,  # type: ignore[arg-type]
+                    concerned_id=2,  # type: ignore[arg-type]
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=7,  # type: ignore[arg-type]
+                            entry_id=6,  # type: ignore[arg-type]
+                            length=26,
+                            timestamp=datetime.datetime(
+                                2025, 5, 31, 23, 6, 25, tzinfo=datetime.timezone.utc
+                            ),
+                            etime=datetime.datetime(
+                                2025, 6, 8, 6, 6, 25, tzinfo=datetime.timezone.utc
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=1,  # type: ignore[arg-type]
+                            authors={3},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
+                7: models.ComplaintEntry(
+                    id=7,  # type: ignore[arg-type]
+                    case_id=1,  # type: ignore[arg-type]
+                    entry_type=const.ComplaintEntryType.agreement_measure,
+                    parent_id=4,  # type: ignore[arg-type]
+                    concerned_id=2,  # type: ignore[arg-type]
+                    is_revoked=True,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=8,  # type: ignore[arg-type]
+                            entry_id=7,  # type: ignore[arg-type]
+                            length=91,
+                            timestamp=datetime.datetime(
+                                2025, 6, 9, 12, 0, tzinfo=datetime.timezone.utc
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=1,  # type: ignore[arg-type]
+                            authors={42},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
+                8: models.ComplaintEntry(
+                    id=8,  # type: ignore[arg-type]
+                    case_id=1,  # type: ignore[arg-type]
+                    entry_type=const.ComplaintEntryType.revocation_explanation,
+                    parent_id=7,  # type: ignore[arg-type]
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=9,  # type: ignore[arg-type]
+                            entry_id=8,  # type: ignore[arg-type]
+                            length=68,
+                            timestamp=datetime.datetime(
+                                2025, 6, 10, 12, 0, tzinfo=datetime.timezone.utc
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=1,  # type: ignore[arg-type]
+                            authors={3},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
             },
         )
         reality = self.complaint.get_case(self.key, 1)
@@ -166,7 +229,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
 
-        self.assertEqual({1, 2, 3, 4, 7}, reality.get_persona_ids(tuple()))
+        self.assertEqual({1, 2, 3, 4, 7, 42}, reality.get_persona_ids(tuple()))
         self.assertEqual({2, 4}, reality.all_involved.keys())
         self.assertEqual({2: {3}, 4: {7}}, reality.companions_by_involved)
         self.assertEqual({2: {3}}, reality.withdrawn_companions_by_involved)
@@ -946,30 +1009,30 @@ class TestComplaintBackend(BackendTest):
         )
 
     @as_users("simon")
-    def test_get_user_measures(self) -> None:
+    def test_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 3, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 4, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 4, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 7, is_active=None)
+            set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
         )
         self.assertEqual(
-            {}, self.complaint.get_user_measures(self.key, 2, is_active=False)
+            {7, 8}, self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
         case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id: measure},
-            self.complaint.get_user_measures(self.key, active_measure_persona_id),
+            {measure.id},
+            self.complaint.list_user_measures(self.key, active_measure_persona_id),
         )
 
         revoke_data: CdEDBObject = {
@@ -980,8 +1043,8 @@ class TestComplaintBackend(BackendTest):
         self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
         self.assertEqual(
-            {},
-            self.complaint.get_user_measures(
+            set(),
+            self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=True
             ),
         )
@@ -990,11 +1053,38 @@ class TestComplaintBackend(BackendTest):
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id: measure},
-            self.complaint.get_user_measures(
+            {measure.id, 7, 8},
+            self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
         )
+
+    @as_users("berta")
+    def test_user_measures_unprivileged(self) -> None:
+        measure_entry_id = 6
+        measure_persona_id = 2
+        # access own measures
+        self.assertEqual(
+            {measure_entry_id},
+            self.complaint.list_user_measures(self.key, measure_persona_id),
+        )
+
+        measures, descriptions, entries = self.complaint.get_measures(
+            self.key, {measure_entry_id}
+        )
+        self.assertEqual({measure_entry_id}, measures.keys())
+        self.assertEqual({measure_entry_id}, descriptions.keys())
+        self.assertEqual({measures[measure_entry_id].entry_id}, entries.keys())
+
+        with self.assertRaises(PrivilegeError):
+            self.complaint.list_measures(self.key)
+
+        # non-affected user
+        with self.switch_user("inga"):
+            with self.assertRaises(PrivilegeError):
+                self.complaint.list_user_measures(self.key, measure_persona_id)
+            with self.assertRaises(PrivilegeError):
+                self.complaint.get_measures(self.key, {measure_entry_id})
 
     @as_users("simon")
     def test_measures(self) -> None:
@@ -1026,6 +1116,7 @@ class TestComplaintBackend(BackendTest):
                 "concerned_id": 2,
                 "entry_type": const.ComplaintEntryType.agreement_measure,
                 "id": 5,
+                "is_revoked": False,
             }
         }
         self.assertEqual(

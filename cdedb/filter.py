@@ -700,6 +700,12 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
     return grouped  # type: ignore[return-value]
 
 
+def multiselect_selectize_filter(entries: Iterable[tuple[int | enum.IntEnum, str]]
+                                 ) -> list[CdEDBObject]:
+    """Convert (value, title)s to format taken by the cdedbMultiSelect JS function."""
+    return [{'id': e[0], 'name': e[1]} for e in entries]
+
+
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
                         *args: str) -> list[tuple[S, ...]]:
     """
@@ -786,6 +792,7 @@ JINJA_FILTERS = {
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
+    'multiselect_selectize': multiselect_selectize_filter,
     'dict_entries': dict_entries_filter,
     'entries': entries_filter,
 }

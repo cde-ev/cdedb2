@@ -711,8 +711,9 @@
     {%- endcall %}
 {%- endmacro%}
 
-{% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
+{% macro input_multi_select(name, entries, selectize=False, readonly=False, actualreadonly=False, anid=none,
         aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+    {% set anid = anid or 'inputmultiselect-' + name %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -742,14 +743,20 @@
     {% if actualreadonly %}
         {{ input_hidden(name) }}
     {% endif %}
+    {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for multiselect selectize.") }}{% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
+        </script>
+    {% endif %}
 {%- endmacro %}
 
-{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False,
+{% macro form_input_multi_select(name, entries, selectize=False, label="", info='', displayerrors=True, readonly=False,
        actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
        attributes="", sort=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
-        {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
+        {{- input_multi_select(name, entries, selectize, readonly, actualreadonly, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro%}

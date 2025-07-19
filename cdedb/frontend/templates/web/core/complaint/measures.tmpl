@@ -33,7 +33,7 @@
                 </strong>
                 <br />
                 <span class="text-muted">
-                    {{ gettext("by") }}
+                    {% trans %}by{% endtrans %}
                     {% for author_id in measure.authors -%}
                         {%- if not loop.first -%}, {% endif -%}
                         {{ util.persona_anchor(personas[author_id]) -}}

@@ -1,9 +1,12 @@
 {% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
 {% endblock %}
+{% set jshint="weak" %}
 {% block title %}
     {% trans %}
     	Case Archive
@@ -49,24 +52,7 @@
                                     cdedblink("core/show_case", {'case_id': case.id}),
                                     gettext("Case %s")|s|format(case.id)
                                 ) }}
-                                <span class="nowrap" style="margin-left: .1em;">
-                                    {% if case.is_confirmed %}
-                                        {{ util.make_icon(
-                                            enums["ComplaintEntryType"].statement_signed.get_icon(),
-                                            aclass='text-muted',
-                                            title=gettext("is confirmed")
-                                        ) }}
-                                    {% endif %}
-                                    {% if not case.is_active %}
-                                        {{ util.make_icon('check', aclass='text-muted', title=gettext("is closed")) }}
-                                    {% endif %}
-                                    {% if case.is_grave %}
-                                        {{ util.make_icon('meteor', aclass='text-muted', title=gettext("is grave")) }}
-                                    {% endif %}
-                                    {% if case.id in unlocked_cases %}
-                                        {{ util.make_icon('lock-open', aclass='text-muted', title=gettext("is unlocked")) }}
-                                    {% endif %}
-                                </span>
+                                {{ generic_complaint.case_status_flags(case) }}
                             </div>
                             <div class="col-md-6">
                                 {{ gettext(case.kind|string) }}
@@ -121,27 +107,50 @@
             </div>
             <div class="panel-body">
                 <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            <label class="control-label col-sm-2" for="input-case_summary">
+                                {% trans %}Summary{% endtrans %}
+                            </label>
+                            <div class="col-sm-10">
+                                {% call util.output_errors("qval_cases.summary", wrapper=True) %}
+                                    {{ util.input_text(name="qval_cases.summary", anid="input-case_summary") }}
+                                {% endcall %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-2" for="input-case_kind">
+                                {% trans %}Kind{% endtrans %}
+                            </label>
+                            <div class="col-sm-10">
+                                {% call util.output_errors("qval_cases.kind", wrapper=True) %}
+                                    {{ util.input_multi_select(
+                                            name="qval_cases.kind", anid="input-case_kind", selectize=true,
+                                            entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
+                                            nulloption=nbsp, attributes="size=" + (enums["ComplaintKind"]|length + 1)|string) }}
+                                {% endcall %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_cases.summary", label=gettext("Summary"), aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_status.is_confirmed",
                                                   label=gettext("is confirmed"), aclass="input-sm",
                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],
                                                   nulloption=nbsp) }}
                         {{ util.form_input_text(name="qval_cases.end_date", label=gettext("Occurred after"),
                                                 aclass="input-sm", type="date") }}
-                        {{ util.form_input_text(name="last_entry_after", label=gettext("Last entry after"),
-                                                aclass="input-sm", type="datetime-local") }}
+                        {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occurred before"),
+                                                aclass="input-sm", type="date") }}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_select(name="qval_cases.kind", label=gettext("Kind"), aclass="input-sm",
-                                                  entries=enums["ComplaintKind"]|enum_entries(processing=gettext, intval=True),
-                                                  nulloption=nbsp) }}
                         {{ util.form_input_select(name="qval_status.is_closed",
                                                   label=gettext("is closed_[[short]]"), aclass="input-sm",
                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],
                                                   nulloption=nbsp) }}
-                        {{ util.form_input_text(name="qval_cases.start_date", label=gettext("Occurred before"),
-                                                aclass="input-sm", type="date") }}
+                        {{ util.form_input_text(name="last_entry_after", label=gettext("Last entry after"),
+                                                aclass="input-sm", type="datetime-local") }}
                         {{ util.form_input_text(name="last_entry_before", label=gettext("Last entry before"),
                                                 aclass="input-sm", type="datetime-local") }}
                     </div>
@@ -157,10 +166,11 @@
                                 [{{ user.persona_id }}], false, false, "{{ gettext("ID, name, email") }}"
                             );
                         </script>
-                        {{ util.form_input_select(name="qval_involved.involved_type",
-                                                  label=gettext("Involvement"), aclass="input-sm",
-                                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
-                                                  nulloption=nbsp) }}
+                        {{ util.form_input_multi_select(
+                                 name="qval_involved.involved_type", label=gettext("Involvement"),
+                                 anid="input-involved_type", aclass="input-sm", selectize=true,
+                                 entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
+                                 nulloption=nbsp, attributes="size=" + (enums["ComplaintInvolvementType"]|length + 1)|string) }}
                         {{ util.form_input_select(name="qval_involved.is_informed",
                                                   label=gettext("is informed"), aclass="input-sm",
                                                   entries=[(True, gettext("Yes")), (False, gettext("No"))],

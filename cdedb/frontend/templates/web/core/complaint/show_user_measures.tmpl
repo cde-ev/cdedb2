@@ -1,0 +1,103 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans name=ambience['persona']|persona_name %}
+        {{ name }} – Measures
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
+                            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_measures"), gettext("Measures"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Measures"), ambience['persona']|persona_name,
+                            'user', gettext("User")) }}
+{% endblock %}
+
+{% block content %}
+    {{ util.h(n_("Global information"), level=4, underline=True) }}
+        <dl class="dl-horizontal" id="global-information">
+            <dt title="{% trans %}Name{% endtrans %}">
+                {% trans %}Name{% endtrans %}
+            </dt>
+            <dd>
+                {{ ambience['persona']|persona_name(with_titles=True) }}
+            </dd>
+            <dt title="{% trans %}CdEDB-ID{% endtrans %}">
+                {% trans %}CdEDB-ID{% endtrans %}
+            </dt>
+            <dd id="cdedb-id">
+                {{ ambience['persona']['id']|cdedbid }}
+            </dd>
+            <dt title="{% trans %}E-Mail{% endtrans %}">
+                {% trans %}E-Mail{% endtrans %}
+            </dt>
+            <dd id="contact-email">
+                {{ util.username_mailto(ambience['persona']) }}
+            </dd>
+        </dl>
+
+    {{ util.h(n_("Measures"), level=4, underline=True) }}
+    <p>
+        {% trans %}
+            This lists all measures targeting this persona.
+        {% endtrans %}
+    </p>
+    <div class="list-group list-group-hover">
+    {% for measure in measures.values() %}
+        {% set entry = entries[measure.entry_id] %}
+        {% set inactive = entry.is_revoked or measure.etime and now() > measure.etime %}
+        <div id="entry{{ measure.id }}" class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
+            <div class="float-right text-right">
+                {{ measure.timestamp|datetime(lang=lang) -}}
+                {% if measure.etime %}
+                    – {{ measure.etime|datetime(lang=lang) }}
+                {% endif %}
+            </div>
+            <strong>
+                {% if inactive %}<s>{% endif %}
+                {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
+                {{- gettext(entry.entry_type|string) -}}
+                {% if inactive -%}
+                    </s> <span class="text-unmuted">
+                    {%- if- entry.is_revoked -%}
+                        ({% trans %}revoked{% endtrans %})
+                    {%- else -%}
+                        ({% trans %}expired{% endtrans %})
+                    {%- endif -%}
+                    </span>
+                {% endif %}
+            </strong>
+            <br>
+            <span class="text-muted">
+                {% trans %}by{% endtrans %}
+                {% for author_id in measure.authors -%}
+                    {%- if not loop.first -%}, {% endif -%}
+                    {{ util.persona_anchor(authors[author_id]) -}}
+                {% endfor %}
+                {% if "complaint" in user.admin_views %}
+                    –
+                    {% trans case=util.href(
+                            cdedblink("core/show_case", {'case_id': entry['case_id']}),
+                            gettext("Case %s")|s|format(entry['case_id']),
+                            readonly="complaint_admin" not in user.roles)
+                    %}
+                        from {{ case }}
+                    {% endtrans %}
+                {% endif %}
+            </span>
+            <hr class="nosp" />
+            {{ descriptions[measure.id] }}
+        </div>
+    {% else %}
+        <p class="text-muted">
+            {% trans %}
+                There are no measures targeting this persona.
+            {% endtrans %}
+        </p>
+    {% endfor %}
+    </div>
+{% endblock %}
