@@ -1060,14 +1060,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "kind")
-    def add_complaint_helper(
-        self, rs: RequestState, persona_id: vtypes.CdedbID, kind: str
-    ) -> Response:
-        """Grant enforcer or monitor privileges to a persona.
-
-        :param kind: "enforcer" or "monitor
-        """
+    @REQUESTdata("persona_id")
+    def add_enforcer(self, rs: RequestState, persona_id: vtypes.CdedbID) -> Response:
+        """Grant enforcer privileges to a persona."""
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
         if not self.coreproxy.verify_persona(rs, persona_id):
@@ -1078,26 +1073,21 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
 
-        ret = self.complaintproxy.add_helper(rs, persona_id, kind)
+        ret = self.complaintproxy.add_enforcer(rs, persona_id)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/list_complaint_helpers")
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "kind")
-    def remove_complaint_helper(
-        self, rs: RequestState, persona_id: vtypes.ID, kind: str
-    ) -> Response:
-        """Remove enforcer or monitor privileges to a persona.
-
-        :param kind: "enforcer" or "monitor
-        """
+    @REQUESTdata("persona_id")
+    def remove_enforcer(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+        """Remove enforcer privileges of a persona."""
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)
         if persona_id not in self.complaintproxy.list_enforcers(rs):
             rs.notify('error', n_("This user does not exist or is no enforcer."))
             return self.list_complaint_helpers(rs)
 
-        ret = self.complaintproxy.remove_helper(rs, persona_id, kind)
+        ret = self.complaintproxy.remove_enforcer(rs, persona_id)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/list_complaint_helpers")
 

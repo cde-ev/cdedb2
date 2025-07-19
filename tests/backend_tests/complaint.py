@@ -1136,28 +1136,16 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual({janis_id}, self.complaint.list_enforcers(self.key))
 
         with self.assertRaises(ValueError) as cm:
-            self.complaint.add_helper(self.key, rowena_id, "invalidr")
-        self.assertIn("Unknown helper kind.", cm.exception.args[0])
-        with self.assertRaises(ValueError) as cm:
-            self.complaint.add_helper(self.key, janis_id, "enforcer")
+            self.complaint.add_enforcer(self.key, janis_id)
         self.assertIn("is not an event user.", cm.exception.args[0])
 
-        self.assertEqual(
-            1001, self.complaint.add_helper(self.key, rowena_id, "enforcer")
-        )
-        self.assertEqual(0, self.complaint.add_helper(self.key, rowena_id, "enforcer"))
+        self.assertEqual(1001, self.complaint.add_enforcer(self.key, rowena_id))
+        self.assertEqual(0, self.complaint.add_enforcer(self.key, rowena_id))
 
         self.assertEqual({janis_id, rowena_id}, self.complaint.list_enforcers(self.key))
 
-        with self.assertRaises(ValueError) as cm:
-            self.complaint.remove_helper(self.key, janis_id, "invalid")
-        self.assertIn("Unknown helper kind.", cm.exception.args[0])
-        self.assertEqual(
-            1, self.complaint.remove_helper(self.key, janis_id, "enforcer")
-        )
-        self.assertEqual(
-            0, self.complaint.remove_helper(self.key, janis_id, "enforcer")
-        )
+        self.assertEqual(1, self.complaint.remove_enforcer(self.key, janis_id))
+        self.assertEqual(0, self.complaint.remove_enforcer(self.key, janis_id))
 
 
 class TestComplaintValidation(TestValidationBase):

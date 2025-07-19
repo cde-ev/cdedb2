@@ -21,10 +21,9 @@
         {% endtrans %}
     </p>
     {% if 'complaint_admin' in user.roles %}
-        <form action="{{ cdedblink('core/add_complaint_helper') }}" method="POST"
+        <form action="{{ cdedblink('core/add_enforcer') }}" method="POST"
               id="addenforcerform" class="p">
-            {{ util.anti_csrf_token('core/add_complaint_helper') }}
-            {{ util.input_hidden("kind", value="enforcer") }}
+            {{ util.anti_csrf_token('core/add_enforcer') }}
             <div class="input-group has-success">
                 <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                 {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid="input-add-enforcer",
@@ -54,12 +53,11 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(personas[enforcer_id]) }}
                             {% if 'complaint_admin' in user.roles %}
-                                <form action="{{ cdedblink('core/remove_complaint_helper') }}"
+                                <form action="{{ cdedblink('core/remove_enforcer') }}"
                                       method="POST"
                                       id="removeenforcerform{{ enforcer_id }}"
                                       class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('core/remove_complaint_helper') }}
-                                    {{ util.input_hidden(name="kind", value="enforcer") }}
+                                    {{ util.anti_csrf_token('core/remove_enforcer') }}
                                     {{ util.input_hidden(name="persona_id", value=enforcer_id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as enforcer")|format(name=personas[enforcer_id]|persona_name)|s) }}
