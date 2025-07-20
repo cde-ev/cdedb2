@@ -1132,16 +1132,16 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_enforcers(self) -> None:
         janis_id = USER_DICT['janis']['id']
-        rowena_id = USER_DICT['kalif']['id']
+        kalif_id = USER_DICT['kalif']['id']
         self.assertEqual({janis_id}, self.complaint.list_enforcers(self.key))
 
-        self.assertEqual(1001, self.complaint.add_enforcer(self.key, rowena_id))
-        self.assertEqual(0, self.complaint.add_enforcer(self.key, rowena_id))
+        self.assertEqual(1001, self.complaint.add_enforcer(self.key, kalif_id))
+        self.assertEqual(-1, self.complaint.add_enforcer(self.key, kalif_id))
 
-        self.assertEqual({janis_id, rowena_id}, self.complaint.list_enforcers(self.key))
+        self.assertEqual({janis_id, kalif_id}, self.complaint.list_enforcers(self.key))
 
         self.assertEqual(1, self.complaint.remove_enforcer(self.key, janis_id))
-        self.assertEqual(0, self.complaint.remove_enforcer(self.key, janis_id))
+        self.assertEqual(-1, self.complaint.remove_enforcer(self.key, janis_id))
 
 
 class TestComplaintValidation(TestValidationBase):

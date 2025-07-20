@@ -769,6 +769,8 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Janis", div="enforcer-list")
         self.assertPresence("Kalif", div="enforcer-list")
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Änderungen", 'info')
 
         remove_form_id = f'removeenforcerform{USER_DICT["janis"]["id"]}'
         f = self.response.forms[remove_form_id]
@@ -781,3 +783,7 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Kalif", div="enforcer-list")
         self.assertNonPresence("Janis", div="enforcer-list")
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+        )

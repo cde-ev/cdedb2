@@ -22,7 +22,6 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -1043,19 +1042,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
         enforcer_ids = self.complaintproxy.list_enforcers(rs)
         monitor_ids = self.complaintproxy.list_monitors(rs)
         personas = self.coreproxy.get_personas(rs, enforcer_ids | monitor_ids)
-        enforcer_ids = xsorted(
-            enforcer_ids, key=lambda e_id: EntitySorter.persona(personas[e_id])
-        )
-        monitor_ids = xsorted(
-            monitor_ids, key=lambda m_id: EntitySorter.persona(personas[m_id])
-        )
+        enforcers = {enforcer_id: personas[enforcer_id] for enforcer_id in enforcer_ids}
+        monitors = {monitor_id: personas[monitor_id] for monitor_id in monitor_ids}
         return self.render(
             rs,
             "complaint/list_complaint_helpers",
             {
-                "enforcer_ids": enforcer_ids,
-                "monitor_ids": monitor_ids,
-                "personas": personas,
+                "enforcers": enforcers,
+                "monitors": monitors,
             },
         )
 
@@ -1074,7 +1068,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.list_complaint_helpers(rs)
 
         ret = self.complaintproxy.add_enforcer(rs, persona_id)
-        rs.notify_return_code(ret)
+        rs.notify_return_code(ret, info=n_("Nothing changed."))
         return self.redirect(rs, "core/list_complaint_helpers")
 
     @access("complaint_admin", modi={"POST"})
@@ -1088,7 +1082,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.list_complaint_helpers(rs)
 
         ret = self.complaintproxy.remove_enforcer(rs, persona_id)
-        rs.notify_return_code(ret)
+        rs.notify_return_code(ret, info=n_("Nothing changed."))
         return self.redirect(rs, "core/list_complaint_helpers")
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())

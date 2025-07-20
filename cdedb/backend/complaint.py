@@ -97,7 +97,7 @@ class ComplaintBackend(AbstractBackend):
 
         with Atomizer(rs):
             if persona_id in self.list_enforcers(rs):
-                return 0
+                return -1
             ret = self.sql_insert(rs, "complaint.enforcers", {'persona_id': persona_id})
             if ret:
                 self.complaint_log(
@@ -119,7 +119,7 @@ class ComplaintBackend(AbstractBackend):
 
         with Atomizer(rs):
             if persona_id not in self.list_enforcers(rs):
-                return 0
+                return -1
             ret = self.sql_delete(
                 rs, "complaint.enforcers", {persona_id}, entity_key="persona_id"
             )
@@ -147,7 +147,7 @@ class ComplaintBackend(AbstractBackend):
 
         with Atomizer(rs):
             if persona_id in self.list_monitors(rs):
-                return 0
+                return -1
             ret = self.sql_insert(rs, "complaint.monitors", {'persona_id': persona_id})
             if ret:
                 self.complaint_log(
@@ -169,7 +169,7 @@ class ComplaintBackend(AbstractBackend):
 
         with Atomizer(rs):
             if persona_id not in self.list_monitors(rs):
-                return 0
+                return -1
             ret = self.sql_delete(
                 rs, "complaint.monitors", {persona_id}, entity_key="persona_id"
             )

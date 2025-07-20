@@ -32,7 +32,7 @@
                     $('#input-add-enforcer').cdedbSearchPerson(
                         '{{ cdedblink('core/select_persona') }}',
                         {{ {'kind': 'admin_persona'}|tojson }},
-                        {{ enforcer_ids|list|tojson }},
+                        {{ enforcers.keys()|list|tojson }},
                         false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                     );
                 </script>
@@ -45,13 +45,12 @@
     {% endif %}
 
     <div class="row" id="enforcer-list">
-        {# id list already sorted in frontend #}
-        {% for list in enforcer_ids | slice(2 if enforcer_ids|length > 5 else 1) %}
+        {% for list in enforcers | keydictsort(EntitySorter.persona) | slice(2 if enforcers|length > 5 else 1) %}
             <div class="col-sm-6">
                 <ul class="nosp slim">
-                    {% for enforcer_id in list %}
+                    {% for enforcer_id, enforcer in list %}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(personas[enforcer_id]) }}
+                            {{ util.persona_anchor(enforcer) }}
                             {% if 'complaint_admin' in user.roles %}
                                 <form action="{{ cdedblink('core/remove_enforcer') }}"
                                       method="POST"
@@ -60,7 +59,7 @@
                                     {{ util.anti_csrf_token('core/remove_enforcer') }}
                                     {{ util.input_hidden(name="persona_id", value=enforcer_id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                            title=gettext("Remove %(name)s as enforcer")|format(name=personas[enforcer_id]|persona_name)|s) }}
+                                            title=gettext("Remove %(name)s as enforcer")|format(name=enforcer|persona_name)|s) }}
                                 </form>
                             {% endif %}
                         </li>
