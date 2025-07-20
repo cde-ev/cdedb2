@@ -113,7 +113,7 @@ class CdEDataclass:
     """Base class of all CdEDB dataclasses.
 
     The behavior of some of the default methods can be modified by setting metadata on
-    dataclass fields via `metadata={"cdedb": MetaFlag.flag}`.
+    dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
     id: vtypes.ProtoID
 
