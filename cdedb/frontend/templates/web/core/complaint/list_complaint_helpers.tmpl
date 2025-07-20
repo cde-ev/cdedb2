@@ -1,0 +1,73 @@
+{% set sidenav_active='complaint_helpers' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}Complaint Helpers{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), active="True") }}
+{% endblock %}
+{% block content %}
+    {{ util.h(n_("Enforcers"), level=2) }}
+    <p>
+        {% trans %}
+            Enforcers have access to all, active and past, measures from the case archive.
+        {% endtrans %}
+    </p>
+    {% if 'complaint_admin' in user.roles %}
+        <form action="{{ cdedblink('core/add_enforcer') }}" method="POST"
+              id="addenforcerform" class="p">
+            {{ util.anti_csrf_token('core/add_enforcer') }}
+            <div class="input-group has-success">
+                <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid="input-add-enforcer",
+                                   arialabel=gettext("ID of the new enforcer")) }}
+                <script nonce="{{ csp_nonce }}">
+                    $('#input-add-enforcer').cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') }}',
+                        {{ {'kind': 'admin_persona'}|tojson }},
+                        {{ enforcers.keys()|list|tojson }},
+                        false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+                    );
+                </script>
+                <div class="input-group-btn">
+                    {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
+                </div>
+            </div>
+            {{ util.output_errors('persona_id', wrapper=True) }}
+        </form>
+    {% endif %}
+
+    <div class="row" id="enforcer-list">
+        {% for list in enforcers | keydictsort(EntitySorter.persona) | slice(2 if enforcers|length > 5 else 1) %}
+            <div class="col-sm-6">
+                <ul class="nosp slim">
+                    {% for enforcer_id, enforcer in list %}
+                        <li class="hide-hover-container clearfix-after">
+                            {{ util.persona_anchor(enforcer) }}
+                            {% if 'complaint_admin' in user.roles %}
+                                <form action="{{ cdedblink('core/remove_enforcer') }}"
+                                      method="POST"
+                                      id="removeenforcerform{{ enforcer_id }}"
+                                      class="hide-hover display-inline">
+                                    {{ util.anti_csrf_token('core/remove_enforcer') }}
+                                    {{ util.input_hidden(name="persona_id", value=enforcer_id) }}
+                                    {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                                            title=gettext("Remove %(name)s as enforcer")|format(name=enforcer|persona_name)|s) }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# TODO: copy-paste and adjust code from above to monitors here #}
+{% endblock %}

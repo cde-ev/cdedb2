@@ -5,7 +5,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import BackendTest, as_users, execsql
+from tests.common import USER_DICT, BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -1008,7 +1008,7 @@ class TestComplaintBackend(BackendTest):
             log_expecation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
         )
 
-    @as_users("simon")
+    @as_users("simon", "janis")
     def test_user_measures(self) -> None:
         case_id = 1
         active_measure_entry_id = 5
@@ -1027,7 +1027,8 @@ class TestComplaintBackend(BackendTest):
             {7, 8}, self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
-        case = self.complaint.get_case(self.key, case_id)
+        with self.switch_user("simon"):
+            case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
@@ -1040,7 +1041,8 @@ class TestComplaintBackend(BackendTest):
             "description": "Oops!... I Did It Again",
             "authors": {3},
         }
-        self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
+        with self.switch_user("simon"):
+            self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
         self.assertEqual(
             set(),
@@ -1049,7 +1051,8 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
-        case = self.complaint.get_case(self.key, case_id)
+        with self.switch_user("simon"):
+            case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
@@ -1086,7 +1089,7 @@ class TestComplaintBackend(BackendTest):
             with self.assertRaises(PrivilegeError):
                 self.complaint.get_measures(self.key, {measure_entry_id})
 
-    @as_users("simon")
+    @as_users("simon", "janis")
     def test_measures(self) -> None:
         measure_ids_expectation = {6: 1}
         self.assertEqual(
@@ -1125,6 +1128,20 @@ class TestComplaintBackend(BackendTest):
                 self.key, self.complaint.list_measures(self.key)
             ),
         )
+
+    @as_users("simon")
+    def test_enforcers(self) -> None:
+        janis_id = USER_DICT['janis']['id']
+        kalif_id = USER_DICT['kalif']['id']
+        self.assertEqual({janis_id}, self.complaint.list_enforcers(self.key))
+
+        self.assertEqual(1001, self.complaint.add_enforcer(self.key, kalif_id))
+        self.assertEqual(-1, self.complaint.add_enforcer(self.key, kalif_id))
+
+        self.assertEqual({janis_id, kalif_id}, self.complaint.list_enforcers(self.key))
+
+        self.assertEqual(1, self.complaint.remove_enforcer(self.key, janis_id))
+        self.assertEqual(-1, self.complaint.remove_enforcer(self.key, janis_id))
 
 
 class TestComplaintValidation(TestValidationBase):

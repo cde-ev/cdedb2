@@ -145,7 +145,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Meine Daten")
 
     @as_users("annika", "martin", "nina", "vera", "werner", "katarina", "simon",
-              maintain_data=True)
+              "janis", maintain_data=True)
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
         everyone = {
@@ -157,8 +157,9 @@ class TestCoreFrontend(FrontendTest):
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
-        # TODO: Add Fall-Unterstützer
-        complaint = {"Fallarchiv", "Fall-Log", "Maßnahmenübersicht"}
+        complaint_admin = {"Fallarchiv", "Fall-Log"}
+        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer"}
+        complaint = complaint_admin | complaint_enforcer
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
@@ -189,6 +190,10 @@ class TestCoreFrontend(FrontendTest):
         elif self.user_in('simon'):
             ins = everyone | complaint
             out = pending | defect_email | core_admin | meta_admin | log
+        elif self.user_in('janis'):
+            ins = everyone | complaint_enforcer
+            out = (pending | defect_email | core_admin | meta_admin | log
+                   | complaint_admin)
         else:
             self.fail("Please adjust users for this tests.")
 

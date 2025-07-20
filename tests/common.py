@@ -241,6 +241,9 @@ def _make_backend_shim(
         )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
+        if hasattr(backend, "list_enforcers"):
+            if rs.user.persona_id in backend.list_enforcers(rs):
+                rs.user.realm_roles["complaint"] = {"enforcer"}
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
             rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
@@ -519,6 +522,7 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        new_user = get_user(new_user)
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield

@@ -165,11 +165,11 @@ def access(*roles: Role) -> Callable[[F], F]:
         @functools.wraps(function)
         def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if rs.user.roles.isdisjoint(roles):
+            if rs.user.all_roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),
-                    {"user_roles": rs.user.roles, "roles": roles,
+                    {"user_roles": rs.user.all_roles, "roles": roles,
                      "method": function.__name__},
                 )
             return function(self, rs, *args, **kwargs)
