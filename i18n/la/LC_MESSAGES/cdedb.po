@@ -81,8 +81,10 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1028 cdedb/frontend/core/base.py:1036
 #: cdedb/frontend/core/base.py:1043 cdedb/frontend/core/base.py:1051
 #: cdedb/frontend/core/base.py:1056 cdedb/frontend/core/base.py:1068
-#: cdedb/frontend/core/base.py:2135 cdedb/frontend/core/base.py:2150
-#: cdedb/frontend/core/base.py:2569 cdedb/frontend/core/base.py:2592
+#: cdedb/frontend/core/base.py:2135 cdedb/frontend/core/base.py:2136
+#: cdedb/frontend/core/base.py:2150 cdedb/frontend/core/base.py:2151
+#: cdedb/frontend/core/base.py:2569 cdedb/frontend/core/base.py:2570
+#: cdedb/frontend/core/base.py:2592 cdedb/frontend/core/base.py:2593
 #: cdedb/frontend/core/complaint.py:1016 cdedb/frontend/core/genesis.py:295
 #: cdedb/frontend/core/genesis.py:336 cdedb/frontend/core/genesis.py:387
 #: cdedb/frontend/core/genesis.py:414 cdedb/frontend/event/query.py:604
@@ -91,7 +93,8 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:351 cdedb/backend/cde/base.py:589
-#: cdedb/backend/complaint.py:1131 cdedb/backend/core/base.py:3042
+#: cdedb/backend/complaint.py:1037 cdedb/backend/complaint.py:1131
+#: cdedb/backend/core/base.py:3018 cdedb/backend/core/base.py:3042
 #: cdedb/backend/event/query.py:715 cdedb/backend/ml.py:323
 #: cdedb/backend/past_event.py:770
 msgid "Bad scope."
@@ -301,6 +304,7 @@ msgid "Cannot add attachment once the assembly has been locked."
 msgstr ""
 
 #: cdedb/backend/assembly.py:1731 cdedb/frontend/core/base.py:1725
+#: cdedb/frontend/core/base.py:1726
 msgid "Something went wrong."
 msgstr ""
 
@@ -398,8 +402,9 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:2360 cdedb/backend/cde/base.py:485
 #: cdedb/backend/cde/lastschrift.py:469 cdedb/backend/common.py:469
-#: cdedb/backend/common.py:475 cdedb/backend/core/base.py:2437
-#: cdedb/backend/event/base.py:1373 cdedb/common/__init__.py:291
+#: cdedb/backend/common.py:475 cdedb/backend/core/base.py:2413
+#: cdedb/backend/core/base.py:2437 cdedb/backend/event/base.py:1373
+#: cdedb/common/__init__.py:291 cdedb/common/__init__.py:292
 #: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:753
 #: cdedb/frontend/cde/lastschrift.py:549
 #: cdedb/frontend/cde/parse_statement.py:695 cdedb/frontend/common.py:716
@@ -491,7 +496,8 @@ msgstr ""
 msgid "May not grant trial membership to member."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:554 cdedb/backend/core/base.py:2242
+#: cdedb/backend/cde/base.py:554 cdedb/backend/core/base.py:2218
+#: cdedb/backend/core/base.py:2242
 msgid "Too many queries."
 msgstr ""
 
@@ -643,87 +649,89 @@ msgstr ""
 msgid "This user does not exist or is archived."
 msgstr ""
 
-#: cdedb/backend/complaint.py:402
+#: cdedb/backend/complaint.py:308 cdedb/backend/complaint.py:402
 #, fuzzy
 msgid "No authors specified."
 msgstr "nihil praeitum."
 
-#: cdedb/backend/complaint.py:404
+#: cdedb/backend/complaint.py:310 cdedb/backend/complaint.py:404
 #, fuzzy
 msgid "Unknown authors."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:435
+#: cdedb/backend/complaint.py:341 cdedb/backend/complaint.py:435
 msgid "Deletion reason given, but entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:454
+#: cdedb/backend/complaint.py:360 cdedb/backend/complaint.py:454
 #, fuzzy
 msgid "Unknown entry."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:580
+#: cdedb/backend/complaint.py:486 cdedb/backend/complaint.py:580
 #, fuzzy
 msgid "Entry already revoked."
 msgstr "eventus"
 
-#: cdedb/backend/complaint.py:582
+#: cdedb/backend/complaint.py:488 cdedb/backend/complaint.py:582
 msgid "Entry has no active version."
 msgstr ""
 
-#: cdedb/backend/complaint.py:594
+#: cdedb/backend/complaint.py:500 cdedb/backend/complaint.py:594
 msgid "Revocation entry without parent."
 msgstr ""
 
-#: cdedb/backend/complaint.py:596 cdedb/frontend/core/complaint.py:847
-#: cdedb/frontend/core/complaint.py:897
+#: cdedb/backend/complaint.py:502 cdedb/backend/complaint.py:596
+#: cdedb/frontend/core/complaint.py:847 cdedb/frontend/core/complaint.py:897
 msgid "Cannot chain revoke."
 msgstr ""
 
-#: cdedb/backend/complaint.py:640
+#: cdedb/backend/complaint.py:546 cdedb/backend/complaint.py:640
 msgid "Appellant cannot be uninformed."
 msgstr ""
 
+#: cdedb/backend/complaint.py:553 cdedb/backend/complaint.py:621
 #: cdedb/backend/complaint.py:647 cdedb/backend/complaint.py:715
 #, fuzzy
 msgid "Unknown users."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:656
+#: cdedb/backend/complaint.py:562 cdedb/backend/complaint.py:656
 #, fuzzy
 msgid "Already involved otherwise."
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
-#: cdedb/backend/complaint.py:658
+#: cdedb/backend/complaint.py:564 cdedb/backend/complaint.py:658
 #, fuzzy
 msgid "Already active companions."
 msgstr "tabellae epistularum electronicarum moderatae"
 
-#: cdedb/backend/complaint.py:765 cdedb/backend/complaint.py:821
-#: cdedb/backend/complaint.py:913
+#: cdedb/backend/complaint.py:671 cdedb/backend/complaint.py:727
+#: cdedb/backend/complaint.py:765 cdedb/backend/complaint.py:819
+#: cdedb/backend/complaint.py:821 cdedb/backend/complaint.py:913
 msgid "Uninvolved user."
 msgstr ""
 
-#: cdedb/backend/complaint.py:806
+#: cdedb/backend/complaint.py:712 cdedb/backend/complaint.py:806
 #, fuzzy
 msgid "Unknown companions."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:826
+#: cdedb/backend/complaint.py:732 cdedb/backend/complaint.py:826
 #, fuzzy
 msgid "Adverse companion."
 msgstr "Annuntiationes"
 
-#: cdedb/backend/complaint.py:828
+#: cdedb/backend/complaint.py:734 cdedb/backend/complaint.py:828
 #, fuzzy
 msgid "Involved companion."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/complaint.py:915
+#: cdedb/backend/complaint.py:821 cdedb/backend/complaint.py:915
 msgid "Not a companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:1247
+#: cdedb/backend/complaint.py:1153 cdedb/backend/complaint.py:1247
 msgid "Can only list measures."
 msgstr ""
 
@@ -740,8 +748,8 @@ msgid "Persona and Changelog are inconsistent."
 msgstr ""
 
 #: cdedb/backend/core/base.py:511 cdedb/backend/core/base.py:1387
-#: cdedb/frontend/core/base.py:2111 cdedb/frontend/event/registration.py:1297
-#: cdedb/frontend/ml/base.py:537
+#: cdedb/frontend/core/base.py:2111 cdedb/frontend/core/base.py:2112
+#: cdedb/frontend/event/registration.py:1297 cdedb/frontend/ml/base.py:537
 #, fuzzy
 msgid "Nothing changed."
 msgstr "Appendix mutata"
@@ -765,21 +773,28 @@ msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/backend/core/base.py:660 cdedb/frontend/core/base.py:823
 #: cdedb/frontend/core/base.py:1347 cdedb/frontend/core/base.py:1378
-#: cdedb/frontend/core/base.py:2319 cdedb/frontend/core/base.py:2478
-#: cdedb/frontend/core/base.py:2492 cdedb/frontend/core/base.py:2510
-#: cdedb/frontend/core/base.py:2607 cdedb/frontend/core/base.py:2633
-#: cdedb/frontend/core/base.py:2644
+#: cdedb/frontend/core/base.py:2319 cdedb/frontend/core/base.py:2320
+#: cdedb/frontend/core/base.py:2478 cdedb/frontend/core/base.py:2479
+#: cdedb/frontend/core/base.py:2492 cdedb/frontend/core/base.py:2493
+#: cdedb/frontend/core/base.py:2510 cdedb/frontend/core/base.py:2511
+#: cdedb/frontend/core/base.py:2607 cdedb/frontend/core/base.py:2608
+#: cdedb/frontend/core/base.py:2633 cdedb/frontend/core/base.py:2634
+#: cdedb/frontend/core/base.py:2644 cdedb/frontend/core/base.py:2645
 msgid "Not a relative admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:876 cdedb/backend/core/base.py:2802
+#: cdedb/backend/core/base.py:876 cdedb/backend/core/base.py:2778
+#: cdedb/backend/core/base.py:2801 cdedb/backend/core/base.py:2802
 #: cdedb/backend/core/base.py:2825 cdedb/frontend/core/base.py:2268
+#: cdedb/frontend/core/base.py:2269
 #, fuzzy
 msgid "Nonexistent user."
 msgstr "non dictum"
 
-#: cdedb/backend/core/base.py:923 cdedb/backend/core/base.py:2604
-#: cdedb/backend/core/base.py:2627 cdedb/backend/core/base.py:2759
+#: cdedb/backend/core/base.py:923 cdedb/backend/core/base.py:2580
+#: cdedb/backend/core/base.py:2603 cdedb/backend/core/base.py:2604
+#: cdedb/backend/core/base.py:2627 cdedb/backend/core/base.py:2735
+#: cdedb/backend/core/base.py:2759
 msgid "Persona does not exist."
 msgstr ""
 
@@ -835,7 +850,8 @@ msgid "Special change not committed."
 msgstr ""
 
 #: cdedb/backend/core/base.py:1100 cdedb/backend/core/base.py:1164
-#: cdedb/frontend/core/base.py:1796 cdedb/frontend/core/base.py:1876
+#: cdedb/frontend/core/base.py:1796 cdedb/frontend/core/base.py:1797
+#: cdedb/frontend/core/base.py:1876 cdedb/frontend/core/base.py:1877
 msgid "Cannot modify own meta admin privileges."
 msgstr ""
 
@@ -853,6 +869,7 @@ msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
 #: cdedb/backend/core/base.py:1167 cdedb/frontend/core/base.py:1879
+#: cdedb/frontend/core/base.py:1880
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
@@ -885,12 +902,16 @@ msgstr ""
 msgid "Active lastschrift permit found."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1672
+#: cdedb/backend/core/base.py:1660 cdedb/backend/core/base.py:1672
 msgid "You are not allowed to archive this user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1680
+#: cdedb/backend/core/base.py:1668 cdedb/backend/core/base.py:1680
 msgid "Cannot archive admins."
+msgstr ""
+
+#: cdedb/backend/core/base.py:1677 cdedb/backend/core/base.py:1701
+msgid "Active lastschrift exists."
 msgstr ""
 
 #: cdedb/backend/core/base.py:1692
@@ -898,177 +919,181 @@ msgstr ""
 msgid "Cannot archive complaint and event helpers."
 msgstr "vestigium novum crea"
 
-#: cdedb/backend/core/base.py:1701
-msgid "Active lastschrift exists."
-msgstr ""
-
-#: cdedb/backend/core/base.py:1717
+#: cdedb/backend/core/base.py:1693 cdedb/backend/core/base.py:1717
 msgid "Failed to revoke membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1721
+#: cdedb/backend/core/base.py:1697 cdedb/backend/core/base.py:1721
 msgid "Failed to remove foto."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1830
+#: cdedb/backend/core/base.py:1806 cdedb/backend/core/base.py:1830
 msgid "Involved in unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1832
+#: cdedb/backend/core/base.py:1808 cdedb/backend/core/base.py:1832
 msgid "Unbalanced event balance."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1840
+#: cdedb/backend/core/base.py:1816 cdedb/backend/core/base.py:1840
 msgid "Orga of unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1857
+#: cdedb/backend/core/base.py:1833 cdedb/backend/core/base.py:1857
 msgid "Attendee of unfinished assembly."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1867
+#: cdedb/backend/core/base.py:1843 cdedb/backend/core/base.py:1867
 msgid "Presider of unfinished assembly."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1892
+#: cdedb/backend/core/base.py:1868 cdedb/backend/core/base.py:1892
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1924
+#: cdedb/backend/core/base.py:1900 cdedb/backend/core/base.py:1924
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1945 cdedb/frontend/common.py:1585
-#: cdedb/frontend/core/base.py:2648
+#: cdedb/backend/core/base.py:1921 cdedb/backend/core/base.py:1945
+#: cdedb/frontend/common.py:1585 cdedb/frontend/core/base.py:2648
+#: cdedb/frontend/core/base.py:2649
 msgid "User with this E-Mail exists already."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1974
+#: cdedb/backend/core/base.py:1950 cdedb/backend/core/base.py:1974
 msgid "Persona is not archived."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1978
+#: cdedb/backend/core/base.py:1954 cdedb/backend/core/base.py:1978
 msgid "Persona may not be purged."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2022
+#: cdedb/backend/core/base.py:1998 cdedb/backend/core/base.py:2022
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2046 cdedb/frontend/core/base.py:2424
+#: cdedb/backend/core/base.py:2022 cdedb/backend/core/base.py:2046
+#: cdedb/frontend/core/base.py:2424 cdedb/frontend/core/base.py:2425
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2066 cdedb/frontend/core/genesis.py:135
-#: cdedb/frontend/core/genesis.py:441
+#: cdedb/backend/core/base.py:2042 cdedb/backend/core/base.py:2066
+#: cdedb/frontend/core/genesis.py:135 cdedb/frontend/core/genesis.py:441
 msgid "Failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2134
+#: cdedb/backend/core/base.py:2110 cdedb/backend/core/base.py:2134
 msgid "Access to persona data inhibited."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2136
+#: cdedb/backend/core/base.py:2112 cdedb/backend/core/base.py:2136
 msgid "Not an event user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2182
+#: cdedb/backend/core/base.py:2158 cdedb/backend/core/base.py:2182
 msgid "May not provide more than one input."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2245
+#: cdedb/backend/core/base.py:2221 cdedb/backend/core/base.py:2245
 msgid "Not a CdE user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2251
+#: cdedb/backend/core/base.py:2227 cdedb/backend/core/base.py:2251
 msgid "Improper access to member data."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2264
+#: cdedb/backend/core/base.py:2240 cdedb/backend/core/base.py:2264
 msgid "Not an ml user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2276
+#: cdedb/backend/core/base.py:2252 cdedb/backend/core/base.py:2276
 msgid "Not an assembly user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2293
+#: cdedb/backend/core/base.py:2269 cdedb/backend/core/base.py:2293
 msgid "Must be privileged."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2318
+#: cdedb/backend/core/base.py:2294 cdedb/backend/core/base.py:2318
 msgid "Unable to create this sort of persona."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2419 cdedb/backend/core/base.py:2683
-#: cdedb/backend/core/base.py:2753
+#: cdedb/backend/core/base.py:2395 cdedb/backend/core/base.py:2419
+#: cdedb/backend/core/base.py:2659 cdedb/backend/core/base.py:2683
+#: cdedb/backend/core/base.py:2729 cdedb/backend/core/base.py:2753
 msgid "Atomized – impossible to escalate."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2609
+#: cdedb/backend/core/base.py:2585 cdedb/backend/core/base.py:2609
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2632 cdedb/frontend/common.py:2243
+#: cdedb/backend/core/base.py:2608 cdedb/backend/core/base.py:2632
+#: cdedb/frontend/common.py:2243 cdedb/frontend/common.py:2248
 msgid "Link expired."
 msgstr ""
 
+#: cdedb/backend/core/base.py:2610 cdedb/backend/core/base.py:2612
 #: cdedb/backend/core/base.py:2634 cdedb/backend/core/base.py:2636
 msgid "Link invalid or already used."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2659
+#: cdedb/backend/core/base.py:2635 cdedb/backend/core/base.py:2659
 msgid "Selecting persona allowed for reset only."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2662
+#: cdedb/backend/core/base.py:2638 cdedb/backend/core/base.py:2662
 msgid "Could not determine persona to reset."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2664
+#: cdedb/backend/core/base.py:2640 cdedb/backend/core/base.py:2664
 msgid "No authorization provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2667
+#: cdedb/backend/core/base.py:2643 cdedb/backend/core/base.py:2667
 #, fuzzy
 msgid "Password verification failed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/core/base.py:2673
+#: cdedb/backend/core/base.py:2649 cdedb/backend/core/base.py:2673
 msgid "No new password provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2676 cdedb/common/validation/validate.py:1282
-#: cdedb/frontend/core/base.py:2224 cdedb/frontend/core/base.py:2392
+#: cdedb/backend/core/base.py:2652 cdedb/backend/core/base.py:2676
+#: cdedb/common/validation/validate.py:1282 cdedb/frontend/core/base.py:2224
+#: cdedb/frontend/core/base.py:2225 cdedb/frontend/core/base.py:2392
+#: cdedb/frontend/core/base.py:2393
 #, fuzzy
 msgid "Password too weak."
 msgstr "Signum arcanum"
 
-#: cdedb/backend/core/base.py:2732 cdedb/frontend/cde/base.py:690
-#: cdedb/frontend/cde/parse.py:309 cdedb/frontend/common.py:1064
-#: cdedb/frontend/event/registration.py:115
+#: cdedb/backend/core/base.py:2708 cdedb/backend/core/base.py:2732
+#: cdedb/frontend/cde/base.py:690 cdedb/frontend/cde/parse.py:309
+#: cdedb/frontend/common.py:1064 cdedb/frontend/event/registration.py:115
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2734
+#: cdedb/backend/core/base.py:2710 cdedb/backend/core/base.py:2734
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2739 cdedb/frontend/core/base.py:2375
+#: cdedb/backend/core/base.py:2715 cdedb/backend/core/base.py:2739
+#: cdedb/frontend/core/base.py:2375 cdedb/frontend/core/base.py:2376
 msgid "Unknown email address."
 msgstr "hanc inscriptionem electronicam nescio."
 
-#: cdedb/backend/core/base.py:2804
+#: cdedb/backend/core/base.py:2780 cdedb/backend/core/base.py:2804
 msgid "Inactive user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2827
+#: cdedb/backend/core/base.py:2803 cdedb/backend/core/base.py:2827
 #, fuzzy
 msgid "Lockdown active."
 msgstr "vestigium novum crea"
 
-#: cdedb/backend/core/base.py:2941
+#: cdedb/backend/core/base.py:2917 cdedb/backend/core/base.py:2941
 #, fuzzy
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
@@ -1714,77 +1739,80 @@ msgstr ""
 msgid "This %(droid_name)s token has expired."
 msgstr ""
 
-#: cdedb/common/__init__.py:264
+#: cdedb/common/__init__.py:264 cdedb/common/__init__.py:265
 #, python-format
 msgid "Invalid notification type %(t)s found."
 msgstr ""
 
-#: cdedb/common/__init__.py:270 cdedb/frontend/core/base.py:1883
-#: cdedb/frontend/core/base.py:2597
+#: cdedb/common/__init__.py:270 cdedb/common/__init__.py:271
+#: cdedb/frontend/core/base.py:1883 cdedb/frontend/core/base.py:1884
+#: cdedb/frontend/core/base.py:2597 cdedb/frontend/core/base.py:2598
 #, fuzzy
 msgid "Change committed."
 msgstr "commentarium mutationis"
 
-#: cdedb/common/__init__.py:271 cdedb/frontend/core/base.py:1213
-#: cdedb/frontend/core/base.py:1360
+#: cdedb/common/__init__.py:271 cdedb/common/__init__.py:272
+#: cdedb/frontend/core/base.py:1213 cdedb/frontend/core/base.py:1360
 #, fuzzy
 msgid "Change pending."
 msgstr "editio"
 
-#: cdedb/common/__init__.py:272
+#: cdedb/common/__init__.py:272 cdedb/common/__init__.py:273
 #, fuzzy
 msgid "Change failed."
 msgstr "inscriptionem electronicam muta"
 
-#: cdedb/common/__init__.py:302
+#: cdedb/common/__init__.py:302 cdedb/common/__init__.py:303
 msgid "Input seems faulty. Please double-check if you really want to save it."
 msgstr ""
 
-#: cdedb/common/__init__.py:305
+#: cdedb/common/__init__.py:305 cdedb/common/__init__.py:306
 msgid "Failed validation."
 msgstr ""
 
-#: cdedb/common/__init__.py:419
+#: cdedb/common/__init__.py:419 cdedb/common/__init__.py:420
 #, python-format
 msgid "Attribute %(name)s not public"
 msgstr ""
 
-#: cdedb/common/__init__.py:500
+#: cdedb/common/__init__.py:500 cdedb/common/__init__.py:501
 msgid "No inputs given."
 msgstr ""
 
-#: cdedb/common/__init__.py:592
+#: cdedb/common/__init__.py:592 cdedb/common/__init__.py:593
 msgid "Invalid use of keyword parameters."
 msgstr ""
 
-#: cdedb/common/__init__.py:664 cdedb/common/__init__.py:699
+#: cdedb/common/__init__.py:664 cdedb/common/__init__.py:665
+#: cdedb/common/__init__.py:699 cdedb/common/__init__.py:700
 msgid "Out of supported scope."
 msgstr ""
 
-#: cdedb/common/__init__.py:688 cdedb/common/__init__.py:716
+#: cdedb/common/__init__.py:688 cdedb/common/__init__.py:689
+#: cdedb/common/__init__.py:716 cdedb/common/__init__.py:717
 msgid "Not supported."
 msgstr ""
 
-#: cdedb/common/__init__.py:805
+#: cdedb/common/__init__.py:805 cdedb/common/__init__.py:806
 #, python-format
 msgid "Cannot unwrap str or bytes. Got %(data)s."
 msgstr ""
 
-#: cdedb/common/__init__.py:809
+#: cdedb/common/__init__.py:809 cdedb/common/__init__.py:810
 #, python-format
 msgid "Can only unwrap collections. Got %(data)s."
 msgstr ""
 
-#: cdedb/common/__init__.py:813
+#: cdedb/common/__init__.py:813 cdedb/common/__init__.py:814
 #, python-format
 msgid "Can only unwrap collections with one element. Got %(len)s elements."
 msgstr ""
 
-#: cdedb/common/__init__.py:1290
+#: cdedb/common/__init__.py:1290 cdedb/common/__init__.py:1291
 msgid "Security degradation: anonymous and non-expiring parameter"
 msgstr ""
 
-#: cdedb/common/__init__.py:1354
+#: cdedb/common/__init__.py:1354 cdedb/common/__init__.py:1355
 #, fuzzy
 msgid "Invalid date string."
 msgstr "Annuntiationes"
@@ -4134,6 +4162,7 @@ msgid "comment"
 msgstr ""
 
 #: cdedb/database/constants.py:683
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:67
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:71
 msgid "revoked"
 msgstr ""
@@ -4190,19 +4219,20 @@ msgstr ""
 msgid "{milliseconds} milliseconds"
 msgstr ""
 
-#: cdedb/frontend/application.py:130 cdedb/frontend/cron.py:51
+#: cdedb/frontend/application.py:128 cdedb/frontend/application.py:130
+#: cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr ""
 
-#: cdedb/frontend/application.py:221
+#: cdedb/frontend/application.py:219 cdedb/frontend/application.py:221
 msgid "Used a non-trusted http host header. Refuse to proceed."
 msgstr ""
 
-#: cdedb/frontend/application.py:257
+#: cdedb/frontend/application.py:255 cdedb/frontend/application.py:257
 msgid "Session expired."
 msgstr ""
 
-#: cdedb/frontend/application.py:364
+#: cdedb/frontend/application.py:358 cdedb/frontend/application.py:364
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -4210,7 +4240,7 @@ msgid ""
 "reset in the next days."
 msgstr ""
 
-#: cdedb/frontend/application.py:383
+#: cdedb/frontend/application.py:377 cdedb/frontend/application.py:383
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -4242,7 +4272,8 @@ msgstr "Appendix mutata"
 #: cdedb/frontend/assembly/base.py:420 cdedb/frontend/assembly/base.py:547
 #: cdedb/frontend/cde/past_event.py:325 cdedb/frontend/cde/past_event.py:387
 #: cdedb/frontend/cde/past_event.py:445 cdedb/frontend/core/base.py:2610
-#: cdedb/frontend/core/base.py:2663 cdedb/frontend/event/course.py:419
+#: cdedb/frontend/core/base.py:2611 cdedb/frontend/core/base.py:2663
+#: cdedb/frontend/core/base.py:2664 cdedb/frontend/event/course.py:419
 #: cdedb/frontend/event/event.py:319 cdedb/frontend/event/event.py:402
 #: cdedb/frontend/event/event.py:510 cdedb/frontend/event/event.py:1096
 #: cdedb/frontend/event/event.py:1401 cdedb/frontend/event/event.py:1454
@@ -4265,7 +4296,7 @@ msgid "File already known for earlier version of this attachment."
 msgstr ""
 
 #: cdedb/frontend/assembly/attachment.py:291 cdedb/frontend/core/base.py:2127
-#: cdedb/frontend/core/genesis.py:261
+#: cdedb/frontend/core/base.py:2128 cdedb/frontend/core/genesis.py:261
 msgid "File does not exist."
 msgstr ""
 
@@ -4446,7 +4477,8 @@ msgid "Decision noted."
 msgstr ""
 
 #: cdedb/frontend/cde/base.py:254 cdedb/frontend/core/base.py:1509
-#: cdedb/frontend/core/base.py:1518
+#: cdedb/frontend/core/base.py:1510 cdedb/frontend/core/base.py:1518
+#: cdedb/frontend/core/base.py:1519
 #, fuzzy
 msgid "Invalid choice."
 msgstr "Annuntiationes"
@@ -4894,10 +4926,14 @@ msgstr ""
 
 #: cdedb/frontend/common.py:1467 cdedb/frontend/core/base.py:785
 #: cdedb/frontend/core/base.py:1349 cdedb/frontend/core/base.py:1733
-#: cdedb/frontend/core/base.py:1960 cdedb/frontend/core/base.py:2042
-#: cdedb/frontend/core/base.py:2091 cdedb/frontend/core/base.py:2114
-#: cdedb/frontend/core/base.py:2137 cdedb/frontend/core/base.py:2480
-#: cdedb/frontend/core/base.py:2515
+#: cdedb/frontend/core/base.py:1734 cdedb/frontend/core/base.py:1960
+#: cdedb/frontend/core/base.py:1961 cdedb/frontend/core/base.py:2042
+#: cdedb/frontend/core/base.py:2043 cdedb/frontend/core/base.py:2091
+#: cdedb/frontend/core/base.py:2092 cdedb/frontend/core/base.py:2114
+#: cdedb/frontend/core/base.py:2115 cdedb/frontend/core/base.py:2137
+#: cdedb/frontend/core/base.py:2138 cdedb/frontend/core/base.py:2480
+#: cdedb/frontend/core/base.py:2481 cdedb/frontend/core/base.py:2515
+#: cdedb/frontend/core/base.py:2516
 msgid "Persona is archived."
 msgstr ""
 
@@ -4945,41 +4981,41 @@ msgstr "epistula electronica ad verificandum mitte"
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:2020
+#: cdedb/frontend/common.py:2020 cdedb/frontend/common.py:2025
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:2023
+#: cdedb/frontend/common.py:2023 cdedb/frontend/common.py:2028
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:2089
+#: cdedb/frontend/common.py:2089 cdedb/frontend/common.py:2094
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:2245
+#: cdedb/frontend/common.py:2245 cdedb/frontend/common.py:2250
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:2325
+#: cdedb/frontend/common.py:2325 cdedb/frontend/common.py:2330
 #, fuzzy
 msgid "Invalid argtype {t} found."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/common.py:2449
+#: cdedb/frontend/common.py:2449 cdedb/frontend/common.py:2454
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:2454
+#: cdedb/frontend/common.py:2454 cdedb/frontend/common.py:2459
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:2458
+#: cdedb/frontend/common.py:2458 cdedb/frontend/common.py:2463
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2480
+#: cdedb/frontend/common.py:2480 cdedb/frontend/common.py:2485
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -5011,6 +5047,7 @@ msgid "Login failure."
 msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/frontend/core/base.py:323 cdedb/frontend/core/base.py:2243
+#: cdedb/frontend/core/base.py:2244
 #, python-format
 msgid "%(count)s session(s) terminated."
 msgstr ""
@@ -5065,60 +5102,63 @@ msgid ""
 "able to change this amount by himself."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1581
+#: cdedb/frontend/core/base.py:1581 cdedb/frontend/core/base.py:1582
 msgid "Message sent!"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1611
+#: cdedb/frontend/core/base.py:1611 cdedb/frontend/core/base.py:1612
 msgid "Wrong format."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1613 cdedb/frontend/core/base.py:1620
-#: cdedb/frontend/core/base.py:1680 cdedb/frontend/core/base.py:1695
+#: cdedb/frontend/core/base.py:1613 cdedb/frontend/core/base.py:1614
+#: cdedb/frontend/core/base.py:1620 cdedb/frontend/core/base.py:1621
+#: cdedb/frontend/core/base.py:1680 cdedb/frontend/core/base.py:1681
+#: cdedb/frontend/core/base.py:1695 cdedb/frontend/core/base.py:1696
 #, fuzzy
 msgid "Invalid secret."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/core/base.py:1664
+#: cdedb/frontend/core/base.py:1664 cdedb/frontend/core/base.py:1665
 msgid "Reply sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1722
+#: cdedb/frontend/core/base.py:1722 cdedb/frontend/core/base.py:1723
 msgid "Encryption has been updated. New secret has been sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1740 cdedb/frontend/core/base.py:1766
+#: cdedb/frontend/core/base.py:1740 cdedb/frontend/core/base.py:1741
+#: cdedb/frontend/core/base.py:1766 cdedb/frontend/core/base.py:1767
 msgid "Resolve pending privilege change first."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1772
+#: cdedb/frontend/core/base.py:1772 cdedb/frontend/core/base.py:1773
 #, fuzzy
 msgid "non-cde user"
 msgstr "administrator CdEi"
 
-#: cdedb/frontend/core/base.py:1773
+#: cdedb/frontend/core/base.py:1773 cdedb/frontend/core/base.py:1774
 msgid "non-event user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1774
+#: cdedb/frontend/core/base.py:1774 cdedb/frontend/core/base.py:1775
 msgid "non-ml user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1775
+#: cdedb/frontend/core/base.py:1775 cdedb/frontend/core/base.py:1776
 msgid "non-assembly user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1776
+#: cdedb/frontend/core/base.py:1776 cdedb/frontend/core/base.py:1777
 #, fuzzy
 msgid "non-cde admin"
 msgstr "administrator CdEi"
 
-#: cdedb/frontend/core/base.py:1787
+#: cdedb/frontend/core/base.py:1787 cdedb/frontend/core/base.py:1788
 #, python-format
 msgid "Cannot grant this privilege to %(reason)s."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1789
+#: cdedb/frontend/core/base.py:1789 cdedb/frontend/core/base.py:1790
 msgid "this user"
 msgstr ""
 
@@ -5126,11 +5166,16 @@ msgstr ""
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1809
+#: cdedb/frontend/core/base.py:1805
+msgid "Privilege change waiting for approval by another meta admin."
+msgstr ""
+
+#: cdedb/frontend/core/base.py:1809 cdedb/frontend/core/base.py:1810
 msgid "No changes were made."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1836 cdedb/frontend/core/base.py:1867
+#: cdedb/frontend/core/base.py:1836 cdedb/frontend/core/base.py:1837
+#: cdedb/frontend/core/base.py:1867 cdedb/frontend/core/base.py:1868
 msgid "Privilege change not pending."
 msgstr ""
 
@@ -5140,89 +5185,105 @@ msgid ""
 "be approved by another Meta-Admin."
 msgstr ""
 
+#: cdedb/frontend/core/base.py:1843
+msgid ""
+"This privilege change is affecting your meta admin privileges, so it has to "
+"be approved by another meta admin."
+msgstr ""
+
 #: cdedb/frontend/core/base.py:1847
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1883
+#: cdedb/frontend/core/base.py:1848
+msgid ""
+"This privilege change was submitted by you, so it has to be approved by "
+"another meta admin."
+msgstr ""
+
+#: cdedb/frontend/core/base.py:1883 cdedb/frontend/core/base.py:1884
 #, fuzzy
 msgid "Change rejected."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/core/base.py:1884
+#: cdedb/frontend/core/base.py:1884 cdedb/frontend/core/base.py:1885
 msgid "Password reset issued for new admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1964
+#: cdedb/frontend/core/base.py:1964 cdedb/frontend/core/base.py:1965
 msgid "No promotion necessary."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2072
+#: cdedb/frontend/core/base.py:2072 cdedb/frontend/core/base.py:2073
 msgid "Revoked active permit."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2159
+#: cdedb/frontend/core/base.py:2159 cdedb/frontend/core/base.py:2160
 msgid "Foto updated."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2160
+#: cdedb/frontend/core/base.py:2160 cdedb/frontend/core/base.py:2161
 msgid "Foto removed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2178
+#: cdedb/frontend/core/base.py:2178 cdedb/frontend/core/base.py:2179
 msgid "Please provide the user's email address."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2184
+#: cdedb/frontend/core/base.py:2184 cdedb/frontend/core/base.py:2185
 msgid "Password invalidated."
 msgstr ""
 
 #: cdedb/frontend/core/base.py:2210 cdedb/frontend/core/base.py:2211
-#: cdedb/frontend/core/base.py:2213 cdedb/frontend/core/base.py:2379
-#: cdedb/frontend/core/base.py:2380 cdedb/frontend/core/base.py:2382
+#: cdedb/frontend/core/base.py:2212 cdedb/frontend/core/base.py:2213
+#: cdedb/frontend/core/base.py:2214 cdedb/frontend/core/base.py:2379
+#: cdedb/frontend/core/base.py:2380 cdedb/frontend/core/base.py:2381
+#: cdedb/frontend/core/base.py:2382 cdedb/frontend/core/base.py:2383
 msgid "Passwords don’t match."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2231
+#: cdedb/frontend/core/base.py:2231 cdedb/frontend/core/base.py:2232
 #, fuzzy
 msgid "Password changed."
 msgstr "Signum arcanum"
 
-#: cdedb/frontend/core/base.py:2235
+#: cdedb/frontend/core/base.py:2235 cdedb/frontend/core/base.py:2236
 #, fuzzy
 msgid "Wrong password."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/core/base.py:2292 cdedb/frontend/core/base.py:2300
-#: cdedb/frontend/core/base.py:2340
+#: cdedb/frontend/core/base.py:2292 cdedb/frontend/core/base.py:2293
+#: cdedb/frontend/core/base.py:2300 cdedb/frontend/core/base.py:2301
+#: cdedb/frontend/core/base.py:2340 cdedb/frontend/core/base.py:2341
 msgid "Email sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2359
+#: cdedb/frontend/core/base.py:2359 cdedb/frontend/core/base.py:2360
 msgid "Please try again."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2399
+#: cdedb/frontend/core/base.py:2399 cdedb/frontend/core/base.py:2400
 #, fuzzy
 msgid "Password reset."
 msgstr "Signum arcanum"
 
-#: cdedb/frontend/core/base.py:2419
+#: cdedb/frontend/core/base.py:2419 cdedb/frontend/core/base.py:2420
 msgid "Must be different from current email address."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2462 cdedb/frontend/core/base.py:2497
+#: cdedb/frontend/core/base.py:2462 cdedb/frontend/core/base.py:2463
+#: cdedb/frontend/core/base.py:2497 cdedb/frontend/core/base.py:2498
 #, fuzzy
 msgid "Email address changed."
 msgstr "inscriptio electronica pristina"
 
-#: cdedb/frontend/core/base.py:2574
+#: cdedb/frontend/core/base.py:2574 cdedb/frontend/core/base.py:2575
 msgid "Persona has no pending change."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2597
+#: cdedb/frontend/core/base.py:2597 cdedb/frontend/core/base.py:2598
 #, fuzzy
 msgid "Change dropped."
 msgstr "signum arcanum muta"
@@ -7213,6 +7274,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:137
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:42
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:43
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:281
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:127
 #: cdedb/frontend/templates/web/event/generic.tmpl:330
@@ -7801,6 +7863,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:85
 #: cdedb/frontend/templates/web/cde/base.tmpl:80
+#: cdedb/frontend/templates/web/core/base.tmpl:74
 #: cdedb/frontend/templates/web/core/base.tmpl:80
 #: cdedb/frontend/templates/web/core/show_user.tmpl:24
 #: cdedb/frontend/templates/web/event/base.tmpl:280
@@ -7811,6 +7874,7 @@ msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:87
 #: cdedb/frontend/templates/web/cde/base.tmpl:83
+#: cdedb/frontend/templates/web/core/base.tmpl:78
 #: cdedb/frontend/templates/web/core/base.tmpl:84
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:282
@@ -8008,6 +8072,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:53
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:38
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:39
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
 #: cdedb/frontend/templates/web/logging.tmpl:87
 #: cdedb/frontend/templates/web/logging.tmpl:91
@@ -8206,6 +8271,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:382
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:76
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
 msgid "by"
 msgstr ""
@@ -10647,18 +10713,25 @@ msgstr "vestigium novum crea"
 msgid "Userdata Log"
 msgstr "data utentis tracta"
 
+#: cdedb/frontend/templates/web/core/base.tmpl:52
 #: cdedb/frontend/templates/web/core/base.tmpl:53
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:11
 #, fuzzy
 msgid "Case Archive"
 msgstr "vestigium novum crea"
 
+#: cdedb/frontend/templates/web/core/base.tmpl:54
 #: cdedb/frontend/templates/web/core/base.tmpl:57
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:13
 #, fuzzy
 msgid "Measure Overview"
 msgstr "conspectus"
+
+#: cdedb/frontend/templates/web/core/base.tmpl:58
+#: cdedb/frontend/templates/web/core/base.tmpl:63
+msgid "Complaint Log"
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:60
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:10
@@ -10667,32 +10740,33 @@ msgstr "conspectus"
 msgid "Complaint Helpers"
 msgstr "eventus"
 
-#: cdedb/frontend/templates/web/core/base.tmpl:63
-msgid "Complaint Log"
-msgstr ""
-
+#: cdedb/frontend/templates/web/core/base.tmpl:64
 #: cdedb/frontend/templates/web/core/base.tmpl:70
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:7
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:13
 msgid "Metadata"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/base.tmpl:75
 #: cdedb/frontend/templates/web/core/base.tmpl:81
 msgid "User Review"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/base.tmpl:76
 #: cdedb/frontend/templates/web/core/base.tmpl:82
 #: cdedb/frontend/templates/web/core/show_user.tmpl:26
 #, fuzzy
 msgid "Admin Administration"
 msgstr "Annuntiationes"
 
+#: cdedb/frontend/templates/web/core/base.tmpl:77
 #: cdedb/frontend/templates/web/core/base.tmpl:83
 #: cdedb/frontend/templates/web/core/show_user.tmpl:27
 #, fuzzy
 msgid "Core Administration"
 msgstr "Annuntiationes"
 
+#: cdedb/frontend/templates/web/core/base.tmpl:79
 #: cdedb/frontend/templates/web/core/base.tmpl:85
 #: cdedb/frontend/templates/web/core/show_user.tmpl:29
 msgid "Complaints"
@@ -10750,10 +10824,26 @@ msgstr "signum arcanum muta"
 msgid "Privilege changes will have to be approved by another Meta-Admin."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:22
+msgid "Privilege changes will have to be approved by another meta admin."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
+#: cdedb/frontend/templates/web/util.tmpl:1101
+#, fuzzy
+msgid "Meta admin"
+msgstr "administrator administratorum"
+
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
 #: cdedb/frontend/templates/web/util.tmpl:1101
 msgid "Meta-Admin"
 msgstr "administrator administratorum"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
+#: cdedb/frontend/templates/web/util.tmpl:1102
+#, fuzzy
+msgid "Core admin"
+msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
 #: cdedb/frontend/templates/web/util.tmpl:1102
@@ -10762,13 +10852,31 @@ msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
 #: cdedb/frontend/templates/web/util.tmpl:1103
+#, fuzzy
+msgid "CdE admin"
+msgstr "administrator CdEi"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
+#: cdedb/frontend/templates/web/util.tmpl:1103
 msgid "CdE-Admin"
 msgstr "administrator CdEi"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
 #: cdedb/frontend/templates/web/util.tmpl:1104
+#, fuzzy
+msgid "Finance admin"
+msgstr "administrator pecuniae"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
+#: cdedb/frontend/templates/web/util.tmpl:1104
 msgid "Finance-Admin"
 msgstr "administrator pecuniae"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
+#: cdedb/frontend/templates/web/util.tmpl:1105
+#, fuzzy
+msgid "Event admin"
+msgstr "administratores eventuum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
 #: cdedb/frontend/templates/web/util.tmpl:1105
@@ -10778,8 +10886,20 @@ msgstr "administrator eventuum"
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:41
 #: cdedb/frontend/templates/web/util.tmpl:1109
 #, fuzzy
+msgid "Case archive admin"
+msgstr "vestigium novum crea"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:41
+#: cdedb/frontend/templates/web/util.tmpl:1109
+#, fuzzy
 msgid "Complaint-Admin"
 msgstr "administrator capitis"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
+#: cdedb/frontend/templates/web/util.tmpl:1106
+#, fuzzy
+msgid "Mailinglist admin"
+msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
 #: cdedb/frontend/templates/web/util.tmpl:1106
@@ -10788,8 +10908,20 @@ msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:45
 #: cdedb/frontend/templates/web/util.tmpl:1107
+#, fuzzy
+msgid "CdElokal admin"
+msgstr "administrator CdElocalis"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:45
+#: cdedb/frontend/templates/web/util.tmpl:1107
 msgid "CdElokal-Admin"
 msgstr "administrator CdElocalis"
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:48
+#: cdedb/frontend/templates/web/util.tmpl:1108
+#, fuzzy
+msgid "Assembly admin"
+msgstr "administrator coetuum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:48
 #: cdedb/frontend/templates/web/util.tmpl:1108
@@ -10869,6 +11001,7 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:44
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:45
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
@@ -10876,6 +11009,7 @@ msgstr "epistula electronica ad verificandum mitte"
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:237
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:402
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:85
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:89
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:22
 #, fuzzy, python-format
@@ -11284,12 +11418,15 @@ msgstr "removere %(name)s adiutorem eventuum"
 msgid "Measure against %(concerned)s"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:42
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:83
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:87
 #, python-format
 msgid "from %(case)s"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:56
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:58
 msgid "Currently, there are no active measures."
 msgstr ""
@@ -11418,6 +11555,7 @@ msgstr "%(name)s tracta"
 
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:16
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:43
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:47
 #, fuzzy
 msgid "Measures"
@@ -11429,14 +11567,17 @@ msgstr "conspectus"
 msgid "Global information"
 msgstr "notitiae rationis"
 
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:45
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:49
 msgid "This lists all measures targeting this persona."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:69
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:73
 msgid "expired"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:97
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
 #, fuzzy
 msgid "There are no measures targeting this persona."
@@ -12929,8 +13070,20 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:21
 #, fuzzy
+msgid "Meta admins"
+msgstr "administrator administratorum"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:21
+#, fuzzy
 msgid "Meta-Admins"
 msgstr "administrator administratorum"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:23
+msgid ""
+"Meta admins may modify admin privileges of other users based on a four-eye "
+"principle. One meta admin may initiate a change, another has to approve that "
+"change."
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:23
 msgid ""
@@ -12941,8 +13094,20 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:34
 #, fuzzy
+msgid "Core admins"
+msgstr "administrator capitis"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:34
+#, fuzzy
 msgid "Core-Admins"
 msgstr "administrator capitis"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:36
+msgid ""
+"Core admins may view and edit any other user account. They may also approve "
+"account requests for all realms and they may approve pending changes of data "
+"fields needing review (address, birthday and name)."
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:36
 msgid ""
@@ -12956,10 +13121,24 @@ msgstr ""
 msgid "CdE-Admins"
 msgstr "administrator CdEi"
 
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:48
+#, fuzzy
+msgid "Case archive admins"
+msgstr "vestigium novum crea"
+
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:49
 msgid ""
 "CdE-Admins may create, view and edit CdE-Users. They may also manage past "
 "events that are displayed on profiles."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:50
+msgid ""
+"Case Archive Admins manage a repository for personal complaints and similar "
+"crises. As the case coordination, they form the control center of our "
+"complaints procedure. Additionally, they give advice and assign companions "
+"to involved individuals. Their privileges are restricted such that they may "
+"not access any complaints concerning themselves."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:58
@@ -12973,6 +13152,17 @@ msgid ""
 "transactions. They also handle semester management, i.e. the sending of "
 "payment notifications, as well as the removal of inactive members and the "
 "updating of balances."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:63
+#, fuzzy
+msgid "CdE admins"
+msgstr "administrator CdEi"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:65
+msgid ""
+"CdE admins may create, view and edit CdE-Users. They may also manage past "
+"events that are displayed on profiles."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:72
@@ -12990,10 +13180,38 @@ msgid ""
 "related mailinglists."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:74
+#, fuzzy
+msgid "Finance admins"
+msgstr "administrator pecuniae"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:76
+msgid ""
+"Finance admins may manage direct debit authorizations and membership fee "
+"transactions. They also handle semester management, i.e. the sending of "
+"payment notifications, as well as the removal of inactive members and the "
+"updating of balances."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:88
+#, fuzzy
+msgid "Event admins"
+msgstr "administratores eventuum"
+
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
 #, fuzzy
 msgid "Mailinglist-Admins"
 msgstr "administrator tabellarum epistularum electronicarum"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:90
+msgid ""
+"Event admins may create DB-organized events and add and remove orgas to "
+"these events. They can also access the configuration as well as all "
+"registration data of these events. Event admins may create and manage Event-"
+"Users, i.e. users with access to the event realm but not the CdE realm. This "
+"includes the approval of account requests. They may manage and create event "
+"related mailinglists."
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:90
 msgid ""
@@ -13014,6 +13232,18 @@ msgid ""
 "accounts."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:104
+#, fuzzy
+msgid "Mailinglist admins"
+msgstr "administrator tabellarum epistularum electronicarum"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:106
+msgid ""
+"Mailinglist admins may manage and create all types of mailinglists. They may "
+"create, manage and approve requests for Mailinglist-Users, i.e. users that "
+"may only access mailinglists."
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:112
 #, fuzzy
 msgid "Assembly-Admins"
@@ -13027,14 +13257,41 @@ msgid ""
 "assemblies."
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:115
+#, fuzzy
+msgid "CdElokal admins"
+msgstr "administrator CdElocalis"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:117
+msgid ""
+"CdElokal admins may manage and create CdElokal mailinglists. They do not "
+"automatically have access to any user management, like creating and managing "
+"accounts."
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:126
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:142
 msgid "Auditors"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
+#, fuzzy
+msgid "Assembly admins"
+msgstr "administrator coetuum"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:128
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:144
 msgid ""
 "Auditors may view all logs, in particular those related to finance "
 "administration, i.e. the documentation of membership fees."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:130
+msgid ""
+"Assembly admins may create and manage assemblies and ballots. They may "
+"create and manage Assembly-Users, i.e. users with access to assemblies, that "
+"are not CdE members. They may also add these users as participants of "
+"assemblies."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:26
@@ -13316,7 +13573,9 @@ msgstr "eventus"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:244
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:9
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:10
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:14
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:15
 #, fuzzy
 msgid "Event Helpers"
 msgstr "eventus"
@@ -15033,6 +15292,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:19
 #, fuzzy, python-format
 msgid ""
 "Event helpers have comprehensive readonly access to event information which "
@@ -15047,14 +15307,17 @@ msgstr ""
 "possunt."
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:19
 msgid "event admins"
 msgstr "administratores eventuum"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:32
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:33
 msgid "ID of the new event helper"
 msgstr "ID novi adiutoris eventuum"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:64
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:65
 #, python-format
 msgid "Remove %(name)s as event helper"
 msgstr "removere %(name)s adiutorem eventuum"
