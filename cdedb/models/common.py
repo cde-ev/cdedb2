@@ -4,11 +4,13 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
+from enum import Flag, auto
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
+    Self,
     TypeVar,
     cast,
     get_args,
@@ -41,40 +43,77 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
         return "str"
 
 
+class MetaFlag(Flag):
+    """Flags representing metadata of CdEDataclass fields."""
+
+    none = 0
+    """Named 'no flags' flag."""
+
+    # validation
+
+    validate_creation_exclude = auto()
+    """Omit this field from `cls.validation_fields(creation=True)`.
+    Can be used to make use of SQL default values."""
+    validate_update_exclude = auto()
+    """Omit this field from `cls.validation_fields(creation=False)`.
+    Can be used to make a field immutable."""
+    validate_exclude = validate_creation_exclude | validate_update_exclude
+    """Omit this field from `cls.validation_fields()`.
+    Can be used for fields that are magically inserted elsewhere."""
+    validate_creation_optional = auto()
+    """Make this field optional in `cls.validation_fields(creation=True)`.
+    Can be used to make use of SQL default values, while also allowing overrides."""
+
+    # request
+
+    request_creation_exclude = auto()
+    """Omit this field from `cls.requestdict_fields(creation=True)`."""
+    request_update_exclude = auto()
+    """Omit this field from `cls.requestdict_fields(creation=False)`."""
+    request_exclude = request_creation_exclude | request_update_exclude
+    """Exclude the field from `cls.requestdict_fields()`.
+    Can be used for fields that are not submitted via form, but taken from URL."""
+    request_include = auto()
+    """Include the field in `cls.requestdict_fields()` even if it would otherwise not be."""
+
+    # validation + request
+
+    input_update_exclude = validate_update_exclude | request_update_exclude
+    """Omit this field from request extraction and validation during entity updates."""
+    input_exclude = validate_exclude | request_exclude
+    """Omit this field from request extraction and validation."""
+
+    # database
+
+    database_exclude = auto()
+    """Exclude the field from `cls.database_fields()`, which excludes it from
+    being written to or read from the database.
+    Can be used for fields that are specifically calculated or magically inserted."""
+    database_include = auto()
+    """Include the field in `cls.database_fields()` even if it would otherwise not be.
+    Can be used to select fields with type list or set from the database."""
+
+    # asdict
+
+    asdict_exclude = auto()
+    """Exclude the field from `self.asdict()`."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
+        return {"cdedb": self}
+
+    def in_field(self, field: dataclasses.Field[T]) -> bool:
+        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
+        return self in field.metadata.get("cdedb", MetaFlag.none)
+
+
 @dataclass
 class CdEDataclass:
-    """
+    """Base class of all CdEDB dataclasses.
 
-    The behavior of some of the default methods of this parent class can be modified by
-    setting metadata on dataclass fields:
-
-    - 'validation_exclude':
-        If True, alway omit this field from `cls.validation_fields()`.
-        Can be used for fields that are magically inserted elsewhere.
-    - 'creation_exclude':
-        If True, omit this field from `cls.validation_fields(creation=True)`.
-        Can be used to make use of SQL default values.
-    - 'update_exclude':
-        If True, omit this field from `cls.validation_fields(creation=False)`.
-        Can be used to make a field immutable.
-    - 'creation_optional':
-        If True, make this field optional in `cls.validation_fields(creation=True)`.
-        Can be used to make use of SQL default values, while also allowing overrides.
-    - 'request_exclude':
-        If True, exclude the field from `cls.requestdict_fields()`.
-        Can be used for fields that are not submitted via form, but taken from URL.
-    - 'database_exclude':
-        If True, exclude the field from `cls.database_fields()`, which excludes it from
-        being written to or read from the database.
-        Can be used for fields that are specifically calculated or magically inserted
-        elsewhere.
-    - 'database_include':
-        If True, include the field in `cls.database_fields()` even if it would
-        otherwise not be.
-        Can be used to select fields with type list or set from the database.
-    - 'asdict_exclude':
-        If True, exclude the field from `self.asdict()`.
-        Can be used to avoid read-only fields being validated.
+    The behavior of some of the default methods can be modified by setting metadata on
+    dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
     id: vtypes.ProtoID
 
@@ -163,12 +202,10 @@ class CdEDataclass:
         optional: vtypes.MutableTypeMapping = {}
         for field in dataclasses.fields(cls):
             field.type = cast(type[Any], field.type)
-            if field.metadata.get('validation_exclude'):
-                continue
             if creation:
-                if field.metadata.get('creation_exclude'):
+                if MetaFlag.validate_creation_exclude.in_field(field):
                     continue
-                if field.metadata.get('creation_optional'):
+                if MetaFlag.validate_creation_optional.in_field(field):
                     optional[field.name] = field.type
                     continue
                 if field.name == 'id':
@@ -186,7 +223,7 @@ class CdEDataclass:
                 else:
                     mandatory[field.name] = field.type
             else:
-                if field.metadata.get('update_exclude'):
+                if MetaFlag.validate_update_exclude.in_field(field):
                     continue
                 if field.name == 'id':
                     mandatory[field.name] = vtypes.ID
@@ -220,22 +257,18 @@ class CdEDataclass:
         field_names.discard("id")
         fields = []
         for field in dataclasses.fields(cls):
-            if not field.metadata.get('request_include'):
+            if not MetaFlag.request_include.in_field(field):
                 if field.name not in field_names:
                     continue
-                if field.metadata.get('request_exclude'):
+                if MetaFlag.request_exclude.in_field(field):
                     continue
                 if not field.init:
                     continue
                 if creation is True:
-                    if field.metadata.get('creation_exclude'):
-                        continue
-                    if field.metadata.get('creation_request_exclude'):
+                    if MetaFlag.request_creation_exclude.in_field(field):
                         continue
                 if creation is False:
-                    if field.metadata.get('update_exclude'):
-                        continue
-                    if field.metadata.get('update_request_exclude'):
+                    if MetaFlag.request_update_exclude.in_field(field):
                         continue
             fields.append((field.name, requestdict_field_spec(field)))
         return fields
@@ -248,8 +281,8 @@ class CdEDataclass:
             if field.init
                and get_origin(field.type) is not dict
                and get_origin(field.type) is not set
-               and not field.metadata.get('database_exclude')
-            or field.metadata.get('database_include')
+               and not MetaFlag.database_exclude.in_field(field)
+            or MetaFlag.database_include.in_field(field)
         ]
 
     def as_dict(self) -> dict[str, Any]:
@@ -312,7 +345,7 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        if field.metadata.get('asdict_exclude'):
+        if MetaFlag.asdict_exclude.in_field(field):
             return False
         # TODO: do not use the repr for this.
         return field.repr
