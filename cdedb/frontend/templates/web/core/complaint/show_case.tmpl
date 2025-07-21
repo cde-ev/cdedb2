@@ -101,7 +101,7 @@
             {{ util.input_select(
                 name="involvement_type",
                 entries=enums['ComplaintInvolvementType']|enum_entries(processing=gettext),
-                attributes='style="width:25%; height:100%; border-left:0;"'|s
+                attributes='style="width:25%; border-left:0;"'|s
             ) }}
             <div class="input-group-btn">
                 {{ util.input_submit(label=gettext("Add"), icon="user-plus", aclass="btn btn-success ") }}
@@ -274,7 +274,7 @@
                     {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
                     <div class="input-group-btn">
                         {{ util.input_submit(label=gettext("Unlock descriptions"),
-                                             aclass="btn btn-sm btn-primary", icon="unlock")
+                                             aclass="btn btn-primary", icon="unlock")
                         }}
                     </div>
                 </div>

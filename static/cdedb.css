@@ -75,6 +75,9 @@ body{
 .input-group-addon label {
     margin-bottom: 0;
 }
+.input-group, .input-group > *, .input-group-btn>.btn {
+    height: 100%;
+}
 .alert-info a {
     text-decoration: underline;
 }
