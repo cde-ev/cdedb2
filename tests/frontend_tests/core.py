@@ -1188,9 +1188,12 @@ class TestCoreFrontend(FrontendTest):
         f['password'] = self.user['password']
         self.submit(f)
         if self.user_in("vera"):
+            # There will be two mails in this case.
             text = self.fetch_mail_content(0)
             self.assertIn("E-Mail-Adresse des Admins Vera Verwaltung", text)
         else:
+            # In this case, there will only one mail (to the old address)
+            # TODO Actually test that
             with self.assertRaises(IndexError):
                 self.fetch_mail_content(1)
         self.logout()
