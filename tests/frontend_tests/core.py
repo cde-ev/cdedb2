@@ -1187,6 +1187,15 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['password'] = self.user['password']
         self.submit(f)
+        if self.user_in("vera"):
+            # There will be two mails in this case.
+            text = self.fetch_mail_content(0)
+            self.assertIn("E-Mail-Adresse des Admins Vera Verwaltung", text)
+        else:
+            # In this case, there will only one mail (to the old address)
+            # TODO Actually test that
+            with self.assertRaises(IndexError):
+                self.fetch_mail_content(1)
         self.logout()
         self.assertIn('loginform', self.response.forms)
         self.login(self.user)
@@ -1198,24 +1207,32 @@ class TestCoreFrontend(FrontendTest):
         self.assertLogin(self.user['given_names'])
 
     def test_admin_username_change(self) -> None:
-        new_username = "bertalotta@example.cde"
         vera = USER_DICT['vera']
         self.get('/')
-        self.login(vera)
-        self.admin_view_profile('berta')
-        self.traverse({'href': '/username/adminchange'})
-        f = self.response.forms['usernamechangeform']
-        f['new_username'] = new_username
-        self.submit(f)
-        self.logout()
-        berta = USER_DICT['berta']
-        self.login(berta)
-        self.assertIn('loginform', self.response.forms)
-        new_berta = dict(berta)
-        new_berta['username'] = new_username
-        self.login(new_berta)
-        self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(new_berta['given_names'])
+        for user_id in ['berta', 'anton']:
+            self.login(vera)
+            self.admin_view_profile(user_id)
+            self.traverse({'href': '/username/adminchange'})
+            f = self.response.forms['usernamechangeform']
+            new_username = f"{user_id}lotta@example.cde"
+            f['new_username'] = new_username
+            self.submit(f)
+            if user_id == "anton":
+                text = self.fetch_mail_content()
+                self.assertIn("E-Mail-Adresse des Admins Anton", text)
+            else:
+                with self.assertRaises(IndexError):
+                    self.fetch_mail_content()
+            self.logout()
+            user = USER_DICT[user_id]
+            self.login(user)
+            self.assertIn('loginform', self.response.forms)
+            new_user = dict(user)
+            new_user['username'] = new_username
+            self.login(new_user)
+            self.assertNotIn('loginform', self.response.forms)
+            self.assertLogin(new_user['given_names'])
+            self.logout()
 
     def test_any_admin_query(self) -> None:
         admin1 = USER_DICT["anton"]
