@@ -305,7 +305,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
-            "address": EntitySorter.address,
+            "address": EntitySorter.make_address_sorter(
+                rs.gettext, self.conf["DEFAULT_COUNTRY"]
+            ),
             # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
