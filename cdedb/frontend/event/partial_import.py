@@ -82,7 +82,7 @@ class EventImportMixin(EventBaseFrontend):
             rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_additional_questionnaire")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
@@ -140,7 +140,11 @@ class EventImportMixin(EventBaseFrontend):
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        # TODO use dataclasses here
+        courses = {
+            course_id: course.as_dict()
+            for course_id, course in self.eventproxy.get_courses(rs, course_ids).items()
+            }
         persona_ids = (
             ({e['persona_id'] for e in registrations.values()}
              | {e.get('persona_id')

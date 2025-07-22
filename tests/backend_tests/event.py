@@ -38,6 +38,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
@@ -450,7 +451,7 @@ class TestEventBackend(BackendTest):
         new_course['active_segments'] = new_course['segments']
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
-            self.key, new_course_id))
+            self.key, new_course_id).as_dict())
 
         new_group = {
             'event_id': new_id,
@@ -867,26 +868,23 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
         data['fields'] = {}
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'] = {1, 3}
         data['active_segments'] = {1, 3}
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
             'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
             'id': new_id, 'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
         self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
@@ -1012,7 +1010,7 @@ class TestEventBackend(BackendTest):
             [1, 3, 4],
             partial_export["registrations"][1]["tracks"][1]["choices"])
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_visible_events(self) -> None:
         rs = self.event.get_rs(self.key)  # type: ignore[attr-defined]
         expectation = {
@@ -1029,7 +1027,7 @@ class TestEventBackend(BackendTest):
                              if event.is_visible_for(rs.user, True, privileged=False)}
         self.assertEqual(event_ids, total_registration)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_has_registrations(self) -> None:
         self.assertTrue(self.event.has_registrations(self.key, 1))
 
@@ -1791,7 +1789,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
-    @as_users("berta", "emilia")
+    @as_users("berta", "emilia", maintain_data=True)
     def test_get_questionnaire(self) -> None:
         event_id = 1
         expectation = {
@@ -1820,7 +1818,7 @@ class TestEventBackend(BackendTest):
                 },
                 {
                     'field_id': 1,
-                    'default_value': 'True',
+                    'default_value': True,
                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
                             ' abzuwerfen.',
                     'pos': 1,
@@ -2509,6 +2507,8 @@ class TestEventBackend(BackendTest):
             reg['mtime'] = None
             for fee_id, amount in reg['personalized_fees'].items():
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
+            for fee_kind, amount in reg['amount_owed_by_kind'].items():
+                reg['amount_owed_by_kind'][fee_kind] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2640,12 +2640,22 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1]['mtime'] = nearly_now()
         # amount_owed is recalculated
         expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
+        expectation['registrations'][2]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("584.49"),
+            "external": decimal.Decimal("5.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
         expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
         expectation['registrations'][3]['personalized_fees'][10] = decimal.Decimal(
             expectation['registrations'][3]['personalized_fees'][10],
         )
+        expectation['registrations'][3]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("534.49"),
+            "instructor_refund": decimal.Decimal("-45.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -2654,6 +2664,9 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
+        expectation['registrations'][1002]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("573.99"),
+        }
         expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)
 
@@ -2967,7 +2980,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertEqual(expectation, delta)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_check_registration_status(self) -> None:
         event_id = 1
 
@@ -4200,7 +4213,7 @@ class TestEventBackend(BackendTest):
             },
             4: None,
             1006: {
-                'part_ids': set(list(event.parts)[:len(event.parts) // 2]),
+                'part_ids': set(xsorted(event.parts.keys())[:len(event.parts) // 2]),
             },
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))

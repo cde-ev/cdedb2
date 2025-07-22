@@ -11,7 +11,7 @@ from tests.common import BackendTest, as_users, event_keeper
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
-    @as_users("vera", "berta")
+    @as_users("vera", "berta", maintain_data=True)
     def test_participation_infos(self) -> None:
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {

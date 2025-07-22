@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         19,
-        2
+        3
     ],
     "courses": {
         "1": {
@@ -299,6 +299,7 @@
         "orga_tokens": {
             "1": {
                 "atime": null,
+                "ctime": "2025-06-01T00:00:00.000000+00:00",
                 "etime": "2222-12-31T23:59:59+00:00",
                 "notes": "Mal probieren, was diese API so alles kann.",
                 "rtime": null,
@@ -373,7 +374,7 @@
                     "title": "Unter\u00fcberschrift"
                 },
                 {
-                    "default_value": "True",
+                    "default_value": true,
                     "field_name": "brings_balls",
                     "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
                     "input_size": null,
@@ -493,8 +494,13 @@
     "registrations": {
         "1": {
             "amount_owed": "553.99",
+            "amount_owed_by_kind": {
+                "common": "573.99",
+                "instructor_refund": "-20.00"
+            },
             "amount_paid": "200.00",
             "checkin_periods": [],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
                 "arrival_at": "2022-02-02T09:00:00+00:00",
@@ -504,6 +510,7 @@
             "is_member": true,
             "list_consent": true,
             "mixed_lodging": true,
+            "mtime": null,
             "notes": null,
             "orga_notes": null,
             "parental_agreement": true,
@@ -583,8 +590,13 @@
         },
         "2": {
             "amount_owed": "466.49",
+            "amount_owed_by_kind": {
+                "common": "461.49",
+                "external": "5.00"
+            },
             "amount_paid": "0.00",
             "checkin_periods": [],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "brings_balls": true,
@@ -595,6 +607,7 @@
             "is_member": false,
             "list_consent": true,
             "mixed_lodging": true,
+            "mtime": null,
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "parental_agreement": true,
@@ -672,8 +685,14 @@
         },
         "3": {
             "amount_owed": "504.48",
+            "amount_owed_by_kind": {
+                "common": "534.49",
+                "instructor_refund": "-30.00",
+                "solidary_reduction": "-0.01"
+            },
             "amount_paid": "0.00",
             "checkin_periods": [],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
@@ -682,6 +701,7 @@
             "is_member": true,
             "list_consent": false,
             "mixed_lodging": true,
+            "mtime": null,
             "notes": null,
             "orga_notes": null,
             "parental_agreement": true,
@@ -761,8 +781,12 @@
         },
         "4": {
             "amount_owed": "431.99",
+            "amount_owed_by_kind": {
+                "common": "431.99"
+            },
             "amount_paid": "548.48",
             "checkin_periods": [],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
                 "brings_balls": false,
@@ -773,6 +797,7 @@
             "is_member": true,
             "list_consent": false,
             "mixed_lodging": false,
+            "mtime": null,
             "notes": null,
             "orga_notes": null,
             "parental_agreement": false,
@@ -850,8 +875,13 @@
         },
         "5": {
             "amount_owed": "584.48",
+            "amount_owed_by_kind": {
+                "common": "584.49",
+                "solidary_reduction": "-0.01"
+            },
             "amount_paid": "0.00",
             "checkin_periods": [],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
@@ -860,6 +890,7 @@
             "is_member": true,
             "list_consent": true,
             "mixed_lodging": false,
+            "mtime": null,
             "notes": null,
             "orga_notes": null,
             "parental_agreement": true,
@@ -937,6 +968,9 @@
         },
         "6": {
             "amount_owed": "10.50",
+            "amount_owed_by_kind": {
+                "common": "10.50"
+            },
             "amount_paid": "10.50",
             "checkin_periods": [
                 {
@@ -944,6 +978,7 @@
                     "checkout_time": "2022-02-23T09:00:00+00:00"
                 }
             ],
+            "ctime": "2025-06-01T00:00:00.000000+00:00",
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 2,
                 "arrival_at": "2022-02-22T14:00:00+00:00",
@@ -953,6 +988,7 @@
             "is_member": true,
             "list_consent": true,
             "mixed_lodging": true,
+            "mtime": null,
             "notes": null,
             "orga_notes": null,
             "parental_agreement": true,
@@ -1019,5 +1055,5 @@
             }
         }
     },
-    "timestamp": "2025-03-03T09:26:46.760304+00:00"
+    "timestamp": "2025-06-01T00:00:00.000000+00:00"
 }

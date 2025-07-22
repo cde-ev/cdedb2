@@ -88,8 +88,8 @@
                 {% trans %}
                     Your fee consists of:
                 {% endtrans %}
-            </p>
             {{ generic_event.fee_breakdown_by_kind() }}
+            </p>
         {% else %}
             <p>
                 {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}
@@ -129,6 +129,7 @@
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
                         'loading': gettext("Loading..."),
+                        'note': "",
                         'close': gettext("Close") }|tojson }})
             </script>
 
@@ -189,6 +190,11 @@
                     {% trans additional_fee=complex_fee.nonmember_surcharge|money(lang=lang) %}
                         Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                     {% endtrans %}
+                    {% if persona["is cde_realm"] %}
+                        {% trans %}
+                            If you pay your membership fee before your registration fee, the additional fee will be waived.
+                        {% endtrans %}
+                    {% endif %}
                 </p>
             </div>
         {% endif %}

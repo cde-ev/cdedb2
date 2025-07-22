@@ -39,6 +39,10 @@ class TestMlBackend(BackendTest):
         new_data = self.core.get_ml_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     @as_users("anton")
     def test_merge_accounts(self) -> None:
         berta_id = USER_DICT['berta']['id']
@@ -57,12 +61,6 @@ class TestMlBackend(BackendTest):
                                    target_persona_id=berta_id)
         self.assertEqual("Source User is admin and can not be merged.",
                          str(e.exception))
-
-        with self.assertRaises(ValueError) as e:
-            self.ml.merge_accounts(self.key,
-                                   source_persona_id=janis_id,
-                                   target_persona_id=USER_DICT['hades']['id'])
-        self.assertEqual("Target User is not accessible.", str(e.exception))
 
         code = self.ml.merge_accounts(self.key,
                                       source_persona_id=janis_id,
@@ -211,6 +209,7 @@ class TestMlBackend(BackendTest):
             68: 'Windischleuba-Mailingliste für Hexerei und Zauberei',
             69: 'Windischleuba-Mailingliste für Hexerei und Zauberei'
                 ' (muggelfreie Zone)',
+            70: 'Strukturierungskomitee',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -298,7 +297,7 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
         self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
-                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67})
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67, 70})
 
     @as_users("janis")
     def test_double_link(self) -> None:
@@ -585,7 +584,7 @@ class TestMlBackend(BackendTest):
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(models_ml.EventAssociatedMailinglist(**expectation), reality)
 
-    @as_users("nina", "berta", "paul", "quintus")
+    @as_users("nina", "berta", "paul", "quintus", maintain_data=True)
     def test_subscriptions(self) -> None:
         # Which lists is Berta subscribed to.
         expectation = {
@@ -609,7 +608,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
 
-    @as_users("nina", "janis", "paul")
+    @as_users("nina", "janis", "paul", maintain_data=True)
     def test_subscriptions_two(self) -> None:
         # Which lists is Janis subscribed to.
         expectation = {
@@ -1195,7 +1194,7 @@ class TestMlBackend(BackendTest):
         self._check_state(
             mailinglist_id=3, persona_id=3, expected_state=SS.none)
 
-    @as_users("charly", "emilia", "janis")
+    @as_users("charly", "emilia", "janis", maintain_data=True)
     def test_no_privileges(self) -> None:
 
         def _try_everything(ml_id: int, user_id: int) -> None:

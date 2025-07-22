@@ -157,7 +157,8 @@
                                 {% for field in spec %}
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
                                                {% if field == scope.get_primary_key() %}id-field{% endif %}"
-                                            data-type="{{ spec[field].type }}" data-id="{{ field }}">
+                                            data-type="{{ spec[field].type }}" data-id="{{ field }}"
+                                            data-group="{{ spec[field].get_group() }}" data-group-label="{{ spec[field].get_group_label(gettext) }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
                                             {% if ',' not in field and field not in selection_blacklist %}
@@ -641,4 +642,45 @@
             })(document.currentScript);
         </script>
     </button>
+{% endmacro %}
+
+{% macro tabs(anid, nav_tabs, aclass="", formid="") %}
+    <div id="{{ anid }}" class="tab-container {{ aclass }}">
+        <ul class="nav nav-tabs mosp softhide" role="tablist" id="{{ anid }}_tablist">
+            {% for nav_tab_data in nav_tabs %}
+                {{ nav_tab(nav_tab_data.target, nav_tab_data.label, nav_tab_data.icon, nav_tab_data.anid) }}
+            {% endfor %}
+        </ul>
+        <div class="tab-content" id="{{ anid }}_tabcontent">
+            {{ caller() }}
+        </div>
+        {% if formid %}
+            {{ util.input_hidden(name="nav_tab_active", form=formid) }}
+        {% endif %}
+    </div>
+    {% if not jshint %}
+        {{ util.raise_for_test("jshint not set for 'util.tabs'.") }}
+    {% endif %}
+    <script nonce="{{ csp_nonce }}">
+        $("#{{ anid }}").cdedbTabNavigation();
+    </script>
+{% endmacro %}
+
+{% macro nav_tab(target, label, icon=none, anid="") %}
+    <li role="presentation">
+        <a data-toggle="tab" role="tab" data-target="{{ target }}" id="{{ anid }}">
+            {{ util.make_icon(icon) if icon }}{{ nbsp if icon and label -}}
+            {{ label }}
+        </a>
+    </li>
+{% endmacro %}
+
+{% macro tab_pane(anid, labelid, alt_heading="", data={}) %}
+    <div class="tab-pane active" role="tabpanel" id="{{ anid }}" aria-labelledby="{{ labelid }}"
+        {%- for key, value in data.items() %} data-{{ key }}="{{ value }}"{% endfor -%}
+        style="scroll-margin-top: 100vh"
+    >
+        {{ util.h(alt_heading, aclass="tab-heading-alt") }}
+        {{ caller() }}
+    </div>
 {% endmacro %}

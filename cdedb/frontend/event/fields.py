@@ -85,9 +85,10 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("active_tab")
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
-                      ) -> Response:
+    @REQUESTdata("nav_tab_active")
+    def field_summary(
+            self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
+    ) -> Response:
         """Manipulate the fields of an event."""
         mandatory, optional = models.EventField.validation_fields(creation=False)
         spec = dict(mandatory) | dict(optional)
@@ -124,8 +125,7 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, "Ändere Datenfelder.", after_change=True)
         rs.notify_return_code(code)
         return self.redirect(
-            rs, "event/field_summary_form", anchor=(
-                ("tab:" + active_tab) if active_tab is not None else None))
+            rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#"))
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
@@ -168,11 +168,11 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
-            entities = self.eventproxy.get_courses(rs, ids)
-            labels = {course_id: f"{course['nr']} {course['shortname']}"
-                      for course_id, course in entities.items()}
-            ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
+            courses = self.eventproxy.get_courses(rs, ids)
+            # TODO remove after migrating lodgements and registrations to dataclasses
+            entities = {course.id: course.as_dict() for course in courses.values()}
+            labels = {course.id: course.shortlabel for course in courses.values()}
+            ordered_ids = list(courses.keys())
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)

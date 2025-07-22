@@ -1,7 +1,6 @@
 {% set sidenav_active='event_helpers' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ super() }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
@@ -19,6 +18,7 @@
         {% trans event_admins=util.href(cdedblink("core/view_admins") + "#Event-Admins", gettext("event admins")) %}
             Event helpers have comprehensive readonly access to event information which is not privacy-sensitive.
             Specifically, they have only aggregated access to registration data.
+            Furthermore, they may see any information available to all participants of an event.
             By contrast, like orgas, {{ event_admins }} have full access to all event data.
         {% endtrans %}
     </p>
@@ -62,7 +62,7 @@
                                     {{ util.input_hidden(name="persona_id", value=persona_id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as event helper")|format(
-                                                name=util.persona_name(persona))|s) }}
+                                                name=persona|persona_name)|s) }}
                                 </form>
                             {% endif %}
                         </li>

@@ -8,11 +8,11 @@
 {% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {{ util.persona_name(data) }}
+    {{ data|persona_name }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
         icon="user", active=True) }}
 {% endblock %}
 
@@ -26,6 +26,7 @@
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
     {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
+    {{ views.append((gettext("Complaints"), ["complaint"], None)) }}
     {% if "moderator" in access_mode %}
         {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
     {% endif %}
@@ -94,7 +95,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["event_user", "ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -115,6 +116,10 @@
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
+                {% endif %}
+                {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
+                    {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
+                                 gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
                 {% endif %}
             {% endif %}
         </div>
@@ -153,8 +158,9 @@
                         {% trans %}QR{% endtrans %}
                     </a>
                     <script nonce="{{ csp_nonce }}">
-                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': util.persona_name(data),
+                        $("#show-vcard-qr").cdedbQRCodeModal({{ {'title': data|persona_name,
                                                                  'loading': gettext("Loading..."),
+                                                                 'note': "" if not data['foto'] else gettext("QR code does not include the profile photo. Consider downloading the vCard instead."),
                                                                  'close': gettext("Close") }|tojson }})
                     </script>
                     {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'],
@@ -177,7 +183,7 @@
                 {% trans %}Name{% endtrans %}
             </dt>
             <dd>
-                {{ util.persona_name(data, include_nickname=True, with_titles=True) }}
+                {{ data|persona_name(include_nickname=True, with_titles=True) }}
                 {% if data['pronouns'] and data['pronouns_profile'] %}
                     <small class="text-muted">
                         ({{ data['pronouns'] }})
@@ -188,7 +194,7 @@
                 <dt title="{% trans %}Legal Name{% endtrans %}">
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
-                <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
+                <dd>{{ data|persona_name(use_legal_name=True, with_titles=True) }}</dd>
                 {% if "show_legal_given_names" in data %}
                     <dt title="{% trans %}Show legal name in member search{% endtrans %}">
                         {% trans %}Show legal name in member search{% endtrans %}
@@ -557,7 +563,7 @@
                             {{ data['address2'] }}<br />
                         {% endif %}
                         {% if data['address_supplement2'] %}
-                            {{ data['address_supplement2'] }}<br />{
+                            {{ data['address_supplement2'] }}<br />
                         {% endif %}
                         {% if not data['show_address2'] %}</span>{% endif %}
                         {{ data['postal_code2'] }} {{ data['location2'] }}

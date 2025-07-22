@@ -76,6 +76,10 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.validation.validate import (
+    FIELD_DATATYPE_VALIDATORS,
+    validate_check_optional,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
@@ -1115,6 +1119,7 @@ class EventBaseBackend(EventLowLevelBackend):
         of those kinds, otherwise you get them all.
         """
         event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
@@ -1128,6 +1133,19 @@ class EventBaseBackend(EventLowLevelBackend):
         d = self.query_all(rs, query, params)
         for row in d:
             row['kind'] = const.QuestionnaireUsages(row['kind'])
+            if field := event.fields.get(row['field_id']):
+                # Deserialize the stored string into the datatype of the field if able.
+                row['default_value'] = validate_check_optional(
+                    FIELD_DATATYPE_VALIDATORS[field.kind], row['default_value'],
+                    ignore_warnings=True,
+                )[0]
+                # Special case for datetimes: Convert them to the default timezone so
+                #  they can be submitted again even without the timezone.
+                #  This is required for use with 'datetime-local' inputs.
+                if field.kind == const.FieldDatatypes.datetime:
+                    if row['default_value']:
+                        row['default_value'] = row['default_value'].astimezone(self.conf["DEFAULT_TIMEZONE"])
+
         ret = {
             k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
@@ -1416,6 +1434,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
             )
+            registration_fees = list_to_dict(self.sql_select(
+                rs, models.Registration.database_table, ["id", "amount_owed_by_kind"],
+                [event_id], entity_key="event_id",
+            ))
             checkin_periods = self.sql_select(
                 rs, models.CheckinPeriod.database_table,
                 models.CheckinPeriod.database_fields(), registrations.keys(),
@@ -1504,6 +1526,11 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
+            by_kind = registration_fees[registration_id]["amount_owed_by_kind"]
+            registration['amount_owed_by_kind'] = {
+                const.EventFeeType(int(key)).name: decimal.Decimal(amount)
+                for key, amount in by_kind.items()
+            }
             periods = xsorted(checkin_period_lookup[registration_id])
             for period in periods:
                 del period['registration_id']

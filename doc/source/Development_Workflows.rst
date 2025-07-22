@@ -6,6 +6,7 @@ Workflows
    :hidden:
 
    Development_Workflows_Contributing
+   Development_Workflows_Linters
    Development_Workflows_Test_Suite
    Development_Workflows_Internationalization
    Development_Workflows_Scripts

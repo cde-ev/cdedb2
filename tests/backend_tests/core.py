@@ -107,11 +107,11 @@ class TestCoreBackend(BackendTest):
                 key = self.core.login(ANONYMOUS, user['username'], "wrong key", IP)
                 self.assertIsNone(key)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_logout(self) -> None:
         self.assertTrue(self.key)
         self.assertEqual(1, self.core.logout(self.key))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(PrivilegeError):
             self.core.logout(self.key)
 
     @as_users("anton")
@@ -154,7 +154,7 @@ class TestCoreBackend(BackendTest):
                 self.assertIn(
                     "A birthday must be in the past. (birthday)", cm.exception.args)
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
@@ -162,7 +162,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(new_name, self.core.retrieve_persona(
             self.key, self.user['id'])['nickname'])
 
-    @as_users("anton", "berta", "janis")
+    @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_password(self) -> None:
         user = self.user
         ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
@@ -297,6 +297,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -371,6 +372,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -409,6 +411,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -434,6 +437,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -473,6 +477,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
         })
         self.assertEqual(data, new_data)
@@ -798,6 +803,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -884,6 +890,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -973,6 +980,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'id': new_id,
             'is_active': True,
@@ -1093,6 +1101,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_complaint_admin': False,
             'is_auditor': False,
             'is_purged': False,
             'is_searchable': True,
@@ -1257,7 +1266,11 @@ class TestCoreBackend(BackendTest):
             self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
-    @prepsql("DELETE FROM ml.moderators WHERE persona_id = 10")
+    @prepsql(
+        # remove archival blockers
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']};"
+        f"DELETE FROM ml.moderators WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     def test_purge(self) -> None:
         purged_personas = {}
         for p_id, name in ((8, "Hades"), (3, "Charly"), (10, "Janis")):

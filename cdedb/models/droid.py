@@ -99,7 +99,7 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
-from cdedb.models.common import CdEDataclass
+from cdedb.models.common import CdEDataclass, MetaFlag as Meta
 from cdedb.models.event import EventDataclass
 
 
@@ -258,28 +258,26 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     title: str  #: Configurable title.
     notes: str | None  #: Configurable notes field.
     #: Expiration time. Set once during creation.
-    etime: datetime.datetime = field(metadata={'update_exclude': True})
+    etime: datetime.datetime = field(metadata=Meta.input_update_exclude.as_dict)
 
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime = field(
-        default_factory=now, kw_only=True, metadata={
-            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
-        },
+        default_factory=now, kw_only=True,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
     )
     #: Revocation time. Automatically set by event backend on revocation.
     rtime: datetime.datetime | None = field(
-        default=None, kw_only=True, metadata={
-            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
-        },
+        default=None, kw_only=True,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+
     )
     #: Last access time. Automatically updated by session backend on every request.
     atime: datetime.datetime | None = field(
-        default=None, kw_only=True, metadata={
-            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
-        },
-    )
+        default=None, kw_only=True,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+)
 
     # Implementations of inherited methods.
 
@@ -319,7 +317,7 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
     name = "orga"
 
     #: ID of the event this token is linked to. May not change.
-    event_id: vtypes.ID = field(metadata={'update_exclude': True})
+    event_id: vtypes.ID = field(metadata=Meta.input_update_exclude.as_dict)
 
     #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"

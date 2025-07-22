@@ -2,6 +2,7 @@
 
 """Basic services for the core realm."""
 
+import base64
 import collections
 import datetime
 import decimal
@@ -60,6 +61,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS,
     ADMIN_VIEWS_COOKIE_NAME,
     ALL_ADMIN_VIEWS,
+    ALL_ADMINS,
     REALM_ADMINS,
     REALM_INHERITANCE,
     extract_roles,
@@ -419,7 +421,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=True)
         persona = self.coreproxy.get_persona(rs, persona_id)
         filename = sanitize_filename(make_persona_name(persona))
 
@@ -432,15 +434,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=False)
 
         buffer = io.BytesIO()
         segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
-    @staticmethod
-    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+    def _make_vcard_data(self, rs: RequestState, persona: CdEDBObject, include_foto: bool) -> str:
         """Creates a string encoding the contact information as vCard 3.0.
 
         Only a subset of available `vCard 3.0 properties
@@ -477,11 +478,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 data.append(prefix + ";".join(escape(e or "") for e in address))
         if persona['birthday'] != datetime.date.min:
             data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        if persona['foto'] and include_foto:
+            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
+            foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
+            if mime_type and foto_data:
+                data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
         data.append('END:VCARD')
         data.append('')
         return '\r\n'.join(data)
 
-    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+    def _create_vcard(self, rs: RequestState, persona_id: int, include_foto: bool) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
 
@@ -496,7 +502,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        vcard = self._make_vcard_data(rs, persona)
+        vcard = self._make_vcard_data(rs, persona, include_foto)
         return vcard
 
     @access("persona")
@@ -961,8 +967,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
+        - ``admin_persona``: Search for users as
+          (core|cde|complaint|ml)_admin or auditor.
+        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -994,10 +1001,13 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
+            if not (
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if "core_admin" not in rs.user.roles:
+            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
@@ -1063,8 +1073,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Core admins are allowed to search by raw ID or CDEDB-ID
-        if "core_admin" in rs.user.roles:
+        # Allow admins to search by (CdEDB)ID
+        if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
@@ -1403,6 +1413,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # meta admins
             "meta": self.coreproxy.list_admins(rs, "meta"),
             "core": self.coreproxy.list_admins(rs, "core"),
+            "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
@@ -1744,7 +1755,8 @@ class CoreBaseFrontend(AbstractFrontend):
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          is_auditor: bool, notes: str) -> Response:
+                          is_complaint_admin: bool, is_auditor: bool, notes: str,
+                          ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1791,7 +1803,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             rs.notify_return_code(code, success=n_("Privilege change waiting for"
-                                                   " approval by another Meta-Admin."))
+                                                   " approval by another meta admin."))
             if not code:
                 return self.change_privileges_form(rs, persona_id)
         else:
@@ -1828,13 +1840,13 @@ class CoreBaseFrontend(AbstractFrontend):
         if (privilege_change["is_meta_admin"] is not None
                 and privilege_change["persona_id"] == rs.user.persona_id):
             rs.notify(
-                "info", n_("This privilege change is affecting your Meta-Admin"
-                           " privileges, so it has to be approved by another "
-                           "Meta-Admin."))
+                "info", n_("This privilege change is affecting your meta admin"
+                           " privileges, so it has to be approved by another"
+                           " meta admin."))
         if privilege_change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info", n_("This privilege change was submitted by you, so it "
-                           "has to be approved by another Meta-Admin."))
+                           "has to be approved by another meta admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
         submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])

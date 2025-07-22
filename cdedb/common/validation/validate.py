@@ -95,6 +95,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
@@ -1012,8 +1013,15 @@ def _realm(
 
 @_add_typed_validator
 def _cdedbid(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, passthrough: bool = False, **kwargs: Any,
 ) -> CdedbID:
+    if passthrough:
+        try:
+            val = _id(val, argname, **kwargs)
+        except ValidationSummary:
+            pass
+        else:
+            return CdedbID(val)
     val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
     if not match:
@@ -1488,6 +1496,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_ml_admin': bool,
     'is_assembly_admin': bool,
     'is_cdelokal_admin': bool,
+    'is_complaint_admin': bool,
     'is_auditor': bool,
     'is_cde_realm': bool,
     'is_event_realm': bool,
@@ -3719,6 +3728,20 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'checkin_periods': list[ReducedCheckinPeriod],
 }
 
+# May be present, but will be ignored:
+PARTIAL_REGISTRATION_IGNORED_FIELDS = {
+    # Ignored to ensure consistent bookkeeping:
+    'amount_paid',
+    'payment',
+    'is_member',
+    # Ignored because they are calculated, derived or external values:
+    'amount_owed',
+    'amount_owed_by_kind',
+    'persona',
+    'ctime',
+    'mtime',
+}
+
 # TODO Can we auto generate all these partial validators?
 
 
@@ -3735,14 +3758,19 @@ def _partial_registration(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
-        optional_fields = {**PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
-        optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
-                           **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
+        optional_fields = {
+            **PARTIAL_REGISTRATION_COMMON_FIELDS,
+            **PARTIAL_REGISTRATION_OPTIONAL_FIELDS,
+            **{key: Any for key in PARTIAL_REGISTRATION_IGNORED_FIELDS}
+        }
 
     # The check of fields is delegated to EventAssociatedFields.
     val = _examine_dictionary_fields(
@@ -3751,8 +3779,9 @@ def _partial_registration(
     )
 
     errs = ValidationSummary()
-    if 'amount_owed' in val:
-        del val['amount_owed']
+    for key in PARTIAL_REGISTRATION_IGNORED_FIELDS:
+        if key in val:
+            del val[key]
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
@@ -4685,7 +4714,7 @@ def _query_input(
                     vv: Any = _ALL_TYPED[
                         Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                     ](
-                        v, field, **kwargs)
+                        v, field, passthrough=True, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -4730,7 +4759,7 @@ def _query_input(
                 value = _ALL_TYPED[
                     Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                 ](
-                    value, field, **kwargs)
+                    value, field, passthrough=True, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -4847,7 +4876,7 @@ def _query(
                 Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
                 with errs:
-                    validator(v, f"constraints/{field}", **kwargs)
+                    validator(v, f"constraints/{field}", passthrough=True, **kwargs)
         else:
             try:
                 _ALL_TYPED[
@@ -4855,6 +4884,7 @@ def _query(
                 ](
                     value,
                     f"constraints/{field}",
+                    passthrough=True,
                     **kwargs,
                 )
             except ValidationSummary as e:
@@ -4936,6 +4966,83 @@ def _log_filter(
     val = _examine_dictionary_fields(val, mandatory, optional)
 
     return LogFilter(val)
+
+
+_create_dataclass_validator(models_complaint.Case, models_complaint.Case)
+
+
+@_create_dataclass_validator(
+    models_complaint.ComplaintEntry,
+    models_complaint.ComplaintEntry
+)
+def _complaint_entry(
+    val: Any, argname: str, *, entries: dict[int, models_complaint.ComplaintEntry],
+    **kwargs: Any,
+) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    entry_type: const.ComplaintEntryType = val['entry_type']
+
+    # Validate concerned_id dependent on entry_type
+    type_ = CdedbID if entry_type.has_concerned else NoneType
+    with errs:
+        val['concerned_id'] = _ALL_TYPED[type_](
+                val.get('concerned_id'), 'concerned_id', **kwargs)
+
+    # Validate parent_id dependent on entry_type
+    type_ = ID if entry_type in entry_type.all_children() else NoneType
+    with errs:
+        val['parent_id'] = _ALL_TYPED[type_](
+            val.get('parent_id'), 'parent_id', **kwargs)
+
+    if val.get('parent_id'):
+        if val['parent_id'] not in entries:
+            errs.append(KeyError("parent_id", n_("Unknown parent entry.")))
+        elif entry_type not in entries[val['parent_id']].entry_type.possible_children:
+            errs.append(ValueError("parent_id", n_("Invalid parent type.")))
+
+    if errs:
+        raise errs
+
+    return val
+
+
+@_create_dataclass_validator(
+    models_complaint.ComplaintEntryVersion,
+    models_complaint.ComplaintEntryVersion,
+)
+def _complaint_entry_version(
+    val: Any, argname: str, entry_type: const.ComplaintEntryType | None, **kwargs: Any
+) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    if not entry_type:
+        raise ValidationSummary(ValueError(
+            "entry_type", "Must provide entry_type for setting entry."))
+
+    # Validate concerned_id dependent on entry_type
+    validator = _str if entry_type.has_description else _None
+    with errs:
+        val['description'] = validator(val.get('description'), 'description', **kwargs)
+
+    if val.get('authors'):
+        # Remove any duplicates
+        val['authors'] = list(set(val['authors']))
+    else:
+        errs.append(ValueError('authors', n_("Must not be empty.")))
+
+    if not entry_type.is_measure:
+        with errs:
+            val['etime'] = _ALL_TYPED[NoneType](
+                val.get('etime'), 'etime', **kwargs)
+
+    if val.get('etime') and val['etime'] <= val['timestamp']:
+        errs.append(ValueError('etime', n_("Must be after timestamp.")))
+
+    if errs:
+        raise errs
+
+    return val
 
 
 E = TypeVar('E', bound=enum.Enum)

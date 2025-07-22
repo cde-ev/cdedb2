@@ -20,6 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend,
@@ -944,6 +945,7 @@ class CoreBaseBackend(AbstractBackend):
             raise PrivilegeError(n_("Hiding prevented."))
         if "is_archived" in data:
             if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
+                    and "ml_admin" not in rs.user.roles
                     or "archive" not in allow_specials):
                 raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
@@ -1279,6 +1281,7 @@ class CoreBaseBackend(AbstractBackend):
             "ml": "is_ml_admin = TRUE",
             "assembly": "is_assembly_admin = TRUE",
             "cdelokal": "is_cdelokal_admin = TRUE",
+            "complaint": "is_complaint_admin = TRUE",
             "auditor": "is_auditor = TRUE",
         }
         constraint = constraints.get(realm)
@@ -1477,7 +1480,7 @@ class CoreBaseBackend(AbstractBackend):
             eligible for archival in between.
 
         Things that prevent such automated archival:
-            * The persona having any admin bit.
+            * The persona having any admin bit or realm helper role.
             * The persona being a member.
             * The persona already being archived.
             * The persona having logged in in the last two years.
@@ -1498,6 +1501,18 @@ class CoreBaseBackend(AbstractBackend):
 
             # Do some basic sanity checks.
             if any(persona[admin_key] for admin_key in ADMIN_KEYS):
+                return False
+
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
                 return False
 
             if persona['is_member'] or persona['is_archived']:
@@ -1664,6 +1679,18 @@ class CoreBaseBackend(AbstractBackend):
             if any(persona[key] for key in ADMIN_KEYS):
                 raise ArchiveError(n_("Cannot archive admins."))
 
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
+                raise ArchiveError(n_("Cannot archive complaint and event helpers."))
+
             #
             # 2. Handle lastschrift
             #
@@ -1716,6 +1743,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_complaint_admin': False,
                 'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
@@ -1944,6 +1972,10 @@ class CoreBaseBackend(AbstractBackend):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
+            if self.sql_select(
+                rs, models_complaint.ComplaintInvolved.database_table, ("id",), (persona_id,), entity_key="persona_id"
+            ):
+                raise RuntimeError(n_("Persona may not be purged."))
             #
             # 1. Zap information
             #
@@ -2071,7 +2103,10 @@ class CoreBaseBackend(AbstractBackend):
         event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin",
+                                          "complaint_admin", "core_admin"}
+            )
+        ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """
@@ -2400,7 +2435,7 @@ class CoreBaseBackend(AbstractBackend):
                                    PERSONA_CORE_FIELDS, data["id"])
         if data is None:
             raise RuntimeError(n_("Impossible."))
-        vals = {k: data[k] for k in ('username', 'given_names', 'family_name')}
+        vals = {k: data[k] for k in ('username', 'given_names', 'nickname', 'family_name')}
         vals['persona_id'] = data['id']
         rs.user = User(roles=extract_roles(data), **vals)
 

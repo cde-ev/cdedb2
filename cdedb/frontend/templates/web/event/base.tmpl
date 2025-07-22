@@ -64,8 +64,10 @@
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
         {% if event['id'] in user.orga or 'event_orga' in user.admin_views %}
-            {{ util.href(cdedblink("event/register_form", {"event_id": event['id'], "preview": True}), gettext("Registration Preview"),
+            {{ util.href(cdedblink("event/register_form", {"event_id": event.id, "preview": True}), gettext("Registration Preview"),
                     aclass="list-group-item", icon="sign-in-alt", active=(sidenav_active == 'event_register_preview')) }}
+            {{ util.href(cdedblink("event/additional_questionnaire_form", {"event_id": event.id, "preview": True}), gettext("Questionnaire Preview"),
+                    aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest_preview')) }}
         {% endif %}
         {% if (is_participant and event['participant_info']) or event['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": event['id']}),
@@ -148,13 +150,14 @@
                              icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {% endif %}
             {% if is_privileged_for("configure_registration_form") %}
-                {{ util.href(cdedblink("event/configure_registration", {"event_id": event['id']}), gettext("Configure Registration"),
-                             icon='check-square', aclass="list-group-item", active=(sidenav_active == 'event_configure_registration')) }}
+                {{ util.href(cdedblink("event/configure_registration", {"event_id": event.id}),
+                             gettext("Configure Registration"), aclass="list-group-item",
+                             active=(sidenav_active == "event_register_config"), icon="check-square") }}
             {% endif %}
             {% if is_privileged_for("configure_additional_questionnaire_form") %}
-                {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": event['id']}),
+                {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": event.id}),
                              gettext("Configure Questionnaire"), aclass="list-group-item",
-                            active=(sidenav_active == 'event_configure_additional_questionnaire'), icon='plus-square') }}
+                             active=(sidenav_active == "event_quest_config"), icon="plus-square") }}
             {% endif %}
             {% if is_privileged_for("constraint_violations") %}
                 {{ util.href(cdedblink("event/constraint_violations", {"event_id": event['id']}),

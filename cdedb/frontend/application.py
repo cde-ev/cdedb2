@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """The WSGI-application to tie it all together."""
-
+import datetime
 import json
 import os
 import pathlib
@@ -17,6 +17,7 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -77,6 +78,7 @@ class Application(BaseApp):
     def __init__(self) -> None:
         super().__init__()
         self.coreproxy = make_proxy(CoreBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.assemblyproxy = make_proxy(AssemblyBackend())
@@ -129,7 +131,9 @@ class Application(BaseApp):
 
     def make_error_page(self, error: Exception,
                         request: werkzeug.wrappers.Request, user: User,
-                        message: Optional[str] = None) -> Response:
+                        begin: datetime.datetime,
+                        message: Optional[str] = None,
+                        ) -> Response:
         """Helper to format an error page.
 
         This is similar to
@@ -172,11 +176,12 @@ class Application(BaseApp):
             def _cdedblink(endpoint: str, params: Optional[CdEDBObject] = None) -> str:
                 return urls.build(endpoint, params or {})
 
-            begin = now()
+            request_begin = now()
             data = {
                 'ambience': {},
                 'cdedblink': _cdedblink,
                 'errors': {},
+                'request_time': lambda: (now() - request_begin),
                 'generation_time': lambda: (now() - begin),
                 'gettext': gettext,
                 'ngettext': self.translations[lang].ngettext,
@@ -212,7 +217,7 @@ class Application(BaseApp):
                 and not self.conf["CDEDB_DEV"]):
             return self.make_error_page(
                 werkzeug.exceptions.SecurityError(),
-                request, user,
+                request, user, begin,
                 n_("Used a non-trusted http host header. Refuse to proceed."))
         try:
             sessionkey = request.cookies.get("sessionkey")
@@ -312,8 +317,12 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                Realms = {"core", "cde", "event", "assembly", "ml"}
-                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in Realms}
+                realms = {"core", "complaint", "cde", "event", "assembly", "ml"}
+                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
+                if user.persona_id in self.complaintproxy.list_enforcers(rs):
+                    realm_roles['complaint'].add('enforcer')
+                if user.persona_id in self.complaintproxy.list_monitors(rs):
+                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')
@@ -351,7 +360,7 @@ class Application(BaseApp):
                 # they happen through the frontend.
                 self.coreproxy.log_quota_violation(rs)
                 return self.make_error_page(
-                    e, request, user,
+                    e, request, user, begin,
                     n_("You reached the internal limit for user profile views. "
                        "This is a privacy feature to prevent users from cloning "
                        "the address database. Unfortunatetly, this may also yield "
@@ -365,12 +374,12 @@ class Application(BaseApp):
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
         except werkzeug.exceptions.HTTPException as e:
-            return self.make_error_page(e, request, user)
+            return self.make_error_page(e, request, user, begin)
         except psycopg2.extensions.TransactionRollbackError as e:
             # Serialization error
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(str(e.args)),
-                request, user,
+                request, user, begin,
                 n_("A modification to the database could not be executed due "
                    "to simultaneous access. Please reload the page to try "
                    "again."))
@@ -398,7 +407,7 @@ class Application(BaseApp):
 
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
-            return self.make_error_page(e, request, user)
+            return self.make_error_page(e, request, user, begin)
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
         """

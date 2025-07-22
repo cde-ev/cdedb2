@@ -631,6 +631,7 @@ class TestCron(CronTest):
             'gu': unittest.mock.MagicMock(),
             'whz': unittest.mock.MagicMock(),
             'whzmfz': unittest.mock.MagicMock(),
+            'struktur': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 
@@ -686,6 +687,7 @@ class TestCron(CronTest):
                           umcall('gu'),
                           umcall('whz'),
                           umcall('whzmfz'),
+                          umcall('struktur'),
                           umcall('migration'),
                           ])))
         # Meta update
@@ -768,6 +770,7 @@ class TestCron(CronTest):
             'gu': unittest.mock.MagicMock(),
             'whz': unittest.mock.MagicMock(),
             'whzmfz': unittest.mock.MagicMock(),
+            'struktur': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 

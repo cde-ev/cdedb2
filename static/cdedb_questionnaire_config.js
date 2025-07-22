@@ -31,21 +31,32 @@ var inputTypes = {
      *      questionnaire for string-fields.
      */
     function replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, size) {
-        var has_entries = field_spec['entries'] !== null;
+        var num_entries = Object.keys(field_spec['entries'] || {}).length;
         var field_type = field_spec['kind'];
 
-        if (parseInt($input_defaultvalue.attr('data-type')) !== field_type
-            || Boolean($input_defaultvalue.attr('data-entries')) !== has_entries) {
+        // Store the original default value to be able to reapply it.
+        let $input_group_defaultvalue = $input_defaultvalue.closest('.form-group');
+        if ($input_group_defaultvalue.data('orig_defaultvalue') === undefined) {
+            $input_group_defaultvalue.data('orig_defaultvalue', $input_defaultvalue.val());
+        }
+        let defaultvalue = $input_group_defaultvalue.data('orig_defaultvalue');
+
+        // Replace the default value input if the field type changed or either the current or the new field has entries.
+        if (
+            parseInt($input_defaultvalue.data('field_type')) !== field_type
+            || parseInt($input_defaultvalue.data('num_entries'))
+            || num_entries
+        ) {
             // Create new input field for data type of selected data field
-            if (field_type === FieldDatatypes.bool || has_entries) {
-                var $i = $('<select>', {
+            if (field_type === FieldDatatypes.bool || num_entries) {
+                $i = $('<select>', {
                     'class': "form-control input-defaultvalue drow-input",
                     'id': $input_defaultvalue.attr('id'),
                     'name': $input_defaultvalue.attr('name')
                 });
 
                 $i.append($('<option>', {'value': ''}));
-                if (has_entries) {
+                if (num_entries) {
                     for (var key in field_spec['entries']) {
                         $i.append($('<option>', {'value': key}).text(field_spec['entries'][key]));
                     }
@@ -54,32 +65,27 @@ var inputTypes = {
                         .append($('<option>', {'value': 'False'}).text(translations['false'] || 'false'));
                 }
 
-                $i.val($input_defaultvalue.val());
+                $i.val(defaultvalue);
 
             // For string type fields, we use a textarea (to allow entering line breaks w/o copy&paste)
-            } else if (field_type === FieldDatatypes.str && size > 0) {
-                $i = $('<textarea>', {
-                    'class': "form-control input-defaultvalue drow-input",
-                    'name': $input_defaultvalue.attr('name'),
-                    'rows': 2
-                })
-                    .val($input_defaultvalue.val());
             } else {
-                $i = $('<input>', {
+                $i = $(field_type === FieldDatatypes.str && size > 0 ? '<textarea>' : '<input>', {
                     'class': "form-control input-defaultvalue drow-input",
+                    'id': $input_defaultvalue.attr('id'),
                     'name': $input_defaultvalue.attr('name'),
                     'type': inputTypes[field_type]
                 })
-                    .val($input_defaultvalue.val());
+                    .val(defaultvalue);
 
                 if (field_type === FieldDatatypes.date)
                     $i.attr('placeholder', 'YYYY-MM-DD');
                 else if (field_type === FieldDatatypes.datetime)
-                    $i.attr('placeholder', 'YYYY-MM-DDThh:mm');
+                    $i.attr('placeholder', 'YYYY-MM-DDThh:mm:ss')
+                        .val(defaultvalue.split("+", 1)[0]);
             }
 
-            $i.attr('data-type', field_type)
-                .attr('data-entries', has_entries);
+            $i.data('field_type', field_type)
+                .data('num_entries', num_entries);
             $input_defaultvalue.replaceWith($i);
         }
     }
@@ -134,11 +140,11 @@ var inputTypes = {
             };
 
             /* Call input_field_handler() on change of field-input and once for intialization */
-            $input_field.change(input_field_handler);
-            $input_field.trigger('change');
+            $input_field.on("change", input_field_handler);
+            $input_field.trigger("change");
 
             /* Additionally, call replace_defaultvalue_input when size-field is changed */
-            $input_size.change(function(){
+            $input_size.on("change", function(){
                 var field_spec = field_list[$input_field.val()];
                 if (field_spec) {
                     var $input_defaultvalue = $container.find('.input-defaultvalue');

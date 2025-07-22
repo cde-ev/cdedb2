@@ -21,7 +21,6 @@ import string
 import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
-from itertools import chain
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
@@ -120,7 +119,7 @@ class User:
                  droid: "APIToken | None" = None,
                  roles: Optional[set[Role]] = None,
                  realm_roles: Optional[dict[Realm, set[str]]] = None,
-                 given_names: str = "", family_name: str = "",
+                 given_names: str = "", nickname: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
@@ -132,6 +131,7 @@ class User:
         self.realm_roles = realm_roles or {}
         self.username = username
         self.given_names = given_names
+        self.nickname = nickname
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
         self.moderator: set[int] = set(moderator) if moderator else set()
@@ -139,18 +139,27 @@ class User:
         self.admin_views: set[AdminView] = set()
 
     @property
+    def all_roles(self) -> set[Role]:
+        return self.roles.union(
+            f"{realm}.{realm_role}"
+            for realm, realm_roles in self.realm_roles.items()
+            for realm_role in realm_roles
+        )
+
+    @property
     def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.roles | set(chain(*self.realm_roles.values())))
+        return roles_to_admin_views(self.all_roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
-    def persona_name(self) -> str:
+    def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name({
             'given_names': self.given_names,
+            'nickname': self.nickname,
             'family_name': self.family_name,
-        })
+        }, include_nickname=include_nickname)
 
 
 if TYPE_CHECKING:
@@ -600,7 +609,6 @@ def make_persona_name(persona: CdEDBObject,
                       with_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
 
-    This is the Python pendant of the `util.persona_name()` macro.
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
@@ -1329,6 +1337,7 @@ def parse_date(val: str) -> datetime.date:
 
     We only support a limited set of formats to avoid any surprises
     """
+    val = val.strip()
     formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
                ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
     for fmt, _ in formats:
@@ -1440,7 +1449,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 2)
+EVENT_SCHEMA_VERSION = (19, 3)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

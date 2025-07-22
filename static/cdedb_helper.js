@@ -290,7 +290,7 @@
      * in its content section ("#cdedb-modal-content").
      *
      * @param translations (object) Translation texts for the modal. Must contain keys
-     *                              "title", "loading" and "close".
+     *                              "title", "loading", "note" and "close".
      * @param small (boolean) optionally reduce the width of the modal
      */
     function cdedb_show_modal(translations, small=false) {
@@ -315,6 +315,9 @@
             <div class="modal-body" id="cdedb-modal-content">
                 ${ loading_spinner }
             </div>
+            <div class="modal-body" id="cdedb-modal-content-note">
+                    ${ translations["note"] }
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" id="cdedb-modal-close" data-dismiss="modal">
                     ${ translations["close"] }
@@ -329,6 +332,7 @@
         } else {
             $("#cdedb-modal-title").text(translations["title"]);
             $("#cdedb-modal-content").html(loading_spinner);
+            $("#cdedb-modal-content-note").text(translations["note"]);
             $("#cdedb-modal-close").text(translations["close"]);
         }
         $("#cdedb-modal").modal("show");
@@ -339,7 +343,7 @@
      *
      * @param link (String) Link to markdown parsing frontend endpoint
      * @param translations (object) A dict containing the localized labels for the preview modal. Should have
-     *                              "title", "loading" and "close" as keys.
+     *                              "title", "loading", "note" and "close" as keys.
      */
     $.fn.cdedbMarkdownPreview = function (link, translations) {
         $(".mdjs").show();
@@ -360,7 +364,7 @@
     /**
      * Replace the link to vcard QR code with a popup modal showing the QR code.
      *
-     * @param translations Label texts for the modal. Must contain keys "title", "loading" and "close".
+     * @param translations Label texts for the modal. Must contain keys "title", "loading", "note" and "close".
      */
     $.fn.cdedbQRCodeModal = function (translations) {
         let qr_button = this;
@@ -369,7 +373,7 @@
         qr_button.click(function () {
             cdedb_show_modal(translations, true);
                 let modal = $("#cdedb-modal");
-                // We have to wait for the modal to finish loading before determining it's width.
+                // We have to wait for the modal to finish loading before determining its width.
                 modal.off("shown.bs.modal");
                 modal.on("shown.bs.modal", function () {
                     let modal_content = $("#cdedb-modal-content");

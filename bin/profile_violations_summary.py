@@ -25,4 +25,6 @@ with script:
     user_rs.translations = setup_translations(script.config)
     user_rs.ambience = reconnoitre_ambience(event, user_rs)
 
+    event.constraint_violations_summary(user_rs)
+
     cProfile.run("event.constraint_violations_summary(user_rs)", sys.argv[1])

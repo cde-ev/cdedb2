@@ -1299,24 +1299,25 @@ class EventLowLevelBackend(AbstractBackend):
             FROM event.registrations
             LEFT OUTER JOIN (
                 SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
-                FROM event.log WHERE code = %s AND event_id = %s
+                FROM event.log WHERE code = %(ctime_code)s AND event_id = %(event_id)s
                 GROUP BY log_persona_id
             ) AS ctime
             ON event.registrations.persona_id = ctime.log_persona_id
             LEFT OUTER JOIN (
                 SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
-                FROM event.log WHERE code = %s AND event_id = %s
+                FROM event.log WHERE code = %(mtime_code)s AND event_id = %(event_id)s
                 GROUP BY log_persona_id
             ) AS mtime
             ON event.registrations.persona_id = mtime.log_persona_id
-            WHERE event.registrations.event_id = %s"""
-        params: list[DatabaseValue_s] = [
-            const.EventLogCodes.registration_created, event_id,
-            const.EventLogCodes.registration_changed, event_id, event_id,
-        ]
+            WHERE event.registrations.event_id = %(event_id)s"""
+        params: dict[str, DatabaseValue_s] = {
+            "event_id": event_id,
+            "ctime_code": const.EventLogCodes.registration_created,
+            "mtime_code": const.EventLogCodes.registration_changed,
+        }
         if registration_ids is not None:
-            query += " AND event.registrations.id = ANY(%s)"
-            params.append(registration_ids)
+            query += " AND event.registrations.id = ANY(%(reg_ids)s)"
+            params["reg_ids"] = registration_ids
         rdata = self.query_all(rs, query, params)
         return {reg['id']: reg for reg in rdata}
 

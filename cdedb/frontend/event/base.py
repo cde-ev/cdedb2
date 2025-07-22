@@ -164,8 +164,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.eventproxy.is_locked(rs, event_id=event_id) and
-                required_privilege & EventPrivileges.all_write):
+        if event := rs.ambience.get('event'):
+            is_locked = event.is_locked
+        else:
+            is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
+        if is_locked and required_privilege & EventPrivileges.all_write:
             return False
         return is_privileged_event(rs, required_privilege, event_id)
 
@@ -303,7 +306,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
             "address": EntitySorter.address,
-            "course": EntitySorter.course,
+            # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
@@ -330,7 +333,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
                     if course_id:
-                        prim_rank += prim_sorter(courses[course_id])
+                        prim_rank += courses[course_id].get_sortkey()
                     else:
                         prim_rank += ("0", "", "")
             else:
@@ -450,6 +453,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
+                # TODO remove when migrating lodgements to dataclasses here
+                if isinstance(instance, models.EventDataclass):
+                    instance = instance.as_dict()
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
@@ -532,7 +538,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         choice_stats: "ChoiceStats"  # noqa: UP037
         attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.get_lodgements(
@@ -545,7 +551,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event.id, involved=True,
+            rs, event.id, involved=True, _registrations=all_registrations,
         )
 
         violations = models_cv.ViolationAux(

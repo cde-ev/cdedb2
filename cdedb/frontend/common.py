@@ -77,12 +77,14 @@ import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -110,7 +112,6 @@ from cdedb.common import (
     get_mandatory_form_fields,
     glue,
     json_serialize,
-    make_persona_name,
     make_proxy,
     merge_dicts,
     now,
@@ -149,6 +150,7 @@ from cdedb.filter import (
     safe_filter,
     sanitize_None,
 )
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
@@ -435,7 +437,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
-        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -448,6 +449,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.pasteventproxy = make_proxy(PastEventBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         # Provide mailman access
         secrets = SecretsConfig()
         # local variables to prevent closure over secrets
@@ -564,6 +566,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise AttributeError(n_("Given method is not callable."))
 
         # here come the always accessible things promised above
+        begin = now()
         data = {
             'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
@@ -571,7 +574,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'doclink': _doclink,
             'staticlink': _staticlink,
             'errors': rs.get_validation_errors_dict(),
-            'generation_time': lambda: (now() - rs.begin),
+            'request_time': lambda: (now() - rs.begin),
+            'generation_time': lambda: (now() - begin),
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
@@ -1405,21 +1409,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if category is None:
             category, p = inspect_validation(
-                vtypes.Identifier, raw['category_old'], argname="category")
+                vtypes.Identifier, raw['category'], argname="category")
             problems.extend(p)
         persona = None
         registration = None
         event = None
 
         date, p = inspect_validation(
-            datetime.date, raw['transaction_date'], argname="date")
+            datetime.date, raw['date'], argname="date")
         problems.extend(p)
 
         amount, p = parse_util.check_amount(raw['amount_german'])
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+            vtypes.CdedbID, (datum['raw']['cdedbid'] or "").strip(), argname="persona_id")
         problems.extend(p)
 
         family_name, p = inspect_validation(
@@ -1433,7 +1437,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if category is None:
             problems.append(('category', ValueError(n_("Invalid category."))))
             type_ = TransactionType.Unknown
-        elif category == TransactionType.MembershipFee.old():
+        elif category == TransactionType.MembershipFee.category():
             type_ = TransactionType.MembershipFee
             if amount is not None and amount <= 0:
                 problems.append((
@@ -1493,7 +1497,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         total = amount_paid + amount
                         fee = registration['amount_owed']
 
-                        if (registration['ctime']
+                        if (registration['ctime'] and date
                                 and date < registration['ctime'].date()):
                             infos.append((
                                 'date',
@@ -1813,7 +1817,7 @@ class AmbienceDict(typing.TypedDict):
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
     pevent: NotRequired[CdEDBObject]
-    course: NotRequired[CdEDBObject]
+    course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
@@ -1828,6 +1832,8 @@ class AmbienceDict(typing.TypedDict):
     assembly: NotRequired[CdEDBObject]
     ballot: NotRequired[CdEDBObject]
     mailinglist: NotRequired[models_ml.Mailinglist]
+    case: NotRequired[models_complaint.Case]
+    entry: NotRequired[models_complaint.ComplaintEntry]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1865,7 +1871,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
@@ -1921,6 +1927,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                                     in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
               'mailinglist_id', 'mailinglist', ()),
+        Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
+              'case_id', 'case', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'entry_id', 'entry', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'parent_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
@@ -1984,18 +1996,13 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> werkzeug.Response:
-            roles = rs.user.roles.union(
-                f"{realm}.{realm_role}"
-                for realm, realm_roles in rs.user.realm_roles.items()
-                for realm_role in realm_roles
-            )
-            if roles & access_list:
+            if rs.user.all_roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 expects_persona = any('droid' not in role
                                       for role in access_list)
-                if roles == {"anonymous"} and expects_persona:
+                if rs.user.all_roles == {"anonymous"} and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2018,7 +2025,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {roles}."
+                log_msg = msg.format(**params) + f" Roles: {rs.user.all_roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
@@ -2522,6 +2529,25 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+DC = TypeVar('DC', bound=CdEDataclass)
+
+
+def extract_and_check_dataclass_validation(
+    rs: RequestState,
+    type_: type[DC],
+    name: Optional[str] = None,
+    *,
+    additional_data: CdEDBObject | None = None,
+    creation: bool,
+    **kwargs: Any
+) -> Optional[CdEDBObject]:
+    data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
+    if additional_data:
+        data.update(additional_data)
+    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    return cast(Optional[CdEDBObject], data)
 
 
 def inspect_validation(

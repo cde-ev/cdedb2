@@ -21,10 +21,8 @@
             {% endif %}
         </h4>
 
-        {% set course_entries = all_courses|keydictsort(EntitySorter.course)
-                                           |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
-        {% set all_course_entries = all_courses|keydictsort(EntitySorter.course)
-                                               |xdict_entries('{id}', '{nr}. {title}', include=all_course_choices) %}
+        {% set course_entries = all_courses|entries('id', 'label', include=course_choices) %}
+        {% set all_course_entries = all_courses|entries('id', 'label', include=all_course_choices) %}
         {% if cco.is_complex() %}
             {% set choice_name = "group{}.course_choice".format(cco['id']) + "_{}" %}
             {% set instructor_name = "group{}.course_instructor".format(cco['id']) %}
@@ -189,6 +187,7 @@
             datatypes.non_negative_int: 'number',
             datatypes.non_negative_float: 'number',
             datatypes.phone: 'tel',
+            datatypes.iban: 'iban',
         } %}
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
@@ -280,7 +279,7 @@
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_questionnaire_config(part_id, kind, aclass="", newrow=False) %}
+{% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}">
         <div class="panel-body">
             <div class="row">
@@ -300,7 +299,7 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields.values()|sort|entries('id', 'field_name'),
+                                              entries=registration_fields|entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
@@ -632,7 +631,7 @@
                                   method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
-                                        icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                        icon='trash-alt' if fee.amount is not none else 'dumpster-fire',
                                         label=None, aclass="btn btn-sm btn-danger",
                                         readonly=not is_privileged_for('delete_fee') or ambience['event'].is_balanced,
                                         title=(
@@ -688,7 +687,7 @@
     Skip fee kinds that sum to zero, unless `show_all=True`.
 #}
 {% macro fee_breakdown_by_kind(show_all=False) -%}
-    <table class="table-slim table-condensed bg-info" style="color: #333">
+    <table id="fee-breakdown" class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
             {# Already sorted automatically. #}
             {% for kind, amount in complex_fee if amount or show_all %}

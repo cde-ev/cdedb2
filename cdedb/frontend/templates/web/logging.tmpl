@@ -20,7 +20,7 @@
     </div>
 {% endmacro %}
 
-{% macro table(log, keytitle='') %}
+{% macro table(log, additional=[]) %}
     {{ filterlink() }}
     <table class="table table-condensed table-hover table-log">
         <thead>
@@ -28,9 +28,9 @@
             <th>{% trans %}Timestamp{% endtrans %}</th>
             <th>{% trans %}Code{% endtrans %}</th>
             <th>{% trans %}Submitted By{% endtrans %}</th>
-            {% if keytitle %}
+            {% for keytitle in additional %}
             <th>{{ gettext(keytitle) }}</th>
-            {% endif %}
+            {% endfor %}
             <th>{% trans %}Affected{% endtrans %}</th>
             <th>{% trans %}Annotation{% endtrans %}</th>
         </tr>
@@ -41,7 +41,7 @@
     </table>
 {% endmacro %}
 
-{% macro row(entry, enum, iteration, key='', link=None, personalink=None) %}
+{% macro row(entry, enum, iteration, additional=[], personalink=None) %}
     <tr id="{{ iteration }}-{{ entry['id'] }}">
         <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
         <td>{{ gettext(enum(entry['code'])|string) }}</td>
@@ -52,15 +52,11 @@
                 –
             {% endif %}
         </td>
-        {% if key %}
+        {% for additional_value in additional %}
         <td>
-            {% if entry[key] %}
-                {{ link }}
-            {% else %}
-                –
-            {% endif %}
+            {{ additional_value or "–" }}
         </td>
-        {% endif %}
+        {% endfor %}
         <td>
             {% if entry['persona_id'] %}
                 {% if personalink %}
@@ -102,12 +98,23 @@
             {% elif filter_name == "pevent_id" %}
                 {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
+            {% elif filter_name == "case_id" %}
+                {{ util.form_input_text(name="case_id", label=gettext("Case"), type="number", small=True) }}
+                {{ util.form_input_select(name="case_id_include_empty", label=gettext("Include Entries without Case"), entries=enums["IncludeEmpty"]|enum_entries, small=True) }}
+                {{ util.form_input_text(name="companion_id", label=gettext("Companion"), small=True,
+                        anid="input-companion_id") }}
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    $('#input-companion_id').cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'}, [],
+                                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    );
+                </script>
             {% elif filter_name == "event_id" %}
                 {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
-                        entries=all_events.values()|sort|entries('id', 'title'), small=True, sort=True) }}
+                        entries=all_events|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
-                        entries=all_mailinglists|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
+                        entries=all_mailinglists|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}

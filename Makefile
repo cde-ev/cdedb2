@@ -13,9 +13,12 @@ help:
 	@echo "Translations"
 	@echo "i18n-refresh        -- extract translatable strings from code and update translation catalogs in I18NDIR"
 	@echo ""
-	@echo "Code formatting:"
-	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
+	@echo "Formatting and static analysis:"
+	@echo "mypy                -- let mypy run over our codebase"
 	@echo "lint                -- run linters (ruff)"
+	@echo "format              -- automatically sort imports and reformat code"
+	@echo "autoformat          -- automatically sort imports, reformat code and lint"
+	@echo "format-diff         -- show the changes 'format' would make but do not apply them"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -35,10 +38,16 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
-ISORT ?= $(RUFF) --select I
+RUFF ?= $(PYTHONBIN) -m ruff --config pyproject.toml
+ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
+
+include .ruff_targets
+
+MAKE_FORMAT_TARGETS ?= $(FORMAT_TARGETS)
+MAKE_LINT_TARGETS ?= $(LINT_TARGETS)
+MAKE_ISORT_TARGETS ?= $(ISORT_TARGETS)
 
 
 #####################
@@ -118,11 +127,21 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 
 .PHONY: format
 format:
-	$(ISORT) --fix bin/*.py cdedb tests
+	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS)
+
+.PHONY: autoformat
+autoformat: format
+	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
+
+.PHONY: format-diff
+format-diff:
+	$(ISORT) $(MAKE_ISORT_TARGETS) --diff
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
 .PHONY: mypy
 mypy:
-	$(MYPY) bin/*.py cdedb tests
+	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 
@@ -131,7 +150,7 @@ isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	$(ISORT) bin/*.py cdedb tests
+	$(ISORT) $(MAKE_ISORT_TARGETS)
 	@echo ""
 
 .PHONY: ruff
@@ -143,11 +162,17 @@ ruff:
 	sudo chown cdedb -R .ruff_cache
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
-	$(RUFF) --output-format=grouped cdedb tests
+	$(RUFF) check $(MAKE_LINT_TARGETS) --output-format=grouped
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
 else
-	$(RUFF) cdedb tests
+	$(RUFF) check $(MAKE_LINT_TARGETS)
+	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
 endif
 	@echo ""
+
+.PHONY: ruff-fix
+ruff-fix:
+	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
 
 .PHONY: template-line-length
 template-line-length:

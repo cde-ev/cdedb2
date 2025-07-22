@@ -251,7 +251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             course_id: {
                 tg_id: {
                     event.tracks[t_id].part_id for t_id in
-                    (set(tg.tracks) & course['segments'])
+                    (set(tg.tracks) & course.segments)
                 }
                 for tg_id, tg in event.track_groups.items()
                 if tg.constraint_type == ccs
@@ -768,13 +768,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         if event.notify_on_registration.send_on_register() and registration_id:
             registration = self.eventproxy.get_registration(rs, registration_id)
             persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
-            registrations = [
-                {
-                    'persona.given_names': persona['given_names'],
-                    'persona.family_name': persona['family_name'],
-                    'id': registration_id,
-                },
-            ]
+            persona['registration_id'] = registration_id
+            registrations: tuple[CdEDBObject, ...] = (persona,)
             query: Query | None = None
         elif event.notify_on_registration.send_periodically():
             query = Query(
@@ -782,6 +777,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 QueryScope.registration.get_spec(event=event),
                 [
                     "persona.given_names",
+                    "persona.nickname",
                     "persona.family_name",
                     "persona.username",
                     "ctime.creation_time",
@@ -800,8 +796,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ("ctime.creation_time", False),
                 ],
             )
-            registrations = list(
-                self.eventproxy.submit_general_query(rs, query, event.id))
+            query_result = self.eventproxy.submit_general_query(rs, query, event.id)
+            registrations = tuple(
+                {
+                    key: res[f'persona.{key}']
+                    for key in ('given_names', 'nickname', 'family_name')
+                }
+                for res in query_result
+            )
         else:
             return 0, ref_timestamp
 
@@ -823,9 +825,6 @@ class EventRegistrationMixin(EventBaseFrontend):
                     'event_id': event.id,
                 } if query else None,
                 'NotifyOnRegistration': const.NotifyOnRegistration,
-                'persona_name':
-                    lambda r:
-                        f"{r['persona.given_names']} {r['persona.family_name']}",
             },
         )
         return len(registrations), ref_timestamp
@@ -899,7 +898,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         ]
 
         return self.render(rs, "registration/registration_status", {
-            'registration': registration, 'age': age,
+            'registration': registration,
+            'persona': persona,
+            'age': age,
             'reg_questionnaire': reg_questionnaire,
             'waitlist_position': waitlist_position,
             'sorted_involved_tracks': sorted_involved_tracks,

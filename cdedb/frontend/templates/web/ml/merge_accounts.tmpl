@@ -45,7 +45,7 @@
                                 placeholder="DB-XXXX-X", anid="input-target-persona") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-target-persona').cdedbSearchPerson(
-                '{{ cdedblink('core/select_persona') }}', {'kind': 'ml_user'}, [],
+                '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'}, [],
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>

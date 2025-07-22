@@ -81,6 +81,8 @@
                 id: id,
                 type: settings.choices[id] ? 'list' : $(this).attr('data-type'),
                 name: $(this).find('.name').text(),
+                group: $(this).data('group'),
+                group_label: $(this).data('group-label'),
                 choices: choices,
                 sortable : false,
                 input_select: input_select.length ? input_select : null,
@@ -130,7 +132,13 @@
             });
             $viewFieldSelect.selectize({
                 'placeholder': settings.labels['add_field'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             $filterFieldSelect.change(function() {
@@ -141,7 +149,13 @@
             });
             $filterFieldSelect.selectize({
                 'placeholder': settings.labels['add_filter'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             $sortFieldSelect.change(function() {
@@ -153,7 +167,13 @@
             });
             $sortFieldSelect.selectize({
                 'placeholder': settings.labels['add_sort'] || '',
-                copyClassesToDropdown: false
+                copyClassesToDropdown: false,
+                optgroupField: 'group',
+                render: {
+                    optgroup_header: function(data, escape) {
+                        return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+                    },
+                }
             });
 
             this.refreshViewFieldSelect();
@@ -238,7 +258,8 @@
             var inputTypes = {
                     'date' : 'date',
                     'datetime' : 'datetime-local',
-                    'checkin_datetime' : 'datetime-local',
+                    'ranged_date': 'date',
+                    'ranged_datetime' : 'datetime-local',
                     'int' : 'number',
                     'id' : 'number',
                     'str' : 'text',
@@ -263,8 +284,8 @@
             case 21: //lessequal
             case 24: //greaterequal
             case 25: //equal
-            case 101: //checkedin_at
-            case 102: //checkedin_notat
+            case 101: //ranged_at
+            case 102: //ranged_notat
                 var changeFunction = function() {
                     f.input_filter_value.val($(this).val());
                     f.error = null;
@@ -301,9 +322,9 @@
                     })
                         .change(changeFunction)
                         .val(f.input_filter_value.val());
-                    if (f.type == 'date')
+                    if (f.type == 'date' || f.type == 'ranged_date')
                         $i.attr('placeholder','YYYY-MM-DD');
-                    else if (f.type == 'datetime' || f.type == 'checkin_datetime')
+                    else if (f.type == 'datetime' || f.type == 'ranged_datetime')
                         $i.attr('placeholder','YYYY-MM-DDThh:mm');
                     $i.appendTo($fieldbox);
                 }
@@ -343,9 +364,9 @@
 
                 var $inputs = $i1.add($i2);
                 $inputs.attr('type', inputTypes[f.type])
-                if (f.type == 'date')
+                if (f.type == 'date' || f.type == 'ranged_date')
                     $inputs.attr('placeholder','YYYY-MM-DD');
-                else if (f.type == 'datetime' || f.type == 'checkin_datetime')
+                else if (f.type == 'datetime' || f.type == 'ranged_datetime')
                     $inputs.attr('placeholder','YYYY-MM-DDThh:mm');
                 $inputs.change(function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
@@ -360,10 +381,10 @@
             case 14: //containsall
             case 15: //containsnone
             case 16: //containssome
-            case 103: //checkedin_oneof
-            case 104: //checkedin_noneof
-            case 105: //checkedin_allof
-            case 106: //checkedin_notallof
+            case 103: //ranged_oneof
+            case 104: //ranged_noneof
+            case 105: //ranged_allof
+            case 106: //ranged_notallof
                 var placeholders = {
                     'date' : 'YYYY-MM-DD,YYYY-MM-DD,…',
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',
@@ -500,15 +521,22 @@
 
             // Add not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (!currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $filterFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 
@@ -524,15 +552,22 @@
 
             // Add all valid and not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.input_select !== null && !currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $viewFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 
@@ -558,15 +593,22 @@
 
             // Add all valid and not listed fields to selectize.js-selectbox
             options = [];
+            let groups = {};
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.sortable && !currentFields[i]) {
-                    options.push({value: i, text: f.name});
+                    options.push({value: i, text: f.name, group: f.group});
+                    if (f.group && !groups[f.group]) {
+                        groups[f.group] = {label: f.group_label};
+                    }
                 }
             }
             var selectize = $sortFieldSelect[0].selectize;
             selectize.setValue('');
             selectize.clearOptions();
+            for (const [key, data] of Object.entries(groups)) {
+                selectize.addOptionGroup(key, data);
+            }
             selectize.addOption(options);
         };
 

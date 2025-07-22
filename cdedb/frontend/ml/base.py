@@ -339,10 +339,13 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
                     "User does not exist or is archived."))))
-        if not self.coreproxy.verify_id(rs, target_persona_id, is_archived=False):
+        if not self.coreproxy.verify_id(rs, target_persona_id, is_archived=None):
             rs.append_validation_error(
-                ("target_persona_id", ValueError(n_(
-                    "User does not exist or is archived."))))
+                ("target_persona_id", ValueError(n_("User does not exist."))))
+        elif not self.coreproxy.verify_id(rs, target_persona_id, is_archived=False):
+            if not self.coreproxy.is_relative_admin(rs, target_persona_id):
+                rs.append_validation_error(
+                    ("target_persona_id", ValueError(n_("May not dearchive user."))))
         if not self.coreproxy.verify_persona(rs, source_persona_id,
                                              allowed_roles={"ml"}):
             rs.append_validation_error(
