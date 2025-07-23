@@ -831,13 +831,6 @@ class Course(EventDataclass):
     def get_sortkey(self) -> Sortkey:
         return self.nr, self.shortname
 
-    def as_dict(self) -> dict[str, Any]:
-        ret = super().as_dict()
-        for segment in ret["segments"].values():
-            del segment["course_id"]
-            del segment["track_id"]
-        return ret
-
     @classmethod
     def validation_fields(
             cls, *, creation: bool,
@@ -859,9 +852,9 @@ class CourseSegment(EventDataclass):
     id: vtypes.ProtoID = dataclasses.field(compare=False, repr=False, metadata={"validation_exclude": True})
 
     course: Course = dataclasses.field(init=False, compare=False, repr=False)
-    course_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    course_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True, "asdict_exclude": True})
 
-    track_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True})
+    track_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True, "asdict_exclude": True})
 
     is_active: bool
 
