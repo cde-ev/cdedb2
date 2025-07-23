@@ -770,13 +770,13 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={"creation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(metadata=(Meta.validate_creation_exclude | Meta.request_creation_exclude).as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, default=cast(Event, None),
-        metadata={"validation_exclude": False},
+        metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata={"update_exclude": False})
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
 
     segments: CdEDataclassMap["CourseSegment"]
 
@@ -850,12 +850,18 @@ class CourseSegment(EventDataclass):
     database_table = "event.course_segments"
     entity_key = "course_id"
 
-    id: vtypes.ProtoID = dataclasses.field(compare=False, repr=False, metadata={"validation_exclude": True})
+    id: vtypes.ProtoID = dataclasses.field(
+        compare=False, repr=False, metadata=Meta.input_exclude.as_dict
+    )
 
     course: Course = dataclasses.field(init=False, compare=False, repr=False)
-    course_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True, "asdict_exclude": True})
+    course_id: vtypes.ProtoID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
 
-    track_id: vtypes.ProtoID = dataclasses.field(metadata={"validation_exclude": True, "asdict_exclude": True})
+    track_id: vtypes.ProtoID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
 
     is_active: bool
 
