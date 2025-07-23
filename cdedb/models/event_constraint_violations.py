@@ -1504,7 +1504,8 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
         if not part.camping_mat_field:
             return None
         if (
-                registration['parts'][part.id]['is_camping_mat']
+                registration['parts'][part.id]['status'].is_involved()
+                and registration['parts'][part.id]['is_camping_mat']
                 and not registration['fields'].get(part.camping_mat_field.field_name)
         ):
             return cls(

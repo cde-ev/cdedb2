@@ -36,7 +36,6 @@ import phonenumbers
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
-from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
 
@@ -701,13 +700,10 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
     return grouped  # type: ignore[return-value]
 
 
-def enum_selectize_filter(enum: Iterable[enum.IntEnum],
-                          processing: Optional[Callable[[Any], str]] = None,
-                          ) -> list[CdEDBObject]:
-    res = enum_entries_filter(enum, processing=processing)
-    if isinstance(res, dict):  # type: ignore[unreachable]
-        raise RuntimeError(n_("Grouped enums not supported yet."))
-    return [{'id': e[0], 'name': e[1]} for e in res]
+def multiselect_selectize_filter(entries: Iterable[tuple[int | enum.IntEnum, str]]
+                                 ) -> list[CdEDBObject]:
+    """Convert (value, title)s to format taken by the cdedbMultiSelect JS function."""
+    return [{'id': e[0], 'name': e[1]} for e in entries]
 
 
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
@@ -796,7 +792,7 @@ JINJA_FILTERS = {
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
-    'enum_selectize': enum_selectize_filter,
+    'multiselect_selectize': multiselect_selectize_filter,
     'dict_entries': dict_entries_filter,
     'entries': entries_filter,
 }

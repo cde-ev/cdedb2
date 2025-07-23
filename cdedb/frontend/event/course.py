@@ -815,7 +815,8 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: xsorted(
                 (
                     (registration_id, make_persona_name(
-                        personas[registrations[registration_id]['persona_id']]))
+                        personas[registrations[registration_id]['persona_id']],
+                        include_nickname=True))
                     for registration_id in registrations
                     if _check_without_course(registration_id, track_id)
                 ),
@@ -837,7 +838,8 @@ class EventCourseMixin(EventBaseFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                ({'name': make_persona_name(personas[registration['persona_id']]),
+                ({'name': make_persona_name(personas[registration['persona_id']],
+                                            include_nickname=True),
                   'group_id': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()

@@ -75,6 +75,9 @@ body{
 .input-group-addon label {
     margin-bottom: 0;
 }
+.input-group, .input-group > *, .input-group-btn>.btn {
+    height: 100%;
+}
 .alert-info a {
     text-decoration: underline;
 }
@@ -153,6 +156,10 @@ ul.slim {
 .list-group-item-muted {
     color: #777;
     background-color: #eee;
+}
+.list-group-item-muted .text-unmuted {
+    /* TODO: replace this with the --bs-* variable for text color in bootstrap 4/5 */
+    color: #333;
 }
 .list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;

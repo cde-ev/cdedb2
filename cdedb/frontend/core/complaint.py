@@ -5,7 +5,6 @@ from itertools import chain
 from typing import Any, Optional
 
 import werkzeug.exceptions
-from markupsafe import Markup
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -1006,16 +1005,85 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/measures", params)
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
-        measures = self.complaintproxy.get_user_measures(rs, persona_id)
-        return self.render(rs, "complaint/show_user_measures", {'measures': measures})
+        if (
+            not {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            and persona_id != rs.user.persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if (
+            "complaint_admin" not in rs.user.roles
+            and not self.coreproxy.is_relative_admin(rs, persona_id)
+            and persona_id != rs.user.persona_id
+        ):
+            del rs.ambience['persona']['username']
 
-    # @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
-    # def list_complaint_helpers(self, rs: RequestState) -> Response:
-    #    """View list of enforcers and monitors."""
-    #    return self.render(rs, "complaint/list_complaint_helpers")
+        measure_ids = self.complaintproxy.list_user_measures(
+            rs, persona_id, is_active=None
+        )
+        measures, descriptions, entries = self.complaintproxy.get_measures(
+            rs, measure_ids
+        )
+        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
+        authors = self.coreproxy.get_personas(rs, author_ids)
+        params = {
+            'measures': measures,
+            'descriptions': descriptions,
+            'entries': entries,
+            'authors': authors,
+        }
+        return self.render(rs, "complaint/show_user_measures", params)
+
+    @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
+    def list_complaint_helpers(self, rs: RequestState) -> Response:
+        """View list of enforcers and monitors."""
+        enforcer_ids = self.complaintproxy.list_enforcers(rs)
+        monitor_ids = self.complaintproxy.list_monitors(rs)
+        personas = self.coreproxy.get_personas(rs, enforcer_ids | monitor_ids)
+        enforcers = {enforcer_id: personas[enforcer_id] for enforcer_id in enforcer_ids}
+        monitors = {monitor_id: personas[monitor_id] for monitor_id in monitor_ids}
+        return self.render(
+            rs,
+            "complaint/list_complaint_helpers",
+            {
+                "enforcers": enforcers,
+                "monitors": monitors,
+            },
+        )
+
+    @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("persona_id")
+    def add_enforcer(self, rs: RequestState, persona_id: vtypes.CdedbID) -> Response:
+        """Grant enforcer privileges to a persona."""
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.append_validation_error((
+                "persona_id",
+                ValueError(n_("This user does not exist or is archived.")),
+            ))
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+
+        ret = self.complaintproxy.add_enforcer(rs, persona_id)
+        rs.notify_return_code(ret, info=n_("Nothing changed."))
+        return self.redirect(rs, "core/list_complaint_helpers")
+
+    @access("complaint_admin", modi={"POST"})
+    @REQUESTdata("persona_id")
+    def remove_enforcer(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+        """Remove enforcer privileges of a persona."""
+        if rs.has_validation_errors():
+            return self.list_complaint_helpers(rs)
+        if persona_id not in self.complaintproxy.list_enforcers(rs):
+            rs.notify('error', n_("This user does not exist or is no enforcer."))
+            return self.list_complaint_helpers(rs)
+
+        ret = self.complaintproxy.remove_enforcer(rs, persona_id)
+        rs.notify_return_code(ret, info=n_("Nothing changed."))
+        return self.redirect(rs, "core/list_complaint_helpers")
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")

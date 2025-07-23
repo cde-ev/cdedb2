@@ -4606,6 +4606,30 @@
             "parent_id": 4,
             "concerned_id": 2,
             "is_revoked": false
+        },
+        {
+            "id": 6,
+            "case_id": 1,
+            "entry_type": 311,
+            "parent_id": 4,
+            "concerned_id": 2,
+            "is_revoked": false
+        },
+        {
+            "id": 7,
+            "case_id": 1,
+            "entry_type": 311,
+            "parent_id": 4,
+            "concerned_id": 2,
+            "is_revoked": true
+        },
+        {
+            "id": 8,
+            "case_id": 1,
+            "entry_type": 10001,
+            "parent_id": 7,
+            "concerned_id": null,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4686,6 +4710,45 @@
             "dtime": null,
             "dreason": null,
             "deleted_by": null
+        },
+        {
+            "id": 7,
+            "entry_id": 6,
+            "submitted_by": 1,
+            "description": "Quarantäne für eine Woche!",
+            "length": 26,
+            "ctime": "---now---",
+            "timestamp": "2025-05-31T23:06:25+00:00",
+            "etime": "2025-06-08T06:06:25+00:00",
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null
+        },
+        {
+            "id": 8,
+            "entry_id": 7,
+            "submitted_by": 1,
+            "description": "Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen, bekommt sie Feriendorfverbot!",
+            "length": 91,
+            "ctime": "---now---",
+            "timestamp": "2025-06-09T12:00:00+00:00",
+            "etime": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null
+        },
+        {
+            "id": 9,
+            "entry_id": 8,
+            "submitted_by": 1,
+            "description": "Da war Petra etwas übereifrig, so schlimm ist es nun wirklich nicht.",
+            "length": 68,
+            "ctime": "---now---",
+            "timestamp": "2025-06-10T12:00:00+00:00",
+            "etime": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null
         }
     ],
     "complaint.authors": [
@@ -4717,6 +4780,21 @@
         {
             "id": 6,
             "entry_version_id": 6,
+            "persona_id": 3
+        },
+        {
+            "id": 7,
+            "entry_version_id": 7,
+            "persona_id": 3
+        },
+        {
+            "id": 8,
+            "entry_version_id": 8,
+            "persona_id": 42
+        },
+        {
+            "id": 9,
+            "entry_version_id": 9,
             "persona_id": 3
         }
     ],
@@ -4755,7 +4833,12 @@
         }
     ],
     "complaint.companion_incompatibles": [],
-    "complaint.enforcers": [],
+    "complaint.enforcers": [
+        {
+            "id": 1,
+            "persona_id": 10
+        }
+    ],
     "complaint.monitors": [],
     "complaint.log": [
         {

@@ -61,7 +61,7 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import datetime_filter
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -118,22 +118,22 @@ class Event(EventDataclass):
 
     # Exclude from request to avoid unsetting when submitting `change_event_form`.
     description: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     registration_text: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     mail_text: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     participant_info: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     notes: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     field_definition_notes: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
 
     # Disallow setting via request altogether.
-    is_locked: bool = dataclasses.field(metadata={'request_exclude': True})
-    is_archived: bool = dataclasses.field(metadata={'request_exclude': True})
-    is_balanced: bool = dataclasses.field(metadata={'request_exclude': True})
+    is_locked: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    is_archived: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    is_balanced: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     is_cancelled: bool
     is_visible: bool
@@ -300,7 +300,7 @@ class EventPart(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True},
+        metadata=Meta.input_exclude.as_dict,
     )
 
     title: str
@@ -453,14 +453,14 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
+    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
 
     event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+        init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
     )
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True},
+        metadata=Meta.input_exclude.as_dict,
     )
 
     kind: const.EventFeeType
@@ -470,9 +470,9 @@ class EventFee(EventDataclass):
     condition: Optional[vtypes.EventFeeCondition]
     amount: Optional[decimal.Decimal]
     amount_min: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+        default=None, metadata=(Meta.validate_exclude | Meta.database_exclude).as_dict)
     amount_max: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+        default=None, metadata=(Meta.validate_exclude | Meta.database_exclude).as_dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -516,22 +516,22 @@ class EventFee(EventDataclass):
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
+    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
 
     event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+        init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
     )
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True},
+        metadata=Meta.input_exclude.as_dict,
     )
 
     # Internal metadata.
     field_name: vtypes.RestrictiveIdentifier = dataclasses.field(
-        metadata={'update_exclude': True})
+        metadata=Meta.input_update_exclude.as_dict)
     kind: const.FieldDatatypes
     association: const.FieldAssociations = dataclasses.field(
-        metadata={'update_exclude': True})
+        metadata=Meta.input_update_exclude.as_dict)
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
@@ -563,14 +563,15 @@ class CustomQueryFilter(EventDataclass):
     database_table = "event.custom_query_filters"
 
     event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+        init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
     )
-    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exclude': True})
+    event_id: vtypes.ProtoID = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
 
-    scope: QueryScope = dataclasses.field(metadata={'update_exclude': True})
+    scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
     notes: Optional[str]
-    fields: set[str] = dataclasses.field(metadata={'database_include': True})
+    fields: set[str] = dataclasses.field(metadata=Meta.database_include.as_dict)
 
     def __post_init__(self) -> None:
         if isinstance(self.fields, str):  # type: ignore[unreachable]
@@ -883,12 +884,12 @@ class LodgementGroup(EventDataclass):
     event_id: vtypes.ID
     title: str
 
-    lodgement_ids: set[int] = dataclasses.field(default_factory=set,
-                                                metadata={'database_exclude': True})
-    regular_capacity: int = dataclasses.field(default=0,
-                                              metadata={'database_exclude': True})
-    camping_mat_capacity: int = dataclasses.field(default=0,
-                                                  metadata={'database_exclude': True})
+    lodgement_ids: set[int] = dataclasses.field(
+        default_factory=set, metadata=Meta.database_exclude.as_dict)
+    regular_capacity: int = dataclasses.field(
+        default=0, metadata=Meta.database_exclude.as_dict)
+    camping_mat_capacity: int = dataclasses.field(
+        default=0, metadata=Meta.database_exclude.as_dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -926,7 +927,7 @@ class Lodgement(EventDataclass):
 
     # event: Event
     event_id: vtypes.ID
-    group: LodgementGroup = dataclasses.field(metadata={'database_exclude': True})
+    group: LodgementGroup = dataclasses.field(metadata=Meta.database_exclude.as_dict)
     group_id: vtypes.ID
 
     title: str
