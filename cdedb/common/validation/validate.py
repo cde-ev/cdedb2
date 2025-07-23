@@ -421,7 +421,7 @@ def _create_dataclass_validator(type_: type[DC], return_type: type[T],
         else:
             raise RuntimeError("Impossible.")
 
-        val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+        val = _examine_dictionary_fields(val, mandatory, optional, argname=argname, **kwargs)
 
         return cast(T, val)
 
