@@ -894,7 +894,7 @@ class TestEventBackend(BackendTest):
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data["segments"][3]["is_active"] = True
-        self.event.set_course(self.key, data)
+        self.event.set_course(self.key, {'id': new_id, 'segments': data['segments']})
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
         log_expectation = [
