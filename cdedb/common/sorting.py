@@ -92,7 +92,10 @@ def _make_persona_sorter(include_nickname: bool = False,
     return sorter
 
 
-def _make_address_sorter(gettext: Callable[[str], str], default_country_code: str) -> KeyFunction:
+def _make_address_sorter(
+    # don't call argument 'gettext' to avoid extracting string below
+    gtxt: Callable[[str], str], default_country_code: str
+) -> KeyFunction:
     def sorter(persona: CdEDBObject) -> Sortkey:
         country = persona.get('country', "") or ""
         postal_code = persona.get('postal_code', "") or ""
@@ -101,7 +104,7 @@ def _make_address_sorter(gettext: Callable[[str], str], default_country_code: st
         return (
             # we want to show Germany first, python sorts False first
             country != default_country_code,
-            gettext(country),
+            gtxt(f"CountryCodes.{country}"),
             postal_code,
             location,
             address
