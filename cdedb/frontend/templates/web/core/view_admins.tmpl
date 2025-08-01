@@ -85,7 +85,7 @@
     {% endif %}
 
     {% if "event" in user.roles %}
-        {{ util.h(n_("Event admins")) }}
+        {{ util.h(n_("Event admins"), anchor="event-admins") }}
         <div class="p">
             {% trans %}
                 Event admins may create DB-organized events and add and remove orgas to these events.
