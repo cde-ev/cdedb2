@@ -11221,7 +11221,7 @@ msgstr "Initiale Angaben"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:83
 msgid "Avoid using names of affected individuals in this field."
-msgstr "Vermeide es, in diesem Feld die Namen von Beteilitgen zu verwenden."
+msgstr "Vermeide es, in diesem Feld die Namen von Beteiligten zu verwenden."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:15
 msgid "Revoke Entry"
