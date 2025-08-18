@@ -67,52 +67,53 @@
     </dl>
 
     <h4 class="heading-underline">{% trans %}Persona Information{% endtrans %}</h4>
+    {% set persona = ambience['genesis_case'].persona %}
     <dl class="dl-horizontal">
         <dt title="{% trans %}Name{% endtrans %}">
             {% trans %}Name{% endtrans %}
         </dt>
         <dd id="given-names">
-            {{ ambience['genesis_case'].persona|persona_name }}
+            {{ persona|persona_name }}
         </dd>
-        {% if ambience['genesis_case'].persona.birth_name %}
+        {% if persona.birth_name %}
             <dt title="{% trans %}Birth Name{% endtrans %}">
                 {% trans %}Birth Name{% endtrans %}
             </dt>
-            <dd>{{ ambience['genesis_case'].persona.birth_name }}</dd>
+            <dd>{{ persona.birth_name }}</dd>
         {% endif %}
-        {% if ambience['genesis_case'].persona.birthday %}
+        {% if persona.birthday %}
             <dt title="{% trans %}Birthday{% endtrans %}">
                 {% trans %}Birthday{% endtrans %}
             </dt>
-            <dd id="birthday">{{ ambience['genesis_case'].persona.birthday|date(lang=lang) }}</dd>
+            <dd id="birthday">{{ persona.birthday|date(lang=lang) }}</dd>
         {% endif %}
-        {% if ambience['genesis_case'].persona.gender %}
+        {% if persona.gender %}
             <dt title="{% trans %}Gender{% endtrans %}">
                 {% trans %}Gender{% endtrans %}
             </dt>
-            <dd id="gender">{{ gettext(enums['Genders'](ambience['genesis_case'].persona.gender)|string) }}</dd>
+            <dd id="gender">{{ gettext(enums['Genders'](persona.gender)|string) }}</dd>
         {% endif %}
         <dt title="{% trans %}E-Mail{% endtrans %}">
             {% trans %}E-Mail{% endtrans %}
         </dt>
         <dd id="username">
-            {% if ambience['genesis_case'].persona.username %}
-                {{ util.username_mailto(ambience['genesis_case'].persona) }}
+            {% if persona.username %}
+                {{ util.username_mailto(persona) }}
             {% else %}
                 —
             {% endif %}
         </dd>
-        {% if ambience['genesis_case'].persona.telephone %}
+        {% if persona.telephone %}
             <dt title="{% trans %}Phone{% endtrans %}">
                 {% trans %}Phone{% endtrans %}
             </dt>
-            <dd id="telephone">{{ util.tel_link(ambience['genesis_case'].persona.telephone|phone) }}</dd>
+            <dd id="telephone">{{ util.tel_link(persona.telephone|phone) }}</dd>
         {% endif %}
-        {% if ambience['genesis_case'].persona.mobile %}
+        {% if persona.mobile %}
             <dt title="{% trans %}Mobile Phone{% endtrans %}">
                 {% trans %}Mobile Phone{% endtrans %}
             </dt>
-            <dd id="mobile">{{ util.tel_link(ambience['genesis_case'].persona.mobile|phone) }}</dd>
+            <dd id="mobile">{{ util.tel_link(persona.mobile|phone) }}</dd>
         {% endif %}
         {% if ambience['genesis_case']['realm'] == 'cde' %}
             <dt title="{% trans %}Membership{% endtrans %}">
@@ -124,18 +125,15 @@
                 </i>
             </dd>
         {% endif %}
-        {% set address_fields = ('address', 'address_supplement', 'postal_code', 'location', 'country') %}
-        {% if (ambience['genesis_case'].persona.address or ambience['genesis_case'].persona.address_supplement
-                    or ambience['genesis_case'].persona.postal_code or ambience['genesis_case'].persona.location
-                    or ambience['genesis_case'].persona.country) %}
+        {% if (persona.address or persona.address_supplement or persona.postal_code or persona.location or persona.country) %}
             <dt title="{% trans %}Address{% endtrans %}">
                 {% trans %}Address{% endtrans %}
             </dt>
             <dd id="address">
-                {{ ambience['genesis_case'].persona.address }}{% if ambience['genesis_case'].persona.address %}<br />{% endif %}
-                {{ ambience['genesis_case'].persona.address_supplement }}{% if ambience['genesis_case'].persona.address_supplement %}<br />{% endif %}
-                {{ ambience['genesis_case'].persona.postal_code }} {{ ambience['genesis_case'].persona.location }}{% if ambience['genesis_case'].persona.location %}<br />{% endif %}
-                {{ util.gettext_country(ambience['genesis_case'].persona.country) }}
+                {{ persona.address }}{% if persona.address %}<br />{% endif %}
+                {{ persona.address_supplement }}{% if persona.address_supplement %}<br />{% endif %}
+                {{ persona.postal_code }} {{ persona.location }}{% if persona.location %}<br />{% endif %}
+                {{ util.gettext_country(persona.country) }}
             </dd>
         {% endif %}
     </dl>
