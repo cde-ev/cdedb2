@@ -1009,7 +1009,7 @@ def _realm(
     with errs:
         if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
             raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
-        if supports_genesis and val not in models_core.GenesisCase.get_available_realms():
+        if supports_genesis and val not in models_core.GenesisCase.available_realms:
             raise ValidationSummary(
                 ValueError(n_("This realm is not supported for genesis.")))
     if errs:

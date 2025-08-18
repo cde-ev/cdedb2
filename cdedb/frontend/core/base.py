@@ -140,7 +140,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
             # genesis cases
             genesis_realms = []
-            for realm in models.GenesisCase.get_available_realms():
+            for realm in models.GenesisCase.available_realms:
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:

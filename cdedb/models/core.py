@@ -381,13 +381,11 @@ class GenesisCase(CdEDataclass):
             return NotImplemented
         return self._lt_inner(other)
 
-    @classmethod
-    def get_available_realms(cls) -> dict[vtypes.Realm, str]:
-        return {
-            vtypes.Realm("cde"): n_("CdE membership & events"),
-            vtypes.Realm("event"): n_("CdE events"),
-            vtypes.Realm("ml"): n_("CdE mailinglist"),
-        }
+    available_realms: ClassVar[dict[vtypes.Realm, str]] = {
+        vtypes.Realm("cde"): n_("CdE membership & events"),
+        vtypes.Realm("event"): n_("CdE events"),
+        vtypes.Realm("ml"): n_("CdE mailinglist"),
+    }
 
     @classmethod
     def get_model_by_realm(cls, realm: str) -> type["GenesisCase"]:

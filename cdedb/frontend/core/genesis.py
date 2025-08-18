@@ -42,7 +42,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                               if x != const.Genders.not_specified)
         realm_options = [
             (realm, rs.gettext(description))
-            for realm, description in models.GenesisCase.get_available_realms().items()]
+            for realm, description in models.GenesisCase.available_realms.items()]
         meta_info = self.coreproxy.get_meta_info(rs)
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
         if not rs.values.get('attachment_hash'):
@@ -260,7 +260,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in models.GenesisCase.get_available_realms()
+        realms = [realm for realm in models.GenesisCase.available_realms
                   if {f"{realm}_admin", 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, realms=realms, stati={
