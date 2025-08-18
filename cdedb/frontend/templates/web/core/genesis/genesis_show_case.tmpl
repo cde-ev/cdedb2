@@ -222,14 +222,18 @@
                 {% endif %}
                 {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit Account Request"),
                     aclass="btn btn-warning", icon="pen") }}
-                {% if ambience["genesis_case"].realm != "ml" %}
-                    {{ util.href(cdedblink('core/genesis_modify_realm_form'), gettext("Change Realm"),
-                        aclass="btn btn-warning", icon="pen") }}
-                {% endif %}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}
             </div>
         </form>
+        {% if ambience["genesis_case"].realm != "ml" %}
+            {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
+            <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" style="margin-top: 5px">
+                {{ util.anti_csrf_token('core/genesis_modify_realm') }}
+                {{ util.input_submit(label=gettext("Change Realm"), icon=icon,
+                    aclass="btn btn-warning") }}
+            </form>
+        {% endif %}
     {% endif %}
 {% endblock %}

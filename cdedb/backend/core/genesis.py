@@ -290,7 +290,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             current = self.genesis_get_case(rs, case_id)
             if current.realm == "ml" or realm == "ml":
                 raise RuntimeError("Realm modification forbidden.")
-            relative_admins = models.GenesisCase.get_relative_admins(realm)
+            relative_admins = {models.GenesisCaseCdE.relative_admin,
+                               models.GenesisCaseEvent.relative_admin}
             if {"core_admin", *relative_admins}.isdisjoint(rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             if current.case_status.is_finalized():

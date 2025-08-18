@@ -377,47 +377,24 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
-    def genesis_modify_realm_form(
-        self, rs: RequestState, genesis_case_id: int,
-    ) -> Response:
-        """Change the realm of a specific genesis case."""
-        model = models.GenesisCase
+    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
+    def genesis_modify_realm(self, rs: RequestState, genesis_case_id: int) -> Response:
+        """Change the target realm of a genesis case.
+
+        Currently, only switching between event and cde realm is supported.
+        """
         case = rs.ambience['genesis_case']
         if case.realm == "ml":
-            rs.notify("info", n_("Realm of mailinglist genesis requests can not be changed."))
+            rs.notify("error", "Realm modification forbidden.")
             return self.redirect(rs, "core/genesis_show_case")
-        if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
+        relative_admins = {models.GenesisCaseCdE.relative_admin,
+                           models.GenesisCaseEvent.relative_admin}
+        if not self.is_admin(rs) and not rs.user.roles & relative_admins:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.case_status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        realm_options = [
-            (realm, rs.gettext(description))
-            for realm, description in model.get_available_realms().items()
-            if realm != "ml" and (
-                self.is_admin(rs) or rs.user.roles & model.get_relative_admins(realm))]
-        return self.render(rs, "genesis/genesis_change_realm", {
-            'realm_options': realm_options}, {"realm"})
-
-    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
-    @REQUESTdata("realm")
-    def genesis_modify_realm(self, rs: RequestState, genesis_case_id: int,
-                       realm: str) -> Response:
-        """Edit a case to fix potential issues before creation."""
-        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
-        if rs.has_validation_errors():
-            return self.genesis_modify_form(rs, genesis_case_id)
-        assert realm is not None
-
-        case = rs.ambience['genesis_case']
-        relative_admins = rs.user.roles & {
-            case.relative_admin, *models.GenesisCase.get_relative_admins(realm)}
-        if not (self.is_admin(rs) or relative_admins):
-            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case.case_status != const.GenesisStati.to_review:
-            rs.notify("error", n_("Case not to review."))
-            return self.genesis_list_cases(rs)
+        realm = "event" if case.realm == "cde" else "cde"
         code = self.coreproxy.genesis_modify_case_realm(rs, genesis_case_id, realm)
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
