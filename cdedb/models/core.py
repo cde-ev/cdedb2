@@ -315,26 +315,52 @@ class GenesisCase(CdEDataclass):
     pcourse_id: int | None
 
     @classmethod
-    def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
-        genesis_fields = [field for field in dataclasses.fields(cls)]
-        class_ = cls
+    def get_persona_class(cls) -> type[Persona]:
+        # extracts the persona class from its type annotation,
+        # since this is static information
+        return {field.type for field in dataclasses.fields(cls)
+                if field.name == "persona"}.pop()  # type: ignore[return-value]
+
+    @classmethod
+    def dataclass_fields(
+        cls, *, only_meta: bool = False, only_persona: bool = False
+    ) -> tuple[dataclasses.Field[Any], ...]:
+        if only_meta and only_persona:
+            raise RuntimeError
+
+        meta_fields = [field for field in dataclasses.fields(cls)]
+        if only_meta:
+            return tuple(meta_fields)
+
+        persona_class = cls.get_persona_class()
         # use always CdE persona as reference, to make sure we fetch
         # all data from the database and from requests
         if cls == GenesisCase:
-            class_ = GenesisCaseCdE
-        persona_fields = class_.persona_dataclass_fields()
-        return tuple([*genesis_fields, *persona_fields])
+            persona_class = CdEPersona
+        persona_fields = [field for field in dataclasses.fields(persona_class)
+                          if field.metadata.get("genesis_exposed")]
+        if only_persona:
+            return tuple(persona_fields)
+
+        return tuple([*meta_fields, *persona_fields])
 
     @classmethod
-    def persona_dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
-        persona_class: type[Persona] = {  # type: ignore[assignment]
-            field.type for field in dataclasses.fields(cls)
-            if field.name == "persona"}.pop()
-        return tuple([field for field in dataclasses.fields(persona_class)
-                      if field.metadata.get("genesis_exposed")])
+    def database_fields(
+        cls, *, only_meta: bool = False, only_persona: bool = False
+    ) -> list[str]:
+        if only_meta and only_persona:
+            raise RuntimeError
+        ret = super().database_fields()
+        if only_meta:
+            database_fields = {field.name for field in cls.dataclass_fields(only_meta=True)}
+            ret = [field for field in ret if field in database_fields]
+        if only_persona:
+            persona_fields = {field.name for field in cls.dataclass_fields(only_persona=True)}
+            ret = [field for field in ret if field in persona_fields]
+        return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.ctime, self.persona.family_name, self.persona.given_names)
+        return (self.ctime, *self.persona.get_sortkey())
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -389,7 +415,8 @@ class GenesisCase(CdEDataclass):
 
     def get_persona_upgrade(self) -> dict[str, Any]:
         """Dict to upgrade an existing persona as the final stage of a genesis case."""
-        keys = {field.name for field in self.persona_dataclass_fields()} - {'username'}
+        keys = {field.name for field in self.dataclass_fields(only_persona=True)}
+        keys -= {'username'}
         proto_persona = self.persona.as_dict()
         ret = {key: proto_persona[key] for key in keys if proto_persona[key]}
         ret['id'] = self.persona_id
@@ -408,20 +435,12 @@ class GenesisCaseMl(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        persona_class = MlPersona
-        # take care to take only the gensis_exposed fields
-        persona_database_fields = {field.name for field in cls.persona_dataclass_fields()}
-        persona_data = {k: v for k, v in data.items() if k in persona_database_fields}
+        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
+        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
-        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
-        #  database fields.
-        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
-                                   if not field.metadata.get("database_exclude")}
-        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
-        genesis_data["persona"] = persona_class.from_database(persona_data)
-
+        meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(genesis_data)
+        return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> MlPersona:
         persona = copy.deepcopy(self.persona)
@@ -436,20 +455,12 @@ class GenesisCaseEvent(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        persona_class = EventPersona
-        # take care to take only the gensis_exposed fields
-        persona_database_fields = {field.name for field in cls.persona_dataclass_fields()}
-        persona_data = {k: v for k, v in data.items() if k in persona_database_fields}
+        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
+        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
-        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
-        #  database fields.
-        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
-                                   if not field.metadata.get("database_exclude")}
-        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
-        genesis_data["persona"] = persona_class.from_database(persona_data)
-
+        meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(genesis_data)
+        return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
         persona = copy.deepcopy(self.persona)
@@ -466,20 +477,12 @@ class GenesisCaseCdE(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        persona_class = CdEPersona
-        # take care to take only the gensis_exposed fields
-        persona_database_fields = {field.name for field in cls.persona_dataclass_fields()}
-        persona_data = {k: v for k, v in data.items() if k in persona_database_fields}
+        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
+        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
-        # we can't use GenesisCase.database_fields(), since this would include the persona_class'
-        #  database fields.
-        genesis_database_fields = {field.name for field in dataclasses.fields(GenesisCase)
-                                   if not field.metadata.get("database_exclude")}
-        genesis_data = {k: v for k, v in data.items() if k in genesis_database_fields}
-        genesis_data["persona"] = persona_class.from_database(persona_data)
-
+        meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
-        return super(GenesisCase, cls).from_database(genesis_data)
+        return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
         persona = copy.deepcopy(self.persona)
