@@ -2811,7 +2811,7 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.

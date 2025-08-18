@@ -257,7 +257,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
         realms = [realm for realm in models.GenesisCase.get_available_realms()
@@ -280,7 +280,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'current_cases_by_realm': current_cases_by_realm,
             'concluded_cases': concluded_cases, 'personas': personas})
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int,
                           ) -> Response:
         """View a specific case."""
@@ -320,7 +320,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int,
                             ) -> Response:
         """Edit a specific case it."""
@@ -343,7 +343,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'choices': choices}, mandatory_fields)
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
+    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
         case_model = models.GenesisCase.get_model_by_realm(
@@ -422,7 +422,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins(), modi={"POST"})
+    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
     @REQUESTdata("decision", "persona_id")
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
                        decision: GenesisDecision, persona_id: Optional[int],

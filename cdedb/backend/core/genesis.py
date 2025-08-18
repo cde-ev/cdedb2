@@ -71,7 +71,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                           change_note=data['username'])
         return ret
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def delete_genesis_case_blockers(self, rs: RequestState,
                                      case_id: int) -> DeletionBlockers:
         """Determine what keeps a genesis case from being deleted.
@@ -100,7 +100,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         return blockers
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
                             cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
@@ -208,7 +208,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                     change_note=data["username"])
         return ret, data["realm"]
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_list_cases(self, rs: RequestState,
                            stati: Optional[Collection[const.GenesisStati]] = None,
                            realms: Optional[Collection[str]] = None) -> CdEDBObjectMap:
@@ -241,7 +241,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int],
                           ) -> CdEDataclassMap[models.GenesisCase]:
         """Retrieve datasets for persona creation cases."""
@@ -262,7 +262,7 @@ class CoreGenesisBackend(CoreBaseBackend):
     genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
@@ -278,7 +278,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                           change_note=current.persona.username)
         return ret
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_modify_case_realm(
             self, rs: RequestState, case_id: int, realm: str,
     ) -> DefaultReturnCode:
@@ -300,7 +300,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                           change_note=current.persona.username)
         return ret
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     @internal
     def genesis_modify_case_meta(
         self, rs: RequestState, case_id: int, *,
@@ -339,7 +339,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                           change_note=current.persona.username)
         return ret
 
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
                        persona_id: Optional[int] = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
@@ -400,7 +400,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 return -1
 
     @internal
-    @access("core_admin", *models.GenesisCase.get_relative_admins())
+    @access("core_admin", *models.GenesisCase.all_admins)
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 

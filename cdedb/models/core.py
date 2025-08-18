@@ -8,7 +8,7 @@ import datetime
 import decimal
 import re
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from cryptography.fernet import Fernet
 
@@ -401,13 +401,9 @@ class GenesisCase(CdEDataclass):
     def model(self) -> type["GenesisCase"]:
         return self.get_model_by_realm(self.realm)
 
-    @classmethod
-    def get_relative_admins(cls, realm: vtypes.Realm | None = None) -> set[str]:
-        relative_admins = {
-            realm: f"{realm}_admin" for realm in cls.get_available_realms()}
-        if realm:
-            return {relative_admins[realm]}  # vty
-        return set(relative_admins.values())
+    all_admins: ClassVar[set[str]] = {
+        f"{realm}_admin" for realm in available_realms
+    }
 
     @property
     def relative_admin(self) -> str:
