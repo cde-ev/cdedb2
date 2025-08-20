@@ -43,7 +43,20 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
         return "str"
 
 
-class MetaFlag(Flag):
+class AbstractFlag(Flag):
+    """Boilerplate of flags representing metadata of CdEDataclass fields."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
+        return {f"cdedb.{self.__class__}": self}
+
+    def in_field(self, field: dataclasses.Field[T]) -> bool:
+        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
+        return self in field.metadata.get(f"cdedb.{self.__class__}", {})
+
+
+class MetaFlag(AbstractFlag):
     """Flags representing metadata of CdEDataclass fields."""
 
     none = 0
@@ -97,15 +110,6 @@ class MetaFlag(Flag):
 
     asdict_exclude = auto()
     """Exclude the field from `self.asdict()`."""
-
-    @property
-    def as_dict(self) -> dict[str, Self]:
-        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
-        return {"cdedb": self}
-
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
-        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
-        return self in field.metadata.get("cdedb", MetaFlag.none)
 
 
 @dataclass
