@@ -226,7 +226,6 @@ DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
-    models_event.CustomQueryFilter: CustomQueryFilter,
 }
 
 
@@ -4518,21 +4517,11 @@ def _non_regex(
     return NonRegex(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CustomQueryFilter)
 def _custom_query_filter(
         val: Any, argname: str = "custom_query_filter", *, creation: bool = False,
         query_spec: QuerySpec, **kwargs: Any,
-) -> CustomQueryFilter:
-    val = _mapping(val, argname, **kwargs)
-
-    if (fields := val.get('fields')) and isinstance(fields, str):
-        val = dict(val)
-        val['fields'] = set(fields.split(","))
-
-    mandatory, optional = models_event.CustomQueryFilter.validation_fields(
-        creation=creation)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
+) -> CdEDBObject:
     errs = ValidationSummary()
 
     if len(val['fields']) < 2:
@@ -4550,12 +4539,10 @@ def _custom_query_filter(
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])
-
     if errs:
         raise errs
 
-    return CustomQueryFilter(val)
+    return val
 
 
 @_add_typed_validator

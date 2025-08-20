@@ -159,7 +159,6 @@ AssemblyAttachment = _NewType("AssemblyAttachment", _CdEDBObject)
 AssemblyAttachmentVersion = _NewType("AssemblyAttachmentVersion", _CdEDBObject)
 QueryInput = _NewType("QueryInput", _Query)
 LogFilter = _NewType("LogFilter", _CdEDBObject)
-CustomQueryFilter = _NewType("CustomQueryFilter", _CdEDBObject)
 
 
 QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
