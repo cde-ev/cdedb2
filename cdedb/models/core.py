@@ -7,6 +7,7 @@ import dataclasses
 import datetime
 import decimal
 import re
+from enum import auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
@@ -19,7 +20,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import EntitySorter, Sortkey
-from cdedb.models.common import CdEDataclass, MetaFlag as Meta
+from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 __all__ = ["AnonymousMessageData"]
 
@@ -195,9 +196,16 @@ class AnonymousMessageData(CdEDataclass):
         return self.recipient, self.ctime
 
 
+class PersonaFlag(AbstractFlag):
+    """Flags to store special metadata of Persona dataclasses."""
+    # This field is exposed for external account creation.
+    genesis_exposed = auto()
+
+
 @dataclasses.dataclass(kw_only=True)
 class Persona(CdEDataclass):
-    username: vtypes.Email = dataclasses.field(metadata={'genesis_exposed': True})
+    username: vtypes.Email = dataclasses.field(
+        metadata=PersonaFlag.genesis_exposed.as_dict)
     # This does not include the ``password_hash`` for security reasons.
 
     # status flags
@@ -224,8 +232,8 @@ class Persona(CdEDataclass):
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
-    given_names: str = dataclasses.field(metadata={'genesis_exposed': True})
-    family_name: str = dataclasses.field(metadata={'genesis_exposed': True})
+    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
+    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
@@ -244,22 +252,29 @@ class MlPersona(Persona):
 
 @dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
-    gender: const.Genders = dataclasses.field(metadata={'genesis_exposed': True})
-    birthday: vtypes.Birthday = dataclasses.field(metadata={'genesis_exposed': True})
-    telephone: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
-    mobile: vtypes.Phone | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
-    address_supplement: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    gender: const.Genders = dataclasses.field(
+        metadata=PersonaFlag.genesis_exposed.as_dict)
+    birthday: vtypes.Birthday = dataclasses.field(
+        metadata=PersonaFlag.genesis_exposed.as_dict)
+    telephone: vtypes.Phone | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+    mobile: vtypes.Phone | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+    address_supplement: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
     # TODO make mandatory?
     # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
     # its mandatory here.
-    address: str = dataclasses.field(metadata={'genesis_exposed': True})
-    postal_code: vtypes.PrintableASCII | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    address: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
+    postal_code: vtypes.PrintableASCII | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
     # TODO make mandatory?
     # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
     # its mandatory here.
-    location: str = dataclasses.field(metadata={'genesis_exposed': True})
+    location: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
     # TODO make mandatory?
-    country: vtypes.Country | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    country: vtypes.Country | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
@@ -286,7 +301,8 @@ class CdEPersona(EventPersona):
     bub_search: bool = False
     foto: str | None = None
     paper_expuls: bool = True
-    birth_name: str | None = dataclasses.field(default=None, metadata={'genesis_exposed': True})
+    birth_name: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
     donation: decimal.Decimal = decimal.Decimal()
     honorary_member: bool = False
 
@@ -340,7 +356,7 @@ class GenesisCase(CdEDataclass):
         if cls == GenesisCase:
             persona_class = CdEPersona
         persona_fields = [field for field in dataclasses.fields(persona_class)
-                          if field.metadata.get("genesis_exposed")]
+                          if PersonaFlag.genesis_exposed.in_field(field)]
         if only_persona:
             return tuple(persona_fields)
 
