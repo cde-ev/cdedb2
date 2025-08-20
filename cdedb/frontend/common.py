@@ -183,6 +183,7 @@ _LOGGER = logging.getLogger(__name__)
 
 S = TypeVar('S')
 T = TypeVar('T')
+DC2 = TypeVar("DC2", CdEDataclass, GenericLogFilter)
 
 
 class Response(werkzeug.wrappers.Response):
@@ -637,7 +638,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             new_filename = pathlib.Path(attachment.filename).parts[-1]
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
-            attachment_hash = store.store(attachment_data)
+            attachment_hash = store.store(attachment_data)  # type: ignore[arg-type]
             attachment_filename = new_filename
         elif attachment_hash:
             # We also end up here and keep the cached attachment if someone tried to
@@ -2486,8 +2487,23 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, type_: type[T], value: Any,
-                     name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation(
+    rs: RequestState, type_: type[DC2], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation(
+    rs: RequestState, type_: type[T | DC2], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2505,11 +2521,26 @@ def check_validation(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
 
 
-def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
-                              name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[DC2], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation_optional(
+    rs: RequestState, type_: type[T | DC2], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
@@ -2529,7 +2560,7 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check_optional(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
 
 
 DC = TypeVar('DC', bound=CdEDataclass)

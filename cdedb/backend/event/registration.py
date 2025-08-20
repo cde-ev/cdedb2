@@ -1552,7 +1552,7 @@ class EventRegistrationBackend(EventBaseBackend):
         This does some validation but currently cannot guarantee that the registration
         object is sufficient to calculate the fee without raising an error.
         """
-        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract, type-var]
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
         return self._calculate_complex_fee(rs, reg, event=event).amount
@@ -1578,7 +1578,7 @@ class EventRegistrationBackend(EventBaseBackend):
         is_orga = affirm_optional(bool, is_orga)
         age = affirm_optional(int, age) or 0
 
-        field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
+        field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract, type-var]
 
         event = self.get_event(rs, event_id)
 

@@ -154,6 +154,7 @@ T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
+DC2 = TypeVar("DC2", CdEDataclass, GenericLogFilter)
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -276,8 +277,17 @@ def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool
     return _validate_dataclass_postprocess(subtype, validated)
 
 
+@overload
+def validate_assert(type_: type[DC2], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> CdEDBObject: ...
+
+@overload
 def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
-                    **kwargs: Any) -> T:
+                    **kwargs: Any) -> T: ...
+
+
+def validate_assert(type_: type[T | DC2], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> T | CdEDBObject:
     """Check if value is of type type_ – otherwise, raise an error.
 
     This should be used mostly in backend functions to check whether an input is
@@ -289,7 +299,7 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
     if "ignore_warnings" in kwargs:
         raise RuntimeError("Not allowed to set 'ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
+        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -301,15 +311,35 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
         raise e from errs
 
 
+@overload
+def validate_assert_optional(type_: type[DC2], value: Any, ignore_warnings: bool,
+                             **kwargs: Any) -> Optional[CdEDBObject]: ...
+
+@overload
 def validate_assert_optional(type_: type[T], value: Any, ignore_warnings: bool,
-                             **kwargs: Any) -> Optional[T]:
+                             **kwargs: Any) -> Optional[T]: ...
+
+
+def validate_assert_optional(type_: type[T | DC2], value: Any, ignore_warnings: bool,
+                             **kwargs: Any) -> Optional[T | CdEDBObject]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
+@overload
+def validate_check(type_: type[DC2], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
+                   ) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
-                   ) -> tuple[Optional[T], list[Error]]:
+                   ) -> tuple[Optional[T], list[Error]]: ...
+
+
+def validate_check(type_: type[T | DC2], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
+                   ) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Checks if value is of type type_.
 
     This is mostly used in the frontend to check if the given input is valid. To display
@@ -324,7 +354,7 @@ def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
         raise RuntimeError("Not allowed to set 'ignore_warnings' as kwarg.")
     try:
         val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
-        return val, []
+        return val, []  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [
             (
@@ -339,11 +369,22 @@ def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
         return None, old_format
 
 
+@overload
+def validate_check_optional(
+    type_: type[DC2], value: Any, ignore_warnings: bool, **kwargs: Any,
+) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def validate_check_optional(
     type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
+) -> tuple[Optional[T], list[Error]]: ...
+
+
+def validate_check_optional(
+    type_: type[T | DC2], value: Any, ignore_warnings: bool, **kwargs: Any,
+) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
 def get_errors(errors: list[Error]) -> list[Error]:

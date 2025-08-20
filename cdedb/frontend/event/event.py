@@ -861,11 +861,11 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration."))
             return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = cast(CdEDBObject, check(
+        fee_data = check(
             rs, models.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
             event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
             personalized=personalized,
-        ))
+        )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
