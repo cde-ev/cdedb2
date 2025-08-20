@@ -76,6 +76,9 @@ class MetaFlag(AbstractFlag):
     validate_creation_optional = auto()
     """Make this field optional in `cls.validation_fields(creation=True)`.
     Can be used to make use of SQL default values, while also allowing overrides."""
+    validate_update_mandatory = auto()
+    """Make this field mandatory in `cls.validation_fields(creation=False)`.
+    By default, all fields here are optional."""
 
     # request
 
@@ -91,6 +94,8 @@ class MetaFlag(AbstractFlag):
 
     # validation + request
 
+    input_creation_exclude = validate_creation_exclude | request_creation_exclude
+    """Omit this field from request extraction and validation during entity creation."""
     input_update_exclude = validate_update_exclude | request_update_exclude
     """Omit this field from request extraction and validation during entity updates."""
     input_exclude = validate_exclude | request_exclude
@@ -119,7 +124,9 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
-    id: vtypes.ProtoID
+    id: vtypes.ProtoID = dataclasses.field(
+        metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
+                  | MetaFlag.validate_update_mandatory).as_dict)
 
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
@@ -221,9 +228,7 @@ class CdEDataclass:
                 if MetaFlag.validate_creation_optional.in_field(field):
                     optional[field.name] = field.type
                     continue
-                if field.name == 'id':
-                    optional[field.name] = vtypes.CreationID
-                elif (
+                if (
                         is_optional_type(field.type)
                         # Fields with init=False are optional, so that objects
                         #  retrieved from the database can pass validation.
@@ -238,8 +243,8 @@ class CdEDataclass:
             else:
                 if MetaFlag.validate_update_exclude.in_field(field):
                     continue
-                if field.name == 'id':
-                    mandatory[field.name] = vtypes.ID
+                if MetaFlag.validate_update_mandatory.in_field(field):
+                    mandatory[field.name] = field.type
                 else:
                     optional[field.name] = field.type
         return mandatory, optional
@@ -267,7 +272,6 @@ class CdEDataclass:
         :param creation: If not None, possibly exclude some fields..
         """
         field_names = set(cls.database_fields())
-        field_names.discard("id")
         fields = []
         for field in cls.dataclass_fields():
             if not MetaFlag.request_include.in_field(field):

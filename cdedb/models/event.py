@@ -453,7 +453,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
+    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
@@ -516,7 +516,7 @@ class EventFee(EventDataclass):
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
+    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,

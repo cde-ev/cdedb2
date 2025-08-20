@@ -34,7 +34,7 @@ class MetaInfo(CdEDataclass):
 
     id: vtypes.ProtoID = dataclasses.field(
         init=False, default=vtypes.ProtoID(1),
-        metadata=Meta.input_update_exclude.as_dict,
+        metadata=Meta.input_exclude.as_dict,
     )
 
     Finanzvorstand_Name: str | None = None
