@@ -26,7 +26,6 @@ from cdedb.common import (
     DeletionBlockers,
     GenesisDecision,
     RequestState,
-    glue,
     merge_dicts,
     now,
     unwrap,
@@ -56,7 +55,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         case_model = models.GenesisCase.get_model_by_realm(realm)
         data = cast(CdEDBObject, affirm(case_model, data, creation=True))
 
-        data['case_status'] = const.GenesisStati.unconfirmed
+        data['status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
             return None
         if (data.get('attachment_hash') and not self.get_genesis_attachment_store(
@@ -80,8 +79,8 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         * unconfirmed: A genesis case with status unconfirmed may only be
                        deleted after the timeout period has passed.
-        * case_status: A genesis case may not be deleted if it has one of the
-                       following stati: to_review, approved.
+        * status: A genesis case may not be deleted if it has one of the
+                  following stati: to_review, approved.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -91,12 +90,11 @@ class CoreGenesisBackend(CoreBaseBackend):
         blockers: DeletionBlockers = {}
 
         case = self.genesis_get_case(rs, case_id)
-        if (case.case_status == const.GenesisStati.unconfirmed and
+        if (case.status == const.GenesisStati.unconfirmed and
                 now() < case.ctime + self.conf["PARAMETER_TIMEOUT"]):
             blockers["unconfirmed"] = [case_id]
-        if case.case_status in {const.GenesisStati.to_review,
-                                const.GenesisStati.approved}:
-            blockers["case_status"] = [case.case_status]
+        if case.status in {const.GenesisStati.to_review, const.GenesisStati.approved}:
+            blockers["status"] = [case.status]
 
         return blockers
 
@@ -111,9 +109,9 @@ class CoreGenesisBackend(CoreBaseBackend):
         if "unconfirmed" in blockers.keys():
             raise ValueError(n_("Unable to remove unconfirmed genesis case "
                                 "before confirmation timeout."))
-        if "case_status" in blockers.keys():
+        if "status" in blockers.keys():
             raise ValueError(n_("Unable to remove genesis case with status {}.")
-                             .format(blockers["case_status"]))
+                             .format(blockers["status"]))
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade) & blockers.keys()
@@ -131,9 +129,9 @@ class CoreGenesisBackend(CoreBaseBackend):
                 if "unconfirmed" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
                                      {"blocker": "unconfirmed"})
-                if "case_status" in cascade:
+                if "status" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
-                                     {"blocker": "case_status"})
+                                     {"blocker": "status"})
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
@@ -164,7 +162,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         email = affirm(str, email)
         query = ("SELECT id FROM core.genesis_cases"
-                 " WHERE username = %s AND case_status = %s")
+                 " WHERE username = %s AND status = %s")
         params = (email, const.GenesisStati.unconfirmed)
         data = self.query_one(rs, query, params)
         if data:
@@ -190,15 +188,14 @@ class CoreGenesisBackend(CoreBaseBackend):
         case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             data = self.sql_select_one(
-                rs, "core.genesis_cases", ("realm", "username", "case_status"),
-                case_id)
+                rs, "core.genesis_cases", ("realm", "username", "status"), case_id)
             # These should be displayed as useful errors in the frontend.
             if not data:
                 return 0, "core"
-            elif not data["case_status"] == const.GenesisStati.unconfirmed:
+            elif not data["status"] == const.GenesisStati.unconfirmed:
                 return -1, data["realm"]
-            query = glue("UPDATE core.genesis_cases SET case_status = %s",
-                         "WHERE id = %s AND case_status = %s")
+            query = ("UPDATE core.genesis_cases SET status = %s"
+                     " WHERE id = %s AND status = %s")
             params = (const.GenesisStati.to_review, case_id,
                       const.GenesisStati.unconfirmed)
             ret = self.query_exec(rs, query, params)
@@ -226,14 +223,14 @@ class CoreGenesisBackend(CoreBaseBackend):
                      for realm in realms):
             raise PrivilegeError(n_("Not privileged."))
         query = ("SELECT id, ctime, username, given_names, family_name,"
-                 " case_status FROM core.genesis_cases")
+                 " status FROM core.genesis_cases")
         conditions = []
         params: list[Any] = []
         if realms:
             conditions.append("realm = ANY(%s)")
             params.append(realms)
         if stati:
-            conditions.append("case_status = ANY(%s)")
+            conditions.append("status = ANY(%s)")
             params.append(stati)
 
         if conditions:
@@ -269,7 +266,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Get case already checks privilege and existence for the current data set.
             current = self.genesis_get_case(rs, data['id'])
-            if current.case_status.is_finalized():
+            if current.status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             case_model = models.GenesisCase.get_model_by_realm(current.realm)
             data = cast(CdEDBObject, affirm(case_model, data))
@@ -294,7 +291,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                                models.GenesisCaseEvent.relative_admin}
             if {"core_admin", *relative_admins}.isdisjoint(rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
-            if current.case_status.is_finalized():
+            if current.status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", update)
             self.core_log(rs, const.CoreLogCodes.genesis_change,
@@ -305,14 +302,14 @@ class CoreGenesisBackend(CoreBaseBackend):
     @internal
     def genesis_modify_case_meta(
         self, rs: RequestState, case_id: int, *,
-        case_status: const.GenesisStati | None = None,
+        status: const.GenesisStati | None = None,
         reviewer_id: int | None = None,
         persona_id: int | None = None,
     ) -> DefaultReturnCode:
         """Modify some meta data of a persona creation case."""
         update = {"id": case_id}
-        if case_status:
-            update["case_status"] = case_status
+        if status:
+            update["status"] = status
         if reviewer_id:
             update["reviewer"] = reviewer_id
         if persona_id:
@@ -320,21 +317,21 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Get case already checks privilege and existence for the current data set.
             current = self.genesis_get_case(rs, case_id)
-            if current.case_status.is_finalized():
+            if current.status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             ret = self.sql_update(rs, "core.genesis_cases", update)
 
             log_code = const.CoreLogCodes.genesis_change
-            if case_status and case_status != current.case_status:
-                if case_status == const.GenesisStati.approved:
+            if status and status != current.status:
+                if status == const.GenesisStati.approved:
                     # TODO this case was not logged until now, and there is
                     #  no meaningful log code for this.
                     pass
-                elif case_status == const.GenesisStati.successful:
+                elif status == const.GenesisStati.successful:
                     log_code = const.CoreLogCodes.genesis_approved
-                elif case_status == const.GenesisStati.rejected:
+                elif status == const.GenesisStati.rejected:
                     log_code = const.CoreLogCodes.genesis_rejected
-                elif case_status == const.GenesisStati.existing_updated:
+                elif status == const.GenesisStati.existing_updated:
                     log_code = const.CoreLogCodes.genesis_merged
             self.core_log(rs, log_code, persona_id=persona_id,
                           change_note=current.persona.username)
@@ -354,17 +351,17 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.
             case = self.genesis_get_case(rs, case_id)
-            if case.case_status != const.GenesisStati.to_review:
+            if case.status != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
             if decision.is_create():
-                case_status = const.GenesisStati.approved
+                status = const.GenesisStati.approved
             elif decision.is_update():
                 case.persona_id = persona_id
-                case_status = const.GenesisStati.existing_updated
+                status = const.GenesisStati.existing_updated
             else:
-                case_status = const.GenesisStati.rejected
+                status = const.GenesisStati.rejected
             ret_code = self.genesis_modify_case_meta(
-                rs, case_id, case_status=case_status,
+                rs, case_id, status=status,
                 reviewer_id=rs.user.persona_id, persona_id=persona_id)
             if not ret_code:
                 raise RuntimeError(n_("Genesis modification failed."))
@@ -425,9 +422,9 @@ class CoreGenesisBackend(CoreBaseBackend):
             if "balance" in data:
                 del data["balance"]
             data = affirm(vtypes.Persona, data, creation=True)
-            if case.case_status != const.GenesisStati.approved:
+            if case.status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             new_id = self.create_persona(rs, data, submitted_by=case.reviewer)
-            self.genesis_modify_case_meta(rs, case_id, case_status=const.GenesisStati.successful,
-                                          persona_id=new_id)
+            self.genesis_modify_case_meta(
+                rs, case_id, status=const.GenesisStati.successful, persona_id=new_id)
         return new_id

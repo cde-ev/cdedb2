@@ -232,7 +232,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf["GENESIS_CLEANUP_TIMEOUT"]
-                       or (case['case_status'] == const.GenesisStati.unconfirmed and
+                       or (case['status'] == const.GenesisStati.unconfirmed and
                            case["ctime"] < now() - self.conf["PARAMETER_TIMEOUT"]))
 
         count = 0
@@ -269,10 +269,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
         current_cases_by_realm = {
             realm: {k: v for k, v in cases.items() if v.realm == realm
-                        and v.case_status == const.GenesisStati.to_review}
+                        and v.status == const.GenesisStati.to_review}
             for realm in realms}
         concluded_cases = {k: v for k, v in cases.items()
-                           if v.case_status != const.GenesisStati.to_review}
+                           if v.status != const.GenesisStati.to_review}
         created_account_ids = [case.persona_id for case in concluded_cases.values()
                                if case.persona_id]
         personas = self.coreproxy.get_personas(rs, created_account_ids)
@@ -326,7 +326,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case.case_status != const.GenesisStati.to_review:
+        if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
@@ -368,7 +368,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs) and case.relative_admin not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case.case_status != const.GenesisStati.to_review:
+        if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(rs, data)
@@ -389,7 +389,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                            models.GenesisCaseEvent.relative_admin}
         if not self.is_admin(rs) and not rs.user.roles & relative_admins:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case.case_status != const.GenesisStati.to_review:
+        if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         realm = "event" if case.realm == "cde" else "cde"
@@ -433,7 +433,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                                       " Add additional realm first: %(realm)s."),
                           {'realm': case.realm})
                 return self.redirect(rs, "core/genesis_show_case")
-        if case.case_status != const.GenesisStati.to_review:
+        if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
 

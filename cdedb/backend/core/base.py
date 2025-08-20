@@ -2580,7 +2580,7 @@ class CoreBaseBackend(AbstractBackend):
         num = unwrap(self.query_one(rs, query, (email,))) or 0
         if include_genesis:
             query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
-                         "WHERE username = %s AND case_status = ANY(%s)")
+                         "WHERE username = %s AND status = ANY(%s)")
             # This should be all stati which are not final.
             stati = set(const.GenesisStati) - const.GenesisStati.finalized_stati()
             num += unwrap(self.query_one(rs, query, (email, stati))) or 0

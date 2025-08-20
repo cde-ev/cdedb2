@@ -21,8 +21,8 @@
             {% trans %}Status{% endtrans %}
         </dt>
         <dd id="status">
-            {{ util.make_icon(enums['GenesisStati'](ambience['genesis_case']['case_status']).get_icon()) }}
-            {{ gettext(enums['GenesisStati'](ambience['genesis_case']['case_status'])|string) }}
+            {{ util.make_icon(enums['GenesisStati'](ambience['genesis_case']['status']).get_icon()) }}
+            {{ gettext(enums['GenesisStati'](ambience['genesis_case']['status'])|string) }}
         </dd>
         <dt title="{% trans %}Realm{% endtrans %}">
             {% trans %}Realm{% endtrans %}
@@ -172,7 +172,7 @@
     {% endif %}
 
 
-    {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
+    {% if ambience['genesis_case']['status'] == enums['GenesisStati'].to_review %}
         <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
          id="genesisdecisionform" style="display: inline;">
             {{ util.anti_csrf_token('core/genesis_decide') }}

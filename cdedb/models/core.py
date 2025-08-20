@@ -314,7 +314,7 @@ class GenesisCase(CdEDataclass):
     # only changable via separate frontend endpoint
     realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
-    case_status: const.GenesisStati = dataclasses.field(
+    status: const.GenesisStati = dataclasses.field(
         metadata=Meta.input_exclude.as_dict)
     ctime: datetime.datetime = dataclasses.field(
         metadata=Meta.input_exclude.as_dict)

@@ -72,16 +72,16 @@
     <div id="concluded-cases" class="list-group list-group-hover list-group-condensed">
     {% for genesis_case_id, entry in concluded_cases|dictsort(by="value", reverse=True) %}
         <div id="genesis-{{ genesis_case_id }}-row" class="row list-group-item
-                {%- if entry['case_status'] == enums['GenesisStati'].rejected %} list-group-item-muted{% endif %}">
+                {%- if entry['status'] == enums['GenesisStati'].rejected %} list-group-item-muted{% endif %}">
             <div class="col-sm-3">
                 {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}),
                              entry.persona|persona_name, icon="door-open") }}
             </div>
             <div class="col-sm-3">
                 <span>
-                {{ util.make_icon(enums['GenesisStati'](entry['case_status']).get_icon(),
-                                  title=gettext( enums['GenesisStati'](entry['case_status'])|string)) }}
-                {{ gettext( enums['GenesisStati'](entry['case_status'])|string) }}
+                {{ util.make_icon(enums['GenesisStati'](entry['status']).get_icon(),
+                                  title=gettext( enums['GenesisStati'](entry['status'])|string)) }}
+                {{ gettext( enums['GenesisStati'](entry['status'])|string) }}
                 </span>
             </div>
             <div class="col-sm-3">
