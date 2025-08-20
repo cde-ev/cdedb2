@@ -296,22 +296,23 @@ class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
 
     # only changable via separate frontend endpoint
-    realm: vtypes.Realm = dataclasses.field(metadata={'update_exclude': True})
+    realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
     case_status: const.GenesisStati = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True})
+        metadata=Meta.input_exclude.as_dict)
     ctime: datetime.datetime = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True})
+        metadata=Meta.input_exclude.as_dict)
     reviewer: vtypes.ID | None = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'request_exclude': True})
+        default=None, metadata=Meta.input_exclude.as_dict)
     persona_id: vtypes.ID | None = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'request_exclude': True})
+        default=None, metadata=Meta.input_exclude.as_dict)
 
     persona: Persona = dataclasses.field(
-        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
 
     # further information tied to the genesis case but not to persona dataclass
-    attachment_hash: str | None = dataclasses.field(metadata={'update_exclude': True})
+    attachment_hash: str | None = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
     pevent_id: int | None
     pcourse_id: int | None
 
@@ -426,7 +427,7 @@ class GenesisCase(CdEDataclass):
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
     persona: MlPersona = dataclasses.field(
-        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -446,7 +447,7 @@ class GenesisCaseMl(GenesisCase):
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
     persona: EventPersona = dataclasses.field(
-        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -467,8 +468,8 @@ class GenesisCaseEvent(GenesisCase):
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
     persona: CdEPersona = dataclasses.field(
-        metadata={'database_exclude': True, 'request_exclude': True, 'validation_exclude': True})
-    attachment_hash: str = dataclasses.field(metadata={'update_exclude': True})
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
+    attachment_hash: str = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
