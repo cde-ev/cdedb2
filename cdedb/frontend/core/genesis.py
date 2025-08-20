@@ -316,7 +316,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
             'persona': persona, 'doppelgangers': doppelgangers,
-            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
@@ -340,7 +339,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
                    "pcourse_id": courses}
 
         return self.render(rs, "genesis/genesis_modify_form", {
-            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'choices': choices}, mandatory_fields)
 
     @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})

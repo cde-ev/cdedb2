@@ -767,6 +767,10 @@ def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDatacla
     ]
 
 
+def hasattr_filter(entity: object, attr: Any) -> bool:
+    return hasattr(entity, attr)
+
+
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
@@ -776,6 +780,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'hasattr': hasattr_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
     'persona_name': persona_name_filter,

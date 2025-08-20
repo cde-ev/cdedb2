@@ -15,7 +15,6 @@
                         active="True", icon="door-open") }}
 {% endblock %}
 {% block content %}
-    {% set realm_fields = REALM_SPECIFIC_GENESIS_FIELDS[ambience['genesis_case']['realm']]|set %}
     <h4 class="heading-underline">{% trans %}Case Meta-Information{% endtrans %}</h4>
     <dl class="dl-horizontal">
         <dt title="{% trans %}Status{% endtrans %}">
@@ -138,7 +137,7 @@
         {% endif %}
     </dl>
 
-    {% if realm_fields.intersection(('pevent_id', 'pcourse_id', 'attachment_hash')) %}
+    {% if ambience["genesis_case"].realm == "cde" %}
         <h4 class="heading-underline">{% trans %}Academy Information{% endtrans %}</h4>
         <dl class="dl-horizontal">
             <dt title="{% trans %}Past Event{% endtrans %}">{% trans %}Past Event{% endtrans %}</dt>
