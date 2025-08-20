@@ -2336,16 +2336,9 @@ def _safe_str(
     return SafeStr(val)
 
 
-@_add_typed_validator
-def _meta_info(
-    val: Any, argname: str = "meta_info", **kwargs: Any,
-) -> MetaInfo:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_core.MetaInfo.validation_fields(creation=False)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
-    return MetaInfo(val)
+@_create_dataclass_validator(models_core.MetaInfo)
+def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {

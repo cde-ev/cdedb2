@@ -2978,7 +2978,7 @@ class CoreBaseBackend(AbstractBackend):
         This is expected to occur regularly.
         """
         with Atomizer(rs):
-            data = affirm(vtypes.MetaInfo, data)
+            data = affirm(models.MetaInfo, data)
             meta_info = self.get_meta_info(rs).as_dict()
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
