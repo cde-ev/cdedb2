@@ -691,35 +691,7 @@ def _id(
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     val = _positive_int(val, argname, **kwargs)
-    return ID(_proto_id(val, argname, **kwargs))
-
-
-@_add_typed_validator
-def _creation_id(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> CreationID:
-    """ID of an object which is currently under creation.
-
-    This is just a wrapper around `_negative_int`, to differentiate this
-    semantically.
-    """
-    if val is None or isinstance(val, str) and not val:
-        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    val = _negative_int(val, argname, **kwargs)
-    return CreationID(_proto_id(val, argname, **kwargs))
-
-
-@_add_typed_validator
-def _proto_id(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> ProtoID:
-    """An object with a proto-id may already exist or is currently under creation.
-
-    This implies that the id may either be positive or negative, but must not be zero.
-    """
-    if val is None or isinstance(val, str) and not val:
-        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    return ProtoID(_non_zero_int(val, argname, **kwargs))
+    return ID(val)
 
 
 @_add_typed_validator
@@ -2806,7 +2778,7 @@ _create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
 @_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        id_: ProtoID,
+        id_: ID,
         event: CdEDBObject,
         personalized: Optional[bool] = None,
         **kwargs: Any,

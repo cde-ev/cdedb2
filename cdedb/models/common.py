@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     )
 
 T = TypeVar("T")
-# Should actually be a vtypes.ProtoID instead of an int
+# Should actually be a vtypes.ID instead of an int
 CdEDataclassMap = dict[int, T]
 
 
@@ -124,7 +124,7 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
-    id: vtypes.ProtoID = dataclasses.field(
+    id: vtypes.ID = dataclasses.field(
         metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
                   | MetaFlag.validate_update_mandatory).as_dict)
 

@@ -22,11 +22,11 @@ class TestMlBackend(BackendTest):
 
     @staticmethod
     def as_id(anid: int) -> vtypes.ID:
-        return vtypes.ID(vtypes.ProtoID(anid))
+        return vtypes.ID(anid)
 
     @staticmethod
-    def as_creation_id(anid: int) -> vtypes.CreationID:
-        return vtypes.CreationID(vtypes.ProtoID(anid))
+    def as_creation_id(anid: int) -> vtypes.ID:
+        return vtypes.ID(anid)
 
     @as_users("janis")
     def test_basics(self) -> None:

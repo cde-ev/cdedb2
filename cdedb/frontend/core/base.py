@@ -1522,7 +1522,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if anonymous_from:
             message, key = models.AnonymousMessageData.encrypt(
-                recipient=to, persona_id=vtypes.ID(vtypes.ProtoID(rs.user.persona_id)),
+                recipient=to, persona_id=vtypes.ID(rs.user.persona_id),
                 username=vtypes.Email(rs.user.username), subject=subject,
             )
             if not self.coreproxy.log_anonymous_message(rs, message):

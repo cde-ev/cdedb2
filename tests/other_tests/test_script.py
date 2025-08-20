@@ -249,5 +249,5 @@ class TestScript(unittest.TestCase):
         with self.assertRaisesRegex(
                 ValueError, "May not create new orga token in offline instance.",
         ):
-            token.id = vtypes.ProtoID(-1)
+            token.id = vtypes.ID(-1)
             event.create_orga_token(offline_script.rs(), token)

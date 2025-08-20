@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 class MetaInfo(CdEDataclass):
     database_table = "core.meta_info"
 
-    id: vtypes.ProtoID = dataclasses.field(
-        init=False, default=vtypes.ProtoID(1),
+    id: vtypes.ID = dataclasses.field(
+        init=False, default=vtypes.ID(1),
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -117,7 +117,7 @@ class AnonymousMessageData(CdEDataclass):
         pattern = re.compile(r"(?P<persona_id>\d+) <(?P<username>.+)> (?P<subject>.+)")
         if result := pattern.fullmatch(data):
             return (
-                vtypes.ID(vtypes.ProtoID(int(result.group("persona_id")))),
+                vtypes.ID(int(result.group("persona_id"))),
                 vtypes.Email(result.group("username")),
                 result.group("subject"),
             )
@@ -163,7 +163,7 @@ class AnonymousMessageData(CdEDataclass):
         data, key = cls._encrypt(cls.format_data(persona_id, username, subject))
         return (
             cls(
-                id=vtypes.ProtoID(-1),
+                id=vtypes.ID(-1),
                 message_id=cls.create_message_id(),
                 recipient=vtypes.Email(recipient),
                 ctime=now(),

@@ -102,7 +102,7 @@ class EventEventMixin(EventBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
 
-        events_registrations: dict[vtypes.ProtoID, int] = {}
+        events_registrations: dict[vtypes.ID, int] = {}
         if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles.get('event', {}):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
@@ -525,7 +525,7 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _valid_event_part_fields(
             fields: models.CdEDataclassMap[models.EventField],
-    ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
+    ) -> dict[str, list[tuple[vtypes.ID, vtypes.RestrictiveIdentifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
@@ -1165,7 +1165,7 @@ class EventEventMixin(EventBaseFrontend):
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
             orga_ml_data = EventOrgaMailinglist(
-                id=vtypes.CreationID(vtypes.ProtoID(-1)),
+                id=vtypes.ID(-1),
                 title=f"{event.title} Orgateam",
                 local_part=vtypes.EmailLocalPart(f"{event.shortname.lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
@@ -1204,7 +1204,7 @@ class EventEventMixin(EventBaseFrontend):
                      f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = EventAssociatedMailinglist(
-                id=vtypes.CreationID(vtypes.ProtoID(-1)),
+                id=vtypes.ID(-1),
                 title=title,
                 local_part=vtypes.EmailLocalPart(local_part.replace(" ", "")),
                 domain=const.MailinglistDomain.aka,
@@ -1217,7 +1217,7 @@ class EventEventMixin(EventBaseFrontend):
                 maxsize=EventAssociatedMailinglist.maxsize_default,
                 additional_footer=None,
                 is_active=True,
-                event_id=cast(vtypes.ID, event.id),
+                event_id=event.id,
                 event_part_group_id=cast(vtypes.ID | None, part_group_id),
                 registration_stati=[const.RegistrationPartStati.participant],
                 notes=None,

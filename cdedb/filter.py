@@ -449,7 +449,7 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace('\n', markupsafe.Markup(replacement))
+    return val.replace('\n', markupsafe.Markup(replacement))  # type: ignore[return-value]
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive

@@ -120,7 +120,7 @@ class APIToken(abc.ABC):
 
     Needs to be overridden by subclasses.
     """
-    id: vtypes.ProtoID
+    id: vtypes.ID
 
     @classmethod
     @lru_cache
@@ -198,7 +198,7 @@ class APIToken(abc.ABC):
         raise ValueError(n_("Wrong format for api token."))
 
 
-STATIC_TOKEN_ID = cast(vtypes.ProtoID, None)
+STATIC_TOKEN_ID = cast(vtypes.ID, None)
 
 
 @dataclass(kw_only=True)
@@ -215,7 +215,7 @@ class StaticAPIToken(APIToken):
     #: Name of the static droid.
     name: ClassVar[str]
 
-    id: vtypes.ProtoID = STATIC_TOKEN_ID
+    id: vtypes.ID = STATIC_TOKEN_ID
 
     @classmethod
     @lru_cache

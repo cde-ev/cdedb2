@@ -22,7 +22,7 @@ from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 class Case(CdEDataclass):
     database_table = "complaint.cases"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     kind: const.ComplaintKind
     is_grave: bool = False
@@ -263,7 +263,7 @@ class ComplaintEntry(CdEDataclass):
     database_table = "complaint.entries"
     entity_key = "case_id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     case: Case = dataclasses.field(init=False, compare=False, repr=False)
     case_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
@@ -333,7 +333,7 @@ class ComplaintEntryVersion(CdEDataclass):
     database_table = "complaint.entry_versions"
     entity_key = "entry_id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     entry_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
