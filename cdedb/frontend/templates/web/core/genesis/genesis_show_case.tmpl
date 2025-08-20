@@ -226,7 +226,8 @@
         </form>
         {% if ambience["genesis_case"].realm != "ml" %}
             {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
-            <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" style="margin-top: 5px">
+            <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST"
+             id="genesismodifyrealmform" style="margin-top: 5px">
                 {{ util.anti_csrf_token('core/genesis_modify_realm') }}
                 {{ util.input_submit(label=gettext("Change Realm"), icon=icon,
                     aclass="btn btn-warning") }}

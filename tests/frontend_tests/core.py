@@ -2340,21 +2340,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde", div='username')
 
-        # modify realm
-        self.traverse("Bereich ändern")
+        # change realm to cde
         f = self.response.forms['genesismodifyrealmform']
-        self.assertEqual(f['realm'].value, "event")
-        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.assertPresence("CdE", div="realm")
         self.assertPresence("verg. Veranstaltung")
 
-        # change realm back to previous value
-        self.traverse("Bereich ändern")
+        # change realm back to event
         f = self.response.forms['genesismodifyrealmform']
-        self.assertEqual(f['realm'].value, "cde")
-        f['realm'] = "event"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.assertPresence("Veranstaltungen", div="realm")
@@ -2410,14 +2404,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
                          f" {self.ML_GENESIS_DATA['family_name']}")
         self.assertNonPresence("Bereich ändern")
-
-        # Set past event and gender that should be ignored
-        self.traverse('Accountanfrage bearbeiten')
-        f = self.response.forms['genesismodifyform']
-        f['gender'].force_value(const.Genders.other)
-        if self.user_in('paul'):
-            f['pevent_id'] = 1
-        self.submit(f)
 
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
@@ -2560,6 +2546,23 @@ class TestCoreFrontend(FrontendTest):
             self.traverse("Goethe")
             self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
             self.response = saved
+
+        if self.user_in("paul"):
+            # change realm to event
+            f = self.response.forms['genesismodifyrealmform']
+            self.submit(f)
+            self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+            self.assertPresence("Veranstaltungen", div="realm")
+            self.assertNonPresence("Goethe")
+            self.assertNonPresence("Anhang herunterladen")
+
+            # change realm back to cde, check that no data was lost
+            f = self.response.forms['genesismodifyrealmform']
+            self.submit(f)
+            self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+            self.assertPresence("CdE", div="realm")
+            self.assertPresence("Goethe")
+            self.assertPresence("Anhang herunterladen")
 
         # modify username of genesis request
         self.traverse({'href': '/core/genesis/1001/modify'})
@@ -2970,9 +2973,7 @@ class TestCoreFrontend(FrontendTest):
         self.response = save
 
         # Check that a cde genesis request cannot be merged into a non-cde account.
-        self.traverse("Bereich ändern")
         f = self.response.forms['genesismodifyrealmform']
-        f['realm'] = "cde"
         self.submit(f)
         f = self.response.forms['genesisdecisionform']
         # Set persona_id to the value of the second radio button.
@@ -2983,9 +2984,7 @@ class TestCoreFrontend(FrontendTest):
                             " Füge zunächst folgenden Bereich hinzu: cde.",
                             div="notifications")
         # Repair the request.
-        self.traverse("Bereich ändern")
         f = self.response.forms['genesismodifyrealmform']
-        f['realm'] = "event"
         self.submit(f)
 
         # Check that approving the request fails if a persona is selected.
