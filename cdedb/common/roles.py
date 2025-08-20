@@ -343,7 +343,7 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
             "core", "core_user", "cde_user", "event_user", "assembly_user",
             "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
         }
-    if "complaint_admin" in roles:
+    if {"complaint_admin", "complaint.enforcer"} & roles:
         result |= {"complaint"}
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
@@ -352,7 +352,7 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "event_admin" in roles:
         result |= {"event_user", "user_review", "event_mgmt", "event_list",
                    "event_orga", "ml_mgmt_event", "ml_mod_event"}
-    if "event_helper" in roles:
+    if "event.event_helper" in roles:
         result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}

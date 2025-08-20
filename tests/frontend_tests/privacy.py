@@ -504,6 +504,16 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                        check_div=False)
 
+    @as_users("simon", "janis")
+    @admin_views("complaint")
+    def test_profile_as_enforcer(self) -> None:
+        self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        if self.user_in("simon"):
+            self.assertPresence("berta@example.cde", div="global-information")
+        else:
+            self.assertNonPresence("berta@example.cde")
+
     def test_profile_of_realm_user(self) -> None:
         users = ("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
                  "paul", "rowena", "viktor")

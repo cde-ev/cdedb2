@@ -21,7 +21,6 @@ import string
 import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
-from itertools import chain
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
@@ -140,8 +139,16 @@ class User:
         self.admin_views: set[AdminView] = set()
 
     @property
+    def all_roles(self) -> set[Role]:
+        return self.roles.union(
+            f"{realm}.{realm_role}"
+            for realm, realm_roles in self.realm_roles.items()
+            for realm_role in realm_roles
+        )
+
+    @property
     def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.roles | set(chain(*self.realm_roles.values())))
+        return roles_to_admin_views(self.all_roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
         enabled_views = enabled_views_cookie.split(',')

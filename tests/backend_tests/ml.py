@@ -39,6 +39,10 @@ class TestMlBackend(BackendTest):
         new_data = self.core.get_ml_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     @as_users("anton")
     def test_merge_accounts(self) -> None:
         berta_id = USER_DICT['berta']['id']

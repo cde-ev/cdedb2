@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-import base64
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, cast
-
-import psycopg2.extensions
-from cryptography.fernet import Fernet
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
-    Silencer,
     access,
     affirm_dataclass,
     affirm_set_validation as affirm_set,
@@ -20,25 +15,22 @@ from cdedb.backend.common import (
     affirm_validation_optional as affirm_optional,
     singularize,
 )
-from cdedb.backend.event import EventBackend
 from cdedb.common import (
     BytesLike,
     CdEDBLog,
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
-    DeletionBlockers,
     RequestState,
     now,
-    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
+from cdedb.database.constants import ComplaintLogCodes
 from cdedb.database.query import DatabaseValue_s
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -87,6 +79,108 @@ class ComplaintBackend(AbstractBackend):
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    @access("persona")
+    def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all enforcers."""
+        data = self.query_all(rs, "SELECT persona_id FROM complaint.enforcers", [])
+        return {e['persona_id'] for e in data}
+
+    @access("complaint_admin")
+    def add_enforcer(
+        self, rs: RequestState, persona_id: vtypes.ID
+    ) -> DefaultReturnCode:
+        """Add a new enforcer."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
+
+        with Atomizer(rs):
+            if persona_id in self.list_enforcers(rs):
+                return -1
+            ret = self.sql_insert(rs, "complaint.enforcers", {'persona_id': persona_id})
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=ComplaintLogCodes.enforcer_added,
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
+
+    @access("complaint_admin")
+    def remove_enforcer(
+        self, rs: RequestState, persona_id: vtypes.ID
+    ) -> DefaultReturnCode:
+        """Remove enforcer privileges for a persona."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
+
+        with Atomizer(rs):
+            if persona_id not in self.list_enforcers(rs):
+                return -1
+            ret = self.sql_delete(
+                rs, "complaint.enforcers", {persona_id}, entity_key="persona_id"
+            )
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=ComplaintLogCodes.enforcer_removed,
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
+
+    @access("persona")
+    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all monitors."""
+        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
+        return {e['persona_id'] for e in data}
+
+    @access("complaint_admin")
+    def add_monitor(self, rs: RequestState, persona_id: vtypes.ID) -> DefaultReturnCode:
+        """Add a new monitor."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
+
+        with Atomizer(rs):
+            if persona_id in self.list_monitors(rs):
+                return -1
+            ret = self.sql_insert(rs, "complaint.monitors", {'persona_id': persona_id})
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=ComplaintLogCodes.monitor_added,
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
+
+    @access("complaint_admin")
+    def remove_monitor(
+        self, rs: RequestState, persona_id: vtypes.ID
+    ) -> DefaultReturnCode:
+        """Remove monitor privileges for a persona."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        if not self.core.verify_id(rs, persona_id, is_archived=False):
+            raise ValueError(n_("This user does not exist or is archived."))
+
+        with Atomizer(rs):
+            if persona_id not in self.list_monitors(rs):
+                return -1
+            ret = self.sql_delete(
+                rs, "complaint.monitors", {persona_id}, entity_key="persona_id"
+            )
+            if ret:
+                self.complaint_log(
+                    rs=rs,
+                    code=ComplaintLogCodes.monitor_removed,
+                    case_id=None,
+                    persona_id=persona_id,
+                )
+        return ret
 
     def complaint_log(
         self,
@@ -190,6 +284,30 @@ class ComplaintBackend(AbstractBackend):
         def __call__(self, rs: RequestState, case_id: int) -> CdEDBObject: ...
 
     get_case = singularize(get_cases, 'case_ids', 'case_id')
+
+    @access("complaint_admin")
+    def get_related_cases(
+        self, rs: RequestState, case_id: int
+    ) -> dict[int, models.Case | None]:
+        """Collect related cases."""
+        case_id = affirm(vtypes.ID, case_id)
+        query = f"SELECT id FROM {models.Case.database_table}"
+        case_ids = self.query_all(rs, query, ())
+        _cases = self.get_cases(rs, [e["id"] for e in case_ids])
+        _related_cases = {
+            maybe_related_case_id: case
+            for maybe_related_case_id, case in _cases.items()
+            if _cases[case_id].all_properly_involved.keys()
+            & case.all_properly_involved.keys()
+        }
+        del _related_cases[case_id]
+
+        # Show no information on invisible cases
+        related_cases: dict[int, models.Case | None] = {}
+        for case_id_, case_ in _related_cases.items():
+            related_cases[case_id_] = case_ if case_.is_visible_for(rs.user) else None
+
+        return related_cases
 
     @access("complaint_admin")
     def set_case(
@@ -1076,10 +1194,17 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("complaint_admin", "complaint.enforcer")
-    def get_user_measures(
+    @access("persona")
+    def list_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
-    ) -> dict[int, models.ComplaintEntryVersion]:
+    ) -> set[vtypes.ID]:
+        concerned_id = affirm(vtypes.ID, concerned_id)
+        is_active = affirm_optional(bool, is_active)
+        if not (
+            {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            or concerned_id == rs.user.persona_id
+        ):
+            raise PrivilegeError
         query = f"""
             SELECT versions.id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
@@ -1104,14 +1229,7 @@ class ComplaintBackend(AbstractBackend):
             """
             params["is_active"] = is_active
 
-        entry_version_ids = [e['id'] for e in self.query_all(rs, query, params)]
-        entry_version_data = self.query_all(
-            rs,
-            *models.ComplaintEntryVersion.get_select_query(
-                entry_version_ids, entity_key="id"
-            ),
-        )
-        return models.ComplaintEntryVersion.many_from_database(entry_version_data)
+        return {e['id'] for e in self.query_all(rs, query, params)}
 
     @access("complaint_admin", "complaint.enforcer")
     def list_measures(
@@ -1120,6 +1238,7 @@ class ComplaintBackend(AbstractBackend):
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
     ) -> dict[int, int]:
+        is_active = affirm_optional(bool, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
         else:
@@ -1151,7 +1270,7 @@ class ComplaintBackend(AbstractBackend):
 
         return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("persona")
     def get_measures(
         self, rs: RequestState, measure_ids: Collection[int]
     ) -> tuple[
@@ -1177,9 +1296,16 @@ class ComplaintBackend(AbstractBackend):
         entry_data = self.sql_select(
             rs,
             models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id'],
+            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
             entry_ids,
         )
+        if not {
+            "complaint_admin",
+            "complaint.enforcer",
+        } & rs.user.all_roles and not all(
+            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
+        ):
+            raise PrivilegeError
         for e in entry_data:
             e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
         entries = {e['id']: e for e in entry_data}

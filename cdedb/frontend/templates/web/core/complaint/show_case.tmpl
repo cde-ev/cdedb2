@@ -101,7 +101,7 @@
             {{ util.input_select(
                 name="involvement_type",
                 entries=enums['ComplaintInvolvementType']|enum_entries(processing=gettext),
-                attributes='style="width:25%; height:100%; border-left:0;"'|s
+                attributes='style="width:25%; border-left:0;"'|s
             ) }}
             <div class="input-group-btn">
                 {{ util.input_submit(label=gettext("Add"), icon="user-plus", aclass="btn btn-success ") }}
@@ -219,6 +219,37 @@
         </div>
     {% endfor %}
 
+    {{ util.h(n_("Related Cases")) }}
+    {% if related_cases %}
+        <ul id="related-cases">
+            {% for case in related_cases.values() if case and ambience['case'].is_strongly_related(case) %}
+                <li>
+                    {{ print_related_case(case) }}
+                </li>
+            {% endfor %}
+            {% for case in related_cases.values() if case and not ambience['case'].is_strongly_related(case) %}
+                <li>
+                    {{ print_related_case(case) }}
+                </li>
+            {% endfor %}
+            {% for case_id, case in related_cases.items() if not case %}
+                <li>
+                    {{ gettext("Case %s")|s|format(case_id) }}:
+                    <strong class="text-warning">
+                        {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
+                        {{ gettext("Not shown due to own involvement or potential bias.") }}
+                    </strong>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            {% trans %}
+                There are no related cases
+            {% endtrans %}
+        </p>
+    {% endif %}
+
     {{ util.h(n_("Events_[[in a complaint]]")) }}
     <div class="p button-par">
         {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
@@ -243,7 +274,7 @@
                     {{ util.input_text(name="reason", placeholder=gettext("Why do you need to unlock this case?")) }}
                     <div class="input-group-btn">
                         {{ util.input_submit(label=gettext("Unlock descriptions"),
-                                             aclass="btn btn-sm btn-primary", icon="unlock")
+                                             aclass="btn btn-primary", icon="unlock")
                         }}
                     </div>
                 </div>
@@ -363,3 +394,30 @@
     {% endfor %}
     </div>
 {% endblock %}
+
+{% macro print_related_case(case) %}
+    {% if ambience['case'].is_strongly_related(case) %}<strong>{% endif %}
+        {{- util.href(
+            cdedblink("core/show_case", {'case_id': case.id}),
+            gettext("Case %s")|s|format(case.id)
+        ) }}
+    {%- if ambience['case'].is_strongly_related(case) %}
+        </strong>
+        {{ util.make_icon("bolt-lightning", title=gettext("strongly related")) }}
+    {% endif %}
+    {{ generic_complaint.case_status_flags(case) }}
+    {%- if case.start_date or case.end_date %}
+        ({{ case.start_date|date(lang=lang) }}–{{ case.end_date|date(lang=lang) }})
+    {%- endif %}:
+    {{ case.summary }}
+    <br />
+    {{ gettext("Intersecting involved") }}:
+    {% for involved_id, involvement_type in case.all_involved.items() if involved_id in ambience['case'].all_properly_involved %}
+        {{ util.persona_anchor(personas[involved_id]) }}
+        <span class="text-muted">(
+            {{- util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
+            <span aria-hidden="true">{{ gettext(involvement_type.shortname) -}}</span></span>)
+        {%- if not loop.last %}, {% endif %}
+    {% endfor %}
+
+{% endmacro %}

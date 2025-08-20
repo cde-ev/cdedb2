@@ -2647,6 +2647,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence(user['family_name'], div="row-" + str(row))
             row += 1
 
+    @prepsql(
+        f"UPDATE core.personas SET country = 'CH'"
+        f" WHERE id = {USER_DICT['berta']['id']};"
+        f"UPDATE core.personas SET postal_code = '01234'"
+        f" WHERE id = {USER_DICT['akira']['id']};"
+    )
     @as_users("garcia")
     def test_participant_list_sorting(self) -> None:
         # first, show courses on participant list
@@ -2681,7 +2687,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([anton, berta, emilia, akira])
+        self._sort_appearance([anton, emilia, akira, berta])
 
         self.traverse({'description': r"^Zweite Hälfte$"})
         self.traverse({'description': r"\sRufname"})
@@ -6900,7 +6906,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
                 "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
-                "1 IncorrectIBANCV",
+                "1 Falsche IBAN-Konfiguration",
             ],
         )
 

@@ -711,8 +711,9 @@
     {%- endcall %}
 {%- endmacro%}
 
-{% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
+{% macro input_multi_select(name, entries, selectize=False, readonly=False, actualreadonly=False, anid=none,
         aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+    {% set anid = anid or 'inputmultiselect-' + name %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -742,14 +743,20 @@
     {% if actualreadonly %}
         {{ input_hidden(name) }}
     {% endif %}
+    {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for multiselect selectize.") }}{% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
+        </script>
+    {% endif %}
 {%- endmacro %}
 
-{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False,
+{% macro form_input_multi_select(name, entries, selectize=False, label="", info='', displayerrors=True, readonly=False,
        actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
        attributes="", sort=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
-        {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
+        {{- input_multi_select(name, entries, selectize, readonly, actualreadonly, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro%}
@@ -1091,15 +1098,15 @@ mailto:
 
 {% macro privilege_icon(privilege, desc=False) %}
     {% with title_icon_map = {
-        "is_meta_admin": (gettext("Meta-Admin"), "wrench"),
-        "is_core_admin": (gettext("Core-Admin"), "user"),
-        "is_cde_admin": (gettext("CdE-Admin"), "graduation-cap"),
-        "is_finance_admin": (gettext("Finance-Admin"), "euro-sign"),
-        "is_event_admin": (gettext("Event-Admin"), "chalkboard-teacher"),
-        "is_ml_admin": (gettext("Mailinglist-Admin"), "envelope"),
-        "is_cdelokal_admin": (gettext("CdElokal-Admin"), "city"),
-        "is_assembly_admin": (gettext("Assembly-Admin"), "bullhorn"),
-        "is_complaint_admin": (gettext("Complaint-Admin"), "gavel"),
+        "is_meta_admin": (gettext("Meta admin"), "wrench"),
+        "is_core_admin": (gettext("Core admin"), "user"),
+        "is_cde_admin": (gettext("CdE admin"), "graduation-cap"),
+        "is_finance_admin": (gettext("Finance admin"), "euro-sign"),
+        "is_event_admin": (gettext("Event admin"), "chalkboard-teacher"),
+        "is_ml_admin": (gettext("Mailinglist admin"), "envelope"),
+        "is_cdelokal_admin": (gettext("CdElokal admin"), "city"),
+        "is_assembly_admin": (gettext("Assembly admin"), "bullhorn"),
+        "is_complaint_admin": (gettext("Case archive admin"), "gavel"),
         "is_auditor": (gettext("Auditor"), "search-dollar"),
         } %}
         {% set description, icon = title_icon_map[privilege] %}

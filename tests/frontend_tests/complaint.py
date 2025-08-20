@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import datetime
 
 import cdedb.database.constants as const
-from cdedb.common.query.log_filter import ComplaintLogFilter
 from tests.common import (
+    USER_DICT,
     FrontendTest,
     as_users,
 )
@@ -113,6 +112,11 @@ class TestComplaintFrontend(FrontendTest):
             "Aktive Fallbegleitung kann nicht selbst beteiligt sein.", 'error'
         )
         self.traverse("Fall 1")
+
+        # Check there are no related cases
+        self.assertPresence("Zusammenhängende Fälle")
+        self.assertPresence("Es gibt keine hiermit zusammenhängenden Fälle.")
+        self.assertNonPresence("Überlappend")
 
         # ##
         # ## 2. Check sample case: entries when locked ##
@@ -468,7 +472,7 @@ class TestComplaintFrontend(FrontendTest):
             self.submit(f)
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
             f['qval_involved.involved_type'] = (
-                const.ComplaintInvolvementType.target.value
+                const.ComplaintInvolvementType.target.value,
             )
             self.submit(f)
             self.assertNonPresence("nnicht angezeigt", div='notifications')
@@ -629,3 +633,157 @@ class TestComplaintFrontend(FrontendTest):
         )
 
         self.assertLogEqual(log_expectation, realm='complaint', offset=6)
+
+        # ##
+        # ## 8. Test related cases
+        self.get("/core/complaint/case/1001/show")
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-4-3"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
+        self.submit(f)
+        self.assertPresence(
+            "Fall 1 ist bestätigt ist schwerwiegend"
+            " (28.05.2025–04.01.2222): Jemand schnarcht ganz furchtbar. Wirklich!"
+            " Überlappende Beteiligte: Daniel Dino (Betroffene Bt)",
+            div='related-cases',
+            exact=True,
+        )
+        self.assertNonPresence("1001", div='related-cases')
+
+        def _assertHidden() -> None:
+            self.get("/core/complaint/case/1/show")
+            self.assertPresence(
+                "Fall 1001: Warnung Wegen eigener Beteiligung"
+                " oder möglicher Befangenheit nicht angezeigt.",
+                div='related-cases',
+                exact=True,
+            )
+
+        with self.switch_user("anton"):
+            _assertHidden()
+
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-2-7"
+        f['involvement_type'] = str(const.ComplaintInvolvementType.target)
+        self.submit(f)
+        self.assertPresence(
+            "Fall 1 eng zusammenhängend ist bestätigt ist schwerwiegend"
+            " (28.05.2025–04.01.2222): Jemand schnarcht ganz furchtbar. Wirklich!"
+            " Überlappende Beteiligte:"
+            " Daniel Dino (Betroffene Bt), Bertå Beispiel (Zielpersonen Zp)",
+            div='related-cases',
+            exact=True,
+        )
+
+        with self.switch_user("anton"):
+            _assertHidden()
+
+    @as_users("simon")
+    def test_user_measures(self) -> None:
+        self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        self.assertPresence("Dr. Bertå Beispiel MdB", div="global-information")
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft von Charly Clown – aus Fall 1"
+            " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div="entry6",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (abgelaufen) von Charly Clown – aus Fall 1"
+            " Quarantäne für eine Woche!",
+            div="entry7",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
+            " – aus Fall 1 Sollte Berta noch einmal die Vögel aus dem Schlaf",
+            div="entry8",
+        )
+        self.traverse("Fall 1")
+        self.assertTitle("Fall 1")
+
+        self.traverse("Anton Administrator", "Maßnahmen$")
+        self.assertTitle("Anton Administrator – Maßnahmen")
+        self.assertPresence("Es gibt keine Maßnahmen gegen diese Person.")
+
+    @as_users("berta")
+    def test_user_measures_unprivileged(self) -> None:
+        self.get("/core/persona/1/measures", status=403)
+        self.get("/core/persona/9/measures", status=403)
+
+        self.traverse("Bertå")
+        self.assertTitle("Bertå Beispiel")
+        measure_link = "/core/persona/2/measures"
+        self.assertNonPresence("Maßnahmen")
+        self.assertNoLink(measure_link)
+
+        self.get(measure_link)
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        self.assertPresence("Dr. Bertå Beispiel MdB", div="global-information")
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft von Charly Clown"
+            " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
+            div="entry6",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (abgelaufen)"
+            " von Charly Clown Quarantäne für eine Woche!",
+            div="entry7",
+        )
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
+            " Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen",
+            div="entry8",
+        )
+        self.assertNonPresence("aus Fall 1")
+
+    @as_users("simon", "janis", maintain_data=True)
+    def test_measure_overview(self) -> None:
+        self.traverse("Maßnahmenübersicht")
+        self.assertTitle("Maßnahmenübersicht")
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
+        self.assertPresence("von Charly Clown", div='entry6')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+        )
+        if self.user_in("simon"):
+            self.traverse("Fall 1")
+        else:
+            self.assertPresence("Fall 1")
+            self.assertNoLink("case/1/show")
+
+    @as_users("simon")
+    def test_enforcers(self) -> None:
+        self.traverse("Fall-Unterstützer")
+        self.assertTitle("Fall-Unterstützer")
+        self.assertPresence("Janis", div="enforcer-list")
+        self.assertNonPresence("Kalif", div="enforcer-list")
+
+        f = self.response.forms['addenforcerform']
+        f['persona_id'] = "DB-999-X"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Checksumme stimmt nicht", div='addenforcerform')
+        f['persona_id'] = "DB-999-7"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Benutzer existiert nicht", div='addenforcerform')
+        f['persona_id'] = USER_DICT['kalif']['DB-ID']
+        self.submit(f)
+        self.assertPresence("Janis", div="enforcer-list")
+        self.assertPresence("Kalif", div="enforcer-list")
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Änderungen", 'info')
+
+        remove_form_id = f'removeenforcerform{USER_DICT["janis"]["id"]}'
+        f = self.response.forms[remove_form_id]
+        f['persona_id'] = "999"
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+        )
+        f = self.response.forms[remove_form_id]
+        self.submit(f)
+        self.assertPresence("Kalif", div="enforcer-list")
+        self.assertNonPresence("Janis", div="enforcer-list")
+        self.submit(f, check_notification=False)
+        self.assertNotification(
+            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+        )

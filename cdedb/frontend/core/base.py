@@ -1412,6 +1412,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # meta admins
             "meta": self.coreproxy.list_admins(rs, "meta"),
             "core": self.coreproxy.list_admins(rs, "core"),
+            "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
@@ -1801,7 +1802,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             rs.notify_return_code(code, success=n_("Privilege change waiting for"
-                                                   " approval by another Meta-Admin."))
+                                                   " approval by another meta admin."))
             if not code:
                 return self.change_privileges_form(rs, persona_id)
         else:
@@ -1838,13 +1839,13 @@ class CoreBaseFrontend(AbstractFrontend):
         if (privilege_change["is_meta_admin"] is not None
                 and privilege_change["persona_id"] == rs.user.persona_id):
             rs.notify(
-                "info", n_("This privilege change is affecting your Meta-Admin"
-                           " privileges, so it has to be approved by another "
-                           "Meta-Admin."))
+                "info", n_("This privilege change is affecting your meta admin"
+                           " privileges, so it has to be approved by another"
+                           " meta admin."))
         if privilege_change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info", n_("This privilege change was submitted by you, so it "
-                           "has to be approved by another Meta-Admin."))
+                           "has to be approved by another meta admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
         submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
@@ -2463,6 +2464,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/change_username_form")
         else:
+            # Warn management of possible privilege escalation
+            if rs.user.roles & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': rs.user})
             self.do_mail(rs, "username_change_info",
                          {'To': (rs.user.username,),
                           'Subject': "Deine E-Mail-Adresse wurde geändert"},
@@ -2498,6 +2507,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")
         else:
+            # Warn management of possible privilege escalation
+            persona = rs.ambience['persona']
+            if extract_roles(persona, introspection_only=True) & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': persona})
             return self.redirect_show_user(rs, persona_id)
 
     @access(*REALM_ADMINS, modi={"POST"})

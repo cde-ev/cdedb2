@@ -449,8 +449,7 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace(  # type: ignore[return-value]
-        '\n', markupsafe.Markup(replacement))
+    return val.replace('\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -706,6 +705,12 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
     return grouped  # type: ignore[return-value]
 
 
+def multiselect_selectize_filter(entries: Iterable[tuple[int | enum.IntEnum, str]]
+                                 ) -> list[CdEDBObject]:
+    """Convert (value, title)s to format taken by the cdedbMultiSelect JS function."""
+    return [{'id': e[0], 'name': e[1]} for e in entries]
+
+
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
                         *args: str) -> list[tuple[S, ...]]:
     """
@@ -792,6 +797,7 @@ JINJA_FILTERS = {
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
+    'multiselect_selectize': multiselect_selectize_filter,
     'dict_entries': dict_entries_filter,
     'entries': entries_filter,
 }

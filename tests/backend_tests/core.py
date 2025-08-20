@@ -1264,7 +1264,11 @@ class TestCoreBackend(BackendTest):
             self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
-    @prepsql("DELETE FROM ml.moderators WHERE persona_id = 10")
+    @prepsql(
+        # remove archival blockers
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']};"
+        f"DELETE FROM ml.moderators WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     def test_purge(self) -> None:
         purged_personas = {}
         for p_id, name in ((8, "Hades"), (3, "Charly"), (10, "Janis")):

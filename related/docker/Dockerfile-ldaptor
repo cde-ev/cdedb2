@@ -1,17 +1,19 @@
 FROM debian:bookworm-20240130
 
+# python and utilities to install packages via pip
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-pip \
-    python3-psycopg \
-    python3-psycopg-pool \
     \
-    && rm -rf /var/lib/apt/lists/* \
-    \
-    && python3 -m pip --no-cache-dir install --break-system-packages \
-    ldaptor==21.2.0 \
-    subman==0.1.1 \
-    Twisted==22.4.0
+    && rm -rf /var/lib/apt/lists/*
+
+# copy project configuration for pip
+COPY ./pyproject.toml /tmp/
+
+# install packages
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
+        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
+                      print(*f["project"]["optional-dependencies"]["ldap"])')
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
