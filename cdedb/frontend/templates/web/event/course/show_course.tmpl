@@ -125,7 +125,7 @@
                                 <ul class="slim">
                                     {%- for involved, attendees in [(True, involved_attendees), (False, uninvolved_attendees)] %}
                                         {%- for instructor, registrations in [(True, attendees.instructors), (False, attendees.learners)] %}
-                                            {%- for reg in registrations|sort %}
+                                            {%- for reg in registrations|keysort(EntitySorter.registration_with_persona) %}
                                                 <li>
                                                     {%- if not involved %}<s>{% endif %}
                                                     {{- util.href(cdedblink('event/show_registration',
