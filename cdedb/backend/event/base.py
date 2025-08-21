@@ -147,7 +147,7 @@ class EventBaseBackend(EventLowLevelBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        log_filter = affirm(EventLogFilter, log_filter)
         event_ids = log_filter.event_ids()
 
         if not all(is_privileged(rs, EventPrivileges.log_read, event_id=event_id)

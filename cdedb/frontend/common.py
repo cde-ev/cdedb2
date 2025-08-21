@@ -183,7 +183,6 @@ _LOGGER = logging.getLogger(__name__)
 
 S = TypeVar('S')
 T = TypeVar('T')
-DC2 = TypeVar("DC2", CdEDataclass, GenericLogFilter)
 
 
 class Response(werkzeug.wrappers.Response):
@@ -638,7 +637,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             new_filename = pathlib.Path(attachment.filename).parts[-1]
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
-            attachment_hash = store.store(attachment_data)  # type: ignore[arg-type]
+            attachment_hash = store.store(attachment_data)
             attachment_filename = new_filename
         elif attachment_hash:
             # We also end up here and keep the cached attachment if someone tried to
@@ -1334,8 +1333,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         This takes care of validating the filter input and retrieving log entries via
         the passed backend method.
         """
-        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
-        if rs.has_validation_errors() or data is None:
+        log_filter = check_validation(rs, filter_class, data)
+        if rs.has_validation_errors() or log_filter is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
@@ -1343,8 +1342,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             self.logger.debug(
                 f"Log filter validation failed: {rs.retrieve_validation_errors()}")
             log_filter = filter_class()
-        else:
-            log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
         total, log = log_retriever(rs, log_filter)
@@ -2489,8 +2486,8 @@ def assembly_guard(fun: F) -> F:
 
 @overload
 def check_validation(
-    rs: RequestState, type_: type[DC2], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
 
 @overload
@@ -2501,8 +2498,8 @@ def check_validation(
 
 
 def check_validation(
-    rs: RequestState, type_: type[T | DC2], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
 ) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2526,8 +2523,8 @@ def check_validation(
 
 @overload
 def check_validation_optional(
-    rs: RequestState, type_: type[DC2], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
 
 @overload
@@ -2538,8 +2535,8 @@ def check_validation_optional(
 
 
 def check_validation_optional(
-    rs: RequestState, type_: type[T | DC2], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
 ) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 

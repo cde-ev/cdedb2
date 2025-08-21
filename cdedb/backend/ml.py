@@ -281,7 +281,7 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(MlLogFilter, log_filter)
+        log_filter = affirm(MlLogFilter, log_filter)
         ml_ids = log_filter.mailinglist_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
@@ -290,7 +290,7 @@ class MlBackend(AbstractBackend):
             # Limit global log to managed lists for non-admins/non-auditors.
             log_filter._mailinglist_ids = list(
                 self.list_mailinglists(rs, active_only=False, managed='managed'))
-            log_filter = affirm_dataclass(MlLogFilter, log_filter)
+            log_filter = affirm(MlLogFilter, log_filter)
         elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):
             pass
         else:

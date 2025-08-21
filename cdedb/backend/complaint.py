@@ -9,7 +9,6 @@ import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -228,7 +227,7 @@ class ComplaintBackend(AbstractBackend):
 
         The full history of a case consists of both log entries and complaint entries.
         """
-        log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
+        log_filter = affirm(ComplaintLogFilter, log_filter)
         case_ids = set(log_filter.case_ids())
 
         visible_case_ids = self.get_visible_case_ids(rs)

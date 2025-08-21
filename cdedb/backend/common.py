@@ -60,7 +60,6 @@ T = TypeVar('T')
 T2 = TypeVar('T2')
 S = TypeVar('S')
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
-DC2 = TypeVar("DC2", CdEDataclass, GenericLogFilter)
 
 
 @overload
@@ -497,9 +496,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         way. It allows to filter the entries for specific
         codes or a specific entity (think event or mailinglist).
 
-        This does not do authentication, which has to be done by the
-        caller. However it does validation which thus may be omitted by the
-        caller.
+        This does not do authentication or validation, which have to be
+        done by the caller.
 
         This is separate from the changelog for member data (which keeps
         a lot more information to be able to reconstruct the entire
@@ -643,13 +641,17 @@ class DatabaseLock:
 
 
 @overload
-def affirm_validation(assertion: type[DC2], value: Any, **kwargs: Any) -> CdEDBObject: ...
+def affirm_validation(
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any
+) -> CdEDBObject: ...
 
 @overload
 def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
 
 
-def affirm_validation(assertion: type[T | DC2], value: Any, **kwargs: Any) -> T | CdEDBObject:
+def affirm_validation(
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any
+) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     ValidationWarnings are used to hint the user to re-think about a given valid entry.
@@ -675,7 +677,7 @@ def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
 
 @overload
 def affirm_validation_optional(
-    assertion: type[DC2], value: Any, **kwargs: Any,
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any,
 ) -> Optional[CdEDBObject]: ...
 
 @overload
@@ -685,7 +687,7 @@ def affirm_validation_optional(
 
 
 def affirm_validation_optional(
-    assertion: type[T | DC2], value: Any, **kwargs: Any,
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any,
 ) -> Optional[T | CdEDBObject]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -698,7 +700,7 @@ def affirm_validation_optional(
 
 @overload
 def affirm_array_validation(
-    assertion: type[DC2], values: Iterable[Any], **kwargs: Any,
+    assertion: type[CdEDataclass], values: Iterable[Any], **kwargs: Any,
 ) -> tuple[CdEDBObject, ...]: ...
 
 @overload
@@ -708,7 +710,7 @@ def affirm_array_validation(
 
 
 def affirm_array_validation(
-    assertion: type[T | DC2], values: Iterable[Any], **kwargs: Any,
+    assertion: type[T | CdEDataclass], values: Iterable[Any], **kwargs: Any,
 ) -> tuple[T, ...] | tuple[CdEDBObject, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return cast(
@@ -740,7 +742,8 @@ def affirm_dict_validation(
 
 @overload
 def inspect_validation(
-    type_: type[DC2], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
+    type_: type[CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
 ) -> tuple[Optional[CdEDBObject], list[Error]]: ...
 
 @overload
@@ -750,7 +753,8 @@ def inspect_validation(
 
 
 def inspect_validation(
-    type_: type[T | DC2], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
+    type_: type[T | CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
 ) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 

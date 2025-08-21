@@ -131,7 +131,7 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpec,
 )
-from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.query.log_filter import GenericLogFilter, ALL_LOG_FILTERS
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
@@ -154,7 +154,6 @@ T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
-DC2 = TypeVar("DC2", CdEDataclass, GenericLogFilter)
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -225,7 +224,6 @@ _ALL_TYPED = ValidatorStorage()
 DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
-    GenericLogFilter: LogFilter,
 }
 
 
@@ -276,7 +274,7 @@ def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool
 
 
 @overload
-def validate_assert(type_: type[DC2], value: Any, ignore_warnings: bool,
+def validate_assert(type_: type[CdEDataclass], value: Any, ignore_warnings: bool,
                     **kwargs: Any) -> CdEDBObject: ...
 
 @overload
@@ -284,7 +282,7 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
                     **kwargs: Any) -> T: ...
 
 
-def validate_assert(type_: type[T | DC2], value: Any, ignore_warnings: bool,
+def validate_assert(type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool,
                     **kwargs: Any) -> T | CdEDBObject:
     """Check if value is of type type_ – otherwise, raise an error.
 
@@ -310,22 +308,25 @@ def validate_assert(type_: type[T | DC2], value: Any, ignore_warnings: bool,
 
 
 @overload
-def validate_assert_optional(type_: type[DC2], value: Any, ignore_warnings: bool,
-                             **kwargs: Any) -> Optional[CdEDBObject]: ...
+def validate_assert_optional(
+    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
 
 @overload
-def validate_assert_optional(type_: type[T], value: Any, ignore_warnings: bool,
-                             **kwargs: Any) -> Optional[T]: ...
+def validate_assert_optional(
+    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[T]: ...
 
 
-def validate_assert_optional(type_: type[T | DC2], value: Any, ignore_warnings: bool,
-                             **kwargs: Any) -> Optional[T | CdEDBObject]:
+def validate_assert_optional(
+    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
 @overload
-def validate_check(type_: type[DC2], value: Any, ignore_warnings: bool,
+def validate_check(type_: type[CdEDataclass], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
                    ) -> tuple[Optional[CdEDBObject], list[Error]]: ...
 
@@ -335,7 +336,7 @@ def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
                    ) -> tuple[Optional[T], list[Error]]: ...
 
 
-def validate_check(type_: type[T | DC2], value: Any, ignore_warnings: bool,
+def validate_check(type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
                    ) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Checks if value is of type type_.
@@ -369,7 +370,7 @@ def validate_check(type_: type[T | DC2], value: Any, ignore_warnings: bool,
 
 @overload
 def validate_check_optional(
-    type_: type[DC2], value: Any, ignore_warnings: bool, **kwargs: Any,
+    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any,
 ) -> tuple[Optional[CdEDBObject], list[Error]]: ...
 
 @overload
@@ -379,7 +380,7 @@ def validate_check_optional(
 
 
 def validate_check_optional(
-    type_: type[T | DC2], value: Any, ignore_warnings: bool, **kwargs: Any,
+    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any,
 ) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
@@ -460,7 +461,7 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
                 val: Any, argname: str = type_.__qualname__, *,
                 type_: type[DC], creation: bool = False, **kwargs: Any
             ) -> CdEDBObject:
-                if isinstance(val, CdEDataclass):
+                if isinstance(val, (CdEDataclass, GenericLogFilter)):
                     val = val._to_validation()
                 val = _mapping(val, argname, **kwargs)
                 if issubclass(type_, GenericLogFilter):
@@ -470,7 +471,7 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
                 else:
                     raise RuntimeError("Impossible.")
                 val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-                val = fun(val, argname, creation=creation, **kwargs)
+                val = fun(val, argname, creation=creation, type_=type_, **kwargs)
                 return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
@@ -4872,24 +4873,11 @@ def _range(
     return (from_val, to_val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(*ALL_LOG_FILTERS)
 def _log_filter(
-    val: Any, argname: Optional[str] = None,
-    *, subtype: type[GenericLogFilter],
-    **kwargs: Any,
-) -> LogFilter:
-
-    if isinstance(val, GenericLogFilter):
-        val = val.to_validation()
-    val = dict(_mapping(val, argname, **kwargs))
-
-    if not val.get('length'):
-        val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
-
-    mandatory, optional = subtype.validation_fields()
-    val = _examine_dictionary_fields(val, mandatory, optional)
-
-    return LogFilter(val)
+    val: CdEDBObject, *args: Any, type_: type[GenericLogFilter], **kwargs: Any
+) -> GenericLogFilter:
+    return type_(**val)
 
 
 @_create_dataclass_validator(models_complaint.Case)

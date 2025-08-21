@@ -26,7 +26,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     access,
     affirm_array_validation as affirm_array,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -348,7 +347,7 @@ class CoreBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(CoreLogFilter, log_filter)
+        log_filter = affirm(CoreLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
@@ -359,7 +358,7 @@ class CoreBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
+        log_filter = affirm(ChangelogLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @staticmethod

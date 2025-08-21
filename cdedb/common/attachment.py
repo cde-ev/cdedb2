@@ -35,11 +35,11 @@ class AttachmentStore:
     def store(self, attachment: bytes) -> vtypes.Identifier:
         """Store a file. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
-        myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment, arg-type]
+        myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment]
         path = self.get_path(myhash)
         if not path.exists():
             with open(path, 'wb') as f:
-                f.write(attachment)  # type: ignore[arg-type]
+                f.write(attachment)
         return myhash
 
     def is_available(self, attachment_hash: str) -> bool:
