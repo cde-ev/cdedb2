@@ -1071,7 +1071,9 @@ class MlBackend(AbstractBackend):
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
-    def may_view_roster(self, rs: RequestState, ml: Mailinglist) -> bool:
+    def may_view_roster(
+        self, rs: RequestState, ml: Mailinglist, *, respect_admin_view: bool = False
+    ) -> bool:
         """Determine if the user is privileged to view the roster of this mailinglist.
 
         This is needed to determine the visibility of "roster" in the navbar. Therefore,
@@ -1083,7 +1085,11 @@ class MlBackend(AbstractBackend):
 
         if not ml.is_active:
             return False
-        elif self.may_manage(rs, ml.id):
+        elif self.is_moderator(rs, ml.id):
+            return True
+        if self.is_relevant_admin(rs, mailinglist_id=ml.id):
+            if respect_admin_view and not ml.has_moderator_view(rs.user):
+                return False
             return True
         elif ml.roster_visibility == mrv.none:
             return False

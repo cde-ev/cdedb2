@@ -60,7 +60,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
-                rs, rs.ambience['mailinglist'])
+                rs, rs.ambience['mailinglist'], respect_admin_view=True)
 
         return super().render(rs, templatename, params=params,
                               mandatory_fields=mandatory_fields)
