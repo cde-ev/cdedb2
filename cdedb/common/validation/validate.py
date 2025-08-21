@@ -223,7 +223,6 @@ _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
-    models_droid.OrgaToken: OrgaToken,
 }
 
 
@@ -1319,17 +1318,8 @@ def _api_token_string(
         raise ValidationSummary(ValueError(argname, *e.args)) from e
 
 
-@_add_typed_validator
-def _orga_token(
-        val: Any, argname: str = "orga_token", *, creation: bool = False,
-        **kwargs: Any,
-) -> OrgaToken:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
-    val = _examine_dictionary_fields(
-        val, mandatory, optional, **kwargs)
-
+@_create_dataclass_validator(models_droid.OrgaToken)
+def _orga_token(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     errs = ValidationSummary()
 
     timestamp = now()
@@ -1342,7 +1332,7 @@ def _orga_token(
     if errs:
         raise errs
 
-    return OrgaToken(val)
+    return val
 
 
 @_add_typed_validator

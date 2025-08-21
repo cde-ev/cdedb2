@@ -72,7 +72,6 @@ NonRegex = _NewType("NonRegex", str)
 IntCSVList = _NewType("IntCSVList", list[int])
 CdedbIDList = _NewType("CdedbIDList", list[CdedbID])
 
-OrgaToken = _NewType("OrgaToken", _CdEDBObject)
 APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", _datetime.date)
