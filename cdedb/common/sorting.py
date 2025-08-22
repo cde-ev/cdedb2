@@ -92,6 +92,26 @@ def _make_persona_sorter(include_nickname: bool = False,
     return sorter
 
 
+def _make_address_sorter(
+    # don't call argument 'gettext' to avoid extracting string below
+    gtxt: Callable[[str], str], default_country_code: str
+) -> KeyFunction:
+    def sorter(persona: CdEDBObject) -> Sortkey:
+        country = persona.get('country', "") or ""
+        postal_code = persona.get('postal_code', "") or ""
+        location = persona.get('location', "") or ""
+        address = persona.get('address', "") or ""
+        return (
+            # we want to show Germany first, python sorts False first
+            country != default_country_code,
+            gtxt(f"CountryCodes.{country}"),
+            postal_code,
+            location,
+            address
+        )
+    return sorter
+
+
 # noinspection PyRedundantParentheses
 class EntitySorter:
     """Provide a singular point for common sortkeys.
@@ -109,14 +129,7 @@ class EntitySorter:
     def email(persona: CdEDBObject) -> Sortkey:
         return (str(persona['username']),)
 
-    @staticmethod
-    def address(persona: CdEDBObject) -> Sortkey:
-        # TODO sort by translated country instead of country code?
-        country = persona.get('country', "") or ""
-        postal_code = persona.get('postal_code', "") or ""
-        location = persona.get('location', "") or ""
-        address = persona.get('address', "") or ""
-        return (country, postal_code, location, address)
+    make_address_sorter = staticmethod(_make_address_sorter)
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:

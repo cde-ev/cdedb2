@@ -117,7 +117,7 @@ from cdedb.common import (
     parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
@@ -408,36 +408,37 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
     _add_typed_validator(the_validator, return_type)
 
 
-def _create_dataclass_validator(type_: type[DC], return_type: type[T],
-                                ) -> Callable[[F], F]:
-    def the_validator(val: Any, argname: str = type_.__qualname__, *,
-                      creation: bool = False, **kwargs: Any) -> T:
-        val = _mapping(val, argname, **kwargs)
-
-        if issubclass(type_, GenericLogFilter):
-            mandatory, optional = type_.validation_fields()
-        elif issubclass(type_, CdEDataclass):
-            mandatory, optional = type_.validation_fields(creation=creation)
-        else:
-            raise RuntimeError("Impossible.")
-
-        val = _examine_dictionary_fields(val, mandatory, optional, argname=argname, **kwargs)
-
-        return cast(T, val)
-
-    _add_typed_validator(the_validator, return_type)
+def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
+    """Takes a function and creates one validator per given dataclass."""
 
     def the_decorator(fun: F) -> F:
-        del _ALL_TYPED[return_type]
 
-        @functools.wraps(fun)
-        def wrapper(val: Any, argname: str = type_.__qualname__, **kwargs: Any) -> T:
-            val = the_validator(val, argname, **kwargs)
-            val = fun(val, argname, **kwargs)
-            return cast(T, val)
+        for type_ in types:
 
-        _add_typed_validator(wrapper, return_type)
-        return cast(F, wrapper)
+            def new_validator_template(
+                val: Any, argname: str = type_.__qualname__, *,
+                type_: type[DC], creation: bool = False, **kwargs: Any
+            ) -> CdEDBObject:
+                val = _mapping(val, argname, **kwargs)
+                if issubclass(type_, GenericLogFilter):
+                    mandatory, optional = type_.validation_fields()
+                elif issubclass(type_, CdEDataclass):
+                    mandatory, optional = type_.validation_fields(creation=creation)
+                else:
+                    raise RuntimeError("Impossible.")
+                val = _examine_dictionary_fields(
+                    val, mandatory, optional, argname=argname, **kwargs
+                )
+                val = fun(val, argname, creation=creation, **kwargs)
+                return val
+
+            # note that we use functools.partial to ensure the enclosure variable type_
+            # is set to the correct value
+            new_validator = functools.update_wrapper(
+                functools.partial(new_validator_template, type_=type_), fun)
+            _add_typed_validator(new_validator, type_)
+
+        return fun
 
     return the_decorator
 
@@ -1003,12 +1004,19 @@ def _empty_list(
 
 @_add_typed_validator  # TODO use Union of Literal
 def _realm(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, supports_genesis: bool = False, **kwargs: Any,
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
-    if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
-        raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
+    errs = ValidationSummary()
+    with errs:
+        if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
+            raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
+        if supports_genesis and val not in models_core.GenesisCase.available_realms:
+            raise ValidationSummary(
+                ValueError(n_("This realm is not supported for genesis.")))
+    if errs:
+        raise errs
     return Realm(val)
 
 
@@ -1831,82 +1839,15 @@ def _country(
     return Country(val)
 
 
-GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
-    'username': Email,
-    'given_names': str,
-    'family_name': str,
-    'realm': str,
-    'notes': str,
-}
-
-GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'case_status': const.GenesisStati,
-    'reviewer': ID,
-    'persona_id': Optional[ID],
-    'pevent_id': Optional[ID],
-    'pcourse_id': Optional[ID],
-}
-
-GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
-    'gender': const.Genders,
-    'birthday': Birthday,
-    'telephone': Optional[Phone],
-    'mobile': Optional[Phone],
-    'address_supplement': Optional[str],
-    'address': str,
-    'postal_code': Optional[PrintableASCII],
-    'location': str,
-    'country': Optional[Country],
-    'birth_name': Optional[str],
-    'attachment_hash': str,
-}
-
-GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_ADDITIONAL_FIELDS,
-                               'pevent_id': Optional[ID],
-                               'pcourse_id': Optional[ID]}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_core.GenesisCaseMl, models_core.GenesisCaseEvent, models_core.GenesisCaseCdE)
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
-) -> GenesisCase:
+    ignore_warnings: bool = False, **kwargs: Any,
+) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
-
-    additional_fields: TypeMapping = {}
-    if 'realm' in val:
-        if val['realm'] not in REALM_SPECIFIC_GENESIS_FIELDS:
-            raise ValidationSummary(ValueError('realm', n_(
-                "This realm is not supported for genesis.")))
-        else:
-            additional_fields = {
-                k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
-                if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
-    else:
-        raise ValidationSummary(ValueError('realm', n_("Must specify realm.")))
-
-    if creation:
-        mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
-                                **additional_fields)
-        # Birth name is not allowed on creation to avoid mistakes
-        if 'birth_name' in mandatory_fields:
-            del mandatory_fields['birth_name']
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = dict(GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_OPTIONAL_FIELDS,
-                               **additional_fields)
-
-    # allow_superflous=True will result in superfluous keys being removed.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, allow_superfluous=True, **kwargs)
-
     errs = ValidationSummary()
 
     with errs:
@@ -1928,7 +1869,7 @@ def _genesis_case(
     if errs:
         raise errs
 
-    return GenesisCase(val)
+    return val
 
 
 PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
@@ -2590,8 +2531,8 @@ def _event(
     if 'fees' in val:
         with errs:
             val['fees'] = _optional_object_mapping_helper(
-                val['fees'], EventFee, 'fees', creation_only=creation, event=val,
-                questionnaire={}, **kwargs)
+                val['fees'], models_event.EventFee, 'fees', creation_only=creation,
+                event=val, questionnaire={}, **kwargs)
 
     if errs:
         raise errs
@@ -2862,17 +2803,17 @@ def _event_field(
     return EventField(val)
 
 
-_create_optional_mapping_validator(EventFee, EventFeeSetter)
+_create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
 
 
-@_create_dataclass_validator(models_event.EventFee, EventFee)
+@_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
         id_: ProtoID,
         event: CdEDBObject,
         personalized: Optional[bool] = None,
         **kwargs: Any,
-) -> EventFee:
+) -> CdEDBObject:
     errs = ValidationSummary()
     current = event['fees'].get(id_)
     if current is not None and personalized is None:
@@ -2900,7 +2841,7 @@ def _event_fee(
     if errs:
         raise errs
 
-    return cast(EventFee, val)
+    return val
 
 
 @_add_typed_validator
@@ -4933,13 +4874,12 @@ def _log_filter(
     return LogFilter(val)
 
 
-_create_dataclass_validator(models_complaint.Case, models_complaint.Case)
+@_create_dataclass_validator(models_complaint.Case)
+def _case(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
-@_create_dataclass_validator(
-    models_complaint.ComplaintEntry,
-    models_complaint.ComplaintEntry
-)
+@_create_dataclass_validator(models_complaint.ComplaintEntry)
 def _complaint_entry(
     val: Any, argname: str, *, entries: dict[int, models_complaint.ComplaintEntry],
     **kwargs: Any,
@@ -4972,10 +4912,7 @@ def _complaint_entry(
     return val
 
 
-@_create_dataclass_validator(
-    models_complaint.ComplaintEntryVersion,
-    models_complaint.ComplaintEntryVersion,
-)
+@_create_dataclass_validator(models_complaint.ComplaintEntryVersion)
 def _complaint_entry_version(
     val: Any, argname: str, entry_type: const.ComplaintEntryType | None, **kwargs: Any
 ) -> CdEDBObject:

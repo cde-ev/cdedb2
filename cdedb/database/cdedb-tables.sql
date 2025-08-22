@@ -260,7 +260,7 @@ CREATE TABLE core.genesis_cases (
         --
         -- enum tracking the progress
         -- see cdedb.database.constants.GenesisStati
-        case_status             integer NOT NULL DEFAULT 0,
+        status                  integer NOT NULL DEFAULT 0,
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
         -- the created or account merged into, if any
@@ -270,10 +270,10 @@ CREATE TABLE core.genesis_cases (
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
 
 );
-CREATE INDEX genesis_cases_case_status_idx ON core.genesis_cases(case_status);
+CREATE INDEX genesis_cases_status_idx ON core.genesis_cases(status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
-GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
+GRANT UPDATE (status) ON core.genesis_cases TO cdb_anonymous;
 GRANT UPDATE, DELETE ON core.genesis_cases TO cdb_admin;
 
 -- this table tracks pending privilege changes

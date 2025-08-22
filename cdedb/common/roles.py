@@ -3,7 +3,6 @@
 """Everything regarding the role model of the CdEDB."""
 
 import collections
-import decimal
 from typing import TYPE_CHECKING, Any
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
@@ -369,39 +368,3 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
         result |= {"genesis"}
     return result
-
-
-# This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
-# defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE: dict[str, dict[str, Any]] = {
-    'event': {
-        'is_cde_realm': False,
-        'is_event_realm': True,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'ml': {
-        'is_cde_realm': False,
-        'is_event_realm': False,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'cde': {
-        'is_cde_realm': True,
-        'is_event_realm': True,
-        'is_assembly_realm': True,
-        'is_ml_realm': True,
-        'is_member': True,
-        'is_searchable': False,
-        'trial_member': True,
-        'honorary_member': False,
-        'decided_search': False,
-        'bub_search': False,
-        'paper_expuls': True,
-        'donation': decimal.Decimal(0),
-    },
-}

@@ -201,6 +201,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="genesis_modify_form"),
                 rule("/modify", methods=_POST,
                      endpoint="genesis_modify"),
+                rule("/modify/realm", methods=_POST,
+                     endpoint="genesis_modify_realm"),
                 rule("/decide", methods=_POST,
                      endpoint="genesis_decide"))),
             sub('/privileges', (

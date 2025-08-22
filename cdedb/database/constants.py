@@ -256,7 +256,7 @@ class NotifyOnRegistration(CdEIntEnum):
 
 @enum.unique
 class GenesisStati(CdEIntEnum):
-    """Spec for field case_status of core.genesis_cases."""
+    """Spec for field status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
     unconfirmed = 1
     #: email confirmed, awaiting review
