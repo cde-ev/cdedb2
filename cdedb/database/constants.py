@@ -839,7 +839,11 @@ class EventLogCodes(CdEIntEnum):
     course_created = 40  #:
     course_changed = 41  #:
     course_segments_changed = 42  #:
+    course_segment_deleted = 420  #:
+    course_segment_created = 421  #:
     course_segment_activity_changed = 43  #:
+    course_segment_deactivated = 430  #:
+    course_segment_activated = 431  #:
     course_deleted = 44  #:
     registration_created = 50  #:
     registration_changed = 51  #:

@@ -851,6 +851,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_course(self) -> None:
         event_id = 1
+        event = self.event.get_event(self.key, event_id)
         old_courses = self.event.list_courses(self.key, event_id)
         data: CdEDBObject = {
             'event_id': event_id,
@@ -903,28 +904,40 @@ class TestEventBackend(BackendTest):
                 "change_note": original_title,
             },
             {
-                "code": const.EventLogCodes.course_segments_changed,
-                "change_note": original_title,
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[2].title})",
             },
             {
-                "code": const.EventLogCodes.course_segment_activity_changed,
-                "change_note": original_title,
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[3].title})",
             },
             {
                 "code": const.EventLogCodes.course_changed,
                 "change_note": original_title,
             },
             {
-                "code": const.EventLogCodes.course_segments_changed,
-                "change_note": original_title,
+                "code": const.EventLogCodes.course_segment_deleted,
+                "change_note": original_title + f" ({event.tracks[2].title})",
             },
             {
-                "code": const.EventLogCodes.course_segment_activity_changed,
-                "change_note": original_title,
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
             },
             {
-                "code": const.EventLogCodes.course_segment_activity_changed,
-                "change_note": data["title"],
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": data["title"] + f" ({event.tracks[3].title})",
             },
         ]
         offset = len(self.get_sample_data("event.log"))

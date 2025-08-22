@@ -175,6 +175,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                and segment != course.segments[track_id].as_dict()
         }
 
+        cn = lambda track_id: f"{course.title} ({course.event.tracks[track_id].title})"
+
         if deleted:
             params: dict[str, DatabaseValue_s] = {
                 "course_id": course.id, "track_ids": deleted
@@ -184,33 +186,45 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 WHERE course_id = %(course_id)s AND track_id = ANY(%(track_ids)s)
             """
             ret *= self.query_exec(rs, query, params)
+            for track_id in xsorted(deleted):
+                self.event_log(
+                    rs, const.EventLogCodes.course_segment_deleted,
+                    course.event_id, change_note=cn(track_id),
+                )
+                if course.segments[track_id].is_active:
+                    self.event_log(
+                        rs, const.EventLogCodes.course_segment_deactivated,
+                        course.event_id, change_note=cn(track_id),
+                    )
 
-        for track_id, segment in xsorted((changed | new).items()):
+        for track_id, segment in xsorted(new.items()):
+            _metadata = {"course_id": course.id, "track_id": track_id}
+            segment = {**segment, **_metadata}
+            ret *= self.sql_insert(rs, models.CourseSegment.database_table, segment)
+            self.event_log(
+                rs, const.EventLogCodes.course_segment_created,
+                course.event_id, change_note=cn(track_id),
+            )
+            if segment["is_active"]:
+                self.event_log(
+                    rs, const.EventLogCodes.course_segment_activated,
+                    course.event_id, change_note=cn(track_id),
+                )
+
+        for track_id, segment in xsorted(changed.items()):
             _metadata = {"course_id": course.id, "track_id": track_id}
             segment = {**segment, **_metadata}
             ret *= self.sql_insert(
                 rs, models.CourseSegment.database_table, segment,
                 update_on_conflict=True, conflict_target="course_id, track_id",
             )
+            if segment["is_active"] != course.segments[track_id].is_active:
+                if segment["is_active"]:
+                    code = const.EventLogCodes.course_segment_activated
+                else:
+                    code = const.EventLogCodes.course_segment_deactivated
+                self.event_log(rs, code, course.event_id, change_note=cn(track_id))
 
-        if new or deleted:
-            self.event_log(
-                rs, const.EventLogCodes.course_segments_changed,
-                course.event_id, change_note=course.title,
-            )
-
-        if (
-            any(course.segments[track_id].is_active for track_id in deleted)
-            or any(new_segment["is_active"] for new_segment in new.values())
-            or any(
-                changed_segment["is_active"] != course.segments[t_id].is_active
-            for t_id, changed_segment in changed.items()
-            )
-        ):
-            self.event_log(
-                rs, const.EventLogCodes.course_segment_activity_changed,
-                course.event_id, change_note=course.title,
-            )
         return ret
 
     @access("event")
