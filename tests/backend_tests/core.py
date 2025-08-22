@@ -1549,6 +1549,10 @@ class TestCoreBackend(BackendTest):
                 'submitted_by': None,
             },
             {
+                'code': const.CoreLogCodes.genesis_change,
+                'change_note': genesis_data['username'],
+            },
+            {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_genesis_persona_id,
             },
