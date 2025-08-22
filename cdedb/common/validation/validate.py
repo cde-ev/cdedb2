@@ -2922,11 +2922,11 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 
-@_create_dataclass_validator(models_event.Course, Course)
+@_create_dataclass_validator(models_event.Course)
 def _course(
-    val: Any, argname: str = "course", *,
+    val: CdEDBObject, argname: str = "course", *,
     creation: bool = False, **kwargs: Any,
-) -> Course:
+) -> CdEDBObject:
 
     errs = ValidationSummary()
 
@@ -2947,7 +2947,7 @@ def _course(
     if errs:
         raise errs
 
-    return Course(val)
+    return val
 
 
 _create_dataclass_validator(models_event.CourseSegment, models_event.CourseSegment)
