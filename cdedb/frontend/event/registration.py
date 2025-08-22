@@ -1107,10 +1107,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Create a personalized fee along with an amount for a specific registration.
         """
         data['amount'] = None
-        fee_data = check(
-            rs, vtypes.EventFee, data, creation=True, id_=-1,
+        fee_data = cast(CdEDBObject, check(
+            rs, models.EventFee, data, creation=True, id_=-1,
             event=rs.ambience['event'].as_dict(), questionnaire={}, personalized=True,
-        )
+        ))
         if rs.has_validation_errors() or not fee_data:
             return self.add_new_personalized_fee_form(rs, event_id, registration_id)
 

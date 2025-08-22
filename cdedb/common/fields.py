@@ -60,22 +60,6 @@ PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 
-#: Maps all realms to their respective fields
-REALMS_TO_FIELDS = {
-    "core": PERSONA_CORE_FIELDS,
-    "ml": PERSONA_ML_FIELDS,
-    "assembly": PERSONA_ASSEMBLY_FIELDS,
-    "event": PERSONA_EVENT_FIELDS,
-    "cde": PERSONA_CDE_FIELDS,
-}
-
-#: Fields of a persona creation case.
-GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "given_names", "family_name", "gender", "birthday",
-    "telephone", "mobile", "address_supplement", "address", "postal_code", "location",
-    "country", "birth_name", "attachment_hash", "realm", "notes", "case_status",
-    "reviewer", "persona_id", "pevent_id", "pcourse_id")
-
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed

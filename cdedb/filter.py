@@ -308,11 +308,17 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
         phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
 
-def persona_name_filter(val: CdEDBObject | User, *args: bool, **kwargs: bool) -> str:
+def persona_name_filter(val: Union[CdEDBObject, User, "CdEDataclass"], *args: bool, **kwargs: bool) -> str:
     """Wrapper to format persona names."""
     if isinstance(val, User):
         return val.persona_name(*args, **kwargs)
     else:
+        # TODO this leads to cyclic imports otherwise
+        from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+            CdEDataclass,
+        )
+        if isinstance(val, CdEDataclass):
+            val = val.as_dict()
         return make_persona_name(val, *args, **kwargs)
 
 
@@ -761,6 +767,10 @@ def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDatacla
     ]
 
 
+def hasattr_filter(entity: object, attr: Any) -> bool:
+    return hasattr(entity, attr)
+
+
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
@@ -770,6 +780,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'hasattr': hasattr_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
     'persona_name': persona_name_filter,

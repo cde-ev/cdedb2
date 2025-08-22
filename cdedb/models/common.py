@@ -43,7 +43,20 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
         return "str"
 
 
-class MetaFlag(Flag):
+class AbstractFlag(Flag):
+    """Boilerplate of flags representing metadata of CdEDataclass fields."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
+        return {f"cdedb.{self.__class__}": self}
+
+    def in_field(self, field: dataclasses.Field[T]) -> bool:
+        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
+        return self in field.metadata.get(f"cdedb.{self.__class__}", {})
+
+
+class MetaFlag(AbstractFlag):
     """Flags representing metadata of CdEDataclass fields."""
 
     none = 0
@@ -98,15 +111,6 @@ class MetaFlag(Flag):
     asdict_exclude = auto()
     """Exclude the field from `self.asdict()`."""
 
-    @property
-    def as_dict(self) -> dict[str, Self]:
-        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
-        return {"cdedb": self}
-
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
-        """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
-        return self in field.metadata.get("cdedb", MetaFlag.none)
-
 
 @dataclass
 class CdEDataclass:
@@ -120,6 +124,15 @@ class CdEDataclass:
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
 
+    @classmethod
+    def dataclass_fields(cls) -> tuple[dataclasses.Field[Any], ...]:
+        """Determine the fields of this class.
+
+        Should be overwritten if multiple dataclasses are nested in each other.
+        Then, also from_database needs to be adjusted.
+        """
+        return dataclasses.fields(cls)
+
     def to_database(self) -> CdEDBObject:
         """Generate a dict representation of this entity to be saved to the database."""
         database_fields = self.database_fields()
@@ -128,7 +141,7 @@ class CdEDataclass:
         # Exclude fields marked as init=False.
         data = {
             field.name: values[field.name]
-            for field in dataclasses.fields(self)
+            for field in self.dataclass_fields()
             if field.name in database_fields and field.init
         }
 
@@ -139,7 +152,7 @@ class CdEDataclass:
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             # Convert enum fields into enum members.
             if isinstance(field.type, type):
                 if issubclass(field.type, (CdEEnum, CdEIntEnum)):
@@ -200,7 +213,7 @@ class CdEDataclass:
         """
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             field.type = cast(type[Any], field.type)
             if creation:
                 if MetaFlag.validate_creation_exclude.in_field(field):
@@ -209,7 +222,7 @@ class CdEDataclass:
                     optional[field.name] = field.type
                     continue
                 if field.name == 'id':
-                    mandatory[field.name] = vtypes.CreationID
+                    optional[field.name] = vtypes.CreationID
                 elif (
                         is_optional_type(field.type)
                         # Fields with init=False are optional, so that objects
@@ -256,7 +269,7 @@ class CdEDataclass:
         field_names = set(cls.database_fields())
         field_names.discard("id")
         fields = []
-        for field in dataclasses.fields(cls):
+        for field in cls.dataclass_fields():
             if not MetaFlag.request_include.in_field(field):
                 if field.name not in field_names:
                     continue
@@ -277,7 +290,7 @@ class CdEDataclass:
     def database_fields(cls) -> list[str]:
         """List all fields of this entity which are saved to the database."""
         return [
-            field.name for field in dataclasses.fields(cls)
+            field.name for field in cls.dataclass_fields()
             if field.init
                and get_origin(field.type) is not dict
                and get_origin(field.type) is not set

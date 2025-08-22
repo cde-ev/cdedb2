@@ -966,13 +966,13 @@ mailto:
 {% macro username_mailto(persona, email=none) -%}
     {{ href(
         mailto(
-            address=email or persona.get("username", persona.get("persona.username", "")),
+            address=email or persona["username"] or persona["persona.username"] or "",
             name="{} {}".format(
-                persona.get("given_names", persona.get("persona.given_names", "")),
-                persona.get("family_name", persona.get("persona.family_name", ""))
+                persona["given_names"] or persona["persona.given_names"] or "",
+                persona["family_name"] or persona["persona.family_name"] or ""
             )
         ),
-        email or persona.get("username", persona.get("persona.username", ""))
+        email or persona["username"] or persona["persona.username"] or ""
     ) }}
 {%- endmacro %}
 

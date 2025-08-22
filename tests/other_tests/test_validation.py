@@ -21,7 +21,6 @@ from cdedb.common.validation.types import (
     EmptyDict,
     EmptyList,
     EventPartGroup,
-    GenesisCase,
     LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
@@ -40,6 +39,7 @@ from cdedb.common.validation.types import (
     Vote,
 )
 from cdedb.config import Config
+from cdedb.models.core import GenesisCaseEvent
 
 T = TypeVar('T')
 
@@ -650,7 +650,7 @@ class TestValidation(TestValidationBase):
                         self.assertIsInstance(e, error)
 
     def test_german_postal_code(self) -> None:
-        for assertion in (Persona, GenesisCase):
+        for assertion in (Persona, GenesisCaseEvent):
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
                 ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
@@ -670,11 +670,6 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, None, ignore_warnings=False)
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
@@ -697,11 +692,6 @@ class TestValidation(TestValidationBase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, ignore_warnings=True)
 
     def test_encoding(self) -> None:
