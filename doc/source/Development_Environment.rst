@@ -10,10 +10,10 @@ Development Environment
    Development_Environment_Development
 
 The initial step is to clone the `CdEDB repository
-<https://tracker.cde-ev.de/gitea/cdedb/cdedb2.git>`_ with ``git``. To get
-access, please `create an account
-<https://tracker.cde-ev.de/gitea/user/sign_up>`_ and contact us at cdedb ät
-lists.cde-ev.de.
+<https://tracker.cde-ev.de/gitea/cdedb/cdedb2.git>`_ with ``git``.
+To get access, please have been logged in once via SSO
+`in ForgeJo <https://tracker.cde-ev.de/gitea/user/login>`_
+and contact us at cdedb ät lists.cde-ev.de.
 
 There are two environments provided:
 
