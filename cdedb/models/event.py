@@ -544,6 +544,10 @@ class EventField(EventDataclass):
 
     entries: Optional[dict[str, str]] = None
 
+    @property
+    def request_name(self) -> str:
+        return f"fields.{self.field_name}"
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['entries'] = dict(data['entries'] or []) or None

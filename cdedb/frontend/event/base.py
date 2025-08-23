@@ -55,6 +55,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
@@ -92,6 +93,33 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
         return cast(F, new_fun)
 
     return wrap
+
+
+def event_associated_fields_extractor(
+        rs: RequestState, event: models.Event, association: const.FieldAssociations
+) -> CdEDBObject:
+    fields = [
+        field for field in event.fields.values()
+        if field.association == association
+    ]
+    field_params: vtypes.TypeMapping = {
+        field.request_name: FIELD_DATATYPE_VALIDATORS[field.kind] | None
+        for field in fields
+    }
+    raw_fields = request_extractor(rs, field_params)
+    return {
+        field.field_name: raw_fields.get(field.request_name)
+        for field in fields
+    }
+
+
+def event_associated_fields_to_request(
+        entity: models.Course | models.Lodgement
+) -> CdEDBObject:
+    return {
+        field.request_name: entity.fields[field.field_name]
+        for field in entity.event.fields.values() if field.field_name in entity.fields
+    }
 
 
 class EventBaseFrontend(AbstractUserFrontend):
