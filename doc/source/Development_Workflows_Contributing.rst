@@ -10,7 +10,7 @@ Contributions should mainly be done by opening
 in ForgeJo. Questions and proposals should be filed as
 `issues <https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues>`_, where
 you can also pick ones you are interested to implement (although for many
-of them there may be nontrivial reasons why the haven't been so far).
+of them there may be nontrivial reasons why they haven't been so far).
 
 .. note::
     Wir unterstützen sowohl Deutsch als auch Englisch als Konversationssprachen.

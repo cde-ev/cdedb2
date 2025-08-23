@@ -25,7 +25,7 @@ Neben den Konversationen in Issues & PRs trifft sich das Team aktuell
 ca. alle drei Monate abends für eine mehrstündige TelKo, deren Termine
 über unsere Mailingliste angekündigt werden.
 Dazwischen treffen wir uns monatlich zu 15-minütigen Kurztreffen, um aktuell offene
-Diskussionen in Pull Requests,  Prioritäten zu besprechen.
+Diskussionen in Pull Requests und Prioritäten zu besprechen.
 
 Erste Schritte
 --------------
