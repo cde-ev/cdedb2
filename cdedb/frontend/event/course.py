@@ -21,6 +21,7 @@ import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
+    CdEDBOptionalMap,
     CourseChoiceToolActions,
     CourseFilterPositions,
     InfiniteEnum,
@@ -34,18 +35,20 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import (
-    COURSE_COMMON_FIELDS,
-    FIELD_DATATYPE_VALIDATORS,
-)
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
     check_validation as check,
+    request_dict_extractor,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_extractor,
+    event_associated_fields_to_request,
+    event_guard,
+)
 from cdedb.models.common import CdEDataclassMap
 from cdedb.models.event_constraint_violations import ViolationList
 
@@ -309,55 +312,67 @@ class EventCourseMixin(EventBaseFrontend):
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
-        if 'segments' not in rs.values:
-            rs.values.setlist('segments', rs.ambience['course'].segments.keys())
-        if 'active_segments' not in rs.values:
-            rs.values.setlist('active_segments', rs.ambience['course'].active_segments)
-        field_values = {
-            f"fields.{key}": value
-            for key, value in rs.ambience['course'].fields.items()}
-        merge_dicts(rs.values, rs.ambience['course'].as_dict(), field_values)
+        field_values = event_associated_fields_to_request(rs.ambience['course'])
+        segment_values = [
+            {
+                f"segment{track_id}": True,
+                f"segment{track_id}.is_active": segment.is_active,
+            }
+            for track_id, segment in rs.ambience['course'].segments.items()
+        ]
+        merge_dicts(rs.values, rs.ambience['course'].as_dict(), field_values, *segment_values)
         mandatory_fields = get_mandatory_form_fields(
-            self.change_course, COURSE_COMMON_FIELDS)
+            models.Course.validation_fields(creation=False)[0]
+        )
         return self.render(
             rs, "course/configure_course",
-            {
-                'has_course_fields': any(
-                    field.association == const.FieldAssociations.course
-                    for field in rs.ambience['event'].fields.values()),
-            },
             mandatory_fields=mandatory_fields,
         )
 
+    @staticmethod
+    def _dynamic_extract_course(
+            rs: RequestState, *, creation: bool, event: models.Event
+    ) -> CdEDBObject:
+        ret: CdEDBObject = {
+            "fields": event_associated_fields_extractor(
+                rs, event, const.FieldAssociations.course
+            ),
+        }
+
+        segment_data: CdEDBOptionalMap = {}
+        for track in event.tracks.values():
+            segment_offered_key = f"segment{track.id}"
+            segment_offered_data = request_extractor(rs, {segment_offered_key: bool})
+            if not segment_offered_data[segment_offered_key]:
+                segment_data[track.id] = None
+            else:
+                segment_params = {
+                    f"segment{track.id}.{key}": val
+                    for key, val in models.CourseSegment.requestdict_fields(creation=creation)
+                }
+                segment_data[track.id] = {
+                    key.removeprefix(f"segment{track.id}."): val
+                    for key, val in request_dict_extractor(rs, segment_params).items()
+                }
+        ret["segments"] = segment_data
+
+        return ret
+
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
-    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
-    @REQUESTdata("segments", "active_segments")
-    def change_course(self, rs: RequestState, event_id: int, course_id: int,
-                      segments: Collection[int],
-                      active_segments: Collection[int], data: CdEDBObject,
-                      ) -> Response:
+    @REQUESTdatadict(*models.Course.requestdict_fields(creation=False))
+    def change_course(
+            self, rs: RequestState, event_id: int, course_id: int, data: CdEDBObject
+    ) -> Response:
         """Modify a course associated to an event organized via DB."""
         data['id'] = course_id
-        data['segments'] = {
-            track_id: {
-                "is_active": track_id in active_segments
-            } if track_id in segments else None
-            for track_id in rs.ambience['event'].tracks
-        }
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.course
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, models.Course, data)
-        if rs.has_validation_errors():
+        data.update(
+            self._dynamic_extract_course(rs, creation=False, event=rs.ambience['event'])
+        )
+        data = check(rs, models.Course, data, creation=False)
+        if rs.has_validation_errors() or not data:
             return self.change_course_form(rs, event_id, course_id)
-        assert data is not None
+
         code = self.eventproxy.set_course(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
@@ -371,45 +386,28 @@ class EventCourseMixin(EventBaseFrontend):
         if not tracks:
             rs.notify("error", n_("Event without tracks forbids courses."))
             return self.redirect(rs, 'event/course_stats')
-        if 'segments' not in rs.values:
-            rs.values.setlist('segments', tracks)
-        mandatory_fields = get_mandatory_form_fields(self.create_course, COURSE_COMMON_FIELDS)
+        mandatory_fields = get_mandatory_form_fields(
+            models.Course.validation_fields(creation=True)[0]
+        )
         return self.render(
             rs, "course/configure_course",
-            {
-                'has_course_fields': any(
-                    field.association == const.FieldAssociations.course
-                    for field in rs.ambience['event'].fields.values()),
-            },
             mandatory_fields=mandatory_fields,
         )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
-    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
-    @REQUESTdata("segments")
-    def create_course(self, rs: RequestState, event_id: int,
-                      segments: Collection[int], data: CdEDBObject) -> Response:
+    @REQUESTdatadict(*models.Course.requestdict_fields(creation=True))
+    def create_course(
+            self, rs: RequestState, event_id: int, data: CdEDBObject
+    ) -> Response:
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
-        data['segments'] = {
-            track_id: {"is_active": True}
-            for track_id in segments
-        }
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.course
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()
-        }
+        data.update(
+            self._dynamic_extract_course(rs, creation=True, event=rs.ambience['event'])
+        )
         data = check(rs, models.Course, data, creation=True)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() or not data:
             return self.create_course_form(rs, event_id)
-        assert data is not None
 
         new_id = self.eventproxy.create_course(rs, data)
         rs.notify_return_code(new_id, success=n_("Course created."))

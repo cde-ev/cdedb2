@@ -805,7 +805,9 @@ class Course(EventDataclass):
     notes: str | None
 
     # Should be vtypes.EventAssociatedFields, but needs additional context.
-    fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    fields: Mapping[str, Any] = dataclasses.field(
+        default_factory=dict, metadata=Meta.request_exclude.as_dict,
+    )
 
     @property
     def label(self) -> str:
