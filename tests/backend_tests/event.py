@@ -2773,12 +2773,16 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_changed,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
             },
             {
                 'change_note': 'Lustigsein für Fortgeschrittene',
@@ -2789,28 +2793,36 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_deleted,
             },
             {
-                'change_note': 'Langer Kurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
             },
             {
-                'change_note': 'Langer Kurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
             },
             {
-                'change_note': 'Backup-Kurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Backup-Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+            },
+            {
+                'change_note': 'Backup-Kurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Blitzkurs',
                 'code': const.EventLogCodes.course_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Blitzkurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+            },
+            {
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
@@ -3894,13 +3906,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {
@@ -3909,13 +3931,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {
