@@ -101,7 +101,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         list of active tracks. This has to be a subset of the segments of
         the course.
         """
-        data = affirm(vtypes.Course, data)
+        data = affirm(models.Course, data)
         ret = 1
         with Atomizer(rs):
             current = self.get_course(rs, data['id'])
@@ -231,7 +231,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
     def create_course(self, rs: RequestState,
                       data: CdEDBObject) -> DefaultReturnCode:
         """Make a new course organized via DB."""
-        data = affirm(vtypes.Course, data, creation=True)
+        data = affirm(models.Course, data, creation=True)
         # direct validation since we already have an event_id
         with Atomizer(rs):
             self.assert_lock(rs, event_id=data['event_id'])

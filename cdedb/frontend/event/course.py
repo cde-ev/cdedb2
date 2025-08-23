@@ -354,7 +354,7 @@ class EventCourseMixin(EventBaseFrontend):
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, vtypes.Course, data)
+        data = check(rs, models.Course, data)
         if rs.has_validation_errors():
             return self.change_course_form(rs, event_id, course_id)
         assert data is not None
@@ -406,7 +406,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
-        data = check(rs, vtypes.Course, data, creation=True)
+        data = check(rs, models.Course, data, creation=True)
         if rs.has_validation_errors():
             return self.create_course_form(rs, event_id)
         assert data is not None

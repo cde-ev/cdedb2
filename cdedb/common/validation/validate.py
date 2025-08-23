@@ -2950,7 +2950,9 @@ def _course(
     return val
 
 
-_create_dataclass_validator(models_event.CourseSegment, models_event.CourseSegment)
+@_create_dataclass_validator(models_event.CourseSegment)
+def _course_segment(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
