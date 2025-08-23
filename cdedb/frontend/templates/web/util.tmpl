@@ -433,7 +433,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -479,7 +479,7 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
+        defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
         enforce_required=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
@@ -530,7 +530,7 @@
 {%- endmacro %}
 
 
-{% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
+{% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=256000, rows=3,
                         arialabel=none, attributes='', actualreadonly=False, enforce_required=True) %}
     <textarea{{ dict(
         name=name,
@@ -549,12 +549,12 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
+        aclass=none, small=False, maxlength=256000, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
         wide=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide,
                                 aclass=outerclass) %}
-        {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
+        {{- input_textarea(name, readonly, defaultvalue, anid, maxlength, rows=rows, attributes=attributes,
                            actualreadonly=actualreadonly, aclass='form-control ' + (aclass or ''),
                            enforce_required=enforce_required) }}
     {%- endcall %}
