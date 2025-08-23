@@ -130,7 +130,7 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	cp files/stage2/* ${WORKDIR}/stage2cd/
 	cp ../../doc/source/motd-vm.txt ${WORKDIR}/stage2cd/motd.txt
 ifndef DEPLOYMENT_KEY_PATH
-	$(error Must provide deployment key (i.e. ssh key for user with access to Gitea))
+	$(error Must provide deployment key (i.e. ssh key for user with access to ForgeJo))
 endif
 	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_rsa_key
 	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_rsa_key.pub
