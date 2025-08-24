@@ -2909,19 +2909,6 @@ def _past_course(
     return PastCourse(val)
 
 
-COURSE_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'description': Optional[str],
-    'nr': str,
-    'shortname': LegacyShortname,
-    'instructors': Optional[str],
-    'max_size': Optional[NonNegativeInt],
-    'min_size': Optional[NonNegativeInt],
-    'is_visible': bool,
-    'notes': Optional[str],
-}
-
-
 @_create_dataclass_validator(models_event.Course)
 def _course(
     val: CdEDBObject, argname: str = "course", *,
