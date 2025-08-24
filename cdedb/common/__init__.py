@@ -832,7 +832,7 @@ def is_optional_type(type_: Any) -> bool:
     ) and NoneType in get_args(type_)
 
 
-def is_list_type(type_: type[Any]) -> bool:
+def is_list_type(type_: type[Any] | UnionType) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,
