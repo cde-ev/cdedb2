@@ -2,6 +2,9 @@
 import abc
 import copy
 import dataclasses
+import functools
+import inspect
+import typing
 from collections.abc import Collection
 from dataclasses import dataclass
 from enum import Flag, auto
@@ -12,6 +15,7 @@ from typing import (
     Literal,
     Self,
     TypeVar,
+    Union,
     cast,
     get_args,
     get_origin,
@@ -113,10 +117,58 @@ class MetaFlag(AbstractFlag):
     """Include the field in `cls.database_fields()` even if it would otherwise not be.
     Can be used to select fields with type list or set from the database."""
 
+    # request + database
+
+    io_exclude = request_exclude | database_exclude
+    """Omit this field from request extraction and being written to or read from the
+    database."""
+
+    # validation + request + database
+
+    exclude = validate_exclude | request_exclude | database_exclude
+    """Exclude this field from validation, request and database."""
+
     # asdict
 
     asdict_exclude = auto()
     """Exclude the field from `self.asdict()`."""
+    asdict_include = auto()
+    """Include the field to `self.asdict()`, even if it would otherwise not be."""
+
+    @functools.lru_cache
+    @staticmethod
+    def _all_cdedataclass_subclasses_names() -> set[str]:
+        ret = set()
+        subclasses = {cls for cls in CdEDataclass.__subclasses__()}
+        while subclasses:
+            cls = subclasses.pop()
+            subclasses.update(cls.__subclasses__())
+            ret.add(cls.__name__)
+        return ret
+
+    @staticmethod
+    def is_excluded(type_: Any) -> bool:
+        """Reveal if a field is excluded from all functions due to its type.
+
+        We exclude all subclasses of CdEDataclass. Sadly, this is a somewhat
+        lengthy and a bit ugly check, since we need to compare the name of
+        the classes due to Forward References.
+        """
+        origin = typing.get_origin(type_)
+        # like Optional[type_]
+        if origin is Union:
+            type_ = typing.get_args(type_)[0]
+        if origin in {list, set}:
+            [type_] = typing.get_args(type_)
+        # like dict[_, type_]
+        if origin is dict:
+            _, type_ = typing.get_args(type_)
+        # like "type_"
+        if isinstance(type_, typing.ForwardRef):
+            type_ = type_.__forward_arg__
+        if inspect.isclass(type_):
+            type_ = type_.__name__
+        return type_ in MetaFlag._all_cdedataclass_subclasses_names()
 
 
 @dataclass
@@ -148,12 +200,11 @@ class CdEDataclass:
         database_fields = self.database_fields()
         values = vars(self)
 
-        # Exclude fields marked as init=False.
         data = {
             field.name: values[field.name]
             for field in self.dataclass_fields()
-            if field.name in database_fields and field.init
-               and not MetaFlag.to_database_exclude.in_field(field)
+            if field.name in database_fields
+                and not MetaFlag.to_database_exclude.in_field(field)
         }
 
         # during creation the entity has no valid id - the database returns the new id
@@ -233,6 +284,8 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
+            if MetaFlag.is_excluded(field.type):
+                continue
             field.type = cast(type[Any], field.type)
             if creation:
                 if MetaFlag.validate_creation_exclude.in_field(field):
@@ -242,9 +295,6 @@ class CdEDataclass:
                     continue
                 if (
                         is_optional_type(field.type)
-                        # Fields with init=False are optional, so that objects
-                        #  retrieved from the database can pass validation.
-                        or not field.init
                         # Fields with a default are optional at creation.
                         or field.default is not dataclasses.MISSING
                         or field.default_factory is not dataclasses.MISSING
@@ -297,19 +347,14 @@ class CdEDataclass:
     ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
-        This uses the database_fields by default, but may be overwritten if needed.
-
         :param creation: If not None, possibly exclude some fields..
         """
-        field_names = set(cls.database_fields())
         fields = []
         for field in cls.dataclass_fields():
             if not MetaFlag.request_include.in_field(field):
-                if field.name not in field_names:
+                if MetaFlag.is_excluded(field.type):
                     continue
                 if MetaFlag.request_exclude.in_field(field):
-                    continue
-                if not field.init:
                     continue
                 if creation is True:
                     if MetaFlag.request_creation_exclude.in_field(field):
@@ -325,9 +370,7 @@ class CdEDataclass:
         """List all fields of this entity which are saved to the database."""
         return [
             field.name for field in cls.dataclass_fields()
-            if field.init
-               and get_origin(field.type) is not dict
-               and get_origin(field.type) is not set
+            if not MetaFlag.is_excluded(field.type)
                and not MetaFlag.database_exclude.in_field(field)
             or MetaFlag.database_include.in_field(field)
         ]
@@ -392,10 +435,9 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        if MetaFlag.asdict_exclude.in_field(field):
-            return False
-        # TODO: do not use the repr for this.
-        return field.repr
+        return MetaFlag.asdict_include.in_field(field) or not (
+            MetaFlag.is_excluded(field.type) or MetaFlag.asdict_exclude.in_field(field)
+        )
 
     @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:

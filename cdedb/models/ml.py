@@ -91,9 +91,9 @@ class Mailinglist(CdEDataclass):
     is_active: bool
 
     moderators: set[vtypes.ID] = dataclasses.field(
-        metadata=Meta.database_exclude.as_dict)
+        metadata=Meta.io_exclude.as_dict)
     whitelist: set[vtypes.Email] = dataclasses.field(
-        metadata=(Meta.database_exclude
+        metadata=(Meta.io_exclude
                   | Meta.validate_creation_optional).as_dict)
 
     description: Optional[str]
