@@ -201,7 +201,7 @@ class Event(EventDataclass):
         for part_group in self.part_groups.values():
             part_group.parts = {
                 part_id: self.parts[part_id]
-                for part_id in part_group.parts
+                for part_id in part_group.part_ids
             }
             for part in part_group.parts.values():
                 part.part_groups[part_group.id] = part_group
@@ -637,15 +637,23 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
     notes: Optional[str]
-    constraint_type: const.EventPartGroupType
+    constraint_type: const.EventPartGroupType = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     parts: CdEDataclassMap[EventPart] = dataclasses.field(
-        default_factory=dict, metadata=Meta.asdict_include.as_dict)
+        init=False, compare=False, repr=False,
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
+    )
+    part_ids: set[int] = dataclasses.field(
+        default_factory=set,
+        metadata=(Meta.input_update_exclude | Meta.database_exclude).as_dict
+    )
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -658,7 +666,7 @@ class PartGroup(EventDataclass):
                     SELECT part_id
                     FROM event.part_group_parts
                     WHERE part_group_id = part_groups.id
-                ) AS parts
+                ) AS part_ids
             FROM
                 event.part_groups
             WHERE

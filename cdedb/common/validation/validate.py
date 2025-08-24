@@ -2562,35 +2562,34 @@ def _event_part(
     return EventPart(val)
 
 
-EVENT_PART_GROUP_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'constraint_type': const.EventPartGroupType,
-    'notes': Optional[str],  # type: ignore[dict-item]
-    'part_ids': list[ID],
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.PartGroup)
 def _event_part_group(
-    val: Any, argname: str = "part_group", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventPartGroup:
-    val = _mapping(val, argname, **kwargs)
+    val: CdEDBObject, argname: str = "part_group", *,
+    event: models_event.Event, creation: bool = False, **kwargs: Any
+) -> CdEDBObject:
+    errs = ValidationSummary()
+    if val.get("part_ids") and not val["part_ids"] <= event.parts.keys():
+        errs.append(ValueError("part_ids", n_("Unknown part.")))
 
-    if creation:
-        mandatory_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_PART_GROUP_COMMON_FIELDS}
+    old_title = set()
+    old_shortname = set()
+    if creation is False:
+        part_group = event.part_groups.get(val["id"])
+        if part_group:
+            old_title = {part_group.title}
+            old_shortname = {part_group.shortname}
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+    if val.get("title") in {pg.title for pg in event.part_groups.values()} - old_title:
+        errs.append(ValueError('title', n_(
+            "A part group with this name already exists.")))
+    existing = {pg.shortname for pg in event.part_groups.values()}
+    if val.get('shortname') in existing - old_shortname:
+        errs.append(ValueError('shortname', n_(
+            "A part group with this name already exists.")))
 
-    return EventPartGroup(val)
-
-
-_create_optional_mapping_validator(EventPartGroup, EventPartGroupSetter)
+    if errs:
+        raise errs
+    return val
 
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
