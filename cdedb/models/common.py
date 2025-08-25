@@ -155,8 +155,7 @@ class MetaFlag(AbstractFlag):
         the classes due to Forward References.
         """
         origin = typing.get_origin(type_)
-        # like Optional[type_]
-        if origin is Union:
+        if is_optional_type(type_):
             type_ = typing.get_args(type_)[0]
         if origin in {list, set}:
             [type_] = typing.get_args(type_)

@@ -829,7 +829,7 @@ def is_optional_type(type_: Any) -> bool:
     return (
         get_origin(type_) is Union
         or get_origin(type_) is UnionType
-    ) and NoneType in get_args(type_)
+    ) and NoneType in get_args(type_) and len(get_args(type_)) == 2
 
 
 def is_list_type(type_: type[Any]) -> bool:
