@@ -496,13 +496,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'notes': None,
             'country2': self.conf["DEFAULT_COUNTRY"],
         })
-        if (persona.get('country') or "").strip():
+        if persona.get('country'):
             persona['country'] = get_country_code_from_country(rs, persona['country'])
         else:
             persona['country'] = self.conf["DEFAULT_COUNTRY"]
         for k in ('telephone', 'mobile'):
-            if persona[k] and not persona[k].strip().startswith(("0", "+")):
-                persona[k] = "0" + persona[k].strip()
+            if persona[k] and not persona[k].startswith(("0", "+")):
+                persona[k] = "0" + persona[k]
+        if persona.get('birth_name') == persona.get('family_name'):
+            persona['birth_name'] = None
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona_backup = copy.deepcopy(persona)
         persona, problems = inspect(
@@ -519,9 +521,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if persona['gender'] == const.Genders.not_specified:
                 warnings.append(
                     ('gender', ValueError(n_("No gender specified."))))
-            birth_name = (persona['birth_name'] or "").strip()
-            if birth_name == (persona['family_name'] or "").strip():
-                persona['birth_name'] = None
 
         pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
