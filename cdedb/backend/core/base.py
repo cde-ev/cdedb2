@@ -2898,18 +2898,15 @@ class CoreBaseBackend(AbstractBackend):
         This is so that one may reply to the anonymous message without needing to know
         who sent it.
         """
-
-        message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
+        data = affirm(models.AnonymousMessageData, message, creation=True)
 
         with Atomizer(rs):
-            if self.sql_insert(
-                rs, models.AnonymousMessageData.database_table, message.to_database(),
-            ):
+            if self.sql_insert(rs, models.AnonymousMessageData.database_table, data):
                 self.core_log(
                     rs, const.CoreLogCodes.send_anonymous_message,
-                    change_note=message.recipient, suppress_persona_id=True,
+                    change_note=data["recipient"], suppress_persona_id=True,
                 )
-                return message.message_id
+                return data["message_id"]
         return None
 
     @access("persona")
@@ -2945,12 +2942,7 @@ class CoreBaseBackend(AbstractBackend):
 
         This is to be done should the message id (including the key) leak.
         """
-
-        message = affirm_dataclass(models.AnonymousMessageData, message)
-
-        update = message.to_database()
-        del update['ctime']
-        del update['recipient']
+        update = affirm(models.AnonymousMessageData, message)
 
         with Atomizer(rs):
             if self.sql_update(

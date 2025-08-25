@@ -227,7 +227,6 @@ DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
     models_event.CustomQueryFilter: CustomQueryFilter,
-    models_core.AnonymousMessageData: AnonymousMessage,
 }
 
 
@@ -1147,18 +1146,9 @@ def _base64(
     return Base64(val)
 
 
-@_add_typed_validator
-def _anonymous_mesage(
-        val: Any, argname: str = models_core.AnonymousMessageData.__qualname__,
-        creation: bool = False, **kwargs: Any,
-) -> AnonymousMessage:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_core.AnonymousMessageData.validation_fields(
-        creation=creation)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
-    return AnonymousMessage(val)
+@_create_dataclass_validator(models_core.AnonymousMessageData)
+def _anonymous_message(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 # TODO manual handling of @_add_typed_validator inside decorator or storage?

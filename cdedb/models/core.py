@@ -22,8 +22,6 @@ from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
-__all__ = ["AnonymousMessageData"]
-
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -100,13 +98,24 @@ class AnonymousMessageData(CdEDataclass):
     entity_key = "message_id"
 
     message_id: vtypes.Base64
-    recipient: vtypes.Email
-    ctime: datetime.datetime
+    recipient: vtypes.Email = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
+    ctime: datetime.datetime = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
 
     encrypted_data: str
-    persona_id: Optional[vtypes.ID] = dataclasses.field(init=False, default=None)
-    username: Optional[vtypes.Email] = dataclasses.field(init=False, default=None)
-    subject: Optional[str] = dataclasses.field(init=False, default=None)
+    persona_id: Optional[vtypes.ID] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
+    username: Optional[vtypes.Email] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
+    subject: Optional[str] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
 
     @staticmethod
     def format_data(persona_id: vtypes.ID, username: vtypes.Email, subject: str) -> str:
