@@ -16,7 +16,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     access,
     affirm_array_validation as affirm_array,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
@@ -179,9 +178,11 @@ class MlBackend(AbstractBackend):
         elif mailinglist_id:
             mailinglist_id = affirm(vtypes.ID, mailinglist_id)
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
+        elif mailinglist:
+            affirm(get_ml_type(mailinglist.ml_type), mailinglist)
 
         persona_id = affirm(vtypes.ID, persona_id)
-        mailinglist = affirm_dataclass(Mailinglist, mailinglist)
+        assert mailinglist is not None
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, mailinglist.id, allow_restricted=False)):
@@ -205,7 +206,7 @@ class MlBackend(AbstractBackend):
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
-        ml = affirm_dataclass(Mailinglist, ml)
+        affirm(get_ml_type(ml.ml_type), ml)
         affirm_set(SubscriptionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
@@ -221,7 +222,7 @@ class MlBackend(AbstractBackend):
 
         :type: bool
         """
-        ml = affirm_dataclass(Mailinglist, ml)
+        affirm(get_ml_type(ml.ml_type), ml)
         is_subscribed = self.is_subscribed(rs, rs.user.persona_id, ml.id)
         return is_subscribed or ml.may_view(rs) or ml.id in rs.user.moderator
 
@@ -536,6 +537,7 @@ class MlBackend(AbstractBackend):
         To preserve data integrity, some additional changes may be specified via update.
         """
         ret = 1
+        ml_type = affirm(const.MailinglistTypes, ml_type)
         update = update or {}
         with Atomizer(rs):
             new_type = get_ml_type(ml_type)
@@ -556,7 +558,7 @@ class MlBackend(AbstractBackend):
             new_ml.update(update)
             for field in obsolete_fields:
                 del new_ml[field]
-            affirm(vtypes.Mailinglist, new_ml, subtype=new_type)
+            affirm(new_type, new_ml)
 
             # Delete all unsubscriptions and explicit addresses for mandatory list.
             if not new_type.allow_unsub:
@@ -604,8 +606,7 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = self.get_mailinglist(rs, data['id'])
-            data = affirm(vtypes.Mailinglist, data,
-                          subtype=get_ml_type(current.ml_type))
+            data = affirm(get_ml_type(current.ml_type), data)
             current_data = current.to_database()
 
             mdata = {k: v for k, v in data.items()
@@ -645,32 +646,37 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def create_mailinglist(self, rs: RequestState,
-                           data: Mailinglist) -> DefaultReturnCode:
+                           new_ml: Mailinglist) -> DefaultReturnCode:
         """Make a new mailinglist.
 
         :returns: the id of the new mailinglist
         """
-        data = affirm_dataclass(Mailinglist, data, creation=True)
-        self.validate_address(rs, data.to_database())
+        ml_type = affirm(const.MailinglistTypes, new_ml.ml_type)
+        ml_class = get_ml_type(ml_type)
+        data = affirm(ml_class, new_ml, creation=True)
+        self.validate_address(rs, data)
         # TODO Migrate this to EventPrivileges?
-        if not (data.is_relevant_admin(rs.user)
-                or (isinstance(data, EventAssociatedMetaMailinglist)
-                    and data.event_id in rs.user.orga)
-                or (isinstance(data, AssemblyAssociatedMailinglist)
-                    and data.assembly_id in rs.user.presider)):
+        if not (ml_class.is_relevant_admin(rs.user)
+                or (issubclass(ml_class, EventAssociatedMetaMailinglist)
+                    and data["event_id"] in rs.user.orga)
+                or (issubclass(ml_class, AssemblyAssociatedMailinglist)
+                    and data["assembly_id"] in rs.user.presider)):
             raise PrivilegeError(n_(
                 "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
-            mdata = data.to_database()
+            # The mltype is a classproperty of the Mailinglist class and therefore
+            #  not part of its dict representation.
+            data["ml_type"] = ml_type
             # The address is a readonly property, but we want to save it into the
             #  database for convenience.
-            mdata["address"] = data.address
-            # The ml_type is not included in the to_database
-            mdata["ml_type"] = data.ml_type
-            new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
+            data["address"] = ml_class.get_address(data)
+            # moderators and whitelist are saved in separate tables
+            moderators = data.pop("moderators")
+            _ = data.pop("whitelist")
+            new_id = self.sql_insert(rs, ml_class.database_table, data)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
-            if data.moderators:
-                self.add_moderators(rs, new_id, data.moderators, on_creation=True)
+            if moderators:
+                self.add_moderators(rs, new_id, moderators, on_creation=True)
             self.write_subscription_states(rs, (new_id,))
         return new_id
 
@@ -1079,7 +1085,7 @@ class MlBackend(AbstractBackend):
         This is needed to determine the visibility of "roster" in the navbar. Therefore,
         we take the is_active of the mailinglist into account.
         """
-        ml = affirm_dataclass(Mailinglist, ml)
+        affirm(get_ml_type(ml.ml_type), ml)
         mrv = const.MailinglistRosterVisibility
         assert rs.user.persona_id is not None
 

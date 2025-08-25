@@ -146,7 +146,6 @@ PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
 PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
                                             _CdEDBObject)
 
-Mailinglist = _NewType("Mailinglist", _CdEDBObject)
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)
 SubscriptionIdentifier = _NewType("SubscriptionIdentifier", _CdEDBObject)
 SubscriptionDataset = _NewType("SubscriptionDataset", _CdEDBObject)

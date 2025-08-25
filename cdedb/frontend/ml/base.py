@@ -258,7 +258,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                            ml_type: const.MailinglistTypes,
                            moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""
-        data["id"] = -1
         data["moderators"] = moderators
         data["whitelist"] = []
         ml_class = get_ml_type(ml_type)
@@ -269,7 +268,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml_class.get_additional_fields():
                 del data[field]
-        data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
+        data = check(rs, ml_class, data, creation=True)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
@@ -287,7 +286,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                         KeyError(n_("Invalid part group.")),
                     ))
 
-        ml = ml_class(**data)
+        ml = ml_class(id=vtypes.ID(-1), **data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -301,7 +300,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert ml is not None
         # Check if mailinglist address is unique and valid
         try:
-            self.mlproxy.validate_address(rs, ml.to_database())
+            self.mlproxy.validate_address(rs, data)
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 
@@ -508,7 +507,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         for key in set(data) - allowed:
             data[key] = current[key]
 
-        data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
+        data = check(rs, get_ml_type(ml.ml_type), data)
         if data and data.get('event_id'):
             event = self.eventproxy.get_event(rs, data['event_id'])
             if part_group_id := data.get('event_part_group_id'):
@@ -566,7 +565,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         new_type = get_ml_type(ml_type)
         for field in new_type.get_additional_fields():
             update[field] = data[field]
-        update = check(rs, vtypes.Mailinglist, update, subtype=new_type)
+        update = check(rs, new_type, update)
         if rs.has_validation_errors():
             return self.change_ml_type_form(rs, mailinglist_id)
         assert update is not None

@@ -131,7 +131,7 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpec,
 )
-from cdedb.common.query.log_filter import GenericLogFilter, ALL_LOG_FILTERS
+from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
@@ -222,7 +222,6 @@ class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
-    models_ml.Mailinglist: Mailinglist,
 }
 
 
@@ -4070,35 +4069,19 @@ def _serialized_event_freetexts(
     return SerializedEventFreetexts(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(*models_ml.ML_TYPE_MAP_INV.keys())
 def _mailinglist(
-    val: Any, argname: str = "mailinglist", *, creation: bool = False,
-    subtype: models_ml.MLType = models_ml.Mailinglist, **kwargs: Any,
-) -> Mailinglist:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    :param subtype: Mandatory parameter to check for suitability for the given subtype.
-    """
-
-    val = _mapping(val, argname, **kwargs)
-
-    if subtype == models_ml.Mailinglist:
-        raise ValidationSummary(ValueError(
-            "ml_type", "Must provide ml_type for setting mailinglist."))
-
-    mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
+    val: CdEDBObject, *args: Any, type_: models_ml.MLType, **kwargs: Any
+) -> CdEDBObject:
     errs = ValidationSummary()
 
-    if val and "moderators" in val and not val["moderators"]:
+    if "moderators" in val and not val["moderators"]:
         errs.append(ValueError("moderators", n_("Must not be empty.")))
+
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
-    elif val["domain"].value not in subtype.available_domains:
+    elif val["domain"].value not in type_.available_domains:
         errs.append(ValueError("domain", n_(
             "Invalid domain for this mailinglist type.")))
 
@@ -4110,7 +4093,7 @@ def _mailinglist(
     if errs:
         raise errs
 
-    return Mailinglist(val)
+    return val
 
 
 SUBSCRIPTION_ID_FIELDS: TypeMapping = {
