@@ -462,6 +462,8 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
                 val: Any, argname: str = type_.__qualname__, *,
                 type_: type[DC], creation: bool = False, **kwargs: Any
             ) -> CdEDBObject:
+                if isinstance(val, CdEDataclass):
+                    val = val._to_validation()
                 val = _mapping(val, argname, **kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()

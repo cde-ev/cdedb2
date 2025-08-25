@@ -154,7 +154,7 @@ class CdEDataclass:
 
         # during creation the id is unknown
         if self.in_creation:
-            del data["id"]
+            data.pop("id", None)
         return data
 
     @classmethod
@@ -248,6 +248,23 @@ class CdEDataclass:
                 else:
                     optional[field.name] = field.type
         return mandatory, optional
+
+    def _to_validation(self) -> CdEDBObject:
+        """Generate a dict representation of this entity to be validated."""
+        mandatory, optional = self.validation_fields(creation=self.in_creation)
+        values = vars(self)
+
+        # include optional fields only if they are present
+        data = {
+            field.name: values[field.name]
+            for field in self.dataclass_fields()
+            if field.name in mandatory
+                or field.name in optional and field.name in values
+        }
+
+        if self.in_creation:
+            data.pop("id", None)
+        return data
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
