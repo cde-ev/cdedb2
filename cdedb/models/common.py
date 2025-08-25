@@ -15,7 +15,6 @@ from typing import (
     Literal,
     Self,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_origin,
@@ -214,29 +213,37 @@ class CdEDataclass:
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         for field in cls.dataclass_fields():
-            # Convert enum fields into enum members.
-            if isinstance(field.type, type):
-                if issubclass(field.type, (CdEEnum, CdEIntEnum)):
-                    if field.name in data:
-                        data[field.name] = field.type(data[field.name])
+            # Convert some values after extracting them from the database.
+            type_ = field.type
+            name = field.name
+            # deduplicate conversion of optional and non-optional types
+            is_optional = False
+            if is_optional_type(type_):
+                type_ = get_args(type_)[0]
+                is_optional = True
 
-            # Convert optional enum fields into enum members.
-            if is_optional_type(field.type):
-                if len(get_args(field.type)) == 2:
-                    inner_type = get_args(field.type)[0]
-                    if isinstance(inner_type, type):
-                        if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            if data.get(field.name) is not None:
-                                data[field.name] = inner_type(data[field.name])
+            # Convert basic types.
+            if isinstance(type_, type):
+                # Convert enum fields into enum members.
+                if issubclass(type_, (CdEEnum, CdEIntEnum)):
+                    if (is_optional and data.get(name) is not None
+                            or not is_optional and name in data):
+                        data[name] = type_(data[name])
 
-            # Convert list[enum] fields into enum members.
-            if get_origin(field.type) is list:
-                if len(get_args(field.type)) == 1:
-                    inner_type = get_args(field.type)[0]
-                    if isinstance(inner_type, type):
+            # Convert array types.
+            for array_type in {list, tuple, set}:
+                if get_origin(type_) is array_type and len(get_args(type_)) == 1:
+                    # No data, so nothing to convert.
+                    if data.get(name) is None:
+                        continue
+                    if isinstance((inner_type := get_args(type_)[0]), type):
+                        # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            data[field.name] = list(
-                                inner_type(x) for x in data[field.name])
+                            data[name] = array_type(
+                                inner_type(x) for x in data[name])
+                        # Convert lists from psycopg to set/tuple.
+                        elif array_type in {tuple, set}:
+                            data[name] = array_type(data[name])
         return cls(**data)
 
     @classmethod

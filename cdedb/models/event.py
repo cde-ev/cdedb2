@@ -576,9 +576,7 @@ class CustomQueryFilter(EventDataclass):
     scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
     notes: Optional[str]
-    fields: set[str] = dataclasses.field(
-        metadata=(Meta.request_exclude | Meta.database_include
-                  | Meta.asdict_include).as_dict)
+    fields: set[str] = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     def __post_init__(self) -> None:
         if isinstance(self.fields, str):  # type: ignore[unreachable]
@@ -588,6 +586,12 @@ class CustomQueryFilter(EventDataclass):
         ret = super().to_database()
         ret['fields'] = self.get_field_string()
         return ret
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        if data.get("fields") and isinstance(data["fields"], str):
+            data["fields"] = set(data["fields"].split(','))
+        return super().from_database(data)
 
     def get_sortkey(self) -> Sortkey:
         return self.scope, self.title

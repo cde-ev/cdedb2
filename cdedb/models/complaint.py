@@ -364,7 +364,7 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(
-        metadata=(Meta.database_exclude | Meta.request_include).as_dict,
+        metadata=Meta.database_exclude.as_dict,
     )
 
     @staticmethod
