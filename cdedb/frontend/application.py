@@ -213,7 +213,7 @@ class Application(BaseApp):
         user = User()
 
         # Requests with _a lot_ of fields cause a 413 Error, so we raise the limit.
-        request.max_form_parts = 10_000
+        request.max_form_parts = 10_000  # type: ignore[attr-defined]
 
         # additional safeguard to apache blocking non-trusted hosts, see cdedb-site.conf
         if (not werkzeug.wsgi.host_is_trusted(request.host, self.conf["HTTP_HOSTS"])
