@@ -230,6 +230,7 @@ class TestValidation(TestValidationBase):
             (54, "54", None),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
             (256000 * "a", 256000 * "a", None),
+            (256000 * "🤔", 256000 * "🤔", None),
             (256001 * "a", None, ValueError),
         ))
         self.do_validator_test(StringType, (
