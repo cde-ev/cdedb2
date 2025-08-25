@@ -643,12 +643,16 @@ class CdEBaseFrontend(AbstractUserFrontend):
         :returns: One of "high", "medium" and "low" indicating similarity.
         """
         score = 0
-        if (ds1['raw']['given_names'] == ds2['raw']['given_names']
-                and ds1['raw']['family_name'] == ds2['raw']['family_name']):
+        if ds1['persona'] is None or ds2['persona'] is None:
+            return "low"
+        if (
+                ds1['persona']['given_names'] == ds2['persona']['given_names']
+                and ds1['persona']['family_name'] == ds2['persona']['family_name']
+        ):
             score += 12
-        if ds1['raw']['username'] == ds2['raw']['username']:
+        if ds1['persona']['username'] == ds2['persona']['username']:
             score += 20
-        if ds1['raw']['birthday'] == ds2['raw']['birthday']:
+        if ds1['persona']['birthday'] == ds2['persona']['birthday']:
             score += 8
         if score >= 20:
             return "high"
