@@ -665,16 +665,6 @@ def affirm_validation(
     )
 
 
-def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.backend.common.affirm_validation`
-    but used for dataclass objects.
-    """
-    return validate.validate_assert_dataclass(
-        assertion, value, ignore_warnings=True, **kwargs)
-
-
 @overload
 def affirm_validation_optional(
     assertion: type[CdEDataclass], value: Any, **kwargs: Any,

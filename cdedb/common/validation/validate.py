@@ -53,7 +53,6 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import base64
 import copy
 import csv
-import dataclasses
 import datetime
 import decimal
 import distutils.util
@@ -220,55 +219,6 @@ class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
 
 
 _ALL_TYPED = ValidatorStorage()
-
-DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
-}
-
-
-def _validate_dataclass_preprocess(type_: type[DC], value: Any,
-                                   ) -> tuple[type[DC], type[CdEDBObject]]:
-    # Keep subclassing intact if possible.
-    if isinstance(value, type_):
-        subtype = type(value)
-    else:
-        raise RuntimeError("Value is no instance of given type.")
-
-    # Figure out the closest validator on the class hierarchy.
-    if not dataclasses.is_dataclass(value):
-        raise RuntimeError("Given value is not an instance of a dataclass.")
-    for supertype in type_.mro():
-        if supertype in DATACLASS_TO_VALIDATORS:
-            validator = DATACLASS_TO_VALIDATORS[supertype]
-            break
-    else:
-        raise RuntimeError("There is no validator mapped to this dataclass.")
-
-    return subtype, validator
-
-
-def _validate_dataclass_postprocess(subtype: type[DC], validated: CdEDBObject) -> DC:
-    dataclass_keys = {field.name for field in dataclasses.fields(subtype)
-                      if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
-    return cast(DC, subtype(**validated))
-
-
-def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> DC:
-    """Wrapper of validate_assert that accepts dataclasses.
-
-    Allows for subclasses, and figures out the appropriate superclass, for which
-    a validator exists, dynamically."""
-    subtype, validator = _validate_dataclass_preprocess(type_, value)
-    if hasattr(value, 'to_validation'):
-        val = value.to_validation()
-    elif hasattr(value, 'as_dict'):
-        val = value.as_dict()
-    else:
-        val = dataclasses.asdict(value)
-    validated = validate_assert(
-        validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
-    return _validate_dataclass_postprocess(subtype, validated)
 
 
 @overload
