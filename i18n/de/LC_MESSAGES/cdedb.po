@@ -3652,7 +3652,11 @@ msgstr "Ungültige Eingabe für eine Zeichenkette."
 msgid "Must be a string."
 msgstr "Muss eine Zeichenkette sein."
 
-#: cdedb/common/validation/validate.py:871
+#: cdedb/common/validation/validate.py:846
+msgid "Longer than 256 kB."
+msgstr "Länger als 256 kB."
+
+#: cdedb/common/validation/validate.py:872
 msgid "Malformed URL."
 msgstr "Nicht-wohlgeformte URL."
 
