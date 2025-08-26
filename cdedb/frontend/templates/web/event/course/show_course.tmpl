@@ -121,7 +121,7 @@
                             {% endfor %}
                         </div>
                         {%- if involved_attendees.num or uninvolved_attendees.num %}
-                            {% if personas %}
+                            {% if registrations %}
                                 <ul class="slim">
                                     {%- for involved, attendees in [(True, involved_attendees), (False, uninvolved_attendees)] %}
                                         {%- for instructor, registrations in [(True, attendees.instructors), (False, attendees.learners)] %}
@@ -130,7 +130,7 @@
                                                     {%- if not involved %}<s>{% endif %}
                                                     {{- util.href(cdedblink('event/show_registration',
                                                                         {'registration_id': reg['id']}),
-                                                                 personas[reg['persona_id']]|persona_name(include_nickname=True)) }}
+                                                                  reg['persona']|persona_name(include_nickname=True)) }}
                                                     {%- if instructor %} ({% trans %}Instr.{% endtrans %}){%- endif %}
                                                     {%- if not involved %}</s>{% endif %}
                                                     {%- if reg['parts'][track.part_id]['status'] != enums['RegistrationPartStati'].participant %}
