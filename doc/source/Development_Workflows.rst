@@ -13,8 +13,7 @@ Workflows
    Development_Workflows_Deployment
    Development_Workflows_Load_Test
 
-.. todo:: Add information about PR&Issues (short with link to ForgeJo), Input validation,
-          Autobuild ...
+.. todo:: Add information about Input validation, Autobuild ...
 
 This page aims to provide descriptions on how to do things.
 
@@ -39,7 +38,7 @@ Anleitungen dazu sind unter :doc:`Development_Environment` zu finden.
 
 Einen high-level Überblick über die Sofwarearchitektur unseres Codes sollte
 die Seite „:doc:`Development_Typical-Request`“ geben.
-Beitragen kannst du über Issues und Pull Requests, etwas mehr dazu unter :doc:`Development_Workflows_Contributing`.
+Beitragen kannst du über Issues und Pull Requests, mehr dazu unter :doc:`Development_Workflows_Contributing`.
 
 Historisch gewachsen werden die meisten unserer Konversationen im Issuetracker auf englisch geführt.
 Fühle dich ermutigt, auch einfach Deutsch zu schreiben.
