@@ -98,7 +98,9 @@ i18n-output-dirs:
 	for lang in $(I18N_LANGUAGES) ; do \
 		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
 	done
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo chown -R cdedb:cdedb $(I18NOUTDIR)
+endif
 
 .PHONY: i18n-refresh
 i18n-refresh: i18n-extract i18n-update
