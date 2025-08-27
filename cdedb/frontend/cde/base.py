@@ -454,7 +454,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             datum['resolution'] = LineResolutions.none
             rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
             warnings.append((None, ValueError(n_("Entry changed."))))
-        persona = copy.deepcopy(datum['raw'])
+
+        persona: CdEDBObject = copy.deepcopy(datum['raw'])
+        persona = {
+            key: val.strip() if isinstance(val, str) else val
+            for key, val in persona.items()
+        }
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
         gender_convert = {
@@ -491,13 +496,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'notes': None,
             'country2': self.conf["DEFAULT_COUNTRY"],
         })
-        if (persona.get('country') or "").strip():
+        if persona.get('country'):
             persona['country'] = get_country_code_from_country(rs, persona['country'])
         else:
             persona['country'] = self.conf["DEFAULT_COUNTRY"]
         for k in ('telephone', 'mobile'):
-            if persona[k] and not persona[k].strip().startswith(("0", "+")):
-                persona[k] = "0" + persona[k].strip()
+            if persona[k] and not persona[k].startswith(("0", "+")):
+                persona[k] = "0" + persona[k]
+        if persona.get('birth_name') == persona.get('family_name'):
+            persona['birth_name'] = None
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona_backup = copy.deepcopy(persona)
         persona, problems = inspect(
@@ -514,9 +521,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if persona['gender'] == const.Genders.not_specified:
                 warnings.append(
                     ('gender', ValueError(n_("No gender specified."))))
-            birth_name = (persona['birth_name'] or "").strip()
-            if birth_name == (persona['family_name'] or "").strip():
-                persona['birth_name'] = None
 
         pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
@@ -639,12 +643,16 @@ class CdEBaseFrontend(AbstractUserFrontend):
         :returns: One of "high", "medium" and "low" indicating similarity.
         """
         score = 0
-        if (ds1['raw']['given_names'] == ds2['raw']['given_names']
-                and ds1['raw']['family_name'] == ds2['raw']['family_name']):
+        if ds1['persona'] is None or ds2['persona'] is None:
+            return "low"
+        if (
+                ds1['persona']['given_names'] == ds2['persona']['given_names']
+                and ds1['persona']['family_name'] == ds2['persona']['family_name']
+        ):
             score += 12
-        if ds1['raw']['username'] == ds2['raw']['username']:
+        if ds1['persona']['username'] == ds2['persona']['username']:
             score += 20
-        if ds1['raw']['birthday'] == ds2['raw']['birthday']:
+        if ds1['persona']['birthday'] == ds2['persona']['birthday']:
             score += 8
         if score >= 20:
             return "high"

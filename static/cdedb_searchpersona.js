@@ -26,25 +26,9 @@
     }
 
     /**
-     * Custom wrapper for selectize.js to search for personas via XHR requests.
-     *
-     * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
-     * given url provided by our python code.
-     *
-     * @param url The url of the server-side endpoint, relative to the document's location.
-     * @param params Object specifying GET-parameters to be appended to the url.
-     *               The search phrase will be added with `phrase` as key.
-     * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
-     * @param freeform If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
-     *                  added as option.
-     * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
-     * @param placeholder If given, this string is used as placeholder in the selectize.js control
-     * @param toggle Optionally let some url parameters depend on a checkbox. If given, this object must contain a key `toggle`,
-     *               which holds the checkbox' jquery object and it may contain arbitrary other keys to append to the url with their values.
-     *               When the checkbox is checked, values from this object take precedence over those specified via the `params` argument.
+     * Un-inlined code from cdedbSearchPerson to avoid code duplication
      */
-    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder, toggle) {
-        submitRequest = function(query, callback) {
+    function submitRequest(query, callback, url, params, exclude, toggle) {
             if (!query.length) return callback();
 
             let target_url = new URL(url, document.location);
@@ -83,6 +67,27 @@
             });
         }
 
+    /**
+     * Custom wrapper for selectize.js to search for personas via XHR requests.
+     *
+     * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
+     * given url provided by our python code.
+     *
+     * @param url The url of the server-side endpoint, relative to the document's location.
+     * @param params Object specifying GET-parameters to be appended to the url.
+     *               The search phrase will be added with `phrase` as key.
+     * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
+     * @param freeform If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
+     *                  added as option.
+     * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
+     * @param placeholder If given, this string is used as placeholder in the selectize.js control
+     * @param toggle Optionally let some url parameters depend on a checkbox. If given, this object must contain a key `toggle`,
+     *               which holds the checkbox' jquery object and it may contain arbitrary other keys to append to the url with their values.
+     *               When the checkbox is checked, values from this object take precedence over those specified via the `params` argument.
+     */
+    $.fn.cdedbSearchPerson = function(url, params, exclude, freeform, multi, placeholder, toggle) {
+
+
         exclude ??= [];
         $(this).selectize({
             'placeholder' : placeholder || '',
@@ -115,7 +120,7 @@
                 }
             },
             load: function(query, callback) {
-                submitRequest(query, callback);
+                submitRequest(query, callback, url, params, exclude, toggle);
             },
             onInitialize: function() {
                 // Initialize with display names instead of raw CdEDBIDs (as prefilled in the HTML).
@@ -127,17 +132,24 @@
                 for (const db_id of initial_values) {
                     // remove the old option only displayed by CdEDBID
                     selectize.removeOption(db_id);
-                    submitRequest(db_id, function(res) {
-                        if (!res || res.length === 0) return;
-                        // add the new option with display name
-                        selectize.addOption(res[0]);
-                        // count how many (async) requests have returned
-                        retCount += 1;
-                        if (retCount === initial_values.length){
-                            // all requests have returned, set the values of the selectize control, now with pretty names
-                            selectize.setValue(initial_values);
-                        }
-                    });
+                    submitRequest(
+                        db_id,
+                        function(res) {
+                            if (!res || res.length === 0) return;
+                            // add the new option with display name
+                            selectize.addOption(res[0]);
+                            // count how many (async) requests have returned
+                            retCount += 1;
+                            if (retCount === initial_values.length){
+                                // all requests have returned, set the values of the selectize control, now with pretty names
+                                selectize.setValue(initial_values);
+                            }
+                        },
+                        url,
+                        params,
+                        exclude,
+                        toggle
+                    );
                 }
             }
         });
