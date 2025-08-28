@@ -6687,49 +6687,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
-        # Disabled checkboxes have a `value` of None, but have their `_value` set.
-        self.assertEqual(
-            f.get('active_segments', index=0).value, "8")
-        self.assertEqual(
-            f.get('active_segments', index=0).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=1)._value, "13")
-        self.assertEqual(
-            f.get('active_segments', index=1)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=2)._value, "14")
-        self.assertEqual(
-            f.get('active_segments', index=2)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=3).value, "6")
-        self.assertEqual(
-            f.get('active_segments', index=3).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=4)._value, "9")
-        self.assertEqual(
-            f.get('active_segments', index=4)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=5)._value, "10")
-        self.assertEqual(
-            f.get('active_segments', index=5)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=6)._value, "7")
-        self.assertEqual(
-            f.get('active_segments', index=6)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=7).value, "11")
-        self.assertEqual(
-            f.get('active_segments', index=7).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=8)._value, "12")
-        self.assertEqual(
-            f.get('active_segments', index=8)._checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=9)._value, "15")
-        self.assertEqual(
-            f.get('active_segments', index=9)._checked, False)
+        self.assertEqual(f["segment6"].checked, True)
+        self.assertEqual(f["segment6.is_active"].checked, True)
+        self.assertEqual(f["segment7"].checked, False)
+        self.assertEqual(f["segment7.is_active"].checked, False)
+        self.assertEqual(f["segment8"].checked, True)
+        self.assertEqual(f["segment8.is_active"].checked, True)
+        self.assertEqual(f["segment9"].checked, False)
+        self.assertEqual(f["segment9.is_active"].checked, False)
+        self.assertEqual(f["segment10"].checked, False)
+        self.assertEqual(f["segment10.is_active"].checked, False)
+        self.assertEqual(f["segment11"].checked, True)
+        self.assertEqual(f["segment11.is_active"].checked, True)
+        self.assertEqual(f["segment12"].checked, True)
+        self.assertEqual(f["segment12.is_active"].checked, True)
+        self.assertEqual(f["segment13"].checked, False)
+        self.assertEqual(f["segment13.is_active"].checked, False)
+        self.assertEqual(f["segment14"].checked, False)
+        self.assertEqual(f["segment14.is_active"].checked, False)
+        self.assertEqual(f["segment15"].checked, False)
+        self.assertEqual(f["segment15.is_active"].checked, False)
 
-        f['active_segments'] = [6, 11, 12]
+        f['segment8.is_active'] = False
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)
