@@ -2,7 +2,7 @@
 import copy
 import datetime
 from itertools import chain
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -269,34 +269,31 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata(
-        "appellant_id", "is_affected", "affected_ids", "target_ids", "timestamp", "info"
-    )
+    @REQUESTdata("appellant_ids", "affected_ids", "target_ids", "timestamp", "info")
     def create_case(
         self,
         rs: RequestState,
         data: dict[str, Any],
-        appellant_id: vtypes.CdedbID,
-        is_affected: bool,
-        affected_ids: Optional[vtypes.CdedbIDList],
-        target_ids: Optional[vtypes.CdedbIDList],
+        appellant_ids: vtypes.CdedbIDList,
+        affected_ids: vtypes.CdedbIDList,
+        target_ids: vtypes.CdedbIDList,
         timestamp: datetime.datetime,
         info: str,
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:  # type: ignore[arg-type]
+        if rs.user.persona_id in set(affected_ids + target_ids + appellant_ids):
             rs.notify('error', n_("May not create case with own involvement."))
             return self.create_case_form(rs)
 
         error = ValueError(n_("May not be involved in multiple ways."))
-        if affected_ids and appellant_id in affected_ids:
+        if set(appellant_ids) & set(affected_ids):
             rs.append_validation_error(('appellant_id', error))
             rs.append_validation_error(('affected_ids', error))
-        if target_ids and appellant_id in target_ids:
+        if set(appellant_ids) & set(target_ids):
             rs.append_validation_error(('appellant_id', error))
             rs.append_validation_error(('target_ids', error))
-        if affected_ids and target_ids and set(affected_ids) & set(target_ids):
+        if set(affected_ids) & set(target_ids):
             rs.append_validation_error(('affected_ids', error))
             rs.append_validation_error(('target_ids', error))
         if rs.has_validation_errors():
@@ -316,13 +313,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs, new_case.id, entry_data, version_data
             )
             t = const.ComplaintInvolvementType
-            if is_affected:
+            if appellant_ids:
                 ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.affected, [appellant_id], is_informed=True
-                )
-            else:
-                ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.appellant, [appellant_id]
+                    rs, new_case.id, t.appellant, appellant_ids
                 )
             if affected_ids:
                 ret *= self.complaintproxy.add_involved(

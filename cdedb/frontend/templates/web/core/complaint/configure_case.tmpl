@@ -49,15 +49,14 @@
         {% if ambience["case"] %}
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
         {% else %}
-            {{ util.form_input_text(name="appellant_id", label=gettext("Appellant"), anid="input-appellant_id",
-                                    placeholder=gettext("DB-XXXX-X"), outerclass="nosp") }}
+            {{ util.form_input_text(name="appellant_ids", label=gettext("Appellants"), anid="input-appellant_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">
-                $('#input-appellant_id').cdedbSearchPerson(
+                $('#input-appellant_ids').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
-                    [], false, false, "{{ gettext("ID, name, email") }}"
+                    [], false, true, "{{ gettext("ID, name, email") }}"
                 );
             </script>
-            {{ util.form_input_checkbox(name="is_affected", label=gettext("is affected")) }}
             {{ util.form_input_text(name="affected_ids", label=gettext("Further Affected"), anid="input-affected_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
             <script nonce="{{ csp_nonce }}">
