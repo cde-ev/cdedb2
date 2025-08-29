@@ -38,6 +38,8 @@
         <div class="p button-par">
             {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
                          gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
+            {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                             aclass="btn btn-default btn-sm", icon="eye") }}
         </div>
         <div class="form-horizontal">
     {% else %}

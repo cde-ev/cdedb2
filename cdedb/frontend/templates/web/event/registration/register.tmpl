@@ -43,6 +43,8 @@
         <div class="p button-par">
             {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
                          gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
+            {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
+                         gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
         </div>
     {% endif %}
     <p>

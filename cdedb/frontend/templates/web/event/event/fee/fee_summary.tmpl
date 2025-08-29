@@ -33,6 +33,7 @@
                                icon='euro-sign', aclass="btn btn-info btn-sm",
                                readonly=not is_privileged_for('batch_fees_form') or ambience['event'].is_balanced,
                                title=gettext("Event is balanced. May not book payments.") if ambience['event'].is_balanced else "") }}
+        {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm') }}
     </div>
 
     {{ generic_event.fee_composition_table() }}
