@@ -482,6 +482,7 @@ class ComplaintKind(CdEIntEnum):
     other_harassment = 15
     mobbing = 21
     bad_administration = 31
+    other = 1001
 
 
 @enum.unique
