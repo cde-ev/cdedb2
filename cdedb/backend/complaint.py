@@ -23,11 +23,11 @@ from cdedb.common import (
     RequestState,
     now,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import ComplaintLogCodes
@@ -648,31 +648,34 @@ class ComplaintBackend(AbstractBackend):
 
             case = self.get_case(rs, case_id)
 
-            if any(
-                persona_ids & involved
-                for inv_type, involved in case.involved.items()
-                if inv_type != involved_type
-            ):
-                raise ValueError(n_("Already involved otherwise."))
+            # If some of these users are involved already, remove their involvement first.
+            #  This also removes their companions.
+            other_involved = persona_ids & case.all_involved.keys() - case.involved.get(
+                involved_type, set()
+            )
+            if other_involved:
+                self.remove_involved(rs, case_id, other_involved)
+
             if persona_ids & case.active_companions.keys():
                 raise ValueError(n_("Already active companions."))
 
             newly_involved = persona_ids - case.involved.get(involved_type, set())
             if not newly_involved:
-                return -1
-            ret = self.sql_insert_many(
-                rs,
-                models.ComplaintInvolved.database_table,
-                [
-                    {
-                        "case_id": case_id,
-                        "persona_id": persona_id,
-                        "involved_type": involved_type,
-                        "is_informed": is_informed,
-                    }
-                    for persona_id in newly_involved
-                ],
-            )
+                ret = -1
+            else:
+                ret = self.sql_insert_many(
+                    rs,
+                    models.ComplaintInvolved.database_table,
+                    [
+                        {
+                            "case_id": case_id,
+                            "persona_id": persona_id,
+                            "involved_type": involved_type,
+                            "is_informed": is_informed,
+                        }
+                        for persona_id in newly_involved
+                    ],
+                )
             for persona_id in mixed_existence_sorter(newly_involved):
                 ret *= self.complaint_log(
                     rs=rs,
@@ -687,6 +690,21 @@ class ComplaintBackend(AbstractBackend):
                         code=const.ComplaintLogCodes.involved_informed,
                         case_id=case_id,
                         persona_id=persona_id,
+                    )
+
+            # Add back any companions we removed previously.
+            for persona_id in mixed_existence_sorter(other_involved):
+                self.add_companions(
+                    rs,
+                    case_id,
+                    persona_id,
+                    case.companions_by_involved.get(persona_id, set()),
+                )
+                for companion_id in xsorted(
+                    case.withdrawn_companions_by_involved.get(persona_id, set())
+                ):
+                    self.set_companion_withdrawn(
+                        rs, case_id, persona_id, companion_id, is_withdrawn=True
                     )
         return ret
 
@@ -823,7 +841,7 @@ class ComplaintBackend(AbstractBackend):
             involved_type = const.ComplaintInvolvementType(involved["involved_type"])
 
             if companion_ids & case.adverse_companions(involved_type):
-                raise ValueError(n_("Adverse companion."))
+                raise AdverseCompanionError
             if companion_ids & case.all_involved.keys():
                 raise ValueError(n_("Involved companion."))
 

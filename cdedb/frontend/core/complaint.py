@@ -19,6 +19,7 @@ from cdedb.common import (
     make_persona_name,
     merge_dicts,
 )
+from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
@@ -352,17 +353,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     "persona_ids",
                     ValueError(n_("May not add own involvement.")),
                 ))
-            if any(
-                set(persona_ids) & involved
-                for inv_type, involved in rs.ambience['case'].involved.items()
-                if inv_type != involvement_type
-            ):
-                rs.append_validation_error((
-                    "persona_ids",
-                    ValueError(
-                        n_("Some of these users are already involved otherwise.")
-                    ),
-                ))
 
             if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
                 rs.append_validation_error((
@@ -391,9 +381,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     rs, case_id, persona_id, companion_id, is_withdrawn=True
                 )
 
-        ret = self.complaintproxy.add_involved(
-            rs, case_id, involvement_type, persona_ids
-        )
+        # Preventing companions from becoming adverse is hard, so just try-except.
+        try:
+            ret = self.complaintproxy.add_involved(
+                rs, case_id, involvement_type, persona_ids
+            )
+        except AdverseCompanionError:
+            # Cannot treat this as a validation error, because of suppressed exception protection.
+            rs.notify("error", n_("Some companions would become adverse."))
+            return self.redirect(rs, "core/show_case")
         rs.notify_return_code(
             ret, info=n_("Some of these users were already involved.")
         )

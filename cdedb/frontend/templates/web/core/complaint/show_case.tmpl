@@ -94,8 +94,7 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-involved').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
-                    {{ ambience['case'].all_involved|list|tojson }},
-                    false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    [], false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
             {{ util.input_select(
