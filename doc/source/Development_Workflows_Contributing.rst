@@ -1,9 +1,8 @@
 Contributing
 ============
 
-Contributions should mainly be done by opening pull requests in Gitea. To get
-access to the repository, please
-`click yourself an account <https://tracker.cde-ev.de/gitea/user/sign_up>`_
+To get access to the repository, please have been logged in once via SSO
+`in ForgeJo <https://tracker.cde-ev.de/gitea/user/login>`_
 and contact us at cdedb ät lists.cde-ev.de.
 
 We have an automated test suite that checks all pull requests. Please write a
@@ -17,3 +16,5 @@ containing either a list of instructions or even better a list of commands,
 that can directly be executed to achieve this. For examples, take a look in
 the ``related/deploy`` folder and/or the ``cdedb/database/evolutions`` folder
 and the doc page for evolution scripts (:doc:`Development_Workflows_Scripts`).
+For additional dependencies also adjust the installation script(s) in
+``related/auto-build/files`` and Dockerfile(s) ``related/docker``.

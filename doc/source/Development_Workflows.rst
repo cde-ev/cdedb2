@@ -13,7 +13,7 @@ Workflows
    Development_Workflows_Deployment
    Development_Workflows_Load_Test
 
-.. todo:: Add information about PR&Issues (short with link to gitea), Test-Suite, Input validation,
+.. todo:: Add information about PR&Issues (short with link to ForgeJo), Input validation,
           Autobuild ...
 
 This page aims to provide descriptions on how to do things.

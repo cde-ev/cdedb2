@@ -512,6 +512,14 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         else:
             registrations = _registrations
 
+        # Add personas to allow for simple display and sorting later
+        personas = self.core.get_personas(
+            rs,
+            [reg['persona_id'] for reg in registrations.values()]
+        )
+        for reg in registrations.values():
+            reg['persona'] = personas[reg['persona_id']]
+
         # Retrieve grouped registration ids.
         query = f"""
             SELECT
