@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-08-29 03:49+0200\n"
+"POT-Creation-Date: 2025-08-29 03:59+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2475,21 +2475,21 @@ msgid "is grave"
 msgstr "ist schwerwiegend"
 
 #: cdedb/common/query/__init__.py:753
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:44
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:46
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:55
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:56
 msgid "Start Date"
 msgstr "Startdatum"
 
 #: cdedb/common/query/__init__.py:754
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:46
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:48
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:61
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:62
 msgid "End Date"
 msgstr "Enddatum"
 
 #: cdedb/common/query/__init__.py:755
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:41
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:43
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:123
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:42
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:43
@@ -2543,7 +2543,7 @@ msgstr "Länge der Beschreibung"
 
 #: cdedb/common/query/__init__.py:763
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:21
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:79
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:81
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:94
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:38
 #: cdedb/frontend/templates/web/core/show_history.tmpl:342
@@ -2756,6 +2756,8 @@ msgstr "Teilnehmerlisten-Zustimmung"
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:53
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:54
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:52
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:41
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:85
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:25
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:42
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:59
@@ -6482,7 +6484,7 @@ msgstr "sicher?"
 #: cdedb/frontend/templates/web/cde/past_event/change_past_event.tmpl:37
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:147
 #: cdedb/frontend/templates/web/core/change_user.tmpl:144
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:50
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:52
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:129
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:78
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:43
@@ -7128,7 +7130,7 @@ msgstr "Name"
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:137
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:40
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:56
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:107
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:114
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:137
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:42
@@ -7803,9 +7805,9 @@ msgstr "Versammlungsleitung"
 
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:67
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:100
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:57
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:66
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:75
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:59
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:68
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:77
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:89
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:106
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:166
@@ -7836,7 +7838,7 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:135
 #: cdedb/frontend/templates/web/cde/past_event/create_past_course.tmpl:40
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:37
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:84
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:86
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:60
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:49
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:214
@@ -7950,7 +7952,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:126
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:36
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:52
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:98
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:105
 #: cdedb/frontend/templates/web/core/index.tmpl:37
 #: cdedb/frontend/templates/web/core/index.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:53
@@ -8151,7 +8153,7 @@ msgstr "Version %(version_nr)s wurde gelöscht."
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:140
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:382
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:389
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
 msgid "by"
 msgstr "von"
@@ -8523,7 +8525,7 @@ msgstr "Fehler"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:123
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:94
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:239
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:246
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:182
 msgid "Warning"
 msgstr "Warnung"
@@ -9030,7 +9032,7 @@ msgid "New Direct Debit Authorization"
 msgstr "Neue Einzugsermächtigung"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:46
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:53
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:55
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:85
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:42
 msgid "DB-XXXX-X"
@@ -9928,8 +9930,8 @@ msgstr "Der Teilnehmer wird aus diesem Kurs entfernt."
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:97
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:182
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:175
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:337
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:182
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:344
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:58
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:131
 #: cdedb/frontend/templates/web/event/generic.tmpl:334
@@ -10902,8 +10904,8 @@ msgstr "Verifizierungs-E-Mail abschicken"
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:19
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:237
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:402
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:244
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:409
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:89
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:22
 #, python-format
@@ -10939,7 +10941,7 @@ msgid "%(count)s versions"
 msgstr "%(count)s Versionen"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:358
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:365
 #, python-format
 msgid "%(label)s at %(stamp)s"
 msgstr "%(label)s am %(stamp)s"
@@ -10977,13 +10979,13 @@ msgid "Replaced at %(dtime)s by %(deleted_by)s: %(dreason)s"
 msgstr "Ersetzt am %(dtime)s von %(deleted_by)s: %(dreason)s"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:133
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:375
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:382
 #, python-format
 msgid "(for %(involved)s)"
 msgstr "(für %(involved)s)"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:144
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:386
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:393
 #, python-format
 msgid "; %(change_note)s"
 msgstr "; %(change_note)s"
@@ -11014,11 +11016,15 @@ msgstr "Ändern"
 msgid "A short anonymized summary what this case is about."
 msgstr "Kurze anonymisierte Zusammenfassung des Falls."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:43
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:42
+msgid "Further notes. Will be visible without unlocking the case."
+msgstr "Zusätzliche Notizen. Sichtbar ohne den Fall zu entsperren."
+
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:45
 msgid "is extraordinarily grave"
 msgstr "ist außerordentlich schwerwiegend"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:45
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:47
 msgid ""
 "All events covered by this complaint are known to have happened after this "
 "date."
@@ -11026,7 +11032,7 @@ msgstr ""
 "Alle Ereignisse, auf die sich diese Beschwerde bezieht, haben sich "
 "bekanntermaßen nach diesem Datum abgespielt."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:47
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:49
 msgid ""
 "All events covered by this complaint are known to have happened before this "
 "date."
@@ -11034,41 +11040,41 @@ msgstr ""
 "Alle Ereignisse, auf die sich diese Beschwerde bezieht, haben sich "
 "bekanntermaßen vor diesem Datum abgespielt."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:52
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:54
 msgid "Appellant"
 msgstr "Beschwerdeführer"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:60
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:62
 msgid "is affected"
 msgstr "ist betroffen"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:61
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:63
 msgid "Further Affected"
 msgstr "Weitere Betroffene"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:62
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:70
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:64
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:72
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:101
 msgid "DB-XXXX-X,DB-XXXX-X,…"
 msgstr "DB-XXXX-X,DB-XXXX-X,…"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:69
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:71
 msgid "Targets"
 msgstr "Zielpersonen"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:71
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:73
 msgid "You can add further involved people later."
 msgstr "Du kannst später weitere Beteiligte hinzufügen."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:81
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:83
 msgid "When did you first receive this case?"
 msgstr "Wann ist dieser Fall erstmals eingegangen?"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:82
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:84
 msgid "Initial Information"
 msgstr "Initiale Angaben"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:83
+#: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:85
 msgid "Avoid using names of affected individuals in this field."
 msgstr "Vermeide es, in diesem Feld die Namen von Beteiligten zu verwenden."
 
@@ -11146,7 +11152,7 @@ msgstr ""
 "festgehalten werden."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:119
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:328
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:335
 msgid "Revoke"
 msgstr "Widerrufen"
 
@@ -11159,7 +11165,7 @@ msgstr ""
 "Wenn du einen verkehrten Eintrag angelegt hast, lösche ihn stattdessen."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:127
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:319
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:326
 msgid "Replace"
 msgstr "Ersetzen"
 
@@ -11285,12 +11291,12 @@ msgstr "Fallbegleitung für %(involved)s verwalten (%(title)s)"
 
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:18
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:34
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:134
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:141
 msgid "Manage Companions"
 msgstr "Fallbegleitung verwalten"
 
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:45
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:92
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:99
 msgid "IDs of the new involved people"
 msgstr "IDs der neuen Beteiligten"
 
@@ -11351,84 +11357,84 @@ msgstr "Fall %(id)s"
 msgid "View Log"
 msgstr "Log anzeigen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:83
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:90
 msgid "Relevant Individuals"
 msgstr "Relevante Personen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:128
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:135
 msgid "(is informed)"
 msgstr "(ist informiert)"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:148
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:155
 msgid "Mark as uninformed"
 msgstr "Als uninformiert markieren"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:161
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:168
 msgid "Mark as informed"
 msgstr "Als informiert markieren"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:183
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:190
 msgid "Companions"
 msgstr "Fallbegleitung"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:188
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:196
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:195
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:203
 msgid "has withdrawn"
 msgstr "hat sich zurückgezogen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:212
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:219
 msgid "There are no involved individuals yet."
 msgstr "Bisher gibt es keine Beteiligten."
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:222
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:229
 msgid "Related Cases"
 msgstr "Zusammenhängende Fälle"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:240
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:247
 msgid "Not shown due to own involvement or potential bias."
 msgstr "Wegen eigener Beteiligung oder möglicher Befangenheit nicht angezeigt."
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:247
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:254
 msgid "There are no related cases"
 msgstr "Es gibt keine hiermit zusammenhängenden Fälle."
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:253
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:260
 msgid "Events_[[in a complaint]]"
 msgstr "Ereignisse"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:255
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:262
 msgid "Add standalone entry"
 msgstr "Eigenständigen Eintrag hinzufügen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:259
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:266
 msgid "Show log entries"
 msgstr "Zeige Log-Einträge"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:260
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:267
 msgid "Show entry history"
 msgstr "Eintragshistorie zeigen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:274
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:281
 msgid "Why do you need to unlock this case?"
 msgstr "Warum möchtest du diesen Fall entsperren?"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:276
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:283
 msgid "Unlock descriptions"
 msgstr "Beschreibungen entsperren"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:291
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:298
 msgid "Lock descriptions"
 msgstr "Beschreibungen sperren"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:312
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:319
 msgid "Add child entry"
 msgstr "Kind-Eintrag hinzufügen"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:406
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:413
 msgid "strongly related"
 msgstr "eng zusammenhängend"
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:414
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:421
 msgid "Intersecting involved"
 msgstr "Überlappende Beteiligte"
 

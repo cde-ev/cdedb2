@@ -80,6 +80,13 @@
         </dd>
     </dl>
 
+
+    {% if ambience['case']['notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Notes"), icon="tag", aclass="panel-default") %}
+            <div id="case-notes">{{ ambience['case']['notes']|md }}</div>
+        {% endcall %}
+    {% endif %}
+
     {{ util.h(n_("Relevant Individuals")) }}
     <form action="{{ cdedblink('core/add_involved') }}" method="POST"
           id="addinvolvedform" class="p">
