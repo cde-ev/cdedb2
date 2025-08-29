@@ -29,6 +29,10 @@
                                title=gettext("Event is balanced. May not change fee configuration.") if ambience['event'].is_balanced else "") }}
         {{ util.href(cdedblink('event/fee_stats'), gettext("Fee Stats"),
                                icon='chart-bar', aclass='btn btn-info btn-sm') }}
+        {{ util.href(cdedblink('event/batch_fees_form'), gettext("Enter Money Transfers"),
+                               icon='euro-sign', aclass="btn btn-info btn-sm",
+                               readonly=not is_privileged_for('batch_fees_form') or ambience['event'].is_balanced,
+                               title=gettext("Event is balanced. May not book payments.") if ambience['event'].is_balanced else "") }}
     </div>
 
     {{ generic_event.fee_composition_table() }}

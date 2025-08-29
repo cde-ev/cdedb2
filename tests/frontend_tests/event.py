@@ -440,17 +440,14 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_privileged = {"Teilnehmer-Infos"}
         privileged = {
-            "Statistik", "Kurse", "Unterkünfte",
-            "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
-            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
-            "Freitexte", "Fragebogen-Vorschau",
+            "Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge",
+            "Konfiguration", "Datenfelder konfigurieren", "Anmeldung konfigurieren",
+            "Fragebogen konfigurieren", "Orga-Tokens"
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
+            "Teilnehmerliste", "Anmeldungen", "Downloads",
             "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
-            "Überweisungen eintragen",
         }
         finance_admin: set[str] = set()
 

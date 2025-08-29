@@ -1,4 +1,4 @@
-{% set sidenav_active='event_parts' %}
+{% set sidenav_active='event_config' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
@@ -18,6 +18,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts"), active=True) }}
 {% endblock %}
 
