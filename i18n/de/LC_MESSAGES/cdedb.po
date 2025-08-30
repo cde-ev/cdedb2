@@ -11244,8 +11244,8 @@ msgid "A short anonymized summary what this case is about."
 msgstr "Kurze anonymisierte Zusammenfassung des Falls."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:42
-msgid "Further notes. Will be visible without unlocking the case."
-msgstr "Zusätzliche Notizen. Sichtbar ohne den Fall zu entsperren."
+msgid "Further notes. Will be visible without unlocking the case. Do not enter sensitive or personal information here."
+msgstr "Zusätzliche Notizen. Sichtbar ohne den Fall zu entsperren. Gib hier keine sensiblen oder personenbezogenen Daten ein."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:43
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:45
