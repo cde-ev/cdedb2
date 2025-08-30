@@ -239,7 +239,7 @@
                     {{ print_related_case(case) }}
                 </li>
             {% endfor %}
-            {% for case_id, case in related_cases.items() if not case %}
+            {% for case_id in related_cases.keys()|sort if not related_cases[case_id] %}
                 <li>
                     {{ gettext("Case %s")|s|format(case_id) }}:
                     <strong class="text-warning">

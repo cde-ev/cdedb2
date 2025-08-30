@@ -536,9 +536,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         doppelgangers: CdEDBObjectMap = {}
         if persona:
-            if (datum['resolution'] == LineResolutions.create
-                    and self.coreproxy.verify_existence(rs, persona['username'])
-                    and not bool(datum['doppelganger_id'])):
+            if (
+                datum['resolution'] == LineResolutions.create
+                and self.coreproxy.verify_existence(
+                    rs, persona['username'], include_genesis=False
+                )
+                and not bool(datum['doppelganger_id'])
+            ):
                 problems.append(
                     ("persona", ValueError(n_("Email address already taken."))))
             temp = copy.deepcopy(persona)
@@ -559,7 +563,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 if (
                     persona
                     and dg['username'] != persona['username']
-                    and self.coreproxy.verify_existence(rs, persona['username'])
+                    and self.coreproxy.verify_existence(
+                        rs, persona['username'], include_genesis=False
+                    )
                 ):
                     warnings.append(
                         ("doppelganger",
