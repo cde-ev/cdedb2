@@ -1,4 +1,4 @@
-{% set sidenav_active='partial_import' %}
+{% set sidenav_active='event_downloads' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
@@ -7,9 +7,10 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads")) }}
+    {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
     {{ util.doclink_("Handbuch_Orga_Partieller-Import") }}

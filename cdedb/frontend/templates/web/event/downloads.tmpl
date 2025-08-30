@@ -9,12 +9,17 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads & Import"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Downloads"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Downloads & Import"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/partial_import_form"), gettext("Partial Import"), aclass="btn btn-sm btn-info",
+                     readonly=not is_privileged_for("event/partial_import_form"), icon="cloud-upload-alt") }}
+    </div>
+
     <h3>{% trans %}Printables{% endtrans %}</h3>
     <table class="table table-slim">
         <tbody>

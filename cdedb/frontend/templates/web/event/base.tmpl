@@ -115,12 +115,8 @@
 
         <div class="list-group tear-down">
             {% if is_privileged_for("downloads") %}
-                {{ util.href(cdedblink("event/downloads", {"event_id": event['id']}), gettext("Downloads"), aclass="list-group-item",
+                {{ util.href(cdedblink("event/downloads", {"event_id": event['id']}), gettext("Downloads & Import"), aclass="list-group-item",
                         icon="file-download", active=(sidenav_active == 'event_downloads')) }}
-            {% endif %}
-            {% if is_privileged_for("partial_import_form") %}
-                {{ util.href(cdedblink("event/partial_import_form", {"event_id": event['id']}), gettext("Partial Import"), aclass="list-group-item",
-                        icon="cloud-upload-alt", active=(sidenav_active == 'partial_import')) }}
             {% endif %}
             {% if is_privileged_for("orga_token_summary") %}
                 {{ util.href(cdedblink("event/orga_token_summary", {"event_id": event['id']}), gettext("Orga Tokens"),
