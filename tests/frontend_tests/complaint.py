@@ -346,7 +346,7 @@ class TestComplaintFrontend(FrontendTest):
         f['appellant_id'] = "DB-1-9"
         self.submit(f)
         self.assertPresence("Zusammenfassung Die Texte von Schorsch")
-        self.assertPresence("Machste Nix")
+        self.assertPresence("Machste nix")
         self.assertPresence("Art Sexuelle Belästigung")
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
