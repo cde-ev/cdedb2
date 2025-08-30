@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import copy
 import datetime
+import itertools
 from itertools import chain
 from typing import Any
 
@@ -267,9 +268,25 @@ class CoreComplaintMixin(CoreBaseFrontend):
         mandatory_fields |= {'timestamp', 'info'}
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
+    @staticmethod
+    def _check_overlapping_sets(id_lists: dict[str, set[int]]) -> set[str]:
+        ret = set()
+        for (name1, set1), (name2, set2) in itertools.combinations(id_lists.items(), 2):
+            if set1 & set2:
+                ret.add(name1)
+                ret.add(name2)
+        return ret
+
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata("appellant_ids", "affected_ids", "target_ids", "timestamp", "info")
+    @REQUESTdata(
+        "appellant_ids",
+        "affected_ids",
+        "target_ids",
+        "withheld_ids",
+        "timestamp",
+        "info",
+    )
     def create_case(
         self,
         rs: RequestState,
@@ -277,25 +294,30 @@ class CoreComplaintMixin(CoreBaseFrontend):
         appellant_ids: vtypes.CdedbIDList,
         affected_ids: vtypes.CdedbIDList,
         target_ids: vtypes.CdedbIDList,
+        withheld_ids: vtypes.CdedbIDList,
         timestamp: datetime.datetime,
         info: str,
     ) -> Response:
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        if rs.user.persona_id in set(affected_ids + target_ids + appellant_ids):
+        if rs.user.persona_id in set(
+            affected_ids + target_ids + appellant_ids + withheld_ids
+        ):
             rs.notify('error', n_("May not create case with own involvement."))
             return self.create_case_form(rs)
 
-        error = ValueError(n_("May not be involved in multiple ways."))
-        if set(appellant_ids) & set(affected_ids):
-            rs.append_validation_error(('appellant_id', error))
-            rs.append_validation_error(('affected_ids', error))
-        if set(appellant_ids) & set(target_ids):
-            rs.append_validation_error(('appellant_id', error))
-            rs.append_validation_error(('target_ids', error))
-        if set(affected_ids) & set(target_ids):
-            rs.append_validation_error(('affected_ids', error))
-            rs.append_validation_error(('target_ids', error))
+        id_lists = {
+            "appellant_ids": set(appellant_ids),
+            "affected_ids": set(affected_ids),
+            "target_ids": set(target_ids),
+            "withheld_ids": set(withheld_ids),
+        }
+        for field in self._check_overlapping_sets(id_lists):
+            rs.append_validation_error((
+                field,
+                ValueError(n_("May not be involved in multiple ways.")),
+            ))
+
         if rs.has_validation_errors():
             return self.create_case_form(rs)
 

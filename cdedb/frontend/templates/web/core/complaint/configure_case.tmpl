@@ -66,10 +66,18 @@
                 );
             </script>
             {{ util.form_input_text(name="target_ids", label=gettext("Targets"), anid="input-target_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-target_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+            {{ util.form_input_text(name="withheld_ids", label=gettext("Withheld From"), anid="input-withheld_ids",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
                                     info=gettext("You can add further involved people later.")) }}
             <script nonce="{{ csp_nonce }}">
-                $('#input-target_ids').cdedbSearchPerson(
+                $('#input-withheld_ids').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
                     [], false, true, "{{ gettext("ID, name, email") }}"
                 );
