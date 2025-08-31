@@ -1418,6 +1418,18 @@ class EventEventMixin(EventBaseFrontend):
 
         new_ids = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
+        if new_ids:
+            self.do_mail(
+                rs,
+                "event_archived",
+                {
+                    "To": [
+                        self.conf["EVENT_ADMIN_ADDRESS"],
+                        self.conf["MANAGEMENT_ADDRESS"],
+                    ],
+                    "Subject": "Veranstaltung archiviert.",
+                },
+            )
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional

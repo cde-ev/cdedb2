@@ -5939,6 +5939,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['ack_archive'].checked = True
         # checkbox to create a past event is checked by default
         self.submit(f)
+        mail = self.fetch_mail_content()
+        self.assertIn("Große Testakademie 2222\nwurde archiviert", mail)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
