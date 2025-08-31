@@ -570,7 +570,6 @@ class EventLowLevelBackend(AbstractBackend):
         if not parts:
             return ret
         self.affirm_atomized_context(rs)
-        has_registrations = self.has_registrations(rs, event_id)
 
         existing_parts = {unwrap(e) for e in self.sql_select(
             rs, "event.event_parts", ("id",), (event_id,), entity_key="event_id")}
