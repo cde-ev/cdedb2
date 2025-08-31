@@ -342,7 +342,13 @@ class TestComplaintFrontend(FrontendTest):
         with self.assertRaises(AssertionError):
             self.assertValidationError('affected_ids')
         f = self.response.forms['configurecaseform']
-        f['appellant_ids'] = "DB-1-9"
+        f['appellant_ids'] = ""
+        f['affected_ids'] = "DB-1-9"
+        f['withheld_ids'] = "DB-2-7, DB-1-9"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('affected_ids')
+        self.assertValidationError('withheld_ids')
+        f['withheld_ids'] = "DB-5-1"
         self.submit(f)
         self.assertPresence("Zusammenfassung Die Texte von Schorsch")
         self.assertPresence("Machste nix")
@@ -596,14 +602,15 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1001,
-                'code': const.ComplaintLogCodes.involved_informed,
-                'persona_id': 1,
-            },
-            {
-                'case_id': 1001,
                 'change_note': 'Zielpersonen',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 10,
+            },
+            {
+                'case_id': 1001,
+                'change_note': 'Versteckt vor',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 5,
             },
             {
                 'case_id': 1,
