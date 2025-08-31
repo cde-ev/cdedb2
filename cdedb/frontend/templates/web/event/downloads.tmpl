@@ -18,6 +18,8 @@
     <div class="p button-par">
         {{ util.href(cdedblink("event/partial_import_form"), gettext("Partial Import"), aclass="btn btn-sm btn-info",
                      readonly=not is_privileged_for("event/partial_import_form"), icon="cloud-upload-alt") }}
+        {{ util.href(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), aclass="btn btn-sm btn-info",
+                     readonly=not is_privileged_for("orga_token_summary"), icon="robot") }}
     </div>
 
     <h3>{% trans %}Printables{% endtrans %}</h3>

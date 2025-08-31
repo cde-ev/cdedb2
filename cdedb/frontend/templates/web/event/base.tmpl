@@ -111,18 +111,12 @@
                              gettext("Constraint Violations"), aclass="list-group-item",
                              active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
             {% endif %}
-        </div>
-
-        <div class="list-group tear-down">
             {% if is_privileged_for("downloads") %}
                 {{ util.href(cdedblink("event/downloads", {"event_id": event['id']}), gettext("Downloads & Import"), aclass="list-group-item",
                         icon="file-download", active=(sidenav_active == 'event_downloads')) }}
             {% endif %}
-            {% if is_privileged_for("orga_token_summary") %}
-                {{ util.href(cdedblink("event/orga_token_summary", {"event_id": event['id']}), gettext("Orga Tokens"),
-                        aclass="list-group-item", icon="robot", active=(sidenav_active == 'orga_tokens')) }}
-            {% endif %}
         </div>
+
         <div class="list-group tear-down">
             {% if is_privileged_for("change_event_form") %}
                 {{ util.href(cdedblink("event/change_event", {"event_id": event['id']}), gettext("Configuration"),
