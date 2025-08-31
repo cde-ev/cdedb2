@@ -3,7 +3,7 @@ import copy
 import datetime
 import itertools
 from itertools import chain
-from typing import Any
+from typing import Any, TypeVar
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -33,6 +33,8 @@ from cdedb.frontend.common import (
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
+
+T = TypeVar("T")
 
 CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
@@ -269,7 +271,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
     @staticmethod
-    def _check_overlapping_sets(id_lists: dict[str, set[int]]) -> set[str]:
+    def _check_overlapping_sets(id_lists: dict[str, set[T]]) -> set[str]:
+        """Return a set of all keys whos value overlaps with another value."""
         ret = set()
         for (name1, set1), (name2, set2) in itertools.combinations(id_lists.items(), 2):
             if set1 & set2:
