@@ -27,6 +27,7 @@ class Case(CdEDataclass):
     kind: const.ComplaintKind
     is_grave: bool = False
     summary: str
+    notes: str | None = None
 
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
