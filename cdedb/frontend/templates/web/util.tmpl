@@ -659,7 +659,7 @@
 
 
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True, selectize=False) %}
     <select{{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -695,6 +695,12 @@
             {{ _select_options(entries, former_value, defaultvalue) }}
         {% endif %}
     </select>
+    {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for selectize.") }}{% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#{{ anid }}").selectize();
+        </script>
+    {% endif %}
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
         {{ input_hidden(name) }}
@@ -703,11 +709,11 @@
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
-        wide=False, outerclass='', enforce_required=True) %}
+        wide=False, outerclass='', enforce_required=True, selectize=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide, aclass=outerclass) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required, selectize=selectize) }}
     {%- endcall %}
 {%- endmacro%}
 
