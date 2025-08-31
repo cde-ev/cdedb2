@@ -11070,7 +11070,7 @@ msgstr "Zielpersonen"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:78
 msgid "Withheld From"
-msgstr ""
+msgstr "Versteckt vor"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:80
 msgid "You can add further involved people later."
