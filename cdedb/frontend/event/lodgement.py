@@ -245,7 +245,6 @@ class EventLodgementMixin(EventBaseFrontend):
             params['involved_inhabitants'] = involved_inhabitants
             params['uninvolved_inhabitants'] = uninvolved_inhabitants
             params['registrations'] = violation_data['all_registrations']
-            params['personas'] = violation_data['personas']
             params['violations'] = violation_data['violations']
         else:
             params['violations'] = violation_data['violations'].get(registration_id=None)
