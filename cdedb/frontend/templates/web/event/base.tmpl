@@ -73,7 +73,6 @@
             form
                 .find("select")
                 .cdedbSearchEvent(
-                    "{{ cdedblink("event/select_event") }}",
                     {{ event_options|tojson }},
                 )
                 .on("change", function() {
