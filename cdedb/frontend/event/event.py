@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-import re
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
