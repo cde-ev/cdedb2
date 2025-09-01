@@ -133,7 +133,7 @@ class EntityKeeper:
         :returns: Representation of the finished commit, if one was done, else None
         """
         entity_id = affirm(int, entity_id)
-        file_text = affirm(vtypes.StringType, file_text)
+        file_text = affirm(vtypes.StringType, file_text, limit_size=False)
         commit_msg = affirm(str, commit_msg)
         full_dir = self._dir / str(entity_id)
         filename = f"{entity_id}.json"

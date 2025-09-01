@@ -823,7 +823,7 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -842,7 +842,7 @@ def _str_type(
     if sieve:
         val = ''.join(c for c in val if c in sieve)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
-    if len(val) > 256000:
+    if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
     return StringType(val)
 
