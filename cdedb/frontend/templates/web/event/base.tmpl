@@ -21,7 +21,6 @@
             <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
             <div class="input-group">
                 <input type="search" name="phrase" class="form-control"
-                       id="input-showregistration{% if mobile %}-mobile{% endif %}"
                        placeholder="{% trans %}Registration Quick-Access{% endtrans %}"
                        aria-label="{% trans %}Registration Quick-Access{% endtrans %}"/>
                 <span class="input-group-btn">
@@ -33,20 +32,21 @@
             {{ util.raise_for_test("jshint not set for quick registration search.") }}
         {% endif %}
         <script nonce="{{ csp_nonce }}">
-            const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
-            const $igroup = $i.closest('.input-group');
-            $igroup.children('.input-group-btn').remove();
-            $igroup.replaceWith($igroup.contents());
-            $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                           + ('?kind=orga_registration&aux='|s)
-                                           + (values['event_id']|e)
-                                           + ('&phrase=%s'|s) }}',
-                                       [], true, false, "{{ gettext("Registration Quick-Access") }}");
-            $i.change(function(){
-                if ($(this).val()) {
-                    $('#quickregistrationform{% if mobile %}-mobile{% endif %}').submit();
-                }
-            });
+            form = $("#quickregistrationform{% if mobile %}-mobile{% endif %}");
+            igroup = form.find('.input-group');
+            igroup.children('.input-group-btn').remove();
+            igroup.replaceWith(igroup.contents());
+            form
+                .find("input")
+                .cdedbSearchRegistration(
+                    '{{ (cdedblink('event/select_registration')|e) + ('?kind=orga_registration&aux='|s) + (values['event_id']|e) + ('&phrase=%s'|s) }}',
+                    [], true, false, "{{ gettext("Registration Quick-Access") }}",
+                )
+                .on("change", function() {
+                    if ($(this).val()) {
+                        $(this).closest("form").submit();
+                    }
+                });
         </script>
     </div>
 {% endmacro %}
