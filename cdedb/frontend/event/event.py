@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-import re
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
@@ -152,44 +151,13 @@ class EventEventMixin(EventBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
-    @access("finance_admin")
-    @REQUESTdata("phrase")
-    def select_event(self, rs: RequestState, phrase: str) -> Response:
-        """API for intelligent input field.
-
-        This allows the user to choose an event by entering (parts of) the title
-        or the shortname.
-
-        Meant for use during parse_statement.
-
-        Since this only returns basic event information it has little privacy
-        implications.
-        """
+    @access("event")
+    @REQUESTdata("event_id")
+    def redirect_event(self, rs: RequestState, event_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.send_json(rs, {})
-        atoms = [re.compile(re.escape(atom), flags=re.I) for atom in phrase.split()]
-        if not atoms:
-            return self.send_json(rs, {})
-
-        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
-
-        def _match(event: models.Event) -> bool:
-            return all(
-                atom_pattern.search(event.shortname) or atom_pattern.search(event.title)
-                for atom_pattern in atoms
-            )
-
-        return self.send_json(rs, {
-            'events': [
-                {
-                    'title': event.title,
-                    'shortname': event.shortname,
-                    'id': event.id,
-                }
-                for event in xsorted(events.values())
-                if _match(event)
-            ],
-        })
+            rs.notify("error", rs.gettext("Unknown event."))
+            return self.list_events(rs)
+        return self.redirect(rs, "event/show_event", {"event_id": event_id})
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)

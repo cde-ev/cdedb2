@@ -134,7 +134,6 @@
                                     nulloption=nbsp, label=gettext("Event"), horizontal=False, sort=False) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-event_id{{ t_id }}').cdedbSearchEvent(
-                                '{{ cdedblink('event/select_event') }}',
                                 {{ event_options|tojson }},
                             );
                         </script>
