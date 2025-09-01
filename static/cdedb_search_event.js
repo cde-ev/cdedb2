@@ -1,9 +1,6 @@
 (function($) {
     /**
-     * Custom wrapper for selectize.js to search for events via XHR requests.
-     *
-     * Adds selectizes to the given DOM elements to search events via jQuerys ajax() function and the json api at the
-     * given url provided by our python code.
+     * Custom wrapper for selectize.js to select an event id. Adds some formatting and displays both event title and shortname.
      *
      * @param options A list of json objects for the initial options. If not given the event shortname cannot be displayed correctly.
      */
