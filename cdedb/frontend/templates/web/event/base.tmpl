@@ -33,21 +33,19 @@
             {{ util.raise_for_test("jshint not set for quick registration search.") }}
         {% endif %}
         <script nonce="{{ csp_nonce }}">
-            $(document).ready(function () {
-                const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
-                const $igroup = $i.closest('.input-group');
-                $igroup.children('.input-group-btn').remove();
-                $igroup.replaceWith($igroup.contents());
-                $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
-                                               + ('?kind=orga_registration&aux='|s)
-                                               + (values['event_id']|e)
-                                               + ('&phrase=%s'|s) }}',
-                                           [], true, false, "{{ gettext("Registration Quick-Access") }}");
-                $i.change(function(){
-                    if ($(this).val()) {
-                        $('#quickregistrationform{% if mobile %}-mobile{% endif %}').submit();
-                    }
-                });
+            const $i = $('#input-showregistration{% if mobile %}-mobile{% endif %}');
+            const $igroup = $i.closest('.input-group');
+            $igroup.children('.input-group-btn').remove();
+            $igroup.replaceWith($igroup.contents());
+            $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
+                                           + ('?kind=orga_registration&aux='|s)
+                                           + (values['event_id']|e)
+                                           + ('&phrase=%s'|s) }}',
+                                       [], true, false, "{{ gettext("Registration Quick-Access") }}");
+            $i.change(function(){
+                if ($(this).val()) {
+                    $('#quickregistrationform{% if mobile %}-mobile{% endif %}').submit();
+                }
             });
         </script>
     </div>
