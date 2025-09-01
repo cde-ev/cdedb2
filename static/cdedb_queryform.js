@@ -65,7 +65,7 @@
 
         /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
-            var id = $(this).attr('data-id');
+            var id = $(this).data('id');
             var input_select = $(this).find('.outputSelector');
             var error_block = $(this).find('.help-block');
 
@@ -79,7 +79,7 @@
 
             fieldList.push({
                 id: id,
-                type: settings.choices[id] ? 'list' : $(this).attr('data-type'),
+                type: settings.choices[id] ? 'list' : $(this).data('type'),
                 name: $(this).find('.name').text(),
                 group: $(this).data('group'),
                 group_label: $(this).data('group-label'),
@@ -256,14 +256,13 @@
             var f = fieldList[fieldNumber];
 
             var inputTypes = {
-                    'date' : 'date',
-                    'datetime' : 'datetime-local',
-                    'ranged_date': 'date',
-                    'ranged_datetime' : 'datetime-local',
-                    'int' : 'number',
-                    'id' : 'number',
-                    'str' : 'text',
-                    'float' : 'text'};
+                'date' : 'date',
+                'datetime' : 'datetime-local',
+                'ranged_date': 'date',
+                'ranged_datetime' : 'datetime-local',
+                'int' : 'number',
+                'id' : 'number',
+            };
 
             switch (parseInt(operator)) {
             // The constants arise from cdedb.query.QueryOperators.
@@ -317,7 +316,7 @@
                 } else {
                     $i = $('<input>',{
                         'class': "form-control input-sm input-slim",
-                        'type': inputTypes[f.type],
+                        'type': inputTypes[f.type] ?? 'text',
                         'aria-label': settings.labels['filter_val'] || ''
                     })
                         .change(changeFunction)
@@ -464,15 +463,11 @@
         this.addSortRow = function(number, sorting) {
             var f = fieldList[number];
 
-            var inputTypes = {
-                    'bool' : ['✘→✔','✔→✘'],
-                    'date' : ['0→9','9→0'],
-                    'datetime' : ['0→9','9→0'],
-                    'int' : ['0→9','9→0'],
-                    'id' : ['0→9','9→0'],
-                    'str' : ['A→Z','Z→A'],
-                    'list' : ['A→Z','Z→A'],
-                    'float' : ['0→9','9→0']};
+            sort_labels = {
+                'bool' : ['✘→✔','✔→✘'],
+                'str' : ['A→Z','Z→A'],
+                'list' : ['A→Z','Z→A'],
+            }[f.type] ?? ['0→9','9→0'];
 
             var $button = $('<button></button>', {
                 'class': "btn btn-sm btn-danger pull-right",
@@ -489,8 +484,8 @@
                 'class': "form-control input-sm input-slim order",
                 'aria-label': settings.labels['sort_order'] || ''
             })
-                .append(new Option(inputTypes[f.type][0],'True'))
-                .append(new Option(inputTypes[f.type][1],'False'))
+                .append(new Option(sort_labels[0], 'True'))
+                .append(new Option(sort_labels[1], 'False'))
                 .val(sorting)
                 .change(function() {
                     obj.updateSortInputs();
