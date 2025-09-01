@@ -192,6 +192,14 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event")
+    @REQUESTdata("event_id")
+    def redirect_event(self, rs: RequestState, event_id: int) -> Response:
+        if rs.has_validation_errors():
+            rs.notify("error", rs.gettext("Unknown event."))
+            return self.list_events(rs)
+        return self.redirect(rs, "event/show_event", {"event_id": event_id})
+
+    @access("event")
     @event_guard(EventPrivileges.basic_read)
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""

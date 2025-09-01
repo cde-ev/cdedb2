@@ -1,4 +1,16 @@
 {% set mainnav_active='event' %}
+{% if ambience['event'] %}
+    {% if is_privileged_for('quick_show_registration') %}
+        {% if not jshint %}
+            {% set jshint='weak' %}
+        {% endif %}
+    {% endif %}
+{% elif "event_list" in user.admin_views %}
+    {% if not jshint %}
+        {% set jshint='weak' %}
+    {% endif %}
+{% endif %}
+
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
@@ -40,6 +52,41 @@
         </script>
     </div>
 {% endmacro %}
+
+
+{% macro event_quicksearch(mobile=false) %}
+    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% else %}hidden-xs hidden-sm{% endif %}">
+        <form action="{{ cdedblink('event/redirect_event') }}" method="GET"
+                id="quickeventform{% if mobile %}-mobile{% endif %}">
+            <div class="sr-only">{% trans %}Quickly navigate to an event by name{% endtrans %}</div>
+            <div class="input-group">
+                {{ util.input_select(name="event_id", entries=all_events|entries('id', 'title'),
+                                     nulloption=gettext("Event Quick-Access")) }}
+                <span class="input-group-btn">
+                    {{ util.input_submit("", icon='chevron-right', title=gettext("Go!")) }}
+                </span>
+            </div>
+        </form>
+        <script nonce="{{ csp_nonce }}">
+            form = $("#quickeventform{% if mobile %}-mobile{% endif %}");
+            igroup = form.find(".input-group");
+            igroup.children(".input-group-btn").remove();
+            igroup.replaceWith(igroup.contents());
+            form
+                .find("select")
+                .cdedbSearchEvent(
+                    "{{ cdedblink("event/select_event") }}",
+                    {{ event_options|tojson }},
+                )
+                .on("change", function() {
+                    if ($(this).val()) {
+                        $(this).closest("form").submit();
+                    }
+                });
+        </script>
+    </div>
+{% endmacro %}
+
 
 {% macro one_event_links(event) %}
     <div class="list-group tear-down">
@@ -189,14 +236,22 @@
     {% endif %}
 {% endmacro %}
 
-{% if ambience['event'] %}
-    {% if not jshint %}
-        {% set jshint='weak' %}
+{% block base_scripts %}
+    {% if ambience['event'] %}
+        {% if is_privileged_for('quick_show_registration') %}
+            {% if not jshint %}
+                {% set jshint='weak' %}
+            {% endif %}
+            {{ util.cdedb_script('cdedb_searchregistration.js') }}
+        {% endif %}
+    {% elif "event_list" in user.admin_views %}
+        {% if not jshint %}
+            {% set jshint='weak' %}
+        {% endif %}
+        {{ util.cdedb_script('cdedb_search_event.js') }}
+        {{ util.cdedb_script('selectize/selectize.min.js') }}
     {% endif %}
-    {% block scripts %}
-        {{ util.cdedb_script('cdedb_searchregistration.js') }}
-    {% endblock %}
-{% endif %}
+{% endblock %}
 
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events")) }}
@@ -245,6 +300,9 @@
                              icon="handshake-angle", active=(sidenav_active == 'event_helpers')) }}
             {% endif %}
         </div>
+        {% if 'event_list' in user.admin_views %}
+            {{ event_quicksearch() }}
+        {% endif %}
         {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if 'event_user' in user.admin_views %}
@@ -256,6 +314,9 @@
                                      active=(sidenav_active == 'event_log')) }}
                 {% endif %}
             </div>
+        {% endif %}
+        {% if 'event_list' in user.admin_views %}
+            {{ event_quicksearch(mobile=True) }}
         {% endif %}
     {% endif %}
     <hr class="strong visible-xs visible-sm" />
