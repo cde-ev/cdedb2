@@ -45,7 +45,7 @@ class EventDownloadMixin(EventBaseFrontend):
         try:
             lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
         except PrivilegeError:
-            # Acceptable fallback for users with only basic_write
+            # Acceptable fallback for users without lodgements_read
             lodgements_exist = True
         return self.render(rs, "downloads",
                            {'lodgements_exist': lodgements_exist})
