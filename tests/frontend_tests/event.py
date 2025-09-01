@@ -440,7 +440,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_privileged = {"Teilnehmer-Infos"}
         privileged = {
-            "Statistik", "Kurse", "Unterkünfte",
+            "Statistik", "Kurse", "Unterkünfte", "Downloads",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
@@ -448,7 +448,7 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
+            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung",
             "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
             "Überweisungen eintragen",
         }
