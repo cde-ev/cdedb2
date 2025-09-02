@@ -528,6 +528,7 @@ CREATE TABLE complaint.cases (
     kind       integer NOT NULL, -- database.constants.ComplaintKind
     is_grave   boolean DEFAULT FALSE,
     summary    varchar NOT NULL,
+    notes      varchar,
     start_date date,
     end_date   date
 );

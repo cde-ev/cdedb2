@@ -442,11 +442,11 @@ class TestEventFrontend(FrontendTest):
         privileged = {
             "Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge",
             "Konfiguration", "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren",
+            "Fragebogen konfigurieren", "Downloads & Import",
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen", "Downloads & Import",
+            "Teilnehmerliste", "Anmeldungen",
             "Log", "Checkin", "Verstöße gegen Beschränkungen",
         }
         finance_admin: set[str] = set()
@@ -4309,7 +4309,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Single-track event
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/3/show'},
-                      {'href': '/event/event/3/course/stats'})
+                      {'href': '/event/event/3/course/stats'},
                       {'href': '/event/event/3/course/choices'})
         self.assertTitle("Kurswahlen (CyberTestAkademie)")
         f = self.response.forms['choiceactionform']
@@ -5917,6 +5917,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['ack_archive'].checked = True
         # checkbox to create a past event is checked by default
         self.submit(f)
+        mail = self.fetch_mail_content()
+        self.assertIn("Große Testakademie 2222\nwurde archiviert", mail)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
