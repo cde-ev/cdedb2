@@ -26,6 +26,7 @@
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
     {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
         {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
                                 gettext("Registration Preview"), active=True) }}
     {% else %}
@@ -45,6 +46,11 @@
                          gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
             {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
                          gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+        </div>
+    {% elif is_privileged_for("event/configure_registration") %}
+        <div class="p button-par">
+            {{ util.href(cdedblink("event/register", {"preview": True}),
+                         gettext("Registration Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
         </div>
     {% endif %}
     <p>

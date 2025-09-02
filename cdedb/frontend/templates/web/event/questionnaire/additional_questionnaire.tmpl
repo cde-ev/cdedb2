@@ -22,6 +22,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
     {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire_form"), gettext("Configure Questionnaire")) }}
         {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
                                 gettext("Questionnaire Preview"), active=True) }}
     {% else %}
@@ -43,6 +44,12 @@
         </div>
         <div class="form-horizontal">
     {% else %}
+        {% if is_privileged_for("event/configure_additional_questionnaire") %}
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
+                             gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+            </div>
+        {% endif %}
         <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
               class="form-horizontal">
             {{ util.anti_csrf_token('event/additional_questionnaire') }}

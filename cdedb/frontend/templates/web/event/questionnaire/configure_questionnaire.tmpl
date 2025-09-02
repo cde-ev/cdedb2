@@ -59,7 +59,10 @@
                      aclass="btn btn-warning btn-sm", icon="file-upload",
                      readonly=not is_privileged_for("questionnaire_import_form")) }}
         {{ util.href(cdedblink(preview_endpoint, {"preview": True}), preview_label,
-                     aclass="btn btn-default btn-sm", icon="eye") }}
+                     aclass="btn btn-info btn-sm", icon="eye") }}
+        {% if kind == enums["QuestionnaireUsages"].registration %}
+            {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm') }}
+        {% endif %}
     </div>
     <form action="{{ cdedblink(config_endpoint) }}" method="POST" id="configurequestionnaireform">
         {{ util.anti_csrf_token(config_endpoint) }}
