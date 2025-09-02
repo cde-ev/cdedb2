@@ -133,7 +133,7 @@ class PostingPatterns:
     account_fee = re.compile(r"Abschluss", flags=re.I)
 
     # Most actively sent outgoing payments, either individual or as a collection.
-    payment = re.compile(r"Überweisungsauftrag", flags=re.I)
+    payment = re.compile(r"Überweisungsauftrag|SEPA Überweisung", flags=re.I)
 
     retoure = re.compile(r"(Retouren|Storno)", flags=re.I)
 
