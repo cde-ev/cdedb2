@@ -30,7 +30,6 @@ from cdedb.common import (
     DeletionBlockers,
     Error,
     RequestState,
-    glue,
     make_proxy,
     now,
     unwrap,
@@ -68,18 +67,19 @@ class PastEventBackend(AbstractBackend):
         :returns: First keys are the ids, second are the pevent_ids.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        query = glue(
-            "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
-            "FROM past_event.participants AS p",
-            "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
-            "WHERE p.persona_id = ANY(%s)")
+        query = """
+            SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga
+            FROM past_event.participants AS p
+                INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)
+            WHERE p.persona_id = ANY(%s)
+        """
         pevents = self.query_all(rs, query, (persona_ids,))
-        query = glue(
-            "SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr,",
-            "p.is_instructor",
-            "FROM past_event.participants AS p",
-            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
-            "WHERE p.persona_id = ANY(%s)")
+        query = """
+            SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr, p.is_instructor
+            FROM past_event.participants AS p
+                LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)
+            WHERE p.persona_id = ANY(%s)
+        """
         pcourse = self.query_all(rs, query, (persona_ids,))
         ret = {}
         course_fields = ('id', 'title', 'is_instructor', 'nr')
@@ -152,34 +152,35 @@ class PastEventBackend(AbstractBackend):
         :returns: Mapping of event ids to stats.
         """
         query = """
-        SELECT
-            events.id AS pevent_id, tempus, events.institution AS institution,
-            COALESCE(course_count, 0) AS courses,
-            COALESCE(participant_count, 0) AS participants
-        FROM (
-            past_event.events
-            LEFT OUTER JOIN (
-                SELECT
-                    pevent_id, COUNT(*) AS course_count
-                FROM
-                    past_event.courses
-                GROUP BY pevent_id
-            ) AS course_counts ON course_counts.pevent_id = events.id
-            LEFT OUTER JOIN (
-                SELECT
-                    pevent_id, COUNT(*) AS participant_count
-                    -- We have to do a subquery, as PSQL does not support
-                    -- counting of more than one distinct column.
-                FROM (
-                    SELECT DISTINCT
-                        pevent_id, persona_id
+            SELECT
+                events.id AS pevent_id, tempus, events.institution AS institution,
+                COALESCE(course_count, 0) AS courses,
+                COALESCE(participant_count, 0) AS participants
+            FROM (
+                past_event.events
+                LEFT OUTER JOIN (
+                    SELECT
+                        pevent_id, COUNT(*) AS course_count
                     FROM
-                        past_event.participants
-                ) AS distinct_participants
-                GROUP BY
-                    pevent_id
-            ) AS participant_counts ON participant_counts.pevent_id = events.id
-        )"""
+                        past_event.courses
+                    GROUP BY pevent_id
+                ) AS course_counts ON course_counts.pevent_id = events.id
+                LEFT OUTER JOIN (
+                    SELECT
+                        pevent_id, COUNT(*) AS participant_count
+                        -- We have to do a subquery, as PSQL does not support
+                        -- counting of more than one distinct column.
+                    FROM (
+                        SELECT DISTINCT
+                            pevent_id, persona_id
+                        FROM
+                            past_event.participants
+                    ) AS distinct_participants
+                    GROUP BY
+                        pevent_id
+                ) AS participant_counts ON participant_counts.pevent_id = events.id
+            )
+        """
         data = self.query_all(rs, query, tuple())
         ret = {}
         for e in data:
@@ -514,8 +515,10 @@ class PastEventBackend(AbstractBackend):
         pevent_id = affirm(vtypes.ID, pevent_id)
         pcourse_id = affirm_optional(vtypes.ID, pcourse_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
-                     "AND persona_id = %s AND pcourse_id {} %s")
+        query = """
+            DELETE FROM past_event.participants
+            WHERE pevent_id = %s AND persona_id = %s AND pcourse_id {} %s
+        """
         query = query.format("IS" if pcourse_id is None else "=")
         with Atomizer(rs):
             ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
@@ -555,8 +558,11 @@ class PastEventBackend(AbstractBackend):
     def _check_pure_event_participation(self, rs: RequestState, persona_id: int,
                                         pevent_id: int) -> bool:
         """Return if user participates at an event without any course."""
-        query = ("SELECT persona_id FROM past_event.participants"
-                 " WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
+        query = """
+            SELECT persona_id
+            FROM past_event.participants
+            WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null
+        """
         return bool(self.query_one(rs, query, (persona_id, pevent_id)))
 
     @access("cde_admin", "event_admin")
@@ -573,10 +579,14 @@ class PastEventBackend(AbstractBackend):
         if not shortname:
             return None, [], [("pevent_id",
                                ValueError(n_("No input supplied.")))]
-        query = glue("SELECT id FROM past_event.events",
-                     "WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s")
-        query2 = glue("SELECT id FROM past_event.events",
-                      "WHERE similarity(title, %s) > %s AND tempus >= %s")
+        query = """
+            SELECT id FROM past_event.events
+            WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s
+        """
+        query2 = """
+            SELECT id FROM past_event.events
+            WHERE similarity(title, %s) > %s AND tempus >= %s
+        """
         today = now().date()
         reference = today - datetime.timedelta(days=200)
         reference = reference.replace(day=1, month=1)
