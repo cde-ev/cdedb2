@@ -108,6 +108,7 @@ class PastEventBackend(AbstractBackend):
     def past_event_log(
         self,
         rs: RequestState,
+        *,
         code: const.PastEventLogCodes,
         pevent_id: Optional[int],
         persona_id: Optional[int] = None,
@@ -227,7 +228,9 @@ class PastEventBackend(AbstractBackend):
         data = affirm(vtypes.PastEvent, data)
         with Atomizer(rs):
             ret = self.sql_update(rs, "past_event.events", data)
-            self.past_event_log(rs, const.PastEventLogCodes.event_changed, data['id'])
+            self.past_event_log(
+                rs, code=const.PastEventLogCodes.event_changed, pevent_id=data['id']
+            )
         return ret
 
     @access("cde_admin", "event_admin")
@@ -238,7 +241,9 @@ class PastEventBackend(AbstractBackend):
         data = affirm(vtypes.PastEvent, data, creation=True)
         with Atomizer(rs):
             ret = self.sql_insert(rs, "past_event.events", data)
-            self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
+            self.past_event_log(
+                rs, code=const.PastEventLogCodes.event_created, pevent_id=ret
+            )
         return ret
 
     @access("cde_admin")
@@ -342,7 +347,7 @@ class PastEventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "past_event.events", pevent_id)
                 self.past_event_log(
                     rs,
-                    const.PastEventLogCodes.event_deleted,
+                    code=const.PastEventLogCodes.event_deleted,
                     pevent_id=None,
                     persona_id=None,
                     change_note=pevent['title'],
@@ -415,8 +420,8 @@ class PastEventBackend(AbstractBackend):
             current.update(data)
             self.past_event_log(
                 rs,
-                const.PastEventLogCodes.course_changed,
-                current['pevent_id'],
+                code=const.PastEventLogCodes.course_changed,
+                pevent_id=current['pevent_id'],
                 change_note=current['title'],
             )
         return ret
@@ -431,8 +436,8 @@ class PastEventBackend(AbstractBackend):
             ret = self.sql_insert(rs, "past_event.courses", data)
             self.past_event_log(
                 rs,
-                const.PastEventLogCodes.course_created,
-                data['pevent_id'],
+                code=const.PastEventLogCodes.course_created,
+                pevent_id=data['pevent_id'],
                 change_note=data['title'],
             )
         return ret
@@ -519,8 +524,8 @@ class PastEventBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "past_event.courses", pcourse_id)
                 self.past_event_log(
                     rs,
-                    const.PastEventLogCodes.course_deleted,
-                    pcourse['pevent_id'],
+                    code=const.PastEventLogCodes.course_deleted,
+                    pevent_id=pcourse['pevent_id'],
                     change_note=pcourse['title'],
                 )
         return ret
@@ -572,8 +577,8 @@ class PastEventBackend(AbstractBackend):
             if ret:
                 self.past_event_log(
                     rs,
-                    const.PastEventLogCodes.participant_added,
-                    pevent_id,
+                    code=const.PastEventLogCodes.participant_added,
+                    pevent_id=pevent_id,
                     persona_id=persona_id,
                 )
         return ret
@@ -604,8 +609,8 @@ class PastEventBackend(AbstractBackend):
             ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
             self.past_event_log(
                 rs,
-                const.PastEventLogCodes.participant_removed,
-                pevent_id,
+                code=const.PastEventLogCodes.participant_removed,
+                pevent_id=pevent_id,
                 persona_id=persona_id,
             )
         return ret
