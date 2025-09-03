@@ -152,6 +152,8 @@ _CONFIG = LazyConfig()
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
+K = TypeVar('K')
+V = TypeVar('V')
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -214,6 +216,21 @@ class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
+        elif typing.get_origin(type_) is dict:
+            return cast(Callable[..., T], make_dict_validator(type_))
+        elif isinstance(type_, typing.ForwardRef):
+            model_namespaces = [
+                models_core, models_event, models_ml, models_droid, models_complaint
+            ]
+            for model_namespace in model_namespaces:
+                try:
+                    return self[type_._evaluate(vars(model_namespace), {}, set())]
+                except NameError:
+                    pass
+            raise NameError(
+                f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
+            )
+
         return super().__getitem__(type_)
 
 
@@ -1219,6 +1236,34 @@ def make_pair_validator(type_: type[T]) -> PairValidator[T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
+
+
+class DictValidator(Protocol[T_co]):
+    def __call__(self, val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        ...
+
+
+def make_dict_validator(type_: type[T]) -> DictValidator[T]:
+
+    key_type, value_type = typing.get_args(type_)
+
+    def dict_validator(val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        val = _mapping(val, argname, **kwargs)
+
+        errs = ValidationSummary()
+        new_val = {}
+        for key_val, val_val in val.items():
+            with errs:
+                key_val = _ALL_TYPED[key_type](key_val, f"{argname}.key", **kwargs)
+                val_val = _ALL_TYPED[value_type](val_val, f"{argname}.value", **kwargs)
+                new_val[key_val] = val_val
+
+        if errs:
+            raise errs
+
+        return new_val
+
+    return dict_validator
 
 
 def _set_of(
@@ -2923,20 +2968,6 @@ def _course(
 
     if not event.tracks:
         errs.append(ValueError("event_id", n_("Event without tracks forbids courses.")))
-
-    if "segments" in val:
-        new_segments = {}
-        for track_id, segment in val["segments"].items():
-            try:
-                track_id = _ALL_TYPED[ID](track_id, "segments", **kwargs)
-                segment = _ALL_TYPED[models_event.CourseSegment | None](
-                    segment, "segments", **kwargs, creation=creation
-                )
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                new_segments[track_id] = segment
-        val["segments"] = new_segments
 
     if errs:
         raise errs
