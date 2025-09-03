@@ -20,6 +20,10 @@ This documentation is written to fulfill two different goals:
 
 For the latter, everything should be findable in the **Handbuch**. The remaining
 parts of the documentation address the former group.
+
+.. seealso:: New here and want to contribute?
+    Take a look at our :doc:`first steps section <Development_Workflows>`.
+
 A small overview where you can find help to which topic:
 
 * **Development**: everything you need to participate actively in the CdEDB-Team.

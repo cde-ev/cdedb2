@@ -235,7 +235,7 @@
         {% endfor %}
     </dl>
 
-    {{ util.h(n_("Courses"), underline=true) }}
+    {{ util.h(n_("Courses"), underline=true) if filtered_choice_objects }}
     {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}

@@ -4,7 +4,6 @@
      */
     $.fn.cdedbFilterViolations = function(
             results_selector,
-            select_event_url='',
             event_options=[],
             violation_severity_to_int={},
             violation_kind_to_int={},
@@ -31,7 +30,6 @@
         if (event_ids_input.length) {
             // Activate event selectize.
             event_ids_input.removeAttr('placeholder').cdedbSearchEvent(
-                select_event_url,
                 event_options,
                 true,
             );

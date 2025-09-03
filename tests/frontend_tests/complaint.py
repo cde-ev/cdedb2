@@ -321,6 +321,7 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fallarchiv", "Fall anlegen")
         f = self.response.forms['configurecaseform']
         f['summary'] = "Die Texte von Schorsch Recklich verstören Menschen."
+        f['notes'] = "Machste nix"
         f['kind'] = const.ComplaintKind.nonphysical_sexual_transgression
         f['start_date'] = "2222-01-02"
         f['end_date'] = "2222-01-06"
@@ -345,6 +346,7 @@ class TestComplaintFrontend(FrontendTest):
         f['appellant_id'] = "DB-1-9"
         self.submit(f)
         self.assertPresence("Zusammenfassung Die Texte von Schorsch")
+        self.assertPresence("Machste nix")
         self.assertPresence("Art Sexuelle Belästigung")
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
@@ -399,6 +401,7 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fall 1", "Bearbeiten")
         f = self.response.forms['configurecaseform']
         f['summary'] = f['summary'].value + " Wirklich!"
+        f['notes'] = "Ist schlimmer geworden"
         f['is_grave'] = True
         f['end_date'] = "2222-01-04"
         self.assertNonPresence("etroffen")

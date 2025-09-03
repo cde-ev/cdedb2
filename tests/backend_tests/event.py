@@ -4827,6 +4827,9 @@ class TestEventBackend(BackendTest):
                 self.event._event_keeper.latest_logtime(event_id),
             )
 
+        # Check size limit bypass for commited file.
+        self.event._event_keeper.commit(event_id, "X" * 300_000, "file size test")
+
     @as_users("garcia")
     def test_replace_checkin_periods(self) -> None:
         registration_id = cast(vtypes.ID, 1)

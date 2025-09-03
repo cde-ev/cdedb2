@@ -20,6 +20,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     AgeClasses,
     CdEDBObjectMap,
+    PrivilegeError,
     RequestState,
     asciificator,
     determine_age_class,
@@ -38,11 +39,14 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 class EventDownloadMixin(EventBaseFrontend):
     @access("event")
-    # TODO Be more lenient here
-    @event_guard(EventPrivileges.all_read)
+    @event_guard(EventPrivileges.basic_read)
     def downloads(self, rs: RequestState, event_id: int) -> Response:
         """Offer documents like nametags for download."""
-        lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
+        try:
+            lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
+        except PrivilegeError:
+            # Acceptable fallback for users without lodgements_read
+            lodgements_exist = True
         return self.render(rs, "downloads",
                            {'lodgements_exist': lodgements_exist})
 
@@ -430,7 +434,7 @@ class EventDownloadMixin(EventBaseFrontend):
                                   filename=f"{zipname}.zip")
 
     @access("event")
-    @event_guard(EventPrivileges.courses_read)
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -450,7 +454,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_courses")
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_read)
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def download_csv_lodgements(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Create CSV file with all lodgements"""

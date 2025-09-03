@@ -409,8 +409,8 @@
                 {{ util.deko_checkbox(checked=ambience['registration']['list_consent']) }}
             </dd>
         </dl>
-        <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
+            <h4>{% trans %}Course Choices{% endtrans %}</h4>
             {% for batch in choice_objects|batch(2) %}
                 <div class="row">
                 {% for cco in batch %}

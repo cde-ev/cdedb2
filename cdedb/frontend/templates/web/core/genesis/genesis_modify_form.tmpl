@@ -1,7 +1,10 @@
 {% set sidenav_active='core_genesis_list' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('selectize/selectize.min.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans name=ambience['genesis_case'].persona|persona_name %}
@@ -66,7 +69,7 @@
             {% endif %}
             {% if ambience['genesis_case'].realm == "cde" %}
                 {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
-                                          nulloption=nbsp, label=gettext("Past Event"), sort=True) }}
+                                          nulloption=nbsp, label=gettext("Past Event"), sort=True, selectize=True) }}
                 {% if values.get('pevent_id') %}
                     {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
                                               nulloption=nbsp, label=gettext("Course"), defaultvalue='', sort=True) }}
