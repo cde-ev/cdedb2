@@ -79,6 +79,17 @@
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
 {%- endmacro %}
 
+{# Strike-through a value if parameter is false #}
+{% macro strike(value, valid=False, striketitle="") -%}
+    {%- if not valid -%}
+        <s title="{{ striketitle }}">
+    {% endif %}
+    {{ value }}
+    {%- if not valid -%}
+        </s>
+    {% endif %}
+{% endmacro %}
+
 {% macro gettext_country(country) -%}
     {%- if country %}
         {{- gettext("CountryCodes." + country) -}}
@@ -92,16 +103,16 @@
 
 {% macro bootstrap_panel(
         title="", aclass="panel-default", icon=none, anid=none, button=none,
-        footer_text=none, footer_class="", footer_icon=none
+        footer_text=none, footer_class="", footer_icon=none, level=3
 ) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon or button %}
             <div class="panel-heading">
                 {{- button -}}
-                <h3 class="panel-title">
+                <h{{ level }} class="panel-title">
                     {{- make_icon(icon) + nbsp if icon }}
                     {{- title -}}
-                </h3>
+                </h{{ level }}>
                 <div style="clear:both;"></div>
             </div>
         {%- endif %}
@@ -175,12 +186,23 @@
    aclass:                  see 'href' macro
    readonly:                see 'href' macro
    title:                   see 'href' macro
+   icon:                    see 'href' macro
 #}
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
-                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none) %}
+                        quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
              persona|persona_name(use_legal_name, include_nickname, with_family_name),
-             aclass=aclass, readonly=readonly, title=title) -}}
+             aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
+{% endmacro %}
+
+{# Comma-separated list of links to personas' profile pages. #}
+{% macro persona_anchors(personas, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
+                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
+    {%- for persona in personas -%}
+        {%- if not loop.first -%}, {% endif %}
+        {{- persona_anchor(persona, use_legal_name, include_nickname, with_family_name, with_titles,
+                           quote_me, event_id, ml_id, aclass, readonly, title, icon) }}
+    {% endfor %}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
@@ -411,7 +433,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=none, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -457,7 +479,7 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
+        defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
         enforce_required=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
@@ -508,7 +530,7 @@
 {%- endmacro %}
 
 
-{% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
+{% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=256000, rows=3,
                         arialabel=none, attributes='', actualreadonly=False, enforce_required=True) %}
     <textarea{{ dict(
         name=name,
@@ -527,7 +549,7 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
+        aclass=none, small=False, maxlength=256000, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
         wide=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide,
@@ -624,8 +646,20 @@
 {%- endmacro %}
 
 
+{% macro _select_options(options, former_value, defaultvalue) %}
+    {% for value, label in options %}
+        <option value="{{ value }}"
+            {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
+                selected="selected"
+            {% endif %}>
+            {{- label -}}
+        </option>
+    {% endfor %}
+{% endmacro %}
+
+
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True, selectize=False) %}
     <select{{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -639,23 +673,34 @@
                 {{- nulloption -}}
             </option>
         {%- endif %}
-        {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# Relevant for default: Use default value if key is unset or empty string or none #}
         {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
-        {%- for value, label in entries %}
-            {% if value in ("", none) and defaultvalue %}
-                {# This leads to problems regarding defaultvalues. #}
-                {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
-                    |format(defaultvalue|string, value|string)) }}
-            {% endif %}
-            <option value="{{ value }}"
-                {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
-                    selected="selected"
-                {% endif %}>
-                {{- label -}}
-            </option>
-        {%- endfor %}
+        {% if value in ("", none) and defaultvalue %}
+            {# This leads to problems regarding defaultvalues. #}
+            {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
+                |format(defaultvalue|string, value|string)) }}
+        {% endif %}
+        {%- if entries is mapping %}
+            {%- for group_label, options in entries.items() %}
+                {% if group_label %}
+                    <optgroup label="{{ group_label }}">
+                        {{ _select_options(options, former_value, defaultvalue) }}
+                    </optgroup>
+                {% else %}
+                    {{ _select_options(options, former_value, defaultvalue) }}
+                {% endif %}
+            {%- endfor %}
+        {%- else -%}
+            {% set entries = entries|sort(attribute=1) if sort else entries %}
+            {{ _select_options(entries, former_value, defaultvalue) }}
+        {% endif %}
     </select>
+    {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for selectize.") }}{% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#{{ anid }}").selectize();
+        </script>
+    {% endif %}
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
         {{ input_hidden(name) }}
@@ -664,16 +709,17 @@
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
-        wide=False, outerclass='', enforce_required=True) %}
+        wide=False, outerclass='', enforce_required=True, selectize=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide, aclass=outerclass) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
+                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required, selectize=selectize) }}
     {%- endcall %}
 {%- endmacro%}
 
-{% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
+{% macro input_multi_select(name, entries, selectize=False, readonly=False, actualreadonly=False, anid=none,
         aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+    {% set anid = anid or 'inputmultiselect-' + name %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -703,14 +749,20 @@
     {% if actualreadonly %}
         {{ input_hidden(name) }}
     {% endif %}
+    {% if selectize %}
+        {% if not jshint %}{{ raise_for_test("jshint not set for multiselect selectize.") }}{% endif %}
+        <script nonce="{{ csp_nonce }}">
+            $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
+        </script>
+    {% endif %}
 {%- endmacro %}
 
-{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False,
+{% macro form_input_multi_select(name, entries, selectize=False, label="", info='', displayerrors=True, readonly=False,
        actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
        attributes="", sort=False, outerclass='', enforce_required=True) %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
-        {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
+        {{- input_multi_select(name, entries, selectize, readonly, actualreadonly, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
     {%- endcall %}
 {%- endmacro%}
@@ -761,7 +813,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
-        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel", cancellinks=none,
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
@@ -778,9 +830,9 @@
                 </p>
             {%- endif %}
             {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
-            {%- if cancellink %}
-                &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
-            {%- endif %}
+            {%- for cancellink, cancelvalue, cancelicon in (cancellinks or []) + [(cancellink, cancelvalue, "times")] if cancellink %}
+                &emsp;{{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+            {%- endfor %}
         </div>
     </div>
 {%- endmacro %}
@@ -913,20 +965,20 @@ attribute to each field of a dynamic row. #}
 #}
 {% macro mailto(address, name=none) -%}
 mailto:
-{%- if name is not none %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if name is not none %}{{ "{} %3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
     {{ href(
         mailto(
-            address=email or persona.get("username", persona.get("persona.username", "")),
+            address=email or persona["username"] or persona["persona.username"] or "",
             name="{} {}".format(
-                persona.get("given_names", persona.get("persona.given_names", "")),
-                persona.get("family_name", persona.get("persona.family_name", ""))
+                persona["given_names"] or persona["persona.given_names"] or "",
+                persona["family_name"] or persona["persona.family_name"] or ""
             )
         ),
-        email or persona.get("username", persona.get("persona.username", ""))
+        email or persona["username"] or persona["persona.username"] or ""
     ) }}
 {%- endmacro %}
 
@@ -1052,14 +1104,15 @@ mailto:
 
 {% macro privilege_icon(privilege, desc=False) %}
     {% with title_icon_map = {
-        "is_meta_admin": (gettext("Meta-Admin"), "wrench"),
-        "is_core_admin": (gettext("Core-Admin"), "user"),
-        "is_cde_admin": (gettext("CdE-Admin"), "graduation-cap"),
-        "is_finance_admin": (gettext("Finance-Admin"), "euro-sign"),
-        "is_event_admin": (gettext("Event-Admin"), "chalkboard-teacher"),
-        "is_ml_admin": (gettext("Mailinglist-Admin"), "envelope"),
-        "is_cdelokal_admin": (gettext("CdElokal-Admin"), "city"),
-        "is_assembly_admin": (gettext("Assembly-Admin"), "bullhorn"),
+        "is_meta_admin": (gettext("Meta admin"), "wrench"),
+        "is_core_admin": (gettext("Core admin"), "user"),
+        "is_cde_admin": (gettext("CdE admin"), "graduation-cap"),
+        "is_finance_admin": (gettext("Finance admin"), "euro-sign"),
+        "is_event_admin": (gettext("Event admin"), "chalkboard-teacher"),
+        "is_ml_admin": (gettext("Mailinglist admin"), "envelope"),
+        "is_cdelokal_admin": (gettext("CdElokal admin"), "city"),
+        "is_assembly_admin": (gettext("Assembly admin"), "bullhorn"),
+        "is_complaint_admin": (gettext("Case archive admin"), "gavel"),
         "is_auditor": (gettext("Auditor"), "search-dollar"),
         } %}
         {% set description, icon = title_icon_map[privilege] %}

@@ -20,6 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend,
@@ -63,7 +64,6 @@ from cdedb.common.fields import (
     PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
@@ -1280,6 +1280,7 @@ class CoreBaseBackend(AbstractBackend):
             "ml": "is_ml_admin = TRUE",
             "assembly": "is_assembly_admin = TRUE",
             "cdelokal": "is_cdelokal_admin = TRUE",
+            "complaint": "is_complaint_admin = TRUE",
             "auditor": "is_auditor = TRUE",
         }
         constraint = constraints.get(realm)
@@ -1478,7 +1479,7 @@ class CoreBaseBackend(AbstractBackend):
             eligible for archival in between.
 
         Things that prevent such automated archival:
-            * The persona having any admin bit.
+            * The persona having any admin bit or realm helper role.
             * The persona being a member.
             * The persona already being archived.
             * The persona having logged in in the last two years.
@@ -1499,6 +1500,18 @@ class CoreBaseBackend(AbstractBackend):
 
             # Do some basic sanity checks.
             if any(persona[admin_key] for admin_key in ADMIN_KEYS):
+                return False
+
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
                 return False
 
             if persona['is_member'] or persona['is_archived']:
@@ -1665,6 +1678,18 @@ class CoreBaseBackend(AbstractBackend):
             if any(persona[key] for key in ADMIN_KEYS):
                 raise ArchiveError(n_("Cannot archive admins."))
 
+            # Disallow archival of realm helpers.
+            helper_queries = (
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
+            )
+            if any(
+                unwrap(self.query_one(rs, query, (persona_id,)))
+                for query in helper_queries
+            ):
+                raise ArchiveError(n_("Cannot archive complaint and event helpers."))
+
             #
             # 2. Handle lastschrift
             #
@@ -1717,6 +1742,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_complaint_admin': False,
                 'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
@@ -1945,6 +1971,10 @@ class CoreBaseBackend(AbstractBackend):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
+            if self.sql_select(
+                rs, models_complaint.ComplaintInvolved.database_table, ("id",), (persona_id,), entity_key="persona_id"
+            ):
+                raise RuntimeError(n_("Persona may not be purged."))
             #
             # 1. Zap information
             #
@@ -2072,7 +2102,10 @@ class CoreBaseBackend(AbstractBackend):
         event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin",
+                                          "complaint_admin", "core_admin"}
+            )
+        ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """
@@ -2547,7 +2580,7 @@ class CoreBaseBackend(AbstractBackend):
         num = unwrap(self.query_one(rs, query, (email,))) or 0
         if include_genesis:
             query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
-                         "WHERE username = %s AND case_status = ANY(%s)")
+                         "WHERE username = %s AND status = ANY(%s)")
             # This should be all stati which are not final.
             stati = set(const.GenesisStati) - const.GenesisStati.finalized_stati()
             num += unwrap(self.query_one(rs, query, (email, stati))) or 0
@@ -2802,8 +2835,7 @@ class CoreBaseBackend(AbstractBackend):
                           atomized=False)
         return success, msg
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm in REALM_SPECIFIC_GENESIS_FIELDS))
+    @access("core_admin", *models.GenesisCase.all_admins)
     def find_doppelgangers(self, rs: RequestState,
                            persona: CdEDBObject) -> CdEDBObjectMap:
         """Look for accounts with data similar to the passed dataset.
@@ -2816,7 +2848,7 @@ class CoreBaseBackend(AbstractBackend):
         :returns: A dict of possibly matching account data.
         """
         persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
-        if persona['birthday'] == datetime.date.min:
+        if persona.get('birthday') == datetime.date.min:
             persona['birthday'] = None
         scores: dict[int, int] = collections.defaultdict(lambda: 0)
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
@@ -2825,22 +2857,19 @@ class CoreBaseBackend(AbstractBackend):
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
             (10, "family_name = %s OR birth_name = %s",
-             (persona['birth_name'], persona['birth_name'])),
-            (10, "birthday = %s", (persona['birthday'],)),
-            (5, "location = %s", (persona['location'],)),
-            (5, "postal_code = %s", (persona['postal_code'],)),
+             (persona.get('birth_name'), persona.get('birth_name'))),
+            (10, "given_names = %s OR legal_given_names = %s",
+             (persona.get('legal_given_names'), persona.get('legal_given_names'))),
+            (10, "birthday = %s", (persona.get('birthday'),)),
+            (5, "location = %s", (persona.get('location'),)),
+            (5, "postal_code = %s", (persona.get('postal_code'),)),
             (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
+              (persona.get('legal_given_names'), persona.get('legal_given_names'),
+               persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
-        if 'legal_given_names' in persona and persona['legal_given_names']:
-            queries.extend([
-                (10, "given_names = %s OR legal_given_names = %s",
-                 (persona['legal_given_names'], persona['legal_given_names'])),
-                (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
-                 (persona['legal_given_names'], persona['legal_given_names'],
-                  persona['family_name'])),
-            ])
         # Omit queries where some parameters are None
         queries = tuple(e for e in queries if all(x is not None for x in e[2]))
         for score, condition, params in queries:

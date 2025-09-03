@@ -75,6 +75,9 @@ body{
 .input-group-addon label {
     margin-bottom: 0;
 }
+.input-group, .input-group > *, .input-group-btn>.btn {
+    height: 100%;
+}
 .alert-info a {
     text-decoration: underline;
 }
@@ -144,6 +147,9 @@ ul.slim {
 .details-list > li > details >  summary {
     margin-left: -15px;
 }
+.list-group.nosp {
+    margin-bottom: 5px;
+}
 .list-group-item {
     padding: 7px 8px;
 }
@@ -151,7 +157,11 @@ ul.slim {
     color: #777;
     background-color: #eee;
 }
-.list-group-item-muted a, .text-muted a, a.text-muted {
+.list-group-item-muted .text-unmuted {
+    /* TODO: replace this with the --bs-* variable for text color in bootstrap 4/5 */
+    color: #333;
+}
+.list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;
 }
 
@@ -198,7 +208,8 @@ h4, .h4, h5, .h5, h6, .h6 {
     margin-top: 12px;
     margin-bottom: 6px;
 }
-h4.heading-underline, h5.heading-underline, h6.heading-underline {
+h4.heading-underline, h5.heading-underline, h6.heading-underline,
+h4.panel-title, h5.panel-title, h6.panel-title {
     font-weight: inherit;
 }
 @media (max-width: 767px) {
@@ -298,7 +309,7 @@ summary.btn {
 }
 
 /* no-space and more-space classes */
-p.nosp {
+p.nosp, .form-group.nosp {
     margin-bottom: 0;
 }
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
@@ -561,6 +572,27 @@ input[type=number].no-number-arrows {
     font-size: 85%;
     color: #777;
 }
+.selectize-dropdown-content {
+    max-height: max(50vh, 300px);
+}
+.selectize-dropdown .optgroup-header {
+    color: revert;
+    font-weight: bold;
+    font-size: revert;
+}
+.selectize-dropdown .optgroup .option {
+    padding-left: 24px;
+}
+.selectize-dropdown .optgroup::before {
+    margin: 2px 0;
+}
+.selectize-dropdown .optgroup:has(+ .option)::after {
+    content: ' ';
+    display: block;
+    height: 1px;
+    margin: 2px -12px;
+    background-color: #e5e5e5;
+}
 
 /* ************* *
  * Extra styling *
@@ -718,7 +750,8 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td, tr:target td{
+tr.ls-selected td, tr:target td, .list-group-item:target
+{
     background: #d9edf7;
 }
 .ls-item {

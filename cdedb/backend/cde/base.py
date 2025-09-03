@@ -176,6 +176,7 @@ class CdEBaseBackend(AbstractBackend):
                             code = self.core.change_membership_easy_mode(
                                 rs, persona['id'], is_member=True)
                             result.new_members += bool(code)
+                            persona['is_member'] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(models_finance.MoneyTransfer(
@@ -533,7 +534,10 @@ class CdEBaseBackend(AbstractBackend):
             # frustrating for the users -- hence some extra error handling
             # here.
             self.logger.error(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation <<<\n<<<\n<<<\n<<<")
+                f">>>\n>>>\n>>>\n>>>"
+                f" Exception during batch creation ({index=})"
+                f" <<<\n<<<\n<<<\n<<<"
+            )
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

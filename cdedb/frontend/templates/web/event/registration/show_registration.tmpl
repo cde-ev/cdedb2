@@ -102,10 +102,10 @@
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set violations = constraint_violations['violations'] %}
+    {% set violations = constraint_violations['violations'].get(registration_id=ambience['registration']['id']) %}
     {% if violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(violations.max_severity) %}
-            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration") }}
+            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration", min_severity=min_severity) }}
         {% endcall %}
     {% endif %}
 
@@ -409,8 +409,8 @@
                 {{ util.deko_checkbox(checked=ambience['registration']['list_consent']) }}
             </dd>
         </dl>
-        <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
+            <h4>{% trans %}Course Choices{% endtrans %}</h4>
             {% for batch in choice_objects|batch(2) %}
                 <div class="row">
                 {% for cco in batch %}

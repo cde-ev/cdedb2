@@ -343,6 +343,13 @@ _DEFAULTS = {
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
 
+    #
+    # complaint stuff
+    #
+
+    # time which a access to a case remains active for.
+    "COMPLAINT_UNLOCK_TIMEOUT": datetime.timedelta(minutes=30),
+
     ###############
     # Query stuff #
     ###############
@@ -370,6 +377,8 @@ _SECRECTS_DEFAULTS = {
     # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
+    # encrypt complaint descriptions with this secret to prevent accidental retrieval/leaks.
+    "COMPLAINT_SECRET": b'gy81i7pj8-0WkTweXbUxBykgA38V2aSEOoPizqXWVGg=',
 
     # mailman REST API password
     "MAILMAN_PASSWORD": "secret",

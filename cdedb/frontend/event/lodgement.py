@@ -245,7 +245,6 @@ class EventLodgementMixin(EventBaseFrontend):
             params['involved_inhabitants'] = involved_inhabitants
             params['uninvolved_inhabitants'] = uninvolved_inhabitants
             params['registrations'] = violation_data['all_registrations']
-            params['personas'] = violation_data['personas']
             params['violations'] = violation_data['violations']
         else:
             params['violations'] = violation_data['violations'].get(registration_id=None)
@@ -518,7 +517,8 @@ class EventLodgementMixin(EventBaseFrontend):
             part_id: xsorted(
                 (
                     (registration_id, make_persona_name(
-                        personas[registrations[registration_id]['persona_id']]))
+                        personas[registrations[registration_id]['persona_id']],
+                        include_nickname=True))
                     for registration_id in registrations
                     if _check_without_lodgement(registration_id, part_id)
                 ),
@@ -538,9 +538,8 @@ class EventLodgementMixin(EventBaseFrontend):
 
         selectize_data = {
             part_id: xsorted(
-                [{'name': (personas[registration['persona_id']]['given_names']
-                           + " " + personas[registration['persona_id']]
-                           ['family_name']),
+                [{'name': make_persona_name(personas[registration['persona_id']],
+                                            include_nickname=True),
                   'group_id': registration['parts'][part_id]['lodgement_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()

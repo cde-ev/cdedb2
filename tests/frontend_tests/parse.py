@@ -128,7 +128,8 @@ class TestParseFrontend(FrontendTest):
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount})
-        transaction._match_event(rs=self.key, event_backend=event_backend)
+        events = self.event.get_events(self.key, self.event.list_events(self.key))
+        transaction._match_event(rs=self.key, event_backend=event_backend, events=events)
 
         # Check that reference match is better.
         self.assertIsNotNone(transaction.event)

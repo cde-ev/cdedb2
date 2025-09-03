@@ -21,7 +21,6 @@ from cdedb.common.validation.types import (
     EmptyDict,
     EmptyList,
     EventPartGroup,
-    GenesisCase,
     LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
@@ -40,11 +39,14 @@ from cdedb.common.validation.types import (
     Vote,
 )
 from cdedb.config import Config
+from cdedb.models.core import GenesisCaseEvent
 
 T = TypeVar('T')
 
+INVAL = object()
 
-class TestValidation(unittest.TestCase):
+
+class TestValidationBase(unittest.TestCase):
     def do_validator_test(
         self,
         type_: type[T],
@@ -62,7 +64,9 @@ class TestValidation(unittest.TestCase):
         """
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
-            with self.subTest(inval=inval):
+            with self.subTest(inval=inval, exception=exception):
+                if retval is INVAL:
+                    retval = inval
                 if not exception:
                     self.assertEqual(
                         validate.validate_check(
@@ -75,16 +79,6 @@ class TestValidation(unittest.TestCase):
                         retval,
                     )
                 else:
-                    self.assertEqual(
-                        None,
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams)[0],
-                    )
-                    self.assertNotEqual(
-                        [],
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams)[1],
-                    )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
@@ -94,12 +88,24 @@ class TestValidation(unittest.TestCase):
                             type_, inval, ignore_warnings, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
+                    self.assertEqual(
+                        retval,
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[0],
+                    )
+                    self.assertNotEqual(
+                        [],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[1],
+                    )
                 onepass = validate.validate_check(
                     type_, inval, ignore_warnings, **extraparams)[0]
                 twopass = validate.validate_check(
                     type_, onepass, ignore_warnings, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
+
+class TestValidation(TestValidationBase):
     def test_optional(self) -> None:
         ignore_warnings = True
         self.assertEqual((12, []), validate.validate_check(int, 12, ignore_warnings))
@@ -223,6 +229,9 @@ class TestValidation(unittest.TestCase):
             ("", "", None),
             (54, "54", None),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
+            (256000 * "a", 256000 * "a", None),
+            (256000 * "🤔", 256000 * "🤔", None),
+            (256001 * "a", None, ValueError),
         ))
         self.do_validator_test(StringType, (
             ("a string", "a stig", None),
@@ -235,7 +244,7 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(str, (
             ("a string", "a string", None),
             ("string with stuff äößł€", "string with stuff äößł€", None),
-            ("", "", ValueError),
+            ("", None, ValueError),
             (54, "54", None),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
@@ -269,9 +278,9 @@ class TestValidation(unittest.TestCase):
                 bytes, "no encoding", ignore_warnings=True, encoding=None)
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (  # type: ignore[type-abstract]
+        self.do_validator_test(Mapping, (
             ({"a": "dict"}, {"a": "dict"}, None),
-            ("something else", "", TypeError),
+            ("something else", None, TypeError),
         ))
 
     def test_sequence(self) -> None:
@@ -330,7 +339,7 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(PrintableASCII, (
             ("a string", "a string", None),
             ("string with stuff äößł€", None, ValueError),
-            ("", "", ValueError),
+            ("", None, ValueError),
             (54, "54", None),
         ))
 
@@ -339,7 +348,7 @@ class TestValidation(unittest.TestCase):
             ("Secure String 0#", "Secure String 0#", None),
             ("short", None, ValueError),
             ("insecure", None, ValueError),
-            ("", "", ValueError),
+            ("", None, ValueError),
         ))
 
     def test_email(self) -> None:
@@ -373,9 +382,9 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(Persona, (
             (base_example, base_example, None),
             (stripped_example, stripped_example, None),
-            (key_example, key_example, KeyError),
-            (password_example, password_example, KeyError),
-            (value_example, value_example, ValueError),
+            (key_example, None, KeyError),
+            (password_example, None, KeyError),
+            (value_example, None, ValueError),
         ))
 
     def test_date(self) -> None:
@@ -511,10 +520,10 @@ class TestValidation(unittest.TestCase):
             (base_example, base_example, None),
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
-            (key_example, key_example, KeyError),
+            (key_example, None, KeyError),
         ))
         self.do_validator_test(
-            Persona, [(value_example, value_example, ValidationWarning)],
+            Persona, [(value_example, None, ValidationWarning)],
             ignore_warnings=False)
 
     def test_event_user_data(self) -> None:
@@ -644,7 +653,7 @@ class TestValidation(unittest.TestCase):
                         self.assertIsInstance(e, error)
 
     def test_german_postal_code(self) -> None:
-        for assertion in (Persona, GenesisCase):
+        for assertion in (Persona, GenesisCaseEvent):
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
                 ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
@@ -664,11 +673,6 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, None, ignore_warnings=False)
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
@@ -691,11 +695,6 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
-                for inv, outv, _ in spec:
-                    inv['realm'] = "event"
-                    if outv is not None:
-                        outv['realm'] = "event"
             self.do_validator_test(assertion, spec, ignore_warnings=True)
 
     def test_encoding(self) -> None:

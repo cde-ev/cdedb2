@@ -254,7 +254,6 @@ class EventCourseMixin(EventBaseFrontend):
             violations: ViolationList = violation_data['violations']
 
             if self.is_privileged(rs, EventPrivileges.registrations_read):
-                params['personas'] = violation_data['personas']
                 params['registrations'] = violation_data['registrations']
                 instructor_ids = set(
                     reg['persona_id']
@@ -263,7 +262,7 @@ class EventCourseMixin(EventBaseFrontend):
                            for reg_track in reg['tracks'].values())
                 )
                 params['instructor_emails'] = [
-                    params['personas'][instructor_id]['username']
+                    violation_data['personas'][instructor_id]['username']
                     for instructor_id in instructor_ids
                 ]
                 params['violations'] = violations
@@ -503,10 +502,9 @@ class EventCourseMixin(EventBaseFrontend):
         corresponding_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
-            ["reg.id", "persona.given_names", "persona.family_name",
-             "persona.username"] + [
-                f"course{track_id}.id"
-                for track_id in tracks],
+            ["persona.given_names", "persona.family_name", "persona.username"] + [
+                f"track{track_id}.course_id" for track_id in tracks
+            ],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True)),
         )
@@ -809,7 +807,8 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: xsorted(
                 (
                     (registration_id, make_persona_name(
-                        personas[registrations[registration_id]['persona_id']]))
+                        personas[registrations[registration_id]['persona_id']],
+                        include_nickname=True))
                     for registration_id in registrations
                     if _check_without_course(registration_id, track_id)
                 ),
@@ -831,7 +830,8 @@ class EventCourseMixin(EventBaseFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                ({'name': make_persona_name(personas[registration['persona_id']]),
+                ({'name': make_persona_name(personas[registration['persona_id']],
+                                            include_nickname=True),
                   'group_id': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()

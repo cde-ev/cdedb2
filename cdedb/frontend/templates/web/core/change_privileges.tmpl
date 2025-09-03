@@ -20,7 +20,7 @@
 {% block content %}
     <p>
         {% trans %}
-            Privilege changes will have to be approved by another Meta-Admin.
+            Privilege changes will have to be approved by another meta admin.
         {% endtrans %}
     </p>
     <form action="{{ cdedblink('core/change_privileges') }}" method="POST" id="privilegechangeform">
@@ -30,21 +30,22 @@
                                       value=ambience['persona']|persona_name) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
             {% if ambience['persona']['is_cde_realm'] %}
-                {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta-Admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core-Admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE-Admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_finance_admin", label=gettext("Finance-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_finance_admin", label=gettext("Finance admin"), small=True) }}
                 {{ util.form_input_checkbox(name="is_auditor", label=gettext("Auditor"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_event_realm'] %}
-                {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_complaint_admin", label=gettext("Case archive admin"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_ml_realm'] %}
-                {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_cdelokal_admin", label=gettext("CdElokal-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_cdelokal_admin", label=gettext("CdElokal admin"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_assembly_realm'] %}
-                {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly admin"), small=True) }}
             {% endif %}
         </div>
         <div class="row">

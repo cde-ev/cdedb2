@@ -158,6 +158,10 @@ class TestMlFrontend(FrontendTest):
     def test_create_archive_user(self) -> None:
         self.check_create_archive_user('ml')
 
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     @as_users("nina")
     def test_merge_accounts(self) -> None:
         self.traverse({'description': "Mailinglisten"},
@@ -215,19 +219,23 @@ class TestMlFrontend(FrontendTest):
         f['target_persona_id'] = berta_id
         self.submit(f)
 
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     @as_users("anton", "nina")
     def test_merge_archived_accounts(self) -> None:
         self.traverse({'description': "Mailinglisten"},
                       {'description': "Accounts verschmelzen"})
 
-        berta_id = USER_DICT['hades']['DB-ID']
+        hades_id = USER_DICT['hades']['DB-ID']
         janis_id = USER_DICT['janis']['DB-ID']
 
         self.traverse({'description': "Mailinglisten"},
                       {'description': "Accounts verschmelzen"})
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = janis_id
-        f['target_persona_id'] = berta_id
+        f['target_persona_id'] = hades_id
         if self.user_in("anton"):
             self.submit(f)
         else:
@@ -390,7 +398,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton", "berta", maintain_data=True)
     def test_show_ml_buttons_opt_in(self) -> None:
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7/'})
         self.assertTitle("Aktivenforum 2001")
         self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
         self.assertIn("subscribe-no-mod-form", self.response.forms)

@@ -51,9 +51,9 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
 def genesis_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'ctime': now(),
-        'realm': "event",
+        'realm': "ml",
         # This seems like a mypy bug:
-        'case_status': const.GenesisStati.to_review.value,
+        'status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
         'given_names': "Zaphod",
         'family_name': "Zappa",
@@ -66,11 +66,11 @@ def forget_finalized_genesis_template() -> str:
     ctime = now() - datetime.timedelta(days=89)
     status = const.GenesisStati
     successful = genesis_template(
-        username="1@example.cde", case_status=status.successful, ctime=ctime)
+        username="1@example.cde", status=status.successful, ctime=ctime)
     updated = genesis_template(
-        username="2@example.cde", case_status=status.existing_updated, ctime=ctime)
+        username="2@example.cde", status=status.existing_updated, ctime=ctime)
     rejected = genesis_template(
-        username="3@example.cde", case_status=status.rejected, ctime=ctime)
+        username="3@example.cde", status=status.rejected, ctime=ctime)
     return successful + updated + rejected
 
 
@@ -214,7 +214,7 @@ class TestCron(CronTest):
     @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
-        case_status=const.GenesisStati.successful.value))
+        status=const.GenesisStati.successful.value))
     def test_genesis_forget_successful(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
@@ -222,7 +222,7 @@ class TestCron(CronTest):
     @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
-        case_status=const.GenesisStati.rejected.value))
+        status=const.GenesisStati.rejected.value))
     def test_genesis_forget_rejected(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
@@ -230,14 +230,14 @@ class TestCron(CronTest):
     @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
-        case_status=const.GenesisStati.unconfirmed.value))
+        status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_unconfirmed(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
     @prepsql(genesis_template(
-        case_status=const.GenesisStati.unconfirmed.value))
+        status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4, 1001}, set(self.core.genesis_list_cases(RS)))
@@ -631,6 +631,7 @@ class TestCron(CronTest):
             'gu': unittest.mock.MagicMock(),
             'whz': unittest.mock.MagicMock(),
             'whzmfz': unittest.mock.MagicMock(),
+            'struktur': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 
@@ -686,6 +687,7 @@ class TestCron(CronTest):
                           umcall('gu'),
                           umcall('whz'),
                           umcall('whzmfz'),
+                          umcall('struktur'),
                           umcall('migration'),
                           ])))
         # Meta update
@@ -768,6 +770,7 @@ class TestCron(CronTest):
             'gu': unittest.mock.MagicMock(),
             'whz': unittest.mock.MagicMock(),
             'whzmfz': unittest.mock.MagicMock(),
+            'struktur': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 

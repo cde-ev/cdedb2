@@ -98,6 +98,9 @@ i18n-output-dirs:
 	for lang in $(I18N_LANGUAGES) ; do \
 		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
 	done
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo chown -R cdedb:cdedb $(I18NOUTDIR)
+endif
 
 .PHONY: i18n-refresh
 i18n-refresh: i18n-extract i18n-update
@@ -169,6 +172,10 @@ else
 	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
 endif
 	@echo ""
+
+.PHONY: ruff-fix
+ruff-fix:
+	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
 
 .PHONY: template-line-length
 template-line-length:

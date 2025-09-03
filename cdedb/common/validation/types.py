@@ -95,7 +95,6 @@ ByFieldDatatype = _NewType("ByFieldDatatype", str)
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
 Persona = _NewType("Persona", _CdEDBObject)
-GenesisCase = _NewType("GenesisCase", _CdEDBObject)
 BatchAdmissionEntry = _NewType("BatchAdmissionEntry", _CdEDBObject)
 PrivilegeChange = _NewType("PrivilegeChange", _CdEDBObject)
 AnonymousMessage = _NewType("AnonymousMessage", _CdEDBObject)
@@ -174,7 +173,8 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "float": float,
     "date": _datetime.date,
     "datetime": _datetime.datetime,
-    "checkin_datetime": _datetime.datetime,
+    "ranged_date": _datetime.date,
+    "ranged_datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
     "non_negative_float": NonNegativeFloat,
@@ -184,4 +184,5 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "enum_int": int,
     "enum_str": str,
     "money": float,
+    "cdedbid": CdedbID,
 }

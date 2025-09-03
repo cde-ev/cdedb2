@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import decimal
+import functools
 import json
 import re
 from typing import TYPE_CHECKING, Callable
@@ -127,7 +128,7 @@ class PostingPatterns:
     account_fee = re.compile(r"Abschluss", flags=re.I)
 
     # Most actively sent outgoing payments, either individual or as a collection.
-    payment = re.compile(r"Überweisungsauftrag", flags=re.I)
+    payment = re.compile(r"Überweisungsauftrag|SEPA Überweisung", flags=re.I)
 
     retoure = re.compile(r"(Retouren|Storno)", flags=re.I)
 
@@ -387,25 +388,25 @@ class Transaction:
         return ret
 
     def parse(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
-              ) -> None:
+              events: models_event.EventDataclassMap) -> None:
         """Try to determine the type of the transaction and referenced entities."""
-        self._get_entities(rs, core, event)
+        self._get_entities(rs, core, events)
         self._match_persona(rs, core)
-        self._match_event(rs, event)
+        self._match_event(rs, event_backend=event, events=events)
         self._determine_type()
 
     def _get_entities(self, rs: RequestState, core: "CoreBackend",
-                      event: "EventBackend") -> None:
+                      events: models_event.EventDataclassMap) -> None:
         """Try retrieving the persona and event belonging to this transaction."""
-        if self._persona_id:
+        if self._persona_id and not self.persona:
             try:
                 self.persona = core.get_persona(rs, self._persona_id)
             except KeyError:
                 self._persona_id = None
                 self.persona = None
-        if self._event_id:
+        if self._event_id and not self.event:
             try:
-                self.event = event.get_event(rs, self._event_id)
+                self.event = events[self._event_id]
             except KeyError:
                 self._event_id = None
                 self.event = None
@@ -491,15 +492,15 @@ class Transaction:
         if persona_matches:
             best_persona_id = max(
                 persona_matches, key=lambda p_id: persona_matches[p_id])
-            self.persona = personas[best_persona_id]
+            self.persona = personas.get(best_persona_id)
             self.persona_confidence = persona_matches[best_persona_id]
 
-    def _match_event(self, rs: RequestState, event_backend: "EventBackend") -> None:
+    def _match_event(self, rs: RequestState, event_backend: "EventBackend",
+                     events: models_event.EventDataclassMap) -> None:
         """Try to match an event to this transaction."""
         if self.event:
             return
 
-        events = event_backend.get_events(rs, event_backend.list_events(rs))
         if not self.persona:
             amounts_owed = {}
         else:
@@ -522,7 +523,9 @@ class Transaction:
             self.errors.extend(best_match.errors)
             self.warnings.extend(best_match.warnings)
 
+    # The cache needs to be able to hold all patterns for all events, so (4 * num events).
     @staticmethod
+    @functools.lru_cache(1024)
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
         s = "|".join(map(
             re.escape,
@@ -687,9 +690,9 @@ class Transaction:
             raise RuntimeError(n_("Impossible."))
 
     def validate(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
-                 ) -> None:
+                 events: models_event.EventDataclassMap) -> None:
         """Inspect transaction for problems."""
-        self._get_entities(rs, core, event)
+        self._get_entities(rs, core, events)
 
         cutoff = ConfidenceLevel.High
         if not self.type:

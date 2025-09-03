@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-import re
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
@@ -152,44 +151,13 @@ class EventEventMixin(EventBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
-    @access("finance_admin")
-    @REQUESTdata("phrase")
-    def select_event(self, rs: RequestState, phrase: str) -> Response:
-        """API for intelligent input field.
-
-        This allows the user to choose an event by entering (parts of) the title
-        or the shortname.
-
-        Meant for use during parse_statement.
-
-        Since this only returns basic event information it has little privacy
-        implications.
-        """
+    @access("event")
+    @REQUESTdata("event_id")
+    def redirect_event(self, rs: RequestState, event_id: int) -> Response:
         if rs.has_validation_errors():
-            return self.send_json(rs, {})
-        atoms = [re.compile(re.escape(atom), flags=re.I) for atom in phrase.split()]
-        if not atoms:
-            return self.send_json(rs, {})
-
-        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
-
-        def _match(event: models.Event) -> bool:
-            return all(
-                atom_pattern.search(event.shortname) or atom_pattern.search(event.title)
-                for atom_pattern in atoms
-            )
-
-        return self.send_json(rs, {
-            'events': [
-                {
-                    'title': event.title,
-                    'shortname': event.shortname,
-                    'id': event.id,
-                }
-                for event in xsorted(events.values())
-                if _match(event)
-            ],
-        })
+            rs.notify("error", rs.gettext("Unknown event."))
+            return self.list_events(rs)
+        return self.redirect(rs, "event/show_event", {"event_id": event_id})
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
@@ -861,11 +829,11 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration."))
             return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = check(
-            rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
+        fee_data = cast(CdEDBObject, check(
+            rs, models.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
             event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
             personalized=personalized,
-        )
+        ))
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
@@ -1418,6 +1386,18 @@ class EventEventMixin(EventBaseFrontend):
 
         new_ids = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
+        if new_ids:
+            self.do_mail(
+                rs,
+                "event_archived",
+                {
+                    "To": [
+                        self.conf["EVENT_ADMIN_ADDRESS"],
+                        self.conf["MANAGEMENT_ADDRESS"],
+                    ],
+                    "Subject": "Veranstaltung archiviert.",
+                },
+            )
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional

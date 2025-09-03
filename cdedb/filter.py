@@ -1,5 +1,5 @@
 """Filter definitions for jinja templates"""
-
+import collections
 import datetime
 import decimal
 import enum
@@ -308,11 +308,17 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
         phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
 
-def persona_name_filter(val: CdEDBObject | User, *args: bool, **kwargs: bool) -> str:
+def persona_name_filter(val: Union[CdEDBObject, User, "CdEDataclass"], *args: bool, **kwargs: bool) -> str:
     """Wrapper to format persona names."""
     if isinstance(val, User):
         return val.persona_name(*args, **kwargs)
     else:
+        # TODO this leads to cyclic imports otherwise
+        from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+            CdEDataclass,
+        )
+        if isinstance(val, CdEDataclass):
+            val = val.as_dict()
         return make_persona_name(val, *args, **kwargs)
 
 
@@ -443,8 +449,7 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace(  # type: ignore[return-value]
-        '\n', markupsafe.Markup(replacement))
+    return val.replace('\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -637,6 +642,12 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
     return xsorted(value.items(), key=key, reverse=reverse)
 
 
+def keysort_filter(value: Iterable[T], sortkey: Callable[[Any], Any],
+                   reverse: bool = False) -> list[T]:
+    """Sort a simple iterable by their value."""
+    return xsorted(value, key=sortkey, reverse=reverse)
+
+
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> list[tuple[T, S]]:
     """Sort a dicts items by their value."""
@@ -654,11 +665,12 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: Iterable[enum.Enum],
+def enum_entries_filter(enum: Iterable[enum.IntEnum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         exempt: Collection[enum. Enum] = frozenset(),
-                        ) -> list[tuple[enum.Enum, str]]:
+                        intval: bool = False,
+                        ) -> list[tuple[enum.IntEnum | int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -671,6 +683,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         is, otherwise they are converted to str first.
     :param prefix: A prefix to prepend to the string output of every entry.
     :param exempt: Enum members not to include
+    :param intval: Use int representation of enum for values
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
@@ -680,9 +693,28 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         pre = lambda x: x
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
-    to_sort = ((entry, prefix + processing(pre(entry)))
+    if intval:
+        sortkey = lambda x: x
+    else:
+        sortkey = lambda e: e[0].value
+    to_sort = ((int(entry) if intval else entry, prefix + processing(pre(entry)))
                for entry in enum if entry not in exempt)
-    return xsorted(to_sort, key=lambda e: e[0].value)
+    ret = xsorted(to_sort, key=sortkey)
+    grouped = collections.defaultdict(list)
+    for value, label in ret:
+        group_label = value.optgroup_label() if hasattr(value, "optgroup_label") else ""
+        if group_label:
+            group_label = processing(group_label)
+        grouped[group_label].append((value, label))
+    if len(grouped) == 1:
+        return list(grouped.values())[0]
+    return grouped  # type: ignore[return-value]
+
+
+def multiselect_selectize_filter(entries: Iterable[tuple[int | enum.IntEnum, str]]
+                                 ) -> list[CdEDBObject]:
+    """Convert (value, title)s to format taken by the cdedbMultiSelect JS function."""
+    return [{'id': e[0], 'name': e[1]} for e in entries]
 
 
 def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
@@ -741,6 +773,10 @@ def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDatacla
     ]
 
 
+def hasattr_filter(entity: object, attr: Any) -> bool:
+    return hasattr(entity, attr)
+
+
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
@@ -750,6 +786,7 @@ JINJA_FILTERS = {
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'iban': iban_filter,
+    'hasattr': hasattr_filter,
     'hidden_iban': hidden_iban_filter,
     'phone': phone_filter,
     'persona_name': persona_name_filter,
@@ -763,6 +800,7 @@ JINJA_FILTERS = {
     'dictcount': dict_count_filter,
     'enum': enum_filter,
     'sort': sort_filter,
+    'keysort': keysort_filter,
     'dictsort': dictsort_filter,
     'xdictsort': xdictsort_filter,
     'keydictsort': keydictsort_filter,
@@ -771,6 +809,7 @@ JINJA_FILTERS = {
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
+    'multiselect_selectize': multiselect_selectize_filter,
     'dict_entries': dict_entries_filter,
     'entries': entries_filter,
 }

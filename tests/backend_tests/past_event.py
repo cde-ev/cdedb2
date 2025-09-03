@@ -65,12 +65,8 @@ class TestPastEventBackend(BackendTest):
     def test_delete_past_course_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         # add the past course to a genesis case
-        genesis_case = self.core.genesis_get_case(self.key, 3)
-        genesis_case.update({
-            'pevent_id': 1,
-            'pcourse_id': 1,
-            'reviewer': self.user['id']})
-        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+        update = {'id': 3, 'pevent_id': 1, 'pcourse_id': 1}
+        self.assertTrue(self.core.genesis_modify_case(self.key, update))
 
         with self.assertRaises(ValueError) as e:
             self.pastevent.delete_past_course(
@@ -91,11 +87,8 @@ class TestPastEventBackend(BackendTest):
         pevent['description'] = "changed"
         self.assertTrue(self.pastevent.set_past_event(self.key, pevent))
         # add the past event to a genesis case
-        genesis_case = self.core.genesis_get_case(self.key, 3)
-        genesis_case.update({
-            'pevent_id': 1,
-            'reviewer': self.user['id']})
-        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+        update = {"id": 3, "pevent_id": 1}
+        self.assertTrue(self.core.genesis_modify_case(self.key, update))
 
         with self.assertRaises(ValueError) as e:
             self.pastevent.delete_past_event(

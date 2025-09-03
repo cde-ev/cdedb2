@@ -165,6 +165,7 @@ class CdEParseMixin(CdEBaseFrontend):
         transactions = []
 
         ALL_KEYS = parse.StatementCSVKeys.all_keys()
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
 
         for i, line in enumerate(reversed(list(reader))):
             if not line.keys() <= ALL_KEYS:
@@ -177,8 +178,8 @@ class CdEParseMixin(CdEBaseFrontend):
                 continue
             line["id"] = i
             t = parse.Transaction.from_csv(line)
-            t.parse(rs, self.coreproxy, self.eventproxy)
-            t.validate(rs, self.coreproxy, self.eventproxy)
+            t.parse(rs, self.coreproxy, self.eventproxy, events)
+            t.validate(rs, self.coreproxy, self.eventproxy, events)
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -203,11 +204,13 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         rs.ignore_validation_errors()
 
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+
         transactions = []
         for i in range(1, count + 1):
             t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
             t = parse.Transaction(t_data, index=i)
-            t.validate(rs, self.coreproxy, self.eventproxy)
+            t.validate(rs, self.coreproxy, self.eventproxy, events)
             transactions.append(t)
 
         data, params = self.organize_transaction_data(rs, transactions, date)
@@ -297,9 +300,10 @@ class CdEParseMixin(CdEBaseFrontend):
             rs.notify("warning", n_("Only one input method allowed."))
             return self.money_transfers_form(rs)
         elif transfers_file:
-            rs.values["transfers"] = transfers = transfers_file
+            rs.values["transfers"] = transfers = transfers_file.strip()
             transferlines = transfers_file.splitlines()
         elif transfers:
+            transfers = transfers.strip()
             transferlines = transfers.splitlines()
         else:
             rs.notify("error", n_("No input provided."))

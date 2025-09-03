@@ -50,7 +50,6 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
     PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -61,6 +60,7 @@ from cdedb.common.roles import (
     ADMIN_KEYS,
     ADMIN_VIEWS_COOKIE_NAME,
     ALL_ADMIN_VIEWS,
+    ALL_ADMINS,
     REALM_ADMINS,
     REALM_INHERITANCE,
     extract_roles,
@@ -140,7 +140,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
             # genesis cases
             genesis_realms = []
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS:
+            for realm in models.GenesisCase.available_realms:
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:
@@ -966,8 +966,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
+        - ``admin_persona``: Search for users as
+          (core|cde|complaint|ml)_admin or auditor.
+        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -999,10 +1000,13 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "ml_admin", "auditor"} & rs.user.roles:
+            if not (
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if not {"core_admin", "ml_admin"} & rs.user.roles:
+            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
@@ -1068,8 +1072,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Core admins are allowed to search by raw ID or CDEDB-ID
-        if "core_admin" in rs.user.roles:
+        # Allow admins to search by (CdEDB)ID
+        if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
@@ -1408,6 +1412,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # meta admins
             "meta": self.coreproxy.list_admins(rs, "meta"),
             "core": self.coreproxy.list_admins(rs, "core"),
+            "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
@@ -1749,7 +1754,8 @@ class CoreBaseFrontend(AbstractFrontend):
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          is_auditor: bool, notes: str) -> Response:
+                          is_complaint_admin: bool, is_auditor: bool, notes: str,
+                          ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1796,7 +1802,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             rs.notify_return_code(code, success=n_("Privilege change waiting for"
-                                                   " approval by another Meta-Admin."))
+                                                   " approval by another meta admin."))
             if not code:
                 return self.change_privileges_form(rs, persona_id)
         else:
@@ -1833,13 +1839,13 @@ class CoreBaseFrontend(AbstractFrontend):
         if (privilege_change["is_meta_admin"] is not None
                 and privilege_change["persona_id"] == rs.user.persona_id):
             rs.notify(
-                "info", n_("This privilege change is affecting your Meta-Admin"
-                           " privileges, so it has to be approved by another "
-                           "Meta-Admin."))
+                "info", n_("This privilege change is affecting your meta admin"
+                           " privileges, so it has to be approved by another"
+                           " meta admin."))
         if privilege_change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info", n_("This privilege change was submitted by you, so it "
-                           "has to be approved by another Meta-Admin."))
+                           "has to be approved by another meta admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
         submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
@@ -2458,6 +2464,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/change_username_form")
         else:
+            # Warn management of possible privilege escalation
+            if rs.user.roles & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': rs.user})
             self.do_mail(rs, "username_change_info",
                          {'To': (rs.user.username,),
                           'Subject': "Deine E-Mail-Adresse wurde geändert"},
@@ -2493,6 +2507,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")
         else:
+            # Warn management of possible privilege escalation
+            persona = rs.ambience['persona']
+            if extract_roles(persona, introspection_only=True) & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': persona})
             return self.redirect_show_user(rs, persona_id)
 
     @access(*REALM_ADMINS, modi={"POST"})

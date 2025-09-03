@@ -17,6 +17,7 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -76,6 +77,7 @@ class Application(BaseApp):
     def __init__(self) -> None:
         super().__init__()
         self.coreproxy = make_proxy(CoreBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.assemblyproxy = make_proxy(AssemblyBackend())
@@ -304,8 +306,12 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                Realms = {"core", "cde", "event", "assembly", "ml"}
-                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in Realms}
+                realms = {"core", "complaint", "cde", "event", "assembly", "ml"}
+                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
+                if user.persona_id in self.complaintproxy.list_enforcers(rs):
+                    realm_roles['complaint'].add('enforcer')
+                if user.persona_id in self.complaintproxy.list_monitors(rs):
+                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')

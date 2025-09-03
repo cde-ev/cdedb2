@@ -6,7 +6,7 @@ import sys
 
 from systemd.journal import JournalHandler
 
-from cdedb.config import Config, DEFAULT_LOG_LEVEL
+from cdedb.config import DEFAULT_LOG_LEVEL, Config
 
 
 def setup_root_logger() -> None:

@@ -31,6 +31,7 @@ from collections.abc import Collection, Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
 
+import cdedb.common.parse.util as parse_util
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
@@ -1503,7 +1504,8 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
         if not part.camping_mat_field:
             return None
         if (
-                registration['parts'][part.id]['is_camping_mat']
+                registration['parts'][part.id]['status'].is_involved()
+                and registration['parts'][part.id]['is_camping_mat']
                 and not registration['fields'].get(part.camping_mat_field.field_name)
         ):
             return cls(
@@ -1744,12 +1746,11 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
         attendees = aux.attendee_data.involved.get(course.id, track.id)
 
         if track.id not in course.segments:
+            if not attendees.all:
+                return None
             return cls(
                 event=aux.event,
-                severity=(
-                    ViolationSeverity.ERROR
-                    if attendees.all else ViolationSeverity.DEBUG
-                ),
+                severity=ViolationSeverity.ERROR,
                 course=course,
                 track=track,
                 num=attendees.num,
@@ -2156,3 +2157,26 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
             html_classes=["lodgement-illegal-mixing"],
             titles=[n_("Mixed with non-mixing inhabitants.")],
         )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class IncorrectIBANCV(ConstraintViolation):
+    kind = ViolationKind.financial
+
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        if aux.event.is_balanced:
+            return None
+        if aux.event.iban and aux.event.iban != parse_util.Accounts.Skatbank:
+            return cls(
+                event=aux.event,
+                severity=ViolationSeverity.WARNING,
+            )
+        return None
+
+    def get_translation(
+            self, *, entity_page: str,
+    ) -> tuple[list[str], CdEDBObject]:
+        msg = n_("Event fees should be collected at the Skatbank account.")
+
+        return [msg], {}

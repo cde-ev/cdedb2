@@ -146,6 +146,18 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+        else:
+            all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+            event_options = [
+                {
+                    'title': event.title,
+                    'shortname': event.shortname,
+                    'id': event.id,
+                }
+                for event in xsorted(all_events.values(), reverse=True)
+            ]
+            params['all_events'] = all_events
+            params['event_options'] = event_options
 
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
@@ -305,7 +317,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
-            "address": EntitySorter.address,
+            "address": EntitySorter.make_address_sorter(
+                rs.gettext, self.conf["DEFAULT_COUNTRY"]
+            ),
             # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),

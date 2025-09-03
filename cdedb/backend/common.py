@@ -164,11 +164,11 @@ def access(*roles: Role) -> Callable[[F], F]:
         @functools.wraps(function)
         def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if rs.user.roles.isdisjoint(roles):
+            if rs.user.all_roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),
-                    {"user_roles": rs.user.roles, "roles": roles,
+                    {"user_roles": rs.user.all_roles, "roles": roles,
                      "method": function.__name__},
                 )
             return function(self, rs, *args, **kwargs)
@@ -399,8 +399,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.less:
                 phrase = "{} < %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.lessornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
+                params.extend((value,) * len(columns))
+            elif operator == _ops.lessequalornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
             elif operator in {_ops.between, _ops.outside}:
                 if operator == _ops.between:
@@ -411,32 +417,40 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greaterequal:
                 phrase = "{} >= %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.greaterequalornull:
+                phrase = "( {0} >= %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.greaterornull:
+                phrase = "( {0} > %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             # These are hard coded special cases for some useful, but very specific
             # conditions. Modelling with special query operators is more flexible.
-            elif operator in VALID_QUERY_OPERATORS["checkin_datetime"]:
+            elif operator in VALID_QUERY_OPERATORS["ranged_datetime"]:
+                if len(columns) != 2:
+                    # This would not be hard to extend to an even number of columns.
+                    # However, let's keep it simple while we do not need it.
+                    raise RuntimeError(n_("Need to specify exactly two columns."))
                 phrase = "/* {} */ "
-                subphrase = """
-                    checkin_at.checkin_time < %s AND (
-                        checkin_at.checkout_time > %s
-                        OR checkin_at.checkout_time IS NULL)
+                subphrase = f"""
+                    {columns[0]} < %s AND ({columns[1]} > %s OR {columns[1]} IS NULL)
                 """
-                if operator == _ops.checkedin_at:
+                if operator == _ops.ranged_at:
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))
-                elif operator == _ops.checkedin_notat:
+                elif operator == _ops.ranged_notat:
                     phrase += "NOT(" + subphrase + ")"
                     params.extend((value,) * 2 * len(columns))
                 else:
-                    if operator == _ops.checkedin_oneof:
+                    if operator == _ops.ranged_oneof:
                         phrase += " OR ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedin_noneof:
+                    elif operator == _ops.ranged_noneof:
                         phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
-                    elif operator == _ops.checkedin_allof:
+                    elif operator == _ops.ranged_allof:
                         phrase += " AND ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedin_notallof:
+                    elif operator == _ops.ranged_notallof:
                         phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
                     else:
                         raise RuntimeError(n_("Impossible."))

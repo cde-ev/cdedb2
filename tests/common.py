@@ -49,6 +49,7 @@ from psycopg2.extras import RealDictCursor
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -67,6 +68,7 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
+    NearlyNow,
     PathLike,
     RequestState,
     make_persona_name,
@@ -81,6 +83,7 @@ from cdedb.common.query.log_filter import (
     AssemblyLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     CoreLogFilter,
     EventLogFilter,
     FinanceLogFilter,
@@ -240,6 +243,9 @@ def _make_backend_shim(
         )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
+        if hasattr(backend, "list_enforcers"):
+            if rs.user.persona_id in backend.list_enforcers(rs):
+                rs.user.realm_roles["complaint"] = {"enforcer"}
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
             rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
@@ -453,6 +459,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
@@ -468,6 +475,7 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.complaint = cls.initialize_backend(ComplaintBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
@@ -516,6 +524,7 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        new_user = get_user(new_user)
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
@@ -539,6 +548,7 @@ class BackendTest(CdEDBTest):
             'event': (self.event.retrieve_log, EventLogFilter),
             'ml': (self.ml.retrieve_log, MlLogFilter),
             'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+            'complaint': (self.complaint.retrieve_log, ComplaintLogFilter),
         }
         log_retriever, log_filter_class = logs[realm]
         _, log = log_retriever(self.key, log_filter_class(**kwargs))
@@ -550,13 +560,13 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
                 if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date', 'companion_id'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -564,6 +574,12 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
             if real['change_note']:
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
+
+        if log != tuple(log_expectation):
+            for log_entry, exp_entry in zip(log, log_expectation):
+                if log_entry['ctime'] == exp_entry['ctime']:
+                    if isinstance(exp_entry['ctime'], NearlyNow):
+                        exp_entry['ctime'] = log_entry['ctime']
         self.assertEqual(log, tuple(log_expectation))
 
     def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
@@ -834,6 +850,16 @@ USER_DICT: dict[str, UserObject] = {
         'legal_given_names': None,
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
+    },
+    "simon": {
+        'id': 19,
+        'DB-ID': "DB-19-1",
+        'username': "simon@example.cde",
+        'password': "secret",
+        'given_names': "Simon",
+        'legal_given_names': None,
+        'family_name': "Struktur",
+        'default_name_format': "Simon Struktur",
     },
     "vera": {
         'id': 22,
@@ -1155,7 +1181,7 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "", *,
+    def submit(self, form: webtest.Form, button: str = "submitform", *,
                check_notification: bool = True, check_button_attrs: bool = False,
                verbose: bool = False, value: Optional[str] = None,
                check_mandatory_filled: bool = True) -> None:
@@ -1196,6 +1222,8 @@ class FrontendTest(BackendTest):
         if value and not button:
             raise ValueError(
                 "Cannot specify button value without specifying button name.")  # pragma: no cover
+        if not form.get(button, index=0, default=None):
+            self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1267,7 +1295,7 @@ class FrontendTest(BackendTest):
         def _logout() -> None:
             f = self.response.forms['logoutform']
             self.submit(f, check_notification=False, verbose=verbose,
-                        check_mandatory_filled=False)
+                        button="submitlogout", check_mandatory_filled=False)
 
         if allow_anonymous:
             if not self.user_in("anonymous"):
@@ -1776,7 +1804,13 @@ class FrontendTest(BackendTest):
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
         personas = self.core.get_personas(self.key, persona_ids)
-        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+
+        if realm == "ml":
+            entity_key = "mailinglist_id"
+        elif realm == "complaint":
+            entity_key = "case_id"
+        else:
+            entity_key = f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
@@ -1808,6 +1842,10 @@ class FrontendTest(BackendTest):
         elif realm == "changelog":
             self.get("/core/changelog/view")
             entities = {}
+        elif realm == "complaint":
+            entities = {case_id: {'title': f"Fall {case_id}"} for case_id in entity_ids}
+            self.get("/core/complaint/log")
+
         else:
             self.get(f"/{realm}/log")
             entities = {}

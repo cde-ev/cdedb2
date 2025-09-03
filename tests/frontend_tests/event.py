@@ -45,6 +45,7 @@ from cdedb.frontend.event.query_stats import (
     StatisticTrackMixin,
     get_id_constraint,
 )
+from cdedb.models.complaint import ComplaintInvolved
 from cdedb.models.droid import OrgaToken
 from cdedb.models.ml import (
     EventAssociatedExclusiveMailinglist,
@@ -439,7 +440,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_privileged = {"Teilnehmer-Infos"}
         privileged = {
-            "Statistik", "Kurse", "Unterkünfte",
+            "Statistik", "Kurse", "Unterkünfte", "Downloads",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
@@ -447,7 +448,7 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
+            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung",
             "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
             "Überweisungen eintragen",
         }
@@ -2646,6 +2647,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence(user['family_name'], div="row-" + str(row))
             row += 1
 
+    @prepsql(
+        f"UPDATE core.personas SET country = 'CH'"
+        f" WHERE id = {USER_DICT['berta']['id']};"
+        f"UPDATE core.personas SET postal_code = '01234'"
+        f" WHERE id = {USER_DICT['akira']['id']};"
+    )
     @as_users("garcia")
     def test_participant_list_sorting(self) -> None:
         # first, show courses on participant list
@@ -2680,7 +2687,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([anton, berta, emilia, akira])
+        self._sort_appearance([anton, emilia, akira, berta])
 
         self.traverse({'description': r"^Zweite Hälfte$"})
         self.traverse({'description': r"\sRufname"})
@@ -5932,6 +5939,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['ack_archive'].checked = True
         # checkbox to create a past event is checked by default
         self.submit(f)
+        mail = self.fetch_mail_content()
+        self.assertIn("Große Testakademie 2222\nwurde archiviert", mail)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
@@ -6029,6 +6038,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         f = self.response.forms['purgepersonaform']
         f['ack_delete'].checked = True
+        with self.assertRaises(RuntimeError):
+            self.submit(f)
+        execsql(f"DELETE FROM {ComplaintInvolved.database_table} WHERE persona_id = 4", 1)
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertPresence("Der Benutzer wurde geleert.", div='purged')
@@ -6714,6 +6726,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Garcia Generalis hat noch keinen Teilnahmebeitrag bezahlt (504,48 €). (Als Orga).",
             "Anton Administrator hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 353,99 €).",
             "Inga Iota muss eine Erstattung erhalten (116,49 €).",
+            "Teilnahmebeiträge sollten über das Skatbankkonto laufen.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6741,6 +6754,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Emilia (Emmy) Eventis hat noch nicht den vollständigen Teilnahmebeitrag bezahlt (übrig: 461,49 €).",
             "Akira Abukara ist involviert, muss aber keinen Beitrag bezahlen.",
             "Inga Iota muss eine Erstattung erhalten",
+            "Teilnahmebeiträge sollten über das Skatbankkonto laufen.",
         ]
         self._check_shown_violations(
             event_id=1, filtered_severity=models_cv.ViolationSeverity.INFO,
@@ -6830,8 +6844,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
-                    self.fail(f"{text!r} not found for event {event_id}"
-                              f" at severity {filtered_severity.name}.")
+                    self.fail(
+                        f"{text!r} not found for event {event_id} at severity {filtered_severity.name}."
+                        f" I found these texts:\n" + "\n".join(node_texts),
+                    )
             if check_complete and len(nodes) > len(texts):
                 # print("\n".join(lxml.etree.tostring(node, encoding="unicode") for node in nodes))
                 self.fail(
@@ -6892,6 +6908,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
                 "1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
+                "1 Falsche IBAN-Konfiguration",
             ],
         )
 
