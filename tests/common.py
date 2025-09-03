@@ -11,6 +11,7 @@ import email.parser
 import email.policy
 import functools
 import gettext
+import html
 import io
 import json
 import os
@@ -1255,7 +1256,7 @@ class FrontendTest(BackendTest):
         """
         for link in links:
             if isinstance(link, str):
-                link = {'description': link}
+                link = {'description': html.escape(link)}
             if 'index' not in link:
                 link['index'] = 0
             try:

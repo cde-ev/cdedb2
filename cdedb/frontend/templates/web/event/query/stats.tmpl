@@ -12,6 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Statistics"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm pull-right') }}
     {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}

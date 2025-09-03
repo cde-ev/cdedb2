@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-02 13:21+0200\n"
+"POT-Creation-Date: 2025-09-03 03:43+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2763,7 +2763,7 @@ msgstr "Teilnehmerlisten-Zustimmung"
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:59
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:51
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:52
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:56
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:57
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:46
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:69
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:48
@@ -2855,8 +2855,8 @@ msgstr "Personalisierter Betrag"
 
 #: cdedb/common/query/__init__.py:1211 cdedb/common/query/__init__.py:1604
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:50
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:32
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:95
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:29
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:92
 msgid "Event Part"
 msgstr "Veranstaltungsteil"
 
@@ -2904,7 +2904,7 @@ msgstr "Unterkunftsgruppen-Bezeichnung"
 #: cdedb/common/query/__init__.py:1460 cdedb/common/query/__init__.py:1484
 #: cdedb/common/query/__init__.py:1503
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:127
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:86
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:83
 msgid "Track"
 msgstr "Kurschiene"
 
@@ -6500,7 +6500,7 @@ msgstr "sicher?"
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:170
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:65
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:67
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:64
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:65
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:84
 #: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:80
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:85
@@ -7602,8 +7602,8 @@ msgstr "Stimme"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:202
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:18
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:36
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:90
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:33
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:87
 msgid "Count"
 msgstr "Anzahl"
 
@@ -9661,7 +9661,7 @@ msgstr "Zugeordnete Anmeldung"
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:40
 #: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:18
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:18
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:15
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:16
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:35
 #: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:35
 #: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:38
@@ -11009,7 +11009,7 @@ msgstr "Fall anlegen"
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:27
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:35
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:35
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:34
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:35
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:45
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:20
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:56
@@ -11132,8 +11132,8 @@ msgid "When did the event you describe here occur?"
 msgstr "Wann ist das Ereignis geschehen"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:98
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:59
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:62
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:60
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:63
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:48
 msgid "Expiration"
 msgstr "Ablaufdatum"
@@ -11995,7 +11995,7 @@ msgstr "Anmeldungen"
 #: cdedb/frontend/templates/web/event/base.tmpl:136
 #: cdedb/frontend/templates/web/event/event/index.tmpl:137
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:12
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:15
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:16
 msgid "Statistics"
 msgstr "Statistik"
 
@@ -13318,9 +13318,10 @@ msgstr "Verstöße gegen Beschränkungen"
 #: cdedb/frontend/templates/web/event/base.tmpl:159
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
 #: cdedb/frontend/templates/web/event/downloads.tmpl:15
-#, fuzzy
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:31
+#: cdedb/frontend/templates/web/event/import/partial_import.tmpl:12
 msgid "Downloads & Import"
-msgstr "Download DB-Import"
+msgstr "Downloads & Import"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:170
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:21
@@ -13475,7 +13476,7 @@ msgstr "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar."
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:22
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:150
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:82
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:22
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:15
 #: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:64
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:129
 msgid "Event Parts"
@@ -14053,7 +14054,7 @@ msgid "Partial Import"
 msgstr "Partieller Import"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:21
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:31
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:32
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:17
 msgid "Orga Tokens"
@@ -14248,7 +14249,7 @@ msgstr "Veranstaltungsteil hinzufügen"
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:41
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:49
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:49
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:55
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:56
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:45
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:67
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:46
@@ -14653,8 +14654,8 @@ msgid "Change part group"
 msgstr "Veranstaltungsteilgruppe bearbeiten"
 
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:20
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:41
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:100
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:38
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:97
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:158
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:164
 msgid "Part Group"
@@ -14801,12 +14802,12 @@ msgid "Orga Token"
 msgstr "Orga-Token"
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:23
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:36
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:37
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:31
 msgid "Create Orga Token"
 msgstr "Orga-Token erstellen"
 
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:46
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:47
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:35
 msgid ""
 "Orga Tokens allow for automated access to event data. With such a token a "
@@ -15917,11 +15918,6 @@ msgstr "beendet"
 msgid "Partial Import for Event %(title)s"
 msgstr "Partieller Import zur Veranstaltung %(title)s"
 
-#: cdedb/frontend/templates/web/event/import/partial_import.tmpl:12
-#: cdedb/frontend/templates/web/ml/advanced_management.tmpl:268
-msgid "Downloads"
-msgstr "Downloads"
-
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:22
 #: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:22
 msgid "Validation errors"
@@ -16663,19 +16659,19 @@ msgstr "Checkin/-out"
 msgid "Statistics (%(title)s)"
 msgstr "Statistik (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:25
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:22
 msgid "Participant Statistics"
 msgstr "Teilnehmer-Statistik"
 
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:79
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:76
 msgid "Course Statistics"
 msgstr "Kursstatistik"
 
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:80
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:77
 msgid "Only includes participants."
 msgstr "Beinhaltet nur Teilnehmer."
 
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:109
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:106
 #, python-format
 msgid "In %(x)s. Choice"
 msgstr "In %(x)s. Wahl"
@@ -18018,6 +18014,10 @@ msgstr "Explizites Deabonnement hat aktuell keinen Effekt."
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:258
 msgid "User would be implicit subscribed otherwise."
 msgstr "Benutzer wäre impliziter Abonnent der Liste."
+
+#: cdedb/frontend/templates/web/ml/advanced_management.tmpl:268
+msgid "Downloads"
+msgstr "Downloads"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:277
 #, python-format

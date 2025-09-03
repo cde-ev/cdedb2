@@ -449,7 +449,6 @@ class TestEventFrontend(FrontendTest):
             "Teilnehmerliste", "Anmeldungen",
             "Log", "Checkin", "Verstöße gegen Beschränkungen",
         }
-        finance_admin: set[str] = set()
 
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         # TODO this could be more expanded (event without courses, distinguish
@@ -457,51 +456,46 @@ class TestEventFrontend(FrontendTest):
         # not registered, not event admin, no event helper, no auditor
         if self.user_in('martin', 'vera', 'werner'):
             ins = everyone | not_registered
-            out = (
-                    registered | registered_or_privileged | privileged | orga
-                    | finance_admin
-            )
+            out = registered | registered_or_privileged | privileged | orga
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_privileged
-            out = not_registered | privileged | orga | finance_admin
+            out = not_registered | privileged | orga
         # orga
         elif self.user_in('garcia'):
             ins = (
                     everyone | registered | registered_or_privileged
                     | privileged | orga
             )
-            out = not_registered | finance_admin
+            out = not_registered
         # event helper
         elif self.user_in('petra'):
             ins = (
                     everyone | not_registered | registered_or_privileged
                     | privileged
             )
-            out = registered | orga | finance_admin
+            out = registered | orga
         # event admin (annika is not registered)
         elif self.user_in('annika'):
             ins = (
                     everyone | not_registered | registered_or_privileged
                     | privileged | orga
             )
-            out = registered | finance_admin
+            out = registered
         # not registered, auditor
         elif self.user_in('katarina'):
             ins = (
                     everyone | not_registered | privileged
                       | registered_or_privileged | {"Log"}
             ) - registrations_stats
-            out = (
-                    registered | orga | finance_admin | registrations_stats
-            ) - {"Log"}
+            out = (registered | orga | registrations_stats) - {"Log"}
         # finance admin
         elif self.user_in('farin'):
             ins = (
                     everyone | not_registered | privileged
-                    | registered_or_privileged | finance_admin
-            ) - registrations_stats
-            out = registered | orga | registrations_stats
+                    | registered_or_privileged
+            ) - registrations_stats | {"Teilnahmebeiträge"}
+            out = registered | orga | registrations_stats - {"Teilnahmebeiträge"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -822,7 +816,7 @@ class TestEventFrontend(FrontendTest):
         log_expectation = []
 
         self.traverse("Veranstaltungen", 'Alle Veranstaltungen', 'CdE-Party 2050',
-                      'Veranstaltungsteile')
+                      'Konfiguration', 'Veranstaltungsteile')
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         self.assertNonPresence("Cooldown")
 
@@ -1373,7 +1367,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Garcia")
 
         # Check creation of parts and no tracks
-        self.traverse({'description': 'Veranstaltungsteile'})
+        self.traverse("Konfiguration", "Veranstaltungsteile")
         self.assertPresence("Universale Akademie", div="part1001")
         self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
         self.assertPresence('07.06.2345', div='part1001_end', exact=True)
@@ -1447,7 +1441,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("altaka-orga@aka.cde-ev.de")
 
         # Check creation of parts and no tracks
-        self.traverse({'description': 'Veranstaltungsteile'})
+        self.traverse("Konfiguration", "Veranstaltungsteile")
         self.assertPresence("Alternative Akademie", div="part1002")
         self.assertPresence("Alternative Akademie", div="trackrow1002_1001")
         self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
@@ -4409,7 +4403,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['track3.course_choice_0'] = ''
         f['track3.course_choice_1'] = ''
         self.submit(f)
-        self.traverse({'href': '/event/event/1/course/choices'})
+        self.get('/event/event/1/course/choices')
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 3]
         f['assign_track_ids'] = [3]
@@ -4783,7 +4777,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @storage
     @as_users("garcia")
     def test_download_export(self) -> None:
-        self.get()
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
                       "Downloads & Import", {'href': '/event/1/export'})
         with open(
@@ -5608,7 +5601,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     def test_partial_import_normal(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/downloads'},
+                      {'href': '/event/event/1/download'},
                       {'href': '/event/event/1/import'})
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         with open(self.testfile_dir / "partial_event_import.json", 'rb') as datafile:
@@ -5672,7 +5665,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika", "garcia")
     def test_partial_import_interleaved(self) -> None:
-        self.get('/event/event/1/import')
+        self.get('/event/event/1/import/partial')
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         with open(self.testfile_dir / "partial_event_import.json", 'rb') as datafile:
             data = datafile.read()
@@ -5697,8 +5690,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("annika")
     def test_delete_event(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                      "Veranstaltungsteile")
+        self.get("/event/event/1/part/summary")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         past_date = now().date() - datetime.timedelta(days=1)
         past_past_date = now().date() - datetime.timedelta(days=2)
@@ -5855,7 +5847,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         upload = copy.deepcopy(first)
         del upload['event']
-        self.get('/event/event/1/import')
+        self.get('/event/event/1/import/partial')
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms["importform"]
         f['json_file'] = webtest.Upload(
@@ -7033,7 +7025,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("berta")
     def test_part_group_part_order(self) -> None:
-        self.get(f'/event/event/2part/summary')
+        self.get('/event/event/2/part/summary')
         self.traverse("Teil hinzufügen")
         f = self.response.forms['addpartform']
         f['title'] = "Afterparty"
@@ -7067,9 +7059,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("annika")
     def test_track_groups(self) -> None:
-        self.get(f'/event/event/1/part/summary')
-        self.traverse("Veranstaltungsteile", "Gruppen",
-                      "Kursschienengruppe hinzufügen")
+        self.get('/event/event/1/part/summary')
+        self.traverse("Gruppen", "Kursschienengruppe hinzufügen")
         self.assertTitle("Kursschienengruppe hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['configuretrackgroupform']
 
@@ -7093,9 +7084,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                          " inkompatible Kurswahlen existieren.", index=0)
 
         # Now a valid one. (TripelAkademie)
-        self.get(f'/event/event/4/part/summary')
-        self.traverse("Veranstaltungsteile",
-                      "Gruppen", "Kursschienengruppe hinzufügen")
+        self.get('/event/event/4/part/summary')
+        self.traverse("Gruppen", "Kursschienengruppe hinzufügen")
         f = self.response.forms['configuretrackgroupform']
         f['title'] = "Gruppe mit einer Kursschiene"
         f['shortname'] = "kl. Gr."
@@ -7138,7 +7128,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                                div="track-group-summary")
 
         # No tracks, no track groups (CdE-Party)
-        self.get(f'/event/event/2/part/summary')
+        self.get('/event/event/2/part/summary')
         self.assertNonPresence("Kursschienengruppe")
 
     @event_keeper
@@ -7254,7 +7244,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertEqual(len(choices_set), 1)
 
         # Check that changing one track propagates to others in the group.
-        self.traverse("Veranstaltungsteile", {'href': "/event/event/4/part/8/change"})
+        self.get("/event/event/4/part/8/change")
         f = self.response.forms['changepartform']
         f['track_num_choices_8'] = 10
         f['track_min_choices_8'] = 9
@@ -7411,7 +7401,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         #  compatible choices exist.
         event_id = 4
         event = self.event.get_event(self.key, event_id)
-        self.traverse("Veranstaltungsteile", "Gruppen")
+        self.get(f'/event/event/{event_id}/part/summary')
+        self.traverse("Gruppen")
         f = self.response.forms['deletetrackgroupform1']
         f['ack_delete'] = True
         self.submit(f)
@@ -7893,9 +7884,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     def test_limited_event_mailinglists(self) -> None:
         # Test creation of part group linked lists by orga.
         with self.switch_user("garcia"):
-            self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                          "Veranstaltungsteile", "Gruppen",
-                          "Veranstaltungsteilgruppe hinzufügen")
+            self.get('/event/event/1/part/summary')
+            self.traverse("Gruppen", "Veranstaltungsteilgruppe hinzufügen")
             f = self.response.forms["configurepartgroupform"]
             f['title'] = f['shortname'] = "Beide"
             f['part_ids'] = [2, 3]
