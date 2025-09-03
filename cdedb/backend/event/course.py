@@ -89,8 +89,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def set_course(self, rs: RequestState,
-                   data: CdEDBObject) -> DefaultReturnCode:
+    def set_course(self, rs: RequestState, course_id: int, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a course linked to an event organized via DB.
 
         If the 'segments' key is present you have to pass the complete list
@@ -101,10 +100,11 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         list of active tracks. This has to be a subset of the segments of
         the course.
         """
-        data = affirm(models.Course, data)
+        course_id = affirm(vtypes.ID, course_id)
         ret = 1
         with Atomizer(rs):
-            current = self.get_course(rs, data['id'])
+            current = self.get_course(rs, course_id)
+            data = affirm(models.Course, data, event=current.event)
             current_dict = current.as_dict()
             if not is_privileged(rs, EventPrivileges.courses_write, current.event_id):
                 raise PrivilegeError
@@ -113,6 +113,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             course_fields = set(models.Course.database_fields()) - {"fields"}
 
             changed = False
+            data["id"] = course_id
             changed_data = {
                 k: v for k, v in data.items()
                 if k in course_fields and v != current_dict[k]
@@ -123,15 +124,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 changed = True
 
             if 'fields' in data:
-                # delayed validation since we need additional info
-                fdata = affirm(
-                    vtypes.EventAssociatedFields, data['fields'],
-                    fields=current.event.fields,
-                    association=const.FieldAssociations.course,
-                )
-
                 fdata = {
-                    k: v for k, v in fdata.items()
+                    k: v for k, v in data['fields'].items()
                     if k not in current.fields or v != current.fields[k]
                 }
                 if fdata:
@@ -228,30 +222,26 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         return ret
 
     @access("event")
-    def create_course(self, rs: RequestState,
-                      data: CdEDBObject) -> DefaultReturnCode:
+    def create_course(self, rs: RequestState, event_id: int, data: CdEDBObject) -> DefaultReturnCode:
         """Make a new course organized via DB."""
-        data = affirm(models.Course, data, creation=True)
-        # direct validation since we already have an event_id
+        event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
+        data = affirm(models.Course, data, creation=True, event=event)
+
         with Atomizer(rs):
-            self.assert_lock(rs, event_id=data['event_id'])
-            event = self.get_event(rs, data['event_id'])
-            # Check for existence of course tracks
-            if not event.tracks:
-                raise RuntimeError(n_("Event without tracks forbids courses."))
-            fdata = affirm(
-                vtypes.EventAssociatedFields, data.get('fields') or {},
-                fields=event.fields, association=const.FieldAssociations.course)
-            data['fields'] = PsycoJson(fdata)
-            if not is_privileged(rs, EventPrivileges.courses_write, data['event_id']):
-                raise PrivilegeError(n_("Not privileged."))
+            self.assert_lock(rs, event_id=event_id)
+            if not is_privileged(rs, EventPrivileges.courses_write, event_id):
+                raise PrivilegeError
+
             course_fields = set(models.Course.database_fields())
+            data['fields'] = PsycoJson(data.get('fields', {}))
+            data['event_id'] = event_id
             course_data = {
                 k: v for k, v in data.items() if k in course_fields
             }
-            new_id = self.sql_insert(rs, "event.courses", course_data)
-            self.event_log(rs, const.EventLogCodes.course_created,
-                           data['event_id'], change_note=data['title'])
+            new_id = self.sql_insert(rs, models.Course.database_table, course_data)
+            self.event_log(rs, const.EventLogCodes.course_created, event_id, change_note=data['title'])
+
             course = self.get_course(rs, new_id)
             self._set_course_segments(rs, data['segments'], course)
         return new_id

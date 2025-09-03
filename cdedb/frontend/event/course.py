@@ -337,7 +337,6 @@ class EventCourseMixin(EventBaseFrontend):
                       active_segments: Collection[int], data: CdEDBObject,
                       ) -> Response:
         """Modify a course associated to an event organized via DB."""
-        data['id'] = course_id
         data['segments'] = {
             track_id: {
                 "is_active": track_id in active_segments
@@ -353,11 +352,11 @@ class EventCourseMixin(EventBaseFrontend):
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, models.Course, data)
+        data = check(rs, models.Course, data, event=rs.ambience['event'])
         if rs.has_validation_errors():
             return self.change_course_form(rs, event_id, course_id)
         assert data is not None
-        code = self.eventproxy.set_course(rs, data)
+        code = self.eventproxy.set_course(rs, course_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
@@ -390,7 +389,6 @@ class EventCourseMixin(EventBaseFrontend):
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
         """Create a new course associated to an event organized via DB."""
-        data['event_id'] = event_id
         data['segments'] = {
             track_id: {"is_active": True}
             for track_id in segments
@@ -405,12 +403,12 @@ class EventCourseMixin(EventBaseFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
-        data = check(rs, models.Course, data, creation=True)
+        data = check(rs, models.Course, data, creation=True, event=rs.ambience['event'])
         if rs.has_validation_errors():
             return self.create_course_form(rs, event_id)
         assert data is not None
 
-        new_id = self.eventproxy.create_course(rs, data)
+        new_id = self.eventproxy.create_course(rs, event_id, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
