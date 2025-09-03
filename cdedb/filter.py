@@ -642,6 +642,12 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
     return xsorted(value.items(), key=key, reverse=reverse)
 
 
+def keysort_filter(value: Iterable[T], sortkey: Callable[[Any], Any],
+                   reverse: bool = False) -> list[T]:
+    """Sort a simple iterable by their value."""
+    return xsorted(value, key=sortkey, reverse=reverse)
+
+
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
                        reverse: bool = False) -> list[tuple[T, S]]:
     """Sort a dicts items by their value."""
@@ -794,6 +800,7 @@ JINJA_FILTERS = {
     'dictcount': dict_count_filter,
     'enum': enum_filter,
     'sort': sort_filter,
+    'keysort': keysort_filter,
     'dictsort': dictsort_filter,
     'xdictsort': xdictsort_filter,
     'keydictsort': keydictsort_filter,

@@ -257,7 +257,6 @@ class EventCourseMixin(EventBaseFrontend):
             violations: ViolationList = violation_data['violations']
 
             if self.is_privileged(rs, EventPrivileges.registrations_read):
-                params['personas'] = violation_data['personas']
                 params['registrations'] = violation_data['registrations']
                 instructor_ids = set(
                     reg['persona_id']
@@ -266,7 +265,7 @@ class EventCourseMixin(EventBaseFrontend):
                            for reg_track in reg['tracks'].values())
                 )
                 params['instructor_emails'] = [
-                    params['personas'][instructor_id]['username']
+                    violation_data['personas'][instructor_id]['username']
                     for instructor_id in instructor_ids
                 ]
                 params['violations'] = violations
@@ -365,15 +364,14 @@ class EventCourseMixin(EventBaseFrontend):
             self, rs: RequestState, event_id: int, course_id: int, data: CdEDBObject
     ) -> Response:
         """Modify a course associated to an event organized via DB."""
-        data['id'] = course_id
         data.update(
             self._dynamic_extract_course(rs, creation=False, event=rs.ambience['event'])
         )
-        data = check(rs, models.Course, data, creation=False)
+        data = check(rs, models.Course, data, creation=False, event=rs.ambience['event'])
         if rs.has_validation_errors() or not data:
             return self.change_course_form(rs, event_id, course_id)
 
-        code = self.eventproxy.set_course(rs, data)
+        code = self.eventproxy.set_course(rs, course_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
@@ -401,15 +399,14 @@ class EventCourseMixin(EventBaseFrontend):
             self, rs: RequestState, event_id: int, data: CdEDBObject
     ) -> Response:
         """Create a new course associated to an event organized via DB."""
-        data['event_id'] = event_id
         data.update(
             self._dynamic_extract_course(rs, creation=True, event=rs.ambience['event'])
         )
-        data = check(rs, models.Course, data, creation=True)
+        data = check(rs, models.Course, data, creation=True, event=rs.ambience['event'])
         if rs.has_validation_errors() or not data:
             return self.create_course_form(rs, event_id)
 
-        new_id = self.eventproxy.create_course(rs, data)
+        new_id = self.eventproxy.create_course(rs, event_id, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 

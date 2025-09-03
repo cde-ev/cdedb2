@@ -67,6 +67,7 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
+    NearlyNow,
     PathLike,
     RequestState,
     make_persona_name,
@@ -572,6 +573,12 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
             if real['change_note']:
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
+
+        if log != tuple(log_expectation):
+            for log_entry, exp_entry in zip(log, log_expectation):
+                if log_entry['ctime'] == exp_entry['ctime']:
+                    if isinstance(exp_entry['ctime'], NearlyNow):
+                        exp_entry['ctime'] = log_entry['ctime']
         self.assertEqual(log, tuple(log_expectation))
 
     def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],

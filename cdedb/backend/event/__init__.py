@@ -382,7 +382,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             self.assert_lock(rs, event_id=event_id)
 
             event = self.get_event(rs, event_id)
-            data = affirm(vtypes.SerializedPartialEvent, data, fields=event.fields)
+            data = affirm(vtypes.SerializedPartialEvent, data, event=event)
 
             if not is_privileged(rs, EventPrivileges.entities_write, event_id=event_id):
                 raise PrivilegeError
@@ -586,11 +586,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     cprevious[course_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_course)
-                        new['event_id'] = event_id
                         new['segments'] = {
                             k: {"is_active": v} for k, v in new['segments'].items()
                         }
-                        new_id = self.create_course(rs, new)
+                        new_id = self.create_course(rs, event_id, new)
                         cmap[course_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_course)
@@ -607,8 +606,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                     } if status is not None else None
                                     for track_id, status in segments.items()
                                 }
-                            changed_course['id'] = course_id
-                            self.set_course(rs, changed_course)
+                            self.set_course(rs, course_id, changed_course)
             if cdelta:
                 total_delta['courses'] = cdelta
                 total_previous['courses'] = cprevious

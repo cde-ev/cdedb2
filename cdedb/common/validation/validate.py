@@ -408,7 +408,7 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
     _add_typed_validator(the_validator, return_type)
 
 
-def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
+def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass."""
 
     def the_decorator(fun: F) -> F:
@@ -419,7 +419,9 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
                 val: Any, argname: str = type_.__qualname__, *,
                 type_: type[DC], creation: bool = False, **kwargs: Any
             ) -> CdEDBObject:
-                val = _mapping(val, argname, **kwargs)
+
+                new_kwargs = {**kwargs_, **kwargs}
+                val = _mapping(val, argname, **new_kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()
                 elif issubclass(type_, CdEDataclass):
@@ -427,9 +429,9 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
                 else:
                     raise RuntimeError("Impossible.")
                 val = _examine_dictionary_fields(
-                    val, mandatory, optional, **kwargs
+                    val, mandatory, optional, **new_kwargs
                 )
-                val = fun(val, argname, creation=creation, **kwargs)
+                val = fun(val, argname, creation=creation, **new_kwargs)
                 return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
@@ -826,7 +828,7 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -845,6 +847,8 @@ def _str_type(
     if sieve:
         val = ''.join(c for c in val if c in sieve)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
+    if limit_size and len(val) > 256000:
+        raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
     return StringType(val)
 
 
@@ -2909,13 +2913,16 @@ def _past_course(
     return PastCourse(val)
 
 
-@_create_dataclass_validator(models_event.Course)
+@_create_dataclass_validator(models_event.Course, association=const.FieldAssociations.course)
 def _course(
     val: CdEDBObject, argname: str = "course", *,
-    creation: bool = False, **kwargs: Any,
+    creation: bool = False, event: models_event.Event, **kwargs: Any,
 ) -> CdEDBObject:
 
     errs = ValidationSummary()
+
+    if not event.tracks:
+        errs.append(ValueError("event_id", n_("Event without tracks forbids courses.")))
 
     if "segments" in val:
         new_segments = {}
@@ -3081,8 +3088,9 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: dict[int, models_event.EventField],
-    association: FieldAssociations, **kwargs: Any,
+    event: models_event.Event,
+    association: FieldAssociations,
+    **kwargs: Any,
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -3100,17 +3108,17 @@ def _event_associated_fields(
     raw = copy.deepcopy(val)
     optional_fields: TypeMapping = {
         str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
-        for field in fields.values() if field.association == association
+        for field in event.fields.values() if field.association == association
     }
 
     val = _examine_dictionary_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
+    lookup: dict[str, int] = {v.field_name: k for k, v in event.fields.items()}
     for field_name, value in val.items():
         field_id = lookup[field_name]
-        entries = fields[field_id].entries
+        entries = event.fields[field_id].entries
         if entries is not None and value is not None:
             if not any(str(raw[field_name]) == x for x, _ in entries.items()):
                 errs.append(ValueError(

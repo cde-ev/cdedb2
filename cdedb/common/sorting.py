@@ -132,6 +132,10 @@ class EntitySorter:
     make_address_sorter = staticmethod(_make_address_sorter)
 
     @staticmethod
+    def registration_with_persona(registration: CdEDBObject) -> Sortkey:
+        return EntitySorter.persona(registration['persona'])
+
+    @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
         return (lodgement['title'], lodgement['id'])
 

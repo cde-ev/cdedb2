@@ -426,6 +426,7 @@ I18N_STRINGS = (
     n_("ComplaintKind.other_harassment"),
     n_("ComplaintKind.mobbing"),
     n_("ComplaintKind.bad_administration"),
+    n_("ComplaintKind.other"),
 
     n_("ComplaintLogCodes.case_created"),
     n_("ComplaintLogCodes.case_changed_kind"),

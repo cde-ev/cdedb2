@@ -739,7 +739,7 @@ class TestEventModels(BackendTest):
             max_size=vtypes.NonNegativeInt(10),
             is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'},
+            fields=vtypes.EventAssociatedFields({'room': 'Wald'}),
         )
         reality = self.event.get_course(self.key, course_id)
 
@@ -782,7 +782,7 @@ class TestEventModels(BackendTest):
                 max_size=vtypes.NonNegativeInt(20),
                 is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'},
+                fields=vtypes.EventAssociatedFields({'room': 'Theater'}),
             ),
         }
         reality = self.event.get_courses(self.key, course_ids)

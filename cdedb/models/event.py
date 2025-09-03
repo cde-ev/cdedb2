@@ -774,13 +774,14 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=(Meta.validate_creation_exclude | Meta.request_creation_exclude).as_dict)
+    id: vtypes.ProtoID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
+    # Give event a default, so automatic sorting of course segments is less horrible.
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     segments: CdEDataclassMap["CourseSegment"]
 
@@ -804,9 +805,9 @@ class Course(EventDataclass):
 
     notes: str | None
 
-    # Should be vtypes.EventAssociatedFields, but needs additional context.
-    fields: Mapping[str, Any] = dataclasses.field(
-        default_factory=dict, metadata=Meta.request_exclude.as_dict,
+    fields: vtypes.EventAssociatedFields = dataclasses.field(
+        default_factory=cast(type[vtypes.EventAssociatedFields], dict),
+        metadata=Meta.request_exclude.as_dict,
     )
 
     @property
@@ -846,8 +847,6 @@ class Course(EventDataclass):
         for ret in (mandatory, optional):
             if "segments" in ret:
                 ret["segments"] = Mapping
-            if "fields" in ret:
-                ret["fields"] = Mapping
         return mandatory, optional
 
 

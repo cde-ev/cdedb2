@@ -100,7 +100,7 @@
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "case_id" %}
                 {{ util.form_input_text(name="case_id", label=gettext("Case"), type="number", small=True) }}
-                {{ util.form_input_select(name="case_id_include_empty", label=gettext("Include Entries without Case"), entries=enums["IncludeEmpty"]|enum_entries, small=True) }}
+                {{ util.form_input_select(name="case_id_include_empty", label=gettext("Include Entries without Case"), entries=enums["IncludeEmpty"]|enum_entries(processing=gettext), small=True) }}
                 {{ util.form_input_text(name="companion_id", label=gettext("Companion"), small=True,
                         anid="input-companion_id") }}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">

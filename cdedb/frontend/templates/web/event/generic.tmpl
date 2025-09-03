@@ -769,7 +769,6 @@
         <script nonce="{{ csp_nonce }}">
             $("#filterconstraintsform").cdedbFilterViolations(
                 "#{{ resultsid }}",
-                "{{ cdedblink("event/select_event") }}",
                 {{ event_options|tojson }},
                 {{ enums['ViolationSeverity'].map()|tojson }},
                 {{ enums['ViolationKind'].map()|tojson }},

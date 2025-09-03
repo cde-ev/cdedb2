@@ -1073,7 +1073,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 # delayed validation since we need additional info
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event.fields,
+                    event=event,
                     association=const.FieldAssociations.registration)
 
                 fupdate = {
@@ -1178,7 +1178,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            vtypes.EventAssociatedFields, fdata, fields=event.fields,
+            vtypes.EventAssociatedFields, fdata, event=event,
             association=const.FieldAssociations.registration)
         if (data['persona_id'] != rs.user.persona_id
                 and not is_privileged(rs, EventPrivileges.registrations_write,

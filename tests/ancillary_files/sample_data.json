@@ -4561,6 +4561,7 @@
             "kind": 15,
             "is_grave": false,
             "summary": "Jemand schnarcht ganz furchtbar.",
+            "notes": null,
             "start_date": "2025-05-28",
             "end_date": null
         }

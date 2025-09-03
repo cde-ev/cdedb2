@@ -432,7 +432,6 @@ class TestEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
         new_course = {
-            'event_id': new_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -450,8 +449,9 @@ class TestEventBackend(BackendTest):
             },
             'is_visible': True,
         }
-        new_course_id = self.event.create_course(self.key, new_course)
+        new_course_id = self.event.create_course(self.key, new_id, new_course)
         new_course['id'] = new_course_id
+        new_course['event_id'] = new_id
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
@@ -854,7 +854,6 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         old_courses = self.event.list_courses(self.key, event_id)
         data: CdEDBObject = {
-            'event_id': event_id,
             'title': (original_title := "Topos theory for the kindergarden"),
             'description': """This is an interesting topic
 
@@ -878,16 +877,17 @@ class TestEventBackend(BackendTest):
                 'room': "outside",
             },
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         data['id'] = new_id
+        data['event_id'] = event_id
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'][2] = None
         data['segments'][1] = {
             "is_active": True,
         }
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments'],
+        self.event.set_course(self.key, new_id, {
+            'title': data['title'], 'segments': data['segments'],
         })
         del data["segments"][2]
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
@@ -895,7 +895,7 @@ class TestEventBackend(BackendTest):
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data["segments"][3]["is_active"] = True
-        self.event.set_course(self.key, {'id': new_id, 'segments': data['segments']})
+        self.event.set_course(self.key, new_id, {'segments': data['segments']})
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
         log_expectation = [
@@ -951,7 +951,6 @@ class TestEventBackend(BackendTest):
     def test_course_delete(self) -> None:
         event_id = 1
         data = {
-            'event_id': event_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -972,7 +971,7 @@ class TestEventBackend(BackendTest):
             'min_size': 23,
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         self.assertEqual(
             self.event.delete_course_blockers(self.key, new_id).keys(),
             {"course_segments"})
@@ -984,14 +983,13 @@ class TestEventBackend(BackendTest):
         # Set the status quo.
         for course_id in (1, 2, 3, 4):
             cdata = {
-                "id": course_id,
                 "segments": {
                     1: {"is_active": True},
                     2: {"is_active": True},
                     3: {"is_active": True},
                 },
             }
-            self.event.set_course(self.key, cdata)
+            self.event.set_course(self.key, course_id, cdata)
         for reg_id in (1, 2, 3, 4):
             rdata = {
                 "id": reg_id,
@@ -3624,7 +3622,6 @@ class TestEventBackend(BackendTest):
             },
         })
         data = {
-            'event_id': 1,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -3645,7 +3642,7 @@ class TestEventBackend(BackendTest):
             },
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, 1, data)
         data['title'] = "Alternate Universes"
         data['segments'] = {
             1: {
@@ -3653,8 +3650,9 @@ class TestEventBackend(BackendTest):
             },
             2: None,
         }
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments']})
+        self.event.set_course(
+            self.key, new_id, {'title': data['title'], 'segments': data['segments']}
+        )
         new_reg = {
             'event_id': 1,
             'list_consent': True,
@@ -4952,6 +4950,9 @@ class TestEventBackend(BackendTest):
                 reference_time,
                 self.event._event_keeper.latest_logtime(event_id),
             )
+
+        # Check size limit bypass for commited file.
+        self.event._event_keeper.commit(event_id, "X" * 300_000, "file size test")
 
     @as_users("garcia")
     def test_replace_checkin_periods(self) -> None:
