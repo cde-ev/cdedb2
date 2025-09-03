@@ -24,6 +24,7 @@ from cdedb.common import (
     DefaultReturnCode,
     RequestState,
     json_serialize,
+    merge_dicts,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -868,9 +869,10 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             spec = scope.get_spec(event=event)
 
             data = affirm(CustomQueryFilter, data, query_spec=spec, creation=True)
-            data['fields'] = CustomQueryFilter._get_field_string(data['fields'])
+            query = CustomQueryFilter(id=vtypes.ID(-1), **data)
 
-            new_id = self.sql_insert(rs, CustomQueryFilter.database_table, data)
+            new_id = self.sql_insert(rs, CustomQueryFilter.database_table,
+                                     query.to_database())
             self.event_log(rs, const.EventLogCodes.custom_filter_created, event_id,
                            change_note=data["title"])
         return new_id
@@ -897,14 +899,15 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             spec = current.scope.get_spec(event=event)
 
             data = affirm(CustomQueryFilter, data, query_spec=spec)
-            data['fields'] = CustomQueryFilter._get_field_string(data['fields'])
+            merge_dicts(data, current.as_dict())
+            updated = CustomQueryFilter(**data)
 
             ret = 1
-            if any(data[k] != current_data[k] for k in data):
-                ret *= self.sql_update(rs, CustomQueryFilter.database_table, data)
-
-                if 'title' in data and data['title'] != current.title:
-                    change_note = f"'{current.title}' -> '{data['title']}'"
+            if current != updated:
+                ret *= self.sql_update(rs, CustomQueryFilter.database_table,
+                                       updated.to_database())
+                if updated.title != current.title:
+                    change_note = f"'{current.title}' -> '{updated.title}'"
                 else:
                     change_note = current.title
                 self.event_log(rs, const.EventLogCodes.custom_filter_changed,

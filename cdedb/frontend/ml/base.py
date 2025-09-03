@@ -300,7 +300,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert ml is not None
         # Check if mailinglist address is unique and valid
         try:
-            self.mlproxy.validate_address(rs, data)
+            self.mlproxy.validate_address(rs, ml.as_dict())
         except ValueError as e:
             rs.extend_validation_errors([("local_part", e), ("domain", e)])
 

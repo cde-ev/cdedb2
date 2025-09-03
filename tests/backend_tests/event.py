@@ -4640,8 +4640,7 @@ class TestEventBackend(BackendTest):
                 notes=None,
                 etime=base_time + delta,
             )
-            data = new_token.as_dict()
-            del data["id"]
+            data = new_token.to_database()
             new_id, secret = self.event.create_orga_token(self.key, data)
             new_token.id = vtypes.ID(new_id)
             apitoken = cast(RequestState, new_token.get_token_string(secret))

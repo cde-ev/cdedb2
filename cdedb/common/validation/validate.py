@@ -399,7 +399,15 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
 
 
 def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
-    """Takes a function and creates one validator per given dataclass."""
+    """Takes a function and creates one validator per given dataclass.
+
+    The new validator accepts a dict, checking that its keys conform to the
+    respective dataclass definition and then calls the function.
+
+    The function may perform further validations and must return a dict.
+    If `creation=True`, the dict can be used to instantiate a valid dataclass
+      (after adding an `id=-1`).
+    """
 
     def the_decorator(fun: F) -> F:
 
