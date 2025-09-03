@@ -254,7 +254,6 @@ class EventCourseMixin(EventBaseFrontend):
             violations: ViolationList = violation_data['violations']
 
             if self.is_privileged(rs, EventPrivileges.registrations_read):
-                params['personas'] = violation_data['personas']
                 params['registrations'] = violation_data['registrations']
                 instructor_ids = set(
                     reg['persona_id']
@@ -263,7 +262,7 @@ class EventCourseMixin(EventBaseFrontend):
                            for reg_track in reg['tracks'].values())
                 )
                 params['instructor_emails'] = [
-                    params['personas'][instructor_id]['username']
+                    violation_data['personas'][instructor_id]['username']
                     for instructor_id in instructor_ids
                 ]
                 params['violations'] = violations

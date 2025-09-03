@@ -440,7 +440,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_privileged = {"Teilnehmer-Infos"}
         privileged = {
-            "Statistik", "Kurse", "Unterkünfte",
+            "Statistik", "Kurse", "Unterkünfte", "Downloads",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
             "Fragebogen konfigurieren", "Orga-Tokens", "Anmeldungsvorschau",
@@ -448,7 +448,7 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung", "Downloads",
+            "Teilnehmerliste", "Anmeldungen", "Kurseinteilung",
             "Partieller Import", "Log", "Checkin", "Verstöße gegen Beschränkungen",
             "Überweisungen eintragen",
         }
@@ -5939,6 +5939,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['ack_archive'].checked = True
         # checkbox to create a past event is checked by default
         self.submit(f)
+        mail = self.fetch_mail_content()
+        self.assertIn("Große Testakademie 2222\nwurde archiviert", mail)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
