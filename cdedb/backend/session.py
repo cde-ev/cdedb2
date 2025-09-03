@@ -170,16 +170,8 @@ class SessionBackend:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        vals = {
-            k: data[k]
-            for k in (
-                'persona_id',
-                'username',
-                'given_names',
-                'nickname',
-                'family_name',
-            )
-        }
+        pkeys = ('persona_id', 'username', 'given_names', 'nickname', 'family_name')
+        vals = {k: data[k] for k in pkeys}
         return User(roles=extract_roles(data), **vals)
 
     def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
