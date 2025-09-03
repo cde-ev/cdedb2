@@ -409,9 +409,6 @@ class TestComplaintBackend(BackendTest):
             _case.involved[const.ComplaintInvolvementType.target]
         )[0]
         original_companions = sorted(_case.companions_by_involved[original_involved])
-        original_withdrawn_companions = sorted(
-            _case.withdrawn_companions_by_involved[original_involved]
-        )
         self.assertNotIn(
             new_involved, _case.all_involved, "Sample data changed. Review test setup."
         )
@@ -537,14 +534,6 @@ class TestComplaintBackend(BackendTest):
                 "change_note": "Zielpersonen",
                 "persona_id": original_involved,
             },
-            *[
-                {
-                    "code": const.ComplaintLogCodes.companion_removed,
-                    "persona_id": original_involved,
-                    "companion_id": companion_id,
-                }
-                for companion_id in original_companions
-            ],
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "change_note": "Sonstige",
@@ -554,22 +543,6 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.involved_informed,
                 "persona_id": original_involved,
             },
-            *[
-                {
-                    "code": const.ComplaintLogCodes.companion_added,
-                    "persona_id": original_involved,
-                    "companion_id": companion_id,
-                }
-                for companion_id in original_companions
-            ],
-            *[
-                {
-                    "code": const.ComplaintLogCodes.companion_withdrawn,
-                    "persona_id": original_involved,
-                    "companion_id": companion_id,
-                }
-                for companion_id in original_withdrawn_companions
-            ],
             {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Sonstige",

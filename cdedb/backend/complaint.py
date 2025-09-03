@@ -8,6 +8,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
+    Silencer,
     access,
     affirm_dataclass,
     affirm_set_validation as affirm_set,
@@ -196,6 +197,8 @@ class ComplaintBackend(AbstractBackend):
         # To ensure logging is done if and only if the corresponding action happened,
         # we require atomization here.
         self.affirm_atomized_context(rs)
+        if rs.is_quiet:
+            return 0
         data = {
             "code": code,
             "case_id": case_id,
@@ -654,7 +657,25 @@ class ComplaintBackend(AbstractBackend):
                 involved_type, set()
             )
             if other_involved:
-                self.remove_involved(rs, case_id, other_involved)
+                # Silence logging of companion removal, explicitly redo the logging
+                #  of involved removed.
+                with Silencer(rs):
+                    self.remove_involved(rs, case_id, other_involved)
+                for involved_id in mixed_existence_sorter(other_involved):
+                    self.complaint_log(
+                        rs=rs,
+                        code=const.ComplaintLogCodes.involved_removed,
+                        case_id=case_id,
+                        persona_id=involved_id,
+                        change_note=rs.log_gettext(str(case.all_involved[involved_id])),
+                    )
+                    if not is_informed and involved_id in case.informed_involved:
+                        self.complaint_log(
+                            rs=rs,
+                            code=const.ComplaintLogCodes.involved_uninformed,
+                            case_id=case_id,
+                            persona_id=involved_id,
+                        )
 
             if persona_ids & case.active_companions.keys():
                 raise ValueError(n_("Already active companions."))
@@ -694,18 +715,19 @@ class ComplaintBackend(AbstractBackend):
 
             # Add back any companions we removed previously.
             for persona_id in mixed_existence_sorter(other_involved):
-                self.add_companions(
-                    rs,
-                    case_id,
-                    persona_id,
-                    case.companions_by_involved.get(persona_id, set()),
-                )
-                for companion_id in xsorted(
-                    case.withdrawn_companions_by_involved.get(persona_id, set())
-                ):
-                    self.set_companion_withdrawn(
-                        rs, case_id, persona_id, companion_id, is_withdrawn=True
+                with Silencer(rs):
+                    self.add_companions(
+                        rs,
+                        case_id,
+                        persona_id,
+                        case.companions_by_involved.get(persona_id, set()),
                     )
+                    for companion_id in xsorted(
+                        case.withdrawn_companions_by_involved.get(persona_id, set())
+                    ):
+                        self.set_companion_withdrawn(
+                            rs, case_id, persona_id, companion_id, is_withdrawn=True
+                        )
         return ret
 
     @access("complaint_admin")

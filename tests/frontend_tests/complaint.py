@@ -43,11 +43,26 @@ class TestComplaintFrontend(FrontendTest):
         )
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-4-3"
-        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
-        self.submit(f, check_notification=False)
+        f['involvement_type'] = const.ComplaintInvolvementType.appellant
+        self.submit(f)
+
+        self.assertPresence("Beschwerdeführer", div='involved_appellant')
+        self.assertPresence("Daniel Dino (ist informiert)", div='involved_appellant')
         self.assertPresence(
-            "Einige dieser Nutzer sind bereits anderweitig beteiligt.",
-            div='addinvolvedform',
+            "Fallbegleitung: Garcia Generalis", div='involved_appellant'
+        )
+        self.assertNonPresence("Betroffene", div='involved_affected', check_div=False)
+
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-4-3"
+        f['involvement_type'] = const.ComplaintInvolvementType.affected
+        self.submit(f)
+
+        self.assertPresence("Betroffene", div='involved_affected')
+        self.assertPresence("Daniel Dino", div='involved_affected')
+        self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
+        self.assertNonPresence(
+            "Beschwerdeführer", div='involved_appellant', check_div=False
         )
 
         f = self.response.forms['addinvolvedform']
@@ -128,9 +143,9 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("Beteiligten hinzugefügt")
         self.traverse("Zeige Log-Einträge")
         self.assertPresence(
-            "Beteiligten hinzugefügt: Anton Administrator", div='logentry1003'
+            "Beteiligten hinzugefügt: Anton Administrator", div='logentry1009'
         )
-        self.assertPresence("von Simon Struktur; Beschwerdeführer", div='logentry1003')
+        self.assertPresence("von Simon Struktur; Beschwerdeführer", div='logentry1009')
         # self.assertPresence(date_filter(now().date(), lang="de"), div='logentry1001')
         self.assertNoLink('/core/complaint/case/1/history')
 
@@ -307,7 +322,7 @@ class TestComplaintFrontend(FrontendTest):
         )
         self.assertPresence(
             "Fallbegleitung zurückgezogen: Garcia Generalis (für Daniel Dino)",
-            div='logentry1012',
+            div='logentry1018',
         )
 
         # Lock case
@@ -514,6 +529,40 @@ class TestComplaintFrontend(FrontendTest):
                 'case_id': 1,
                 'code': const.ComplaintLogCodes.involved_uninformed,
                 'persona_id': 2,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Betroffene',
+                'code': const.ComplaintLogCodes.involved_removed,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.involved_informed,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_removed,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'code': const.ComplaintLogCodes.involved_uninformed,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Betroffene',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 4,
             },
             {
                 'case_id': 1,
