@@ -87,28 +87,30 @@ class TestScript(unittest.TestCase):
         real_configpath = get_configpath()
         real_config = TestConfig()
 
-        # choose SYSLOG_LEVEL, since this is overwritten in the test config
+        # choose EVENT_ARCHIVAL_BALANCE_CUTOFF, since this is overwritten in the test config
         script = self.get_script()
-        self.assertEqual(None, script.config["SYSLOG_LEVEL"])
+        self.assertEqual(0, script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
         self.assertEqual(real_configpath, get_configpath())
 
         # check overwriting per config argument
         # this takes the options from the real_configpath into account automatically
-        configured_script = self.get_script(SYSLOG_LEVEL=42)
-        self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+        configured_script = self.get_script(EVENT_ARCHIVAL_BALANCE_CUTOFF=42)
+        self.assertEqual(42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
         self.assertEqual(real_configpath, get_configpath())
-        self.assertEqual(str(configured_script._tempconfig), str({"SYSLOG_LEVEL": 42}))
+        self.assertEqual(str(configured_script._tempconfig),
+                         str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
-            f.write("SYSLOG_LEVEL = 42\n")
+            f.write("EVENT_ARCHIVAL_BALANCE_CUTOFF = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
             f.write(f"CDB_DATABASE_NAME = '{real_config['CDB_DATABASE_NAME']}'\n")
             f.flush()
             configured_script = self.get_script(configpath=f.name)
-            self.assertEqual(42, configured_script.config["SYSLOG_LEVEL"])
+            self.assertEqual(
+                42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
             self.assertEqual(real_configpath, get_configpath())
 
     def test_make_backend(self) -> None:
