@@ -33,7 +33,7 @@ DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
 
 # Default log level of our application. Note that this is applied not directly at startup,
 #  but shortly afterwards at the first config access.
-DEFAULT_LOG_LEVEL = logging.WARNING
+DEFAULT_LOG_LEVEL = logging.INFO
 
 
 def set_configpath(path: PathLike) -> None:

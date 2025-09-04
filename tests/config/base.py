@@ -4,6 +4,7 @@ Note that this does is not a complete test config, but only contains the common 
 which are shared by all configurations of the test suite.
 """
 
+import logging
 import pathlib
 
 # config
@@ -15,6 +16,9 @@ CDEDB_TEST = True
 if pathlib.Path('/CONTAINER').is_file():
     DB_HOST = "cdb"
     DB_PORT = 5432
+
+    # to avoid polluting the CI output
+    LOG_LEVEL = logging.WARNING
 
 
 EVENT_ARCHIVAL_BALANCE_CUTOFF = 0

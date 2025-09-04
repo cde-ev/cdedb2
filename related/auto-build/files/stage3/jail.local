@@ -1,3 +1,6 @@
+[DEFAULT]
+backend = systemd
+
 [cdedb-login]
 enabled = true
 port    = http,https
@@ -17,7 +20,7 @@ filter  = cdedb-apitoken
 maxretry = 5
 
 [cdedb-contact]
-enabled = true
+enabled = false
 port    = http,https
 filter  = cdedb-contact
 maxretry = 5
