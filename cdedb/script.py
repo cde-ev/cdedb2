@@ -184,8 +184,8 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._tempconfig = TempConfig(configpath, **config)
         with self._tempconfig:
-            self.config = Config()
-            self._secrets = SecretsConfig()
+            self.config = Config(frozen=True)
+            self._secrets = SecretsConfig(frozen=True)
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
         self._backends: dict[tuple[str, bool], AbstractBackend]
         self._frontends: dict[str, AbstractFrontend]
@@ -219,7 +219,7 @@ class Script:
             return ret
         with self._tempconfig:
             backend_name = self.backend_map[realm]
-            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
+            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")(freeze_config=True)
         self._backends.update({
             (realm, True): make_proxy(backend),
             (realm, False): backend,
@@ -232,7 +232,7 @@ class Script:
             return ret
         with self._tempconfig:
             frontend_name = self.frontend_map[realm]
-            frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
+            frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")(freeze_config=True)
         self._frontends[realm] = frontend
         return frontend
 

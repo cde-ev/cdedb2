@@ -40,8 +40,8 @@ class SessionBackend:
 
     realm = "session"
 
-    def __init__(self) -> None:
-        self.conf = Config()
+    def __init__(self, freeze_config: bool = False) -> None:
+        self.conf = Config(frozen=freeze_config)
         secrets = SecretsConfig()
 
         # local variable also to prevent closure over secrets

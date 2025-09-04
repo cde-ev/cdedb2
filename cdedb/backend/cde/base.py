@@ -14,7 +14,7 @@ import copy
 import dataclasses
 import decimal
 from collections import OrderedDict
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import psycopg2.extensions
 
@@ -84,10 +84,10 @@ class CdEBaseBackend(AbstractBackend):
     """
     realm = "cde"
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.pastevent = make_proxy(PastEventBackend(), internal=True)
-        self.event = make_proxy(EventBackend(), internal=True)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.pastevent = make_proxy(PastEventBackend(**kwargs), internal=True)
+        self.event = make_proxy(EventBackend(**kwargs), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

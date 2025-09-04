@@ -92,8 +92,8 @@ CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
 
 
 class EventBaseBackend(EventLowLevelBackend):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
         # define which keys of log entries will show up in commit messages
         # they are translated to german, since commit messages are always in german
         log_keys = ["Zeitstempel", "Code", "Verantwortlich", "Betroffen", "Erläuterung"]

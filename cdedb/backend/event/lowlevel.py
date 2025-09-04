@@ -73,8 +73,8 @@ class EventFeesPerEntity:
 class EventLowLevelBackend(AbstractBackend):
     realm = "event"
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
         self.minor_form_dir: Path = self.conf['STORAGE_DIR'] / 'minor_form'
 
     @classmethod

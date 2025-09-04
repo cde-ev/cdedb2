@@ -419,10 +419,14 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
 class BaseConfig(Mapping[str, Any], abc.ABC):
     _configpath: pathlib.Path
     _configchain: collections.ChainMap[str, Any]
+    # Do not update the configpath / configchain on environment variable changes.
+    # Needed for scripts.
+    _is_frozen: bool
 
-    def __init__(self) -> None:
+    def __init__(self, frozen: bool = False) -> None:
         configpath = self._get_configpath()
         self._configpath = configpath
+        self._is_frozen = frozen
 
         if not pathlib.Path(configpath).is_file():
             raise RuntimeError(  # pragma: no cover
@@ -441,6 +445,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
 
         :return: Wheter the configpath had been updated.
         """
+        if self._is_frozen:
+            return False
         if (configpath := self._get_configpath()) != self._configpath:
             old_configpath = self._configpath
             if not pathlib.Path(configpath).is_file():
