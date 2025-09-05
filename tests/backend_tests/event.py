@@ -36,7 +36,7 @@ from cdedb.common.exceptions import (
     PartialImportError,
     PrivilegeError,
 )
-from cdedb.common.query import Query, QueryConstraintType, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
