@@ -45,7 +45,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators
+from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.validation import validate
 from cdedb.config import Config
@@ -454,7 +454,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))
                 elif operator == _ops.ranged_notat:
-                    phrase += "NOT(" + subphrase + ")"
+                    if query.scope != QueryScope.registration:
+                        raise ValueError(n_("Operator only allowed for registration query."))
+                    phrase += f"""
+                        NOT EXISTS (
+                            SELECT * FROM event.checkin_periods AS checkin_at
+                            WHERE registration_id = reg.id AND {subphrase}
+                        )
+                    """
                     params.extend((value,) * 2 * len(columns))
                 else:
                     if operator == _ops.ranged_oneof:

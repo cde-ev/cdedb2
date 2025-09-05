@@ -5167,6 +5167,53 @@ class TestEventBackend(BackendTest):
 
     @event_keeper
     @as_users("garcia")
+    @prepsql("DELETE FROM event.checkin_periods")
+    def test_checkin_notat_query(self) -> None:
+        event_id = 1
+        registration_id = 1
+
+        base_time = now() - datetime.timedelta(days=2)
+        delta = datetime.timedelta(hours=2)
+
+        self.event.replace_checkin_periods(
+            self.key,
+            registration_id,
+            [
+                models.ReducedCheckinPeriod(base_time, base_time + delta),
+                models.ReducedCheckinPeriod(base_time + 2 * delta, base_time + 3 * delta),
+            ],
+        )
+
+        constraint = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notat,
+            dt,
+        )
+
+        base_query = Query(
+            QueryScope.registration,
+            spec={},
+            fields_of_interest=["reg.id"],
+            order=[],
+            constraints=[("reg.id", QueryOperators.equal, registration_id)],
+        )
+        spec = base_query.scope.get_spec(event=self.event.get_event(self.key, event_id))
+        for time, expectation in [
+            (base_time - 0.5 * delta, 1),
+            (base_time + 0.5 * delta, 0),
+            (base_time + 1.5 * delta, 1),
+            (base_time + 2.5 * delta, 0),
+            (base_time + 3.5 * delta, 1),
+        ]:
+            with self.subTest(msg=time):
+                query = copy.deepcopy(base_query)
+                query.spec = spec
+                query.constraints.append(constraint(time))
+                data = self.event.submit_general_query(self.key, query, event_id)
+                self.assertEqual(expectation, len(data))
+
+    @event_keeper
+    @as_users("garcia")
     @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1;")
     def test_event_is_balanced(self) -> None:
         event_id = 1
