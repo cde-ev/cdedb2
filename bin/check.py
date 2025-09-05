@@ -101,6 +101,8 @@ class CdEDBTestLock:
 
     def __enter__(self) -> "CdEDBTestLock":
         self.acquire()
+        print(f"Using thread {self.thread}", file=sys.stderr)
+        set_configpath(self.configpath)
         return self
 
     def __exit__(self, exc_type: Optional[Type[BaseException]],
@@ -131,91 +133,104 @@ def _load_tests(testpatterns: Optional[List[str]],
 
 def run_application_tests(testpatterns: Optional[List[str]] = None, *,
                           verbose: bool = False) -> int:
-    conf = TestConfig()
-    secrets = SecretsConfig()
-    # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-
-    create_log(conf)
-    create_database(conf, secrets)
-    populate_database(conf, secrets)
-
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
     test_suite = _load_tests(testpatterns, test_modules)
 
-    unittest.installHandler()
-    test_runner = MyTextTestRunner(
-        verbosity=(2 if verbose else 1),
-        resultclass=MyTextTestResult,  # type: ignore[arg-type]
-        descriptions=False,
-    )
-    ran_tests = test_runner.run(test_suite)
+    if not test_suite.countTestCases():
+        print("No tests to run.")
+        return 1
+
+    with CdEDBTestLock():
+        conf = TestConfig()
+        secrets = SecretsConfig()
+
+        # prepare the translations
+        subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
+
+        create_log(conf)
+        create_database(conf, secrets)
+        populate_database(conf, secrets)
+
+        unittest.installHandler()
+        test_runner = MyTextTestRunner(
+            verbosity=(2 if verbose else 1),
+            resultclass=MyTextTestResult,  # type: ignore[arg-type]
+            descriptions=False,
+        )
+        ran_tests = test_runner.run(test_suite)
+
     return 0 if ran_tests.wasSuccessful() else 1
 
 
 def run_xss_tests(*, verbose: bool = False) -> int:
-    conf = TestConfig()
-    secrets = SecretsConfig()
-    # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
+    with CdEDBTestLock("xss"):
+        conf = TestConfig()
+        secrets = SecretsConfig()
+        # prepare the translations
+        subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-    create_log(conf)
-    create_storage(conf)
-    populate_storage(conf)
-    populate_sample_event_keepers(conf)
-    create_database(conf, secrets)
-    populate_database(conf, secrets, xss=True)
+        create_log(conf)
+        create_storage(conf)
+        populate_storage(conf)
+        populate_sample_event_keepers(conf)
+        create_database(conf, secrets)
+        populate_database(conf, secrets, xss=True)
 
-    ret = xss_check(
-        conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
-        secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
-    )
+        ret = xss_check(
+            conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
+            secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
+        )
 
     return ret
 
 
 def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = False) -> int:
-    conf = TestConfig()
-    secrets = SecretsConfig()
-    # prepare the translations
-    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
-
-    create_log(conf)
-    if is_docker():
-        # the database is already initialized, since it is needed to start the
-        # ldap container in the first place
-        print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
-        # TODO verify this somehow
-    else:
-        create_database(conf, secrets)
-        populate_database(conf, secrets)
-
-        # ensure the test ldap server is running
-        restart_services("cde-ldap-test")
-
-        # wait until the ldap server is ready
-        max_attempts = 20
-        for attempt in range(max_attempts):
-            try:
-                socket.create_connection(
-                    (conf["LDAP_HOST"], conf["LDAP_PORT"]), timeout=0.5)
-                break
-            except OSError:
-                time.sleep(0.5)
-            if attempt == max_attempts - 1:
-                raise TimeoutError("LDAP server took too long for startup.")
-
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
-    unittest.installHandler()
-    test_runner = MyTextTestRunner(
-        verbosity=(2 if verbose else 1),
-        resultclass=MyTextTestResult,  # type: ignore[arg-type]
-        descriptions=False,
-    )
-    ran_tests = test_runner.run(test_suite)
-    stop_services("cde-ldap-test")
+    if not test_suite.countTestCases():
+        print("No tests to run.")
+        return 1
+
+    with CdEDBTestLock("ldap"):
+        conf = TestConfig()
+        secrets = SecretsConfig()
+        # prepare the translations
+        subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
+
+        create_log(conf)
+        if is_docker():
+            # the database is already initialized, since it is needed to start the
+            # ldap container in the first place
+            print(f"Database {conf['CDB_DATABASE_NAME']} must already been set up.")
+            # TODO verify this somehow
+        else:
+            create_database(conf, secrets)
+            populate_database(conf, secrets)
+
+            # ensure the test ldap server is running
+            restart_services("cde-ldap-test")
+
+            # wait until the ldap server is ready
+            max_attempts = 20
+            for attempt in range(max_attempts):
+                try:
+                    socket.create_connection(
+                        (conf["LDAP_HOST"], conf["LDAP_PORT"]), timeout=0.5)
+                    break
+                except OSError:
+                    time.sleep(0.5)
+                if attempt == max_attempts - 1:
+                    raise TimeoutError("LDAP server took too long for startup.")
+
+        unittest.installHandler()
+        test_runner = MyTextTestRunner(
+            verbosity=(2 if verbose else 1),
+            resultclass=MyTextTestResult,  # type: ignore[arg-type]
+            descriptions=False,
+        )
+        ran_tests = test_runner.run(test_suite)
+        stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1
 
 
@@ -292,12 +307,8 @@ if __name__ == '__main__':
         else:
             testpatterns = args.testpatterns
 
-        with CdEDBTestLock() as Lock:
-            assert Lock.thread is not None
-            print(f"Using thread {Lock.thread}", file=sys.stderr)
-            set_configpath(Lock.configpath)
-            return_code += run_application_tests(
-                testpatterns=testpatterns, verbose=args.verbose)
+        return_code += run_application_tests(
+            testpatterns=testpatterns, verbose=args.verbose)
 
     if do_ldap:
         # Override testpatterns to run all tests.
@@ -306,18 +317,10 @@ if __name__ == '__main__':
         else:
             testpatterns = args.testpatterns
 
-        with CdEDBTestLock("ldap") as Lock:
-            assert Lock.thread is not None
-            print(f"Using thread {Lock.thread}", file=sys.stderr)
-            set_configpath(Lock.configpath)
-            return_code += run_ldap_tests(
-                testpatterns=testpatterns, verbose=args.verbose)
+        return_code += run_ldap_tests(
+            testpatterns=testpatterns, verbose=args.verbose)
 
     if do_xss:
-        with CdEDBTestLock("xss") as Lock:
-            assert Lock.thread is not None
-            print(f"Using thread {Lock.thread}", file=sys.stderr)
-            set_configpath(Lock.configpath)
-            return_code += run_xss_tests(verbose=args.verbose)
+        return_code += run_xss_tests(verbose=args.verbose)
 
     sys.exit(return_code)
