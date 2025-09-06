@@ -94,8 +94,8 @@ class CoreBaseBackend(AbstractBackend):
     ``@internal`` quite often. """
     realm = "core"
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self) -> None:
+        super().__init__()
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,

@@ -91,6 +91,7 @@ class TestScript(unittest.TestCase):
         script = self.get_script()
         self.assertEqual(0, script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
         self.assertEqual(real_configpath, get_configpath())
+        self.assertTrue(script.config._is_frozen)
 
         # check overwriting per config argument
         # this takes the options from the real_configpath into account automatically
@@ -99,6 +100,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(real_configpath, get_configpath())
         self.assertEqual(str(configured_script._tempconfig),
                          str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
+        self.assertTrue(configured_script.config._is_frozen)
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
@@ -112,6 +114,10 @@ class TestScript(unittest.TestCase):
             self.assertEqual(
                 42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
             self.assertEqual(real_configpath, get_configpath())
+            self.assertTrue(configured_script.config._is_frozen)
+
+        # check that other configs are not marked as frozen
+        self.assertFalse(TestConfig()._is_frozen)
 
     def test_make_backend(self) -> None:
         # check that the config path stays correct

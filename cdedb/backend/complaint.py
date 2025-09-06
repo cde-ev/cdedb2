@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 from collections.abc import Collection
-from typing import Any, Protocol, cast
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -55,8 +55,8 @@ def _format_date_change_note(
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self) -> None:
+        super().__init__()
         secrets = SecretsConfig()
         complaint_secret = secrets["COMPLAINT_SECRET"]
 

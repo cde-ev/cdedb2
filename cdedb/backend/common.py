@@ -208,12 +208,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm: ClassVar[str]
 
-    def __init__(self, freeze_config: bool = False) -> None:
-        """Initialize a Backend.
-
-        :param freeze_config: Passed to config, shall only be used in scripts.
-        """
-        self.conf = Config(frozen=freeze_config)
+    def __init__(self) -> None:
+        self.conf = Config()
         # initialize logging
         # logger are thread-safe!
         self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
@@ -232,8 +228,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # self.core = cast('CoreBackend', self)
             self.core = make_proxy(self, internal=True)
         else:
-            self.core = make_proxy(CoreBackend(freeze_config=freeze_config),
-                                   internal=True)
+            self.core = make_proxy(CoreBackend(), internal=True)
 
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 

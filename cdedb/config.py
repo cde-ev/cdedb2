@@ -48,6 +48,22 @@ def get_configpath() -> pathlib.Path:
     return DEFAULT_CONFIGPATH
 
 
+def start_freezing_new_configs() -> None:
+    """Frozen configs will not update themselves upon changes of CDEDB_CONFIGPATH.
+
+    This is mainly required for scripts and shall not be used in regular code.
+    The environment variable is read in `BasicConfig`, marking all newly created
+    config objects as frozen. Remember to call `stop_freezing_new_configs` after
+    you are done.
+    """
+    os.environ["CDEDB_CONFIG_FREEZE"] = "True"
+
+
+def stop_freezing_new_configs() -> None:
+    """Counterpart of `start_freezing_new_configs`."""
+    del os.environ["CDEDB_CONFIG_FREEZE"]
+
+
 _LOGGER = logging.getLogger(__name__)
 _ROOT_LOGGER = logging.getLogger()
 
@@ -423,10 +439,10 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
     # Needed for scripts.
     _is_frozen: bool
 
-    def __init__(self, frozen: bool = False) -> None:
+    def __init__(self) -> None:
         configpath = self._get_configpath()
         self._configpath = configpath
-        self._is_frozen = frozen
+        self._is_frozen = bool(os.environ.get("CDEDB_CONFIG_FREEZE"))
 
         if not pathlib.Path(configpath).is_file():
             raise RuntimeError(  # pragma: no cover

@@ -202,12 +202,8 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
     realm: ClassVar[str]
 
-    def __init__(self, *args: Any, freeze_config: bool = False, **kwargs: Any) -> None:
-        """Initialize a Frontend.
-
-        :param freeze_config: Passed to config, shall only be used in scripts.
-        """
-        self.conf = Config(frozen=freeze_config)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.conf = Config()
         secrets = SecretsConfig()
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
@@ -441,14 +437,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             lstrip_blocks=True,
         )
         # Always provide all backends -- they are cheap
-        freeze_config = self.conf._is_frozen
-        self.assemblyproxy = make_proxy(AssemblyBackend(freeze_config=freeze_config))
-        self.cdeproxy = make_proxy(CdEBackend(freeze_config=freeze_config))
-        self.coreproxy = make_proxy(CoreBackend(freeze_config=freeze_config))
-        self.eventproxy = make_proxy(EventBackend(freeze_config=freeze_config))
-        self.mlproxy = make_proxy(MlBackend(freeze_config=freeze_config))
-        self.pasteventproxy = make_proxy(PastEventBackend(freeze_config=freeze_config))
-        self.complaintproxy = make_proxy(ComplaintBackend(freeze_config=freeze_config))
+        self.assemblyproxy = make_proxy(AssemblyBackend())
+        self.cdeproxy = make_proxy(CdEBackend())
+        self.coreproxy = make_proxy(CoreBackend())
+        self.eventproxy = make_proxy(EventBackend())
+        self.mlproxy = make_proxy(MlBackend())
+        self.pasteventproxy = make_proxy(PastEventBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         # Provide mailman access
         secrets = SecretsConfig()
         # local variables to prevent closure over secrets
