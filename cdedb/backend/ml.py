@@ -33,7 +33,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import is_privileged_event, EventPrivileges
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
