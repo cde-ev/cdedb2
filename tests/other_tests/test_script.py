@@ -248,6 +248,6 @@ class TestScript(unittest.TestCase):
         with self.assertRaisesRegex(
                 ValueError, "May not create new orga token in offline instance.",
         ):
-            data = token.as_dict()
+            data = token.to_database()
             del data["id"]
             event.create_orga_token(offline_script.rs(), data)
