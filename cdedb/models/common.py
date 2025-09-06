@@ -103,6 +103,8 @@ class MetaFlag(AbstractFlag):
 
     # database
 
+    to_database_exclude = auto()
+    """Exclude this field from being written to the database via `cls.to_database()`."""
     database_exclude = auto()
     """Exclude the field from `cls.database_fields()`, which excludes it from
     being written to or read from the database.
@@ -150,6 +152,7 @@ class CdEDataclass:
             field.name: values[field.name]
             for field in self.dataclass_fields()
             if field.name in database_fields and field.init
+               and not MetaFlag.to_database_exclude.in_field(field)
         }
 
         # during creation the id is unknown

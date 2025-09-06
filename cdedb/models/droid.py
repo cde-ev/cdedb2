@@ -265,18 +265,17 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime = field(
         default_factory=now, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Revocation time. Automatically set by event backend on revocation.
     rtime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
-
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Last access time. Automatically updated by session backend on every request.
     atime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
 )
 
     # Implementations of inherited methods.

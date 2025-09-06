@@ -463,6 +463,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             secret = OrgaToken.create_secret()
             data['secret_hash'] = encrypt_password(secret)
+            data['ctime'] = now()
 
             new_id = self.sql_insert(rs, OrgaToken.database_table, data)
             self.event_log(rs, const.EventLogCodes.orga_token_created,
