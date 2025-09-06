@@ -18,7 +18,7 @@ class TestEventModels(BackendTest):
         event_id = 1
 
         expectation = models.Event(
-            id=vtypes.ProtoID(1),
+            id=vtypes.ID(1),
             title="Große Testakademie 2222",
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
@@ -58,7 +58,7 @@ class TestEventModels(BackendTest):
             parts={
                 1: models.EventPart(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Warmup",
                     shortname="Wu",
                     part_begin=datetime.date(2222, 2, 2),
@@ -69,7 +69,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventPart(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Erste Hälfte",
                     shortname="1.H.",
                     part_begin=datetime.date(2222, 11, 1),
@@ -80,7 +80,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventPart(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Zweite Hälfte",
                     shortname="2.H.",
                     part_begin=datetime.date(2222, 11, 11),
@@ -94,7 +94,7 @@ class TestEventModels(BackendTest):
             tracks={
                 1: models.CourseTrack(
                     id=1,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
                     num_choices=4,
@@ -104,7 +104,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CourseTrack(
                     id=2,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
                     num_choices=1,
@@ -114,7 +114,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CourseTrack(
                     id=3,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(3),
+                    part_id=vtypes.ID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
                     num_choices=3,
@@ -254,7 +254,7 @@ class TestEventModels(BackendTest):
             custom_query_filters={
                 1: models.CustomQueryFilter(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bälle oder Kind?",
                     notes=None,
@@ -265,7 +265,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CustomQueryFilter(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Kind oder Bälle?",
                     notes=None,
@@ -276,7 +276,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CustomQueryFilter(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Alle Notizen",
                     notes=None,
@@ -287,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.CustomQueryFilter(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bad Combo!",
                     notes=None,
@@ -298,7 +298,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.CustomQueryFilter(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Extrem wichtig!",
                     notes="Ups, hätte ich das Feld nicht löschen sollen?",
@@ -417,7 +417,7 @@ class TestEventModels(BackendTest):
         self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
-        event_id = vtypes.ProtoID(4)
+        event_id = vtypes.ID(4)
 
         expectation = models.Event(
             id=event_id,
@@ -537,7 +537,7 @@ class TestEventModels(BackendTest):
             fees={
                 17: models.EventFee(
                     id=17,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    event_id=event_id,
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -710,23 +710,23 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = vtypes.ProtoID(1)
-        event_id = vtypes.ID(vtypes.ProtoID(1))
+        course_id = vtypes.ID(1)
+        event_id = vtypes.ID(vtypes.ID(1))
 
         expectation = models.Course(
             id=course_id,
             event_id=event_id,
             segments={
                 1: models.CourseSegment(
-                    id=vtypes.ProtoID(-1),
+                    id=vtypes.ID(-1),
                     course_id=course_id,
-                    track_id=vtypes.ProtoID(1),
+                    track_id=vtypes.ID(1),
                     is_active=True,
                 ),
                 3: models.CourseSegment(
-                    id=vtypes.ProtoID(-1),
+                    id=vtypes.ID(-1),
                     course_id=course_id,
-                    track_id=vtypes.ProtoID(3),
+                    track_id=vtypes.ID(3),
                     is_active=True,
                 )
             },
@@ -751,25 +751,25 @@ class TestEventModels(BackendTest):
         expectation = {
             1: expectation,
             2: models.Course(
-                id=vtypes.ProtoID(2),
+                id=vtypes.ID(2),
                 event_id=event_id,
                 segments={
                     1: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(1),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(1),
                         is_active=True,
                     ),
                     2: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(2),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(2),
                         is_active=False,
                     ),
                     3: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(3),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(3),
                         is_active=True,
                     )
                 },

@@ -353,7 +353,8 @@ class EventQueryMixin(EventBaseFrontend):
                for cf in rs.ambience['event'].custom_query_filters.values()):
             rs.append_validation_error(
                 ('title', KeyError(n_("A filter with this title already exists."))))
-        if any(cf.get_field_string() == data['fields'] and cf.id != custom_filter_id
+        field_string = models.CustomQueryFilter._get_field_string(data['fields'])
+        if any(cf.get_field_string() == field_string and cf.id != custom_filter_id
                for cf in rs.ambience['event'].custom_query_filters.values()):
             rs.append_validation_error(
                 ('field', KeyError(n_(
@@ -372,17 +373,15 @@ class EventQueryMixin(EventBaseFrontend):
 
         data.update({
             'fields': self.retrieve_custom_filter_fields(rs, spec),
-            'id': -1,
             'event_id': event_id,
         })
-        data = check(rs, vtypes.CustomQueryFilter, data, creation=True, query_spec=spec)
+        data = check(rs, models.CustomQueryFilter, data, creation=True, query_spec=spec)
         if data:
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
         if rs.has_validation_errors() or not data:
             return self.configure_custom_filter_form(rs, event_id, scope)
-        custom_filter = models.CustomQueryFilter(**data)
-        custom_filter.event = None  # type: ignore[assignment]
-        code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
+        code = self.eventproxy.add_custom_query_filter(
+            rs, scope=scope, event_id=event_id, data=data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
@@ -413,7 +412,7 @@ class EventQueryMixin(EventBaseFrontend):
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id
 
-        data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
+        data = check(rs, models.CustomQueryFilter, data, query_spec=spec)
         if data:
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id)
         if rs.has_validation_errors() or not data:

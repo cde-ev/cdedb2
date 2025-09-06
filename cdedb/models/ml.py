@@ -90,9 +90,11 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: set[vtypes.ID]
+    moderators: set[vtypes.ID] = dataclasses.field(
+        metadata=Meta.io_exclude.as_dict)
     whitelist: set[vtypes.Email] = dataclasses.field(
-        metadata=Meta.validate_creation_optional.as_dict)
+        metadata=(Meta.io_exclude
+                  | Meta.validate_creation_optional).as_dict)
 
     description: Optional[str]
     additional_footer: Optional[str]
@@ -144,11 +146,6 @@ class Mailinglist(CdEDataclass):
     @property
     def domain_str(self) -> str:
         return self.domain.get_domain()
-
-    @classmethod
-    def database_fields(cls) -> list[str]:
-        return [field.name for field in fields(cls)
-                if field.name not in {"moderators", "whitelist"}]
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

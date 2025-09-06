@@ -5,7 +5,7 @@ The `CoreGenesisBackend` subclasses the `CoreBaseBackend` and provides functiona
 for "genesis", that is for account creation via anonymous account requests.
 """
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, cast
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -53,7 +53,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         realm = affirm(vtypes.Realm, data["realm"], supports_genesis=True)
         case_model = models.GenesisCase.get_model_by_realm(realm)
-        data = cast(CdEDBObject, affirm(case_model, data, creation=True))
+        data = affirm(case_model, data, creation=True)
 
         data['status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
@@ -269,7 +269,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             if current.status.is_finalized():
                 raise ValueError(n_("Genesis case already finalized."))
             case_model = models.GenesisCase.get_model_by_realm(current.realm)
-            data = cast(CdEDBObject, affirm(case_model, data))
+            data = affirm(case_model, data)
             ret = self.sql_update(rs, "core.genesis_cases", data)
             self.core_log(rs, const.CoreLogCodes.genesis_change,
                           change_note=current.persona.username)

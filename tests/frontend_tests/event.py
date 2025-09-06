@@ -7655,8 +7655,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             fields={'reg_fields.xfield_TEST', 'reg_fields.xfield_TEST2'},
             notes=None,
         )
-        new_filter.event = None  # type: ignore[assignment]
-        self.event.add_custom_query_filter(self.key, new_filter)
+        data = {'title': new_filter.title, 'fields': new_filter.fields,
+                'notes': new_filter.notes}
+        self.event.add_custom_query_filter(
+            self.key, scope=new_filter.scope, event_id=new_filter.event_id, data=data)
+
         self.traverse("Anmeldungen")
         f = self.response.forms['queryform']
         f[f'qop_{new_filter.get_field_string()}'] = QueryOperators.equal.value

@@ -53,7 +53,6 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import base64
 import copy
 import csv
-import dataclasses
 import datetime
 import decimal
 import distutils.util
@@ -131,7 +130,7 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpec,
 )
-from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
@@ -236,63 +235,18 @@ class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
-    models_ml.Mailinglist: Mailinglist,
-    models_droid.OrgaToken: OrgaToken,
-    GenericLogFilter: LogFilter,
-    models_event.CustomQueryFilter: CustomQueryFilter,
-    models_core.AnonymousMessageData: AnonymousMessage,
-}
 
+@overload
+def validate_assert(type_: type[CdEDataclass], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> CdEDBObject: ...
 
-def _validate_dataclass_preprocess(type_: type[DC], value: Any,
-                                   ) -> tuple[type[DC], type[CdEDBObject]]:
-    # Keep subclassing intact if possible.
-    if isinstance(value, type_):
-        subtype = type(value)
-    else:
-        raise RuntimeError("Value is no instance of given type.")
-
-    # Figure out the closest validator on the class hierarchy.
-    if not dataclasses.is_dataclass(value):
-        raise RuntimeError("Given value is not an instance of a dataclass.")
-    for supertype in type_.mro():
-        if supertype in DATACLASS_TO_VALIDATORS:
-            validator = DATACLASS_TO_VALIDATORS[supertype]
-            break
-    else:
-        raise RuntimeError("There is no validator mapped to this dataclass.")
-
-    return subtype, validator
-
-
-def _validate_dataclass_postprocess(subtype: type[DC], validated: CdEDBObject) -> DC:
-    dataclass_keys = {field.name for field in dataclasses.fields(subtype)
-                      if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
-    return cast(DC, subtype(**validated))
-
-
-def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> DC:
-    """Wrapper of validate_assert that accepts dataclasses.
-
-    Allows for subclasses, and figures out the appropriate superclass, for which
-    a validator exists, dynamically."""
-    subtype, validator = _validate_dataclass_preprocess(type_, value)
-    if hasattr(value, 'to_validation'):
-        val = value.to_validation()
-    elif hasattr(value, 'as_dict'):
-        val = value.as_dict()
-    else:
-        val = dataclasses.asdict(value)
-    validated = validate_assert(
-        validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
-    return _validate_dataclass_postprocess(subtype, validated)
-
-
+@overload
 def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
-                    **kwargs: Any) -> T:
+                    **kwargs: Any) -> T: ...
+
+
+def validate_assert(type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> T | CdEDBObject:
     """Check if value is of type type_ – otherwise, raise an error.
 
     This should be used mostly in backend functions to check whether an input is
@@ -304,7 +258,7 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
     if "ignore_warnings" in kwargs:
         raise RuntimeError("Not allowed to set 'ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
+        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -316,15 +270,38 @@ def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
         raise e from errs
 
 
-def validate_assert_optional(type_: type[T], value: Any, ignore_warnings: bool,
-                             **kwargs: Any) -> Optional[T]:
+@overload
+def validate_assert_optional(
+    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def validate_assert_optional(
+    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[T]: ...
+
+
+def validate_assert_optional(
+    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
+@overload
+def validate_check(type_: type[CdEDataclass], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
+                   ) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
-                   ) -> tuple[Optional[T], list[Error]]:
+                   ) -> tuple[Optional[T], list[Error]]: ...
+
+
+def validate_check(type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any,
+                   ) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Checks if value is of type type_.
 
     This is mostly used in the frontend to check if the given input is valid. To display
@@ -339,7 +316,7 @@ def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
         raise RuntimeError("Not allowed to set 'ignore_warnings' as kwarg.")
     try:
         val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
-        return val, []
+        return val, []  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [
             (
@@ -354,11 +331,22 @@ def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
         return None, old_format
 
 
+@overload
+def validate_check_optional(
+    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any,
+) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def validate_check_optional(
     type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
+) -> tuple[Optional[T], list[Error]]: ...
+
+
+def validate_check_optional(
+    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any,
+) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
+    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
 def get_errors(errors: list[Error]) -> list[Error]:
@@ -426,7 +414,15 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
 
 
 def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
-    """Takes a function and creates one validator per given dataclass."""
+    """Takes a function and creates one validator per given dataclass.
+
+    The new validator accepts a dict, checking that its keys conform to the
+    respective dataclass definition and then calls the function.
+
+    The function may perform further validations and must return a dict.
+    If `creation=True`, the dict can be used to instantiate a valid dataclass
+      (after adding an `id=-1`).
+    """
 
     def the_decorator(fun: F) -> F:
 
@@ -436,7 +432,8 @@ def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F
                 val: Any, argname: str = type_.__qualname__, *,
                 type_: type[DC], creation: bool = False, **kwargs: Any
             ) -> CdEDBObject:
-
+                if isinstance(val, (CdEDataclass, GenericLogFilter)):
+                    val = val._to_validation()
                 new_kwargs = {**kwargs_, **kwargs}
                 val = _mapping(val, argname, **new_kwargs)
                 if issubclass(type_, GenericLogFilter):
@@ -448,7 +445,7 @@ def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F
                 val = _examine_dictionary_fields(
                     val, mandatory, optional, **new_kwargs
                 )
-                val = fun(val, argname, creation=creation, **new_kwargs)
+                val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
                 return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
@@ -713,35 +710,7 @@ def _id(
     if val is None or isinstance(val, str) and not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     val = _positive_int(val, argname, **kwargs)
-    return ID(_proto_id(val, argname, **kwargs))
-
-
-@_add_typed_validator
-def _creation_id(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> CreationID:
-    """ID of an object which is currently under creation.
-
-    This is just a wrapper around `_negative_int`, to differentiate this
-    semantically.
-    """
-    if val is None or isinstance(val, str) and not val:
-        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    val = _negative_int(val, argname, **kwargs)
-    return CreationID(_proto_id(val, argname, **kwargs))
-
-
-@_add_typed_validator
-def _proto_id(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> ProtoID:
-    """An object with a proto-id may already exist or is currently under creation.
-
-    This implies that the id may either be positive or negative, but must not be zero.
-    """
-    if val is None or isinstance(val, str) and not val:
-        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
-    return ProtoID(_non_zero_int(val, argname, **kwargs))
+    return ID(val)
 
 
 @_add_typed_validator
@@ -1156,18 +1125,9 @@ def _base64(
     return Base64(val)
 
 
-@_add_typed_validator
-def _anonymous_mesage(
-        val: Any, argname: str = models_core.AnonymousMessageData.__qualname__,
-        creation: bool = False, **kwargs: Any,
-) -> AnonymousMessage:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_core.AnonymousMessageData.validation_fields(
-        creation=creation)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
-    return AnonymousMessage(val)
+@_create_dataclass_validator(models_core.AnonymousMessageData)
+def _anonymous_message(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
@@ -1366,17 +1326,8 @@ def _api_token_string(
         raise ValidationSummary(ValueError(argname, *e.args)) from e
 
 
-@_add_typed_validator
-def _orga_token(
-        val: Any, argname: str = "orga_token", *, creation: bool = False,
-        **kwargs: Any,
-) -> OrgaToken:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
-    val = _examine_dictionary_fields(
-        val, mandatory, optional, **kwargs)
-
+@_create_dataclass_validator(models_droid.OrgaToken)
+def _orga_token(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     errs = ValidationSummary()
 
     timestamp = now()
@@ -1389,7 +1340,7 @@ def _orga_token(
     if errs:
         raise errs
 
-    return OrgaToken(val)
+    return val
 
 
 @_add_typed_validator
@@ -2383,16 +2334,9 @@ def _safe_str(
     return SafeStr(val)
 
 
-@_add_typed_validator
-def _meta_info(
-    val: Any, argname: str = "meta_info", **kwargs: Any,
-) -> MetaInfo:
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory, optional = models_core.MetaInfo.validation_fields(creation=False)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
-    return MetaInfo(val)
+@_create_dataclass_validator(models_core.MetaInfo)
+def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
@@ -2858,7 +2802,7 @@ _create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
 @_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        id_: ProtoID,
+        id_: ID,
         event: CdEDBObject,
         personalized: Optional[bool] = None,
         **kwargs: Any,
@@ -4077,35 +4021,19 @@ def _serialized_event_freetexts(
     return SerializedEventFreetexts(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(*models_ml.ML_TYPE_MAP_INV.keys())
 def _mailinglist(
-    val: Any, argname: str = "mailinglist", *, creation: bool = False,
-    subtype: models_ml.MLType = models_ml.Mailinglist, **kwargs: Any,
-) -> Mailinglist:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    :param subtype: Mandatory parameter to check for suitability for the given subtype.
-    """
-
-    val = _mapping(val, argname, **kwargs)
-
-    if subtype == models_ml.Mailinglist:
-        raise ValidationSummary(ValueError(
-            "ml_type", "Must provide ml_type for setting mailinglist."))
-
-    mandatory_fields, optional_fields = subtype.validation_fields(creation=creation)
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
+    val: CdEDBObject, *args: Any, type_: models_ml.MLType, **kwargs: Any
+) -> CdEDBObject:
     errs = ValidationSummary()
 
-    if val and "moderators" in val and not val["moderators"]:
+    if "moderators" in val and not val["moderators"]:
         errs.append(ValueError("moderators", n_("Must not be empty.")))
+
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
-    elif val["domain"].value not in subtype.available_domains:
+    elif val["domain"].value not in type_.available_domains:
         errs.append(ValueError("domain", n_(
             "Invalid domain for this mailinglist type.")))
 
@@ -4117,7 +4045,7 @@ def _mailinglist(
     if errs:
         raise errs
 
-    return Mailinglist(val)
+    return val
 
 
 SUBSCRIPTION_ID_FIELDS: TypeMapping = {
@@ -4515,21 +4443,11 @@ def _non_regex(
     return NonRegex(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CustomQueryFilter)
 def _custom_query_filter(
         val: Any, argname: str = "custom_query_filter", *, creation: bool = False,
         query_spec: QuerySpec, **kwargs: Any,
-) -> CustomQueryFilter:
-    val = _mapping(val, argname, **kwargs)
-
-    if (fields := val.get('fields')) and isinstance(fields, str):
-        val = dict(val)
-        val['fields'] = set(fields.split(","))
-
-    mandatory, optional = models_event.CustomQueryFilter.validation_fields(
-        creation=creation)
-    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-
+) -> CdEDBObject:
     errs = ValidationSummary()
 
     if len(val['fields']) < 2:
@@ -4547,12 +4465,10 @@ def _custom_query_filter(
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])
-
     if errs:
         raise errs
 
-    return CustomQueryFilter(val)
+    return val
 
 
 @_add_typed_validator
@@ -4882,24 +4798,11 @@ def _range(
     return (from_val, to_val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(*ALL_LOG_FILTERS)
 def _log_filter(
-    val: Any, argname: Optional[str] = None,
-    *, subtype: type[GenericLogFilter],
-    **kwargs: Any,
-) -> LogFilter:
-
-    if isinstance(val, GenericLogFilter):
-        val = val.to_validation()
-    val = dict(_mapping(val, argname, **kwargs))
-
-    if not val.get('length'):
-        val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
-
-    mandatory, optional = subtype.validation_fields()
-    val = _examine_dictionary_fields(val, mandatory, optional)
-
-    return LogFilter(val)
+    val: CdEDBObject, *args: Any, type_: type[GenericLogFilter], **kwargs: Any
+) -> GenericLogFilter:
+    return type_(**val)
 
 
 @_create_dataclass_validator(models_complaint.Case)
