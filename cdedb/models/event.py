@@ -796,7 +796,9 @@ class Course(EventDataclass):
     )
     event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
-    segments: CdEDataclassMap["CourseSegment"]
+    segments: CdEDataclassMap["CourseSegment"] = dataclasses.field(
+        metadata=(Meta.validate_include | Meta.asdict_include).as_dict
+    )
 
     @property
     def active_segments(self) -> set[int]:
