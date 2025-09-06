@@ -107,6 +107,7 @@ class Mailinglist(CdEDataclass):
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
+    notify_owner_on_bounce: ClassVar[bool] = False
 
     database_table = "ml.mailinglists"
 
@@ -393,6 +394,7 @@ class TeamMeta(GeneralMailinglist):
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
     maxsize_default = vtypes.PositiveInt(4096)
+    notify_owner_on_bounce = True
 
 
 @dataclass
@@ -841,6 +843,7 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
 @dataclass
 class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, GeneralMailinglist):
     allow_unsub = False
+    notify_owner_on_bounce = True
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
                                  ) -> set[int]:
