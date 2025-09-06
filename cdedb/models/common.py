@@ -227,12 +227,14 @@ class CdEDataclass:
 
             # Convert array types.
             for array_type in {list, tuple, set}:
-                if get_origin(type_) is array_type and len(get_args(type_)) == 1:
+                if get_origin(type_) is array_type:
                     # No data, so nothing to convert.
                     if data.get(name) is None:
                         continue
                     data[name] = array_type(data[name])
-                    if isinstance((inner_type := get_args(type_)[0]), type):
+                    # Check if we can convert the elements of the array.
+                    if (len(set(get_args(type_)) - {Ellipsis}) == 1
+                            and isinstance((inner_type := get_args(type_)[0]), type)):
                         # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
                             data[name] = array_type(
