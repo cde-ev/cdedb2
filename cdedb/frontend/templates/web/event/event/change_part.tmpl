@@ -22,6 +22,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
     {{ util.breadcrumb_link("", ambience['event']['parts'][part_id]['title'], icon="clock", readonly=True) }}
     {{ util.breadcrumb_link(cdedblink("event/change_part"), gettext("Change"), active=True) }}

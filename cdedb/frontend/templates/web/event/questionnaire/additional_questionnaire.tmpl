@@ -34,14 +34,19 @@
     {{ util.context_heading(gettext("Questionnaire Preview") if preview else gettext("Participant Questionnaire"),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
+
+{% macro button_par() %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
+                     gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
+        {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                         aclass="btn btn-default btn-sm", icon="eye") }}
+    </div>
+{% endmacro %}
+
 {% block content %}
     {% if preview %}
-        <div class="p button-par">
-            {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
-                         gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
-            {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
-                             aclass="btn btn-default btn-sm", icon="eye") }}
-        </div>
+        {{ button_par() }}
         <div class="form-horizontal">
     {% else %}
         {% if is_privileged_for("event/configure_additional_questionnaire") %}
@@ -66,6 +71,8 @@
         </script>
     {% else %}
         </div>
+        <hr />
+        {{ button_par() }}
     {% endif %}
     {% if lodgement_wishes %}
         <hr />

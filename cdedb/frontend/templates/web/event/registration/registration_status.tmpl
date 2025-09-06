@@ -58,7 +58,7 @@
         {% endif %}
         {% if is_privileged_for("event/configure_registration") %}
             {{ util.href(cdedblink("event/register", {"preview": True}), "Registration Preview",
-                             aclass="btn btn-default btn-sm", icon="eye") }}
+                             aclass="btn btn-info btn-sm", icon="eye") }}
         {% endif %}
     </div>
     {% endif %}

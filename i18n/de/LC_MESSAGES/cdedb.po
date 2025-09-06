@@ -14895,12 +14895,12 @@ msgstr "Teilnahmebeitrag hinzufügen"
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:26
 #: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:57
 msgid "Add Personalized Fee"
-msgstr "Personalisierten Teilnahmebeitrag hinzufügen"
+msgstr "Personalisierten Beitrag hinzufügen"
 
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:49
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:22
 msgid "Add Conditional Fee"
-msgstr "Bedingten Teilnahmebeitrag hinzufügen"
+msgstr "Bedingten Beitrag hinzufügen"
 
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:74
 msgid "Initially affected Registrations"
