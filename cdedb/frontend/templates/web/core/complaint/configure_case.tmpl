@@ -53,7 +53,8 @@
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
         {% else %}
             <h3 class="heading-underline">{% trans %}Involved{% endtrans %}</h3>
-            <p>
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}{{ nbsp -}}
                 {% trans %}
                     Enter affected appellants as affected and mark them as informed.
                 {% endtrans %}
