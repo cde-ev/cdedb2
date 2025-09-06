@@ -156,7 +156,8 @@ class CdEDataclass:
                and not MetaFlag.to_database_exclude.in_field(field)
         }
 
-        # during creation the entity has no valid id - the database returns the new id
+        # Storing an ephemeral object to database corresponds to its creation. In this
+        # case, the entity has no valid id, with the new id returned by sql_insert.
         if self.is_ephemeral:
             data.pop("id", None)
         return data
@@ -210,12 +211,12 @@ class CdEDataclass:
 
     @property
     def is_ephemeral(self) -> bool:
-        """This dataset will be used to create a new entity.
+        """This dataset does not correspond to a entity stored in the database.
 
+        For instance, it may be used to represent an entity to be created.
         Note that the id property is annotated as a positive integer. This is true for
         regular dataclass instances, which are retrieved from the database, but not true
-        for ephemeral ones, which are used to _create_ an object and save it to the
-        database afterwards.
+        for ephemeral ones, which do not represent such data.
 
         Therefore, we exclude the id field in `to_database` and `_to_validation`.
         """
@@ -274,7 +275,7 @@ class CdEDataclass:
                 or field.name in optional and field.name in values
         }
 
-        # during creation the entity has no id, its only a placeholder
+        # during creation etc. the entity has no id, it is only a placeholder
         if self.is_ephemeral:
             data.pop("id", None)
         return data
