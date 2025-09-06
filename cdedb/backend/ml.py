@@ -33,6 +33,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import is_privileged_event, EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
@@ -655,12 +656,14 @@ class MlBackend(AbstractBackend):
         ml_class = get_ml_type(ml_type)
         data = affirm(ml_class, new_ml, creation=True)
         self.validate_address(rs, data)
-        # TODO Migrate this to EventPrivileges?
-        if not (ml_class.is_relevant_admin(rs.user)
-                or (issubclass(ml_class, EventAssociatedMetaMailinglist)
-                    and data["event_id"] in rs.user.orga)
-                or (issubclass(ml_class, AssemblyAssociatedMailinglist)
-                    and data["assembly_id"] in rs.user.presider)):
+        EP = EventPrivileges
+        if not (
+            ml_class.is_relevant_admin(rs.user)
+            or (issubclass(ml_class, EventAssociatedMetaMailinglist)
+                and is_privileged_event(rs, EP.basic_write, data["event_id"]))
+            or (issubclass(ml_class, AssemblyAssociatedMailinglist)
+                and data["assembly_id"] in rs.user.presider)
+        ):
             raise PrivilegeError(n_(
                 "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
