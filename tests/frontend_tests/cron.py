@@ -572,7 +572,7 @@ class TestCron(CronTest):
             'max_num_recipients': 0,
             'acceptable_aliases': {"cde-ev.de", "lists.schuelerakademie.de"},
             'require_explicit_destination': True,
-            'notify_owner_on_bounce_increment': False,
+            'bounce_notify_owner_on_bounce_increment': False,
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(
