@@ -217,17 +217,14 @@ class CdEDataclass:
             type_ = field.type
             name = field.name
             # deduplicate conversion of optional and non-optional types
-            is_optional = False
             if is_optional_type(type_):
                 type_ = get_args(type_)[0]
-                is_optional = True
 
             # Convert basic types.
             if isinstance(type_, type):
                 # Convert enum fields into enum members.
                 if issubclass(type_, (CdEEnum, CdEIntEnum)):
-                    if (is_optional and data.get(name) is not None
-                            or not is_optional and name in data):
+                    if data.get(name) is not None:
                         data[name] = type_(data[name])
 
             # Convert array types.
@@ -236,14 +233,12 @@ class CdEDataclass:
                     # No data, so nothing to convert.
                     if data.get(name) is None:
                         continue
+                    data[name] = array_type(data[name])
                     if isinstance((inner_type := get_args(type_)[0]), type):
                         # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
                             data[name] = array_type(
                                 inner_type(x) for x in data[name])
-                        # Convert lists from psycopg to set/tuple.
-                        elif array_type in {tuple, set}:
-                            data[name] = array_type(data[name])
         return cls(**data)
 
     @classmethod
