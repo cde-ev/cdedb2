@@ -216,9 +216,9 @@ class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
         elif typing.get_origin(type_) is dict:
-            return cast(Callable[..., T], make_dict_validator(type_))
+            return cast(Callable[..., T], make_dict_validator(cast(type[Any], type_)))
         elif isinstance(type_, typing.ForwardRef):
-            model_namespaces = [
+            model_namespaces = [  # type: ignore[unreachable]
                 models_core, models_event, models_ml, models_droid, models_complaint
             ]
             for model_namespace in model_namespaces:

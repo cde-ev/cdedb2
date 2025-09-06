@@ -114,7 +114,7 @@ def event_associated_fields_extractor(
 
 
 def event_associated_fields_to_request(
-        entity: models.Course | models.Lodgement
+        entity: models.Course
 ) -> CdEDBObject:
     return {
         field.request_name: entity.fields[field.field_name]
