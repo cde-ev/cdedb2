@@ -26,7 +26,6 @@ from cdedb.common import (
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
-    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     unwrap,
@@ -320,9 +319,7 @@ class EventCourseMixin(EventBaseFrontend):
             for track_id, segment in rs.ambience['course'].segments.items()
         ]
         merge_dicts(rs.values, rs.ambience['course'].as_dict(), field_values, *segment_values)
-        mandatory_fields = get_mandatory_form_fields(
-            models.Course.validation_fields(creation=False)[0]
-        )
+        mandatory_fields = models.Course.mandatory_form_fields(creation=False)
         return self.render(
             rs, "course/configure_course",
             mandatory_fields=mandatory_fields,
@@ -384,9 +381,7 @@ class EventCourseMixin(EventBaseFrontend):
         if not tracks:
             rs.notify("error", n_("Event without tracks forbids courses."))
             return self.redirect(rs, 'event/course_stats')
-        mandatory_fields = get_mandatory_form_fields(
-            models.Course.validation_fields(creation=True)[0]
-        )
+        mandatory_fields = models.Course.mandatory_form_fields(creation=True)
         return self.render(
             rs, "course/configure_course",
             mandatory_fields=mandatory_fields,
