@@ -318,8 +318,35 @@ class TestLDAP(BasicTest):
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton'],
             'sn': ['Administrator'],
+            'labeledURI': [],
 
-            # there is no password returned, since passwords may not be retrived but
+            # there is no password returned, since passwords may not be retrieved but
+            # only used for binding
+            'objectClass': ['inetOrgPerson'],
+        }
+        search_filter = (
+            "(&"
+            "(objectClass=inetOrgPerson)"
+            f"(uid={user_id})"
+            ")"
+        )
+        self.single_result_search(
+            search_filter, expectation, excluded_attributes=["memberOf"])
+
+        user_id = 2
+        expectation: dict[str, list[str] | list[NearlyNow]] = {
+            'uid': ['2'],
+            'mail': ['berta@example.cde'],
+            'ipaUniqueID': ['personas/2'],
+            'modifyTimestamp': [nearly_now()],
+
+            'cn': ['Bertå Beispiel'],
+            'displayName': ['Bertå Beispiel'],
+            'givenName': ['Bertå'],
+            'sn': ['Beispiel'],
+            'labeledURI': ['https://localhost/db/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 Profile Picture'],
+
+            # there is no password returned, since passwords may not be retrieved but
             # only used for binding
             'objectClass': ['inetOrgPerson'],
         }
