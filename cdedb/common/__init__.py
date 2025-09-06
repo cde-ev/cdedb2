@@ -826,10 +826,13 @@ NoneType = type(None)
 
 
 def is_optional_type(type_: Any) -> bool:
-    return (
+    is_optional = (
         get_origin(type_) is Union
         or get_origin(type_) is UnionType
-    ) and NoneType in get_args(type_) and len(get_args(type_)) == 2
+    ) and NoneType in get_args(type_)
+    if is_optional and len(get_args(type_)) != 2:
+        raise RuntimeError("We only support simple optional types.")
+    return is_optional
 
 
 def is_list_type(type_: type[Any]) -> bool:
