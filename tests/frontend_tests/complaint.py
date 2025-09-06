@@ -325,9 +325,8 @@ class TestComplaintFrontend(FrontendTest):
         f['kind'] = const.ComplaintKind.nonphysical_sexual_transgression
         f['start_date'] = "2222-01-02"
         f['end_date'] = "2222-01-06"
-        f['appellant_id'] = "DB-19-1"
+        f['appellant_ids'] = "DB-19-1"
         f['target_ids'] = "DB-10-8"
-        f['is_affected'] = True
         f['timestamp'] = "2222-03-13"
         f['info'] = "Beschreibung folgt, zwischen Tür und Angel…"
         self.submit(f, check_notification=False)
@@ -336,14 +335,20 @@ class TestComplaintFrontend(FrontendTest):
             'error',
         )
         f = self.response.forms['configurecaseform']
-        f['appellant_id'] = "DB-10-8"
+        f['appellant_ids'] = "DB-10-8"
         self.submit(f, check_notification=False)
         self.assertValidationError('target_ids')
-        self.assertValidationError('appellant_id')
+        self.assertValidationError('appellant_ids')
         with self.assertRaises(AssertionError):
             self.assertValidationError('affected_ids')
         f = self.response.forms['configurecaseform']
-        f['appellant_id'] = "DB-1-9"
+        f['appellant_ids'] = ""
+        f['affected_ids'] = "DB-1-9"
+        f['withheld_ids'] = "DB-2-7, DB-1-9"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('affected_ids')
+        self.assertValidationError('withheld_ids')
+        f['withheld_ids'] = "DB-5-1"
         self.submit(f)
         self.assertPresence("Zusammenfassung Die Texte von Schorsch")
         self.assertPresence("Machste nix")
@@ -597,14 +602,15 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1001,
-                'code': const.ComplaintLogCodes.involved_informed,
-                'persona_id': 1,
-            },
-            {
-                'case_id': 1001,
                 'change_note': 'Zielpersonen',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 10,
+            },
+            {
+                'case_id': 1001,
+                'change_note': 'Versteckt vor',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 5,
             },
             {
                 'case_id': 1,

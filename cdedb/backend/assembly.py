@@ -44,7 +44,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -309,7 +308,7 @@ class AssemblyBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(AssemblyLogFilter, log_filter)
+        log_filter = affirm(AssemblyLogFilter, log_filter)
         assembly_ids = log_filter.assembly_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:

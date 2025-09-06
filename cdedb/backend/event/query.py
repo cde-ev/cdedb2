@@ -14,7 +14,6 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
@@ -25,6 +24,7 @@ from cdedb.common import (
     DefaultReturnCode,
     RequestState,
     json_serialize,
+    merge_dicts,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -855,24 +855,25 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
 
     @access("event")
-    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter,
-                                ) -> DefaultReturnCode:
-        if not isinstance(data, CustomQueryFilter):
-            raise ValueError
-
-        event_id = affirm(vtypes.ID, data.event_id)
-        scope = affirm(QueryScope, data.scope)
+    def add_custom_query_filter(
+        self, rs: RequestState, scope: QueryScope, event_id: int, data: CdEDBObject,
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        scope = affirm(QueryScope, scope)
+        data["event_id"] = event_id
+        data["scope"] = scope
 
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             spec = scope.get_spec(event=event)
 
-            custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
-                                             creation=True)
+            data = affirm(CustomQueryFilter, data, query_spec=spec, creation=True)
+            query = CustomQueryFilter(id=vtypes.ID(-1), **data)
 
-            new_id = self.sql_insert_dataclass(rs, custom_filter)
+            new_id = self.sql_insert(rs, CustomQueryFilter.database_table,
+                                     query.to_database())
             self.event_log(rs, const.EventLogCodes.custom_filter_created, event_id,
-                           change_note=data.title)
+                           change_note=data["title"])
         return new_id
 
     @access("event")
@@ -896,14 +897,16 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             event = self.get_event(rs, event_id)
             spec = current.scope.get_spec(event=event)
 
-            affirm(vtypes.CustomQueryFilter, data, query_spec=spec)
+            data = affirm(CustomQueryFilter, data, query_spec=spec)
+            merge_dicts(data, current.as_dict())
+            updated = CustomQueryFilter(**data)
 
             ret = 1
-            if any(data[k] != current_data[k] for k in data):
-                ret *= self.sql_update(rs, CustomQueryFilter.database_table, data)
-
-                if 'title' in data and data['title'] != current.title:
-                    change_note = f"'{current.title}' -> '{data['title']}'"
+            if current != updated:
+                ret *= self.sql_update(rs, CustomQueryFilter.database_table,
+                                       updated.to_database())
+                if updated.title != current.title:
+                    change_note = f"'{current.title}' -> '{updated.title}'"
                 else:
                     change_note = current.title
                 self.event_log(rs, const.EventLogCodes.custom_filter_changed,
