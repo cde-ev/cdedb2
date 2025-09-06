@@ -129,8 +129,6 @@ class MetaFlag(AbstractFlag):
 
     # asdict
 
-    asdict_exclude = auto()
-    """Exclude the field from `self.asdict()`."""
     asdict_include = auto()
     """Include the field to `self.asdict()`, even if it would otherwise not be."""
 
@@ -436,9 +434,8 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        return MetaFlag.asdict_include.in_field(field) or not (
-            MetaFlag.is_excluded(field.type) or MetaFlag.asdict_exclude.in_field(field)
-        )
+        return (MetaFlag.asdict_include.in_field(field)
+                or not MetaFlag.is_excluded(field.type))
 
     @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:
