@@ -2,6 +2,9 @@
 import abc
 import copy
 import dataclasses
+import functools
+import inspect
+import typing
 from collections.abc import Collection
 from dataclasses import dataclass
 from enum import Flag, auto
@@ -113,10 +116,55 @@ class MetaFlag(AbstractFlag):
     """Include the field in `cls.database_fields()` even if it would otherwise not be.
     Can be used to select fields with type list or set from the database."""
 
+    # request + database
+
+    io_exclude = request_exclude | database_exclude
+    """Omit this field from request extraction and being written to or read from the
+    database."""
+
+    # validation + request + database
+
+    exclude = validate_exclude | request_exclude | database_exclude
+    """Exclude this field from validation, request and database."""
+
     # asdict
 
-    asdict_exclude = auto()
-    """Exclude the field from `self.asdict()`."""
+    asdict_include = auto()
+    """Include the field to `self.asdict()`, even if it would otherwise not be."""
+
+    @functools.lru_cache
+    @staticmethod
+    def _all_cdedataclass_subclasses_names() -> set[str]:
+        ret = set()
+        subclasses = {cls for cls in CdEDataclass.__subclasses__()}
+        while subclasses:
+            cls = subclasses.pop()
+            subclasses.update(cls.__subclasses__())
+            ret.add(cls.__name__)
+        return ret
+
+    @staticmethod
+    def is_excluded(type_: Any) -> bool:
+        """Reveal if a field is excluded from all functions due to its type.
+
+        We exclude all subclasses of CdEDataclass. Sadly, this is a somewhat
+        lengthy and a bit ugly check, since we need to compare the name of
+        the classes due to Forward References.
+        """
+        origin = typing.get_origin(type_)
+        if is_optional_type(type_):
+            type_ = typing.get_args(type_)[0]
+        if origin in {list, set}:
+            [type_] = typing.get_args(type_)
+        # like dict[_, type_]
+        if origin is dict:
+            _, type_ = typing.get_args(type_)
+        # like "type_"
+        if isinstance(type_, typing.ForwardRef):
+            type_ = type_.__forward_arg__
+        if inspect.isclass(type_):
+            type_ = type_.__name__
+        return type_ in MetaFlag._all_cdedataclass_subclasses_names()
 
 
 @dataclass
@@ -148,12 +196,11 @@ class CdEDataclass:
         database_fields = self.database_fields()
         values = vars(self)
 
-        # Exclude fields marked as init=False.
         data = {
             field.name: values[field.name]
             for field in self.dataclass_fields()
-            if field.name in database_fields and field.init
-               and not MetaFlag.to_database_exclude.in_field(field)
+            if field.name in database_fields
+                and not MetaFlag.to_database_exclude.in_field(field)
         }
 
         # Storing an ephemeral object to database corresponds to its creation. In this
@@ -165,29 +212,34 @@ class CdEDataclass:
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         for field in cls.dataclass_fields():
-            # Convert enum fields into enum members.
-            if isinstance(field.type, type):
-                if issubclass(field.type, (CdEEnum, CdEIntEnum)):
-                    if field.name in data:
-                        data[field.name] = field.type(data[field.name])
+            # Convert some values after extracting them from the database.
+            type_ = field.type
+            name = field.name
+            # deduplicate conversion of optional and non-optional types
+            if is_optional_type(type_):
+                type_ = get_args(type_)[0]
 
-            # Convert optional enum fields into enum members.
-            if is_optional_type(field.type):
-                if len(get_args(field.type)) == 2:
-                    inner_type = get_args(field.type)[0]
-                    if isinstance(inner_type, type):
-                        if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            if data.get(field.name) is not None:
-                                data[field.name] = inner_type(data[field.name])
+            # Convert basic types.
+            if isinstance(type_, type):
+                # Convert enum fields into enum members.
+                if issubclass(type_, (CdEEnum, CdEIntEnum)):
+                    if data.get(name) is not None:
+                        data[name] = type_(data[name])
 
-            # Convert list[enum] fields into enum members.
-            if get_origin(field.type) is list:
-                if len(get_args(field.type)) == 1:
-                    inner_type = get_args(field.type)[0]
-                    if isinstance(inner_type, type):
+            # Convert array types.
+            for array_type in {list, tuple, set}:
+                if get_origin(type_) is array_type:
+                    # No data, so nothing to convert.
+                    if data.get(name) is None:
+                        continue
+                    data[name] = array_type(data[name])
+                    # Check if we can convert the elements of the array.
+                    if (len(set(get_args(type_)) - {Ellipsis}) == 1
+                            and isinstance((inner_type := get_args(type_)[0]), type)):
+                        # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            data[field.name] = list(
-                                inner_type(x) for x in data[field.name])
+                            data[name] = array_type(
+                                inner_type(x) for x in data[name])
         return cls(**data)
 
     @classmethod
@@ -234,6 +286,8 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
+            if MetaFlag.is_excluded(field.type):
+                continue
             field.type = cast(type[Any], field.type)
             if creation:
                 if MetaFlag.validate_creation_exclude.in_field(field):
@@ -243,9 +297,6 @@ class CdEDataclass:
                     continue
                 if (
                         is_optional_type(field.type)
-                        # Fields with init=False are optional, so that objects
-                        #  retrieved from the database can pass validation.
-                        or not field.init
                         # Fields with a default are optional at creation.
                         or field.default is not dataclasses.MISSING
                         or field.default_factory is not dataclasses.MISSING
@@ -298,19 +349,14 @@ class CdEDataclass:
     ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
-        This uses the database_fields by default, but may be overwritten if needed.
-
         :param creation: If not None, possibly exclude some fields..
         """
-        field_names = set(cls.database_fields())
         fields = []
         for field in cls.dataclass_fields():
             if not MetaFlag.request_include.in_field(field):
-                if field.name not in field_names:
+                if MetaFlag.is_excluded(field.type):
                     continue
                 if MetaFlag.request_exclude.in_field(field):
-                    continue
-                if not field.init:
                     continue
                 if creation is True:
                     if MetaFlag.request_creation_exclude.in_field(field):
@@ -326,9 +372,7 @@ class CdEDataclass:
         """List all fields of this entity which are saved to the database."""
         return [
             field.name for field in cls.dataclass_fields()
-            if field.init
-               and get_origin(field.type) is not dict
-               and get_origin(field.type) is not set
+            if not MetaFlag.is_excluded(field.type)
                and not MetaFlag.database_exclude.in_field(field)
             or MetaFlag.database_include.in_field(field)
         ]
@@ -393,10 +437,8 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        if MetaFlag.asdict_exclude.in_field(field):
-            return False
-        # TODO: do not use the repr for this.
-        return field.repr
+        return (MetaFlag.asdict_include.in_field(field)
+                or not MetaFlag.is_excluded(field.type))
 
     @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:

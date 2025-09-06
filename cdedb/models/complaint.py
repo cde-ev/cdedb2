@@ -32,13 +32,11 @@ class Case(CdEDataclass):
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
 
-    entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
-        metadata=Meta.validate_exclude.as_dict,
-    )
+    entries: CdEDataclassMap["ComplaintEntry"]
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict,
+        metadata=Meta.exclude.as_dict,
     )
-    informed_involved: set[int] = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    informed_involved: set[int] = dataclasses.field(metadata=Meta.exclude.as_dict)
 
     @functools.cached_property
     def all_involved(self) -> dict[int, const.ComplaintInvolvementType]:
@@ -60,7 +58,7 @@ class Case(CdEDataclass):
 
     # Companions to set of involved personas they accompany
     companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict,
+        metadata=Meta.exclude.as_dict,
     )
 
     @functools.cached_property
@@ -83,7 +81,7 @@ class Case(CdEDataclass):
         return ret
 
     withdrawn_companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict,
+        metadata=Meta.exclude.as_dict,
     )
 
     @functools.cached_property
@@ -341,7 +339,7 @@ class ComplaintEntryVersion(CdEDataclass):
     description: str | None = dataclasses.field(
         init=False,
         default=None,
-        metadata=(Meta.database_exclude | Meta.request_include).as_dict,
+        metadata=Meta.database_exclude.as_dict,
     )
     length: int | None = dataclasses.field(
         default=None,
@@ -367,7 +365,7 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(
-        metadata=(Meta.database_exclude | Meta.request_include).as_dict,
+        metadata=Meta.database_exclude.as_dict,
     )
 
     @staticmethod

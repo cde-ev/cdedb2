@@ -31,8 +31,7 @@ class MetaInfo(CdEDataclass):
     database_table = "core.meta_info"
 
     id: vtypes.ID = dataclasses.field(
-        init=False, default=vtypes.ID(1),
-        metadata=Meta.input_exclude.as_dict,
+        init=False, default=vtypes.ID(1), metadata=Meta.exclude.as_dict,
     )
 
     Finanzvorstand_Name: str | None = None
@@ -105,16 +104,13 @@ class AnonymousMessageData(CdEDataclass):
 
     encrypted_data: str
     persona_id: Optional[vtypes.ID] = dataclasses.field(
-        init=False, default=None,
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+        init=False, default=None, metadata=Meta.exclude.as_dict
     )
     username: Optional[vtypes.Email] = dataclasses.field(
-        init=False, default=None,
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+        init=False, default=None, metadata=Meta.exclude.as_dict
     )
     subject: Optional[str] = dataclasses.field(
-        init=False, default=None,
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+        init=False, default=None, metadata=Meta.exclude.as_dict
     )
 
     @staticmethod
@@ -332,8 +328,7 @@ class GenesisCase(CdEDataclass):
     persona_id: vtypes.ID | None = dataclasses.field(
         default=None, metadata=Meta.input_exclude.as_dict)
 
-    persona: Persona = dataclasses.field(
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
+    persona: Persona
 
     # further information tied to the genesis case but not to persona dataclass
     attachment_hash: str | None = dataclasses.field(
@@ -451,8 +446,7 @@ class GenesisCase(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
-    persona: MlPersona = dataclasses.field(
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
+    persona: MlPersona
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -471,8 +465,7 @@ class GenesisCaseMl(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
-    persona: EventPersona = dataclasses.field(
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
+    persona: EventPersona
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -492,8 +485,7 @@ class GenesisCaseEvent(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
-    persona: CdEPersona = dataclasses.field(
-        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict)
+    persona: CdEPersona
     attachment_hash: str = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
 
     @classmethod
