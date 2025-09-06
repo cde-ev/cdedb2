@@ -9,7 +9,6 @@ import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -228,7 +227,7 @@ class ComplaintBackend(AbstractBackend):
 
         The full history of a case consists of both log entries and complaint entries.
         """
-        log_filter = affirm_dataclass(ComplaintLogFilter, log_filter)
+        log_filter = affirm(ComplaintLogFilter, log_filter)
         case_ids = set(log_filter.case_ids())
 
         visible_case_ids = self.get_visible_case_ids(rs)
@@ -315,7 +314,7 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Alter metadata of a complaint case."""
         case_id = affirm(vtypes.ID, case_id)
-        data = cast(CdEDBObject, affirm(models.Case, data))
+        data = affirm(models.Case, data)
 
         with Atomizer(rs):
             current = self.get_case(rs, case_id)
@@ -369,7 +368,7 @@ class ComplaintBackend(AbstractBackend):
     @access("complaint_admin")
     def create_case(self, rs: RequestState, data: CdEDBObject) -> models.Case:
         """Create a new complaint case. Only includes the metadata and not entries."""
-        data = cast(CdEDBObject, affirm(models.Case, data, creation=True))
+        data = affirm(models.Case, data, creation=True)
 
         with Atomizer(rs):
             new_id = self.sql_insert(rs, models.Case.database_table, data)

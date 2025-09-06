@@ -22,8 +22,6 @@ from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
-__all__ = ["AnonymousMessageData"]
-
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -32,9 +30,9 @@ if TYPE_CHECKING:
 class MetaInfo(CdEDataclass):
     database_table = "core.meta_info"
 
-    id: vtypes.ProtoID = dataclasses.field(
-        init=False, default=vtypes.ProtoID(1),
-        metadata=Meta.input_update_exclude.as_dict,
+    id: vtypes.ID = dataclasses.field(
+        init=False, default=vtypes.ID(1),
+        metadata=Meta.input_exclude.as_dict,
     )
 
     Finanzvorstand_Name: str | None = None
@@ -100,13 +98,24 @@ class AnonymousMessageData(CdEDataclass):
     entity_key = "message_id"
 
     message_id: vtypes.Base64
-    recipient: vtypes.Email
-    ctime: datetime.datetime
+    recipient: vtypes.Email = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
+    ctime: datetime.datetime = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
 
     encrypted_data: str
-    persona_id: Optional[vtypes.ID] = dataclasses.field(init=False, default=None)
-    username: Optional[vtypes.Email] = dataclasses.field(init=False, default=None)
-    subject: Optional[str] = dataclasses.field(init=False, default=None)
+    persona_id: Optional[vtypes.ID] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
+    username: Optional[vtypes.Email] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
+    subject: Optional[str] = dataclasses.field(
+        init=False, default=None,
+        metadata=(Meta.input_exclude | Meta.database_exclude).as_dict
+    )
 
     @staticmethod
     def format_data(persona_id: vtypes.ID, username: vtypes.Email, subject: str) -> str:
@@ -117,7 +126,7 @@ class AnonymousMessageData(CdEDataclass):
         pattern = re.compile(r"(?P<persona_id>\d+) <(?P<username>.+)> (?P<subject>.+)")
         if result := pattern.fullmatch(data):
             return (
-                vtypes.ID(vtypes.ProtoID(int(result.group("persona_id")))),
+                vtypes.ID(int(result.group("persona_id"))),
                 vtypes.Email(result.group("username")),
                 result.group("subject"),
             )
@@ -163,7 +172,7 @@ class AnonymousMessageData(CdEDataclass):
         data, key = cls._encrypt(cls.format_data(persona_id, username, subject))
         return (
             cls(
-                id=vtypes.ProtoID(-1),
+                id=vtypes.ID(-1),
                 message_id=cls.create_message_id(),
                 recipient=vtypes.Email(recipient),
                 ctime=now(),

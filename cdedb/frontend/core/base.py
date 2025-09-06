@@ -261,7 +261,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
     def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
-        data = check(rs, vtypes.MetaInfo, data)
+        data = check(rs, models.MetaInfo, data)
         if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
@@ -1522,7 +1522,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if anonymous_from:
             message, key = models.AnonymousMessageData.encrypt(
-                recipient=to, persona_id=vtypes.ID(vtypes.ProtoID(rs.user.persona_id)),
+                recipient=to, persona_id=vtypes.ID(rs.user.persona_id),
                 username=vtypes.Email(rs.user.username), subject=subject,
             )
             if not self.coreproxy.log_anonymous_message(rs, message):

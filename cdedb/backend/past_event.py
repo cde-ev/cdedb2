@@ -15,7 +15,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -142,7 +141,7 @@ class PastEventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(PastEventLogFilter, log_filter)
+        log_filter = affirm(PastEventLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("persona")

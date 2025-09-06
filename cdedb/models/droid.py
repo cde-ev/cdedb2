@@ -120,7 +120,7 @@ class APIToken(abc.ABC):
 
     Needs to be overridden by subclasses.
     """
-    id: vtypes.ProtoID
+    id: vtypes.ID
 
     @classmethod
     @lru_cache
@@ -198,7 +198,7 @@ class APIToken(abc.ABC):
         raise ValueError(n_("Wrong format for api token."))
 
 
-STATIC_TOKEN_ID = cast(vtypes.ProtoID, None)
+STATIC_TOKEN_ID = cast(vtypes.ID, None)
 
 
 @dataclass(kw_only=True)
@@ -215,7 +215,7 @@ class StaticAPIToken(APIToken):
     #: Name of the static droid.
     name: ClassVar[str]
 
-    id: vtypes.ProtoID = STATIC_TOKEN_ID
+    id: vtypes.ID = STATIC_TOKEN_ID
 
     @classmethod
     @lru_cache
@@ -265,18 +265,17 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime = field(
         default_factory=now, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Revocation time. Automatically set by event backend on revocation.
     rtime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
-
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Last access time. Automatically updated by session backend on every request.
     atime: datetime.datetime | None = field(
         default=None, kw_only=True,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
 )
 
     # Implementations of inherited methods.

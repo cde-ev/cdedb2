@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     )
 
 T = TypeVar("T")
-# Should actually be a vtypes.ProtoID instead of an int
+# Should actually be a vtypes.ID instead of an int
 CdEDataclassMap = dict[int, T]
 
 
@@ -76,6 +76,9 @@ class MetaFlag(AbstractFlag):
     validate_creation_optional = auto()
     """Make this field optional in `cls.validation_fields(creation=True)`.
     Can be used to make use of SQL default values, while also allowing overrides."""
+    validate_update_mandatory = auto()
+    """Make this field mandatory in `cls.validation_fields(creation=False)`.
+    By default, all fields here are optional."""
 
     # request
 
@@ -91,6 +94,8 @@ class MetaFlag(AbstractFlag):
 
     # validation + request
 
+    input_creation_exclude = validate_creation_exclude | request_creation_exclude
+    """Omit this field from request extraction and validation during entity creation."""
     input_update_exclude = validate_update_exclude | request_update_exclude
     """Omit this field from request extraction and validation during entity updates."""
     input_exclude = validate_exclude | request_exclude
@@ -98,6 +103,8 @@ class MetaFlag(AbstractFlag):
 
     # database
 
+    to_database_exclude = auto()
+    """Exclude this field from being written to the database via `cls.to_database()`."""
     database_exclude = auto()
     """Exclude the field from `cls.database_fields()`, which excludes it from
     being written to or read from the database.
@@ -119,7 +126,10 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
-    id: vtypes.ProtoID
+    # for ephemeral instances, this is actually negative despite its annotation
+    id: vtypes.ID = dataclasses.field(
+        metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
+                  | MetaFlag.validate_update_mandatory).as_dict)
 
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
@@ -143,11 +153,13 @@ class CdEDataclass:
             field.name: values[field.name]
             for field in self.dataclass_fields()
             if field.name in database_fields and field.init
+               and not MetaFlag.to_database_exclude.in_field(field)
         }
 
-        # during creation the id is unknown
-        if self.in_creation:
-            del data["id"]
+        # Storing an ephemeral object to database corresponds to its creation. In this
+        # case, the entity has no valid id, with the new id returned by sql_insert.
+        if self.is_ephemeral:
+            data.pop("id", None)
         return data
 
     @classmethod
@@ -198,8 +210,16 @@ class CdEDataclass:
         return query, params
 
     @property
-    def in_creation(self) -> bool:
-        """This dataset will be used to create a new entity."""
+    def is_ephemeral(self) -> bool:
+        """This dataset does not correspond to a entity stored in the database.
+
+        For instance, it may be used to represent an entity to be created.
+        Note that the id property is annotated as a positive integer. This is true for
+        regular dataclass instances, which are retrieved from the database, but not true
+        for ephemeral ones, which do not represent such data.
+
+        Therefore, we exclude the id field in `to_database` and `_to_validation`.
+        """
         return self.id < 0
 
     @classmethod
@@ -221,9 +241,7 @@ class CdEDataclass:
                 if MetaFlag.validate_creation_optional.in_field(field):
                     optional[field.name] = field.type
                     continue
-                if field.name == 'id':
-                    optional[field.name] = vtypes.CreationID
-                elif (
+                if (
                         is_optional_type(field.type)
                         # Fields with init=False are optional, so that objects
                         #  retrieved from the database can pass validation.
@@ -238,11 +256,29 @@ class CdEDataclass:
             else:
                 if MetaFlag.validate_update_exclude.in_field(field):
                     continue
-                if field.name == 'id':
-                    mandatory[field.name] = vtypes.ID
+                if MetaFlag.validate_update_mandatory.in_field(field):
+                    mandatory[field.name] = field.type
                 else:
                     optional[field.name] = field.type
         return mandatory, optional
+
+    def _to_validation(self) -> CdEDBObject:
+        """Generate a dict representation of this entity to be validated."""
+        mandatory, optional = self.validation_fields(creation=self.is_ephemeral)
+        values = vars(self)
+
+        # include optional fields only if they are present
+        data = {
+            field.name: values[field.name]
+            for field in self.dataclass_fields()
+            if field.name in mandatory
+                or field.name in optional and field.name in values
+        }
+
+        # during creation etc. the entity has no id, it is only a placeholder
+        if self.is_ephemeral:
+            data.pop("id", None)
+        return data
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -267,7 +303,6 @@ class CdEDataclass:
         :param creation: If not None, possibly exclude some fields..
         """
         field_names = set(cls.database_fields())
-        field_names.discard("id")
         fields = []
         for field in cls.dataclass_fields():
             if not MetaFlag.request_include.in_field(field):

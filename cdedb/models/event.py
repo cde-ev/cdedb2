@@ -299,7 +299,7 @@ class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID = dataclasses.field(
+    event_id: vtypes.ID = dataclasses.field(
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -360,7 +360,7 @@ class EventPart(EventDataclass):
 
 @dataclasses.dataclass
 class CourseChoiceObject(abc.ABC):
-    id: vtypes.ProtoID
+    id: vtypes.ID
 
     title: str
     shortname: str
@@ -407,7 +407,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ProtoID
+    part_id: vtypes.ID
 
     course_room_field_id: Optional[vtypes.ID]
 
@@ -453,7 +453,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
@@ -516,7 +516,7 @@ class EventFee(EventDataclass):
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=Meta.validate_exclude.as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
@@ -565,7 +565,7 @@ class CustomQueryFilter(EventDataclass):
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata=Meta.validate_exclude.as_dict,
     )
-    event_id: vtypes.ProtoID = dataclasses.field(
+    event_id: vtypes.ID = dataclasses.field(
         metadata=Meta.input_update_exclude.as_dict)
 
     scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
@@ -626,7 +626,7 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ID
 
     title: str
     shortname: str
@@ -664,7 +664,7 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ID
 
     title: str
     shortname: str

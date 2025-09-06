@@ -4634,14 +4634,15 @@ class TestEventBackend(BackendTest):
         delta = datetime.timedelta(minutes=1)
         with freezegun.freeze_time(base_time) as frozen_time:
             new_token = OrgaToken(
-                id=cast(vtypes.ProtoID, -1),
+                id=cast(vtypes.ID, -1),
                 event_id=cast(vtypes.ID, event_id),
                 title="New Token!",
                 notes=None,
                 etime=base_time + delta,
             )
-            new_id, secret = self.event.create_orga_token(self.key, new_token)
-            new_token.id = vtypes.ProtoID(new_id)
+            data = new_token.to_database()
+            new_id, secret = self.event.create_orga_token(self.key, data)
+            new_token.id = vtypes.ID(new_id)
             apitoken = cast(RequestState, new_token.get_token_string(secret))
 
             log_expectation = [
