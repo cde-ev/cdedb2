@@ -846,6 +846,8 @@ class Course(EventDataclass):
         mandatory, optional = super().validation_fields(creation=creation)
         for ret in (mandatory, optional):
             if "segments" in ret:
+                # During validation we also accept None, meaning to delete the segment,
+                #  i.e. it is not (or no longer) offered.
                 ret["segments"] = CdEDataclassMap[CourseSegment | None]
         return mandatory, optional
 
