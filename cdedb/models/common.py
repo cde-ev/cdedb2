@@ -126,6 +126,7 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
+    # for ephemeral instances, this is actually negative despite its annotation
     id: vtypes.ID = dataclasses.field(
         metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
                   | MetaFlag.validate_update_mandatory).as_dict)
@@ -155,8 +156,8 @@ class CdEDataclass:
                and not MetaFlag.to_database_exclude.in_field(field)
         }
 
-        # during creation the id is unknown
-        if self.in_creation:
+        # during creation the entity has no valid id - the database returns the new id
+        if self.is_ephemeral:
             data.pop("id", None)
         return data
 
@@ -208,8 +209,16 @@ class CdEDataclass:
         return query, params
 
     @property
-    def in_creation(self) -> bool:
-        """This dataset will be used to create a new entity."""
+    def is_ephemeral(self) -> bool:
+        """This dataset will be used to create a new entity.
+
+        Note that the id property is annotated as a positive integer. This is true for
+        regular dataclass instances, which are retrieved from the database, but not true
+        for ephemeral ones, which are used to _create_ an object and save it to the
+        database afterwards.
+
+        Therefore, we exclude the id field in `to_database` and `_to_validation`.
+        """
         return self.id < 0
 
     @classmethod
@@ -254,7 +263,7 @@ class CdEDataclass:
 
     def _to_validation(self) -> CdEDBObject:
         """Generate a dict representation of this entity to be validated."""
-        mandatory, optional = self.validation_fields(creation=self.in_creation)
+        mandatory, optional = self.validation_fields(creation=self.is_ephemeral)
         values = vars(self)
 
         # include optional fields only if they are present
@@ -265,7 +274,8 @@ class CdEDataclass:
                 or field.name in optional and field.name in values
         }
 
-        if self.in_creation:
+        # during creation the entity has no id, its only a placeholder
+        if self.is_ephemeral:
             data.pop("id", None)
         return data
 
