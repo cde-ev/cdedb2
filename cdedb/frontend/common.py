@@ -112,6 +112,7 @@ from cdedb.common import (
     get_hash,
     get_mandatory_form_fields,
     glue,
+    is_optional_type,
     json_serialize,
     make_proxy,
     merge_dicts,
@@ -2218,12 +2219,9 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if typing.get_origin(hints[name]) is Union:
-                        type_, _ = hints[name].__args__
-                        optional = True
-                    else:
-                        type_ = hints[name]
-                        optional = False
+                    type_ = hints[name]
+                    if optional := is_optional_type(type_):
+                        type_ = typing.get_args(type_)[0]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
