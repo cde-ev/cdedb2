@@ -576,9 +576,9 @@ class EventLowLevelBackend(AbstractBackend):
         new_parts = {x for x in parts if x < 0}
         updated_parts = {x for x in parts if x > 0 and parts[x] is not None}
         deleted_parts = {x for x in parts if x > 0 and parts[x] is None}
-        # if has_registrations and (deleted_parts or new_parts):
-        #     raise ValueError(
-        #         n_("Registrations exist, modifications only."))
+        if self.has_registrations(rs, event_id) and deleted_parts:
+            raise ValueError(
+                n_("Registrations exist, cannot delete event parts."))
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
