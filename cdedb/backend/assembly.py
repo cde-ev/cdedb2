@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, NamedTuple, Optional, Protocol, Union
+from typing import NamedTuple, Optional, Protocol, Union
 
 from schulze_condorcet import schulze_evaluate
 
@@ -58,7 +58,6 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
-    glue,
     json_serialize,
     now,
     unwrap,
@@ -81,6 +80,7 @@ from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s, Params
 
 
 class BallotConfiguration(NamedTuple):
@@ -338,11 +338,18 @@ class AssemblyBackend(AbstractBackend):
         # we require atomization here.
         self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
-        query = (
-            "INSERT INTO assembly.log (code, assembly_id, submitted_by,"
-            " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)"
-        )
-        params = (code, assembly_id, rs.user.persona_id, persona_id, change_note)
+        query = """
+            INSERT INTO assembly.log
+                (code, assembly_id, submitted_by, persona_id, change_note)
+                VALUES (%(code)s, %(assembly_id)s, %(submitted_by)s, %(persona_id)s, %(change_note)s)
+        """
+        params = {
+            "code": code,
+            "assembly_id": assembly_id,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "change_note": change_note,
+        }
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
@@ -491,11 +498,12 @@ class AssemblyBackend(AbstractBackend):
                 assembly_id = self.get_assembly_id(
                     rs, ballot_id=ballot_id, attachment_id=attachment_id
                 )
-            query = glue(
-                "SELECT id FROM assembly.attendees",
-                "WHERE assembly_id = %s and persona_id = %s",
-            )
-            return bool(self.query_one(rs, query, (assembly_id, persona_id)))
+            query = """
+                SELECT id FROM assembly.attendees
+                WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+            """
+            params = {"assembly_id": assembly_id, "persona_id": persona_id}
+            return bool(self.query_one(rs, query, params))
 
     @access("assembly")
     def does_attend(
@@ -572,26 +580,25 @@ class AssemblyBackend(AbstractBackend):
 
         q = """
             SELECT persona_id FROM assembly.log
-            WHERE assembly_id = %s AND code = %s AND ctime < %s
+            WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime < %(ctime)s
         """
+        params: Params = {
+            "assembly_id": assembly_id,
+            "code": const.AssemblyLogCodes.new_attendee,
+            "ctime": cutoff,
+        }
         early_list = [
-            attendee_data[e['persona_id']]
-            for e in self.query_all(
-                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff)
-            )
+            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
         ]
         early_attendees = {
             e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)
         }
         q = """
             SELECT persona_id FROM assembly.log
-            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+            WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime >= %(ctime)s
         """
         late_list = [
-            attendee_data[e['persona_id']]
-            for e in self.query_all(
-                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff)
-            )
+            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
         ]
         late_attendees = {
             e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)
@@ -776,11 +783,13 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
-        query = (
-            "DELETE FROM assembly.presiders WHERE persona_id = %s AND assembly_id = %s"
-        )
+        query = """
+            DELETE FROM assembly.presiders
+            WHERE persona_id = %(persona_id)s AND assembly_id = %(assembly_id)s
+        """
+        params = {"assembly_id": assembly_id, "persona_id": persona_id}
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (persona_id, assembly_id))
+            ret = self.query_exec(rs, query, params)
             if ret:
                 self.assembly_log(
                     rs,
@@ -1012,11 +1021,11 @@ class AssemblyBackend(AbstractBackend):
     ) -> dict[int, bool]:
         """Helper to check whether the given ballots may be modified."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = (
-            "SELECT id, vote_begin < %s AS is_locked"
-            " FROM assembly.ballots WHERE id = ANY(%s)"
-        )
-        params = (now(), ballot_ids)
+        q = """
+            SELECT id, vote_begin < %(now)s AS is_locked
+            FROM assembly.ballots WHERE id = ANY(%(ballot_ids)s)
+        """
+        params: Params = {"now": now(), "ballot_ids": ballot_ids}
         return {e['id']: e['is_locked'] for e in self.query_all(rs, q, params)}
 
     class _IsBallotLockedProtocol(Protocol):
@@ -1055,20 +1064,16 @@ class AssemblyBackend(AbstractBackend):
         # yet, but is between vote_end and vote_extension_end.
         # The third part of the statement makes sure this returns False instead of None
         # if the ballot is definitely over.
-        q = """SELECT id, (
-            vote_begin < %s
-            AND (vote_end > %s OR (vote_extension_end > %s AND extended = True))
-            AND NOT COALESCE(vote_extension_end, vote_end) < %s
-            ) AS is_voting
-        FROM assembly.ballots WHERE id = ANY(%s)"""
-        reference_time = now()
-        params = (
-            reference_time,
-            reference_time,
-            reference_time,
-            reference_time,
-            ballot_ids,
-        )
+        q = """
+            SELECT
+                id, (
+                    vote_begin < %(now)s
+                    AND (vote_end > %(now)s OR (vote_extension_end > %(now)s AND extended = True))
+                    AND NOT COALESCE(vote_extension_end, vote_end) < %(now)s
+                ) AS is_voting
+            FROM assembly.ballots WHERE id = ANY(%(ballot_ids)s)
+        """
+        params: Params = {"now": now(), "ballot_ids": ballot_ids}
 
         # If is_voting is no bool, the voting period extension has not been checked yet.
         # The result of this check equals whether the ballot is still voting.
@@ -1138,10 +1143,10 @@ class AssemblyBackend(AbstractBackend):
                             # of attendees plus the # number of members
                             # (who may decide to become attendees).
                             attendees = self.list_attendees(rs, e["assembly_id"])
-                            query = (
-                                "SELECT COUNT(id) FROM core.personas"
-                                " WHERE is_member = TRUE AND NOT(id = ANY(%s))"
-                            )
+                            query = """
+                                SELECT COUNT(id) FROM core.personas
+                                WHERE is_member = TRUE AND NOT(id = ANY(%s))
+                            """
                             non_attending_members = (
                                 unwrap(self.query_one(rs, query, (attendees,))) or 0
                             )
@@ -1630,23 +1635,22 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_ballot_voting(rs, ballot_id):
                 raise ValueError(n_("Ballot is not open for voting."))  # TODO: coverage
 
-            query = glue(
-                "SELECT has_voted FROM assembly.voter_register",
-                "WHERE ballot_id = %s and persona_id = %s",
-            )
-            has_voted = unwrap(
-                self.query_one(rs, query, (ballot_id, rs.user.persona_id))
-            )
+            query = """
+                SELECT has_voted FROM assembly.voter_register
+                WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+            """
+            ballot_params = {"ballot_id": ballot_id, "persona_id": rs.user.persona_id}
+            has_voted = unwrap(self.query_one(rs, query, ballot_params))
             if secret is None:
-                query = glue(
-                    "SELECT secret FROM assembly.attendees",
-                    "WHERE assembly_id = %s and persona_id = %s",
-                )
-                secret = unwrap(
-                    self.query_one(
-                        rs, query, (ballot['assembly_id'], rs.user.persona_id)
-                    )
-                )
+                query = """
+                    SELECT secret FROM assembly.attendees
+                    WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+                """
+                assembly_params = {
+                    "assembly_id": ballot["assembly_id"],
+                    "persona_id": rs.user.persona_id,
+                }
+                secret = unwrap(self.query_one(rs, query, assembly_params))
                 if secret is None:  # TODO: coverage
                     raise ValueError(n_("Could not determine secret."))
             if not has_voted:
@@ -1658,11 +1662,11 @@ class AssemblyBackend(AbstractBackend):
                     'hash': self.encrypt_vote(salt, secret, vote),
                 }
                 ret = self.sql_insert(rs, "assembly.votes", entry)
-                query = glue(
-                    "UPDATE assembly.voter_register SET has_voted = True",
-                    "WHERE ballot_id = %s and persona_id = %s",
-                )
-                ret *= self.query_exec(rs, query, (ballot_id, rs.user.persona_id))
+                query = """
+                    UPDATE assembly.voter_register SET has_voted = True
+                    WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+                """
+                ret *= self.query_exec(rs, query, ballot_params)
             else:
                 current = self.retrieve_vote(rs, ballot_id, secret)
                 update = {
@@ -1684,11 +1688,12 @@ class AssemblyBackend(AbstractBackend):
         if not self.check_attendance(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Must attend the ballot."))
 
-        query = glue(
-            "SELECT has_voted FROM assembly.voter_register",
-            "WHERE ballot_id = %s and persona_id = %s",
-        )
-        has_voted = unwrap(self.query_one(rs, query, (ballot_id, rs.user.persona_id)))
+        query = """
+            SELECT has_voted FROM assembly.voter_register
+            WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+        """
+        params = {"ballot_id": ballot_id, "persona_id": rs.user.persona_id}
+        has_voted = unwrap(self.query_one(rs, query, params))
         return bool(has_voted)
 
     @access("assembly")
@@ -1696,12 +1701,11 @@ class AssemblyBackend(AbstractBackend):
         """Look up how many attendees had already voted in a ballot."""
         ballot_id = affirm(vtypes.ID, ballot_id)
 
-        query = glue(
-            "SELECT COUNT(*) AS count FROM assembly.voter_register",
-            "WHERE ballot_id = %s and has_voted = True",
-        )
-        count_votes = unwrap(self.query_one(rs, query, (ballot_id,))) or 0
-        return count_votes
+        query = """
+            SELECT COUNT(*) AS count FROM assembly.voter_register
+            WHERE ballot_id = %(ballot_id)s and has_voted = True
+        """
+        return unwrap(self.query_one(rs, query, {"ballot_id": ballot_id})) or 0
 
     @access("assembly")
     def get_vote(
@@ -1731,15 +1735,15 @@ class AssemblyBackend(AbstractBackend):
                 return None
             if secret is None:
                 ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
-                query = glue(
-                    "SELECT secret FROM assembly.attendees",
-                    "WHERE assembly_id = %s and persona_id = %s",
-                )
-                secret = unwrap(
-                    self.query_one(
-                        rs, query, (ballot['assembly_id'], rs.user.persona_id)
-                    )
-                )
+                query = """
+                    SELECT secret FROM assembly.attendees
+                    WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+                """
+                params = {
+                    "assembly_id": ballot["assembly_id"],
+                    "persona_id": rs.user.persona_id,
+                }
+                secret = unwrap(self.query_one(rs, query, params))
             if secret is None:
                 return None
             vote = self.retrieve_vote(rs, ballot_id, secret)
@@ -1833,11 +1837,11 @@ class AssemblyBackend(AbstractBackend):
                     ballot['candidates'].values(), key=EntitySorter.candidates
                 )
             }
-            query = glue(
-                "SELECT persona_id FROM assembly.voter_register",
-                "WHERE ballot_id = %s and has_voted = True",
-            )
-            voter_ids = self.query_all(rs, query, (ballot_id,))
+            query = """
+                SELECT persona_id FROM assembly.voter_register
+                WHERE ballot_id = %(ballot_id)s and has_voted = True
+            """
+            voter_ids = self.query_all(rs, query, {"ballot_id": ballot_id})
             voters = self.core.get_personas(rs, tuple(unwrap(e) for e in voter_ids))
             voter_names = list(
                 f"{e['given_names']} {e['family_name']}"
@@ -2207,11 +2211,12 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(
                     n_("Cannot unlink attachment from ballot that has been locked.")
                 )  # TODO: coverage
-            query = (
-                "DELETE FROM assembly.attachment_ballot_links"
-                " WHERE attachment_id = %s AND ballot_id = %s"
-            )
-            ret = self.query_exec(rs, query, (attachment_id, ballot_id))
+            query = """
+                DELETE FROM assembly.attachment_ballot_links
+                WHERE attachment_id = %(attachment_id)s AND ballot_id = %(ballot_id)s
+            """
+            params = {"attachment_id": attachment_id, "ballot_id": ballot_id}
+            ret = self.query_exec(rs, query, params)
             if ret:
                 version = self.get_latest_attachment_version(rs, attachment_id)
                 ballot = self.get_ballot(rs, ballot_id)
@@ -2312,7 +2317,8 @@ class AssemblyBackend(AbstractBackend):
         :param timestamp: If given, retrieve the latest version before then.
         :returns: Dict[attachment_id, version]
         """
-        base_query = """SELECT {select_keys}
+        base_query = """
+            SELECT {select_keys}
             FROM (
                 SELECT attachment_id, MAX(version_nr) AS version_nr
                 FROM assembly.attachment_versions
@@ -2322,20 +2328,20 @@ class AssemblyBackend(AbstractBackend):
             LEFT OUTER JOIN assembly.attachment_versions AS version_data
             ON max_version.attachment_id = version_data.attachment_id
                 AND max_version.version_nr = version_data.version_nr
-            WHERE max_version.attachment_id = ANY(%s)"""
-        # Be careful here, because the `attachment_ids` param needs to be at the end.
-        params: list[Any] = []
+            WHERE max_version.attachment_id = ANY(%(attachment_ids)s)
+        """
+        params: dict[str, DatabaseValue_s] = {"attachment_ids": attachment_ids}
         conditions = ["dtime IS NULL"]
         if timestamp:
-            conditions.append("ctime < %s")
-            params.append(timestamp)
+            conditions.append("ctime < %(timestamp)s")
+            params["timestamp"] = timestamp
         query = base_query.format(
             select_keys=', '.join(
                 f'version_data.{k}' for k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
             ),
             condition=" AND ".join(conditions),
         )
-        data = self.query_all(rs, query, params + [attachment_ids])
+        data = self.query_all(rs, query, params)
         return {e['attachment_id']: e for e in data}
 
     @access("assembly")
@@ -2376,12 +2382,12 @@ class AssemblyBackend(AbstractBackend):
         if not self.may_access_attachments(rs, [attachment_id]):
             raise PrivilegeError()
 
-        query = (
-            f"SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}"
-            f" FROM assembly.attachment_versions WHERE attachment_id = %s"
-            f" AND version_nr = %s"
-        )
-        params = (attachment_id, version_nr)
+        query = f"""
+            SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}
+            FROM assembly.attachment_versions WHERE attachment_id = %(attachment_id)s
+            AND version_nr = %(version_nr)s
+        """
+        params = {"attachment_id": attachment_id, "version_nr": version_nr}
         return self.query_one(rs, query, params) or {}
 
     @access("assembly")
@@ -2441,10 +2447,10 @@ class AssemblyBackend(AbstractBackend):
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
         """Is an attachment file still referenced by some version?"""
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
-        query = (
-            "SELECT COUNT(*) FROM assembly.attachment_versions"
-            " WHERE file_hash = %s AND dtime IS NULL"
-        )
+        query = """
+            SELECT COUNT(*) FROM assembly.attachment_versions
+            WHERE file_hash = %s AND dtime IS NULL
+        """
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("assembly")
@@ -2471,10 +2477,10 @@ class AssemblyBackend(AbstractBackend):
                     )
                 )  # TODO: coverage
             # Take care to include deleted attachment versions here
-            query = (
-                "SELECT MAX(version_nr) AS max_version_nr"
-                " FROM assembly.attachment_versions WHERE attachment_id = %s"
-            )
+            query = """
+                SELECT MAX(version_nr) AS max_version_nr
+                FROM assembly.attachment_versions WHERE attachment_id = %s
+            """
             max_version = self.query_one(rs, query, (attachment_id,))
             if max_version is None:  # pragma: no cover
                 raise ValueError(n_("Attachment does not exist."))
@@ -2517,16 +2523,13 @@ class AssemblyBackend(AbstractBackend):
             )
             if old_state['dtime']:  # TODO: coverage
                 raise ValueError(n_("Deleted attachment version can not be changed."))
-            attachment_id = data.pop('attachment_id')
-            version_nr = data.pop('version_nr')
-            keys = data.keys()
-            query = (
-                f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
-                f" ROW({', '.join(('%s',) * len(keys))})"
-                f" WHERE attachment_id = %s AND version_nr = %s"
-            )
-            params = tuple(data[key] for key in keys) + (attachment_id, version_nr)
-            ret = self.query_exec(rs, query, params)
+            keys = xsorted(set(data.keys()) - {'attachment_id', 'version_nr'})
+            query = f"""
+                UPDATE assembly.attachment_versions
+                SET ({', '.join(keys)}) = ROW({", ".join(f"%({key})s" for key in keys)})
+                WHERE attachment_id = %(attachment_id)s AND version_nr = %(version_nr)s
+            """
+            ret = self.query_exec(rs, query, data)
 
             # Use title from current verstion
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
@@ -2534,7 +2537,7 @@ class AssemblyBackend(AbstractBackend):
                 rs,
                 const.AssemblyLogCodes.attachment_version_changed,
                 assembly_id,
-                change_note=f"{latest_version['title']}: Version {version_nr}",
+                change_note=f"{latest_version['title']}: Version {data['version_nr']}",
             )
         return ret
 
@@ -2573,20 +2576,23 @@ class AssemblyBackend(AbstractBackend):
                     n_("Cannot remove the last remaining version of an attachment.")
                 )
             deletor: dict[str, Union[int, datetime.datetime, None]] = {
+                'attachment_id': attachment_id,
+                'version_nr': version_nr,
                 'dtime': now(),
                 'title': None,
                 'authors': None,
                 'filename': None,
             }
 
-            keys = tuple(deletor.keys())
-            setters = ", ".join(f"{k} = %s" for k in keys)
-            query = (
-                f"UPDATE assembly.attachment_versions SET {setters}"
-                f" WHERE attachment_id = %s AND version_nr = %s"
+            setters = ", ".join(
+                f"{k} = %({k})s"
+                for k in set(deletor.keys()) - {'attachment_id', 'version_nr'}
             )
-            params = tuple(deletor[k] for k in keys) + (attachment_id, version_nr)
-            ret = self.query_exec(rs, query, params)
+            query = f"""
+                UPDATE assembly.attachment_versions SET {setters}
+                WHERE attachment_id = %(attachment_id)s AND version_nr = %(version_nr)s
+            """
+            ret = self.query_exec(rs, query, deletor)
             if ret:
                 change_note = f"{versions[version_nr]['title']}: Version {version_nr}"
                 self.assembly_log(
@@ -2646,17 +2652,14 @@ class AssemblyBackend(AbstractBackend):
     ) -> CdEDBObjectMap:
         """Internal helper to retrieve attachment data without access check."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        query = f"""SELECT
-                {
-            ', '.join(
-                ASSEMBLY_ATTACHMENT_FIELDS
-                + (
-                    'num_versions',
-                    'latest_version_nr',
-                    'COALESCE(ballot_ids, array[]::integer[]) AS ballot_ids',
-                )
-            )
-        }
+        fields = ASSEMBLY_ATTACHMENT_FIELDS + (
+            'num_versions',
+            'latest_version_nr',
+            'COALESCE(ballot_ids, array[]::integer[]) AS ballot_ids',
+        )
+        query = f"""
+            SELECT
+                {', '.join(fields)}
             FROM (
                 (
                     SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
@@ -2678,7 +2681,8 @@ class AssemblyBackend(AbstractBackend):
                     FROM assembly.attachment_ballot_links
                     GROUP BY attachment_id
                 ) AS ballot_links ON attachments.id = ballot_links.attachment_id
-            )"""
+            )
+        """
         params = (attachment_ids,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
