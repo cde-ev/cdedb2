@@ -536,7 +536,7 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
-        data = check(rs, models.EventPart, data, creation=True)
+        data = check(rs, vtypes.EventPart, data, creation=True)
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
         assert data is not None
