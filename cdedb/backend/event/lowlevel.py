@@ -570,16 +570,15 @@ class EventLowLevelBackend(AbstractBackend):
         if not parts:
             return ret
         self.affirm_atomized_context(rs)
-        has_registrations = self.has_registrations(rs, event_id)
 
         existing_parts = {unwrap(e) for e in self.sql_select(
             rs, "event.event_parts", ("id",), (event_id,), entity_key="event_id")}
         new_parts = {x for x in parts if x < 0}
         updated_parts = {x for x in parts if x > 0 and parts[x] is not None}
         deleted_parts = {x for x in parts if x > 0 and parts[x] is None}
-        if has_registrations and (deleted_parts or new_parts):
+        if self.has_registrations(rs, event_id) and deleted_parts:
             raise ValueError(
-                n_("Registrations exist, modifications only."))
+                n_("Registrations exist, cannot delete event parts."))
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
@@ -613,6 +612,17 @@ class EventLowLevelBackend(AbstractBackend):
             self.event_log(rs, const.EventLogCodes.part_created, event_id,
                            change_note=new_part['title'])
             ret *= self._set_tracks(rs, event_id, new_id, tracks)
+            reg_data = self.sql_select(
+                rs, "event.registrations", ("id",), (event_id,), entity_key="event_id")
+            reg_ids = tuple(e['id'] for e in reg_data)
+            for reg_id in reg_ids:
+                reg_part = {
+                    'registration_id': reg_id,
+                    'part_id': new_id,
+                    'status': const.RegistrationPartStati.not_applied,
+                }
+                ret *= self.sql_insert(
+                    rs, "event.registration_parts", reg_part)
 
         if updated_parts:
             # Retrieve current data, so we can check if anything actually changed.

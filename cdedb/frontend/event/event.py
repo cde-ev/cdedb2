@@ -479,7 +479,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
-            rs.notify("error", n_("Registrations exist, no deletion."))
+            rs.notify("error", n_("Registrations exist, cannot delete event parts."))
             return self.part_summary(rs, event_id)
         if part_id in self._deletion_blocked_parts(rs, event_id):
             rs.notify("error", n_("This part can not be deleted."))
