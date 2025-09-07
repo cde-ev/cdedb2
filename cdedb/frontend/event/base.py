@@ -125,6 +125,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
             if (
                 event_id in rs.user.orga
+                or event_id in rs.user.caretaker
                 or 'event_orga' not in rs.user.available_admin_views
                 or not consider_admin_view
             ):

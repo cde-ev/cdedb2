@@ -80,7 +80,7 @@
 
     {% if ambience['event']['registration_text'] %}
         {% set button = None %}
-        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+        {% if orga_view %}
             {% set button = generic_event.edit_free_text_button("registration_text") %}
         {% endif %}
         {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,

@@ -42,12 +42,13 @@ class EventPrivileges(Flag):
     payment_write = auto()
     token = auto()
     log_read = auto()
-    # send_email = auto()  #: api only? tool suggested recently
+
     # create = auto()
     conclude = auto()
     balance = auto()
     lock = auto()
     delete = auto()
+    orgas_change = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
@@ -83,7 +84,8 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     """
     EP = EventPrivileges
     admin_privileges = ~(EP.conclude | EP.balance)
-    orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
+    orga_privileges = ~(EP.conclude | EP.balance | EP.delete | EP.orgas_change)
+    caretaker_privileges = orga_privileges  | EP.orgas_change
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
                                | EP.registrations_stats | EP.registrations_read_internal
                                | EP.participant_list)
@@ -96,6 +98,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
         {"event_admin", "cde_admin"} <= user.roles and required_privilege == EP.conclude
         or "event_admin" in user.roles and required_privilege in admin_privileges
         or event_id in user.orga and required_privilege in orga_privileges
+        or event_id in user.caretaker and required_privilege in caretaker_privileges
         # Due to use in ml realm, users without event realm might come across this
         or ("event_helper" in user.realm_roles.get('event', {})
             and required_privilege in event_helper_privileges)

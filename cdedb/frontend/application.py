@@ -330,6 +330,7 @@ class Application(BaseApp):
                 orga: set[int] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
+                    caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)
                 moderator: set[int] = set()
                 if "ml" in user.roles:
                     moderator = self.mlproxy.moderator_info(
@@ -339,6 +340,7 @@ class Application(BaseApp):
                     presider = self.assemblyproxy.presider_info(
                         rs, user.persona_id)
                 user.orga = orga
+                user.caretaker = caretaker
                 user.moderator = moderator
                 user.presider = presider
                 user.init_admin_views_from_cookie(

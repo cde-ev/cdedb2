@@ -4,12 +4,12 @@
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
     {{ super() }}
-    {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+    {% if orga_view or 'event_mgmt' in user.admin_views %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+{% if orga_view or 'event_mgmt' in user.admin_views %}
     {% set jshint = 'strong' %}
 {% endif %}
 {% block title %}
@@ -29,7 +29,7 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+        {% if orga_view %}
             <div class="p button-par">
                 {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
             </div>
@@ -79,8 +79,7 @@
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
                     {{- (hard_limit if soft_limit is none else soft_limit)|datetime(lang=lang) }}
-                    {% if ((values['event_id'] in user.orga or 'event_orga' in user.admin_views)
-                        or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
+                    {% if (orga_view or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
                         {% if hard_limit %}
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})
@@ -119,13 +118,13 @@
             </dd>
         {% endif %}
     </dl>
-    {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+    {% if orga_view or 'event_mgmt' in user.admin_views %}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
             <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
-            {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+            {% if orga_view %}
                 <dt title="{% trans %}CdE-Account{% endtrans %}">{% trans %}CdE-Account{% endtrans %}</dt>
                 <dd id="cde-iban">
                     {%- if ambience['event'].iban -%}
@@ -140,7 +139,7 @@
     {% endif %}
 
 
-    {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+    {% if orga_view %}
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"),
                                          button=generic.edit_free_text_button("notes"),
@@ -151,7 +150,7 @@
     {% endif %}
 
     <div class="row">
-        {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+        {% if orga_view %}
             {% set min_severity = enums['ViolationSeverity'].INFO %}
             {% set violations = constraint_violations['violations'] if constraint_violations else None %}
             {% if violations and violations.max_severity >= min_severity %}
@@ -244,7 +243,7 @@
                 {% endcall %}
             </div>
         {% endif %}
-        {% if "event_mgmt" in user.admin_views %}
+        {% if "event_mgmt" in user.admin_views or ambience['event'].id in user.caretaker %}
             <div class="col-md-6" id="manage-orgas">
                 {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
                 <ul>
@@ -298,7 +297,7 @@
 
 
     {% if "event_mgmt" in user.admin_views or "finance" in user.admin_views or (
-            values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
+            (values['event_id'] in user.orga or values['event_id'] in user.caretaker) and (not ambience['event']['orga_address'] or not participant_list)) %}
         {# This ensures no empty box is shown for orgas. #}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['event']['orga_address'] %}

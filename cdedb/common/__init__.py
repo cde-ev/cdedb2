@@ -121,6 +121,7 @@ class User:
                  realm_roles: Optional[dict[Realm, set[str]]] = None,
                  given_names: str = "", nickname: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
+                 caretaker: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
@@ -134,6 +135,7 @@ class User:
         self.nickname = nickname
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
+        self.caretaker: set[int] = set(caretaker) if caretaker else set()
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
         self.admin_views: set[AdminView] = set()
