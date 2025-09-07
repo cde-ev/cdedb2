@@ -123,13 +123,6 @@
         this.initFieldSelects = function() {
             /* Add event handler, and selectize.js for add*field select boxes */
             /* No refreshs/filling with options for now, as they are done later by init() */
-            $viewFieldSelect.on("change", function() {
-                if ($(this).val() === '')
-                    return;
-                obj.addViewRow($(this).val());
-                obj.refreshViewFieldSelect();
-                $viewFieldSelect[0].selectize.focus();
-            });
             $viewFieldSelect.selectize({
                 'placeholder': settings.labels['add_field'] || '',
                 copyClassesToDropdown: false,
@@ -140,13 +133,14 @@
                     },
                 }
             });
-
-            $filterFieldSelect.on("change", function() {
+            $viewFieldSelect.on("change", function() {
                 if ($(this).val() === '')
                     return;
-                obj.addFilterRow($(this).val(), true);
-                obj.refreshFilterFieldSelect();
+                obj.addViewRow($(this).val());
+                obj.refreshViewFieldSelect();
+                $viewFieldSelect[0].selectize.focus();
             });
+
             $filterFieldSelect.selectize({
                 'placeholder': settings.labels['add_filter'] || '',
                 copyClassesToDropdown: false,
@@ -157,14 +151,13 @@
                     },
                 }
             });
-
-            $sortFieldSelect.on("change", function() {
+            $filterFieldSelect.on("change", function() {
                 if ($(this).val() === '')
                     return;
-                obj.addSortRow($(this).val(),'True');
-                obj.updateSortInputs();
-                obj.refreshSortFieldSelect();
+                obj.addFilterRow($(this).val(), true);
+                obj.refreshFilterFieldSelect();
             });
+
             $sortFieldSelect.selectize({
                 'placeholder': settings.labels['add_sort'] || '',
                 copyClassesToDropdown: false,
@@ -174,6 +167,13 @@
                         return '<div class="optgroup-header">' + escape(data.label) + '</div>';
                     },
                 }
+            });
+            $sortFieldSelect.on("change", function() {
+                if ($(this).val() === '')
+                    return;
+                obj.addSortRow($(this).val(),'True');
+                obj.updateSortInputs();
+                obj.refreshSortFieldSelect();
             });
 
             this.refreshViewFieldSelect();
