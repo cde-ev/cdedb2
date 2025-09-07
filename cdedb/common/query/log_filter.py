@@ -53,9 +53,9 @@ class GenericLogFilter:
 
     # Pagination parameters.
     offset: Optional[int] = None  # How many entries to skip at the start.
-    _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
+    _offset: Optional[int] = None  # Unmodified offset.
     length: int = 0  # How many entries to list. Set default in post_init.
-    _length: int = dataclasses.field(default=0)  # Unmodified length.
+    _length: int = 0  # Unmodified length.
 
     # Generic attributes available for all logs.
     codes: list[int] = dataclasses.field(default_factory=list)  # Log codes to filter.
@@ -139,7 +139,7 @@ class GenericLogFilter:
             if field.name not in {"_offset", "_length"}
         ]
 
-    def to_validation(self) -> CdEDBObject:
+    def _to_validation(self) -> CdEDBObject:
         """Turn an instance of the dataclass into a dict, that can be validated.
 
         Because CdEDB-ID validation is not idempotent, we need to fix some data.
@@ -158,11 +158,12 @@ class GenericLogFilter:
         Returns two dicts, with mandatory and optional keys respectively.
         Some type annotations differ slightly from the validation type.
         """
-        mandatory: vtypes.MutableTypeMapping = {'length': int}
+        mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {
             field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
-        del optional['length']
+        # allow empty strings to be validated as None and replaced by the default length
+        optional['length'] = Optional[int]  # type: ignore[assignment]
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
         for k in cls.get_persona_columns():
             optional[k] = Optional[vtypes.CdedbID]  # type: ignore[assignment]
@@ -428,6 +429,7 @@ ALL_LOG_FILTERS: tuple[type[GenericLogFilter], ...] = (
     CoreLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     FinanceLogFilter,
     AssemblyLogFilter,
     EventLogFilter,

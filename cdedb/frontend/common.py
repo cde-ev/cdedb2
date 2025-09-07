@@ -111,7 +111,6 @@ from cdedb.common import (
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
-    glue,
     json_serialize,
     make_proxy,
     merge_dicts,
@@ -394,7 +393,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'nbsp': "\u00A0",
             'query_mod': query_mod,
             'get_hash': get_hash,
-            'glue': glue,
             'enums': ENUMS_DICT,
             'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
@@ -1333,8 +1331,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         This takes care of validating the filter input and retrieving log entries via
         the passed backend method.
         """
-        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
-        if rs.has_validation_errors() or data is None:
+        log_filter = check_validation(rs, filter_class, data)
+        if rs.has_validation_errors() or log_filter is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
@@ -1342,8 +1340,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             self.logger.debug(
                 f"Log filter validation failed: {rs.retrieve_validation_errors()}")
             log_filter = filter_class()
-        else:
-            log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
         total, log = log_retriever(rs, log_filter)
@@ -2486,8 +2482,23 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, type_: type[T], value: Any,
-                     name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation(
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation(
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2505,11 +2516,26 @@ def check_validation(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
 
 
-def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
-                              name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation_optional(
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
@@ -2529,7 +2555,7 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check_optional(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
 
 
 DC = TypeVar('DC', bound=CdEDataclass)

@@ -22,11 +22,7 @@ class TestMlBackend(BackendTest):
 
     @staticmethod
     def as_id(anid: int) -> vtypes.ID:
-        return vtypes.ID(vtypes.ProtoID(anid))
-
-    @staticmethod
-    def as_creation_id(anid: int) -> vtypes.CreationID:
-        return vtypes.CreationID(vtypes.ProtoID(anid))
+        return vtypes.ID(anid)
 
     @as_users("janis")
     def test_basics(self) -> None:
@@ -313,7 +309,7 @@ class TestMlBackend(BackendTest):
     def test_mailinglist_creation_deletion(self) -> None:
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = models_ml.MemberInvitationOnlyMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -345,7 +341,7 @@ class TestMlBackend(BackendTest):
     @as_users("garcia")
     def test_mailinglist_creation_orga(self) -> None:
         data: models_ml.EventAssociatedMeta = models_ml.EventAssociatedMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart("test"),
             domain=const.MailinglistDomain.aka,
             description=None,
@@ -389,7 +385,7 @@ class TestMlBackend(BackendTest):
     @as_users("werner")
     def test_mailinglist_creation_presider(self) -> None:
         data = models_ml.AssemblyAssociatedMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart("test"),
             domain=const.MailinglistDomain.lists,
             description=None,
@@ -429,7 +425,7 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
         new_data = models_ml.MemberModeratedOptInMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -1413,7 +1409,7 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_change_sub_policy(self) -> None:
         data = models_ml.MemberInvitationOnlyMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',
@@ -1519,7 +1515,7 @@ class TestMlBackend(BackendTest):
     @as_users("nina")
     def test_change_mailinglist_association(self) -> None:
         data = models_ml.EventOrgaMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart('orga'),
             domain=const.MailinglistDomain.aka,
             description=None,
@@ -2041,7 +2037,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
-                id=self.as_creation_id(-1),
+                id=vtypes.ID(-1),
                 local_part=vtypes.EmailLocalPart("cyber"),
                 domain=const.MailinglistDomain.aka,
                 description="Für alle, die nicht ohne Akademien können.",
@@ -2103,7 +2099,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("viktor", "nina"):
             # Create a new assembly mailinglist.
             data = models_ml.AssemblyAssociatedMailinglist(
-                id=self.as_creation_id(-1),
+                id=vtypes.ID(-1),
                 local_part=vtypes.EmailLocalPart("mgv-ag"),
                 domain=const.MailinglistDomain.lists,
                 description="Vor der nächsten MGV müssen wir noch ein paar"
@@ -2153,7 +2149,7 @@ class TestMlBackend(BackendTest):
         if self.user_in("quintus", "nina"):
             # Create a new member mailinglist.
             data = models_ml.MemberOptInMailinglist(
-                id=self.as_creation_id(-1),
+                id=vtypes.ID(-1),
                 local_part=vtypes.EmailLocalPart("literatir"),
                 domain=const.MailinglistDomain.lists,
                 description="Wir reden hier über coole Bücher die wir gelesen haben.",
@@ -2210,7 +2206,7 @@ class TestMlBackend(BackendTest):
         self.ml.set_subscription_address(self.key, **datum)
         self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = models_ml.MemberInvitationOnlyMailinglist(
-            id=self.as_creation_id(-1),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart('revolution'),
             domain=const.MailinglistDomain.lists,
             description='Vereinigt Euch',

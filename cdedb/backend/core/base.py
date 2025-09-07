@@ -26,7 +26,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     access,
     affirm_array_validation as affirm_array,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -348,7 +347,7 @@ class CoreBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(CoreLogFilter, log_filter)
+        log_filter = affirm(CoreLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
@@ -359,7 +358,7 @@ class CoreBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
+        log_filter = affirm(ChangelogLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @staticmethod
@@ -2898,18 +2897,15 @@ class CoreBaseBackend(AbstractBackend):
         This is so that one may reply to the anonymous message without needing to know
         who sent it.
         """
-
-        message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
+        data = affirm(models.AnonymousMessageData, message, creation=True)
 
         with Atomizer(rs):
-            if self.sql_insert(
-                rs, models.AnonymousMessageData.database_table, message.to_database(),
-            ):
+            if self.sql_insert(rs, models.AnonymousMessageData.database_table, data):
                 self.core_log(
                     rs, const.CoreLogCodes.send_anonymous_message,
-                    change_note=message.recipient, suppress_persona_id=True,
+                    change_note=data["recipient"], suppress_persona_id=True,
                 )
-                return message.message_id
+                return data["message_id"]
         return None
 
     @access("persona")
@@ -2945,12 +2941,7 @@ class CoreBaseBackend(AbstractBackend):
 
         This is to be done should the message id (including the key) leak.
         """
-
-        message = affirm_dataclass(models.AnonymousMessageData, message)
-
-        update = message.to_database()
-        del update['ctime']
-        del update['recipient']
+        update = affirm(models.AnonymousMessageData, message)
 
         with Atomizer(rs):
             if self.sql_update(
@@ -2986,7 +2977,7 @@ class CoreBaseBackend(AbstractBackend):
         This is expected to occur regularly.
         """
         with Atomizer(rs):
-            data = affirm(vtypes.MetaInfo, data)
+            data = affirm(models.MetaInfo, data)
             meta_info = self.get_meta_info(rs).as_dict()
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"

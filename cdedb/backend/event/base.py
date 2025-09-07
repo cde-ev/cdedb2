@@ -27,7 +27,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -147,7 +146,7 @@ class EventBaseBackend(EventLowLevelBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        log_filter = affirm(EventLogFilter, log_filter)
         event_ids = log_filter.event_ids()
 
         if not all(is_privileged(rs, EventPrivileges.log_read, event_id=event_id)
@@ -444,18 +443,18 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id")
 
     @access("event")
-    def create_orga_token(self, rs: RequestState, data: OrgaToken,
+    def create_orga_token(self, rs: RequestState, data: CdEDBObject,
                           ) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
         :returns: A tuple of the new token id and it's secret. The secret is only
             stored as a hash and thus cannot be retrieved again.
         """
-        data = affirm_dataclass(OrgaToken, data, creation=True)
+        data = affirm(OrgaToken, data, creation=True)
 
         with Atomizer(rs):
             if not is_privileged(rs, EventPrivileges.token,
-                                 event_id=data.event_id):
+                                 event_id=data["event_id"]):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -463,14 +462,12 @@ class EventBaseBackend(EventLowLevelBackend):
                     "May not create new orga token in offline instance."))
 
             secret = OrgaToken.create_secret()
-            tdata = data.to_database()
-            tdata['secret_hash'] = encrypt_password(secret)
-            # Expiration time is not set automatically.
-            tdata['etime'] = data.etime
+            data['secret_hash'] = encrypt_password(secret)
+            data['ctime'] = now()
 
-            new_id = self.sql_insert(rs, OrgaToken.database_table, tdata)
+            new_id = self.sql_insert(rs, OrgaToken.database_table, data)
             self.event_log(rs, const.EventLogCodes.orga_token_created,
-                           data.event_id, change_note=data.title)
+                           data["event_id"], change_note=data["title"])
         return new_id, secret
 
     @access("event")
@@ -480,7 +477,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Note that only a small subset of token attributes may be changed.
         """
-        data = affirm(vtypes.OrgaToken, data)
+        data = affirm(OrgaToken, data)
 
         with Atomizer(rs):
             current = self.get_orga_token(rs, data['id'])

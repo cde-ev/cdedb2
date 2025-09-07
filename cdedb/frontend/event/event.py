@@ -101,7 +101,7 @@ class EventEventMixin(EventBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
 
-        events_registrations: dict[vtypes.ProtoID, int] = {}
+        events_registrations: dict[vtypes.ID, int] = {}
         if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles.get('event', {}):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
@@ -479,7 +479,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
-            rs.notify("error", n_("Registrations exist, no deletion."))
+            rs.notify("error", n_("Registrations exist, cannot delete event parts."))
             return self.part_summary(rs, event_id)
         if part_id in self._deletion_blocked_parts(rs, event_id):
             rs.notify("error", n_("This part can not be deleted."))
@@ -493,7 +493,7 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _valid_event_part_fields(
             fields: models.CdEDataclassMap[models.EventField],
-    ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
+    ) -> dict[str, list[tuple[vtypes.ID, vtypes.RestrictiveIdentifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
@@ -829,11 +829,11 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration."))
             return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = cast(CdEDBObject, check(
+        fee_data = check(
             rs, models.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
             event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
             personalized=personalized,
-        ))
+        )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
@@ -1133,7 +1133,7 @@ class EventEventMixin(EventBaseFrontend):
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
             orga_ml_data = EventOrgaMailinglist(
-                id=vtypes.CreationID(vtypes.ProtoID(-1)),
+                id=vtypes.ID(-1),
                 title=f"{event.title} Orgateam",
                 local_part=vtypes.EmailLocalPart(f"{event.shortname.lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
@@ -1172,7 +1172,7 @@ class EventEventMixin(EventBaseFrontend):
                      f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = EventAssociatedMailinglist(
-                id=vtypes.CreationID(vtypes.ProtoID(-1)),
+                id=vtypes.ID(-1),
                 title=title,
                 local_part=vtypes.EmailLocalPart(local_part.replace(" ", "")),
                 domain=const.MailinglistDomain.aka,
@@ -1185,7 +1185,7 @@ class EventEventMixin(EventBaseFrontend):
                 maxsize=EventAssociatedMailinglist.maxsize_default,
                 additional_footer=None,
                 is_active=True,
-                event_id=cast(vtypes.ID, event.id),
+                event_id=event.id,
                 event_part_group_id=cast(vtypes.ID | None, part_group_id),
                 registration_stati=[const.RegistrationPartStati.participant],
                 notes=None,

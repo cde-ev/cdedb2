@@ -28,7 +28,6 @@ from cdedb.common import (
     Realm,
     RequestState,
     User,
-    glue,
     make_proxy,
     now,
     setup_logger,
@@ -117,7 +116,6 @@ class Application(BaseApp):
             'now': now,
             'staticurl': staticurl,
             'docurl': docurl,
-            'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.policies['ext.i18n.trimmed'] = True

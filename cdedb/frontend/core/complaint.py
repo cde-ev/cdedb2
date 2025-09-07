@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import copy
 import datetime
+import itertools
+from collections.abc import Collection
 from itertools import chain
-from typing import Any, Optional
+from typing import Any, TypeVar
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -23,6 +25,7 @@ from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.common.sorting import xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -31,8 +34,11 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
+    request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
+
+T = TypeVar("T")
 
 CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
@@ -268,38 +274,47 @@ class CoreComplaintMixin(CoreBaseFrontend):
         mandatory_fields |= {'timestamp', 'info'}
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
+    @staticmethod
+    def _check_overlapping_sets(id_lists: dict[str, Collection[T]]) -> set[str]:
+        """Return a set of all keys whos value overlaps with another value."""
+        ret = set()
+        for (name1, set1), (name2, set2) in itertools.combinations(id_lists.items(), 2):
+            if set(set1) & set(set2):
+                ret.add(name1)
+                ret.add(name2)
+        return ret
+
     @access("complaint_admin", modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
-    @REQUESTdata(
-        "appellant_id", "is_affected", "affected_ids", "target_ids", "timestamp", "info"
-    )
+    @REQUESTdata("timestamp", "info")
     def create_case(
         self,
         rs: RequestState,
         data: dict[str, Any],
-        appellant_id: vtypes.CdedbID,
-        is_affected: bool,
-        affected_ids: Optional[vtypes.CdedbIDList],
-        target_ids: Optional[vtypes.CdedbIDList],
         timestamp: datetime.datetime,
         info: str,
     ) -> Response:
+        involved_params = {
+            f"{involvement_type.name}_ids": vtypes.CdedbIDList
+            for involvement_type in const.ComplaintInvolvementType
+        }
+        involved_data = request_extractor(rs, involved_params)
+
         if rs.has_validation_errors():
             return self.create_case_form(rs)
-        if rs.user.persona_id in set(affected_ids) | set(target_ids) | {appellant_id}:  # type: ignore[arg-type]
+        if any(
+            rs.user.persona_id in involved_ids
+            for involved_ids in involved_data.values()
+        ):
             rs.notify('error', n_("May not create case with own involvement."))
             return self.create_case_form(rs)
 
-        error = ValueError(n_("May not be involved in multiple ways."))
-        if affected_ids and appellant_id in affected_ids:
-            rs.append_validation_error(('appellant_id', error))
-            rs.append_validation_error(('affected_ids', error))
-        if target_ids and appellant_id in target_ids:
-            rs.append_validation_error(('appellant_id', error))
-            rs.append_validation_error(('target_ids', error))
-        if affected_ids and target_ids and set(affected_ids) & set(target_ids):
-            rs.append_validation_error(('affected_ids', error))
-            rs.append_validation_error(('target_ids', error))
+        for field in self._check_overlapping_sets(involved_data):
+            rs.append_validation_error((
+                field,
+                ValueError(n_("May not be involved in multiple ways.")),
+            ))
+
         if rs.has_validation_errors():
             return self.create_case_form(rs)
 
@@ -316,23 +331,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ret = self.complaintproxy.add_entry(
                 rs, new_case.id, entry_data, version_data
             )
-            t = const.ComplaintInvolvementType
-            if is_affected:
-                ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.affected, [appellant_id], is_informed=True
-                )
-            else:
-                ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.appellant, [appellant_id]
-                )
-            if affected_ids:
-                ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.affected, affected_ids
-                )
-            if target_ids:
-                ret *= self.complaintproxy.add_involved(
-                    rs, new_case.id, t.target, target_ids
-                )
+            for involvement_type in xsorted(const.ComplaintInvolvementType):
+                if involved_ids := involved_data[f"{involvement_type.name}_ids"]:
+                    ret *= self.complaintproxy.add_involved(
+                        rs, new_case.id, involvement_type, involved_ids
+                    )
         rs.notify_return_code(ret * bool(new_case))
         return self.redirect(rs, "core/show_case", {"case_id": new_case.id})
 

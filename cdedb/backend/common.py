@@ -496,9 +496,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         way. It allows to filter the entries for specific
         codes or a specific entity (think event or mailinglist).
 
-        This does not do authentication, which has to be done by the
-        caller. However it does validation which thus may be omitted by the
-        caller.
+        This does not do authentication or validation, which have to be
+        done by the caller.
 
         This is separate from the changelog for member data (which keeps
         a lot more information to be able to reconstruct the entire
@@ -641,7 +640,18 @@ class DatabaseLock:
         return False
 
 
-def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T:
+@overload
+def affirm_validation(
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any
+) -> CdEDBObject: ...
+
+@overload
+def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
+
+
+def affirm_validation(
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any
+) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     ValidationWarnings are used to hint the user to re-think about a given valid entry.
@@ -649,38 +659,53 @@ def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T:
     Therefore, the frontend has to handle ValidationWarnings properly, while the backend
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
-    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
+    return cast(
+        T | CdEDBObject,
+        validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
+    )
 
 
-def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+@overload
+def affirm_validation_optional(
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any,
+) -> Optional[CdEDBObject]: ...
 
-    This is similar to :func:`~cdedb.backend.common.affirm_validation`
-    but used for dataclass objects.
-    """
-    return validate.validate_assert_dataclass(
-        assertion, value, ignore_warnings=True, **kwargs)
+@overload
+def affirm_validation_optional(
+    assertion: type[T], value: Any, **kwargs: Any,
+) -> Optional[T]: ...
 
 
 def affirm_validation_optional(
-    assertion: type[T], value: Any, **kwargs: Any,
-) -> Optional[T]:
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any,
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.backend.common.affirm_validation`
     but also allows optional/falsy values.
     """
     return validate.validate_assert_optional(
-        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore[arg-type]
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore[call-overload]
+
+
+@overload
+def affirm_array_validation(
+    assertion: type[CdEDataclass], values: Iterable[Any], **kwargs: Any,
+) -> tuple[CdEDBObject, ...]: ...
+
+@overload
+def affirm_array_validation(
+    assertion: type[T], values: Iterable[Any], **kwargs: Any,
+) -> tuple[T, ...]: ...
 
 
 def affirm_array_validation(
-    assertion: type[T], values: Iterable[Any], **kwargs: Any,
-) -> tuple[T, ...]:
+    assertion: type[T | CdEDataclass], values: Iterable[Any], **kwargs: Any,
+) -> tuple[T, ...] | tuple[CdEDBObject, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
-    return tuple(
-        affirm_validation(assertion, value, **kwargs)
-        for value in values
+    return cast(
+        tuple[T, ...] | tuple[CdEDBObject, ...],
+        tuple(affirm_validation(assertion, value, **kwargs) for value in values)
     )
 
 
@@ -705,9 +730,22 @@ def affirm_dict_validation(
     }
 
 
+@overload
+def inspect_validation(
+    type_: type[CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
+) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def inspect_validation(
     type_: type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
+) -> tuple[Optional[T], list[Error]]: ...
+
+
+def inspect_validation(
+    type_: type[T | CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
+) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to
