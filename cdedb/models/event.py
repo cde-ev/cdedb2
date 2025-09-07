@@ -193,23 +193,23 @@ class Event(EventDataclass):
 
         for part in self.parts.values():
             part.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in part.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in part.tracks
             }
             for track in part.tracks.values():
                 track.part = part
         for part_group in self.part_groups.values():
             part_group.parts = {
-                part_id: self.parts[part_id]
-                for part_id in part_group.part_ids
+                part.id: part
+                for part in self.parts.values() if part.id in part_group.part_ids
             }
             for part in part_group.parts.values():
                 part.part_groups[part_group.id] = part_group
                 part.part_group_ids.add(part_group.id)
         for track_group in self.track_groups.values():
             track_group.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in track_group.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in track_group.tracks
             }
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
