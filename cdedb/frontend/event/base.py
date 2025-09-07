@@ -98,6 +98,7 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
 def event_associated_fields_extractor(
         rs: RequestState, event: models.Event, association: const.FieldAssociations
 ) -> CdEDBObject:
+    """Given an event, extract inputs for all event fields of the given association."""
     fields = [
         field for field in event.fields.values()
         if field.association == association
@@ -116,6 +117,11 @@ def event_associated_fields_extractor(
 def event_associated_fields_to_request(
         entity: models.Course
 ) -> CdEDBObject:
+    """
+    Given an entity, prepare the associated field data to be put into a form.
+
+    This is the inverse of `event_associated_fields_extractor`.
+    """
     return {
         field.request_name: entity.fields[field.field_name]
         for field in entity.event.fields.values() if field.field_name in entity.fields

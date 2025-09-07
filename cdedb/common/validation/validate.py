@@ -1204,6 +1204,9 @@ class DictValidator(Protocol[T_co]):
 
 
 def make_dict_validator(type_: type[T]) -> DictValidator[T]:
+    """
+    Given a type `dict[K, V]` create a validator to validate the keys of a mapping as K and the values as V.
+    """
 
     key_type, value_type = typing.get_args(type_)
 

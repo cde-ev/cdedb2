@@ -74,7 +74,7 @@ class MetaFlag(AbstractFlag):
     """Omit this field from `cls.validation_fields(creation=False)`.
     Can be used to make a field immutable."""
     validate_include = auto()
-    """Include this field from `cls.validation_fields()`.
+    """Include this field in `cls.validation_fields()`.
     Can be used if the field would otherwise be automatically excluded, like
     a field containing another dataclass."""
     validate_exclude = validate_creation_exclude | validate_update_exclude
