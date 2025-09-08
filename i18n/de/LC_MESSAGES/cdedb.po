@@ -1273,9 +1273,9 @@ msgstr "Unbekanntes Feld."
 msgid "This should not happen."
 msgstr "Dies sollte nicht passieren."
 
-#: cdedb/backend/event/lowlevel.py:582
-msgid "Registrations exist, modifications only."
-msgstr "Anmeldungen vorhanden, nur Änderungen möglich."
+#: cdedb/backend/event/lowlevel.py:581
+msgid "Registrations exist, cannot delete event parts."
+msgstr "Es gibt Anmeldungen, Löschen von Veransaltungsteilen nicht möglich."
 
 #: cdedb/backend/event/lowlevel.py:931
 msgid "Synced tracks must have same number of choices."

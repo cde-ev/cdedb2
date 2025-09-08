@@ -808,6 +808,52 @@ class TestEventBackend(BackendTest):
         expectation -= {track_id}
         self.assertEqual(expectation, event.tracks.keys())
 
+    @as_users("emilia")
+    def test_aposteriori_part_creation(self) -> None:
+        event_id = 4
+
+        self.assertTrue(self.event.list_registrations(self.key, event_id))
+
+        regs = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, event_id))
+        event = self.event.get_event(self.key, event_id)
+
+        new_part = {
+            'title': "Abreise",
+            'shortname': "D",
+            'part_begin': datetime.date(2222, 11, 11),
+            'part_end': datetime.date(2222, 12, 12),
+        }
+        update_event = {
+            'parts': {
+                -1: new_part,
+            },
+        }
+        self.event.set_event(self.key, event_id, update_event)
+
+        new_part['id'] = new_part_id = 1001
+        new_part['event_id'] = event_id
+        new_part['tracks'] = {}
+        new_part['part_groups'] = {}
+        new_part['waitlist_field_id'] = new_part['camping_mat_field_id'] = None
+
+        for reg in regs.values():
+            reg['parts'][new_part_id] = {
+                'status': const.RegistrationPartStati.not_applied,
+                'lodgement_id': None,
+                'is_camping_mat': False,
+                'part_id': new_part_id,
+                'registration_id': reg['id'],
+            }
+
+        new_part_obj = models.EventPart.from_database(new_part)
+        event.parts[new_part_id] = new_part_obj
+
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
+        self.assertEqual(event.as_dict(), self.event.get_event(self.key, event_id).as_dict())
+        self.assertEqual(event, self.event.get_event(self.key, event_id))
+
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self) -> None:
         event_id = 1
