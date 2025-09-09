@@ -642,6 +642,14 @@ msgstr "Keine Kontaminierung!"
 msgid "Need to specify exactly two columns."
 msgstr "Genau zwei Spalten müssen angegeben werden."
 
+#: cdedb/backend/common.py:450
+msgid "Operator only allowed for registration query."
+msgstr "Operation nur bei der Anmelundgssuche möglich."
+
+#: cdedb/backend/common.py:452
+msgid "Operator only alloed for checkin times."
+msgstr "Operation nur für Checkin-Zeitpunkt möglich."
+
 #: cdedb/backend/complaint.py:96 cdedb/backend/complaint.py:118
 #: cdedb/backend/complaint.py:146 cdedb/backend/complaint.py:168
 #: cdedb/backend/event/registration.py:1189 cdedb/frontend/assembly/base.py:489

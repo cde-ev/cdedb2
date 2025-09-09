@@ -36,7 +36,7 @@ from cdedb.common.exceptions import (
     PartialImportError,
     PrivilegeError,
 )
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
@@ -5211,6 +5211,108 @@ class TestEventBackend(BackendTest):
             log_expectation, realm="event", event_id=1, offset=log_offset,
         )
         log_offset += len(log_expectation)
+
+    @event_keeper
+    @as_users("garcia")
+    @prepsql("DELETE FROM event.checkin_periods")
+    def test_checkin_query(self) -> None:
+        event_id = 1
+        registration_id = 1
+
+        base_time = now() - datetime.timedelta(days=2)
+        delta = datetime.timedelta(hours=2)
+
+        self.event.replace_checkin_periods(
+            self.key,
+            registration_id,
+            [
+                models.ReducedCheckinPeriod(base_time, base_time + delta),
+                models.ReducedCheckinPeriod(base_time + 2 * delta, base_time + 3 * delta),
+            ],
+        )
+
+        base_query = Query(
+            QueryScope.registration,
+            spec={},
+            fields_of_interest=["reg.id"],
+            order=[],
+            constraints=[("reg.id", QueryOperators.equal, registration_id)],
+        )
+        spec = base_query.scope.get_spec(event=self.event.get_event(self.key, event_id))
+
+        def _check_queries(constraint_a: QueryConstraint, constraint_b: QueryConstraint, first: bool) -> None:
+            query = copy.deepcopy(base_query)
+            query.spec = spec
+            query.constraints.append(constraint_a)
+            data_a = self.event.submit_general_query(self.key, query, event_id)
+            query.constraints[-1] = constraint_b
+            data_b = self.event.submit_general_query(self.key, query, event_id)
+
+            self.assertEqual(int(first), len(data_a))
+            self.assertEqual(int(not first), len(data_b))
+
+        # Test at and notat operators.
+        _at = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_at,
+            dt,
+        )
+        _notat = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notat,
+            dt,
+        )
+        for i, (time, expectation) in enumerate([
+            (base_time - 0.5 * delta, False),
+            (base_time + 0.5 * delta, True),
+            (base_time + 1.5 * delta, False),
+            (base_time + 2.5 * delta, True),
+            (base_time + 3.5 * delta, False),
+        ]):
+            with self.subTest(operator="at/notat", i=i, time=time):
+                _check_queries(_at(time), _notat(time), expectation)
+
+        # Test oneof and noneof operators.
+        _oneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_oneof,
+            ldt,
+        )
+        _noneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_noneof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time - 0.5 * delta, base_time + 1.5 * delta, base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta], True),
+            ([base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 1.5 * delta, base_time + 2.5 * delta], True),
+        ]):
+            with self.subTest(operator="oneof/noneof", i=i, times=ldt):
+                _check_queries(_oneof(ldt), _noneof(ldt), expectation)
+
+        # Test allof and notallof operators.
+        _allof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_allof,
+            ldt,
+        )
+        _notallof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notallof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time - 0.5 * delta], False),
+            ([base_time + 1.5 * delta], False),
+            ([base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta, base_time + 3.5 * delta], False),
+        ]):
+            with self.subTest(operator="allof/notallof", i=i, times=ldt):
+                _check_queries(_allof(ldt), _notallof(ldt), expectation)
 
     @event_keeper
     @as_users("garcia")
