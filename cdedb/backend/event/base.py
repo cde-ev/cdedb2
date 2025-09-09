@@ -803,7 +803,7 @@ class EventBaseBackend(EventLowLevelBackend):
                                 event=event)
             part_group['event_id'] = event_id
             part_ids = part_group.pop("part_ids")
-            new_id = self.sql_insert(rs, "event.part_groups", part_group)
+            new_id = self.sql_insert(rs, models.PartGroup.database_table, part_group)
             ret *= new_id
             self.event_log(
                 rs, const.EventLogCodes.part_group_created, event_id,
@@ -821,22 +821,24 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def change_part_group(self, rs: RequestState, event_id: int,
+    def change_part_group(self, rs: RequestState, part_group_id: int,
                           part_group: CdEDBObject) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        part_group["id"] = part_group_id
 
-        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
         ret = 1
-
         with Atomizer(rs):
+            event_id = unwrap(self.sql_select_one(
+                rs, models.PartGroup.database_table, ("event_id", ), part_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             part_group = affirm(models.PartGroup, part_group, event=event)
-            if part_group["id"] not in event.part_groups:
-                raise ValueError(n_("Unknown part group."))
             current = event.part_groups[part_group["id"]].as_dict()
             if any(part_group[k] != current[k] for k in part_group):
-                ret *= self.sql_update(rs, "event.part_groups", part_group)
+                ret *= self.sql_update(rs, models.PartGroup.database_table, part_group)
                 self.event_log(
                     rs, const.EventLogCodes.part_group_changed, event_id,
                     change_note=part_group.get('title', current['title']))
@@ -844,18 +846,17 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def delete_part_group(self, rs: RequestState, event_id: int,
-                          part_group_id: int) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+    def delete_part_group(self, rs: RequestState, part_group_id: int
+                          ) -> DefaultReturnCode:
         part_group_id = affirm(vtypes.ID, part_group_id)
 
-        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-
         with Atomizer(rs):
-            event = self.get_event(rs, event_id)
-            if part_group_id not in event.part_groups:
-                raise ValueError(n_("Unknown part group."))
+            event_id = unwrap(self.sql_select_one(
+                rs, models.PartGroup.database_table, ("event_id", ), part_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
             ret = self._delete_part_group(rs, part_group_id=part_group_id,
                                           cascade=("part_group_parts",))
 

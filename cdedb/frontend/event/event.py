@@ -911,7 +911,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
         assert data is not None
-        code = self.eventproxy.change_part_group(rs, event_id, data)
+        code = self.eventproxy.change_part_group(rs, part_group_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
@@ -921,7 +921,7 @@ class EventEventMixin(EventBaseFrontend):
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
-        code = self.eventproxy.delete_part_group(rs, event_id, part_group_id)
+        code = self.eventproxy.delete_part_group(rs, part_group_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 

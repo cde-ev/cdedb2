@@ -4239,14 +4239,13 @@ class TestEventBackend(BackendTest):
 
         # Update an existing group.
         update = {
-            'id': 1,
             'notes': "Pack explosives for New Years!",
         }
-        self.assertTrue(self.event.change_part_group(self.key, event_id, update))
+        self.assertTrue(self.event.change_part_group(self.key, 1, update))
         part_group_expectation[1].update(update)
 
         # Delete an existing group
-        self.assertTrue(self.event.delete_part_group(self.key, event_id, 4))
+        self.assertTrue(self.event.delete_part_group(self.key, 4))
         del part_group_expectation[4]
 
         reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
@@ -4259,9 +4258,9 @@ class TestEventBackend(BackendTest):
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
         with self.assertRaises(ValueError):
-            self.event.change_part_group(self.key, event_id, {"id": NON_EXISTING_ID})
+            self.event.change_part_group(self.key, NON_EXISTING_ID, {"id": NON_EXISTING_ID})
         with self.assertRaises(ValueError):
-            self.event.delete_part_group(self.key, event_id, NON_EXISTING_ID)
+            self.event.delete_part_group(self.key, NON_EXISTING_ID)
         # ValueError when creating a part group with a non existing part.
         data = new_part_group.copy()
         data["part_ids"] = [NON_EXISTING_ID]
