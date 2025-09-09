@@ -3,7 +3,7 @@ from cdedb.common.sorting import EntitySorter, xsorted
 
 
 def past_event_entries(pevents: CdEDBObjectMap) -> list[tuple[int, str]]:
-    sortkey = lambda pevent: (-pevent['tempus'].year, pevent['title'], pevent['id'])
+    sortkey = EntitySorter.past_event_select_entries
 
     pevent_entries = [
         (pevent['id'], pevent['title'])
