@@ -20,7 +20,6 @@ from cdedb.common.validation.types import (
     Email,
     EmptyDict,
     EmptyList,
-    EventPartGroup,
     LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
@@ -40,6 +39,7 @@ from cdedb.common.validation.types import (
 )
 from cdedb.config import Config
 from cdedb.models.core import GenesisCaseEvent
+from cdedb.models.event import PartGroup
 
 T = TypeVar('T')
 
@@ -789,7 +789,7 @@ class TestValidation(TestValidationBase):
 
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
-                {-1: None}, EventPartGroup, "event_part", creation_only=False)
+                {-1: None}, PartGroup, "event_part", creation_only=False)
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {-1: None}, int, "int", creation_only=False)

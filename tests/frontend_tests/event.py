@@ -6363,8 +6363,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['title'] = ""
         f['shortname'] = ""
         f['constraint_type'] = const.EventPartGroupType.Statistic
-        f['part_ids'] = []
-        f['part_ids'] = list(event.parts)
+        f['part_ids'] = list(event.parts.keys())
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
@@ -6421,9 +6420,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Submit garbage.
         f['title'] = ""
-        f['shortname'] = list(event.part_groups.values())[0].shortname
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
+        f['title'] = "placeholder"
+        f['shortname'] = list(event.part_groups.values())[0].shortname
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError(
             'shortname',
             "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")

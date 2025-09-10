@@ -38,7 +38,6 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
@@ -4205,67 +4204,49 @@ class TestEventBackend(BackendTest):
 
         # Setting is not allowed for non-privileged users.
         with self.assertRaises(PrivilegeError):
-            self.event.set_part_groups(ANONYMOUS, event_id, {})
+            self.event.add_part_group(ANONYMOUS, event_id, {})
         with self.switch_user("garcia"):
             with self.assertRaises(PrivilegeError):
-                self.event.set_part_groups(self.key, event_id, {})
+                self.event.add_part_group(self.key, event_id, {})
 
-        # Empty setter just returns 1.
-        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
-
-        new_part_group_id = self.event.set_part_groups(
-            self.key, event_id, {-1: new_part_group})
+        new_part_group_id = self.event.add_part_group(
+            self.key, event_id, new_part_group)  # id 1001
         self.assertTrue(new_part_group_id)
 
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+        # we require shortname and title to be unique
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, new_part_group)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['title'] = "All"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
         data['title'] = "All"
-        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+        self.event.add_part_group(self.key, event_id, data)  # id 1002
 
-        # Simultaneous deletion and recreation of part group with same name works.
-        self.event.set_part_groups(
-            self.key, event_id, {1001: None, -1: new_part_group},  # id 1006
-        )
-
-        # Switching of shortnames for exisitng groups is also possible.
-        setter = {
-            1005: {'shortname': new_part_group['shortname']},
-            1006: {'shortname': data['shortname']},
-        }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
         part_group_expectation.update({
-            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
-            1006: {**new_part_group, **setter[1006],
-                   **{'event_id': event_id, 'id': 1006}},
+            1001: {**new_part_group, **{'event_id': event_id, 'id': 1001}},
+            1002: {**data, **{'event_id': event_id, 'id': 1002}},
         })
 
-        # Update and delete an existing group.
+        # Update an existing group.
         update = {
-            1: {
-                'notes': "Pack explosives for New Years!",
-            },
-            4: None,
-            1006: {
-                'part_ids': set(xsorted(event.parts.keys())[:len(event.parts) // 2]),
-            },
+            'notes': "Pack explosives for New Years!",
         }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
-        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        self.assertTrue(self.event.change_part_group(self.key, 1, update))
+        part_group_expectation[1].update(update)
+
+        # Delete an existing group
+        self.assertTrue(self.event.delete_part_group(self.key, 4))
         del part_group_expectation[4]
-        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
         reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
         for pg in reality.values():
@@ -4277,15 +4258,14 @@ class TestEventBackend(BackendTest):
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
-        # ValueError when creating or updating a part group with a non existing part.
+            self.event.change_part_group(self.key, NON_EXISTING_ID, {"id": NON_EXISTING_ID})
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id,
-                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+            self.event.delete_part_group(self.key, NON_EXISTING_ID)
+        # ValueError when creating a part group with a non existing part.
+        data = new_part_group.copy()
+        data["part_ids"] = [NON_EXISTING_ID]
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+            self.event.add_part_group(self.key, event_id, data)
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
@@ -4329,16 +4309,16 @@ class TestEventBackend(BackendTest):
                 'part_ids': [7, 10],
                 'shortname': 'ML W',
                 'title': 'Mailingliste Windischleuba'},
-            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+            1001: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
-                   'title': 'All'},
-            1006: {'constraint_type': const.EventPartGroupType.Statistic,
-                   'notes': "Let's see what happens",
-                   'part_ids': [7, 8],
-                   'shortname': 'ALL',
                    'title': 'Everything'},
+            1002: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11, 12],
+                   'shortname': 'ALL',
+                   'title': 'All'},
         }
         export = self.event.partial_export_event(self.key, event_id)
         self.assertEqual(export['event']['part_groups'], export_expectation)
