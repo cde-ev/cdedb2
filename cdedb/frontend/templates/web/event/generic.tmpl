@@ -230,7 +230,7 @@
 
 
 {% macro print_field_inputs(association) %}
-    {% if ambience['event']['fields']|length > 0 %}
+    {% if ambience['event'].grouped_fields[association]|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
         {% for title, fields in ambience['event'].grouped_fields[association].items() %}
             {% if ambience['event'].grouped_fields[association]|length > 1 %}

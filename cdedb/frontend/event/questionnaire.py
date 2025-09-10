@@ -138,10 +138,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         other_used_fields = {e['field_id'] for v in other_questionnaire.values()
                              for e in v if e['field_id']}
 
-        checksum = request_extractor(
-            rs,
-            {"checksum": str | None},  # type: ignore[dict-item]
-        )["checksum"]
+        checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
         old_questionnaire, old_checksum, registration_fields = \
             self._prepare_questionnaire_form(rs, event_id, kind)
 

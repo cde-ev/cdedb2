@@ -710,23 +710,23 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = vtypes.ProtoID(1)
-        event_id = vtypes.ID(vtypes.ProtoID(1))
+        course_id = vtypes.ID(1)
+        event_id = vtypes.ID(vtypes.ID(1))
 
         expectation = models.Course(
             id=course_id,
             event_id=event_id,
             segments={
                 1: models.CourseSegment(
-                    id=vtypes.ProtoID(-1),
+                    id=vtypes.ID(-1),
                     course_id=course_id,
-                    track_id=vtypes.ProtoID(1),
+                    track_id=vtypes.ID(1),
                     is_active=True,
                 ),
                 3: models.CourseSegment(
-                    id=vtypes.ProtoID(-1),
+                    id=vtypes.ID(-1),
                     course_id=course_id,
-                    track_id=vtypes.ProtoID(3),
+                    track_id=vtypes.ID(3),
                     is_active=True,
                 )
             },
@@ -751,25 +751,25 @@ class TestEventModels(BackendTest):
         expectation = {
             1: expectation,
             2: models.Course(
-                id=vtypes.ProtoID(2),
+                id=vtypes.ID(2),
                 event_id=event_id,
                 segments={
                     1: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(1),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(1),
                         is_active=True,
                     ),
                     2: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(2),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(2),
                         is_active=False,
                     ),
                     3: models.CourseSegment(
-                        id=vtypes.ProtoID(-1),
-                        course_id=vtypes.ProtoID(2),
-                        track_id=vtypes.ProtoID(3),
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(3),
                         is_active=True,
                     )
                 },

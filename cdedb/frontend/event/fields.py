@@ -323,6 +323,7 @@ class EventFieldMixin(EventBaseFrontend):
                 if kind == const.FieldAssociations.registration:
                     self.eventproxy.set_registration(rs, new, msg)
                 elif kind == const.FieldAssociations.course:
+                    del new['id']
                     self.eventproxy.set_course(rs, anid, new)
                 elif kind == const.FieldAssociations.lodgement:
                     self.eventproxy.set_lodgement(rs, new)

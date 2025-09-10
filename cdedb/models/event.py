@@ -551,6 +551,10 @@ class EventField(EventDataclass):
 
     entries: Optional[dict[str, str]] = None
 
+    @property
+    def request_name(self) -> str:
+        return f"fields.{self.field_name}"
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['entries'] = dict(data['entries'] or []) or None
@@ -783,7 +787,7 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Give event a default, so automatic sorting of course segments is less horrible.
     event: Event = dataclasses.field(
@@ -792,7 +796,9 @@ class Course(EventDataclass):
     )
     event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
-    segments: CdEDataclassMap["CourseSegment"]
+    segments: CdEDataclassMap["CourseSegment"] = dataclasses.field(
+        metadata=(Meta.validate_include | Meta.asdict_include).as_dict
+    )
 
     @property
     def active_segments(self) -> set[int]:
@@ -814,7 +820,10 @@ class Course(EventDataclass):
 
     notes: str | None
 
-    fields: vtypes.EventAssociatedFields = dataclasses.field(default_factory=cast(type[vtypes.EventAssociatedFields], dict))
+    fields: vtypes.EventAssociatedFields = dataclasses.field(
+        default_factory=cast(type[vtypes.EventAssociatedFields], dict),
+        metadata=Meta.request_exclude.as_dict,
+    )
 
     @property
     def label(self) -> str:
@@ -852,7 +861,9 @@ class Course(EventDataclass):
         mandatory, optional = super().validation_fields(creation=creation)
         for ret in (mandatory, optional):
             if "segments" in ret:
-                ret["segments"] = Mapping
+                # During validation we also accept None, meaning to delete the segment,
+                #  i.e. it is not (or no longer) offered.
+                ret["segments"] = CdEDataclassMap[CourseSegment | None]
         return mandatory, optional
 
 
@@ -861,16 +872,17 @@ class CourseSegment(EventDataclass):
     database_table = "event.course_segments"
     entity_key = "course_id"
 
-    id: vtypes.ProtoID = dataclasses.field(
-        compare=False, repr=False, metadata=Meta.input_exclude.as_dict
+    id: vtypes.ID = dataclasses.field(
+        compare=False, repr=False,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
     )
 
     course: Course = dataclasses.field(init=False, compare=False, repr=False)
-    course_id: vtypes.ProtoID = dataclasses.field(
+    course_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
     )
 
-    track_id: vtypes.ProtoID = dataclasses.field(
+    track_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
     )
 
