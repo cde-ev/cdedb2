@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, NamedTuple, Optional, Protocol, Union
+from typing import NamedTuple, Optional, Protocol, Union
 
 from schulze_condorcet import schulze_evaluate
 
@@ -58,7 +58,6 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
-    glue,
     json_serialize,
     now,
     unwrap,
@@ -81,6 +80,7 @@ from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s, Params
 
 
 class BallotConfiguration(NamedTuple):
@@ -121,14 +121,15 @@ class GroupedBallots:
 
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
+
     realm = "assembly"
 
     def __init__(self) -> None:
         super().__init__()
         self._attachment_store = AttachmentStore(
-            self.conf['STORAGE_DIR'] / "assembly_attachment")
-        self.ballot_result_base_path: Path = (
-            self.conf['STORAGE_DIR'] / 'ballot_result')
+            self.conf['STORAGE_DIR'] / "assembly_attachment"
+        )
+        self.ballot_result_base_path: Path = self.conf['STORAGE_DIR'] / 'ballot_result'
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -144,13 +145,13 @@ class AssemblyBackend(AbstractBackend):
         return self.ballot_result_base_path / str(ballot_id)
 
     @access("assembly")
-    def are_assemblies_locked(self, rs: RequestState,
-                              assembly_ids: Collection[int],
-                              ) -> dict[int, bool]:
+    def are_assemblies_locked(
+        self, rs: RequestState, assembly_ids: Collection[int]
+    ) -> dict[int, bool]:
         """Helper to check, whether the assemblies may be modified."""
         assembly_ids = affirm_set(vtypes.ID, assembly_ids)
         q = "SELECT id, is_active FROM assembly.assemblies WHERE id = ANY(%s)"
-        params = (assembly_ids, )
+        params = (assembly_ids,)
         data = self.query_all(rs, q, params)
         return {e["id"]: not e["is_active"] for e in data}
 
@@ -158,31 +159,43 @@ class AssemblyBackend(AbstractBackend):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
     is_assembly_locked: _IsAssemblyLockedProtocol = singularize(
-        are_assemblies_locked, "assembly_ids", "assembly_id")
+        are_assemblies_locked, "assembly_ids", "assembly_id"
+    )
 
     @access("assembly")
-    def presider_infos(self, rs: RequestState, persona_ids: Collection[int],
-                       ) -> dict[int, set[int]]:
+    def presider_infos(
+        self, rs: RequestState, persona_ids: Collection[int]
+    ) -> dict[int, set[int]]:
         """List assemblies managed by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
-            rs, "assembly.presiders", ("persona_id", "assembly_id"),
-            persona_ids, entity_key="persona_id")
+            rs,
+            "assembly.presiders",
+            ("persona_id", "assembly_id"),
+            persona_ids,
+            entity_key="persona_id",
+        )
         ret = {}
         for anid in persona_ids:
             ret[anid] = {e['assembly_id'] for e in data if e['persona_id'] == anid}
         return ret
 
     class _PresiderInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int,
-                     ) -> set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+
     presider_info: _PresiderInfoProtocol = singularize(
-        presider_infos, "persona_ids", "persona_id")
+        presider_infos, "persona_ids", "persona_id"
+    )
 
     @access("assembly")
-    def is_presider(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                    ballot_id: Optional[int] = None,
-                    attachment_id: Optional[int] = None) -> bool:
+    def is_presider(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+        attachment_id: Optional[int] = None,
+    ) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
         If persona_id is not given, the current user is used.
@@ -191,16 +204,22 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm_optional(vtypes.ID, attachment_id)
         if assembly_id is None:
             assembly_id = self.get_assembly_id(
-                rs, ballot_id=ballot_id, attachment_id=attachment_id)
+                rs, ballot_id=ballot_id, attachment_id=attachment_id
+            )
         assembly_id = affirm(vtypes.ID, assembly_id)
 
         return self.is_admin(rs) or assembly_id in rs.user.presider
 
     @internal
     @access("persona")
-    def may_access(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                   ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
-                   ) -> bool:
+    def may_access(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+        attachment_id: Optional[int] = None,
+    ) -> bool:
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -216,17 +235,28 @@ class AssemblyBackend(AbstractBackend):
         if "assembly" not in rs.user.roles:
             return False
         if "member" in rs.user.roles or self.is_presider(
-                rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                attachment_id=attachment_id):
+            rs,
+            assembly_id=assembly_id,
+            ballot_id=ballot_id,
+            attachment_id=attachment_id,
+        ):
             return True
         return self.check_attendance(
-            rs, assembly_id=assembly_id, ballot_id=ballot_id,
-            attachment_id=attachment_id)
+            rs,
+            assembly_id=assembly_id,
+            ballot_id=ballot_id,
+            attachment_id=attachment_id,
+        )
 
     @access("persona")
-    def may_assemble(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                     ballot_id: Optional[int] = None,
-                     attachment_id: Optional[int] = None) -> bool:
+    def may_assemble(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+        attachment_id: Optional[int] = None,
+    ) -> bool:
         """Check authorization of this persona.
 
         This checks, if the calling user may interact with a specific
@@ -240,8 +270,12 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
         attachment_id = affirm_optional(vtypes.ID, attachment_id)
 
-        return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                               attachment_id=attachment_id)
+        return self.may_access(
+            rs,
+            assembly_id=assembly_id,
+            ballot_id=ballot_id,
+            attachment_id=attachment_id,
+        )
 
     @staticmethod
     def encrypt_vote(salt: str, secret: str, vote: str) -> str:
@@ -255,8 +289,9 @@ class AssemblyBackend(AbstractBackend):
         h.update(vote.encode('ascii'))
         return h.hexdigest()
 
-    def retrieve_vote(self, rs: RequestState, ballot_id: int,
-                      secret: str) -> CdEDBObject:
+    def retrieve_vote(
+        self, rs: RequestState, ballot_id: int, secret: str
+    ) -> CdEDBObject:
         """Low level function for looking up a vote.
 
         This is a brute force algorithm checking each vote, whether it
@@ -268,17 +303,25 @@ class AssemblyBackend(AbstractBackend):
         not.
         """
         all_votes = self.sql_select(
-            rs, "assembly.votes", ("id", "vote", "salt", "hash"),
-            (ballot_id,), entity_key="ballot_id")
+            rs,
+            "assembly.votes",
+            ("id", "vote", "salt", "hash"),
+            (ballot_id,),
+            entity_key="ballot_id",
+        )
         for v in all_votes:
             if v['hash'] == self.encrypt_vote(v['salt'], secret, v['vote']):
                 return v
         raise ValueError(n_("No vote found."))
 
-    def assembly_log(self, rs: RequestState, code: const.AssemblyLogCodes,
-                     assembly_id: Optional[int],
-                     persona_id: Optional[int] = None,
-                     change_note: Optional[str] = None) -> DefaultReturnCode:
+    def assembly_log(
+        self,
+        rs: RequestState,
+        code: const.AssemblyLogCodes,
+        assembly_id: Optional[int],
+        persona_id: Optional[int] = None,
+        change_note: Optional[str] = None,
+    ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -295,10 +338,18 @@ class AssemblyBackend(AbstractBackend):
         # we require atomization here.
         self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
-        query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
-                 " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)")
-        params = (code, assembly_id, rs.user.persona_id, persona_id,
-                  change_note)
+        query = """
+            INSERT INTO assembly.log
+                (code, assembly_id, submitted_by, persona_id, change_note)
+                VALUES (%(code)s, %(assembly_id)s, %(submitted_by)s, %(persona_id)s, %(change_note)s)
+        """
+        params = {
+            "code": code,
+            "assembly_id": assembly_id,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "change_note": change_note,
+        }
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
@@ -323,8 +374,9 @@ class AssemblyBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "assembly_admin")
-    def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
+    def submit_general_query(
+        self, rs: RequestState, query: Query, aggregate: bool = False
+    ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -337,14 +389,14 @@ class AssemblyBackend(AbstractBackend):
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Restrict to assembly users.
-            query.constraints.append(
-                ("is_assembly_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_assembly_realm", QueryOperators.equal, True))
             query.spec["is_assembly_realm"] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('assembly'):
                 query.constraints.append(
-                    (f"is_{realm}_realm", QueryOperators.equal, False))
+                    (f"is_{realm}_realm", QueryOperators.equal, False),
+                )
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
@@ -352,28 +404,38 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("assembly")
-    def get_assembly_ids(self, rs: RequestState, *,
-                         ballot_ids: Optional[Collection[int]] = None,
-                         attachment_ids: Optional[Collection[int]] = None,
-                         ) -> set[int]:
+    def get_assembly_ids(
+        self,
+        rs: RequestState,
+        *,
+        ballot_ids: Optional[Collection[int]] = None,
+        attachment_ids: Optional[Collection[int]] = None,
+    ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids or set())
         attachment_ids = affirm_set(vtypes.ID, attachment_ids or set())
         ret: set[int] = set()
         if attachment_ids:
             attachment_data = self.sql_select(
-                rs, "assembly.attachments", ("assembly_id",), attachment_ids)
+                rs, "assembly.attachments", ("assembly_id",), attachment_ids
+            )
             ret.update(e["assembly_id"] for e in attachment_data)
         if ballot_ids:
             ballot_data = self.sql_select(
-                rs, "assembly.ballots", ("assembly_id",), ballot_ids)
+                rs, "assembly.ballots", ("assembly_id",), ballot_ids
+            )
             ret.update(e["assembly_id"] for e in ballot_data)
         return ret
 
     @internal
     @access("assembly")
-    def get_assembly_id(self, rs: RequestState, *, ballot_id: Optional[int] = None,
-                        attachment_id: Optional[int] = None) -> int:
+    def get_assembly_id(
+        self,
+        rs: RequestState,
+        *,
+        ballot_id: Optional[int] = None,
+        attachment_id: Optional[int] = None,
+    ) -> int:
         """Singular version of `get_assembly_ids`.
 
         This allows both inputs, but raises an error if they belong to
@@ -389,20 +451,25 @@ class AssemblyBackend(AbstractBackend):
         else:
             attachment_ids = {affirm(vtypes.ID, attachment_id)}
         ret = self.get_assembly_ids(
-            rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
+            rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids
+        )
         if not ret:
             raise ValueError(n_("No input specified."))
         if len(ret) > 1:
-            raise ValueError(n_(
-                "Can only retrieve id for exactly one assembly."))
+            raise ValueError(n_("Can only retrieve id for exactly one assembly."))
         return unwrap(ret)
 
     @internal
     @access("assembly", "ml_admin")
-    def check_attendance(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                         ballot_id: Optional[int] = None,
-                         attachment_id: Optional[int] = None,
-                         persona_id: Optional[int] = None) -> bool:
+    def check_attendance(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+        attachment_id: Optional[int] = None,
+        persona_id: Optional[int] = None,
+    ) -> bool:
         """Check whether a persona attends a specific assembly/ballot.
 
         Exactly one of the inputs assembly_id, ballot_id and attachment_id has
@@ -429,14 +496,23 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if assembly_id is None:
                 assembly_id = self.get_assembly_id(
-                    rs, ballot_id=ballot_id, attachment_id=attachment_id)
-            query = glue("SELECT id FROM assembly.attendees",
-                         "WHERE assembly_id = %s and persona_id = %s")
-            return bool(self.query_one(rs, query, (assembly_id, persona_id)))
+                    rs, ballot_id=ballot_id, attachment_id=attachment_id
+                )
+            query = """
+                SELECT id FROM assembly.attendees
+                WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+            """
+            params = {"assembly_id": assembly_id, "persona_id": persona_id}
+            return bool(self.query_one(rs, query, params))
 
     @access("assembly")
-    def does_attend(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                    ballot_id: Optional[int] = None) -> bool:
+    def does_attend(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+    ) -> bool:
         """Check whether this persona attends a specific assembly/ballot.
 
         Exactly one of the inputs has to be provided.
@@ -446,12 +522,10 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        return self.check_attendance(rs, assembly_id=assembly_id,
-                                     ballot_id=ballot_id)
+        return self.check_attendance(rs, assembly_id=assembly_id, ballot_id=ballot_id)
 
     @access("assembly", "ml_admin")
-    def list_attendees(self, rs: RequestState, assembly_id: int,
-                       ) -> set[int]:
+    def list_attendees(self, rs: RequestState, assembly_id: int) -> set[int]:
         """Everybody who has subscribed for a specific assembly.
 
         This is an unprivileged operation in that everybody (with access
@@ -463,17 +537,23 @@ class AssemblyBackend(AbstractBackend):
         subscribers of assembly mailinglists.
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
-        if not (self.may_access(rs, assembly_id=assembly_id)
-                or "ml_admin" in rs.user.roles):
+        if not (
+            self.may_access(rs, assembly_id=assembly_id) or "ml_admin" in rs.user.roles
+        ):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
-            rs, "assembly.attendees", ("persona_id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs,
+            "assembly.attendees",
+            ("persona_id",),
+            (assembly_id,),
+            entity_key="assembly_id",
+        )
         return {e['persona_id'] for e in attendees}
 
     @access("assembly")
-    def get_attendees(self, rs: RequestState, assembly_id: int,
-                      cutoff: datetime.datetime) -> AssembyAttendees:
+    def get_attendees(
+        self, rs: RequestState, assembly_id: int, cutoff: datetime.datetime
+    ) -> AssembyAttendees:
         assembly_id = affirm(vtypes.ID, assembly_id)
         cutoff = affirm(datetime.datetime, cutoff)
 
@@ -481,57 +561,75 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError()
 
         all_attendees = {
-            e['persona_id'] for e in self.sql_select(
-                rs, "assembly.attendees", ("persona_id",), (assembly_id,),
-                entity_key="assembly_id")
+            e['persona_id']
+            for e in self.sql_select(
+                rs,
+                "assembly.attendees",
+                ("persona_id",),
+                (assembly_id,),
+                entity_key="assembly_id",
+            )
         }
         attendee_data = {
-            e['id']: e for e in xsorted(
+            e['id']: e
+            for e in xsorted(
                 self.core.get_assembly_users(rs, all_attendees).values(),
-                key=EntitySorter.persona)
+                key=EntitySorter.persona,
+            )
         }
 
         q = """
             SELECT persona_id FROM assembly.log
-            WHERE assembly_id = %s AND code = %s AND ctime < %s
+            WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime < %(ctime)s
         """
+        params: Params = {
+            "assembly_id": assembly_id,
+            "code": const.AssemblyLogCodes.new_attendee,
+            "ctime": cutoff,
+        }
         early_list = [
-            attendee_data[e['persona_id']]
-            for e in self.query_all(
-                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
         ]
         early_attendees = {
-            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)}
+            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)
+        }
         q = """
             SELECT persona_id FROM assembly.log
-            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+            WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime >= %(ctime)s
         """
         late_list = [
-            attendee_data[e['persona_id']]
-            for e in self.query_all(
-                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
         ]
         late_attendees = {
-            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)}
+            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)
+        }
         if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
         undetermined_list = [
             attendee_data[persona_id]
-            for persona_id in (all_attendees - early_attendees.keys()
-                               - late_attendees.keys())
+            for persona_id in (
+                all_attendees - early_attendees.keys() - late_attendees.keys()
+            )
         ]
         undetermined_attendees = {
-             e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)}
+            e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)
+        }
 
         return AssembyAttendees(
-            all=attendee_data, early=early_attendees, late=late_attendees,
-            undetermined=undetermined_attendees, cutoff=cutoff,
+            all=attendee_data,
+            early=early_attendees,
+            late=late_attendees,
+            undetermined=undetermined_attendees,
+            cutoff=cutoff,
         )
 
     @access("persona")
-    def list_assemblies(self, rs: RequestState,
-                        is_active: Optional[bool] = None,
-                        restrictive: bool = False) -> CdEDBObjectMap:
+    def list_assemblies(
+        self,
+        rs: RequestState,
+        is_active: Optional[bool] = None,
+        restrictive: bool = False,
+    ) -> CdEDBObjectMap:
         """List all assemblies.
 
         :param is_active: If not None list only assemblies which have this
@@ -542,8 +640,7 @@ class AssemblyBackend(AbstractBackend):
           signup end. The latter is used to sort the assemblies in index.
         """
         is_active = affirm_optional(bool, is_active)
-        query = ("SELECT id, title, signup_end, is_active "
-                 "FROM assembly.assemblies")
+        query = "SELECT id, title, signup_end, is_active FROM assembly.assemblies"
         constraints = []
         params = []
         if is_active is not None:
@@ -554,13 +651,13 @@ class AssemblyBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
         if restrictive:
-            ret = {k: v for k, v in ret.items()
-                   if self.may_access(rs, assembly_id=k)}
+            ret = {k: v for k, v in ret.items() if self.may_access(rs, assembly_id=k)}
         return ret
 
     @access("assembly")
-    def get_assemblies(self, rs: RequestState,
-                       assembly_ids: Collection[int]) -> CdEDBObjectMap:
+    def get_assemblies(
+        self, rs: RequestState, assembly_ids: Collection[int]
+    ) -> CdEDBObjectMap:
         """Retrieve data for some assemblies.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, this
@@ -573,8 +670,12 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, 'assembly.assemblies', ASSEMBLY_FIELDS, assembly_ids)
         presider_data = self.sql_select(
-            rs, 'assembly.presiders', ("assembly_id", "persona_id"),
-            assembly_ids, entity_key="assembly_id")
+            rs,
+            'assembly.presiders',
+            ("assembly_id", "persona_id"),
+            assembly_ids,
+            entity_key="assembly_id",
+        )
         ret = {}
         for assembly in data:
             assembly['presiders'] = set()
@@ -585,12 +686,15 @@ class AssemblyBackend(AbstractBackend):
 
     class _GetAssemblyProtocol(Protocol):
         def __call__(self, rs: RequestState, assembly_id: int) -> CdEDBObject: ...
+
     get_assembly: _GetAssemblyProtocol = singularize(
-        get_assemblies, "assembly_ids", "assembly_id")
+        get_assemblies, "assembly_ids", "assembly_id"
+    )
 
     @access("assembly")
-    def set_assembly(self, rs: RequestState, data: CdEDBObject,
-                     change_note: Optional[str] = None) -> DefaultReturnCode:
+    def set_assembly(
+        self, rs: RequestState, data: CdEDBObject, change_note: Optional[str] = None
+    ) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
@@ -608,13 +712,18 @@ class AssemblyBackend(AbstractBackend):
             assembly_data = {k: v for k, v in data.items() if k in ASSEMBLY_FIELDS}
             if assembly_data:
                 ret *= self.sql_update(rs, "assembly.assemblies", assembly_data)
-                self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
-                                  data['id'], change_note=change_note)
+                self.assembly_log(
+                    rs,
+                    const.AssemblyLogCodes.assembly_changed,
+                    data['id'],
+                    change_note=change_note,
+                )
         return ret
 
     @access("assembly_admin")
-    def add_assembly_presiders(self, rs: RequestState, assembly_id: int,
-                               persona_ids: Collection[int]) -> DefaultReturnCode:
+    def add_assembly_presiders(
+        self, rs: RequestState, assembly_id: int, persona_ids: Collection[int]
+    ) -> DefaultReturnCode:
         """Add a collection of presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -623,14 +732,24 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             assembly = self.get_assembly(rs, assembly_id)
             if not assembly['is_active']:  # TODO: coverage  # TODO: Why?
-                raise ValueError(n_("Cannot alter assembly presiders after"
-                                    " assembly has been concluded."))
+                raise ValueError(
+                    n_(
+                        "Cannot alter assembly presiders after"
+                        " assembly has been concluded."
+                    )
+                )
             if not self.core.verify_ids(rs, persona_ids, is_archived=False):
-                raise ValueError(n_(  # TODO: coverage
-                    "Some of these users do not exist or are archived."))
+                raise ValueError(
+                    n_(  # TODO: coverage
+                        "Some of these users do not exist or are archived."
+                    )
+                )
             if not self.core.verify_personas(rs, persona_ids, {"assembly"}):
-                raise ValueError(n_(  # TODO: coverage
-                    "Some of these users are not assembly users."))
+                raise ValueError(
+                    n_(  # TODO: coverage
+                        "Some of these users are not assembly users."
+                    )
+                )
 
             for anid in xsorted(persona_ids):
                 new_presider = {
@@ -638,12 +757,16 @@ class AssemblyBackend(AbstractBackend):
                     'assembly_id': assembly_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "assembly.presiders", new_presider,
-                                    drop_on_conflict=True)
+                r = self.sql_insert(
+                    rs, "assembly.presiders", new_presider, drop_on_conflict=True
+                )
                 if r:
                     self.assembly_log(
-                        rs, const.AssemblyLogCodes.assembly_presider_added,
-                        assembly_id, anid)
+                        rs,
+                        const.AssemblyLogCodes.assembly_presider_added,
+                        assembly_id,
+                        anid,
+                    )
                 ret *= r
 
             # Update session presider status
@@ -653,19 +776,27 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def remove_assembly_presider(self, rs: RequestState, assembly_id: int,
-                                persona_id: int) -> DefaultReturnCode:
+    def remove_assembly_presider(
+        self, rs: RequestState, assembly_id: int, persona_id: int
+    ) -> DefaultReturnCode:
         """Remove a single presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
-        query = ("DELETE FROM assembly.presiders"
-                 " WHERE persona_id = %s AND assembly_id = %s")
+        query = """
+            DELETE FROM assembly.presiders
+            WHERE persona_id = %(persona_id)s AND assembly_id = %(assembly_id)s
+        """
+        params = {"assembly_id": assembly_id, "persona_id": persona_id}
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (persona_id, assembly_id))
+            ret = self.query_exec(rs, query, params)
             if ret:
-                self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
-                                  assembly_id, persona_id)
+                self.assembly_log(
+                    rs,
+                    const.AssemblyLogCodes.assembly_presider_removed,
+                    assembly_id,
+                    persona_id,
+                )
 
         # Update session presider status
         if rs.user.persona_id == persona_id:
@@ -682,28 +813,31 @@ class AssemblyBackend(AbstractBackend):
         "asembly" realm.
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
-        data = self.sql_select(rs, "assembly.presiders", ("assembly_id", "persona_id"),
-                               (assembly_id,), entity_key="assembly_id")
+        data = self.sql_select(
+            rs,
+            "assembly.presiders",
+            ("assembly_id", "persona_id"),
+            (assembly_id,),
+            entity_key="assembly_id",
+        )
         return {e["persona_id"] for e in data}
 
     @access("assembly_admin")
-    def create_assembly(self, rs: RequestState, data: CdEDBObject,
-                        ) -> DefaultReturnCode:
+    def create_assembly(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Make a new assembly."""
         data = affirm(vtypes.Assembly, data, creation=True)
-        assembly_data = {k: v for k, v in data.items()
-                         if k in ASSEMBLY_FIELDS}
+        assembly_data = {k: v for k, v in data.items() if k in ASSEMBLY_FIELDS}
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "assembly.assemblies", assembly_data)
-            self.assembly_log(
-                rs, const.AssemblyLogCodes.assembly_created, new_id)
+            self.assembly_log(rs, const.AssemblyLogCodes.assembly_created, new_id)
             if 'presiders' in data:
                 self.add_assembly_presiders(rs, new_id, data['presiders'])
         return new_id
 
     @access("assembly_admin")
-    def delete_assembly_blockers(self, rs: RequestState,
-                                 assembly_id: int) -> DeletionBlockers:
+    def delete_assembly_blockers(
+        self, rs: RequestState, assembly_id: int
+    ) -> DeletionBlockers:
         """Determine whether an assembly is deletable.
 
         Possible blockers:
@@ -733,8 +867,8 @@ class AssemblyBackend(AbstractBackend):
             blockers["assembly_is_locked"] = [assembly_id]
 
         ballots = self.sql_select(
-            rs, "assembly.ballots", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs, "assembly.ballots", ("id",), (assembly_id,), entity_key="assembly_id"
+        )
         if ballots:
             blockers["ballots"] = [e["id"] for e in ballots]
             # Take special care with ballots, since they can prevent deletion entirely.
@@ -742,40 +876,48 @@ class AssemblyBackend(AbstractBackend):
                 blockers["ballot_is_locked"] = [True]
 
         attendees = self.sql_select(
-            rs, "assembly.attendees", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs, "assembly.attendees", ("id",), (assembly_id,), entity_key="assembly_id"
+        )
         if attendees:
             blockers["attendees"] = [e["id"] for e in attendees]
 
         attachments = self.sql_select(
-            rs, "assembly.attachments", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs,
+            "assembly.attachments",
+            ("id",),
+            (assembly_id,),
+            entity_key="assembly_id",
+        )
         if attachments:
             blockers["attachments"] = [e["id"] for e in attachments]
 
         presiders = self.sql_select(
-            rs, "assembly.presiders", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs, "assembly.presiders", ("id",), (assembly_id,), entity_key="assembly_id"
+        )
         if presiders:
             blockers["presiders"] = [e["id"] for e in presiders]
 
         log = self.sql_select(
-            rs, "assembly.log", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs, "assembly.log", ("id",), (assembly_id,), entity_key="assembly_id"
+        )
         if log:
             blockers["log"] = [e["id"] for e in log]
 
         mailinglists = self.sql_select(
-            rs, "ml.mailinglists", ("id",), (assembly_id,),
-            entity_key="assembly_id")
+            rs, "ml.mailinglists", ("id",), (assembly_id,), entity_key="assembly_id"
+        )
         if mailinglists:
             blockers["mailinglists"] = [e["id"] for e in mailinglists]
 
         return blockers
 
     @access("assembly_admin")
-    def delete_assembly(self, rs: RequestState, assembly_id: int,
-                        cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+    def delete_assembly(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        cascade: Optional[Collection[str]] = None,
+    ) -> DefaultReturnCode:
         """Remove an assembly.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -784,12 +926,15 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers = self.delete_assembly_blockers(rs, assembly_id)
         if "ballot_is_locked" in blockers:
-            raise DeletionImpossibleError(n_(
-                "Cannot delete assembly with locked ballots."))  # TODO: coverage
+            raise DeletionImpossibleError(
+                n_("Cannot delete assembly with locked ballots.")
+            )  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
-            raise DeletionBlockedError(rs.gettext("Assembly"), remaining_blockers)  # TODO: coverage
+            raise DeletionBlockedError(
+                rs.gettext("Assembly"), remaining_blockers
+            )  # TODO: coverage
 
         ret = 1
         with Atomizer(rs):
@@ -805,22 +950,28 @@ class AssemblyBackend(AbstractBackend):
                     ret *= self.sql_update(rs, "assembly.assemblies", update)
                 if "ballots" in cascade:
                     with Silencer(rs):
-                        ballot_cascade = ("candidates", "attachment_ballot_links",
-                                          "voters")
+                        ballot_cascade = (
+                            "candidates",
+                            "attachment_ballot_links",
+                            "voters",
+                        )
                         for ballot_id in blockers["ballots"]:
                             ret *= self.delete_ballot(rs, ballot_id, ballot_cascade)
                 if "attendees" in cascade:
-                    ret *= self.sql_delete(rs, "assembly.attendees",
-                                           blockers["attendees"])
+                    ret *= self.sql_delete(
+                        rs, "assembly.attendees", blockers["attendees"]
+                    )
                 if "attachments" in cascade:
                     with Silencer(rs):
                         attachment_cascade = {"versions", "attachment_ballot_links"}
                         for attachment_id in blockers["attachments"]:
                             ret *= self.delete_attachment(
-                                rs, attachment_id, attachment_cascade)
+                                rs, attachment_id, attachment_cascade
+                            )
                 if "presiders" in cascade:
-                    ret *= self.sql_delete(rs, "assembly.presiders",
-                                           blockers["presiders"])
+                    ret *= self.sql_delete(
+                        rs, "assembly.presiders", blockers["presiders"]
+                    )
                 if "log" in cascade:
                     ret *= self.sql_delete(rs, "assembly.log", blockers["log"])
                 if "mailinglists" in cascade:
@@ -834,19 +985,20 @@ class AssemblyBackend(AbstractBackend):
                 blockers = self.delete_assembly_blockers(rs, assembly_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(
-                    rs, "assembly.assemblies", assembly_id)
+                ret *= self.sql_delete_one(rs, "assembly.assemblies", assembly_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.assembly_deleted,
-                    assembly_id=None, change_note=assembly["title"])
+                    rs,
+                    const.AssemblyLogCodes.assembly_deleted,
+                    assembly_id=None,
+                    change_note=assembly["title"],
+                )
             else:  # pragma: no cover
                 raise DeletionBlockedError(rs.gettext("Assembly"), blockers.keys())
 
         return ret
 
     @access("assembly")
-    def list_ballots(self, rs: RequestState,
-                     assembly_id: int) -> dict[int, str]:
+    def list_ballots(self, rs: RequestState, assembly_id: int) -> dict[int, str]:
         """List all ballots of an assembly.
 
         :returns: Mapping of ballot ids to titles.
@@ -854,28 +1006,39 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID, assembly_id)
         if not self.may_access(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
-                               (assembly_id,), entity_key="assembly_id")
+        data = self.sql_select(
+            rs,
+            "assembly.ballots",
+            ("id", "title"),
+            (assembly_id,),
+            entity_key="assembly_id",
+        )
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int],
-                           ) -> dict[int, bool]:
+    def are_ballots_locked(
+        self, rs: RequestState, ballot_ids: Collection[int]
+    ) -> dict[int, bool]:
         """Helper to check whether the given ballots may be modified."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = ("SELECT id, vote_begin < %s AS is_locked"
-             " FROM assembly.ballots WHERE id = ANY(%s)")
-        params = (now(), ballot_ids)
+        q = """
+            SELECT id, vote_begin < %(now)s AS is_locked
+            FROM assembly.ballots WHERE id = ANY(%(ballot_ids)s)
+        """
+        params: Params = {"now": now(), "ballot_ids": ballot_ids}
         return {e['id']: e['is_locked'] for e in self.query_all(rs, q, params)}
 
     class _IsBallotLockedProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
+
     is_ballot_locked: _IsBallotLockedProtocol = singularize(
-        are_ballots_locked, "ballot_ids", "ballot_id")
+        are_ballots_locked, "ballot_ids", "ballot_id"
+    )
 
     @access("assembly")
-    def is_any_ballot_locked(self, rs: RequestState, ballot_ids: Collection[int],
-                             ) -> bool:
+    def is_any_ballot_locked(
+        self, rs: RequestState, ballot_ids: Collection[int]
+    ) -> bool:
         """Helper to check whether the given ballots may all be modified.
 
         :returns: True if any of the ballots may not be edited.
@@ -884,8 +1047,9 @@ class AssemblyBackend(AbstractBackend):
         return any(lock for lock in self.are_ballots_locked(rs, ballot_ids).values())
 
     @access("assembly")
-    def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int],
-                           ) -> dict[int, bool]:
+    def are_ballots_voting(
+        self, rs: RequestState, ballot_ids: Collection[int]
+    ) -> dict[int, bool]:
         """Helper to check whether the given ballots are (partially) open for voting.
 
         This uses non-obvious logic to catch some edge cases, since extended is None
@@ -900,38 +1064,50 @@ class AssemblyBackend(AbstractBackend):
         # yet, but is between vote_end and vote_extension_end.
         # The third part of the statement makes sure this returns False instead of None
         # if the ballot is definitely over.
-        q = """SELECT id, (
-            vote_begin < %s
-            AND (vote_end > %s OR (vote_extension_end > %s AND extended = True))
-            AND NOT COALESCE(vote_extension_end, vote_end) < %s
-            ) AS is_voting
-        FROM assembly.ballots WHERE id = ANY(%s)"""
-        reference_time = now()
-        params = (reference_time, reference_time, reference_time, reference_time,
-                  ballot_ids)
+        q = """
+            SELECT
+                id, (
+                    vote_begin < %(now)s
+                    AND (vote_end > %(now)s OR (vote_extension_end > %(now)s AND extended = True))
+                    AND NOT COALESCE(vote_extension_end, vote_end) < %(now)s
+                ) AS is_voting
+            FROM assembly.ballots WHERE id = ANY(%(ballot_ids)s)
+        """
+        params: Params = {"now": now(), "ballot_ids": ballot_ids}
 
         # If is_voting is no bool, the voting period extension has not been checked yet.
         # The result of this check equals whether the ballot is still voting.
         with Atomizer(rs):
-            return {e["id"]: e['is_voting'] if e['is_voting'] is not None
-                    else self.check_voting_period_extension(rs, e["id"])
-                    for e in self.query_all(rs, q, params)}
+            return {
+                e["id"]: e['is_voting']
+                if e['is_voting'] is not None
+                else self.check_voting_period_extension(rs, e["id"])
+                for e in self.query_all(rs, q, params)
+            }
 
     class _IsBallotVotingProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
+
     is_ballot_voting: _IsBallotVotingProtocol = singularize(
-        are_ballots_voting, "ballot_ids", "ballot_id")
+        are_ballots_voting, "ballot_ids", "ballot_id"
+    )
 
     @access("assembly")
     def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
         """Helper to check whether the given ballot has been concluded."""
         with Atomizer(rs):
-            return (self.is_ballot_locked(rs, ballot_id)
-                and not self.is_ballot_voting(rs, ballot_id))
+            return self.is_ballot_locked(rs, ballot_id) and not self.is_ballot_voting(
+                rs, ballot_id
+            )
 
     @access("assembly")
-    def get_ballots(self, rs: RequestState, ballot_ids: Collection[int], *,
-                    include_is_voting: bool = True) -> CdEDBObjectMap:
+    def get_ballots(
+        self,
+        rs: RequestState,
+        ballot_ids: Collection[int],
+        *,
+        include_is_voting: bool = True,
+    ) -> CdEDBObjectMap:
         """Retrieve data for some ballots,
 
         They do not need to be associated to the same assembly. This has an
@@ -951,7 +1127,8 @@ class AssemblyBackend(AbstractBackend):
 
         with Atomizer(rs):
             data = self.sql_select(
-                rs, "assembly.ballots", BALLOT_FIELDS + ('comment',), ballot_ids)
+                rs, "assembly.ballots", BALLOT_FIELDS + ('comment',), ballot_ids
+            )
             eligible_voters = None
             if include_is_voting:
                 are_voting = self.are_ballots_voting(rs, ballot_ids)
@@ -966,10 +1143,13 @@ class AssemblyBackend(AbstractBackend):
                             # of attendees plus the # number of members
                             # (who may decide to become attendees).
                             attendees = self.list_attendees(rs, e["assembly_id"])
-                            query = ("SELECT COUNT(id) FROM core.personas"
-                                     " WHERE is_member = TRUE AND NOT(id = ANY(%s))")
-                            non_attending_members = unwrap(
-                                self.query_one(rs, query, (attendees,))) or 0
+                            query = """
+                                SELECT COUNT(id) FROM core.personas
+                                WHERE is_member = TRUE AND NOT(id = ANY(%s))
+                            """
+                            non_attending_members = (
+                                unwrap(self.query_one(rs, query, (attendees,))) or 0
+                            )
                             eligible_voters = non_attending_members + len(attendees)
                         e["quorum"] = math.ceil(eligible_voters * e["rel_quorum"] / 100)
                     else:
@@ -980,16 +1160,20 @@ class AssemblyBackend(AbstractBackend):
                 e['candidates'] = {}
                 ret[e['id']] = e
             candidate_data = self.sql_select(
-                rs, "assembly.candidates", ("id", "ballot_id", "title", "shortname"),
-                ballot_ids, entity_key="ballot_id")
+                rs,
+                "assembly.candidates",
+                ("id", "ballot_id", "title", "shortname"),
+                ballot_ids,
+                entity_key="ballot_id",
+            )
             for candidate in candidate_data:
                 ret[candidate['ballot_id']]['candidates'][candidate['id']] = candidate
-            ret = {k: v for k, v in ret.items()
-                   if self.may_access(rs, ballot_id=k)}
+            ret = {k: v for k, v in ret.items() if self.may_access(rs, ballot_id=k)}
         return ret
 
     class _GetBallotProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
     get_ballot: _GetBallotProtocol = singularize(get_ballots, "ballot_ids", "ballot_id")
 
     @access("assembly")
@@ -1017,57 +1201,75 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.get_ballot(rs, data['id'])
             if not self.is_presider(rs, assembly_id=current['assembly_id']):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to change ballot."))
+                raise PrivilegeError(
+                    n_("Must have privileged access to change ballot.")
+                )
             if current['is_locked']:
                 raise ValueError(n_("Unable to modify active ballot."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             if len(bdata) > 1:
                 ret *= self.sql_update(rs, "assembly.ballots", bdata)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.ballot_changed,
-                    current['assembly_id'], change_note=current['title'])
+                    rs,
+                    const.AssemblyLogCodes.ballot_changed,
+                    current['assembly_id'],
+                    change_note=current['title'],
+                )
             if 'candidates' in data:
                 existing = set(current['candidates'].keys())
                 if not (existing >= {x for x in data['candidates'] if x > 0}):
-                    raise ValueError(n_("Non-existing candidates specified."))  # TODO: coverage
+                    raise ValueError(
+                        n_("Non-existing candidates specified.")
+                    )  # TODO: coverage
                 new = {x for x in data['candidates'] if x < 0}
-                updated = {x for x in data['candidates']
-                           if x > 0 and data['candidates'][x] is not None}
-                deleted = {x for x in data['candidates']
-                           if x > 0 and data['candidates'][x] is None}
+                updated = {
+                    x
+                    for x in data['candidates']
+                    if x > 0 and data['candidates'][x] is not None
+                }
+                deleted = {
+                    x
+                    for x in data['candidates']
+                    if x > 0 and data['candidates'][x] is None
+                }
 
                 # Defer check of shortname uniqueness until later.
                 self.sql_defer_constraints(
-                    rs, "assembly.candidate_shortname_constraint")
+                    rs, "assembly.candidate_shortname_constraint"
+                )
 
                 # new
                 for x in mixed_existence_sorter(new):
                     new_candidate = copy.deepcopy(data['candidates'][x])
                     new_candidate['ballot_id'] = data['id']
-                    ret *= self.sql_insert(rs, "assembly.candidates",
-                                           new_candidate)
+                    ret *= self.sql_insert(rs, "assembly.candidates", new_candidate)
                     self.assembly_log(
-                        rs, const.AssemblyLogCodes.candidate_added,
+                        rs,
+                        const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
-                        change_note=data['candidates'][x]['shortname'])
+                        change_note=data['candidates'][x]['shortname'],
+                    )
                 # updated
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(data['candidates'][x])
                     update['id'] = x
                     ret *= self.sql_update(rs, "assembly.candidates", update)
                     self.assembly_log(
-                        rs, const.AssemblyLogCodes.candidate_updated,
+                        rs,
+                        const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
-                        change_note=current['candidates'][x]['shortname'])
+                        change_note=current['candidates'][x]['shortname'],
+                    )
                 # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "assembly.candidates", deleted)
                     for x in mixed_existence_sorter(deleted):
                         self.assembly_log(
-                            rs, const.AssemblyLogCodes.candidate_removed,
+                            rs,
+                            const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
-                            change_note=current['candidates'][x]['shortname'])
+                            change_note=current['candidates'][x]['shortname'],
+                        )
         return ret
 
     @access("assembly")
@@ -1082,18 +1284,22 @@ class AssemblyBackend(AbstractBackend):
 
         with Atomizer(rs):
             if not self.is_presider(rs, assembly_id=data['assembly_id']):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to create ballot."))
-            assembly = unwrap(
-                self.get_assemblies(rs, (data['assembly_id'],)))
+                raise PrivilegeError(
+                    n_("Must have privileged access to create ballot.")
+                )
+            assembly = unwrap(self.get_assemblies(rs, (data['assembly_id'],)))
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))  # TODO: coverage
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
             if new_id <= 0:  # pragma: no cover
                 raise RuntimeError(n_("Ballot creation failed."))
-            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                              data['assembly_id'], change_note=data['title'])
+            self.assembly_log(
+                rs,
+                const.AssemblyLogCodes.ballot_created,
+                data['assembly_id'],
+                change_note=data['title'],
+            )
             if 'candidates' in data:
                 cdata = {
                     'id': new_id,
@@ -1102,8 +1308,12 @@ class AssemblyBackend(AbstractBackend):
                 self.set_ballot(rs, cdata)
             # update voter register
             attendees = self.sql_select(
-                rs, "assembly.attendees", ("persona_id",),
-                (data['assembly_id'],), entity_key="assembly_id")
+                rs,
+                "assembly.attendees",
+                ("persona_id",),
+                (data['assembly_id'],),
+                entity_key="assembly_id",
+            )
             for attendee in attendees:
                 entry = {
                     'persona_id': unwrap(attendee),
@@ -1113,8 +1323,9 @@ class AssemblyBackend(AbstractBackend):
         return new_id
 
     @access("assembly")
-    def comment_concluded_ballot(self, rs: RequestState, ballot_id: int,
-                                 comment: Optional[str] = None) -> DefaultReturnCode:
+    def comment_concluded_ballot(
+        self, rs: RequestState, ballot_id: int, comment: Optional[str] = None
+    ) -> DefaultReturnCode:
         """Add a comment to a concluded ballot.
 
         This is intended to note comments regarding tallying, for exmaple tie breakers
@@ -1138,13 +1349,17 @@ class AssemblyBackend(AbstractBackend):
             data = {'id': ballot_id, 'comment': comment}
             ret = self.sql_update(rs, "assembly.ballots", data)
             self.assembly_log(
-                rs, const.AssemblyLogCodes.ballot_changed,
-                current['assembly_id'], change_note=current['title'])
+                rs,
+                const.AssemblyLogCodes.ballot_changed,
+                current['assembly_id'],
+                change_note=current['title'],
+            )
         return ret
 
     @access("assembly")
-    def delete_ballot_blockers(self, rs: RequestState,
-                               ballot_id: int) -> DeletionBlockers:
+    def delete_ballot_blockers(
+        self, rs: RequestState, ballot_id: int
+    ) -> DeletionBlockers:
         """Determine whether a ballot is deletable.
 
         Possible blockers:
@@ -1181,23 +1396,29 @@ class AssemblyBackend(AbstractBackend):
             blockers["attachments"] = attachment_ids
 
         # Voters are people who _may_ vote in this ballot.
-        voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
-                                 (ballot_id,), entity_key="ballot_id")
+        voters = self.sql_select(
+            rs, "assembly.voter_register", ("id",), (ballot_id,), entity_key="ballot_id"
+        )
         if voters:
             # Ballot still has voters
             blockers["voters"] = [e["id"] for e in voters]
 
         # Votes are people who _have_ voted in this ballot.
-        votes = self.sql_select(rs, "assembly.votes", ("id",),
-                                (ballot_id,), entity_key="ballot_id")
+        votes = self.sql_select(
+            rs, "assembly.votes", ("id",), (ballot_id,), entity_key="ballot_id"
+        )
         if votes:
             blockers["votes"] = [e["id"] for e in votes]
 
         return blockers
 
     @access("assembly")
-    def delete_ballot(self, rs: RequestState, ballot_id: int,
-                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+    def delete_ballot(
+        self,
+        rs: RequestState,
+        ballot_id: int,
+        cascade: Optional[Collection[str]] = None,
+    ) -> DefaultReturnCode:
         """Remove a ballot.
 
         .. note:: As with modification of ballots this is forbidden
@@ -1211,18 +1432,23 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Must have privileged access to delete ballot."))
         blockers = self.delete_ballot_blockers(rs, ballot_id)
         if "ballot_is_locked" in blockers:
-            raise DeletionImpossibleError(n_(
-                "Cannot delete ballot once it has been locked."))  # TODO: coverage
+            raise DeletionImpossibleError(
+                n_("Cannot delete ballot once it has been locked.")
+            )  # TODO: coverage
         if "assembly_is_locked" in blockers:
-            raise DeletionImpossibleError(n_(
-                "Cannot delete ballot once the assembly has been locked."))  # TODO: coverage
+            raise DeletionImpossibleError(
+                n_("Cannot delete ballot once the assembly has been locked.")
+            )  # TODO: coverage
         if "votes" in blockers:
-            raise DeletionImpossibleError(n_(
-                "Cannot delete ballot that has votes."))  # TODO: coverage
+            raise DeletionImpossibleError(
+                n_("Cannot delete ballot that has votes.")
+            )  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
-            raise DeletionBlockedError(rs.gettext("Ballot"), remaining_blockers)  # TODO: coverage
+            raise DeletionBlockedError(
+                rs.gettext("Ballot"), remaining_blockers
+            )  # TODO: coverage
 
         ret = 1
         with Atomizer(rs):
@@ -1231,15 +1457,18 @@ class AssemblyBackend(AbstractBackend):
             if cascade:
                 if "candidates" in cascade:
                     ret *= self.sql_delete(
-                        rs, "assembly.candidates", blockers["candidates"])
+                        rs, "assembly.candidates", blockers["candidates"]
+                    )
                 if "attachments" in cascade:
                     with Silencer(rs):
                         for attachment_id in blockers["attachments"]:
                             ret *= self.remove_attachment_ballot_link(
-                                rs, attachment_id, ballot_id)
+                                rs, attachment_id, ballot_id
+                            )
                 if "voters" in cascade:
                     ret *= self.sql_delete(
-                        rs, "assembly.voter_register", blockers["voters"])
+                        rs, "assembly.voter_register", blockers["voters"]
+                    )
 
                 # check if ballot is deletable after maybe cascading
                 blockers = self.delete_ballot_blockers(rs, ballot_id)
@@ -1247,8 +1476,11 @@ class AssemblyBackend(AbstractBackend):
             if not blockers:
                 ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.ballot_deleted,
-                    current['assembly_id'], change_note=current['title'])
+                    rs,
+                    const.AssemblyLogCodes.ballot_deleted,
+                    current['assembly_id'],
+                    change_note=current['title'],
+                )
             else:  # pragma: no cover
                 raise DeletionBlockedError(rs.gettext("Ballot"), blockers.keys())
         return ret
@@ -1274,8 +1506,9 @@ class AssemblyBackend(AbstractBackend):
                 return ballot['extended']
             if now() < ballot['vote_end']:
                 raise ValueError(n_("Normal voting still going on."))  # TODO: coverage
-            votes = self.sql_select(rs, "assembly.votes", ("id",),
-                                    (ballot_id,), entity_key="ballot_id")
+            votes = self.sql_select(
+                rs, "assembly.votes", ("id",), (ballot_id,), entity_key="ballot_id"
+            )
             update = {
                 'id': ballot_id,
                 'extended': len(votes) < ballot['quorum'],
@@ -1285,12 +1518,16 @@ class AssemblyBackend(AbstractBackend):
             self.sql_update(rs, "assembly.ballots", update)
             if update['extended']:
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.ballot_extended,
-                    ballot['assembly_id'], change_note=ballot['title'])
+                    rs,
+                    const.AssemblyLogCodes.ballot_extended,
+                    ballot['assembly_id'],
+                    change_note=ballot['title'],
+                )
         return update['extended']
 
-    def process_signup(self, rs: RequestState, assembly_id: int,
-                       persona_id: int) -> Union[str, None]:
+    def process_signup(
+        self, rs: RequestState, assembly_id: int, persona_id: int
+    ) -> Union[str, None]:
         """Helper to perform the actual signup
 
         This has to take care to keep the voter register consistent.
@@ -1300,7 +1537,8 @@ class AssemblyBackend(AbstractBackend):
         """
         with Atomizer(rs):
             if self.check_attendance(
-                    rs, assembly_id=assembly_id, persona_id=persona_id):
+                rs, assembly_id=assembly_id, persona_id=persona_id
+            ):
                 # already signed up
                 return None
             assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
@@ -1314,8 +1552,12 @@ class AssemblyBackend(AbstractBackend):
                 'secret': secret,
             }
             self.sql_insert(rs, "assembly.attendees", new_attendee)
-            self.assembly_log(rs, const.AssemblyLogCodes.new_attendee,
-                              assembly_id, persona_id=persona_id)
+            self.assembly_log(
+                rs,
+                const.AssemblyLogCodes.new_attendee,
+                assembly_id,
+                persona_id=persona_id,
+            )
             # update voter register
             ballots = self.list_ballots(rs, assembly_id)
             for ballot in ballots:
@@ -1327,8 +1569,9 @@ class AssemblyBackend(AbstractBackend):
         return secret
 
     @access("assembly")
-    def external_signup(self, rs: RequestState, assembly_id: int,
-                        persona_id: int) -> Union[str, None]:
+    def external_signup(
+        self, rs: RequestState, assembly_id: int, persona_id: int
+    ) -> Union[str, None]:
         """Make a non-member attend an assembly.
 
         Those are not allowed to subscribe themselves, but must be added
@@ -1341,8 +1584,11 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_id = affirm(vtypes.ID, persona_id)
         if not self.is_presider(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_(
-                "Must have privileged access to add an external assembly participant."))
+            raise PrivilegeError(
+                n_(
+                    "Must have privileged access to add an external assembly participant."
+                )
+            )
 
         roles = self.core.get_roles_single(rs, persona_id)
         if "member" in roles:
@@ -1368,8 +1614,9 @@ class AssemblyBackend(AbstractBackend):
         return self.process_signup(rs, assembly_id, rs.user.persona_id)
 
     @access("assembly")
-    def vote(self, rs: RequestState, ballot_id: int, vote: str,
-             secret: Optional[str]) -> DefaultReturnCode:
+    def vote(
+        self, rs: RequestState, ballot_id: int, vote: str, secret: Optional[str]
+    ) -> DefaultReturnCode:
         """Submit a vote.
 
         This does not accept a persona_id on purpose.
@@ -1388,15 +1635,22 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_ballot_voting(rs, ballot_id):
                 raise ValueError(n_("Ballot is not open for voting."))  # TODO: coverage
 
-            query = glue("SELECT has_voted FROM assembly.voter_register",
-                         "WHERE ballot_id = %s and persona_id = %s")
-            has_voted = unwrap(self.query_one(
-                rs, query, (ballot_id, rs.user.persona_id)))
+            query = """
+                SELECT has_voted FROM assembly.voter_register
+                WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+            """
+            ballot_params = {"ballot_id": ballot_id, "persona_id": rs.user.persona_id}
+            has_voted = unwrap(self.query_one(rs, query, ballot_params))
             if secret is None:
-                query = glue("SELECT secret FROM assembly.attendees",
-                             "WHERE assembly_id = %s and persona_id = %s")
-                secret = unwrap(self.query_one(
-                    rs, query, (ballot['assembly_id'], rs.user.persona_id)))
+                query = """
+                    SELECT secret FROM assembly.attendees
+                    WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+                """
+                assembly_params = {
+                    "assembly_id": ballot["assembly_id"],
+                    "persona_id": rs.user.persona_id,
+                }
+                secret = unwrap(self.query_one(rs, query, assembly_params))
                 if secret is None:  # TODO: coverage
                     raise ValueError(n_("Could not determine secret."))
             if not has_voted:
@@ -1408,11 +1662,11 @@ class AssemblyBackend(AbstractBackend):
                     'hash': self.encrypt_vote(salt, secret, vote),
                 }
                 ret = self.sql_insert(rs, "assembly.votes", entry)
-                query = glue(
-                    "UPDATE assembly.voter_register SET has_voted = True",
-                    "WHERE ballot_id = %s and persona_id = %s")
-                ret *= self.query_exec(rs, query,
-                                       (ballot_id, rs.user.persona_id))
+                query = """
+                    UPDATE assembly.voter_register SET has_voted = True
+                    WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+                """
+                ret *= self.query_exec(rs, query, ballot_params)
             else:
                 current = self.retrieve_vote(rs, ballot_id, secret)
                 update = {
@@ -1434,10 +1688,12 @@ class AssemblyBackend(AbstractBackend):
         if not self.check_attendance(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Must attend the ballot."))
 
-        query = glue("SELECT has_voted FROM assembly.voter_register",
-                     "WHERE ballot_id = %s and persona_id = %s")
-        has_voted = unwrap(
-            self.query_one(rs, query, (ballot_id, rs.user.persona_id)))
+        query = """
+            SELECT has_voted FROM assembly.voter_register
+            WHERE ballot_id = %(ballot_id)s and persona_id = %(persona_id)s
+        """
+        params = {"ballot_id": ballot_id, "persona_id": rs.user.persona_id}
+        has_voted = unwrap(self.query_one(rs, query, params))
         return bool(has_voted)
 
     @access("assembly")
@@ -1445,14 +1701,16 @@ class AssemblyBackend(AbstractBackend):
         """Look up how many attendees had already voted in a ballot."""
         ballot_id = affirm(vtypes.ID, ballot_id)
 
-        query = glue("SELECT COUNT(*) AS count FROM assembly.voter_register",
-                     "WHERE ballot_id = %s and has_voted = True")
-        count_votes = unwrap(self.query_one(rs, query, (ballot_id,))) or 0
-        return count_votes
+        query = """
+            SELECT COUNT(*) AS count FROM assembly.voter_register
+            WHERE ballot_id = %(ballot_id)s and has_voted = True
+        """
+        return unwrap(self.query_one(rs, query, {"ballot_id": ballot_id})) or 0
 
     @access("assembly")
-    def get_vote(self, rs: RequestState, ballot_id: int,
-                 secret: Union[str, None]) -> Union[str, None]:
+    def get_vote(
+        self, rs: RequestState, ballot_id: int, secret: Union[str, None]
+    ) -> Union[str, None]:
         """Look up a vote.
 
         This does not accept a persona_id on purpose.
@@ -1477,10 +1735,15 @@ class AssemblyBackend(AbstractBackend):
                 return None
             if secret is None:
                 ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
-                query = glue("SELECT secret FROM assembly.attendees",
-                             "WHERE assembly_id = %s and persona_id = %s")
-                secret = unwrap(self.query_one(
-                    rs, query, (ballot['assembly_id'], rs.user.persona_id)))
+                query = """
+                    SELECT secret FROM assembly.attendees
+                    WHERE assembly_id = %(assembly_id)s and persona_id = %(persona_id)s
+                """
+                params = {
+                    "assembly_id": ballot["assembly_id"],
+                    "persona_id": rs.user.persona_id,
+                }
+                secret = unwrap(self.query_one(rs, query, params))
             if secret is None:
                 return None
             vote = self.retrieve_vote(rs, ballot_id, secret)
@@ -1503,16 +1766,14 @@ class AssemblyBackend(AbstractBackend):
             path = self.get_ballot_file_path(rs, ballot_id)
             if not path.is_file():  # pragma: no cover
                 # TODO raise an error here?
-                self.logger.warning(
-                    f"Result file for ballot {ballot_id} not found.")
+                self.logger.warning(f"Result file for ballot {ballot_id} not found.")
                 return None
             with open(path, 'rb') as f:
                 ret = f.read()
             return ret
 
     @access("assembly")
-    def tally_ballot(self, rs: RequestState,
-                     ballot_id: int) -> Optional[bytes]:
+    def tally_ballot(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
         """Evaluate the result of a ballot.
 
         After voting has finished all votes are tallied and a result
@@ -1545,10 +1806,13 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("Voting is still going on."))
 
             votes = self.sql_select(
-                rs, "assembly.votes", ("vote", "salt", "hash"), (ballot_id,),
-                entity_key="ballot_id")
-            shortnames = tuple(
-                x['shortname'] for x in ballot['candidates'].values())
+                rs,
+                "assembly.votes",
+                ("vote", "salt", "hash"),
+                (ballot_id,),
+                entity_key="ballot_id",
+            )
+            shortnames = tuple(x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 shortnames += (ASSEMBLY_BAR_SHORTNAME,)
             vote_result = schulze_evaluate([e['vote'] for e in votes], shortnames)
@@ -1559,25 +1823,30 @@ class AssemblyBackend(AbstractBackend):
             # do not use set_ballot since it would throw an error
             self.sql_update(rs, "assembly.ballots", update)
             self.assembly_log(
-                rs, const.AssemblyLogCodes.ballot_tallied,
-                ballot['assembly_id'], change_note=ballot['title'])
+                rs,
+                const.AssemblyLogCodes.ballot_tallied,
+                ballot['assembly_id'],
+                change_note=ballot['title'],
+            )
 
             # now generate the result file
-            assembly = unwrap(
-                self.get_assemblies(rs, (ballot['assembly_id'],)))
+            assembly = unwrap(self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = {
                 c['shortname']: c['title']
-                for c in xsorted(ballot['candidates'].values(),
-                                 key=EntitySorter.candidates)
+                for c in xsorted(
+                    ballot['candidates'].values(), key=EntitySorter.candidates
+                )
             }
-            query = glue("SELECT persona_id FROM assembly.voter_register",
-                         "WHERE ballot_id = %s and has_voted = True")
-            voter_ids = self.query_all(rs, query, (ballot_id,))
-            voters = self.core.get_personas(
-                rs, tuple(unwrap(e) for e in voter_ids))
-            voter_names = list(f"{e['given_names']} {e['family_name']}"
-                               for e in xsorted(voters.values(),
-                                                key=EntitySorter.persona))
+            query = """
+                SELECT persona_id FROM assembly.voter_register
+                WHERE ballot_id = %(ballot_id)s and has_voted = True
+            """
+            voter_ids = self.query_all(rs, query, {"ballot_id": ballot_id})
+            voters = self.core.get_personas(rs, tuple(unwrap(e) for e in voter_ids))
+            voter_names = list(
+                f"{e['given_names']} {e['family_name']}"
+                for e in xsorted(voters.values(), key=EntitySorter.persona)
+            )
             vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
@@ -1596,8 +1865,9 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def conclude_assembly_blockers(self, rs: RequestState,
-                                   assembly_id: int) -> DeletionBlockers:
+    def conclude_assembly_blockers(
+        self, rs: RequestState, assembly_id: int
+    ) -> DeletionBlockers:
         """Determine whether an assembly may be concluded.
 
         Possible blockers:
@@ -1618,8 +1888,12 @@ class AssemblyBackend(AbstractBackend):
             blockers["signup_end"] = [assembly['signup_end']]
 
         ballots = self.sql_select(
-            rs, "assembly.ballots", ("id", "is_tallied"), (assembly_id,),
-            entity_key="assembly_id")
+            rs,
+            "assembly.ballots",
+            ("id", "is_tallied"),
+            (assembly_id,),
+            entity_key="assembly_id",
+        )
         for ballot in ballots:
             if not ballot["is_tallied"]:
                 if "ballot" not in blockers:
@@ -1629,9 +1903,12 @@ class AssemblyBackend(AbstractBackend):
         return blockers
 
     @access("assembly_admin")
-    def conclude_assembly(self, rs: RequestState, assembly_id: int,
-                          cascade: Optional[set[str]] = None,
-                          ) -> DefaultReturnCode:
+    def conclude_assembly(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        cascade: Optional[set[str]] = None,
+    ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
         This mainly purges the secrets which are no longer required for
@@ -1648,8 +1925,10 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Assembly has open ballots."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:  # TODO: coverage
-            raise ValueError(n_("Conclusion of assembly blocked by %(block)s."),
-                             {"block": blockers.keys() - cascade})
+            raise ValueError(
+                n_("Conclusion of assembly blocked by %(block)s."),
+                {"block": blockers.keys() - cascade},
+            )
 
         ret = 1
         with Atomizer(rs):
@@ -1676,27 +1955,34 @@ class AssemblyBackend(AbstractBackend):
                 }
                 # Don't include in ret, because this may be empty.
                 self.sql_update(
-                    rs, "assembly.attendees", update, entity_key="assembly_id")
+                    rs, "assembly.attendees", update, entity_key="assembly_id"
+                )
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.assembly_concluded, assembly_id)
+                    rs, const.AssemblyLogCodes.assembly_concluded, assembly_id
+                )
             else:
                 raise ValueError(  # pragma: no cover
                     n_("Conclusion of assembly blocked by %(block)s."),
-                    {"block": blockers.keys()})
+                    {"block": blockers.keys()},
+                )
         return ret
 
     @internal
     @access("assembly")
-    def may_access_attachments(self, rs: RequestState,
-                               attachment_ids: Collection[int]) -> bool:
+    def may_access_attachments(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> bool:
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         if not attachment_ids:
             return True
         assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
         if len(assembly_ids) != 1:
-            raise ValueError(n_(  # TODO: coverage
-                "Can only access attachments from exactly one assembly at a time."))
+            raise ValueError(
+                n_(  # TODO: coverage
+                    "Can only access attachments from exactly one assembly at a time."
+                )
+            )
         return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
@@ -1713,16 +1999,17 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = data['assembly_id']
         if not self.is_presider(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Must have privileged access to add attachment."))
-        attachment = {k: v for k, v in data.items()
-                      if k in ASSEMBLY_ATTACHMENT_FIELDS}
-        version = {k: v for k, v in data.items()
-                   if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        attachment = {k: v for k, v in data.items() if k in ASSEMBLY_ATTACHMENT_FIELDS}
+        version = {
+            k: v for k, v in data.items() if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
+        }
         version['version_nr'] = 1
         version['ctime'] = now()
         with Atomizer(rs):
             if self.is_assembly_locked(rs, assembly_id):
-                raise ValueError(n_(
-                    "Cannot add attachment once the assembly has been locked."))  # TODO: coverage
+                raise ValueError(
+                    n_("Cannot add attachment once the assembly has been locked.")
+                )  # TODO: coverage
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
             version['attachment_id'] = new_id
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
@@ -1730,13 +2017,18 @@ class AssemblyBackend(AbstractBackend):
                 raise RuntimeError(n_("Something went wrong."))  # pragma: no cover
             if not self.get_attachment_store(rs).is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
-            self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
-                              assembly_id=assembly_id, change_note=version['title'])
+            self.assembly_log(
+                rs,
+                const.AssemblyLogCodes.attachment_added,
+                assembly_id=assembly_id,
+                change_note=version['title'],
+            )
         return new_id
 
     @access("assembly")
-    def delete_attachment_blockers(self, rs: RequestState,
-                                   attachment_id: int) -> DeletionBlockers:
+    def delete_attachment_blockers(
+        self, rs: RequestState, attachment_id: int
+    ) -> DeletionBlockers:
         """Determine what keeps an attachment from being deleted.
 
         Possible blockers:
@@ -1755,7 +2047,7 @@ class AssemblyBackend(AbstractBackend):
 
         attachment = self.get_attachment(rs, attachment_id)
         if self.is_assembly_locked(rs, attachment['assembly_id']):
-            blockers['assembly_is_locked'] = [attachment['assembly_id']]  # TODO: coverage
+            blockers['assembly_is_locked'] = [attachment['assembly_id']]  # TODO: cover
         if attachment['ballot_ids']:
             blockers['ballots'] = attachment['ballot_ids']
             if self.is_any_ballot_locked(rs, blockers['ballots']):
@@ -1768,27 +2060,38 @@ class AssemblyBackend(AbstractBackend):
         return blockers
 
     @access("assembly")
-    def delete_attachment(self, rs: RequestState, attachment_id: int,
-                          cascade: Optional[Collection[str]] = None,
-                          ) -> DefaultReturnCode:
+    def delete_attachment(
+        self,
+        rs: RequestState,
+        attachment_id: int,
+        cascade: Optional[Collection[str]] = None,
+    ) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
         if not self.is_presider(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_(
-                "Must have privileged access to delete attachment."))
+            raise PrivilegeError(
+                n_("Must have privileged access to delete attachment.")
+            )
         blockers = self.delete_attachment_blockers(rs, attachment_id)
         if "assembly_is_locked" in blockers:
-            raise DeletionImpossibleError(n_(  # TODO: coverage
-                "Cannot delete attachment once the assembly has been locked."))
+            raise DeletionImpossibleError(
+                n_(  # TODO: coverage
+                    "Cannot delete attachment once the assembly has been locked."
+                )
+            )
         if "ballot_is_locked" in blockers:
-            raise DeletionImpossibleError(n_(  # TODO: coverage
-                "Cannot delete attachment once any linked ballot has been locked."))
+            raise DeletionImpossibleError(
+                n_(  # TODO: coverage
+                    "Cannot delete attachment once any linked ballot has been locked."
+                )
+            )
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
-                rs.gettext("Assembly Attachment"), remaining_blockers)  # TODO: coverage
+                rs.gettext("Assembly Attachment"), remaining_blockers
+            )  # TODO: coverage
 
         ret = 1
         with Atomizer(rs):
@@ -1799,26 +2102,35 @@ class AssemblyBackend(AbstractBackend):
                     with Silencer(rs):
                         for ballot_id in current['ballot_ids']:
                             ret *= self.remove_attachment_ballot_link(
-                                rs, attachment_id, ballot_id)
+                                rs, attachment_id, ballot_id
+                            )
                 if "versions" in cascade:
-                    ret *= self.sql_delete(rs, "assembly.attachment_versions",
-                                           (attachment_id,), "attachment_id")
+                    ret *= self.sql_delete(
+                        rs,
+                        "assembly.attachment_versions",
+                        (attachment_id,),
+                        "attachment_id",
+                    )
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(
-                    rs, "assembly.attachments", attachment_id)
-                self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
-                                  assembly_id, change_note=latest_version['title'])
+                ret *= self.sql_delete_one(rs, "assembly.attachments", attachment_id)
+                self.assembly_log(
+                    rs,
+                    const.AssemblyLogCodes.attachment_removed,
+                    assembly_id,
+                    change_note=latest_version['title'],
+                )
             else:  # pragma: no cover
                 raise DeletionBlockedError(
-                    rs.gettext("Assembly Attachment"), blockers.keys())
+                    rs.gettext("Assembly Attachment"), blockers.keys()
+                )
         return ret
 
     @access("assembly")
-    def is_attachment_ballot_link_creatable(self, rs: RequestState,
-                                            attachment_id: int,
-                                            ballot_id: int) -> bool:
+    def is_attachment_ballot_link_creatable(
+        self, rs: RequestState, attachment_id: int, ballot_id: int
+    ) -> bool:
         """An attachment_ballot_link may be created if the ballot it links to is before
         its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -1826,9 +2138,9 @@ class AssemblyBackend(AbstractBackend):
         return not self.is_ballot_locked(rs, ballot_id)
 
     @access("assembly")
-    def is_attachment_ballot_link_deletable(self, rs: RequestState,
-                                            attachment_id: int,
-                                            ballot_id: int) -> bool:
+    def is_attachment_ballot_link_deletable(
+        self, rs: RequestState, attachment_id: int, ballot_id: int
+    ) -> bool:
         """An attachment_ballot_link can only be deleted if the ballot it links to is
         before its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -1836,69 +2148,91 @@ class AssemblyBackend(AbstractBackend):
         return not self.is_ballot_locked(rs, ballot_id)
 
     @access("assembly")
-    def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
-                                   ballot_id: int) -> DefaultReturnCode:
+    def add_attachment_ballot_link(
+        self, rs: RequestState, attachment_id: int, ballot_id: int
+    ) -> DefaultReturnCode:
         """Create a new association attachment <-> ballot."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         ballot_id = affirm(vtypes.ID, ballot_id)
         with Atomizer(rs):
             # This checks that attachment and ballot belong to the same assembly.
             assembly_id = self.get_assembly_id(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+                rs, attachment_id=attachment_id, ballot_id=ballot_id
+            )
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to add attachment link."))  # TODO: coverage
+                raise PrivilegeError(
+                    n_("Must have privileged access to add attachment link.")
+                )  # TODO: coverage
             if not self.is_attachment_ballot_link_creatable(
-                    rs, attachment_id, ballot_id):
-                raise ValueError(n_(
-                    "Cannot link attachment to ballot that has been locked."))
+                rs, attachment_id, ballot_id
+            ):
+                raise ValueError(
+                    n_("Cannot link attachment to ballot that has been locked.")
+                )
             ret = self.sql_insert(
-                rs, "assembly.attachment_ballot_links",
+                rs,
+                "assembly.attachment_ballot_links",
                 {'attachment_id': attachment_id, 'ballot_id': ballot_id},
-                drop_on_conflict=True)
+                drop_on_conflict=True,
+            )
             if ret:
                 version = self.get_latest_attachment_version(rs, attachment_id)
                 ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachment_ballot_link_created,
-                    assembly_id, persona_id=None,
-                    change_note=f"{version['title']} ({ballot['title']})")
+                    rs,
+                    const.AssemblyLogCodes.attachment_ballot_link_created,
+                    assembly_id,
+                    persona_id=None,
+                    change_note=f"{version['title']} ({ballot['title']})",
+                )
                 return ret
             else:
                 return -1  # TODO: coverage
 
     @access("assembly")
-    def remove_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
-                                      ballot_id: int) -> DefaultReturnCode:
+    def remove_attachment_ballot_link(
+        self, rs: RequestState, attachment_id: int, ballot_id: int
+    ) -> DefaultReturnCode:
         """Remove an association between an attachment and a ballot."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         ballot_id = affirm(vtypes.ID, ballot_id)
         with Atomizer(rs):
             # This checks that attachment and ballot belong to the same assembly.
             assembly_id = self.get_assembly_id(
-                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+                rs, attachment_id=attachment_id, ballot_id=ballot_id
+            )
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to delete attachment link."))  # TODO: coverage
+                raise PrivilegeError(
+                    n_("Must have privileged access to delete attachment link.")
+                )  # TODO: coverage
             if not self.is_attachment_ballot_link_deletable(
-                    rs, attachment_id, ballot_id):
-                raise ValueError(n_(
-                    "Cannot unlink attachment from ballot that has been locked."))  # TODO: coverage
-            query = ("DELETE FROM assembly.attachment_ballot_links"
-                     " WHERE attachment_id = %s AND ballot_id = %s")
-            ret = self.query_exec(rs, query, (attachment_id, ballot_id))
+                rs, attachment_id, ballot_id
+            ):
+                raise ValueError(
+                    n_("Cannot unlink attachment from ballot that has been locked.")
+                )  # TODO: coverage
+            query = """
+                DELETE FROM assembly.attachment_ballot_links
+                WHERE attachment_id = %(attachment_id)s AND ballot_id = %(ballot_id)s
+            """
+            params = {"attachment_id": attachment_id, "ballot_id": ballot_id}
+            ret = self.query_exec(rs, query, params)
             if ret:
                 version = self.get_latest_attachment_version(rs, attachment_id)
                 ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachment_ballot_link_deleted,
-                    assembly_id, persona_id=None,
-                    change_note=f"{version['title']} ({ballot['title']})")
+                    rs,
+                    const.AssemblyLogCodes.attachment_ballot_link_deleted,
+                    assembly_id,
+                    persona_id=None,
+                    change_note=f"{version['title']} ({ballot['title']})",
+                )
             return ret
 
     @access("assembly")
-    def set_ballot_attachments(self, rs: RequestState, ballot_id: int,
-                               attachment_ids: Collection[int]) -> DefaultReturnCode:
+    def set_ballot_attachments(
+        self, rs: RequestState, ballot_id: int, attachment_ids: Collection[int]
+    ) -> DefaultReturnCode:
         """Set the attachments linked to an assembly.
 
         This helper takes care about which attachment links are present, to add or
@@ -1912,37 +2246,42 @@ class AssemblyBackend(AbstractBackend):
             new_attachments = attachment_ids - current_attachments
             for attachment_id in xsorted(new_attachments):
                 ret *= self.add_attachment_ballot_link(
-                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id
+                )
             deleted_attachments = current_attachments - attachment_ids
             for attachment_id in xsorted(deleted_attachments):
                 ret *= self.remove_attachment_ballot_link(
-                    rs, attachment_id=attachment_id, ballot_id=ballot_id)
+                    rs, attachment_id=attachment_id, ballot_id=ballot_id
+                )
             return ret
 
     @access("assembly")
-    def are_attachment_versions_creatable(self, rs: RequestState,
-                                          attachment_ids: Collection[int],
-                                          ) -> dict[int, bool]:
+    def are_attachment_versions_creatable(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> dict[int, bool]:
         """An attachment_version may be created at any time during an assembly."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
             are_assemblies_locked = self.are_assemblies_locked(rs, assembly_ids)
-            return {attachment_id: not are_assemblies_locked[attachment["assembly_id"]]
-                    for attachment_id, attachment in attachments.items()}
+            return {
+                attachment_id: not are_assemblies_locked[attachment["assembly_id"]]
+                for attachment_id, attachment in attachments.items()
+            }
 
     class _IsAttachmentVersionCreatableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
     is_attachment_version_creatable: _IsAttachmentVersionCreatableProtocol
     is_attachment_version_creatable = singularize(
-        are_attachment_versions_creatable, "attachment_ids", "attachment_id")
+        are_attachment_versions_creatable, "attachment_ids", "attachment_id"
+    )
 
     @access("assembly")
-    def are_attachment_versions_deletable(self, rs: RequestState,
-                                          attachment_ids: Collection[int],
-                                          ) -> dict[int, bool]:
+    def are_attachment_versions_deletable(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> dict[int, bool]:
         """An attachment_version must not be deleted if its attachment has at least one
         attachment_ballot_link which voting phase had started."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
@@ -1954,26 +2293,32 @@ class AssemblyBackend(AbstractBackend):
                 att_id: not (
                     assembly_locks[att['assembly_id']]
                     or self.is_any_ballot_locked(rs, att['ballot_ids'])
-                ) for att_id, att in attachments.items()}
+                )
+                for att_id, att in attachments.items()
+            }
 
     class _IsAttachmentVersionDeletableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
     is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol
     is_attachment_version_deletable = singularize(
-        are_attachment_versions_deletable, "attachment_ids", "attachment_id")
+        are_attachment_versions_deletable, "attachment_ids", "attachment_id"
+    )
 
     @internal
-    def _get_latest_attachments_versions(self, rs: RequestState,
-                                         attachment_ids: Collection[int],
-                                         timestamp: Optional[datetime.datetime] = None,
-                                         ) -> CdEDBObjectMap:
+    def _get_latest_attachments_versions(
+        self,
+        rs: RequestState,
+        attachment_ids: Collection[int],
+        timestamp: Optional[datetime.datetime] = None,
+    ) -> CdEDBObjectMap:
         """Helper to get only the latest (non-deleted) version of attachments.
 
         :param timestamp: If given, retrieve the latest version before then.
         :returns: Dict[attachment_id, version]
         """
-        base_query = """SELECT {select_keys}
+        base_query = """
+            SELECT {select_keys}
             FROM (
                 SELECT attachment_id, MAX(version_nr) AS version_nr
                 FROM assembly.attachment_versions
@@ -1983,33 +2328,38 @@ class AssemblyBackend(AbstractBackend):
             LEFT OUTER JOIN assembly.attachment_versions AS version_data
             ON max_version.attachment_id = version_data.attachment_id
                 AND max_version.version_nr = version_data.version_nr
-            WHERE max_version.attachment_id = ANY(%s)"""
-        # Be careful here, because the `attachment_ids` param needs to be at the end.
-        params: list[Any] = []
+            WHERE max_version.attachment_id = ANY(%(attachment_ids)s)
+        """
+        params: dict[str, DatabaseValue_s] = {"attachment_ids": attachment_ids}
         conditions = ["dtime IS NULL"]
         if timestamp:
-            conditions.append("ctime < %s")
-            params.append(timestamp)
+            conditions.append("ctime < %(timestamp)s")
+            params["timestamp"] = timestamp
         query = base_query.format(
             select_keys=', '.join(
-                f'version_data.{k}' for k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS),
-            condition=" AND ".join(conditions))
-        data = self.query_all(rs, query, params + [attachment_ids])
+                f'version_data.{k}' for k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
+            ),
+            condition=" AND ".join(conditions),
+        )
+        data = self.query_all(rs, query, params)
         return {e['attachment_id']: e for e in data}
 
     @access("assembly")
-    def get_attachments_versions(self, rs: RequestState,
-                                 attachment_ids: Collection[int],
-                                 ) -> dict[int, CdEDBObjectMap]:
+    def get_attachments_versions(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         ret: dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
         if not self.may_access_attachments(rs, attachment_ids):
             raise PrivilegeError()
         data = self.sql_select(
-            rs, "assembly.attachment_versions",
-            ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
-            entity_key="attachment_id")
+            rs,
+            "assembly.attachment_versions",
+            ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+            attachment_ids,
+            entity_key="attachment_id",
+        )
         for entry in data:
             ret[entry["attachment_id"]][entry["version_nr"]] = entry
 
@@ -2017,28 +2367,33 @@ class AssemblyBackend(AbstractBackend):
 
     class _GetAttachmentVersionsProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
+
     get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
-        get_attachments_versions, "attachment_ids", "attachment_id")
+        get_attachments_versions, "attachment_ids", "attachment_id"
+    )
 
     @access("assembly")
-    def get_attachment_version(self, rs: RequestState, attachment_id: int,
-                               version_nr: int) -> CdEDBObject:
+    def get_attachment_version(
+        self, rs: RequestState, attachment_id: int, version_nr: int
+    ) -> CdEDBObject:
         """Retrieve a given attachment version."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         version_nr = affirm(vtypes.ID, version_nr)
         if not self.may_access_attachments(rs, [attachment_id]):
             raise PrivilegeError()
 
-        query = (f"SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}"
-                 f" FROM assembly.attachment_versions WHERE attachment_id = %s"
-                 f" AND version_nr = %s")
-        params = (attachment_id, version_nr)
+        query = f"""
+            SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}
+            FROM assembly.attachment_versions WHERE attachment_id = %(attachment_id)s
+            AND version_nr = %(version_nr)s
+        """
+        params = {"attachment_id": attachment_id, "version_nr": version_nr}
         return self.query_one(rs, query, params) or {}
 
     @access("assembly")
-    def get_latest_attachments_version(self, rs: RequestState,
-                                       attachment_ids: Collection[int],
-                                       ) -> CdEDBObjectMap:
+    def get_latest_attachments_version(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> CdEDBObjectMap:
         """Get the most recent version for the given attachments.
 
         This is independent from the context in which the attachment is viewed, in
@@ -2051,12 +2406,15 @@ class AssemblyBackend(AbstractBackend):
 
     class _GetLatestVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
+
     get_latest_attachment_version: _GetLatestVersionProtocol = singularize(
-        get_latest_attachments_version, "attachment_ids", "attachment_id")
+        get_latest_attachments_version, "attachment_ids", "attachment_id"
+    )
 
     @access("assembly")
     def get_definitive_attachments_version(
-            self, rs: RequestState, ballot_id: int) -> CdEDBObjectMap:
+        self, rs: RequestState, ballot_id: int
+    ) -> CdEDBObjectMap:
         """Get the definitive version of all attachments for a given ballot.
 
         The definitive version of an attachment depends on the context in which the
@@ -2079,7 +2437,8 @@ class AssemblyBackend(AbstractBackend):
                 if self.is_ballot_locked(rs, ballot_id):
                     ballot = self.get_ballot(rs, ballot_id)
                     return self._get_latest_attachments_versions(
-                        rs, attachment_ids, ballot['vote_begin'])
+                        rs, attachment_ids, ballot['vote_begin']
+                    )
                 else:
                     return self._get_latest_attachments_versions(rs, attachment_ids)
             return {}
@@ -2088,13 +2447,16 @@ class AssemblyBackend(AbstractBackend):
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
         """Is an attachment file still referenced by some version?"""
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
-        query = ("SELECT COUNT(*) FROM assembly.attachment_versions"
-                 " WHERE file_hash = %s AND dtime IS NULL")
+        query = """
+            SELECT COUNT(*) FROM assembly.attachment_versions
+            WHERE file_hash = %s AND dtime IS NULL
+        """
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("assembly")
-    def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
-                               ) -> DefaultReturnCode:
+    def add_attachment_version(
+        self, rs: RequestState, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Add a new version of an attachment.
 
         The actual file has already been stored by the frontend."""
@@ -2103,15 +2465,23 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(  # TODO: coverage
-                    "Must have privileged access to add attachment version."))
+                raise PrivilegeError(
+                    n_(  # TODO: coverage
+                        "Must have privileged access to add attachment version."
+                    )
+                )
             if not self.is_attachment_version_creatable(rs, attachment_id):
-                raise ValueError(n_(
-                    "Cannot add attachment version once the assembly has been locked."))  # TODO: coverage
+                raise ValueError(
+                    n_(
+                        "Cannot add attachment version once the assembly has been locked."
+                    )
+                )  # TODO: coverage
             # Take care to include deleted attachment versions here
-            query = ("SELECT MAX(version_nr) AS max_version_nr"
-                     " FROM assembly.attachment_versions WHERE attachment_id = %s")
-            max_version = self.query_one(rs, query, (attachment_id, ))
+            query = """
+                SELECT MAX(version_nr) AS max_version_nr
+                FROM assembly.attachment_versions WHERE attachment_id = %s
+            """
+            max_version = self.query_one(rs, query, (attachment_id,))
             if max_version is None:  # pragma: no cover
                 raise ValueError(n_("Attachment does not exist."))
             version_nr = max_version["max_version_nr"] + 1
@@ -2121,94 +2491,129 @@ class AssemblyBackend(AbstractBackend):
             if not self.get_attachment_store(rs).is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
             self.assembly_log(
-                rs, const.AssemblyLogCodes.attachment_version_added,
-                assembly_id, change_note=f"{data['title']}: Version {version_nr}")
+                rs,
+                const.AssemblyLogCodes.attachment_version_added,
+                assembly_id,
+                change_note=f"{data['title']}: Version {version_nr}",
+            )
         return ret
 
     @access("assembly")
-    def change_attachment_version(self, rs: RequestState, data: CdEDBObject,
-                                  ) -> DefaultReturnCode:
+    def change_attachment_version(
+        self, rs: RequestState, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Change metadata of an attachment version."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to change attachment version."))  # TODO: coverage
+                raise PrivilegeError(
+                    n_("Must have privileged access to change attachment version.")
+                )  # TODO: coverage
             if not self.is_attachment_version_deletable(rs, attachment_id):
-                raise ValueError(n_(  # TODO: coverage
-                    "Cannot change attachment version once the assembly or"
-                    " any linked ballots have been locked."))
-            old_state = self.get_attachment_version(rs, attachment_id,
-                                                    data['version_nr'])
+                raise ValueError(
+                    n_(  # TODO: coverage
+                        "Cannot change attachment version once the assembly or"
+                        " any linked ballots have been locked."
+                    )
+                )
+            old_state = self.get_attachment_version(
+                rs, attachment_id, data['version_nr']
+            )
             if old_state['dtime']:  # TODO: coverage
                 raise ValueError(n_("Deleted attachment version can not be changed."))
-            attachment_id = data.pop('attachment_id')
-            version_nr = data.pop('version_nr')
-            keys = data.keys()
-            query = (f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
-                     f" ROW({', '.join(('%s',) * len(keys))})"
-                     f" WHERE attachment_id = %s AND version_nr = %s")
-            params = tuple(data[key] for key in keys) + (attachment_id, version_nr)
-            ret = self.query_exec(rs, query, params)
+            keys = xsorted(set(data.keys()) - {'attachment_id', 'version_nr'})
+            query = f"""
+                UPDATE assembly.attachment_versions
+                SET ({', '.join(keys)}) = ROW({", ".join(f"%({key})s" for key in keys)})
+                WHERE attachment_id = %(attachment_id)s AND version_nr = %(version_nr)s
+            """
+            ret = self.query_exec(rs, query, data)
 
             # Use title from current verstion
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             self.assembly_log(
-                rs, const.AssemblyLogCodes.attachment_version_changed, assembly_id,
-                change_note=f"{latest_version['title']}: Version {version_nr}")
+                rs,
+                const.AssemblyLogCodes.attachment_version_changed,
+                assembly_id,
+                change_note=f"{latest_version['title']}: Version {data['version_nr']}",
+            )
         return ret
 
     @access("assembly")
-    def remove_attachment_version(self, rs: RequestState, attachment_id: int,
-                                  version_nr: int) -> DefaultReturnCode:
+    def remove_attachment_version(
+        self, rs: RequestState, attachment_id: int, version_nr: int
+    ) -> DefaultReturnCode:
         """Remove a version of an attachment. Leaves other versions intact."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         version_nr = affirm(vtypes.ID, version_nr)
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(  # TODO: coverage
-                    "Must have privileged access to remove attachment version."))
+                raise PrivilegeError(
+                    n_(  # TODO: coverage
+                        "Must have privileged access to remove attachment version."
+                    )
+                )
             if not self.is_attachment_version_deletable(rs, attachment_id):
-                raise ValueError(n_(  # TODO: coverage
-                    "Cannot remove attachment version once the assembly or"
-                    " any linked ballots have been locked."))
+                raise ValueError(
+                    n_(  # TODO: coverage
+                        "Cannot remove attachment version once the assembly or"
+                        " any linked ballots have been locked."
+                    )
+                )
             versions = self.get_attachment_versions(rs, attachment_id)
             if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))  # TODO: coverage
             if versions[version_nr]['dtime']:
-                raise ValueError(n_("This version has already been deleted."))  # TODO: coverage
+                raise ValueError(
+                    n_("This version has already been deleted.")
+                )  # TODO: coverage
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['num_versions'] <= 1:
-                raise ValueError(n_(
-                    "Cannot remove the last remaining version of an attachment."))
+                raise ValueError(
+                    n_("Cannot remove the last remaining version of an attachment.")
+                )
             deletor: dict[str, Union[int, datetime.datetime, None]] = {
+                'attachment_id': attachment_id,
+                'version_nr': version_nr,
                 'dtime': now(),
                 'title': None,
                 'authors': None,
                 'filename': None,
             }
 
-            keys = tuple(deletor.keys())
-            setters = ", ".join(f"{k} = %s" for k in keys)
-            query = (f"UPDATE assembly.attachment_versions SET {setters}"
-                     f" WHERE attachment_id = %s AND version_nr = %s")
-            params = tuple(deletor[k] for k in keys) + (attachment_id, version_nr)
-            ret = self.query_exec(rs, query, params)
+            setters = ", ".join(
+                f"{k} = %({k})s"
+                for k in set(deletor.keys()) - {'attachment_id', 'version_nr'}
+            )
+            query = f"""
+                UPDATE assembly.attachment_versions SET {setters}
+                WHERE attachment_id = %(attachment_id)s AND version_nr = %(version_nr)s
+            """
+            ret = self.query_exec(rs, query, deletor)
             if ret:
                 change_note = f"{versions[version_nr]['title']}: Version {version_nr}"
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachment_version_removed,
-                    assembly_id, change_note=change_note)
-        self.get_attachment_store(rs).forget_one(rs, self.get_attachment_usage,
-                                                 versions[version_nr]['file_hash'])
+                    rs,
+                    const.AssemblyLogCodes.attachment_version_removed,
+                    assembly_id,
+                    change_note=change_note,
+                )
+        self.get_attachment_store(rs).forget_one(
+            rs, self.get_attachment_usage, versions[version_nr]['file_hash']
+        )
         return ret
 
     @access("assembly")
-    def list_attachments(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                         ballot_id: Optional[int] = None) -> set[int]:
+    def list_attachments(
+        self,
+        rs: RequestState,
+        *,
+        assembly_id: Optional[int] = None,
+        ballot_id: Optional[int] = None,
+    ) -> set[int]:
         """List all files attached to an assembly/ballot.
 
         Exactly one of the inputs has to be provided.
@@ -2223,25 +2628,38 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError()
 
         if assembly_id is not None:
-            data = self.sql_select(rs, "assembly.attachments", ("id",),
-                                   (assembly_id,), entity_key="assembly_id")
+            data = self.sql_select(
+                rs,
+                "assembly.attachments",
+                ("id",),
+                (assembly_id,),
+                entity_key="assembly_id",
+            )
         else:
             assert ballot_id is not None
             data = self.sql_select(
-                rs, "assembly.attachment_ballot_links", ("attachment_id",),
-                (ballot_id,), entity_key="ballot_id")
+                rs,
+                "assembly.attachment_ballot_links",
+                ("attachment_id",),
+                (ballot_id,),
+                entity_key="ballot_id",
+            )
 
         return {unwrap(e) for e in data}
 
-    def _get_attachment_infos(self, rs: RequestState,
-                              attachment_ids: Collection[int],
-                              ) -> CdEDBObjectMap:
+    def _get_attachment_infos(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> CdEDBObjectMap:
         """Internal helper to retrieve attachment data without access check."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        query = f"""SELECT
-                {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
-                           ('num_versions', 'latest_version_nr',
-                            'COALESCE(ballot_ids, array[]::integer[]) AS ballot_ids'))}
+        fields = ASSEMBLY_ATTACHMENT_FIELDS + (
+            'num_versions',
+            'latest_version_nr',
+            'COALESCE(ballot_ids, array[]::integer[]) AS ballot_ids',
+        )
+        query = f"""
+            SELECT
+                {', '.join(fields)}
             FROM (
                 (
                     SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
@@ -2263,15 +2681,17 @@ class AssemblyBackend(AbstractBackend):
                     FROM assembly.attachment_ballot_links
                     GROUP BY attachment_id
                 ) AS ballot_links ON attachments.id = ballot_links.attachment_id
-            )"""
+            )
+        """
         params = (attachment_ids,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
         return ret
 
     @access("assembly")
-    def get_attachments(self, rs: RequestState,
-                        attachment_ids: Collection[int]) -> CdEDBObjectMap:
+    def get_attachments(
+        self, rs: RequestState, attachment_ids: Collection[int]
+    ) -> CdEDBObjectMap:
         """Retrieve data on attachments"""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         if not self.may_access_attachments(rs, attachment_ids):
@@ -2280,12 +2700,15 @@ class AssemblyBackend(AbstractBackend):
 
     class _GetAttachmentProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
+
     get_attachment: _GetAttachmentProtocol = singularize(
-        get_attachments, "attachment_ids", "attachment_id")
+        get_attachments, "attachment_ids", "attachment_id"
+    )
 
     @access("assembly")
-    def group_ballots_by_config(self, rs: RequestState, assembly_id: int,
-                                ) -> dict[BallotConfiguration, set[int]]:
+    def group_ballots_by_config(
+        self, rs: RequestState, assembly_id: int
+    ) -> dict[BallotConfiguration, set[int]]:
         """Group ballot ids by their configuration."""
         query = """
             SELECT
@@ -2300,10 +2723,12 @@ class AssemblyBackend(AbstractBackend):
         params = (assembly_id,)
         return {
             BallotConfiguration(
-                e['vote_begin'], e['vote_end'], e['vote_extension_end'],
-                e['abs_quorum'], e['rel_quorum'],
-            ):
-                set(e['ballot_ids'])
+                e['vote_begin'],
+                e['vote_end'],
+                e['vote_extension_end'],
+                e['abs_quorum'],
+                e['rel_quorum'],
+            ): set(e['ballot_ids'])
             for e in self.query_all(rs, query, params)
         }
 
@@ -2332,27 +2757,23 @@ class AssemblyBackend(AbstractBackend):
         for e in self.query_all(rs, query, params):
             if e['ended']:
                 concluded.update({
-                    ballot_id: ballots[ballot_id]
-                    for ballot_id in e['ballot_ids']
+                    ballot_id: ballots[ballot_id] for ballot_id in e['ballot_ids']
                 })
             elif not e['started']:
                 upcoming.update({
-                    ballot_id: ballots[ballot_id]
-                    for ballot_id in e['ballot_ids']
+                    ballot_id: ballots[ballot_id] for ballot_id in e['ballot_ids']
                 })
             elif e['extended']:
                 extended.update({
-                    ballot_id: ballots[ballot_id]
-                    for ballot_id in e['ballot_ids']
+                    ballot_id: ballots[ballot_id] for ballot_id in e['ballot_ids']
                 })
             else:
                 current.update({
-                    ballot_id: ballots[ballot_id]
-                    for ballot_id in e['ballot_ids']
+                    ballot_id: ballots[ballot_id] for ballot_id in e['ballot_ids']
                 })
 
         ret = GroupedBallots(
-            concluded=concluded, extended=extended, current=current, upcoming=upcoming,
+            concluded=concluded, extended=extended, current=current, upcoming=upcoming
         )
 
         if len(ballots) != len(ret.all):

@@ -45,7 +45,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators
+from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.validation import validate
 from cdedb.config import Config
@@ -446,25 +446,36 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     # This would not be hard to extend to an even number of columns.
                     # However, let's keep it simple while we do not need it.
                     raise RuntimeError(n_("Need to specify exactly two columns."))
+                if query.scope != QueryScope.registration:
+                    raise RuntimeError(n_("Operator only allowed for registration query."))
+                if columns != ["checkin_at.checkin_time", "checkin_at.checkout_time"]:
+                    raise RuntimeError(n_("Operator only alloed for checkin times."))
                 phrase = "/* {} */ "
                 subphrase = f"""
                     {columns[0]} < %s AND ({columns[1]} > %s OR {columns[1]} IS NULL)
                 """
+                exists_phrase = f"""
+                    EXISTS (
+                        SELECT * FROM event.checkin_periods AS checkin_at
+                        WHERE registration_id = reg.id AND {subphrase}
+                    )
+                """
+                not_exists_phrase = f"NOT {exists_phrase}"
                 if operator == _ops.ranged_at:
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))
                 elif operator == _ops.ranged_notat:
-                    phrase += "NOT(" + subphrase + ")"
+                    phrase += not_exists_phrase
                     params.extend((value,) * 2 * len(columns))
                 else:
                     if operator == _ops.ranged_oneof:
                         phrase += " OR ".join((subphrase,) * len(value))
                     elif operator == _ops.ranged_noneof:
-                        phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
+                        phrase += " AND ".join((not_exists_phrase,) * len(value))
                     elif operator == _ops.ranged_allof:
-                        phrase += " AND ".join((subphrase,) * len(value))
+                        phrase += " AND ".join((exists_phrase,) * len(value))
                     elif operator == _ops.ranged_notallof:
-                        phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
+                        phrase += " OR ".join((not_exists_phrase,) * len(value))
                     else:
                         raise RuntimeError(n_("Impossible."))
                     extension: list[str] = []
