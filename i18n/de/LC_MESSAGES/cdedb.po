@@ -1256,6 +1256,10 @@ msgstr "Kurse sind nur in Veranstaltungen mit Kursschienen möglich."
 msgid "Only lodgement groups from exactly one event allowed!"
 msgstr "Nur Unterkunftsgruppen eines einzelnen Events sind erlaubt!"
 
+#: cdedb/backend/event/lodgement.py:105 cdedb/backend/event/lodgement.py:157
+msgid "Not privileged to modify lodgement groups."
+msgstr "Nicht die notwendige Zugriffsberechtigung um Unterkunftsgruppen zu ändern."
+
 #: cdedb/backend/event/lodgement.py:279 cdedb/frontend/event/lodgement.py:712
 msgid "Invalid lodgement group."
 msgstr "Ungültige Unterkunftsgruppe"
