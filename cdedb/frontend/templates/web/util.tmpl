@@ -10,7 +10,7 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js', 'cdedb_searchregistration.js', 'cdedb_search_event.js') %}
+        {%- if script in ('cdedb_helper.js', 'cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js', 'cdedb_searchregistration.js', 'cdedb_search_event.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
@@ -698,7 +698,7 @@
     {% if selectize %}
         {% if not jshint %}{{ raise_for_test("jshint not set for selectize.") }}{% endif %}
         <script nonce="{{ csp_nonce }}">
-            $("#{{ anid }}").selectize();
+            $("#{{ anid }}").cdedbSelectize();
         </script>
     {% endif %}
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
