@@ -87,10 +87,10 @@ class FeeStatsOneFee:
 
 @dataclasses.dataclass
 class FeeStatsOneKind:
-    by_fee: dict[vtypes.ProtoID, FeeStatsOneFee] = \
+    by_fee: dict[vtypes.ID, FeeStatsOneFee] = \
         dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneFee))
 
-    def __getitem__(self, item: vtypes.ProtoID) -> FeeStatsOneFee:
+    def __getitem__(self, item: vtypes.ID) -> FeeStatsOneFee:
         return self.by_fee[item]
 
     @cached_property
@@ -1714,7 +1714,7 @@ class EventRegistrationBackend(EventBaseBackend):
             if not event.fees[fee_id].is_personalized():
                 raise ValueError
             personalized_fee = models.PersonalizedFee(
-                id=vtypes.ProtoID(-1),  # Placeholder id.
+                id=vtypes.ID(-1),  # Placeholder id.
                 registration_id=registration_id, fee_id=fee_id, amount=amount,
             )
             ret = self.query_exec(rs, *personalized_fee.get_query())

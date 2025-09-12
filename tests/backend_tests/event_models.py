@@ -18,7 +18,7 @@ class TestEventModels(BackendTest):
         event_id = 1
 
         expectation = models.Event(
-            id=vtypes.ProtoID(1),
+            id=vtypes.ID(1),
             title="Große Testakademie 2222",
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
@@ -58,7 +58,7 @@ class TestEventModels(BackendTest):
             parts={
                 1: models.EventPart(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Warmup",
                     shortname="Wu",
                     part_begin=datetime.date(2222, 2, 2),
@@ -69,7 +69,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventPart(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Erste Hälfte",
                     shortname="1.H.",
                     part_begin=datetime.date(2222, 11, 1),
@@ -80,7 +80,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventPart(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Zweite Hälfte",
                     shortname="2.H.",
                     part_begin=datetime.date(2222, 11, 11),
@@ -94,7 +94,7 @@ class TestEventModels(BackendTest):
             tracks={
                 1: models.CourseTrack(
                     id=1,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
                     num_choices=4,
@@ -104,7 +104,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CourseTrack(
                     id=2,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
                     num_choices=1,
@@ -114,7 +114,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CourseTrack(
                     id=3,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(3),
+                    part_id=vtypes.ID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
                     num_choices=3,
@@ -254,7 +254,7 @@ class TestEventModels(BackendTest):
             custom_query_filters={
                 1: models.CustomQueryFilter(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bälle oder Kind?",
                     notes=None,
@@ -265,7 +265,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CustomQueryFilter(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Kind oder Bälle?",
                     notes=None,
@@ -276,7 +276,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CustomQueryFilter(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Alle Notizen",
                     notes=None,
@@ -287,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.CustomQueryFilter(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bad Combo!",
                     notes=None,
@@ -298,7 +298,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.CustomQueryFilter(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Extrem wichtig!",
                     notes="Ups, hätte ich das Feld nicht löschen sollen?",
@@ -417,7 +417,7 @@ class TestEventModels(BackendTest):
         self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
-        event_id = vtypes.ProtoID(4)
+        event_id = vtypes.ID(4)
 
         expectation = models.Event(
             id=event_id,
@@ -537,7 +537,7 @@ class TestEventModels(BackendTest):
             fees={
                 17: models.EventFee(
                     id=17,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    event_id=event_id,
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -553,7 +553,7 @@ class TestEventModels(BackendTest):
                     shortname="1.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 2: models.PartGroup(
                     id=2,  # type: ignore[arg-type]
@@ -562,7 +562,7 @@ class TestEventModels(BackendTest):
                     shortname="2.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 3: models.PartGroup(
                     id=3,  # type: ignore[arg-type]
@@ -571,7 +571,7 @@ class TestEventModels(BackendTest):
                     shortname="OW",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 9),  # type: ignore[arg-type]
+                    part_ids={6, 9},
                 ),
                 4: models.PartGroup(
                     id=4,  # type: ignore[arg-type]
@@ -580,7 +580,7 @@ class TestEventModels(BackendTest):
                     shortname="WS",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
                 5: models.PartGroup(
                     id=5,  # type: ignore[arg-type]
@@ -589,7 +589,7 @@ class TestEventModels(BackendTest):
                     shortname="KA",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(8, 11),  # type: ignore[arg-type]
+                    part_ids={8, 11},
                 ),
                 6: models.PartGroup(
                     id=6,  # type: ignore[arg-type]
@@ -598,7 +598,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 1H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 7: models.PartGroup(
                     id=7,  # type: ignore[arg-type]
@@ -607,7 +607,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 2H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 10: models.PartGroup(
                     id=10,  # type: ignore[arg-type]
@@ -616,7 +616,7 @@ class TestEventModels(BackendTest):
                     shortname="ML W",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mailinglist_link,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
             },
             track_groups={

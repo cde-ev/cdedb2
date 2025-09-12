@@ -109,6 +109,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'pass_extensions': ATTACHMENT_EXTENSIONS_CONVERT[
                 db_list.attachment_policy],
             'pass_types': ATTACHMENT_MIME_CONVERT[db_list.attachment_policy],
+            'bounce_notify_owner_on_bounce_increment': db_list.notify_owner_on_bounce,
         }
         desired_templates = {
 

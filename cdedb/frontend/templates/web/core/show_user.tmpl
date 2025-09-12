@@ -656,15 +656,16 @@ BIC:                {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck:   {{ reference }}
 
-Bei Überweisungen aus dem Ausland achte bitte darauf, dass der
-Empfänger keine Gebühren bezahlen muss.
+Bei Überweisungen aus dem Ausland achte bitte darauf, dass der Empfänger
+keine Gebühren bezahlen muss.
 
 Nähere Informationen gibt es auf:
 https://www.cde-ev.de/faq/mitglied/
 
-Sobald deine Überweisung angekommen ist und eingetragen wurde, erhältst
-du automatisch eine Bestätigung per E-Mail und bist dann sofort wieder
-Mitglied.</pre>
+Sobald deine Überweisung angekommen ist und eingetragen wurde, erhältst du
+automatisch eine Bestätigung per E-Mail
+{%- if not data["is_member"] %} und bist dann sofort wieder Mitglied{% endif %}.
+</pre>
         {% endif %}
     </div>
 

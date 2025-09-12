@@ -245,7 +245,7 @@ def work(
     # Order matters here:
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
-        'event.part_groups', 'event.part_group_parts',
+        models.PartGroup.database_table, 'event.part_group_parts',
         'event.courses', 'event.course_tracks', 'event.course_segments',
         'event.orgas', 'event.field_definitions', 'event.event_fees',
         'event.lodgement_groups', 'event.lodgements', 'event.registrations',

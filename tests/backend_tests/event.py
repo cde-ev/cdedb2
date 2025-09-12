@@ -36,9 +36,8 @@ from cdedb.common.exceptions import (
     PartialImportError,
     PrivilegeError,
 )
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
@@ -808,6 +807,52 @@ class TestEventBackend(BackendTest):
 
         expectation -= {track_id}
         self.assertEqual(expectation, event.tracks.keys())
+
+    @as_users("emilia")
+    def test_aposteriori_part_creation(self) -> None:
+        event_id = 4
+
+        self.assertTrue(self.event.list_registrations(self.key, event_id))
+
+        regs = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, event_id))
+        event = self.event.get_event(self.key, event_id)
+
+        new_part = {
+            'title': "Abreise",
+            'shortname': "D",
+            'part_begin': datetime.date(2222, 11, 11),
+            'part_end': datetime.date(2222, 12, 12),
+        }
+        update_event = {
+            'parts': {
+                -1: new_part,
+            },
+        }
+        self.event.set_event(self.key, event_id, update_event)
+
+        new_part['id'] = new_part_id = 1001
+        new_part['event_id'] = event_id
+        new_part['tracks'] = {}
+        new_part['part_groups'] = {}
+        new_part['waitlist_field_id'] = new_part['camping_mat_field_id'] = None
+
+        for reg in regs.values():
+            reg['parts'][new_part_id] = {
+                'status': const.RegistrationPartStati.not_applied,
+                'lodgement_id': None,
+                'is_camping_mat': False,
+                'part_id': new_part_id,
+                'registration_id': reg['id'],
+            }
+
+        new_part_obj = models.EventPart.from_database(new_part)
+        event.parts[new_part_id] = new_part_obj
+
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
+        self.assertEqual(event.as_dict(), self.event.get_event(self.key, event_id).as_dict())
+        self.assertEqual(event, self.event.get_event(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self) -> None:
@@ -4159,67 +4204,49 @@ class TestEventBackend(BackendTest):
 
         # Setting is not allowed for non-privileged users.
         with self.assertRaises(PrivilegeError):
-            self.event.set_part_groups(ANONYMOUS, event_id, {})
+            self.event.add_part_group(ANONYMOUS, event_id, {})
         with self.switch_user("garcia"):
             with self.assertRaises(PrivilegeError):
-                self.event.set_part_groups(self.key, event_id, {})
+                self.event.add_part_group(self.key, event_id, {})
 
-        # Empty setter just returns 1.
-        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
-
-        new_part_group_id = self.event.set_part_groups(
-            self.key, event_id, {-1: new_part_group})
+        new_part_group_id = self.event.add_part_group(
+            self.key, event_id, new_part_group)  # id 1001
         self.assertTrue(new_part_group_id)
 
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+        # we require shortname and title to be unique
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, new_part_group)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['title'] = "All"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
         data['title'] = "All"
-        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+        self.event.add_part_group(self.key, event_id, data)  # id 1002
 
-        # Simultaneous deletion and recreation of part group with same name works.
-        self.event.set_part_groups(
-            self.key, event_id, {1001: None, -1: new_part_group},  # id 1006
-        )
-
-        # Switching of shortnames for exisitng groups is also possible.
-        setter = {
-            1005: {'shortname': new_part_group['shortname']},
-            1006: {'shortname': data['shortname']},
-        }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
         part_group_expectation.update({
-            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
-            1006: {**new_part_group, **setter[1006],
-                   **{'event_id': event_id, 'id': 1006}},
+            1001: {**new_part_group, **{'event_id': event_id, 'id': 1001}},
+            1002: {**data, **{'event_id': event_id, 'id': 1002}},
         })
 
-        # Update and delete an existing group.
+        # Update an existing group.
         update = {
-            1: {
-                'notes': "Pack explosives for New Years!",
-            },
-            4: None,
-            1006: {
-                'part_ids': set(xsorted(event.parts.keys())[:len(event.parts) // 2]),
-            },
+            'notes': "Pack explosives for New Years!",
         }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
-        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        self.assertTrue(self.event.change_part_group(self.key, 1, update))
+        part_group_expectation[1].update(update)
+
+        # Delete an existing group
+        self.assertTrue(self.event.delete_part_group(self.key, 4))
         del part_group_expectation[4]
-        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
         reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
         for pg in reality.values():
@@ -4231,15 +4258,14 @@ class TestEventBackend(BackendTest):
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
-        # ValueError when creating or updating a part group with a non existing part.
+            self.event.change_part_group(self.key, NON_EXISTING_ID, {"id": NON_EXISTING_ID})
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id,
-                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+            self.event.delete_part_group(self.key, NON_EXISTING_ID)
+        # ValueError when creating a part group with a non existing part.
+        data = new_part_group.copy()
+        data["part_ids"] = [NON_EXISTING_ID]
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+            self.event.add_part_group(self.key, event_id, data)
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
@@ -4283,16 +4309,16 @@ class TestEventBackend(BackendTest):
                 'part_ids': [7, 10],
                 'shortname': 'ML W',
                 'title': 'Mailingliste Windischleuba'},
-            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+            1001: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
-                   'title': 'All'},
-            1006: {'constraint_type': const.EventPartGroupType.Statistic,
-                   'notes': "Let's see what happens",
-                   'part_ids': [7, 8],
-                   'shortname': 'ALL',
                    'title': 'Everything'},
+            1002: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11, 12],
+                   'shortname': 'ALL',
+                   'title': 'All'},
         }
         export = self.event.partial_export_event(self.key, event_id)
         self.assertEqual(export['event']['part_groups'], export_expectation)
@@ -4634,14 +4660,15 @@ class TestEventBackend(BackendTest):
         delta = datetime.timedelta(minutes=1)
         with freezegun.freeze_time(base_time) as frozen_time:
             new_token = OrgaToken(
-                id=cast(vtypes.ProtoID, -1),
+                id=cast(vtypes.ID, -1),
                 event_id=cast(vtypes.ID, event_id),
                 title="New Token!",
                 notes=None,
                 etime=base_time + delta,
             )
-            new_id, secret = self.event.create_orga_token(self.key, new_token)
-            new_token.id = vtypes.ProtoID(new_id)
+            data = new_token.to_database()
+            new_id, secret = self.event.create_orga_token(self.key, data)
+            new_token.id = vtypes.ID(new_id)
             apitoken = cast(RequestState, new_token.get_token_string(secret))
 
             log_expectation = [
@@ -5164,6 +5191,108 @@ class TestEventBackend(BackendTest):
             log_expectation, realm="event", event_id=1, offset=log_offset,
         )
         log_offset += len(log_expectation)
+
+    @event_keeper
+    @as_users("garcia")
+    @prepsql("DELETE FROM event.checkin_periods")
+    def test_checkin_query(self) -> None:
+        event_id = 1
+        registration_id = 1
+
+        base_time = now() - datetime.timedelta(days=2)
+        delta = datetime.timedelta(hours=2)
+
+        self.event.replace_checkin_periods(
+            self.key,
+            registration_id,
+            [
+                models.ReducedCheckinPeriod(base_time, base_time + delta),
+                models.ReducedCheckinPeriod(base_time + 2 * delta, base_time + 3 * delta),
+            ],
+        )
+
+        base_query = Query(
+            QueryScope.registration,
+            spec={},
+            fields_of_interest=["reg.id"],
+            order=[],
+            constraints=[("reg.id", QueryOperators.equal, registration_id)],
+        )
+        spec = base_query.scope.get_spec(event=self.event.get_event(self.key, event_id))
+
+        def _check_queries(constraint_a: QueryConstraint, constraint_b: QueryConstraint, first: bool) -> None:
+            query = copy.deepcopy(base_query)
+            query.spec = spec
+            query.constraints.append(constraint_a)
+            data_a = self.event.submit_general_query(self.key, query, event_id)
+            query.constraints[-1] = constraint_b
+            data_b = self.event.submit_general_query(self.key, query, event_id)
+
+            self.assertEqual(int(first), len(data_a))
+            self.assertEqual(int(not first), len(data_b))
+
+        # Test at and notat operators.
+        _at = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_at,
+            dt,
+        )
+        _notat = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notat,
+            dt,
+        )
+        for i, (time, expectation) in enumerate([
+            (base_time - 0.5 * delta, False),
+            (base_time + 0.5 * delta, True),
+            (base_time + 1.5 * delta, False),
+            (base_time + 2.5 * delta, True),
+            (base_time + 3.5 * delta, False),
+        ]):
+            with self.subTest(operator="at/notat", i=i, time=time):
+                _check_queries(_at(time), _notat(time), expectation)
+
+        # Test oneof and noneof operators.
+        _oneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_oneof,
+            ldt,
+        )
+        _noneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_noneof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time - 0.5 * delta, base_time + 1.5 * delta, base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta], True),
+            ([base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 1.5 * delta, base_time + 2.5 * delta], True),
+        ]):
+            with self.subTest(operator="oneof/noneof", i=i, times=ldt):
+                _check_queries(_oneof(ldt), _noneof(ldt), expectation)
+
+        # Test allof and notallof operators.
+        _allof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_allof,
+            ldt,
+        )
+        _notallof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notallof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time - 0.5 * delta], False),
+            ([base_time + 1.5 * delta], False),
+            ([base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta, base_time + 3.5 * delta], False),
+        ]):
+            with self.subTest(operator="allof/notallof", i=i, times=ldt):
+                _check_queries(_allof(ldt), _notallof(ldt), expectation)
 
     @event_keeper
     @as_users("garcia")
