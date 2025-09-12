@@ -29,6 +29,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
+from cdedb.models.past_event import past_course_entries, past_event_entries
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
@@ -332,14 +333,23 @@ class CoreGenesisMixin(CoreBaseFrontend):
         merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
 
-        courses: dict[int, str] = {}
+        pcourses = {}
         if case.pevent_id:
-            courses = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
-        choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
-                   "pcourse_id": courses}
+            pcourse_ids = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
+            pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
 
-        return self.render(rs, "genesis/genesis_modify_form", {
-            'choices': choices}, mandatory_fields)
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        params = {
+            "pevents": pevents,
+            "pevent_entries": past_event_entries(pevents),
+            "pcourses": pcourses,
+            "pcourse_entries": past_course_entries(pcourses),
+        }
+
+        return self.render(
+            rs, "genesis/genesis_modify_form", params, mandatory_fields
+        )
 
     @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:

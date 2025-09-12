@@ -384,6 +384,20 @@
                 });
         });
     }
+
+    /**
+     * Apply some default settings to selectize.
+     *
+     */
+    $.fn.cdedbSelectize = function() {
+        $(this).selectize({
+            valueField: "id",
+            labelField: "title",
+            searchField: ["title"],
+            sortField: [{field: "$order"}, {field: "$score"}],
+            plugins: ["auto_position"],
+        })
+    }
 })(jQuery);
 
 
