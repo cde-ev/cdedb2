@@ -20,8 +20,7 @@
                      readonly=not is_privileged_for("event/partial_import_form"), icon="cloud-upload-alt") }}
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"),
                      readonly=not is_privileged_for('questionnaire_import'), aclass="btn btn-info btn-sm", icon='file-upload') }}
-        {{ util.href(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), aclass="btn btn-sm btn-info",
-                     readonly=not is_privileged_for("orga_token_summary"), icon="robot") }}
+        {{ util.href(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), aclass="btn btn-sm btn-info", icon="robot") }}
     </div>
 
     <h3>{% trans %}Printables{% endtrans %}</h3>
