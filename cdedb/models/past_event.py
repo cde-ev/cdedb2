@@ -1,3 +1,4 @@
+"""Contains only some helpers for now, that might become dataclass methods later."""
 from cdedb.common import CdEDBObjectMap
 from cdedb.common.sorting import EntitySorter, xsorted
 
