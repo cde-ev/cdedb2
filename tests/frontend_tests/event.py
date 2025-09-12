@@ -2065,13 +2065,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
 
-        self.traverse("Teilnahmebeiträge", "Teilnahmebeitrag hinzufügen")
+        self.traverse("Teilnahmebeiträge", "Beitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         f['title'] = "Is Child"
         f['amount'] = "-10"
         f['condition'] = "part.Party AND field.is_child"
         self.submit(f)
-        self.traverse("Teilnahmebeitrag hinzufügen")
+        self.traverse("Beitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         f['title'] = "Plus One"
         f['amount'] = "+14.99"
@@ -2339,7 +2339,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("garcia")
     def test_event_fees(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge",
-                      "Teilnahmebeitrag hinzufügen")
+                      "Beitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         f['title'] = "New fee!"
         f['kind'] = const.EventFeeType.common
@@ -7804,7 +7804,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Personalisierter Teilnahmebeitrag", div="eventfee_10")
 
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
-        self.traverse("Personalisierten Teilnahmebeitrag hinzufügen")
+        self.traverse("Personalisierten Beitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
         self.assertIsNone(f.get('condition', default=None))
         f['title'] = "Rabatt auf Ehrenhomiebasis"
