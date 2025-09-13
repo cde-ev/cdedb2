@@ -18,7 +18,12 @@
     {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
     {% set sorted_parts = ambience['event']['parts'].values()|sort %}
     {% set sorted_part_groups = ambience['event']['part_groups'].values()|sort %}
-    <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/fee_stats"), gettext("Fee Stats"), icon='bar-chart', aclass='btn btn-info btn-sm') }}
+        {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm') }}
+    </div>
+
+    <h3 class="nosp">{% trans %}Participant Statistics{% endtrans %}</h3>
         <table id="participant-stats" class="table table-slim table-condensed table-stats table-hover">
             <thead>
                 <tr>
