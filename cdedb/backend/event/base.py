@@ -360,7 +360,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event_admin")
+    @access("event")
     def add_event_orgas(self, rs: RequestState, event_id: int,
                         persona_ids: Collection[int]) -> DefaultReturnCode:
         """Add orgas to an event.
@@ -368,10 +368,14 @@ class EventBaseBackend(EventLowLevelBackend):
         This is basically un-inlined code from `set_event`, but may also be
         called separately.
 
-        Note that this is only available to admins in contrast to `set_event`.
+        Note that this is only available to admins and caretakers in contrast to
+        `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
         with Atomizer(rs):
@@ -395,15 +399,19 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event_admin")
+    @access("event")
     def remove_event_orga(self, rs: RequestState, event_id: int,
                           persona_id: int) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
-        Note that this is only available to admins in contrast to `set_event`.
+        Note that this is only available to admins and caretakers in contrast to
+        `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
+
+        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM event.orgas"
                  " WHERE persona_id = %s AND event_id = %s")
@@ -416,6 +424,69 @@ class EventBaseBackend(EventLowLevelBackend):
         # Update session orga status
         if rs.user.persona_id == persona_id:
             rs.user.orga.remove(event_id)
+
+        return ret
+
+    @access("event_admin")
+    def add_event_caretakers(self, rs: RequestState, event_id: int,
+                             persona_ids: Collection[int]) -> DefaultReturnCode:
+        """Add caretakers for an event.
+
+        These have similar permissions to orgas, but are external caretakers.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        ret = 1
+        with Atomizer(rs):
+            self.validate_persona_ids(rs, persona_ids)
+
+            for anid in xsorted(persona_ids):
+                new_caretaker = {
+                    'persona_id': anid,
+                    'event_id': event_id,
+                }
+                # on conflict do nothing
+                r = self.sql_insert(
+                    rs, "event.caretakers", new_caretaker, drop_on_conflict=True
+                )
+                if r:
+                    self.event_log(
+                        rs,
+                        const.EventLogCodes.caretaker_added,
+                        event_id,
+                        persona_id=anid
+                    )
+                ret *= r
+
+        # Update session caretaker status
+        if rs.user.persona_id in persona_ids:
+            rs.user.caretaker.add(event_id)
+
+        return ret
+
+    @access("event_admin")
+    def remove_event_caretaker(self, rs: RequestState, event_id: int,
+                          persona_id: int) -> DefaultReturnCode:
+        """Remove a single caretaker of an event."""
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = ("DELETE FROM event.caretakers"
+                 " WHERE persona_id = %s AND event_id = %s")
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (persona_id, event_id))
+            if ret:
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.caretaker_removed,
+                    event_id,
+                    persona_id=persona_id
+                )
+
+        # Update session caretaker status
+        if rs.user.persona_id == persona_id:
+            rs.user.caretaker.remove(event_id)
 
         return ret
 

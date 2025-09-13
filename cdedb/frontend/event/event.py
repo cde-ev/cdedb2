@@ -131,7 +131,14 @@ class EventEventMixin(EventBaseFrontend):
                 (e['id'], e) for e in xsorted(
                     self.coreproxy.get_personas(
                         rs, rs.ambience['event'].orgas).values(),
-                    key=EntitySorter.persona))
+                    key=EntitySorter.persona)
+            )
+            params['caretakers'] = OrderedDict(
+                (e['id'], e) for e in xsorted(
+                    self.coreproxy.get_personas(
+                        rs, rs.ambience['event'].caretakers).values(),
+                    key=EntitySorter.persona)
+            )
             is_registered = bool(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id))
         if "ml" in rs.user.roles:
@@ -331,24 +338,42 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/list_event_helpers")
 
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata("orga_id")
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
-                 ) -> Response:
-        """Make an additional persona become orga."""
+    @access("event", modi={"POST"})
+    @REQUESTdata("persona_id", "as_caretaker")
+    def add_orgas_or_caretakers(
+        self,
+        rs: RequestState,
+        event_id: int,
+        persona_id: vtypes.CdedbID,
+        as_caretaker: bool = False,
+    ) -> Response:
+        """Make an additional persona become orga or caretaker."""
+
+        # Check privileges
+        if as_caretaker:
+            if not self.is_admin(rs):
+                raise werkzeug.exceptions.Forbidden()
+        elif not self.is_privileged(rs, EventPrivileges.orgas_change):
+            raise werkzeug.exceptions.Forbidden()
+
         if rs.has_validation_errors():
-            # Shortcircuit if we have got no workable cdedbid
+            # Shortcircuit if we have got no workable cdedbid / caretaker bit
             return self.show_event(rs, event_id)
         try:
-            self.eventproxy.validate_persona_ids(rs, {orga_id})
+            self.eventproxy.validate_persona_ids(rs, {persona_id})
         except ValueError as e:
-            rs.append_validation_error(('orga_id', e))
+            rs.append_validation_error(('persona_id', e))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
+
+        if as_caretaker:
+            code = self.eventproxy.add_event_caretakers(rs, event_id, {persona_id})
+        else:
+            code = self.eventproxy.add_event_orgas(rs, event_id, {persona_id})
         rs.notify_return_code(code, error=n_("Action had no effect."))
-        if code:
-            orga = self.coreproxy.get_persona(rs, orga_id)
+        if code and not as_caretaker:
+            # TODO Notify on caretaker changes too?
+            orga = self.coreproxy.get_persona(rs, persona_id)
             subject = f"Orga hinzugefügt ({rs.ambience['event'].shortname})"
             self.do_mail(rs, "orga_added",
                          {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
@@ -362,7 +387,8 @@ class EventEventMixin(EventBaseFrontend):
                     ack_delete: bool) -> Response:
         """Remove a persona as orga of an event.
 
-        This is only available for admins. This can drop your own orga role.
+        This is only available for admins and caretakers.
+        This can drop your own orga role.
         """
         if not ack_delete:
             rs.append_validation_error(
@@ -378,6 +404,37 @@ class EventEventMixin(EventBaseFrontend):
                          {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
                           'Subject': subject},
                          {'orga': orga, 'event': rs.ambience['event']})
+        return self.redirect(rs, "event/show_event")
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdata("caretaker_id", "ack_delete")
+    def remove_caretaker(
+        self,
+        rs: RequestState,
+        event_id: int,
+        caretaker_id: vtypes.ID,
+        ack_delete: bool
+    ) -> Response:
+        """Remove a persona as caretaker of an event.
+
+        This is only available for admins. This can drop your own caretaker role.
+        """
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked.")))
+            )
+        if rs.has_validation_errors():
+            return self.show_event(rs, event_id)
+        code = self.eventproxy.remove_event_caretaker(rs, event_id, caretaker_id)
+        rs.notify_return_code(code, error=n_("Action had no effect."))
+        # TODO Do we want an email notification here?
+        # if code:
+            # caretaker = self.coreproxy.get_persona(rs, caretaker_id)
+            #subject = f"Betreuer entfernt ({rs.ambience['event'].shortname})"
+            #self.do_mail(rs, "orga_removed",
+            #             {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
+            #              'Subject': subject},
+            #             {'orga': orga, 'event': rs.ambience['event']})
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
