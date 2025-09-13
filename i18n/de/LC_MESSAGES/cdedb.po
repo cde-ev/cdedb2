@@ -13548,7 +13548,7 @@ msgstr "Teilnahmebeiträge"
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:15
 #: cdedb/frontend/templates/web/event/generic.tmpl:346
 msgid "Constraint Violations"
-msgstr "Verstöße gegen Beschränkungen"
+msgstr "Ungereimtheiten"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:157
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
@@ -13711,7 +13711,7 @@ msgstr "Zur Zeit gibt es keine Verstöße."
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:8
 msgid "Constraint Violations Summary"
-msgstr "Übersicht über Verstöße gegen Beschränkungen"
+msgstr "Übersicht über Ungereimtheiten"
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:54
 #, python-format
