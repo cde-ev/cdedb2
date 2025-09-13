@@ -278,8 +278,8 @@
                         </li>
                     {% endfor %}
                 </ul>
-                <form action="{{ cdedblink('event/add_orgas_or_caretakers') }}" method="POST" id="addorgaform" class="p">
-                    {{ util.anti_csrf_token('event/add_orgas_or_caretakers') }}
+                <form action="{{ cdedblink('event/add_orga_or_caretaker') }}" method="POST" id="addorgaform" class="p">
+                    {{ util.anti_csrf_token('event/add_orga_or_caretaker') }}
                     {% call util.output_errors('persona_id', wrapper=True) %}
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>

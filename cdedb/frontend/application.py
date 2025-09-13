@@ -328,6 +328,7 @@ class Application(BaseApp):
 
                 # Insert orga and moderator status context
                 orga: set[int] = set()
+                caretaker: set[int] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                     caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)

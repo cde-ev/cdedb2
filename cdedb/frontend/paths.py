@@ -542,7 +542,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 )),
                 sub('/orga', (
                     rule("/add", methods=_POST,
-                         endpoint="add_orgas_or_caretakers"),
+                         endpoint="add_orga_or_caretaker"),
                     rule("/remove", methods=_POST,
                          endpoint="remove_orga"),
                 )),

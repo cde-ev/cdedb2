@@ -340,7 +340,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTdata("persona_id", "as_caretaker")
-    def add_orgas_or_caretakers(
+    def add_orga_or_caretaker(
         self,
         rs: RequestState,
         event_id: int,

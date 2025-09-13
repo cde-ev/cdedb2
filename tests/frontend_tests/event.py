@@ -419,7 +419,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
         f = self.response.forms['addorgaform']
-        f['orga_id'] = USER_DICT['garcia']['DB-ID']
+        f['persona_id'] = USER_DICT['garcia']['DB-ID']
         self.submit(f)
 
     @as_users("annika", "garcia")
@@ -627,25 +627,25 @@ class TestEventFrontend(FrontendTest):
         if self.user_in('ferdinand', 'annika'):
             f = self.response.forms['addorgaform']
             # Try to add an invalid cdedbid.
-            f['orga_id'] = "DB-1-1"
+            f['persona_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
-            self.assertValidationError('orga_id', "Checksumme stimmt nicht.", index=-1)
+            self.assertValidationError('persona_id', "Checksumme stimmt nicht.", index=-1)
             # Try to add a non event user.
-            f['orga_id'] = USER_DICT['janis']['DB-ID']
+            f['persona_id'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
+                'persona_id', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
                 index=-1)
             # Try to add an archived user.
-            f['orga_id'] = USER_DICT['hades']['DB-ID']
+            f['persona_id'] = USER_DICT['hades']['DB-ID']
             self.submit(f, check_notification=False)
             msg = "Einige dieser Accounts existieren nicht oder sind archiviert."
-            self.assertValidationError('orga_id', msg, index=-1)
+            self.assertValidationError('persona_id', msg, index=-1)
             # Try to add a non-existent user.
-            f['orga_id'] = "DB-1000-6"
+            f['persona_id'] = "DB-1000-6"
             self.submit(f, check_notification=False)
-            self.assertValidationError('orga_id', msg, index=-1)
-            f['orga_id'] = USER_DICT['berta']['DB-ID']
+            self.assertValidationError('persona_id', msg, index=-1)
+            f['persona_id'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertPresence("Beispiel", div='manage-orgas')
