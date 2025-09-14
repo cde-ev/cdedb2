@@ -43,7 +43,6 @@ from cdedb.common.query import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_TRACK_COMMON_FIELDS,
-    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import (
@@ -929,61 +928,25 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
         return self.render(rs, "event/configure_track_group", {},
-                           get_mandatory_form_fields(self.add_track_group))
+                           models.TrackGroup.mandatory_form_fields(creation=True))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata(*EVENT_TRACK_GROUP_COMMON_FIELDS)
-    def add_track_group(self, rs: RequestState, event_id: int, title: str,
-                       shortname: str, notes: Optional[str], sortkey: int,
-                       constraint_type: const.CourseTrackGroupType,
-                       track_ids: Collection[int]) -> Response:
-        if track_ids and not set(track_ids) <= rs.ambience['event'].tracks.keys():
-            rs.append_validation_error(("track_ids", ValueError(n_("Unknown track."))))
-        data = {
-            'title': title,
-            'shortname': shortname,
-            'notes': notes,
-            'constraint_type': constraint_type,
-            'sortkey': sortkey,
-            'track_ids': track_ids,
-        }
-        existing = {tg.title for tg in rs.ambience['event'].track_groups.values()}
-        if data['title'] in existing:
-            rs.append_validation_error(('title', ValueError(n_(
-                "A track group with this name already exists."))))
-        existing = {tg.shortname for tg in rs.ambience['event'].track_groups.values()}
-        if data['shortname'] in existing:
-            rs.append_validation_error(('shortname', ValueError(n_(
-                "A track group with this name already exists."))))
-        data = check(rs, vtypes.EventTrackGroup, data)
+    @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=True))
+    def add_track_group(self, rs: RequestState, event_id: int, data: CdEDBObject
+                        ) -> Response:
+        data = check(rs, models.TrackGroup, data, creation=True,
+                     event=rs.ambience['event'])
         if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
-        event = rs.ambience['event']
-        tracks = event.tracks
-        if constraint_type.is_sync():
-            track_ids = set(track_ids)
-            if any(tg.constraint_type.is_sync() and set(tg.tracks) & track_ids
-                   for tg in event.track_groups.values()):
-                rs.append_validation_error((
-                    "track_ids",
-                    ValueError(n_("Cannot have more than one course choice sync"
-                                  " track group per track.")),
-                ))
-            if not len(set(
-                    (tracks[track_id].num_choices, tracks[track_id].min_choices)
-                    for track_id in track_ids),
-            ) == 1:
-                rs.append_validation_error((
-                    "track_ids", ValueError(n_("Incompatible tracks.")),
-                ))
-            if not self.eventproxy.may_create_ccs_group(rs, track_ids):
-                rs.append_validation_error((
-                    "track_ids", ValueError(n_("Cannot create CCS group due to"
-                                               " incompatible choices."))))
-            if rs.has_validation_errors():
-                return self.add_track_group_form(rs, event_id)
-        code = self.eventproxy.set_track_groups(rs, event_id, {-1: data})
+        assert data is not None
+        if (data["constraint_type"].is_sync()
+                and not self.eventproxy.may_create_ccs_group(rs, data["track_ids"])):
+            rs.append_validation_error((
+                "track_ids", ValueError(n_(
+                    "Cannot create CCS group due to incompatible choices."))))
+            return self.add_track_group_form(rs, event_id)
+        code = self.eventproxy.add_track_group(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
@@ -995,32 +958,19 @@ class EventEventMixin(EventBaseFrontend):
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"track_ids": rs.ambience['track_group'].tracks.keys()})
         return self.render(rs, "event/configure_track_group", {},
-                           get_mandatory_form_fields(self.change_track_group))
+                           models.TrackGroup.mandatory_form_fields(creation=False))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("title", "shortname", "notes", "sortkey")
+    @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=False))
     def change_track_group(self, rs: RequestState, event_id: int,
-                          track_group_id: int, title: str, shortname: str,
-                          notes: Optional[str], sortkey: int) -> Response:
-        data: CdEDBObject = {
-            'title': title,
-            'shortname': shortname,
-            'notes': notes,
-            'sortkey': sortkey,
-        }
-        existing = {tg.title for tg in rs.ambience['event'].track_groups.values()}
-        if data['title'] in existing - {rs.ambience['track_group'].title}:
-            rs.append_validation_error(('title', ValueError(n_(
-                "A track group with this name already exists."))))
-        existing = {tg.shortname for tg in rs.ambience['event'].track_groups.values()}
-        if data['shortname'] in existing - {rs.ambience['track_group'].shortname}:
-            rs.append_validation_error(('shortname', ValueError(n_(
-                "A track group with this name already exists."))))
-        data = check(rs, vtypes.EventTrackGroup, data)
+                           track_group_id: int, data: CdEDBObject) -> Response:
+        data["id"] = track_group_id
+        data = check(rs, models.TrackGroup, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_track_group_form(rs, event_id, track_group_id)
-        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: data})
+        assert data is not None
+        code = self.eventproxy.change_track_group(rs, track_group_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
@@ -1034,7 +984,7 @@ class EventEventMixin(EventBaseFrontend):
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
-        code = self.eventproxy.set_track_groups(rs, event_id, {track_group_id: None})
+        code = self.eventproxy.delete_track_group(rs, track_group_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 

@@ -7080,9 +7080,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'track_ids', "Inkompatible Kursschienen", index=0)
-        self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
-                         " inkompatible Kurswahlen existieren.", index=0)
 
         # Now a valid one. (TripelAkademie)
         self.get('/event/event/4/part/summary')

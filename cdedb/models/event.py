@@ -209,7 +209,7 @@ class Event(EventDataclass):
         for track_group in self.track_groups.values():
             track_group.tracks = {
                 track.id: track
-                for track in self.tracks.values() if track.id in track_group.tracks
+                for track in self.tracks.values() if track.id in track_group.track_ids
             }
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
@@ -684,16 +684,24 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
     notes: Optional[str]
     sortkey: int
-    constraint_type: const.CourseTrackGroupType
+    constraint_type: const.CourseTrackGroupType = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     tracks: CdEDataclassMap[CourseTrack] = dataclasses.field(
-        default_factory=dict, metadata=Meta.asdict_include.as_dict)
+        init=False, compare=False, repr=False,
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
+    )
+    track_ids: set[int] = dataclasses.field(
+        default_factory=set,
+        metadata=(Meta.input_update_exclude | Meta.database_exclude).as_dict
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "TrackGroup":
@@ -712,7 +720,7 @@ class TrackGroup(EventDataclass):
                     SELECT track_id
                     FROM event.track_group_tracks
                     WHERE track_group_id = track_groups.id
-                ) AS tracks
+                ) AS track_ids
             FROM
                 event.track_groups
             WHERE

@@ -584,75 +584,69 @@ class TestEventBackend(BackendTest):
     def test_track_groups(self) -> None:
         event_id = 4
         event = self.event.get_event(self.key, event_id)
-        track_group_ids = self.event.get_event(self.key, event_id).track_groups.keys()
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, {
-            tg_id: None
-            for tg_id in track_group_ids
-        }))
-        tg_data: CdEDBOptionalMap = {
-            -1: {
-                'title': "Test",
-                'shortname': "Test",
-                'constraint_type': const.CourseTrackGroupType.course_choice_sync,
-                'notes': None,
-                'track_ids': event.tracks.keys(),
-                'sortkey': 1,
-            },
+        # delete existent track groups to avoid interference
+        for tg_id in event.track_groups.keys():
+            self.assertTrue(self.event.delete_track_group(self.key, tg_id))
+
+        new_track_group = {
+            'title': "Test",
+            'shortname': "Test",
+            'constraint_type': const.CourseTrackGroupType.course_choice_sync,
+            'notes': None,
+            'track_ids': event.tracks.keys(),
+            'sortkey': 1,
         }
-        assert tg_data[-1] is not None
         # Test incompatible tracks.
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test empty tracks.
-        tg_data[-1]['track_ids'] = []
+        new_track_group['track_ids'] = []
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test unknown tracks.
-        tg_data[-1]['track_ids'] = {1, 2}
+        new_track_group['track_ids'] = {1, 2}
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+            self.event.add_track_group(self.key, event_id, new_track_group)
 
         # Test correct tracks.
-        tg_data[-1]['track_ids'] = {6, 7}
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        new_track_group['track_ids'] = {6, 7}
+        self.assertTrue(self.event.add_track_group(self.key, event_id, new_track_group))
         event = self.event.get_event(self.key, event_id)
-        tg = tg_data[-1].copy()
-        tg['id'] = 1003
-        tg['event_id'] = event_id
-        tg['tracks'] = {
+        expectation: CdEDBObject = new_track_group.copy()
+        expectation['id'] = 1001
+        expectation['event_id'] = event_id
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
         # Test duplicate tracks.
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
-        # Test dupliclate title.
-        with self.assertRaises(psycopg2.errors.UniqueViolation):
-            tmp = copy.deepcopy(tg_data)
-            assert tmp[-1] is not None
-            tmp[-1]['track_ids'] = [8]
-            self.event.set_track_groups(self.key, event_id, tmp)
+            self.event.add_track_group(self.key, event_id, new_track_group)
+        # Test duplicate title.
+        with self.assertRaises(ValueError):
+            tmp = copy.deepcopy(new_track_group)
+            tmp['track_ids'] = [8]
+            self.event.add_track_group(self.key, event_id, tmp)
 
         # Test update
-        tg_update: CdEDBOptionalMap = {
-            1003: {
-                'title': "tEST",
-                'track_ids': {7, 8},
-            },
+        tg_update = {
+            'title': "tEST",
+            'track_ids': {7, 8},
         }
-        assert tg_update[1003] is not None
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        # updating track_ids is forbidden
+        with self.assertRaises(KeyError):
+            self.event.change_track_group(self.key, 1001, tg_update)
+        del tg_update['track_ids']
+        self.assertTrue(self.event.change_track_group(self.key, 1001, tg_update))
         event = self.event.get_event(self.key, event_id)
-        tg.update(tg_update[1003])
-        tg['tracks'] = {
+        expectation.update(tg_update)
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
     @as_users("emilia")
     def test_course_choice_sync(self) -> None:
