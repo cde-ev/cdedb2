@@ -15,6 +15,10 @@
         {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Confirm"), active=True) }}
     {% endif %}
 {% endblock %}
+{% set jshint = "weak" %}
+{% block scripts %}
+    {{ util.cdedb_script("cdedb_helper.js") }}
+{% endblock %}
 
 {% block heading %}
     {{ util.context_heading(gettext("Add Realm"), ambience['persona']|persona_name, 'user', gettext("User")) }}
@@ -97,11 +101,10 @@
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
                     {{ util.form_input_select(
-                            name='pevent_id', entries=past_events.items(), sort=True,
-                            nulloption=nbsp, label=gettext("Past Event")) }}
+                            name='pevent_id', entries=pevent_entries, nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
                     {% if values.get('pevent_id') %}
                         {{ util.form_input_select(
-                                name='pcourse_id', entries=past_courses.items(), sort=True,
+                                name='pcourse_id', entries=pcourse_entries, selectize=True,
                                 nulloption=nbsp, label=gettext("Course"), defaultvalue='') }}
                     {% else %}
                         {# Pass in a sentinel value, so we know, there was no past event selected before. #}
