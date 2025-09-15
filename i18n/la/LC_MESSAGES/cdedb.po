@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-15 19:59+0200\n"
+"POT-Creation-Date: 2025-09-15 21:30+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -13245,8 +13245,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:15
 #: cdedb/frontend/templates/web/event/generic.tmpl:346
 #, fuzzy
-msgid "Constraint Violations"
-msgstr "notitiae rationis"
+msgid "Inconsistencies"
+msgstr "vestigium novum crea"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:159
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
@@ -13327,20 +13327,19 @@ msgstr "administrator eventuum"
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:35
 #, fuzzy
-msgid "There are currently no violations matching the filter."
+msgid "There are currently no inconsistencies matching the filter."
 msgstr "nullum ad eventum nunc annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:43
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:110
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:138
 #, fuzzy
-msgid "There are currently no violations."
+msgid "There are currently no inconsistencies."
 msgstr "nullum ad eventum nunc annuntiari potest."
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:8
-#, fuzzy
-msgid "Constraint Violations Summary"
-msgstr "notitiae rationis"
+msgid "Inconsistencies Summary"
+msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:54
 #, python-format

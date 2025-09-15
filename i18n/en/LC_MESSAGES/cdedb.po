@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-15 19:59+0200\n"
+"POT-Creation-Date: 2025-09-15 21:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -12651,7 +12651,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:15
 #: cdedb/frontend/templates/web/event/generic.tmpl:346
-msgid "Constraint Violations"
+msgid "Inconsistencies"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:159
@@ -12726,17 +12726,17 @@ msgid "Event Administration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:35
-msgid "There are currently no violations matching the filter."
+msgid "There are currently no inconsistencies matching the filter."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:43
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:110
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:138
-msgid "There are currently no violations."
+msgid "There are currently no inconsistencies."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:8
-msgid "Constraint Violations Summary"
+msgid "Inconsistencies Summary"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:54
