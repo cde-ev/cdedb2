@@ -233,6 +233,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (19, 4): Die Log-Codes "Kurs: angebotene Schienen geändert" und
+  "Kurs: stattfindende Schienen geändert" wurden entfernt.
 * Version (19, 3): Im partiellen Export ist die ``amount_owed`` einer Anmeldung nun auch
   ``by_kind`` aufgeschlüsselt.
   Im partiellen Import einer Anmeldung sind nun alle Felder erlaubt, die auch im partiellen Export
