@@ -65,7 +65,7 @@
                 <hr class="nosp" />
                 {% for version in entry.all_versions %}
                     <div class="row">
-                        <div class="col-md-11 col-md-offset-1">
+                        <div class="col-md-11 col-md-offset-1 {% if version.dtime %}text-muted{% endif %}">
                             {% if not loop.first %}
                                 <hr class="nosp" />
                             {% endif %}
