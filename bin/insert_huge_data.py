@@ -11,6 +11,7 @@ from typing import Dict
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.ml
+from cdedb.backend.event import EventBackend
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
 
@@ -227,9 +228,9 @@ def event(context: argparse.Namespace) -> int:
             },
         },
     }
-    event = context.script.make_backend('event', proxy=False)
+    event: EventBackend = context.script.make_backend('event', proxy=False)
     ret = event.create_event(rs, data)
-    lodgement_groups = event.list_lodgement_groups(rs, ret)
+    lodgement_groups = event.new_get_lodgement_groups(rs, ret)
     for lg in lodgement_groups:
         for _ in range(1 if context.quick else 5):
             alodgement = event.create_lodgement(rs, {

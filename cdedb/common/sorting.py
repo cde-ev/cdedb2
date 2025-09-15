@@ -145,10 +145,6 @@ class EntitySorter:
                 lodgement['id'])
 
     @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['shortname'], candidates['id'])
 
