@@ -5,14 +5,14 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
-    {% trans %}Constraint Violations Summary{% endtrans %}
+    {% trans %}Inconsistencies Summary{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/constraint_violations_summary"), gettext("Constraint Violations")) }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations_summary"), gettext("Inconsistencies")) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Constraint Violations")) }}
+    {{ util.context_heading(gettext("Inconsistencies")) }}
 {% endblock %}
 
 {% block scripts %}
@@ -108,7 +108,7 @@
                     </div>
                     <div class="maybenothide text-muted">
                         {% trans %}
-                            There are currently no violations.
+                            There are currently no inconsistencies.
                         {% endtrans %}
                     </div>
                 {% endcall %}
@@ -135,7 +135,7 @@
                 </div>
             {% endfor %}
             <p class="maybenothide text-muted">
-                {% trans %}There are currently no violations.{% endtrans %}
+                {% trans %}There are currently no inconsistencies.{% endtrans %}
             </p>
         {% endcall %}
     {% endcall %}

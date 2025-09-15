@@ -343,7 +343,7 @@
     </div>
 {% endmacro %}
 
-{% macro constraint_violations_panel(severity, title=gettext("Constraint Violations"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
+{% macro constraint_violations_panel(severity, title=gettext("Inconsistencies"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
     {% set caller_content = caller() %}
     {% if link_title %}
         {% set title = util.href(cdedblink("event/constraint_violations"), title, icon=icon) %}
