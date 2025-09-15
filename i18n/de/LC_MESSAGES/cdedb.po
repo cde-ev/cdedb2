@@ -5649,8 +5649,8 @@ msgid "Cannot have more than one course choice sync track group per track."
 msgstr "Maximal eine Kurswahlsynchronisierung pro Kursschiene."
 
 #: cdedb/frontend/event/event.py:1008
-msgid "Incompatible tracks."
-msgstr "Inkompatible Kursschienen."
+msgid "Tracks of a course choice sync track group must have the same number course of choices."
+msgstr "Alle Kursschienen einer Kurswahlsynchronisierung müssen die gleiche Kurswahl-Anzahl haben."
 
 #: cdedb/frontend/event/event.py:1012
 msgid "Cannot create CCS group due to incompatible choices."

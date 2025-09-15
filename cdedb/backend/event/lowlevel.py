@@ -916,45 +916,12 @@ class EventLowLevelBackend(AbstractBackend):
     @access("event")
     def may_create_ccs_group(self, rs: RequestState, track_ids: Collection[int],
                              ) -> bool:
-        """Determine whether a CCS group with the given tracks may be created."""
+        """Determine whether a CCS group with the given tracks may be created.
+
+        Performs more involved checks which can not be done in the validation due to
+        missing data, like registrations.
+        """
         track_ids = affirm_set(vtypes.ID, track_ids)
-
-        # Check that the given tracks are from the same event.
-        query = """
-            SELECT COUNT(DISTINCT ep.event_id)
-            FROM event.event_parts AS ep
-                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
-            WHERE ct.id = ANY(%s)
-            HAVING COUNT(DISTINCT ep.event_id) > 1
-        """
-        params = (track_ids,)
-        if self.query_all(rs, query, params):
-            return False
-
-        # Check that the given tracks have the same number of choices.
-        query = """
-            SELECT COUNT(*)
-            FROM (
-                SELECT DISTINCT num_choices, min_choices
-                FROM event.course_tracks
-                WHERE id = ANY(%s)
-            ) AS tmp
-            HAVING COUNT(*) > 1
-        """
-        params = (track_ids,)
-        if self.query_all(rs, query, params):
-            return False
-
-        # Check that the given tracks are not part of another CCS group.
-        query = """
-            SELECT tgt.track_id
-            FROM event.track_group_tracks AS tgt
-                LEFT JOIN event.track_groups AS tg on tg.id = tgt.track_group_id
-            WHERE tg.constraint_type = %s AND tgt.track_id = ANY(%s)
-        """
-        params = (const.CourseTrackGroupType.course_choice_sync, track_ids)
-        if self.query_all(rs, query, params):
-            return False
 
         # Check that course choices and course instructors are compatible.
         query = """

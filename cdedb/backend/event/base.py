@@ -876,6 +876,9 @@ class EventBaseBackend(EventLowLevelBackend):
                                  event=event)
             track_group['event_id'] = event_id
             track_ids = track_group.pop("track_ids")
+            if (track_group["constraint_type"].is_sync()
+                    and not self.may_create_ccs_group(rs, track_ids)):
+                raise ValueError
             new_id = self.sql_insert(rs, models.TrackGroup.database_table, track_group)
             ret *= new_id
             self.event_log(
