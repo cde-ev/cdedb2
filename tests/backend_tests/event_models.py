@@ -553,7 +553,7 @@ class TestEventModels(BackendTest):
                     shortname="1.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 2: models.PartGroup(
                     id=2,  # type: ignore[arg-type]
@@ -562,7 +562,7 @@ class TestEventModels(BackendTest):
                     shortname="2.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 3: models.PartGroup(
                     id=3,  # type: ignore[arg-type]
@@ -571,7 +571,7 @@ class TestEventModels(BackendTest):
                     shortname="OW",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 9),  # type: ignore[arg-type]
+                    part_ids={6, 9},
                 ),
                 4: models.PartGroup(
                     id=4,  # type: ignore[arg-type]
@@ -580,7 +580,7 @@ class TestEventModels(BackendTest):
                     shortname="WS",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
                 5: models.PartGroup(
                     id=5,  # type: ignore[arg-type]
@@ -589,7 +589,7 @@ class TestEventModels(BackendTest):
                     shortname="KA",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(8, 11),  # type: ignore[arg-type]
+                    part_ids={8, 11},
                 ),
                 6: models.PartGroup(
                     id=6,  # type: ignore[arg-type]
@@ -598,7 +598,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 1H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 7: models.PartGroup(
                     id=7,  # type: ignore[arg-type]
@@ -607,7 +607,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 2H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 10: models.PartGroup(
                     id=10,  # type: ignore[arg-type]
@@ -616,7 +616,7 @@ class TestEventModels(BackendTest):
                     shortname="ML W",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mailinglist_link,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
             },
             track_groups={

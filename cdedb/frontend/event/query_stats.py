@@ -225,17 +225,17 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: models.Event, *, part_group_id: int) -> Sequence[int]:
-        return tuple(event.part_groups[part_group_id].parts.keys())
+        return xsorted(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
     def get_track_ids(event: models.Event, *, part_id: Optional[int] = None,
                       part_group_id: Optional[int] = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return tuple(event.parts[part_id].tracks.keys())
+            return xsorted(event.parts[part_id].tracks.keys())
         if part_group_id:
             parts = event.part_groups[part_group_id].parts.values()
-            return tuple(itertools.chain.from_iterable(p.tracks for p in parts))
+            return xsorted(itertools.chain.from_iterable(p.tracks for p in parts))
         return ()
 
     @abc.abstractmethod

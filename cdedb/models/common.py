@@ -39,8 +39,7 @@ CdEDataclassMap = dict[int, T]
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
     """The spec of this field, expected by the REQUESTdatadict extractor."""
-    # TODO whats about tuples, sets etc?
-    if get_origin(field.type) is list:
+    if get_origin(field.type) in {list, tuple, set}:
         return "[str]"
     else:
         return "str"

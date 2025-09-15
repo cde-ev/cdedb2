@@ -261,7 +261,7 @@
                         <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                         <div class="input-group has-success queryform-add">
                             <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("add filter")) }}</span>
-                            <select class="form-control input-sm addfilter"
+                            <select id="addfilter" class="form-control input-sm addfilter"
                                     aria-label="{% trans %}field to filter on{% endtrans %}"></select>
                         </div>
                         <div class="row">
@@ -273,7 +273,7 @@
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
-                                    <select class="form-control input-sm addviewfield"
+                                    <select id="addviewfield" class="form-control input-sm addviewfield"
                                             aria-label="{% trans %}field to add{% endtrans %}"></select>
                                 </div>
                             </div>
@@ -285,7 +285,7 @@
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add sort key")) }}
                                     </span>
-                                    <select class="form-control input-sm addsortfield"
+                                    <select id="addsortfield" class="form-control input-sm addsortfield"
                                             aria-label="{% trans %}sort key to add{% endtrans %}"></select>
                                 </div>
                             </div>

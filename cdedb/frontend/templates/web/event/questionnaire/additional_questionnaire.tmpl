@@ -1,4 +1,4 @@
-{% set sidenav_active = "event_quest_preview" if preview else "event_quest" %}
+{% set sidenav_active = "event_quest_config" if preview else "event_quest" %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
@@ -22,6 +22,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
     {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire_form"), gettext("Configure Questionnaire")) }}
         {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
                                 gettext("Questionnaire Preview"), active=True) }}
     {% else %}
@@ -33,14 +34,27 @@
     {{ util.context_heading(gettext("Questionnaire Preview") if preview else gettext("Participant Questionnaire"),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
+
+{% macro button_par() %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
+                     gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
+        {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                         aclass="btn btn-default btn-sm", icon="eye") }}
+    </div>
+{% endmacro %}
+
 {% block content %}
     {% if preview %}
-        <div class="p button-par">
-            {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
-                         gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
-        </div>
+        {{ button_par() }}
         <div class="form-horizontal">
     {% else %}
+        {% if is_privileged_for("event/configure_additional_questionnaire") %}
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
+                             gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+            </div>
+        {% endif %}
         <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
               class="form-horizontal">
             {{ util.anti_csrf_token('event/additional_questionnaire') }}
@@ -57,6 +71,8 @@
         </script>
     {% else %}
         </div>
+        <hr />
+        {{ button_par() }}
     {% endif %}
     {% if lodgement_wishes %}
         <hr />

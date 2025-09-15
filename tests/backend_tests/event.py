@@ -38,7 +38,6 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
@@ -456,7 +455,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
 
-        new_group = {
+        new_group: CdEDBObject = {
             'event_id': new_id,
             'title': "Nebenan",
         }
@@ -465,12 +464,14 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
-            'lodgement_ids': [],
+            'lodgement_ids': set(),
             'regular_capacity': 0,
             'camping_mat_capacity': 0,
         })
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.new_get_lodgement_groups(self.key, new_id)[new_group_id],
+        )
 
         new_lodgement = {
             'regular_capacity': 42,
@@ -1704,45 +1705,40 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1, position=InfiniteEnum(
                 CourseFilterPositions.assigned, 0)))
 
-    @as_users("annika", "garcia")
+    @storage
+    @as_users("garcia")
     def test_entity_lodgement_group(self) -> None:
-        event_id = 1
-        expectation_list = {
-            1: "Haupthaus",
-            2: "AußenWohnGruppe",
-            3: "Sonstige",
-        }
-        group_ids = self.event.list_lodgement_groups(self.key, event_id)
-        self.assertEqual(expectation_list, group_ids)
+        event_id = vtypes.ID(1)
 
         expectation_groups = {
-            1: {
-                'id': 1,
-                'event_id': 1,
-                'title': "Haupthaus",
-                'lodgement_ids': [2, 4],
-                'camping_mat_capacity': 2,
-                'regular_capacity': 11,
-            },
-            2: {
-                'id': 2,
-                'event_id': 1,
-                'title': "AußenWohnGruppe",
-                'lodgement_ids': [1],
-                'camping_mat_capacity': 1,
-                'regular_capacity': 5,
-            },
-            3: {
-                'id': 3,
-                'event_id': 1,
-                'title': "Sonstige",
-                'lodgement_ids': [3],
-                'camping_mat_capacity': 100,
-                'regular_capacity': 0,
-            },
+            1: models.LodgementGroup(
+                id=vtypes.ID(1),
+                event_id=event_id,
+                title="Haupthaus",
+                lodgement_ids={2, 4},
+                camping_mat_capacity=2,
+                regular_capacity=11,
+            ),
+            2: models.LodgementGroup(
+                id=vtypes.ID(2),
+                event_id=event_id,
+                title="AußenWohnGruppe",
+                lodgement_ids={1},
+                camping_mat_capacity=1,
+                regular_capacity=5,
+            ),
+            3: models.LodgementGroup(
+                id=vtypes.ID(3),
+                event_id=event_id,
+                title="Sonstige",
+                lodgement_ids={3},
+                camping_mat_capacity=100,
+                regular_capacity=0,
+            ),
         }
-        self.assertEqual(expectation_groups,
-                         self.event.get_lodgement_groups(self.key, group_ids))
+        self.assertEqual(
+            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+        )
 
         new_group: CdEDBObject = {
             'event_id': event_id,
@@ -1753,12 +1749,14 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
-            'lodgement_ids': [],
+            'lodgement_ids': set(),
             'camping_mat_capacity': 0,
             'regular_capacity': 0,
         })
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
         update = {
             'id': new_group_id,
             'title': "Auf der anderen Rheinseite",
@@ -1766,7 +1764,9 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.set_lodgement_group(self.key, update))
         new_group.update(update)
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
 
         new_lodgement: CdEDBObject = {
             'regular_capacity': 42,
@@ -1788,45 +1788,55 @@ class TestEventBackend(BackendTest):
         new_group.update({
             'camping_mat_capacity': new_lodgement['camping_mat_capacity'],
             'regular_capacity': new_lodgement['regular_capacity'],
-            'lodgement_ids': [new_lodgement_id],
+            'lodgement_ids': {new_lodgement_id},
         })
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
 
-        expectation_list[new_group_id] = new_group['title']
-        self.assertEqual(expectation_list,
-                         self.event.list_lodgement_groups(self.key, event_id))
+        expectation_groups[new_group_id] = models.LodgementGroup(**new_group)
+        self.assertEqual(
+            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+        )
         self.assertLess(
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
-        del expectation_list[new_group_id]
+        del expectation_groups[new_group_id]
         self.assertEqual(
-            expectation_list, self.event.list_lodgement_groups(self.key, event_id))
+            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+        )
 
         self.assertNotIn(
-            new_lodgement_id, self.event.list_lodgements(self.key, event_id))
+            new_lodgement_id, self.event.list_lodgements(self.key, event_id)
+        )
 
-    @storage
-    @as_users("annika")
-    def test_implicit_lodgement_group(self) -> None:
         new_event_data = {
-            'title': "KreativAkademie",
-            'shortname': "KreAka",
+            'title': (new_event_title := "KreativAkademie"),
+            'shortname': "KrAka",
             'institution': 1,
             'parts': {
                 -1: {
                     'part_begin': "2222-02-02",
                     'part_end': "2222-02-22",
                     'title': "KreativAkademie",
-                    'shortname': "KreAka",
+                    'shortname': "KrAka",
                     'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
             },
         }
-        new_event_id = self.event.create_event(self.key, new_event_data)
-        groups = self.event.list_lodgement_groups(self.key, new_event_id)
-        groups_expectation = {1001: new_event_data['title']}
+        with self.switch_user("annika"):
+            new_event_id = self.event.create_event(self.key, new_event_data)
+
+        groups = self.event.new_get_lodgement_groups(self.key, new_event_id)
+        groups_expectation = {
+            1002: models.LodgementGroup(
+                id=vtypes.ID(1002),
+                event_id=vtypes.ID(new_event_id),
+                title=new_event_title,
+            ),
+        }
         self.assertEqual(groups_expectation, groups)
 
     @as_users("annika", "garcia")
@@ -4329,67 +4339,49 @@ class TestEventBackend(BackendTest):
 
         # Setting is not allowed for non-privileged users.
         with self.assertRaises(PrivilegeError):
-            self.event.set_part_groups(ANONYMOUS, event_id, {})
+            self.event.add_part_group(ANONYMOUS, event_id, {})
         with self.switch_user("garcia"):
             with self.assertRaises(PrivilegeError):
-                self.event.set_part_groups(self.key, event_id, {})
+                self.event.add_part_group(self.key, event_id, {})
 
-        # Empty setter just returns 1.
-        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
-
-        new_part_group_id = self.event.set_part_groups(
-            self.key, event_id, {-1: new_part_group})
+        new_part_group_id = self.event.add_part_group(
+            self.key, event_id, new_part_group)  # id 1001
         self.assertTrue(new_part_group_id)
 
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+        # we require shortname and title to be unique
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, new_part_group)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['title'] = "All"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
         data['title'] = "All"
-        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+        self.event.add_part_group(self.key, event_id, data)  # id 1002
 
-        # Simultaneous deletion and recreation of part group with same name works.
-        self.event.set_part_groups(
-            self.key, event_id, {1001: None, -1: new_part_group},  # id 1006
-        )
-
-        # Switching of shortnames for exisitng groups is also possible.
-        setter = {
-            1005: {'shortname': new_part_group['shortname']},
-            1006: {'shortname': data['shortname']},
-        }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
         part_group_expectation.update({
-            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
-            1006: {**new_part_group, **setter[1006],
-                   **{'event_id': event_id, 'id': 1006}},
+            1001: {**new_part_group, **{'event_id': event_id, 'id': 1001}},
+            1002: {**data, **{'event_id': event_id, 'id': 1002}},
         })
 
-        # Update and delete an existing group.
+        # Update an existing group.
         update = {
-            1: {
-                'notes': "Pack explosives for New Years!",
-            },
-            4: None,
-            1006: {
-                'part_ids': set(xsorted(event.parts.keys())[:len(event.parts) // 2]),
-            },
+            'notes': "Pack explosives for New Years!",
         }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
-        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        self.assertTrue(self.event.change_part_group(self.key, 1, update))
+        part_group_expectation[1].update(update)
+
+        # Delete an existing group
+        self.assertTrue(self.event.delete_part_group(self.key, 4))
         del part_group_expectation[4]
-        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
         reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
         for pg in reality.values():
@@ -4401,15 +4393,14 @@ class TestEventBackend(BackendTest):
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
-        # ValueError when creating or updating a part group with a non existing part.
+            self.event.change_part_group(self.key, NON_EXISTING_ID, {"id": NON_EXISTING_ID})
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id,
-                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+            self.event.delete_part_group(self.key, NON_EXISTING_ID)
+        # ValueError when creating a part group with a non existing part.
+        data = new_part_group.copy()
+        data["part_ids"] = [NON_EXISTING_ID]
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+            self.event.add_part_group(self.key, event_id, data)
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
@@ -4453,16 +4444,16 @@ class TestEventBackend(BackendTest):
                 'part_ids': [7, 10],
                 'shortname': 'ML W',
                 'title': 'Mailingliste Windischleuba'},
-            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+            1001: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
-                   'title': 'All'},
-            1006: {'constraint_type': const.EventPartGroupType.Statistic,
-                   'notes': "Let's see what happens",
-                   'part_ids': [7, 8],
-                   'shortname': 'ALL',
                    'title': 'Everything'},
+            1002: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11, 12],
+                   'shortname': 'ALL',
+                   'title': 'All'},
         }
         export = self.event.partial_export_event(self.key, event_id)
         self.assertEqual(export['event']['part_groups'], export_expectation)
@@ -4731,51 +4722,6 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
             "part.2.H. and not part.1.H.", event.fees[1001].condition)
-
-    @as_users("garcia")
-    def test_rcw_mechanism(self) -> None:
-        # Cull readonly attributes
-        def _get_lodgement_group(rs: RequestState, group_id: int) -> CdEDBObject:
-            ret = self.event.get_lodgement_group(rs, group_id=group_id)
-            del ret['lodgement_ids']
-            del ret['camping_mat_capacity']
-            del ret['regular_capacity']
-            return ret
-
-        group_id = 1
-        data = _get_lodgement_group(self.key, group_id=group_id)
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-
-        # positional argument
-        data['title'] = "Stavromula Beta"
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        self.event.rcw_lodgement_group(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Gamma"
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Delta"
-        self.event.rcw_lodgement_group(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-
-        # keyword argument
-        data['title'] = "Stavromula Epsilon"
-        self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        self.event.rcw_lodgement_group(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Zeta"
-        self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Eta"
-        self.event.rcw_lodgement_group(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
     @as_users("garcia")
     def test_orga_apitokens(self) -> None:
