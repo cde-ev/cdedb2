@@ -620,7 +620,6 @@ class ComplaintBackend(AbstractBackend):
         case_id: int,
         involved_type: const.ComplaintInvolvementType,
         persona_ids: Collection[int],
-        is_informed: bool | None = None,
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
 
@@ -632,16 +631,13 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involved_type = affirm(const.ComplaintInvolvementType, involved_type)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        is_informed = affirm_optional(bool, is_informed)
 
         if not persona_ids:
             return 0
 
         if involved_type == const.ComplaintInvolvementType.appellant:
-            if is_informed is False:
-                raise ValueError(n_("Appellant cannot be uninformed."))
             is_informed = True
-        elif is_informed is None:
+        else:
             is_informed = False
 
         with Atomizer(rs):
@@ -675,6 +671,12 @@ class ComplaintBackend(AbstractBackend):
                             case_id=case_id,
                             persona_id=involved_id,
                         )
+                if num := len(other_involved & case.informed_involved):
+                    rs.notify(
+                        "info",
+                        n_("%(num)s involved lost their informed status."),
+                        {"num": num},
+                    )
 
             if persona_ids & case.active_companions.keys():
                 raise ValueError(n_("Already active companions."))

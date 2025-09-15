@@ -431,7 +431,6 @@ class TestComplaintBackend(BackendTest):
                 case_id=case_id,
                 involved_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
-                is_informed=True,
             ),
         )
         # Adding them again is a noop.
@@ -450,14 +449,12 @@ class TestComplaintBackend(BackendTest):
         expectation.involved.setdefault(
             const.ComplaintInvolvementType.target, set()
         ).add(new_involved)
-        expectation.informed_involved.add(new_involved)
 
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
 
-        # Setting them as informed is a noop, since we already informed them previously.
-        self.assertEqual(
-            -1,
+        self.assertLessEqual(
+            1,
             self.complaint.set_involved_informed(self.key, case_id, new_involved, True),
         )
         # Set them as uninformed.
@@ -486,12 +483,17 @@ class TestComplaintBackend(BackendTest):
         # Adding the original involved as a new type removes and readds their companions.
         self.assertLessEqual(
             1,
+            self.complaint.set_involved_informed(
+                self.key, case_id, original_involved, True
+            ),
+        )
+        self.assertLessEqual(
+            1,
             self.complaint.add_involved(
                 self.key,
                 case_id,
                 const.ComplaintInvolvementType.other,
                 [original_involved],
-                is_informed=True,
             ),
         )
 
@@ -530,17 +532,21 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": new_involved,
             },
             {
+                "code": const.ComplaintLogCodes.involved_informed,
+                "persona_id": original_involved,
+            },
+            {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
                 "persona_id": original_involved,
             },
             {
-                "code": const.ComplaintLogCodes.involved_added,
-                "change_note": "Sonstige",
+                "code": const.ComplaintLogCodes.involved_uninformed,
                 "persona_id": original_involved,
             },
             {
-                "code": const.ComplaintLogCodes.involved_informed,
+                "code": const.ComplaintLogCodes.involved_added,
+                "change_note": "Sonstige",
                 "persona_id": original_involved,
             },
             {

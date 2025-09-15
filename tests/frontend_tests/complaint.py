@@ -64,6 +64,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence(
             "Beschwerdeführer", div='involved_appellant', check_div=False
         )
+        self.assertNotification("1 Personen sind nun nicht mehr informiert.", "info")
 
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-1-9"
