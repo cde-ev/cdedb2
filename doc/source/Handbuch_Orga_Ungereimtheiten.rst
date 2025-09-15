@@ -10,10 +10,10 @@ bezeichnet.
 Es existieren mehrere Stufen an Ungereimtheiten, welche einen Hinweis darauf geben, wie
 schwerwiegend diese sind und wie schnell sich darum gekümmert werden sollte:
 
-- Hinweis: Um einen solchen Ungereimtheit sollte sich vermutlich irgendwann einmal
+- Hinweis: Um eine solche Ungereimtheit sollte sich vermutlich irgendwann einmal
   gekümmert werden, aber das ist erst langfristig möglich oder erfordert die
   Beteiligung weiterer Personen. Einige Hinweise lassen sich auch nicht lösen und
-  von ungewöhnlichen, aber korrekten Situationen ausgelöst.
+  werden von ungewöhnlichen, aber korrekten Situationen ausgelöst.
 - Warnung: Eine solche Ungereimtheit deutet darauf hin, dass die Ursache relativ bald
   behoben werden sollte, in Ausnahmefällen kann der entsprechende Zustand aber
   vorübergehend oder sogar vollständig korrekt sein.
