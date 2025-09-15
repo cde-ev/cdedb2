@@ -94,6 +94,7 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.models.past_event import past_course_entries, past_event_entries
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -1963,15 +1964,18 @@ class CoreBaseFrontend(AbstractFrontend):
         if target_realm and rs.ambience['persona'][f'is_{target_realm}_realm']:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
-        past_events = self.pasteventproxy.list_past_events(rs)
-        past_courses = {}
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        pcourses = {}
         if pevent_id := rs.values.get('pevent_id'):
-            past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+            pcourse_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
+            pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
 
         mandatory_fields = get_mandatory_form_fields(
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
-            "past_events": past_events, "past_courses": past_courses,
+            "pevent_entries": past_event_entries(pevents),
+            "pcourse_entries": past_course_entries(pcourses),
         }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})
