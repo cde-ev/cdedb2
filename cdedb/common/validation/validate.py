@@ -1798,7 +1798,7 @@ def _genesis_case(
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :param is_upgrade: State if the genesis_case was requested by an existing user.
+    :param is_upgrade: Whether the genesis_case was requested by an existing user.
     """
     errs = ValidationSummary()
 
@@ -1817,12 +1817,6 @@ def _genesis_case(
                         n_("Birthday was less than a year ago."
                            " Please check the birth year."),
                     ))
-
-        if is_upgrade and val['realm'] == 'cde':
-            if not val.get('attachment_hash') and not val.get('pevent_id'):
-                msg = n_("Either attachement or past event must be provided.")
-                errs.append(ValueError('attachment', msg))
-                errs.append(ValueError('pevent_id', msg))
 
     if errs:
         raise errs

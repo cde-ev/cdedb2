@@ -316,9 +316,12 @@ class CdEPersona(EventPersona):
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
 
-    # only changable via separate frontend endpoint
+    # only changeable via separate frontend endpoint
     realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
+    # an existing user issued a realm upgrade, which we model as a genesis case internally
+    is_upgrade: bool = dataclasses.field(
+        default=False, metadata=Meta.input_exclude.as_dict)
     status: const.GenesisStati = dataclasses.field(
         metadata=Meta.input_exclude.as_dict)
     ctime: datetime.datetime = dataclasses.field(

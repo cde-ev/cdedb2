@@ -374,7 +374,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = self.genesis_get_case(rs, case_id)
             if case.status != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
-            if case['is_upgrade'] and not decision.is_update():
+            if case.is_upgrade and not decision.is_update():
                 raise ValueError(n_("Decision must be 'update'."))
             if decision.is_create():
                 status = const.GenesisStati.approved
@@ -391,7 +391,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             if decision.is_create():
                 return self.genesis(rs, case_id)
             # internal upgrade requests use the existing data, do not reapply it
-            elif decision.is_update() and not case['is_upgrade']:
+            elif decision.is_update() and not case.is_upgrade:
                 assert case.persona_id is not None
                 persona = self.get_persona(rs, case.persona_id)
                 if not self._is_relative_admin(rs, persona):

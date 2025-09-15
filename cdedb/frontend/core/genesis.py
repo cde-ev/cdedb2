@@ -179,9 +179,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
                         attachment_hash: Optional[vtypes.Identifier] = None,
                         pevent_id: Optional[int] = None,
                         attachment_filename: Optional[str] = None) -> Response:
-        """Request an upgrade to an higher realm with an existing account.
+        """Request an upgrade to a higher realm.
 
-        Currently, only upgrades form event to cde realm are supported.
+        Currently, only upgrades from event to cde realm are supported.
         """
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
             self.locate_or_store_attachment(
@@ -208,7 +208,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if courses := past_events[pevent_id]["courses"]:
                 data["pcourse_id"] = list(courses)[0]
 
-        data = check(rs, vtypes.GenesisCase, data, creation=True, is_upgrade=True)
+        data = check(rs, models.GenesisCaseCdE, data, creation=True, is_upgrade=True)
         if rs.has_validation_errors():
             return self.genesis_upgrade_form(rs)
 
@@ -392,7 +392,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case['is_upgrade']:
+        if case.is_upgrade:
             rs.notify("error", n_("Modification of upgrade request is not possible."))
             return self.genesis_list_cases(rs)
         if case.status != const.GenesisStati.to_review:
@@ -537,7 +537,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             persona = self.coreproxy.get_persona(rs, persona_id)
             self.send_welcome_mail(rs, persona)
             rs.notify("success", n_("Case approved."))
-        elif case['is_upgrade']:
+        elif case.is_upgrade:
             # TODO send email notification?
             pass
         elif decision.is_update():
