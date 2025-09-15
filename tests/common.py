@@ -27,7 +27,14 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Collection,
+    Generator,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from re import Pattern
 from typing import (
     Any,
@@ -41,6 +48,7 @@ from typing import (
     no_type_check,
 )
 
+import lxml
 import PIL.Image
 import webtest
 import webtest.utils
@@ -1422,7 +1430,7 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(title.strip(), normalized)
 
-    def get_content(self, div: str = "content") -> str:
+    def get_content(self, div: str = "content", check_div: bool = True) -> str:
         """Retrieve the content of the (first) element with the given id."""
         if (
             self.response.content_type.startswith("text/")
@@ -1431,9 +1439,10 @@ class FrontendTest(BackendTest):
             return self.response.text
         tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
-            self.fail(f"Div '{div}' not found.")
-        content = tmp[0]
-        return content.text_content()
+            if check_div:
+                self.fail(f"Div '{div}' not found.")
+            return ""
+        return re.sub(r'\s+', ' ', tmp[0].text_content())
 
     def assertDivNotExists(self, div: str) -> None:
         """Assert that the given id is not used by any element on the page.
@@ -1499,14 +1508,13 @@ class FrontendTest(BackendTest):
         :param regex: If True, do a RegEx match of the given string.
         :param exact: If True, require an exact match.
         """
-        target = self.get_content(div)
-        normalized = re.sub(r'\s+', ' ', target)
+        content = self.get_content(div, check_div=True)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized), msg=msg)
+            self.assertTrue(re.search(s.strip(), content), msg=msg)
         elif exact:
-            self.assertEqual(s.strip(), normalized.strip(), msg=msg)
+            self.assertEqual(s.strip(), content.strip(), msg=msg)
         else:
-            self.assertIn(s.strip(), normalized, msg=msg)
+            self.assertIn(s.strip(), content, msg=msg)
 
     def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
@@ -1517,17 +1525,31 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if (
-            self.response.content_type.startswith("text/")
-            and self.response.content_type != "text/html"
-        ):
-            self.assertNotIn(s.strip(), self.response.text)
-        else:
-            tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-            if tmp:
-                self.assertNotIn(s.strip(), tmp[0].text_content())
-            elif check_div:
-                self.fail(f"Specified div {div!r} not found.")
+        content = self.get_content(div, check_div=check_div)
+        self.assertNotIn(s.strip(), content)
+
+    def assertClassPresent(self, nodes: Collection["lxml.etree._HTMLElement"], htmlclass: str) -> None:
+        for node in nodes:
+            self.assertIn(htmlclass, node.classes, f"Node {node!r} does not have class {htmlclass!r}: {set(node.classes)!r}.")
+
+    def assertClassNotPresent(self, nodes: Collection["lxml.etree._HTMLElement"], htmlclass: str) -> None:
+        for node in nodes:
+            self.assertNotIn(htmlclass, node.classes, f"Node {node!r} unexpectedly has class {htmlclass!r}: {set(node.classes)!r}.")
+
+    def _get_nodes(self, selector: str) -> list["lxml.etree._HTMLElement"]:
+        nodes = self.response.lxml.cssselect(selector)
+        if not nodes:
+            self.fail(f"Element '{selector}' not found.")
+        return nodes
+
+    def assertHidden(self, *divs: Collection[str]) -> None:
+        """Assert that a collection of HTML elements are hidden."""
+        for div in divs:
+            self.assertClassPresent(self._get_nodes(div), "softhide")
+
+    def assertNotHidden(self, *divs: Collection[str]) -> None:
+        for div in divs:
+            self.assertClassNotPresent(self._get_nodes(div), "softhide")
 
     def assertTextContainedInElement(self, search_text: str, element_tag: str,
                                      div: str = "content") -> None:
