@@ -626,7 +626,7 @@ class TestEventBackend(BackendTest):
             self.event.add_track_group(self.key, event_id, new_track_group)
         # Test duplicate title.
         with self.assertRaises(ValueError):
-            tmp = copy.deepcopy(new_track_group)
+            tmp = copy.copy(new_track_group)
             tmp['track_ids'] = [8]
             self.event.add_track_group(self.key, event_id, tmp)
 

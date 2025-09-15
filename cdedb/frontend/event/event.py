@@ -945,6 +945,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.append_validation_error((
                 "track_ids", ValueError(n_(
                     "Cannot create CCS group due to incompatible choices."))))
+        if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
         code = self.eventproxy.add_track_group(rs, event_id, data)
         rs.notify_return_code(code)
