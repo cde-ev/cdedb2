@@ -13432,8 +13432,8 @@ msgstr "Nach Veranstaltung"
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:92
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:120
-msgid "Group by Violation Class"
-msgstr "Nach Art des Verstoßes"
+msgid "Group by Type of Inconsistency"
+msgstr "Nach Art der Ungereimtheit"
 
 #: cdedb/frontend/templates/web/event/base/constraint_violations_summary.tmpl:117
 msgid "Filter matched no events."
@@ -15891,12 +15891,12 @@ msgid "Fee Preview"
 msgstr "Teilnahmebeitragsvorschau"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:732
-msgid "Minimum Violation Severity:"
-msgstr "Minimale Schwere der Verstöße:"
+msgid "Minimum Inconsistency Severity"
+msgstr "Minimale Schwere der Ungereimtheit"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:735
-msgid "Violation Kind"
-msgstr "Art des Verstoßes"
+msgid "Type of Inconsistency"
+msgstr "Art der Ungereimtheit"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:741
 msgid "Only show these events:"

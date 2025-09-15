@@ -89,7 +89,7 @@
 
     {% call generic.tabs("violations", [
             {"target": "#tab_group_by_event", "label": gettext("Group by Event"), "icon": "chalkboard-teacher", "anid": "event_tab"},
-            {"target": "#tab_group_by_violation", "label": gettext("Group by Violation Class"), "icon": "exclamation-circle", "anid":"violation_tab"},
+            {"target": "#tab_group_by_violation", "label": gettext("Group by Type of Inconsistency"), "icon": "exclamation-circle", "anid":"violation_tab"},
     ], formid="filterconstraintsform") %}
         {% call generic.tab_pane("tab_group_by_event", "event_tab", gettext("Group by Event")) %}
             {% for event in all_events.values()|sort %}
@@ -117,10 +117,10 @@
                 {% trans %}Filter matched no events.{% endtrans %}
             </p>
         {% endcall %}
-        {% call generic.tab_pane("tab_group_by_violation", "violation_tab", gettext("Group by Violation Class")) %}
+        {% call generic.tab_pane("tab_group_by_violation", "violation_tab", gettext("Group by Type of Inconsistency")) %}
             {% for class_name, violations_ in violations.by_class.items() %}
                 <div class="violation-list maybehide">
-                    {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                    {{ util.doclink_("Handbuch_Orga_Ungereimtheiten", class_name|lower) }}
                     {{ util.h(class_name, level=4) }}
                     <ul>
                     {% for event in all_events.values()|sort %}

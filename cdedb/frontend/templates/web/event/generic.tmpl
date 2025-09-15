@@ -729,10 +729,10 @@
     {% call util.bootstrap_panel(gettext("Filter"), aclass="panel-primary", icon="filter") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="filterconstraintsform" class="form-horizontal">
             {% if filter_severity %}
-                {{ util.form_input_select(name="min_severity", label=gettext("Minimum Violation Severity:"),
+                {{ util.form_input_select(name="min_severity", label=gettext("Minimum Inconsistency Severity"),
                                           anid="filter-min-severity", defaultvalue=min_severity,
                                           entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
-                {{ util.form_input_select(name="violation_kind", label=gettext("Violation Kind"),
+                {{ util.form_input_select(name="violation_kind", label=gettext("Type of Inconsistency"),
                                           anid="filter-violation-kind", defaultvalue=violation_kind,
                                           nulloption=gettext(gettext("All")),
                                           entries=enums['ViolationKind']|enum_entries(gettext)) }}
