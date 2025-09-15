@@ -100,6 +100,9 @@
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
+
+                    {# Pass previously submitted pevent id to enable selection of pcourse id without js #}
+                    {{ util.input_hidden(name='prev_pevent_id', value=values.get("pevent_id")) }}
                     {{ util.form_input_select(
                             name='pevent_id', entries=pevent_entries, nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
                     {% if values.get('pevent_id') %}
@@ -107,8 +110,6 @@
                                 name='pcourse_id', entries=pcourse_entries, selectize=True,
                                 nulloption=nbsp, label=gettext("Course"), defaultvalue='') }}
                     {% else %}
-                        {# Pass in a sentinel value, so we know, there was no past event selected before. #}
-                        {{ util.input_hidden(name='pcourse_id', value=-1) }}
                         {{ util.form_input_static(
                                 aclass='text-info', icon='info-circle', label=gettext("Course"),
                                 value=gettext("Course choices will be displayed after selecting an event and submitting.")) }}

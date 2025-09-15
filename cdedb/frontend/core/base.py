@@ -1981,11 +1981,11 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata("target_realm", "change_note", "pevent_id", "is_orga", "is_instructor",
-                 "pcourse_id")
+                 "pcourse_id", "prev_pevent_id")
     def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
-                     target_realm: vtypes.Realm, pevent_id: Optional[int],
-                     is_orga: bool, is_instructor: bool,
-                     pcourse_id: Optional[int], data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, pevent_id: int | None,
+                     is_orga: bool, is_instructor: bool, prev_pevent_id: int | None,
+                     pcourse_id: int | None, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -2021,11 +2021,10 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True)
-        if pevent_id is not None:
+        if pevent_id is not None and pevent_id != prev_pevent_id:
             # Show the form again, if past event was selected for the first time.
-            if pcourse_id == -1:
-                return self.promote_user_form(
-                    rs, persona_id, target_realm=target_realm, internal=True)
+            return self.promote_user_form(
+                rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
