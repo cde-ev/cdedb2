@@ -2,11 +2,13 @@
 {% set jshint = "weak" %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans %}CdE-Member Search{% endtrans %}
 {% endblock %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_select_past_course.js') }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -91,18 +93,7 @@
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label=gettext("Interests"), aclass="input-sm") }}
-                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_entries'],
-                                                  nulloption=nbsp, label=gettext("Academy"), aclass="input-sm", selectize=True) }}
-                        {% if values.get('qval_pevent_id') %}
-                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_entries'],
-                                                      nulloption=nbsp, label=gettext("Course"), aclass="input-sm",
-                                                      defaultvalue='', selectize=True) }}
-                        {% else %}
-                            <div class="help-block text-muted">
-                                {{ util.make_icon('info-circle') }}
-                                {% trans %}Course choices will be displayed after first search.{% endtrans %}
-                            </div>
-                        {% endif %}
+                        {{ generic.past_course_select(small=False, select_class="input-sm", input_name_prefix="qval_") }}
                     </div>
                     <div class="col-sm-6">
                         {{ util.form_input_from_to('postal_lower', 'postal_upper', label=gettext("ZIP"),
@@ -110,7 +101,7 @@
                         {{ util.form_input_text(name="qval_location,location2", label=gettext("City"),
                                                 aclass="input-sm") }}
                         {{ util.form_input_text('near_pc', label=gettext("Near ZIP")) }}
-                        {{ util.form_input_select('near_radius', label=gettext("Radius"), entries=choices['near_radius'].items(),
+                        {{ util.form_input_select('near_radius', label=gettext("Radius"), entries=near_radius.items(),
                                                   nulloption=nbsp, aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_country,country2", label=gettext("Country"),
                                                   entries=COUNTRY_CODES, nulloption=nbsp) }}

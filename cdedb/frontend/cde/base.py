@@ -61,7 +61,11 @@ from cdedb.frontend.common import (
     make_membership_fee_reference,
     request_extractor,
 )
-from cdedb.models.past_event import past_course_entries, past_event_entries
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -215,10 +219,14 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
         choices = {
             'pevents': pevents,
             'pevent_entries': past_event_entries(pevents),
             'near_radius': self.conf["NEARBY_SEARCH_RADII"],
+            "pcourse_entries": [],
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }
 
         result: Optional[Sequence[CdEDBObject]] = None
@@ -334,8 +342,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 persona['id'] = persona[query.scope.get_primary_key()]
 
         return self.render(rs, "member_search", {
-            'spec': spec, 'choices': choices, 'result': result,
-            'cutoff': cutoff, 'count': count,
+            'spec': spec, 'result': result, 'cutoff': cutoff, 'count': count,
+            **choices,
         })
 
     @staticmethod

@@ -94,7 +94,11 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
-from cdedb.models.past_event import past_course_entries, past_event_entries
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -1970,12 +1974,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if pevent_id := rs.values.get('pevent_id'):
             pcourse_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
             pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
 
         mandatory_fields = get_mandatory_form_fields(
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
             "pevent_entries": past_event_entries(pevents),
             "pcourse_entries": past_course_entries(pcourses),
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})
