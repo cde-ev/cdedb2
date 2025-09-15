@@ -38,6 +38,9 @@
         {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), icon='plus',
                      readonly=not is_privileged_for('create_course'), aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/course_query'), gettext('Course Query'), icon='search', aclass='btn btn-info btn-sm') }}
+        {{ util.href(cdedblink('event/course_choices'), gettext("Course Assignment"), icon='crosshairs',
+                               readonly=not is_privileged_for('course_choices'), aclass='btn btn-info btn-sm') }}
+        {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm') }}
     </div>
 
     {% if not include_active %}
@@ -108,23 +111,23 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
+            {% for course_id, course in courses.items() %}
                 <tr>
-                    {% set format = violations.get(course_id=course_id, track=None, track_group=None).course_stats_format -%}
+                    {% set format = violations.get(course=course, track=None, track_group=None).course_stats_format -%}
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                     <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}">
-                        {{ course['nr'] }}
+                        {{ course.nr }}
                     </td>
                     <td class="{{ aclass }}" title="{{ atitle }}">
-                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname'],
+                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course.shortname,
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
-                        {% set format = violations.get(course_id=course_id, track=track, track_group=None).course_stats_format -%}
+                        {% set format = violations.get(course=course, track=track, track_group=None).course_stats_format -%}
                         {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
-                        {% if track.id in course['segments'] %}
+                        {% if track.id in course.segments %}
                             <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
                                 {% for icon, icon_title in format.icons %}
                                     {{ util.make_icon(icon, title=gettext(icon_title)) }}
@@ -155,8 +158,8 @@
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
-                    <td class="b-left text-right">{{ course['min_size'] }}</td>
-                    <td class="text-right">{{ course['max_size'] }}</td>
+                    <td class="b-left text-right">{{ course.min_size }}</td>
+                    <td class="text-right">{{ course.max_size }}</td>
                     {% if ambience['event']['tracks']|length < 4 %}
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),

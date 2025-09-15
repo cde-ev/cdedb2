@@ -8,7 +8,6 @@ from typing import Optional
 
 from werkzeug import Response
 
-import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.frontend.common import (
@@ -49,13 +48,12 @@ class EventDroidMixin(EventBaseFrontend):
     def create_orga_token(self, rs: RequestState, event_id: int, data: CdEDBObject,
                           ) -> Response:
         """Create a new orga token. The new token will be displayed after a redirect."""
-        data['id'] = -1
         data['event_id'] = event_id
-        data = check(rs, vtypes.OrgaToken, data, creation=True)
+        data = check(rs, OrgaToken, data, creation=True)
         if rs.has_validation_errors() or not data:
             return self.create_orga_token_form(rs, event_id)
 
-        new_id, secret = self.eventproxy.create_orga_token(rs, OrgaToken(**data))
+        new_id, secret = self.eventproxy.create_orga_token(rs, data)
         orga_token = self.eventproxy.get_orga_token(rs, new_id)
         new_token = orga_token.get_token_string(secret)
         rs.notify_return_code(new_id)
@@ -78,7 +76,7 @@ class EventDroidMixin(EventBaseFrontend):
                           data: CdEDBObject) -> Response:
         """Change an existing orga token."""
         data['id'] = orga_token_id
-        data = check(rs, vtypes.OrgaToken, data)
+        data = check(rs, OrgaToken, data)
         if rs.has_validation_errors() or not data:
             return self.change_orga_token_form(rs, event_id, orga_token_id)
 

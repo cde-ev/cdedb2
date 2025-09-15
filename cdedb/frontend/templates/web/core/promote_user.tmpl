@@ -1,23 +1,27 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=ambience['persona']|persona_name %}
     	Change Realms for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']),
-            util.persona_name(ambience['persona']), icon="user") }}
+            ambience['persona']|persona_name, icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Add Realm"),
             active=(values['target_realm'] == '')) }}
     {% if values['target_realm'] %}
         {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Confirm"), active=True) }}
     {% endif %}
 {% endblock %}
+{% set jshint = "weak" %}
+{% block scripts %}
+    {{ util.cdedb_script("cdedb_helper.js") }}
+{% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Add Realm"), util.persona_name(ambience['persona']), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Add Realm"), ambience['persona']|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
@@ -44,7 +48,7 @@
             </p>
             <form action="{{ cdedblink('core/promote_user_form') }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
-                {{ util.form_input_static(gettext("User"), value=util.persona_name(p),
+                {{ util.form_input_static(gettext("User"), value=p|persona_name,
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
                         radio=True, small=True) }}
@@ -56,7 +60,7 @@
             <form action="{{ cdedblink('core/promote_user') }}" method="POST" id="promotionform"
                     class="form-horizontal">
                 {{ util.anti_csrf_token('core/promote_user') }}
-                {{ util.form_input_static(gettext("User"), value=util.persona_name(p)) }}
+                {{ util.form_input_static(gettext("User"), value=p|persona_name) }}
                 {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}
 
                 {% set implicit_realms = [] %}
@@ -97,11 +101,10 @@
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
                     {{ util.form_input_select(
-                            name='pevent_id', entries=past_events.items(), sort=True,
-                            nulloption=nbsp, label=gettext("Past Event")) }}
+                            name='pevent_id', entries=pevent_entries, nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
                     {% if values.get('pevent_id') %}
                         {{ util.form_input_select(
-                                name='pcourse_id', entries=past_courses.items(), sort=True,
+                                name='pcourse_id', entries=pcourse_entries, selectize=True,
                                 nulloption=nbsp, label=gettext("Course"), defaultvalue='') }}
                     {% else %}
                         {# Pass in a sentinel value, so we know, there was no past event selected before. #}

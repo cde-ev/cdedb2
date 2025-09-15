@@ -34,7 +34,7 @@ We have frontends for each realm, in this case the
 ``cdedb/frontend/cde.py``. The method corresponding to the action is called,
 that is :py:meth:`cdedb.frontend.cde.CdEFrontend.show_past_event`. This
 function is annotated with the :py:func:`cdedb.frontend.common.access`
-decorated which in this case triggers a check whether the accessing user has
+decorator which in this case triggers a check whether the accessing user has
 privileges to view ``cde`` content (this corresponds to the boolean
 ``is_cde_realm`` in the database entry of the user in the table
 ``core.personas``, more on this later). Only things annotated with this
@@ -60,11 +60,11 @@ any inputs requiring validation, but if you look at a frontend function
 receiving inputs via the :py:func:`cdedb.frontend.common.REQUESTdata`
 decorator you will see those arguments validated too). In this case the
 parameter ``pevent_id`` is checked with the validation function
-:py:func:`cdedb.validation._id` from ``cdedb/validation.py`` (which by some
-magic is actually accessed as :py:func:`cdedb.validation.affirm_id`). It
+:py:func:`cdedb.common.validation._id` from ``cdedb/validation.py`` (which by some
+magic is actually accessed as :py:func:`cdedb.backend.common.affirm_optional(vtypes.ID, )`). It
 proceeds to extract the list of courses of a concluded event from the table
 ``past_event.courses`` with help of the method
-:py:meth:`cdedb.backend.common.AbstractBackend.sql_select`, which
+:py:meth:`cdedb.database.query.SqlQueryBackend.sql_select`, which
 essentially formulates an SQL query and submits it to the PostgreSQL
 server. The database layout is stored in
 ``cdedb/database/cdedb-tables.sql``, where each schema roughly corresponds
@@ -75,6 +75,6 @@ Returning to the frontend we skip over most of the logic in
 final call to :py:meth:`cdedb.frontend.common.AbstractFrontend.render` which
 takes all the data from the backend and creates a nice HTML page. For this
 it uses the template
-``cdedb/frontend/templates/web/de/cde/show_past_event.tmpl``. The templates
+``cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl``. The templates
 utilize the :py:mod:`jinja2` syntax. The finished page is then returned to
 the Apache server which delivers it to the user.

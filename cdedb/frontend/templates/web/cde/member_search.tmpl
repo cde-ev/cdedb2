@@ -1,8 +1,12 @@
 {% set sidenav_active='cde_member_search' %}
+{% set jshint = "weak" %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans %}CdE-Member Search{% endtrans %}
+{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -87,13 +91,12 @@
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label=gettext("Interests"), aclass="input-sm") }}
-                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id'].items(),
-                                                  nulloption=nbsp, label=gettext("Academy"), aclass="input-sm",
-                                                  sort=True) }}
+                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_entries'],
+                                                  nulloption=nbsp, label=gettext("Academy"), aclass="input-sm", selectize=True) }}
                         {% if values.get('qval_pevent_id') %}
-                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id'].items(),
+                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_entries'],
                                                       nulloption=nbsp, label=gettext("Course"), aclass="input-sm",
-                                                      defaultvalue='', sort=True) }}
+                                                      defaultvalue='', selectize=True) }}
                         {% else %}
                             <div class="help-block text-muted">
                                 {{ util.make_icon('info-circle') }}

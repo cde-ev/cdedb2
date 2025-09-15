@@ -3,7 +3,6 @@
 """Everything regarding the role model of the CdEDB."""
 
 import collections
-import decimal
 from typing import TYPE_CHECKING, Any
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
@@ -56,6 +55,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False,
                 ret.add("searchable")
         if session.get("is_auditor"):
             ret.add("auditor")
+    if "event" in ret:
+        if session.get("is_complaint_admin"):
+            ret.add("complaint_admin")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -250,11 +252,16 @@ ADMIN_KEYS = {
     n_("is_ml_admin"): "is_ml_realm",
     n_("is_assembly_admin"): "is_assembly_realm",
     n_("is_cdelokal_admin"): "is_ml_realm",
+    n_("is_complaint_admin"): "is_event_realm",
     n_("is_auditor"): "is_cde_realm",
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
+
+#: All admin roles. Have privileged access to user data.
+ALL_ADMINS = {*REALM_ADMINS, "meta_admin", "finance_admin", "cdelokal_admin",
+              "complaint_admin", "auditor"}
 
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
@@ -265,6 +272,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("event_admin", "cdb_admin"),
     ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
+    ("complaint_admin", "cdb_admin"),
 
     ("searchable", "cdb_member"),
     ("member", "cdb_member"),
@@ -301,6 +309,7 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
     "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
+    "complaint",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
     "event_user", "event_mgmt", "event_list", "event_orga",
@@ -334,6 +343,8 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
             "core", "core_user", "cde_user", "event_user", "assembly_user",
             "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
         }
+    if {"complaint_admin", "complaint.enforcer"} & roles:
+        result |= {"complaint"}
     if "cde_admin" in roles:
         result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
@@ -341,7 +352,7 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "event_admin" in roles:
         result |= {"event_user", "user_review", "event_mgmt", "event_list",
                    "event_orga", "ml_mgmt_event", "ml_mod_event"}
-    if "event_helper" in roles:
+    if "event.event_helper" in roles:
         result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
@@ -357,39 +368,3 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
         result |= {"genesis"}
     return result
-
-
-# This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
-# defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE: dict[str, dict[str, Any]] = {
-    'event': {
-        'is_cde_realm': False,
-        'is_event_realm': True,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'ml': {
-        'is_cde_realm': False,
-        'is_event_realm': False,
-        'is_assembly_realm': False,
-        'is_ml_realm': True,
-        'is_member': False,
-        'is_searchable': False,
-    },
-    'cde': {
-        'is_cde_realm': True,
-        'is_event_realm': True,
-        'is_assembly_realm': True,
-        'is_ml_realm': True,
-        'is_member': True,
-        'is_searchable': False,
-        'trial_member': True,
-        'honorary_member': False,
-        'decided_search': False,
-        'bub_search': False,
-        'paper_expuls': True,
-        'donation': decimal.Decimal(0),
-    },
-}

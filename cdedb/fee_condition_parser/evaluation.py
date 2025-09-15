@@ -1,8 +1,7 @@
-
 import dataclasses
 from collections.abc import Set as AbstractSet
-from functools import partial
-from typing import Callable
+from datetime import date
+from typing import TypedDict
 
 import pyparsing as pp
 
@@ -44,42 +43,36 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
     return referenced_names
 
 
-def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-             other_values: dict[str, bool]) -> bool:
+class EvaluationData(TypedDict):
+    field_values: dict[str, bool]
+    part_values: dict[str, bool]
+    other_values: dict[str, bool]
+    reference_date: date
+    birthday: date
+
+
+def is_below_age(data: EvaluationData, age: int) -> bool:
+    reference_date, birthday = data['reference_date'], data['birthday']
+    years = reference_date.year - birthday.year
+
+    if (reference_date.month, reference_date.day) < (birthday.month, birthday.day):
+        years -= 1
+
+    return years < age
+
+
+def evaluate(result: pp.ParseResults, data: EvaluationData) -> bool:
     functions = {
-        'and': lambda x: evaluate(x[0], field_values, part_values, other_values) and evaluate(x[1], field_values, part_values, other_values),
-        'or': lambda x: evaluate(x[0], field_values, part_values, other_values) or evaluate(x[1], field_values, part_values, other_values),
-        'xor': lambda x: evaluate(x[0], field_values, part_values, other_values) != evaluate(x[1], field_values, part_values, other_values),
-        'not': lambda x: not evaluate(x[0], field_values, part_values, other_values),
+        'and': lambda x: evaluate(x[0], data) and evaluate(x[1], data),
+        'or': lambda x: evaluate(x[0], data) or evaluate(x[1], data),
+        'xor': lambda x: evaluate(x[0], data) != evaluate(x[1], data),
+        'not': lambda x: not evaluate(x[0], data),
         'true': lambda x_: True,
         'false': lambda x_: False,
-        'field': lambda x: field_values[x[0]],
-        'part': lambda x: part_values[x[0]],
-        'bool': lambda x: other_values[x[0]],
+        'field': lambda x: data['field_values'][x[0]],
+        'age': lambda x: is_below_age(data, int(x[0])),
+        'part': lambda x: data['part_values'][x[0]],
+        'bool': lambda x: data['other_values'][x[0]],
     }
     # print(result.get_name())
     return functions[result.get_name()](result)
-
-
-#: Tuple (evaluator, evaluate_args) for each result Group name.
-_EVALUATOR_FUNCTIONS: dict[str, tuple[Callable[..., bool], bool]] = {
-    'and': (lambda x, y, f, p, o: x(f, p, o) and y(f, p, o), True),
-    'or': (lambda x, y, f, p, o: x(f, p, o) or y(f, p, o), True),
-    'xor': (lambda x, y, f, p, o: x(f, p, o) != y(f, p, o), True),
-    'not': (lambda x, f, p, o: not x(f, p, o), True),
-    'true': (lambda f, p, o: True, False),
-    'false': (lambda f, p, o: False, False),
-    'field': (lambda t, f, p, o: f[t], False),
-    'part': (lambda t, f, p, o: p[t], False),
-    'bool': (lambda t, f, p, o: o[t], False),
-}
-
-
-# TODO: Do we need this? We don't use it?
-def create_evaluator(result: pp.ParseResults) -> Callable[[dict[str, bool], dict[str, bool]], bool]:
-    # num_bound_args = _EVALUATOR_NARY[result.get_name()]
-    evaluator, evaluate_args = _EVALUATOR_FUNCTIONS[result.get_name()]
-    if evaluate_args:
-        return partial(evaluator, *(create_evaluator(token) for token in result))
-    else:
-        return partial(evaluator, *result)

@@ -45,9 +45,9 @@
         <dd id="orgas">
             {% for anid, orga in orgas.items() %} {# This is already sorted. #}
                 {% if orga['viewable'] %}
-                    {{ util.persona_anchor(personas[anid], quote_me=not is_admin) -}}
+                    {{ util.persona_anchor(personas[anid], include_nickname=true, quote_me=not is_admin) -}}
                 {% else %}
-                    {{ util.persona_name(personas[anid]) -}}
+                    {{ personas[anid]|persona_name(include_nickname=true) -}}
                 {% endif -%}
                 {% if not loop.last %},{% endif %}
             {% endfor %}
@@ -147,9 +147,9 @@
                 <li class="hide-hover-container clearfix-after">
 
                     {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
+                        {{ util.persona_anchor(personas[anid], include_nickname=true, quote_me=not is_admin) }}
                     {% else %}
-                        {{ util.persona_name(personas[anid]) -}}
+                        {{ personas[anid]|persona_name(include_nickname=true) -}}
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (

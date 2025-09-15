@@ -18,6 +18,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
     CdEDBOptionalMap,
@@ -29,8 +30,13 @@ from cdedb.common import (
     now,
     parse_datetime,
 )
-from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.exceptions import (
+    APITokenError,
+    EventIsBalancedError,
+    PartialImportError,
+    PrivilegeError,
+)
+from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
@@ -444,7 +450,7 @@ class TestEventBackend(BackendTest):
         new_course['active_segments'] = new_course['segments']
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
-            self.key, new_course_id))
+            self.key, new_course_id).as_dict())
 
         new_group = {
             'event_id': new_id,
@@ -802,6 +808,52 @@ class TestEventBackend(BackendTest):
         expectation -= {track_id}
         self.assertEqual(expectation, event.tracks.keys())
 
+    @as_users("emilia")
+    def test_aposteriori_part_creation(self) -> None:
+        event_id = 4
+
+        self.assertTrue(self.event.list_registrations(self.key, event_id))
+
+        regs = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, event_id))
+        event = self.event.get_event(self.key, event_id)
+
+        new_part = {
+            'title': "Abreise",
+            'shortname': "D",
+            'part_begin': datetime.date(2222, 11, 11),
+            'part_end': datetime.date(2222, 12, 12),
+        }
+        update_event = {
+            'parts': {
+                -1: new_part,
+            },
+        }
+        self.event.set_event(self.key, event_id, update_event)
+
+        new_part['id'] = new_part_id = 1001
+        new_part['event_id'] = event_id
+        new_part['tracks'] = {}
+        new_part['part_groups'] = {}
+        new_part['waitlist_field_id'] = new_part['camping_mat_field_id'] = None
+
+        for reg in regs.values():
+            reg['parts'][new_part_id] = {
+                'status': const.RegistrationPartStati.not_applied,
+                'lodgement_id': None,
+                'is_camping_mat': False,
+                'part_id': new_part_id,
+                'registration_id': reg['id'],
+            }
+
+        new_part_obj = models.EventPart.from_database(new_part)
+        event.parts[new_part_id] = new_part_obj
+
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
+        self.assertEqual(event.as_dict(), self.event.get_event(self.key, event_id).as_dict())
+        self.assertEqual(event, self.event.get_event(self.key, event_id))
+
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self) -> None:
         event_id = 1
@@ -861,26 +913,23 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
         data['fields'] = {}
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
         data['segments'] = {1, 3}
         data['active_segments'] = {1, 3}
         self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'segments': data['segments'],
             'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
         data['active_segments'] = {1}
         self.event.set_course(self.key, {
             'id': new_id, 'active_segments': data['active_segments']})
-        self.assertEqual(data,
-                         self.event.get_course(self.key, new_id))
+        self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
         self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
@@ -1006,7 +1055,7 @@ class TestEventBackend(BackendTest):
             [1, 3, 4],
             partial_export["registrations"][1]["tracks"][1]["choices"])
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_visible_events(self) -> None:
         rs = self.event.get_rs(self.key)  # type: ignore[attr-defined]
         expectation = {
@@ -1023,7 +1072,7 @@ class TestEventBackend(BackendTest):
                              if event.is_visible_for(rs.user, True, privileged=False)}
         self.assertEqual(event_ids, total_registration)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_has_registrations(self) -> None:
         self.assertTrue(self.event.has_registrations(self.key, 1))
 
@@ -1785,7 +1834,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
-    @as_users("berta", "emilia")
+    @as_users("berta", "emilia", maintain_data=True)
     def test_get_questionnaire(self) -> None:
         event_id = 1
         expectation = {
@@ -1814,7 +1863,7 @@ class TestEventBackend(BackendTest):
                 },
                 {
                     'field_id': 1,
-                    'default_value': 'True',
+                    'default_value': True,
                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
                             ' abzuwerfen.',
                     'pos': 1,
@@ -2503,6 +2552,8 @@ class TestEventBackend(BackendTest):
             reg['mtime'] = None
             for fee_id, amount in reg['personalized_fees'].items():
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
+            for fee_kind, amount in reg['amount_owed_by_kind'].items():
+                reg['amount_owed_by_kind'][fee_kind] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2522,6 +2573,10 @@ class TestEventBackend(BackendTest):
                 self.testfile_dir / "partial_event_import.json", encoding="utf-8",
         ) as datafile:
             data = json.load(datafile)
+        self.assertEqual(
+            (EVENT_SCHEMA_VERSION[0], 0), tuple(data["EVENT_SCHEMA_VERSION"]),
+            "Partial Import should be tested with a minor version of 0.",
+        )
 
         # first a test run
         token1, delta = self.event.partial_import_event(
@@ -2630,12 +2685,22 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1]['mtime'] = nearly_now()
         # amount_owed is recalculated
         expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
+        expectation['registrations'][2]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("584.49"),
+            "external": decimal.Decimal("5.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
         expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
         expectation['registrations'][3]['personalized_fees'][10] = decimal.Decimal(
             expectation['registrations'][3]['personalized_fees'][10],
         )
+        expectation['registrations'][3]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("534.49"),
+            "instructor_refund": decimal.Decimal("-45.00"),
+            "solidary_reduction": decimal.Decimal("-0.01"),
+        }
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -2644,8 +2709,10 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['registrations'][1002]['personalized_fees'] = {}
-        expectation['EVENT_SCHEMA_VERSION'] = tuple(
-            expectation['EVENT_SCHEMA_VERSION'])
+        expectation['registrations'][1002]['amount_owed_by_kind'] = {
+            "common": decimal.Decimal("573.99"),
+        }
+        expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)
 
         # Test logging
@@ -2958,7 +3025,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertEqual(expectation, delta)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", maintain_data=True)
     def test_check_registration_status(self) -> None:
         event_id = 1
 
@@ -2994,17 +3061,36 @@ class TestEventBackend(BackendTest):
                 5: decimal.Decimal("584.48"),
                 6: decimal.Decimal("10.50"),
             }
-            self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+            reality = {
+                reg_id: self.event.calculate_complex_fee(self.key, reg_id).amount
+                for reg_id in reg_ids
+            }
+            self.assertEqual(expectation, reality)
+
+        if self.user_in("annika"):
+            for event_id in self.event.list_events(self.key):
+                for reg_id in self.event.list_registrations(self.key, event_id=event_id):
+                    data = self._raw_backend.sql_select_one(
+                        self.key, models.Registration.database_table,
+                        ["amount_owed", "amount_owed_by_kind"],
+                        entity=reg_id,
+                    )
+                    assert data is not None
+                    expectation_amount = data["amount_owed"]
+                    expectation_by_kind = {
+                        const.EventFeeType(int(key)): decimal.Decimal(val)
+                        for key, val in data["amount_owed_by_kind"].items()
+                    }
+                    complex_reality = self.event.calculate_complex_fee(self.key, reg_id)
+                    self.assertEqual(expectation_amount, complex_reality.amount)
+                    self.assertEqual(expectation_by_kind, dict(complex_reality.by_kind))
+
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
-        self.assertEqual(
-            const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
-        self.assertEqual(
-            const.RegistrationPartStati.guest, reg['parts'][2]['status'])
-        self.assertEqual(
-            const.RegistrationPartStati.participant,
-            reg['parts'][3]['status'])
+        self.assertEqual(const.RegistrationPartStati.waitlist, reg['parts'][1]['status'])
+        self.assertEqual(const.RegistrationPartStati.guest, reg['parts'][2]['status'])
+        self.assertEqual(const.RegistrationPartStati.participant, reg['parts'][3]['status'])
         update = {
             'id': reg_id,
             'parts': {
@@ -3022,12 +3108,9 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.set_registration(self.key, update))
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("128.00"))
-        self.assertEqual(reg['parts'][1]['status'],
-                         const.RegistrationPartStati.cancelled)
-        self.assertEqual(reg['parts'][2]['status'],
-                         const.RegistrationPartStati.participant)
-        self.assertEqual(reg['parts'][3]['status'],
-                         const.RegistrationPartStati.rejected)
+        self.assertEqual(reg['parts'][1]['status'], const.RegistrationPartStati.cancelled)
+        self.assertEqual(reg['parts'][2]['status'], const.RegistrationPartStati.participant)
+        self.assertEqual(reg['parts'][3]['status'], const.RegistrationPartStati.rejected)
 
     @as_users("berta")
     def test_uniqueness(self) -> None:
@@ -3131,7 +3214,7 @@ class TestEventBackend(BackendTest):
             "notes": None,
         }
         reg_id = self.event.create_registration(self.key, reg_data)
-        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+        self.assertEqual(self.event.calculate_complex_fee(self.key, reg_id).amount,
                          decimal.Decimal("15"))
         reg_data = {
             'id': reg_id,
@@ -3140,7 +3223,7 @@ class TestEventBackend(BackendTest):
             },
         }
         self.assertTrue(self.event.set_registration(self.key, reg_data))
-        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+        self.assertEqual(self.event.calculate_complex_fee(self.key, reg_id).amount,
                          decimal.Decimal("2.50"))
 
     @as_users("garcia")
@@ -4121,67 +4204,49 @@ class TestEventBackend(BackendTest):
 
         # Setting is not allowed for non-privileged users.
         with self.assertRaises(PrivilegeError):
-            self.event.set_part_groups(ANONYMOUS, event_id, {})
+            self.event.add_part_group(ANONYMOUS, event_id, {})
         with self.switch_user("garcia"):
             with self.assertRaises(PrivilegeError):
-                self.event.set_part_groups(self.key, event_id, {})
+                self.event.add_part_group(self.key, event_id, {})
 
-        # Empty setter just returns 1.
-        self.assertEqual(self.event.set_part_groups(self.key, event_id, {}), 1)
-
-        new_part_group_id = self.event.set_part_groups(
-            self.key, event_id, {-1: new_part_group})
+        new_part_group_id = self.event.add_part_group(
+            self.key, event_id, new_part_group)  # id 1001
         self.assertTrue(new_part_group_id)
 
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: new_part_group})
+        # we require shortname and title to be unique
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, new_part_group)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['title'] = "All"
-        with self.assertRaises(UNIQUE_VIOLATION):
-            self.event.set_part_groups(self.key, event_id, {-1: data})
+        with self.assertRaises(ValueError):
+            self.event.add_part_group(self.key, event_id, data)
 
         data = new_part_group.copy()
         data['shortname'] = "ALL"
         data['title'] = "All"
-        self.event.set_part_groups(self.key, event_id, {-1: data})  # id 1005
+        self.event.add_part_group(self.key, event_id, data)  # id 1002
 
-        # Simultaneous deletion and recreation of part group with same name works.
-        self.event.set_part_groups(
-            self.key, event_id, {1001: None, -1: new_part_group},  # id 1006
-        )
-
-        # Switching of shortnames for exisitng groups is also possible.
-        setter = {
-            1005: {'shortname': new_part_group['shortname']},
-            1006: {'shortname': data['shortname']},
-        }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, setter))  # type: ignore[arg-type]
         part_group_expectation.update({
-            1005: {**data, **setter[1005], **{'event_id': event_id, 'id': 1005}},
-            1006: {**new_part_group, **setter[1006],
-                   **{'event_id': event_id, 'id': 1006}},
+            1001: {**new_part_group, **{'event_id': event_id, 'id': 1001}},
+            1002: {**data, **{'event_id': event_id, 'id': 1002}},
         })
 
-        # Update and delete an existing group.
+        # Update an existing group.
         update = {
-            1: {
-                'notes': "Pack explosives for New Years!",
-            },
-            4: None,
-            1006: {
-                'part_ids': set(list(event.parts)[:len(event.parts) // 2]),
-            },
+            'notes': "Pack explosives for New Years!",
         }
-        self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
-        part_group_expectation[1].update(update[1])  # type: ignore[arg-type]
+        self.assertTrue(self.event.change_part_group(self.key, 1, update))
+        part_group_expectation[1].update(update)
+
+        # Delete an existing group
+        self.assertTrue(self.event.delete_part_group(self.key, 4))
         del part_group_expectation[4]
-        part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
         reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
         for pg in reality.values():
@@ -4193,15 +4258,14 @@ class TestEventBackend(BackendTest):
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(self.key, event_id, {NON_EXISTING_ID: None})
-        # ValueError when creating or updating a part group with a non existing part.
+            self.event.change_part_group(self.key, NON_EXISTING_ID, {"id": NON_EXISTING_ID})
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id,
-                {-1: {**new_part_group, **{'part_ids': [NON_EXISTING_ID]}}})
+            self.event.delete_part_group(self.key, NON_EXISTING_ID)
+        # ValueError when creating a part group with a non existing part.
+        data = new_part_group.copy()
+        data["part_ids"] = [NON_EXISTING_ID]
         with self.assertRaises(ValueError):
-            self.event.set_part_groups(
-                self.key, event_id, {1: {'part_ids': [NON_EXISTING_ID]}})
+            self.event.add_part_group(self.key, event_id, data)
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
@@ -4245,16 +4309,16 @@ class TestEventBackend(BackendTest):
                 'part_ids': [7, 10],
                 'shortname': 'ML W',
                 'title': 'Mailingliste Windischleuba'},
-            1005: {'constraint_type': const.EventPartGroupType.Statistic,
+            1001: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
                    'shortname': 'all',
-                   'title': 'All'},
-            1006: {'constraint_type': const.EventPartGroupType.Statistic,
-                   'notes': "Let's see what happens",
-                   'part_ids': [7, 8],
-                   'shortname': 'ALL',
                    'title': 'Everything'},
+            1002: {'constraint_type': const.EventPartGroupType.Statistic,
+                   'notes': "Let's see what happens",
+                   'part_ids': [7, 8, 9, 10, 11, 12],
+                   'shortname': 'ALL',
+                   'title': 'All'},
         }
         export = self.event.partial_export_event(self.key, event_id)
         self.assertEqual(export['event']['part_groups'], export_expectation)
@@ -4493,7 +4557,7 @@ class TestEventBackend(BackendTest):
             }
             self.event.set_registration(self.key, r_data)
             combination = ", ".join(str(int(x == p)) for x in stati)
-            fee = self.event.calculate_fee(self.key, reg_id)
+            fee = self.event.calculate_complex_fee(self.key, reg_id).amount
             with self.subTest(combination=combination):
                 self.assertEqual(fee, decimal.Decimal(expected_fee))
 
@@ -4596,14 +4660,15 @@ class TestEventBackend(BackendTest):
         delta = datetime.timedelta(minutes=1)
         with freezegun.freeze_time(base_time) as frozen_time:
             new_token = OrgaToken(
-                id=cast(vtypes.ProtoID, -1),
+                id=cast(vtypes.ID, -1),
                 event_id=cast(vtypes.ID, event_id),
                 title="New Token!",
                 notes=None,
                 etime=base_time + delta,
             )
-            new_id, secret = self.event.create_orga_token(self.key, new_token)
-            new_token.id = vtypes.ProtoID(new_id)
+            data = new_token.to_database()
+            new_id, secret = self.event.create_orga_token(self.key, data)
+            new_token.id = vtypes.ID(new_id)
             apitoken = cast(RequestState, new_token.get_token_string(secret))
 
             log_expectation = [
@@ -4715,12 +4780,12 @@ class TestEventBackend(BackendTest):
         }
         reg_id = self.event.create_registration(self.key, rdata)
         self.assertEqual(
-            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+            external_fee_amount, self.event.calculate_complex_fee(self.key, reg_id).amount)
 
         # 2.2 Now grant them membership and check that the external fee still holds.
         self.cde.change_membership(self.key, persona_id, True)
         self.assertEqual(
-            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+            external_fee_amount, self.event.calculate_complex_fee(self.key, reg_id).amount)
 
         # 3.1 Delete and recreate the registration.
         #  Check that external fee does not apply.
@@ -4728,12 +4793,12 @@ class TestEventBackend(BackendTest):
             self.key, reg_id, ('registration_parts',))
         new_reg_id = self.event.create_registration(self.key, rdata)
         self.assertEqual(
-            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+            decimal.Decimal(0), self.event.calculate_complex_fee(self.key, new_reg_id).amount)
 
         # 3.2 Revoke membership and check that external fee still does not apply.
         self.cde.change_membership(self.key, persona_id, False)
         self.assertEqual(
-            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+            decimal.Decimal(0), self.event.calculate_complex_fee(self.key, new_reg_id).amount)
 
     @event_keeper
     @as_users("anton")
@@ -4788,6 +4853,9 @@ class TestEventBackend(BackendTest):
                 reference_time,
                 self.event._event_keeper.latest_logtime(event_id),
             )
+
+        # Check size limit bypass for commited file.
+        self.event._event_keeper.commit(event_id, "X" * 300_000, "file size test")
 
     @as_users("garcia")
     def test_replace_checkin_periods(self) -> None:
@@ -5126,22 +5194,145 @@ class TestEventBackend(BackendTest):
 
     @event_keeper
     @as_users("garcia")
+    @prepsql("DELETE FROM event.checkin_periods")
+    def test_checkin_query(self) -> None:
+        event_id = 1
+        registration_id = 1
+
+        base_time = now() - datetime.timedelta(days=2)
+        delta = datetime.timedelta(hours=2)
+
+        self.event.replace_checkin_periods(
+            self.key,
+            registration_id,
+            [
+                models.ReducedCheckinPeriod(base_time, base_time + delta),
+                models.ReducedCheckinPeriod(base_time + 2 * delta, base_time + 3 * delta),
+            ],
+        )
+
+        base_query = Query(
+            QueryScope.registration,
+            spec={},
+            fields_of_interest=["reg.id"],
+            order=[],
+            constraints=[("reg.id", QueryOperators.equal, registration_id)],
+        )
+        spec = base_query.scope.get_spec(event=self.event.get_event(self.key, event_id))
+
+        def _check_queries(constraint_a: QueryConstraint, constraint_b: QueryConstraint, first: bool) -> None:
+            query = copy.deepcopy(base_query)
+            query.spec = spec
+            query.constraints.append(constraint_a)
+            data_a = self.event.submit_general_query(self.key, query, event_id)
+            query.constraints[-1] = constraint_b
+            data_b = self.event.submit_general_query(self.key, query, event_id)
+
+            self.assertEqual(int(first), len(data_a))
+            self.assertEqual(int(not first), len(data_b))
+
+        # Test at and notat operators.
+        _at = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_at,
+            dt,
+        )
+        _notat = lambda dt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notat,
+            dt,
+        )
+        for i, (time, expectation) in enumerate([
+            (base_time - 0.5 * delta, False),
+            (base_time + 0.5 * delta, True),
+            (base_time + 1.5 * delta, False),
+            (base_time + 2.5 * delta, True),
+            (base_time + 3.5 * delta, False),
+        ]):
+            with self.subTest(operator="at/notat", i=i, time=time):
+                _check_queries(_at(time), _notat(time), expectation)
+
+        # Test oneof and noneof operators.
+        _oneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_oneof,
+            ldt,
+        )
+        _noneof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_noneof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time - 0.5 * delta, base_time + 1.5 * delta, base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta], True),
+            ([base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time + 0.5 * delta, base_time + 1.5 * delta, base_time + 2.5 * delta], True),
+        ]):
+            with self.subTest(operator="oneof/noneof", i=i, times=ldt):
+                _check_queries(_oneof(ldt), _noneof(ldt), expectation)
+
+        # Test allof and notallof operators.
+        _allof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_allof,
+            ldt,
+        )
+        _notallof = lambda ldt: (
+            "checkin_at.checkin_time,checkin_at.checkout_time",
+            QueryOperators.ranged_notallof,
+            ldt,
+        )
+        for i, (ldt, expectation) in enumerate([
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta], True),
+            ([base_time - 0.5 * delta], False),
+            ([base_time + 1.5 * delta], False),
+            ([base_time + 3.5 * delta], False),
+            ([base_time + 0.5 * delta, base_time + 2.5 * delta, base_time + 3.5 * delta], False),
+        ]):
+            with self.subTest(operator="allof/notallof", i=i, times=ldt):
+                _check_queries(_allof(ldt), _notallof(ldt), expectation)
+
+    @event_keeper
+    @as_users("garcia")
     @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1;")
     def test_event_is_balanced(self) -> None:
         event_id = 1
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_event_fees(self.key, event_id, {})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
-            self.event.set_registration(self.key, {'id': 1, 'fields': {'is_child': True}})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})
 
         self.event.set_registration(self.key, {'id': 1, 'fields': {'brings_balls': False}})
 
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
 
-        new_reg = {
+        with self.assertRaises(EventIsBalancedError):
+            self.event.set_event(self.key, event_id, {
+                'parts': {
+                    part_id: {
+                        'part_begin': "2322-01-01",
+                        'part_end': "2322-01-01",
+                    }
+                    for part_id in [1, 2, 3]
+                },
+            })
+
+        self.event.set_event(self.key, event_id, {
+            'parts': {
+                part_id: {
+                    'part_begin': "2223-01-01",
+                    'part_end': "2223-01-01",
+                }
+                for part_id in [1, 2, 3]
+            },
+        })
+
+        new_reg: CdEDBObject = {
             'event_id': event_id,
             'persona_id': 4,
             'parts': {
@@ -5156,10 +5347,16 @@ class TestEventBackend(BackendTest):
                 },
             },
             'tracks': {
+                1: {},
+                2: {},
+                3: {},
             },
             'notes': None,
             'mixed_lodging': False,
             'list_consent': True,
         }
-        with self.assertRaisesRegex(ValueError, "Event is balanced."):
+        with self.assertRaises(EventIsBalancedError):
             self.event.create_registration(self.key, new_reg)
+
+        new_reg['parts'][1]['status'] = const.RegistrationPartStati.cancelled
+        self.event.create_registration(self.key, new_reg)

@@ -39,7 +39,7 @@
                                 <tr id="inhabitant-{{ part.id }}-{{ registration_id }}">
                                     <td>
                                         {% if not registration_part_status.is_involved() %}<s>{% endif -%}
-                                        {{ util.persona_name(personas[registrations[registration_id]['persona_id']], include_nickname=True) }}
+                                        {{ personas[registrations[registration_id]['persona_id']]|persona_name(include_nickname=True) }}
                                         {%- if not registration_part_status.is_involved() %}</s>{% endif %}
                                         {% if registration_part_status != enums['RegistrationPartStati'].participant %}
                                             <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import csv
 import pathlib
 import sys
@@ -20,12 +22,12 @@ institution_map['AT'] = institution_map['DSA']
 
 with infile_events.open("r") as f:
     event_data = {
-        event_line['shortname']: {
-            'title': event_line['Titel'],
-            'shortname': event_line['shortname'],
-            'institution': institution_map[event_line['Veranstalter']],
-            'description': event_line['Beschreibung'],
-            'tempus': event_line['Beginn'],
+        event_line['Standort_Kurzbez']: {
+            'title': event_line['Standort_Langbez'],
+            'shortname': event_line['Standort_Kurzbez'],
+            'institution': const.PastInstitutions.bub,
+            'description': None,
+            'tempus': event_line['Termin_Aka_von'],
         }
         for event_line in csv.DictReader(f, dialect=CustomCSVDialect)
     }
@@ -33,17 +35,17 @@ with infile_events.open("r") as f:
 with infile_courses.open("r") as f:
     course_data: CdEDBObject = {}
     for course_line in csv.DictReader(f, dialect=CustomCSVDialect):
-        event_id = course_line['Akademie']
+        event_id = course_line['Standort_Kurzbez']
         if event_id not in course_data:
             course_data[event_id] = []
         course_data[event_id].append({
-            'nr': course_line['KursNr'],
+            'nr': course_line['GLKurse::KursNr'],
             'title': " – ".join(
                 filter(None, map(str.strip, (
-                    course_line['Kurstitel'],
-                    course_line['Kurstiel2'],
+                    course_line['GLKurse::Kursobertitel'],
+                    course_line['GLKurse::Kursuntertitel'],
                 )))),
-            'description': course_line['Beschreibung'],
+            'description': course_line['GLKurse::KursBeschreibung'],
         })
 
 with s:
@@ -52,6 +54,8 @@ with s:
         pevent_id = past_event.create_past_event(s.rs(), pevent)
         pevent_count += 1
         for pcourse in course_data.get(external_id, []):
+            if not pcourse['nr']:
+                continue
             pcourse['pevent_id'] = pevent_id
             past_event.create_past_course(s.rs(), pcourse)
             pcourse_count += 1

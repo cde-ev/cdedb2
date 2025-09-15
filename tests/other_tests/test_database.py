@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import psycopg2.extensions
 
@@ -21,11 +21,14 @@ from cdedb.database.connection import (
 
 
 class TestDatabase(unittest.TestCase):
+    config: ClassVar[Config]
+    secrets: ClassVar[SecretsConfig]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.config = Config()
-        self.secrets = SecretsConfig()
+    @classmethod
+    def setUpClass(cls, *args: Any, **kwargs: Any) -> None:
+        super().setUpClass(*args, **kwargs)
+        cls.config = Config()
+        cls.secrets = SecretsConfig()
 
     def test_instant_connection(self) -> None:
         factory = connection_pool_factory(

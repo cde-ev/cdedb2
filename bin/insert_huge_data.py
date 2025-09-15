@@ -378,7 +378,7 @@ def mailinglist(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     ml = context.script.make_backend('ml', proxy=False)
     data = cdedb.models.ml.MemberOptInMailinglist(
-            id=vtypes.CreationID(vtypes.ProtoID(-1)),
+            id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart(make_counter(context, 'EmailLocalPart')),
             domain=const.MailinglistDomain.lists,
             description='',

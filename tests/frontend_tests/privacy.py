@@ -475,7 +475,8 @@ class TestPrivacyFrontend(FrontendTest):
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
 
-    @as_users("annika", "ludwig", "nina", "quintus", "viktor")
+    @as_users("annika", "ludwig", "nina", "quintus", "viktor",
+              maintain_data=True)
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
     def test_profile_as_relevant_ml_admin(self) -> None:
@@ -502,6 +503,16 @@ class TestPrivacyFrontend(FrontendTest):
             for field in self.ALL_FIELDS - found:
                 self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                        check_div=False)
+
+    @as_users("simon", "janis")
+    @admin_views("complaint")
+    def test_profile_as_enforcer(self) -> None:
+        self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
+        self.assertTitle("Bertå Beispiel – Maßnahmen")
+        if self.user_in("simon"):
+            self.assertPresence("berta@example.cde", div="global-information")
+        else:
+            self.assertNonPresence("berta@example.cde")
 
     def test_profile_of_realm_user(self) -> None:
         users = ("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
@@ -565,7 +576,7 @@ class TestPrivacyFrontend(FrontendTest):
         # TODO maybe add all above tests as subtests?
         self.skipTest("Test not yet implemented.")
 
-    @as_users("inga", "viktor")
+    @as_users("inga", "viktor", maintain_data=True)
     def test_user_pages_unprivileged(self) -> None:
         self.get('/core/persona/2/events', status=403)
         self.get('/core/persona/2/mailinglists', status=403)
@@ -683,12 +694,12 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
 
-    @as_users("charly", "daniel", "garcia", "inga")
+    @as_users("charly", "daniel", "garcia", "inga", maintain_data=True)
     def test_show_past_event(self) -> None:
         akira = "Akira Abukara"
-        berta = "Bertå Beispiel"
+        berta = "Bertå (Bindi) Beispiel"
         charly = "Charly Clown"
-        emilia = "Emilia Eventis"
+        emilia = "Emilia (Emmy) Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
@@ -722,10 +733,10 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertPresence(participant, div='list-participants')
                 self.assertNoLink(participant)
 
-    @as_users("charly", "daniel", "garcia", "inga")
+    @as_users("charly", "daniel", "garcia", "inga", maintain_data=True)
     def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
-        emilia = "Emilia Eventis"
+        emilia = "Emilia (Emmy) Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):

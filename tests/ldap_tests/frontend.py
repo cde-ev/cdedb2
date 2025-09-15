@@ -14,6 +14,7 @@ from tests.common import USER_DICT, BasicTest, nearly_now
 
 
 class TestLDAP(BasicTest):
+    maxDiff = None  # useful since verbose debug output on failure
 
     root_dn = 'dc=cde-ev,dc=de'
     test_dua_dn = f'cn=test,ou=duas,{root_dn}'
@@ -227,6 +228,7 @@ class TestLDAP(BasicTest):
                 'cn=is_cde_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_cdelokal_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_complaint_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_core_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_event_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
@@ -253,6 +255,7 @@ class TestLDAP(BasicTest):
                 'cn=party50@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=struktur@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',

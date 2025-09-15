@@ -7,7 +7,6 @@ import unittest
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
-import cdedb.common.validation.types as vtypes
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.session import SessionBackend
@@ -249,5 +248,6 @@ class TestScript(unittest.TestCase):
         with self.assertRaisesRegex(
                 ValueError, "May not create new orga token in offline instance.",
         ):
-            token.id = vtypes.ProtoID(-1)
-            event.create_orga_token(offline_script.rs(), token)
+            data = token.to_database()
+            del data["id"]
+            event.create_orga_token(offline_script.rs(), data)

@@ -1,0 +1,56 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% trans title=gettext("Case %s")|format(ambience['case'].id) %}
+        Remove Entry ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Remove Entry"), gettext("Case %s")|format(ambience['case'].id),
+                            'gavel', "") }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
+                            icon="gavel") }}
+    {{ util.breadcrumb_link(cdedblink("core/remove_entry"), gettext("Remove Entry"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% set entry_type = ambience['entry'].entry_type %}
+    <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal">
+        {% if ambience['entry'] %}
+            {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
+        {% endif %}
+        {{ util.anti_csrf_token("core/remove_entry") }}
+        {% call util.form_input_static(label=gettext("Entry Type")) %}
+            {{ util.make_icon(entry_type.get_icon()) }}
+            {{ gettext(entry_type|string) }}
+        {% endcall %}
+        {% if entry_type.has_concerned %}
+            {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(concerned, icon='user')) }}
+        {% endif %}
+        {{ util.form_input_static(label=gettext("Timestamp"), value=ambience['entry'].active_version.timestamp|datetime(lang=lang)) }}
+        {{ util.form_input_static(label=gettext("Authors"), value=util.persona_anchors(authors)) }}
+        {% if entry_type.has_description %}
+            {{ util.form_input_static(name="description", label=gettext("Description"), value=description|md, info=infotext) }}
+        {% endif %}
+        {# Add some conditional warnings here. #}
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_text(name="dreason", label=gettext("Deletion Reason")) }}
+            </div>
+        </div>
+        {{ util.form_input_submit(label=gettext("Remove"), cancellink=cdedblink('core/show_case'), aclass="btn btn-primary btn-danger", icon="eye-slash",
+                                  info=gettext("Only remove entries if they are erroneous. If they are no longer valid or have been rescinded, revoke them instead.")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#removeeentryform').cdedbProtectChanges();
+    </script>
+{% endblock %}

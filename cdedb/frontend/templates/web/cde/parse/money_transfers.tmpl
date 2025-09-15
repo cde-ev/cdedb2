@@ -58,11 +58,11 @@
                             {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                         </span>:
                         {% if dataset['event'] and dataset['persona'] %}
-                            {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']), event=dataset['event'].title %}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=dataset['persona']|persona_name, event=dataset['event'].title %}
                                 {{ amount }} for {{ name }} for {{ event }}
                             {% endtrans %}
                         {% elif dataset['persona'] %}
-                            {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']) -%}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=dataset['persona']|persona_name -%}
                                 {{ amount }} for {{ name }}
                             {% endtrans %}
                         {% elif dataset['event'] %}

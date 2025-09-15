@@ -13,7 +13,7 @@ Grundsätzlich gibt es folgende Datenfelder, die im Profil einer Person angezeig
 werden können:
 
 * Name,
-* Geburstname,
+* Geburtsname,
 * Geburtsdatum,
 * Geschlecht,
 * Pronomen,
@@ -23,7 +23,7 @@ werden können:
 * Bereiche,
 * Admin-Privilegien,
 * Admin-Notizen,
-* Guthaben, bzw Lastschrift
+* Guthaben, bzw. Lastschrift
 * Sichtbarkeit,
 * E-Mail,
 * Telefon,

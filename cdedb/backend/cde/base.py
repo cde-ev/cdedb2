@@ -25,7 +25,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     access,
     affirm_array_validation as affirm_array,
-    affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.event import EventBackend
@@ -46,6 +45,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
 )
@@ -120,7 +120,7 @@ class CdEBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(CdELogFilter, log_filter)
+        log_filter = affirm(CdELogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
@@ -131,13 +131,16 @@ class CdEBaseBackend(AbstractBackend):
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(FinanceLogFilter, log_filter)
+        log_filter = affirm(FinanceLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
     def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
                              ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        # This ensures that membership fees are handled before event fees for each day.
+        transfers = xsorted(transfers,
+                            key=lambda t: (t['date'], t['registration_id'] is not None))
         index = 0
 
         changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
@@ -172,6 +175,7 @@ class CdEBaseBackend(AbstractBackend):
                             code = self.core.change_membership_easy_mode(
                                 rs, persona['id'], is_member=True)
                             result.new_members += bool(code)
+                            persona['is_member'] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(models_finance.MoneyTransfer(
@@ -184,6 +188,7 @@ class CdEBaseBackend(AbstractBackend):
                         registration = self.event.book_registration_payment(
                             rs, registration_id=transfer['registration_id'],
                             amount=amount, date=date, by_orga=False,
+                            is_member=persona['is_member'],
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(
@@ -528,7 +533,10 @@ class CdEBaseBackend(AbstractBackend):
             # frustrating for the users -- hence some extra error handling
             # here.
             self.logger.error(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation <<<\n<<<\n<<<\n<<<")
+                f">>>\n>>>\n>>>\n>>>"
+                f" Exception during batch creation ({index=})"
+                f" <<<\n<<<\n<<<\n<<<"
+            )
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

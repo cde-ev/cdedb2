@@ -87,7 +87,7 @@ steps:
     - failure
     - success
   commands:
-    - make --keep-going lint
+    - sudo -u cdedb make --keep-going lint
 - name: testsuite-setup
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -281,8 +281,6 @@ volumes:
 
 trigger:
   branch:
-  - master
-  - stable
-  - ci/*
-  # remove after #3073 is merged
-  - feature/mandatory-forms/*
+    - master
+    - stable
+    - ci/*

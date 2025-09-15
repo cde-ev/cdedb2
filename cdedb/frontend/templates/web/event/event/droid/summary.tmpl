@@ -1,4 +1,4 @@
-{% set sidenav_active='orga_tokens' %}
+{% set sidenav_active='event_downloads' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
@@ -14,6 +14,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads & Import")) }}
     {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), active=True) }}
 {% endblock %}
 

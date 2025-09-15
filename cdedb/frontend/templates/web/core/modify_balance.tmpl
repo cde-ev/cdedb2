@@ -1,19 +1,19 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=ambience['persona']|persona_name %}
     	Modify Balance for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_balance_form"), gettext("Modify Balance"), active="True") }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Modify Balance"), util.persona_name(ambience['persona']),
+    {{ util.context_heading(gettext("Modify Balance"), ambience['persona']|persona_name,
                             'user', gettext("User")) }}
 {% endblock %}
 

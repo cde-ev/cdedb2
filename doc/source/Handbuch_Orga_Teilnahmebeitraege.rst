@@ -91,6 +91,7 @@ Folgende Tokens stehen zur Verfügung, die in den Formeln verknüpft werden kön
 
 * ``field.<Kurzname>``: Ist der Wert des entsprechenden Feldes wahr oder falsch?
 * ``part.<Kurzname>``: Ist der Status für den Teil "Offen", "Teilnehmer" oder "Warteliste"?
+* ``age.U<Zahl>``: Ist die Person *zu Beginn der Veranstaltung* jünger als der angegebene Wert?
 * ``any_part``: Gilt ein entsprechender Status für mindestens einen Teil der Veranstaltung?
 * ``all_parts``: Gilt ein entsprechender Status für alle Teile der Veranstaltung?
 * ``is_member``: Ist die Person derzeit CdE-Mitglied?
@@ -171,7 +172,7 @@ Beispiel 2 (mehrteilige Veranstaltung)
 Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
 kostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
 
-* ``part.A1 OR part.A2 OR part.A3`` => 215 Euro (Regulärer Beitrag)
+* ``any_part`` => 215 Euro (Regulärer Beitrag)
 * ``part.A2`` => 15 Euro (Regulärer Beitrag)
 
 Darüber hinaus wird für die Erstellung einer Anmeldung eine Bearbeitungsgebühr
@@ -183,7 +184,7 @@ Die Teilnehmenden sollen angeben können, dass sie nur zu einem der Teile oder
 nicht zu allen Teilen, für die sie sich angemeldet haben, kommen.
 
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro (Regulärer Beitrag)
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro (Regulärer Beitrag)
+* ``all_parts AND NOT field.not_all_parts``  => 215 Euro (Regulärer Beitrag)
 
 Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch
 dann richtig aus, wenn die Person sowieso nur für die entsprechende Zahl an
@@ -192,10 +193,10 @@ Teilen angemeldet ist.
 Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 15 Euro weniger bezahlen.
 
-* ``(part.A1 OR part.A2 OR part.A3) AND field.is_child`` => -15 Euro (Regulärer Beitrag)
+* ``any_part AND age.U13`` => -15 Euro (Regulärer Beitrag)
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1))``
-  ``AND NOT field.one_part AND field.is_child`` => -15 Euro (Regulärer Beitrag)
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro (Regulärer Beitrag)
+  ``AND NOT field.one_part AND age.U13`` => -15 Euro (Regulärer Beitrag)
+* ``all_parts AND NOT field.not_all_parts AND age.U13`` => -15 Euro (Regulärer Beitrag)
 
 Finanziell besser situierte Teilnehmende sollen die Möglichkeit bekommen,
 mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den Verein und
@@ -209,7 +210,7 @@ Nicht-Mitglieder müssen einen Zusatzbeitrag in Höhe des Mitgliedsbeitrags
 errichten, wenn sie teilnehmen möchten.
 Wer eine Doku möchte, muss 10 Euro extra zahlen.
 
-* ``any_part AND NOT is_member`` => 8 Euro (Externenbeitrag)
+* ``any_part AND NOT is_member AND NOT age.U12`` => 8 Euro (Externenbeitrag)
 * ``any_part AND field.doku`` => 10 Euro (Regulärer Beitrag)
 
 Gäste, oder Personen, welche früher ab- oder später angereist sind, zahlen einen
@@ -268,20 +269,14 @@ geht unter "Anmeldung konfigurieren":
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
-3. * Titel: "Ich bin unter 13 Jahre alt."
-   * Abfrage: "is_child"
-   * Text: "Kinder zahlen pro Teil 15 Euro weniger"
-   * Vorgabewert: *(Feld leer lassen)*
-   * Schreibgeschützt: Nein
-
-4. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
+3. * Titel: "Ich möchte den Solidarzusatzbeitrag bezahlen."
    * Abfrage: "solidarity"
    * Text: "Du kannst freiwillig 9 Euro pro Teil mehr zahlen um zukünftige Veranstaltungen zu unterstützen."
    * Vorgabewert: *(Feld leer lassen)*
    * Schreibgeschützt: Nein
 
 Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmenden nun die
-entsprechenden vier Checkboxen angezeigt.
+entsprechenden drei Checkboxen angezeigt.
 
 Für Gäste und "Anti-Gäste" können die entstehenden, bzw. gesparten Kosten als
 individuelle Beträge für den personalisierten Beitrag "Zusatzübernachtungen"

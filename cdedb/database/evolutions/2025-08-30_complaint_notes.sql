@@ -1,0 +1,3 @@
+BEGIN;
+    ALTER TABLE complaint.cases ADD COLUMN notes VARCHAR;
+COMMIT;

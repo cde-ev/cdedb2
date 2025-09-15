@@ -27,7 +27,7 @@ from tests.common import (
 class TestCdEBackend(BackendTest):
     used_backends = ("core", "cde")
 
-    @as_users("berta", "vera")
+    @as_users("berta", "vera", maintain_data=True)
     def test_basics(self) -> None:
         data = self.core.get_cde_user(self.key, self.user['id'])
         data['nickname'] = "Zelda"
@@ -102,7 +102,7 @@ class TestCdEBackend(BackendTest):
         self.core.changelog_resolve_change(self.key, user['id'], 2, ack=False)
         self.assertEqual(1, self.core.changelog_get_generation(self.key, user['id']))
 
-    @as_users("berta", "vera")
+    @as_users("berta", "vera", maintain_data=True)
     def test_get_cde_users(self) -> None:
         data = self.core.get_cde_users(self.key, (1, 2))
         expectation = self.get_sample_data(

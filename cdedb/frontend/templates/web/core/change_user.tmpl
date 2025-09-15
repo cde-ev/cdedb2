@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), util.persona_name(values),
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), values|persona_name,
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
 {% endblock %}

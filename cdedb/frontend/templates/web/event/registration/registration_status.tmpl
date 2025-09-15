@@ -47,16 +47,27 @@
 {% endmacro %}
 
 {% block content %}
-{% if ambience['event']['registration_soft_limit'] is none or
+    {% if ambience['event']['registration_soft_limit'] is none or
+            ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived']
+            or is_privileged_for("event/configure_registration")  %}
+    <div class="p button-par">
+         {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
-        <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning mosp",
                          icon='pen') }}
-            {% if not ambience['event']['registration_soft_limit'] is none %}
-                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
-                    Changes can be made until the registration end ({{ date }}).
-                {% endtrans %}
-            {% endif %}
+        {% endif %}
+        {% if is_privileged_for("event/configure_registration") %}
+            {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                             aclass="btn btn-info btn-sm", icon="eye") }}
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if ambience['event']['registration_soft_limit'] and
+            ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
+        <p>
+            {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
+                Changes can be made until the registration end ({{ date }}).
+            {% endtrans %}
         </p>
     {% else %}
         <p>
@@ -88,8 +99,8 @@
                 {% trans %}
                     Your fee consists of:
                 {% endtrans %}
-            </p>
             {{ generic_event.fee_breakdown_by_kind() }}
+            </p>
         {% else %}
             <p>
                 {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}
@@ -129,6 +140,7 @@
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
                         'loading': gettext("Loading..."),
+                        'note': "",
                         'close': gettext("Close") }|tojson }})
             </script>
 
@@ -189,6 +201,11 @@
                     {% trans additional_fee=complex_fee.nonmember_surcharge|money(lang=lang) %}
                         Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                     {% endtrans %}
+                    {% if persona["is cde_realm"] %}
+                        {% trans %}
+                            If you pay your membership fee before your registration fee, the additional fee will be waived.
+                        {% endtrans %}
+                    {% endif %}
                 </p>
             </div>
         {% endif %}
@@ -229,7 +246,7 @@
         {% endfor %}
     </dl>
 
-    {{ util.h(n_("Courses"), underline=true) }}
+    {{ util.h(n_("Courses"), underline=true) if filtered_choice_objects }}
     {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}

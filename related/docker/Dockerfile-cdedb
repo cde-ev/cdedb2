@@ -36,43 +36,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-# mostly python packages and some dev tools
-# * the large lib* block is mostly for the web driver
+# install playwright dependencies (and pip)
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-psycopg2 \
-    python3-dateutil \
-    python3-babel \
-    python3-icu \
-    python3-jinja2 \
-    python3-sphinx \
-    python3-lxml \
-    python3-pil \
-    python3-webtest \
-    python3-werkzeug \
-    python3-ldap3 \
-    python3-passlib \
-    python3-bleach \
-    python3-magic \
-    python3-segno \
-    python3-sphinx-rtd-theme \
-    python3-zxcvbn \
-    python3-markdown \
-    python3-requests \
-    python3-vobject \
-    python3-graphviz \
-    python3-phonenumbers \
-    python3-tabulate \
-    python3-mailmanclient \
-    python3-pyparsing \
-    python3-psycopg \
-    python3-psycopg-pool \
-    \
     python3-pip \
-    python3-click \
-    python3-freezegun \
-    python3-coverage \
-    wget \
-    unzip \
     \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -101,29 +67,42 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-    ldaptor==21.2.0 \
-    schulze_condorcet==2.0.1 \
-    subman==0.1.1 \
-    segno==1.5.2 \
-    mypy==1.14.0 \
-    types-python-dateutil \
-    types-bleach \
-    types-Markdown \
-    types-tabulate \
-    lxml-stubs \
-    types-Pillow \
-    types-ldap3 \
-    types-passlib \
-    types-psycopg2 \
-    types-zxcvbn \
-    'playwright>=1.37.0'
+# install playwright
+# make sure to bump the playwright version in pyproject.toml
+RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1.43.0'
 
 # Retrieve browser engines, but only do so for root (which runs the tests in
 # the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
 # want to save some disk space.
 RUN /usr/local/bin/playwright install
 # RUN sudo -u cdedb /usr/local/bin/playwright install
+
+# utilities and to install packages via pip, and package dependencies
+# dependencies:
+# - graphviz for the python package with the same name
+# - libicu-dev for pyicu
+# - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    wget \
+    unzip \
+    python3-dev \
+    g++ \
+    pkg-config \
+    \
+    graphviz \
+    libicu-dev \
+    libmagic1 \
+    \
+    && rm -rf /var/lib/apt/lists/*
+
+# copy project configuration for pip
+COPY ./pyproject.toml /tmp/
+
+# install packages
+# since this works as a dev and CI container, install dev and ldap (for running tests) too
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
+        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
+                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"], *f["project"]["optional-dependencies"]["ldap"])')
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
@@ -187,7 +166,3 @@ WORKDIR /cdedb2
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
-
-USER cdedb
-RUN pip install --break-system-packages ruff==0.8.4
-USER root

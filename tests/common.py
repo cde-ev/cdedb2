@@ -11,6 +11,7 @@ import email.parser
 import email.policy
 import functools
 import gettext
+import html
 import io
 import json
 import os
@@ -48,6 +49,7 @@ from psycopg2.extras import RealDictCursor
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -66,8 +68,10 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
+    NearlyNow,
     PathLike,
     RequestState,
+    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -79,6 +83,7 @@ from cdedb.common.query.log_filter import (
     AssemblyLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     CoreLogFilter,
     EventLogFilter,
     FinanceLogFilter,
@@ -98,7 +103,6 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
     AbstractFrontend,
     Worker,
-    make_persona_name,
     setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend
@@ -180,7 +184,9 @@ _SAMPLE_DATA = _read_sample_data()
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def _make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(
+        backend: B, internal: bool = False, allow_private: bool = False,
+) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -237,6 +243,9 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
+        if hasattr(backend, "list_enforcers"):
+            if rs.user.persona_id in backend.list_enforcers(rs):
+                rs.user.realm_roles["complaint"] = {"enforcer"}
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
             rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
@@ -261,7 +270,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if name == "_event_keeper":
                 return attr
             if any([
-                not getattr(attr, "access", False),
+                not getattr(attr, "access", False) and not allow_private,
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
@@ -443,12 +452,14 @@ class BackendTest(CdEDBTest):
     """
     maxDiff = None
     session: ClassVar[SessionBackend]
+    _raw_backend: ClassVar[CoreBackend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
     event: ClassVar[EventBackend]
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
@@ -457,12 +468,14 @@ class BackendTest(CdEDBTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls._raw_backend = cls.initialze_private_backend(CoreBackend)
         cls.core = cls.initialize_backend(CoreBackend)
         cls.cde = cls.initialize_backend(CdEBackend)
         cls.event = cls.initialize_backend(EventBackend)
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.complaint = cls.initialize_backend(ComplaintBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
@@ -495,10 +508,15 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        self.core.logout(self.key)
+        if allow_anonymous:
+            try:
+                self.core.logout(self.key)
+            except PrivilegeError:
+                pass
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -506,6 +524,7 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        new_user = get_user(new_user)
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
@@ -529,6 +548,7 @@ class BackendTest(CdEDBTest):
             'event': (self.event.retrieve_log, EventLogFilter),
             'ml': (self.ml.retrieve_log, MlLogFilter),
             'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+            'complaint': (self.complaint.retrieve_log, ComplaintLogFilter),
         }
         log_retriever, log_filter_class = logs[realm]
         _, log = log_retriever(self.key, log_filter_class(**kwargs))
@@ -540,13 +560,13 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
                 if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date', 'companion_id'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -554,6 +574,12 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
             if real['change_note']:
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
+
+        if log != tuple(log_expectation):
+            for log_entry, exp_entry in zip(log, log_expectation):
+                if log_entry['ctime'] == exp_entry['ctime']:
+                    if isinstance(exp_entry['ctime'], NearlyNow):
+                        exp_entry['ctime'] = log_entry['ctime']
         self.assertEqual(log, tuple(log_expectation))
 
     def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
@@ -595,7 +621,11 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+
+    @classmethod
+    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
@@ -821,6 +851,16 @@ USER_DICT: dict[str, UserObject] = {
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
     },
+    "simon": {
+        'id': 19,
+        'DB-ID': "DB-19-1",
+        'username': "simon@example.cde",
+        'password': "secret",
+        'given_names': "Simon",
+        'legal_given_names': None,
+        'family_name': "Struktur",
+        'default_name_format': "Simon Struktur",
+    },
     "vera": {
         'id': 22,
         'DB-ID': "DB-22-1",
@@ -866,6 +906,7 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-37-X",
         'username': "katarina@example.cde",
         'password': "secret",
+        'given_names': "Katarina",
         'legal_given_names': None,
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
@@ -934,8 +975,8 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
-                                                 Callable[..., None]]:
+def as_users(*users: UserIdentifier, maintain_data: bool = False,
+             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
@@ -944,7 +985,12 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
-                        self.setUp()
+                        if maintain_data:
+                            if isinstance(self, FrontendTest):
+                                self.get("/")
+                            self.logout(allow_anonymous=True)
+                        else:
+                            self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
@@ -962,12 +1008,12 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str) -> Callable[[F], F]:
+def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(*args: Any, **kwargs: Any) -> Any:
-            execsql(sql)
+            execsql(sql, verbose=verbose)
             return fun(*args, **kwargs)
         return cast(F, new_fun)
     return decorator
@@ -985,9 +1031,9 @@ def event_keeper(fun: F) -> F:
     return storage(fun)
 
 
-def execsql(sql: str) -> None:
+def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):
@@ -1137,7 +1183,7 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "", *,
+    def submit(self, form: webtest.Form, button: str = "submitform", *,
                check_notification: bool = True, check_button_attrs: bool = False,
                verbose: bool = False, value: Optional[str] = None,
                check_mandatory_filled: bool = True) -> None:
@@ -1178,6 +1224,8 @@ class FrontendTest(BackendTest):
         if value and not button:
             raise ValueError(
                 "Cannot specify button value without specifying button name.")  # pragma: no cover
+        if not form.get(button, index=0, default=None):
+            self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1208,7 +1256,7 @@ class FrontendTest(BackendTest):
         """
         for link in links:
             if isinstance(link, str):
-                link = {'description': link}
+                link = {'description': html.escape(link)}
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -1246,13 +1294,19 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        else:
+        def _logout() -> None:
             f = self.response.forms['logoutform']
             self.submit(f, check_notification=False, verbose=verbose,
-                        check_mandatory_filled=False)
+                        button="submitlogout", check_mandatory_filled=False)
+
+        if allow_anonymous:
+            if not self.user_in("anonymous"):
+                if 'logoutform' in self.response.forms:
+                    _logout()
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            _logout()
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -1404,7 +1458,20 @@ class FrontendTest(BackendTest):
         if not tmp:
             self.fail(f"Div '{div}' not found.")
         classes = tmp[0].classes
-        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
+        self.assertIn(
+            html_class, classes,
+            f"{html_class} not in {list(classes)} of div {div!r}.",
+        )
+
+    def assertHasNotClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertNotIn(
+            html_class, classes,
+            f"{html_class} unexpectedly in {list(classes)} of div {div!r}.",
+        )
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
@@ -1739,7 +1806,13 @@ class FrontendTest(BackendTest):
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
         personas = self.core.get_personas(self.key, persona_ids)
-        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+
+        if realm == "ml":
+            entity_key = "mailinglist_id"
+        elif realm == "complaint":
+            entity_key = "case_id"
+        else:
+            entity_key = f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
@@ -1771,6 +1844,10 @@ class FrontendTest(BackendTest):
         elif realm == "changelog":
             self.get("/core/changelog/view")
             entities = {}
+        elif realm == "complaint":
+            entities = {case_id: {'title': f"Fall {case_id}"} for case_id in entity_ids}
+            self.get("/core/complaint/log")
+
         else:
             self.get(f"/{realm}/log")
             entities = {}
@@ -1789,8 +1866,13 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name = make_persona_name(personas[entry['persona_id']])
-                self.assertPresence(name, div=f"{i}-{log_id}")
+                name1 = make_persona_name(personas[entry['persona_id']])
+                name2 = make_persona_name(
+                    personas[entry['persona_id']], include_nickname=True,
+                )
+                self.assertPresence(
+                    f'({re.escape(name1)}|{re.escape(name2)})',
+                    regex=True, div=f"{i}-{log_id}")
             if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 

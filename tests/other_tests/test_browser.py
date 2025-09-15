@@ -162,6 +162,13 @@ class TestBrowser(BrowserTest):
 
         page.locator("#dynamicrow-delete-button-0").click()
 
+        # test tab navigation...
+        page.get_by_role("tab", name="Kursfelder").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.get_by_role("tab", name="Anmeldungsfelder").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_registration")
+
+        # ... continue testing dynamiicrow
         page.get_by_role("button", name="Feld hinzufügen").click()
         page.locator('input[name="title_-2"]').click()
         page.locator('input[name="title_-2"]').fill("Lieblingsheld")
@@ -170,8 +177,11 @@ class TestBrowser(BrowserTest):
 
         page.locator("#dynamicrow-delete-button-9").click()
 
+        page.get_by_role("tab", name="Kursfelder").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+
         page.get_by_role("button", name="Speichern").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary")
+        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
 
         expect(page.locator('input[name="title_1001"]')).to_have_value('Lieblingsheld')
         expect(page.locator('input[name="field_name_1001"]')).to_have_value('held')
@@ -265,10 +275,8 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag",
-                                               ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit",
-                                               ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bezahlter Betrag").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit").nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()
         page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"

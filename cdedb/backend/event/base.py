@@ -20,14 +20,13 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
@@ -52,7 +51,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS,
     COURSE_SEGMENT_FIELDS,
@@ -76,9 +75,16 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.validation.validate import (
+    FIELD_DATATYPE_VALIDATORS,
+    validate_check_optional,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
+
+if TYPE_CHECKING:
+    from cdedb.backend.event.registration import ComplexRegistrationFee
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
@@ -93,7 +99,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self._event_keeper = EntityKeeper(
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
-    @access("event")
+    @access("anonymous")
     def is_locked(self, rs: RequestState, *, event_id: int) -> bool:
         """Helper to determine if an event is locked."""
         event_id = affirm(vtypes.ID, event_id)
@@ -140,7 +146,7 @@ class EventBaseBackend(EventLowLevelBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        log_filter = affirm(EventLogFilter, log_filter)
         event_ids = log_filter.event_ids()
 
         if not all(is_privileged(rs, EventPrivileges.log_read, event_id=event_id)
@@ -437,18 +443,18 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id")
 
     @access("event")
-    def create_orga_token(self, rs: RequestState, data: OrgaToken,
+    def create_orga_token(self, rs: RequestState, data: CdEDBObject,
                           ) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
         :returns: A tuple of the new token id and it's secret. The secret is only
             stored as a hash and thus cannot be retrieved again.
         """
-        data = affirm_dataclass(OrgaToken, data, creation=True)
+        data = affirm(OrgaToken, data, creation=True)
 
         with Atomizer(rs):
             if not is_privileged(rs, EventPrivileges.token,
-                                 event_id=data.event_id):
+                                 event_id=data["event_id"]):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -456,14 +462,12 @@ class EventBaseBackend(EventLowLevelBackend):
                     "May not create new orga token in offline instance."))
 
             secret = OrgaToken.create_secret()
-            tdata = data.to_database()
-            tdata['secret_hash'] = encrypt_password(secret)
-            # Expiration time is not set automatically.
-            tdata['etime'] = data.etime
+            data['secret_hash'] = encrypt_password(secret)
+            data['ctime'] = now()
 
-            new_id = self.sql_insert(rs, OrgaToken.database_table, tdata)
+            new_id = self.sql_insert(rs, OrgaToken.database_table, data)
             self.event_log(rs, const.EventLogCodes.orga_token_created,
-                           data.event_id, change_note=data.title)
+                           data["event_id"], change_note=data["title"])
         return new_id, secret
 
     @access("event")
@@ -473,7 +477,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Note that only a small subset of token attributes may be changed.
         """
-        data = affirm(vtypes.OrgaToken, data)
+        data = affirm(OrgaToken, data)
 
         with Atomizer(rs):
             current = self.get_orga_token(rs, data['id'])
@@ -693,10 +697,22 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, event_id, data['fields'])
-            # This also includes taking care of course tracks and fee modifiers, since
-            # they are each linked to a single event part.
+            # This also includes taking care of course tracks, since
+            # they are linked to a single event part.
             if 'parts' in data:
+                # Event begin can have an effect on fees.
+
+                current_fees = None
+                if current.is_balanced:
+                    current_fees = self._update_registrations_amount_owed(rs, event_id)
+
                 ret *= self._set_event_parts(rs, event_id, data['parts'])
+
+                new_fees = self._update_registrations_amount_owed(rs, event_id)
+
+                if current.is_balanced and (current_fees != new_fees):
+                    raise EventIsBalancedError(n_(
+                        "Event is balanced. Amount owed may no longer change."))
 
         return ret
 
@@ -772,93 +788,77 @@ class EventBaseBackend(EventLowLevelBackend):
         return new_id
 
     @access("event")
-    def set_part_groups(self, rs: RequestState, event_id: int,
-                        part_groups: CdEDBOptionalMap) -> DefaultReturnCode:
-        """Create, delete and/or update part groups for one event."""
+    def add_part_group(self, rs: RequestState, event_id: int, part_group: CdEDBObject
+                       ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
-        part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         ret = 1
-        if not part_groups:
-            return ret
 
         with Atomizer(rs):
-            parts = {e['id']: e for e in self.sql_select(
-                rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
-                entity_key="event_id")}
+            event = self.get_event(rs, event_id)
 
-            existing_part_groups = {unwrap(e) for e in self.sql_select(
-                rs, "event.part_groups", ("id",), (event_id,), entity_key="event_id")}
-            new_part_groups = {x for x in part_groups if x < 0}
-            updated_part_groups = {
-                x for x in part_groups if x > 0 and part_groups[x] is not None}
-            deleted_part_groups = {
-                x for x in part_groups if x > 0 and part_groups[x] is None}
-
-            if not (updated_part_groups | deleted_part_groups) <= existing_part_groups:
-                raise ValueError(n_("Unknown part group."))
-
-            # Defer unique constraints until end of transaction to avoid errors when
-            # updating multiple groups at once or deleting and recreating them.
-            self.sql_defer_constraints(
-                rs, "event.part_groups_event_id_shortname_key",
-                "event.part_groups_event_id_title_key",
-                "event.part_group_parts_part_id_part_group_id_key")
-
-            # new
-            for x in mixed_existence_sorter(new_part_groups):
-                new_part_group = part_groups[x]
-                assert new_part_group is not None
-                new_part_group['event_id'] = event_id
-                part_ids = affirm_set(vtypes.ID, new_part_group.pop('part_ids'))
-                new_id = self.sql_insert(rs, "event.part_groups", new_part_group)
-                ret *= new_id
+            part_group = affirm(models.PartGroup, part_group, creation=True,
+                                event=event)
+            part_group['event_id'] = event_id
+            part_ids = part_group.pop("part_ids")
+            new_id = self.sql_insert(rs, models.PartGroup.database_table, part_group)
+            ret *= new_id
+            self.event_log(
+                rs, const.EventLogCodes.part_group_created, event_id,
+                change_note=part_group['title'])
+            inserter = []
+            for part_id in part_ids:
+                inserter.append({'part_group_id': new_id, 'part_id': part_id})
+                change_note = f"{event.parts[part_id].title} -> {part_group['title']}"
                 self.event_log(
-                    rs, const.EventLogCodes.part_group_created, event_id,
-                    change_note=new_part_group['title'])
-                if part_ids:
-                    if not part_ids <= parts.keys():
-                        raise ValueError(n_("Unknown part for the given event."))
-                    ret *= self._set_part_group_parts(
-                        rs, event_id, part_group_id=new_id, part_ids=part_ids,
-                        parts=parts, part_group_title=new_part_group['title'])
+                    rs, const.EventLogCodes.part_group_link_created, event_id,
+                    change_note=change_note)
+            if part_ids:
+                ret *= self.sql_insert_many(rs, "event.part_group_parts", inserter)
 
-            # updated
-            if updated_part_groups:
-                current_part_group_data = {e['id']: e for e in self.sql_select(
-                    rs, models.PartGroup.database_table,
-                    models.PartGroup.database_fields(), updated_part_groups)}
-                for x in mixed_existence_sorter(updated_part_groups):
-                    updated = part_groups[x]
-                    assert updated is not None
-                    updated['id'] = x
-                    # Changing the constraint type is not allowed.
-                    new_ct = updated.pop('contraint_type', None)
-                    old_ct = current_part_group_data[x]['constraint_type']
-                    if new_ct and new_ct != old_ct:
-                        raise ValueError(n_("May not change constraint type."))
-                    part_ids = updated.pop('part_ids', None)
-                    title = updated.get('title', current_part_group_data[x]['title'])
-                    if any(updated[k] != current_part_group_data[x][k]
-                           for k in updated):
-                        ret *= self.sql_update(rs, "event.part_groups", updated)
-                        self.event_log(
-                            rs, const.EventLogCodes.part_group_changed, event_id,
-                            change_note=title)
-                    if part_ids is not None:
-                        part_ids = affirm_set(vtypes.ID, part_ids)
-                        if not part_ids <= parts.keys():
-                            raise ValueError(n_("Unknown part for the given event."))
-                        ret *= self._set_part_group_parts(
-                            rs, event_id, part_group_id=x, part_ids=part_ids,
-                            parts=parts, part_group_title=title)
+        return ret
 
-            if deleted_part_groups:
-                cascade = ("part_group_parts",)
-                for x in mixed_existence_sorter(deleted_part_groups):
-                    ret *= self._delete_part_group(rs, part_group_id=x, cascade=cascade)
+    @access("event")
+    def change_part_group(self, rs: RequestState, part_group_id: int,
+                          part_group: CdEDBObject) -> DefaultReturnCode:
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        part_group["id"] = part_group_id
+
+        ret = 1
+        with Atomizer(rs):
+            event_id = unwrap(self.sql_select_one(
+                rs, models.PartGroup.database_table, ("event_id", ), part_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            event = self.get_event(rs, event_id)
+            part_group = affirm(models.PartGroup, part_group, event=event)
+            current = event.part_groups[part_group["id"]].as_dict()
+            if any(part_group[k] != current[k] for k in part_group):
+                ret *= self.sql_update(rs, models.PartGroup.database_table, part_group)
+                self.event_log(
+                    rs, const.EventLogCodes.part_group_changed, event_id,
+                    change_note=part_group.get('title', current['title']))
+
+        return ret
+
+    @access("event")
+    def delete_part_group(self, rs: RequestState, part_group_id: int
+                          ) -> DefaultReturnCode:
+        part_group_id = affirm(vtypes.ID, part_group_id)
+
+        with Atomizer(rs):
+            event_id = unwrap(self.sql_select_one(
+                rs, models.PartGroup.database_table, ("event_id", ), part_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            ret = self._delete_part_group(rs, part_group_id=part_group_id,
+                                          cascade=("part_group_parts",))
 
         return ret
 
@@ -980,7 +980,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self.get_event(rs, event_id)
 
             if event.is_balanced:
-                raise ValueError(n_(
+                raise EventIsBalancedError(n_(
                     "Event is balanced. May not change fee configuration."))
             if not fees:
                 return ret
@@ -1062,7 +1062,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @abc.abstractmethod
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
-                                          ) -> DefaultReturnCode: ...
+                                          ) -> dict[int, "ComplexRegistrationFee"]: ...
 
     @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
@@ -1100,6 +1100,7 @@ class EventBaseBackend(EventLowLevelBackend):
         of those kinds, otherwise you get them all.
         """
         event_id = affirm(vtypes.ID, event_id)
+        event = self.get_event(rs, event_id)
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
@@ -1113,6 +1114,19 @@ class EventBaseBackend(EventLowLevelBackend):
         d = self.query_all(rs, query, params)
         for row in d:
             row['kind'] = const.QuestionnaireUsages(row['kind'])
+            if field := event.fields.get(row['field_id']):
+                # Deserialize the stored string into the datatype of the field if able.
+                row['default_value'] = validate_check_optional(
+                    FIELD_DATATYPE_VALIDATORS[field.kind], row['default_value'],
+                    ignore_warnings=True,
+                )[0]
+                # Special case for datetimes: Convert them to the default timezone so
+                #  they can be submitted again even without the timezone.
+                #  This is required for use with 'datetime-local' inputs.
+                if field.kind == const.FieldDatatypes.datetime:
+                    if row['default_value']:
+                        row['default_value'] = row['default_value'].astimezone(self.conf["DEFAULT_TIMEZONE"])
+
         ret = {
             k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
@@ -1401,6 +1415,10 @@ class EventBaseBackend(EventLowLevelBackend):
                     rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
             )
+            registration_fees = list_to_dict(self.sql_select(
+                rs, models.Registration.database_table, ["id", "amount_owed_by_kind"],
+                [event_id], entity_key="event_id",
+            ))
             checkin_periods = self.sql_select(
                 rs, models.CheckinPeriod.database_table,
                 models.CheckinPeriod.database_fields(), registrations.keys(),
@@ -1489,6 +1507,11 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
+            by_kind = registration_fees[registration_id]["amount_owed_by_kind"]
+            registration['amount_owed_by_kind'] = {
+                const.EventFeeType(int(key)).name: decimal.Decimal(amount)
+                for key, amount in by_kind.items()
+            }
             periods = xsorted(checkin_period_lookup[registration_id])
             for period in periods:
                 del period['registration_id']

@@ -151,7 +151,7 @@ class AssemblyTestHelpers(FrontendTest):
 
 
 class TestAssemblyFrontend(AssemblyTestHelpers):
-    @as_users("werner", "berta", "kalif")
+    @as_users("werner", "berta", "kalif", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'href': '/assembly/'})
         self.assertPresence("Internationaler Kongress", div='active-assemblies')
@@ -178,7 +178,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNonPresence("Teilnehmer")
         self.assertPresence("Inaktive Versammlungen")
 
-    @as_users("annika", "martin", "vera", "werner", "anton", "katarina")
+    @as_users("annika", "martin", "vera", "werner", "anton", "katarina",
+              maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Versammlungen'})
         everyone = {"Versammlungen", "Übersicht"}
@@ -240,7 +241,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence('Nein', div='account-active')
 
-    @as_users("paul", "viktor")
+    @as_users("paul", "viktor", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
@@ -338,7 +339,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("TeX-Liste")
 
     @storage
-    @as_users("annika", "martin", "vera", "werner", "katarina")
+    @as_users("annika", "martin", "vera", "werner", "katarina",
+              maintain_data=True)
     def test_sidebar_one_assembly(self) -> None:
         user = self.user
         self.traverse({'description': 'Versammlungen'})
@@ -651,7 +653,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Anwesenheitsliste (Kanonische Beispielversammlung)")
             self.assertNotification("Der Anmeldezeitraum ist vorbei.", 'warning')
 
-    @as_users("werner", "kalif")
+    @as_users("werner", "kalif", maintain_data=True)
     def test_list_attendees(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
@@ -1065,7 +1067,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                         "Eine aktive Abstimmung kann nicht gelöscht werden.", 'error')
 
     @storage
-    @as_users("charly", "viktor")
+    @as_users("charly", "viktor", maintain_data=True)
     def test_attachment_redirects(self) -> None:
         # Test that accessing the latest version and the legacy urls redirect to the
         # correct page.
@@ -1415,7 +1417,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                             div="8-1008")
 
     @storage
-    @as_users("werner", "inga", "kalif")
+    @as_users("werner", "inga", "kalif", maintain_data=True)
     def test_preferential_vote(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
@@ -1458,7 +1460,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'vote', "Jeder Kandidat muss genau einmal vorhanden sein.")
 
     @storage
-    @as_users("werner", "inga", "kalif")
+    @as_users("werner", "inga", "kalif", maintain_data=True)
     def test_classical_vote_radio(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
@@ -1489,7 +1491,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("St", f['vote'].value)
 
     @storage
-    @as_users("werner", "inga", "kalif")
+    @as_users("werner", "inga", "kalif", maintain_data=True)
     def test_classical_vote_select(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
@@ -2178,7 +2180,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle(
             "Test-Abstimmung – bitte ignorieren (Internationaler Kongress)")
 
-    @as_users("werner", "berta")
+    @as_users("werner", "berta", maintain_data=True)
     @storage
     def test_group_ballots_by_config(self) -> None:
         self.traverse("Versammlungen", "Internationaler Kongress", "Zusammenfassung")

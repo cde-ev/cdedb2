@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, user['persona_id']), util.persona_name(user), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, user['persona_id']), user|persona_name, icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_username_form"), gettext("Change Email Address"), active=True) }}
 {% endblock %}
 {% block content %}

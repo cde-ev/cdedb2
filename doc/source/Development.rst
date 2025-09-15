@@ -14,7 +14,8 @@ Development
 
 Here you can find every information regarding development of the DBv2.
 Do you want to participate in active development? Please contact us at
-cdedb ät lists.cde-ev.de.
+cdedb ät lists.cde-ev.de, useful introductory steps are explained at
+:doc:`Development_Workflows`.
 
 .. todo:: split this up and move it to the right places
 

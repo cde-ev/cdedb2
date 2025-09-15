@@ -597,7 +597,8 @@ class LDAPsqlBackend:
                         is_active, is_member, is_searchable AND is_member AS is_searchable,
                         is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
                         is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
-                        is_core_admin, is_finance_admin, is_cdelokal_admin
+                        is_core_admin, is_finance_admin, is_cdelokal_admin,
+                        is_complaint_admin
                     FROM core.personas WHERE personas.id = ANY(%s)
                     """
             return {e['id']: [self.status_group_dn(flag) for flag in e.keys()
@@ -848,6 +849,7 @@ class LDAPsqlBackend:
         "is_core_admin": "Core-Administratoren",
         "is_finance_admin": "Finanz-Administratoren",
         "is_cdelokal_admin": "CdELokal-Administratoren",
+        "is_complaint_admin": "Fallarchiv-Administratoren",
     }
 
     async def list_status_groups(self) -> list[DN]:

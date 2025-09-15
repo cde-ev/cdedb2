@@ -37,8 +37,7 @@
 {% endmacro %}
 
 {% block content %}
-    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform"
-          enctype="multipart/form-data">
+    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform" {% if not data %} enctype="multipart/form-data" {% endif %}>
         {{ util.anti_csrf_token('cde/batch_admission') }}
         {{ util.input_hidden("finalized") }}
         <div class="row">
@@ -53,7 +52,9 @@
                                                                         gettext("Send Welcome Mail")), horizontal=False) }}
             </div>
         </div>
-        {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}
+        {% if not data %}
+            {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}
+        {% endif %}
         {{ util.form_input_textarea(name="accounts", horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
@@ -86,7 +87,7 @@
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {% if dataset['persona'] %}
-                        {{ util.persona_name(dataset['persona']) }}
+                        {{ dataset['persona']|persona_name }}
                     {% endif %}
                     {% if dataset['persona']['username'] %}
                         &lt;{{ dataset['persona']['username'] }}&gt;

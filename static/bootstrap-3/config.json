@@ -411,6 +411,7 @@
     "modals.less"
   ],
   "js": [
+    "button.js",
     "modal.js",
     "tab.js",
     "collapse.js",

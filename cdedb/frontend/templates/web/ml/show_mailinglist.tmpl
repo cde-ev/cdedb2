@@ -98,7 +98,7 @@
                                 {{ user.username }} {% trans %}(default){% endtrans %}
                             {% endif %}
                             {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
-                                <span class="text-danger">({{gettext(email_report.status)}})
+                                <span class="text-danger">({{gettext(email_report.status|string)}})
                             {% endif %}
                         </dd>
                     </dl>

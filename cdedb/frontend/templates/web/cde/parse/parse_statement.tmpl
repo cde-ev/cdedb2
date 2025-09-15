@@ -40,7 +40,7 @@
                         {% trans %}Reference{% endtrans %}: {{ data["reference{}".format(t_id)] }}
                     </li>
                     <li>
-                        {% trans %}Transaction Date{% endtrans %}: {{ data["transaction_date{}".format(t_id)] }}
+                        {% trans %}Transaction Date{% endtrans %}: {{ data["date{}".format(t_id)] }}
                     </li>
                     <li>
                         {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
@@ -134,7 +134,6 @@
                                     nulloption=nbsp, label=gettext("Event"), horizontal=False, sort=False) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-event_id{{ t_id }}').cdedbSearchEvent(
-                                '{{ cdedblink('event/select_event') }}',
                                 {{ event_options|tojson }},
                             );
                         </script>
@@ -178,14 +177,14 @@
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
             {{ util.input_hidden(name="date") }}
-            <div>
+            <div class="p">
             {% if params["has_error"] %}
-                <div id="has_error_summary">
+                <div id="has_error_summary" class="text-danger">
                     {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
                 </div>
             {% endif %}
             {% if params["has_warning"] %}
-                <div id="has_warning_summary">
+                <div id="has_warning_summary" class="text-warning">
                     {% trans count=params["has_warning"]|length %}{{ count }} Transactions with Warnings{% endtrans %}
                 </div>
             {% endif %}
@@ -194,6 +193,8 @@
                     {% trans count=params["has_none"]|length %}{{ count }} Successful Transactions{% endtrans %}
                 </div>
             {% endif %}
+            </div>
+            <div class="p button-par">
             {% if params["jump_order"][None] %}
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
                     {{ util.make_icon('arrow-down') }}

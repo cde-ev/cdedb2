@@ -61,9 +61,8 @@
                                                   class="hide-hover display-inline">
                                             {{ util.anti_csrf_token('core/delete_email_status') }}
                                             {{ util.input_hidden(name="address", value=address) }}
-                                                {{ util.input_submit(label=gettext('Delete'), icon='trash-alt',
-                                                                     value='discard', name="action",
-                                                                     aclass=("btn btn-sm btn-danger")) }}
+                                            {{ util.input_submit(label=gettext('Delete'), icon='trash-alt',
+                                                                 value='discard', aclass=("btn btn-sm btn-danger")) }}
                                         </form>
                                     </div>
                                     {% if infos.notes or infos.user_id or infos.subscriber_id %}

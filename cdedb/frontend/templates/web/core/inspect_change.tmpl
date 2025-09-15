@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(current) %}
+    {% trans name=current|persona_name %}
     	Inspect Changes for {{ name }}
     {% endtrans %}
 {% endblock %}
@@ -12,11 +12,11 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), gettext("Inspect Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
-        util.persona_name(current), icon="user", active="True") }}
+        current|persona_name, icon="user", active="True") }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Inspect Changes"), util.persona_name(current), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Inspect Changes"), current|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {# Helper to take care of some special values (enums, date, country codes) #}

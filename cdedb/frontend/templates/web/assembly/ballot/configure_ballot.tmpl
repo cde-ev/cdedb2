@@ -60,10 +60,7 @@
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
         {% if attachment_entries %}
             {{ util.form_input_multi_select("linked_attachments", attachment_entries, label=gettext("Linked Attachments"),
-                                            nulloption=gettext("– none –"), sort=True, anid="input-attachments") }}
-            <script nonce="{{ csp_nonce }}">
-                $("#input-attachments").cdedbMultiSelect({{ selectize_data|tojson }});
-            </script>
+                                            nulloption=gettext("– none –"), selectize=True, sort=True, anid="input-attachments") }}
         {% else %}
             {{ util.form_input_static(label=gettext("Linked Attachments"),
                                       value=gettext("No attachments have been uploaded yet.")) }}

@@ -77,12 +77,15 @@ import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
+import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -108,9 +111,8 @@ from cdedb.common import (
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
-    glue,
+    is_optional_type,
     json_serialize,
-    make_persona_name,
     make_proxy,
     merge_dicts,
     now,
@@ -149,6 +151,7 @@ from cdedb.filter import (
     safe_filter,
     sanitize_None,
 )
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
@@ -391,7 +394,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'nbsp': "\u00A0",
             'query_mod': query_mod,
             'get_hash': get_hash,
-            'glue': glue,
             'enums': ENUMS_DICT,
             'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
@@ -435,7 +437,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
-        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -448,6 +449,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.eventproxy = make_proxy(EventBackend())
         self.mlproxy = make_proxy(MlBackend())
         self.pasteventproxy = make_proxy(PastEventBackend())
+        self.complaintproxy = make_proxy(ComplaintBackend())
         # Provide mailman access
         secrets = SecretsConfig()
         # local variables to prevent closure over secrets
@@ -564,6 +566,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise AttributeError(n_("Given method is not callable."))
 
         # here come the always accessible things promised above
+        begin = now()
         data = {
             'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
@@ -571,7 +574,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'doclink': _doclink,
             'staticlink': _staticlink,
             'errors': rs.get_validation_errors_dict(),
-            'generation_time': lambda: (now() - rs.begin),
+            'request_time': lambda: (now() - rs.begin),
+            'generation_time': lambda: (now() - begin),
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
@@ -1330,8 +1334,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         This takes care of validating the filter input and retrieving log entries via
         the passed backend method.
         """
-        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
-        if rs.has_validation_errors() or data is None:
+        log_filter = check_validation(rs, filter_class, data)
+        if rs.has_validation_errors() or log_filter is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
@@ -1339,8 +1343,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             self.logger.debug(
                 f"Log filter validation failed: {rs.retrieve_validation_errors()}")
             log_filter = filter_class()
-        else:
-            log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
         total, log = log_retriever(rs, log_filter)
@@ -1407,21 +1409,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if category is None:
             category, p = inspect_validation(
-                vtypes.Identifier, raw['category_old'], argname="category")
+                vtypes.Identifier, raw['category'], argname="category")
             problems.extend(p)
         persona = None
         registration = None
         event = None
 
         date, p = inspect_validation(
-            datetime.date, raw['transaction_date'], argname="date")
+            datetime.date, raw['date'], argname="date")
         problems.extend(p)
 
         amount, p = parse_util.check_amount(raw['amount_german'])
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID, datum['raw']['cdedbid'].strip(), argname="persona_id")
+            vtypes.CdedbID, (datum['raw']['cdedbid'] or "").strip(), argname="persona_id")
         problems.extend(p)
 
         family_name, p = inspect_validation(
@@ -1435,7 +1437,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if category is None:
             problems.append(('category', ValueError(n_("Invalid category."))))
             type_ = TransactionType.Unknown
-        elif category == TransactionType.MembershipFee.old():
+        elif category == TransactionType.MembershipFee.category():
             type_ = TransactionType.MembershipFee
             if amount is not None and amount <= 0:
                 problems.append((
@@ -1495,7 +1497,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         total = amount_paid + amount
                         fee = registration['amount_owed']
 
-                        if (registration['ctime']
+                        if (registration['ctime'] and date
                                 and date < registration['ctime'].date()):
                             infos.append((
                                 'date',
@@ -1810,12 +1812,12 @@ class Worker(threading.Thread):
 class AmbienceDict(typing.TypedDict):
     persona: NotRequired[CdEDBObject]
     privilege_change: NotRequired[CdEDBObject]
-    genesis_case: NotRequired[CdEDBObject]
+    genesis_case: NotRequired[models_core.GenesisCase]
     lastschrift: NotRequired[CdEDBObject]
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
     pevent: NotRequired[CdEDBObject]
-    course: NotRequired[CdEDBObject]
+    course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
@@ -1830,6 +1832,8 @@ class AmbienceDict(typing.TypedDict):
     assembly: NotRequired[CdEDBObject]
     ballot: NotRequired[CdEDBObject]
     mailinglist: NotRequired[models_ml.Mailinglist]
+    case: NotRequired[models_complaint.Case]
+    entry: NotRequired[models_complaint.ComplaintEntry]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1867,7 +1871,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
@@ -1923,6 +1927,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                                     in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
               'mailinglist_id', 'mailinglist', ()),
+        Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
+              'case_id', 'case', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'entry_id', 'entry', ()),
+        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+              'parent_id', 'entry', ()),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}
@@ -1986,13 +1996,13 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> werkzeug.Response:
-            if rs.user.roles & access_list:
+            if rs.user.all_roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 expects_persona = any('droid' not in role
                                       for role in access_list)
-                if rs.user.roles == {"anonymous"} and expects_persona:
+                if rs.user.all_roles == {"anonymous"} and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2015,7 +2025,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                log_msg = msg.format(**params) + f" Roles: {rs.user.all_roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
@@ -2209,12 +2219,9 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if typing.get_origin(hints[name]) is Union:
-                        type_, _ = hints[name].__args__
-                        optional = True
-                    else:
-                        type_ = hints[name]
-                        optional = False
+                    type_ = hints[name]
+                    if optional := is_optional_type(type_):
+                        type_ = typing.get_args(type_)[0]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
@@ -2475,8 +2482,23 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, type_: type[T], value: Any,
-                     name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation(
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation(
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2494,11 +2516,26 @@ def check_validation(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
 
 
-def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
-                              name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[CdEDBObject]: ...
+
+@overload
+def check_validation_optional(
+    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
+    **kwargs: Any
+) -> Optional[T]: ...
+
+
+def check_validation_optional(
+    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
+    name: Optional[str] = None, **kwargs: Any
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
@@ -2518,7 +2555,26 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
         ret, errs = validate.validate_check_optional(
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
-    return ret
+    return cast(None | T | CdEDBObject, ret)
+
+
+DC = TypeVar('DC', bound=CdEDataclass)
+
+
+def extract_and_check_dataclass_validation(
+    rs: RequestState,
+    type_: type[DC],
+    name: Optional[str] = None,
+    *,
+    additional_data: CdEDBObject | None = None,
+    creation: bool,
+    **kwargs: Any
+) -> Optional[CdEDBObject]:
+    data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
+    if additional_data:
+        data.update(additional_data)
+    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    return cast(Optional[CdEDBObject], data)
 
 
 def inspect_validation(
@@ -2733,7 +2789,7 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             vtypes.EventPartGroup, vtypes.EventField}:
+                             models_event.PartGroup, vtypes.EventField}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

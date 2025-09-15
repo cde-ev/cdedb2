@@ -112,7 +112,7 @@
             </dt>
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
                 {% else %}
                     {% trans %}None{% endtrans %}
                 {% endfor %}
@@ -225,7 +225,8 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/unlock_event') }}" method="POST" id="unlockeventform">
                                 {{ util.anti_csrf_token('event/unlock_event') }}
-                                {{ util.input_submit(label=gettext("Unlock Event"), icon='unlock', aclass='btn btn-primary') }}
+                                {{ util.input_submit(label=gettext("Unlock Event"), icon='unlock', aclass='btn btn-primary',
+                                                     readonly=not is_privileged_for("event/unlock_event")) }}
                             </form>
                         </div>
                     {% else %}
@@ -235,7 +236,8 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockeventform">
                                 {{ util.anti_csrf_token('event/lock_event') }}
-                                {{ util.input_submit(label=gettext("Lock Event"), icon='lock', aclass='btn btn-danger') }}
+                                {{ util.input_submit(label=gettext("Lock Event"), icon='lock', aclass='btn btn-danger',
+                                                     readonly=not is_privileged_for("event/lock_event")) }}
                             </form>
                         </div>
                     {% endif %}
@@ -248,7 +250,7 @@
                 <ul>
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
+                            {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
                             <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
                                     id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('event/remove_orga') }}
