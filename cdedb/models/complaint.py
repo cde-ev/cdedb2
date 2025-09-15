@@ -377,7 +377,7 @@ class ComplaintEntryVersion(CdEDataclass):
         return Fernet(key).decrypt(description).decode("utf-8")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.ctime,)
+        return (self.entry_id, self.ctime)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
