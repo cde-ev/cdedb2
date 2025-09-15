@@ -26,7 +26,7 @@
             <div id="event_{{ ambience['event'].id }}" class="event">
                 {% for class_name, violation_list in violations.by_class.items() %}
                     <div class="violation-list maybehide">
-                        {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                        {{ util.doclink_("Handbuch_Orga_Ungereimtheiten", class_name|lower) }}
                         {{ util.h(class_name, underline=true) }}
                         {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity, violation_kind=violation_list[0].kind) }}
                     </div>
