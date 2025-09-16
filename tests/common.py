@@ -1769,16 +1769,17 @@ class FrontendTest(BackendTest):
                     f"Input with name {f!r} and index {index} not found."
                     f" {len(nodes)} inputs with name {f!r} found.") from None
 
-        # From https://devhints.io/xpath#class-check
-        for ancestor in node.iterancestors():
-            if f"has-{kind}" in ancestor.classes:
-                break
-        else:
+        error_containers = [
+            ancestor.text_content()
+            for ancestor in node.iterancestors()
+            if f"has-{kind}" in ancestor.classes
+        ]
+        if not error_containers:
             self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
-        normalized = re.sub(r'\s+', ' ', ancestor.text_content())
-        errmsg = (f"Expected error message not found near input with name {f!r}:\n"
-                  f"{normalized}")
-        self.assertIn(message, normalized, errmsg)
+
+        normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
+        if not any(message in content for content in normalized):
+            self.fail(f"Expected error message not found near input with name {f!r}:\n{normalized}")
 
     def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
                      tag: str = 'a', href_attr: str = 'href',
