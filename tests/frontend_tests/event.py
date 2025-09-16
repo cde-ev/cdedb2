@@ -4679,6 +4679,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'zip': b"PK\x03\x04",
         }
 
+        def assertLatex(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertIn(phrase, self.response.text)
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -4713,16 +4719,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertLess(1000, len(self.response.body))
         # course puzzle
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Planetenretten für Anfänger')
+        assertLatex('Planetenretten für Anfänger')
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # lodgement puzzle
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Kalte Kammer')
+        assertLatex('Kalte Kammer')
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4732,10 +4736,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # public list
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertNonPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia', 'Garcia')  # we don't want nicknames here
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4744,10 +4745,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
             index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia', 'Garcia')  # we don't want nicknames here
 
         # export
         # partial event export
@@ -4877,7 +4875,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             if link.endswith('lists'):  # downloads with multiple docs are zipped
                 self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
             else:
-                self.assertPresence('documentclass')
+                self.assertEqual("text/x-tex", self.response.content_type)
+                self.assertIn("documentclass", self.response.text)
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:
