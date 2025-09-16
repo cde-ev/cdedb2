@@ -4685,6 +4685,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             for phrase in phrases:
                 self.assertIn(phrase, self.response.text)
 
+        def assertLatexNotIn(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertNotIn(phrase, self.response.text)
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -4736,7 +4742,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # public list
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
-        assertLatex('Heldentum', 'Emilia', 'Garcia')  # we don't want nicknames here
+        assertLatex('Heldentum', 'Emilia')  # we don't want nicknames here
+        assertLatexNotIn('Garcia')
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4766,7 +4773,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
-        self.assertPresence('|cde')
+        self.assertIn('|cde', self.response.text)
         # dokuteam participant list
         self.response = save.click(href='event/event/1/download/dokuteam_participant')
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
