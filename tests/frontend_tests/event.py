@@ -6772,37 +6772,39 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             texts: list[str], check_complete: bool = True, only_severity: bool = True,
     ) -> None:
 
-        def test_not_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertNotIn("softhide", node.classes)
+                self._assertNodeHasClass(node, "softhide")
 
-        def test_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesNotHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertIn("softhide", node.classes)
+                self._assertNodeNotHasClass(node, "softhide")
 
-        id_ = f"event_{event_id}"
-        parents = self.response.lxml.cssselect(f"#{id_}")
+        parents = self._get_nodes(f"#event_{event_id}", check_exists=False)
         if not parents:
             self.fail(f"Did not find event {event_id}.")
-        test_not_hidden(parents)
+        assertNodesNotHidden(parents)
         if texts:
-            select = lambda node, severity: node.cssselect(
+            selector = lambda severity: (
                 f"[data-severity='{severity.value}']"
-                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else ""),
+                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else "")
             )
-            nodes = select(parents[0], filtered_severity)
+            nodes = self._get_nodes(
+                selector(filtered_severity), root_node=parents[0], check_exists=False
+            )
             if not only_severity:
-                for severity in models_cv.ViolationSeverity:
-                    if severity > filtered_severity:
-                        nodes.extend(select(parents[0], severity))
+                nodes.extend(
+                    self._get_nodes(
+                        selector(severity), root_node=parents[0], check_exists=False
+                    )
+                    for severity in models_cv.ViolationSeverity
+                    if severity > filtered_severity
+                )
             if not nodes:
-                self.fail(f"Did not find violations for severity {filtered_severity.name}"
-                          f" for event {event_id}.")
-            test_not_hidden(nodes)
+                self.fail(
+                    f"Did not find violations for severity {filtered_severity.name} for event {event_id}."
+                )
+            assertNodesNotHidden(nodes)
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
@@ -6818,8 +6820,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     f" I found these texts:\n" + "\n".join(node_texts),
                 )
         if not texts:
-            nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
-            test_hidden(nodes)
+            nodes = self._get_nodes(
+                ".violations", root_node=parents[0], check_exists=False
+            )
+            assertNodesHidden(nodes)
 
     @event_keeper
     @as_users("annika", "petra")

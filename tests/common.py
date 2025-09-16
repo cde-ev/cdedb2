@@ -1430,12 +1430,15 @@ class FrontendTest(BackendTest):
             self.assertIn(title.strip(), normalized)
 
     def _get_nodes(
-            self, selector: str, *, check_exists: bool = True
+            self, selector: str, *, check_exists: bool = True, root_node: "lxml.html.Element | None" = None
     ) -> list["lxml.html.Element"]:
         """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
             raise ValueError("Not a HTML page.")
-        nodes = self.response.lxml.cssselect(selector)
+        if root_node is not None:
+            nodes = root_node.cssselect(selector)
+        else:
+            nodes = self.response.lxml.cssselect(selector)
         if not nodes and check_exists:
             self.fail(f"Element '{selector}' not found.")
         return nodes
@@ -1516,21 +1519,29 @@ class FrontendTest(BackendTest):
         content = self.get_content(div, check_exists=check_div)
         self.assertNotIn(s.strip(), content)
 
+    def _assertNodeHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+        default_message = f"Node <{node.tag} id={node.get('id')}> does not have class {html_class!r}: {set(node.classes)!r}."
+        self.assertIn(html_class, node.classes, msg=msg or default_message)
+
+    def _assertNodeNotHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+        default_message = f"Node <{node.tag} id={node.get('id')}> unexpectedly has class {html_class!r}: {set(node.classes)!r}."
+        self.assertNotIn(html_class, node.classes, msg=msg or default_message)
+
     def assertHasClass(self, selector: str, html_class: str) -> None:
         nodes = self._get_nodes(selector)
         for i, node in enumerate(nodes):
-            self.assertIn(
+            self._assertNodeHasClass(
+                node,
                 html_class,
-                node.classes,
-                f"Element {selector!r} does not have class {html_class!r}: {set(node.classes)!r}.",
+                f"Element {selector!r}[{i}/{len(nodes)}] does not have class {html_class!r}: {set(node.classes)!r}.",
             )
 
     def assertNotHasClass(self, selector: str, html_class: str) -> None:
         nodes = self._get_nodes(selector)
         for i, node in enumerate(nodes):
-            self.assertNotIn(
+            self._assertNodeNotHasClass(
+                node,
                 html_class,
-                node.classes,
                 f"Element {selector!r}[{i}/{len(nodes)}] unexpectedly has class {html_class!r}: {set(node.classes)!r}.",
             )
 
