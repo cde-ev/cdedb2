@@ -80,7 +80,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         return event_id
 
     @access("event")
-    def new_get_lodgement_groups(
+    def get_lodgement_groups(
         self, rs: RequestState, event_id: int
     ) -> models.CdEDataclassMap[models.LodgementGroup]:
         event_id = affirm(vtypes.ID, event_id)
@@ -104,7 +104,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ):
                 raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
             self.assert_lock(rs, event_id=event_id)
-            current = self.new_get_lodgement_groups(rs, event_id)[data["id"]]
+            current = self.get_lodgement_groups(rs, event_id)[data["id"]]
 
             # Do the actual work:
             if data != current.as_dict():
@@ -184,7 +184,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 blockers = self.delete_lodgement_group_blockers(rs, group_id)
 
             if not blockers:
-                group = self.new_get_lodgement_groups(rs, event_id)[group_id]
+                group = self.get_lodgement_groups(rs, event_id)[group_id]
                 ret *= self.sql_delete_one(rs, "event.lodgement_groups", group_id)
                 self.event_log(
                     rs,

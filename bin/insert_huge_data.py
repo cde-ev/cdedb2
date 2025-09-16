@@ -230,7 +230,7 @@ def event(context: argparse.Namespace) -> int:
     }
     event: EventBackend = context.script.make_backend('event', proxy=False)
     ret = event.create_event(rs, data)
-    lodgement_groups = event.new_get_lodgement_groups(rs, ret)
+    lodgement_groups = event.get_lodgement_groups(rs, ret)
     for lg in lodgement_groups:
         for _ in range(1 if context.quick else 5):
             alodgement = event.create_lodgement(rs, {
