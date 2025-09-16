@@ -2683,41 +2683,50 @@ def _event_track(
     return EventTrack(val)
 
 
-EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'constraint_type': const.CourseTrackGroupType,
-    'notes': Optional[str],  # type: ignore[dict-item]
-    'track_ids': list[ID],
-    'sortkey': int,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.TrackGroup)
 def _event_track_group(
-    val: Any, argname: str = "track_group", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventTrackGroup:
-    val = _mapping(val, argname, **kwargs)
-
+    val: CdEDBObject, argname: str = "track_group", *,
+    event: models_event.Event, creation: bool = False, **kwargs: Any
+) -> CdEDBObject:
+    errs = ValidationSummary()
     if creation:
-        mandatory_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+        if "track_ids" not in val or not val["track_ids"]:
+            errs.append(ValueError('track_ids', n_("Must not be empty.")))
+        elif not val["track_ids"] <= event.tracks.keys():
+            errs.append(ValueError("track_ids", n_("Unknown track.")))
+        elif val["constraint_type"].is_sync():
+            if any(tg.constraint_type.is_sync() and set(tg.tracks) & val["track_ids"]
+                    for tg in event.track_groups.values()):
+                errs.append(ValueError("track_ids", n_(
+                    "Cannot have more than one course choice sync track group per track.")))
+            track_choice_configs = set(
+                (event.tracks[track_id].num_choices, event.tracks[track_id].min_choices)
+                for track_id in val["track_ids"]
+            )
+            if len(track_choice_configs) != 1:
+                errs.append(ValueError("track_ids", n_(
+                    "Tracks of a course choice sync track group must have the same"
+                    " number of choices.")))
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+    old_title = set()
+    old_shortname = set()
+    if creation is False:
+        track_group = event.track_groups.get(val["id"])
+        if track_group:
+            old_title = {track_group.title}
+            old_shortname = {track_group.shortname}
 
-    if 'track_ids' in val:
-        if not val['track_ids']:
-            raise ValidationSummary(
-                ValueError('track_ids', n_("Must not be empty.")))
+    if val.get("title") in {tg.title for tg in event.track_groups.values()} - old_title:
+        errs.append(ValueError('title', n_(
+            "A track group with this name already exists.")))
+    existing = {tg.shortname for tg in event.track_groups.values()}
+    if val.get('shortname') in existing - old_shortname:
+        errs.append(ValueError('shortname', n_(
+            "A track group with this name already exists.")))
 
-    return EventTrackGroup(val)
-
-
-_create_optional_mapping_validator(EventTrackGroup, EventTrackGroupSetter)
+    if errs:
+        raise errs
+    return val
 
 
 @_add_typed_validator

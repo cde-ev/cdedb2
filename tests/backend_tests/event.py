@@ -470,7 +470,7 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, new_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, new_id)[new_group_id],
         )
 
         new_lodgement = {
@@ -589,75 +589,102 @@ class TestEventBackend(BackendTest):
     def test_track_groups(self) -> None:
         event_id = 4
         event = self.event.get_event(self.key, event_id)
-        track_group_ids = self.event.get_event(self.key, event_id).track_groups.keys()
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, {
-            tg_id: None
-            for tg_id in track_group_ids
-        }))
-        tg_data: CdEDBOptionalMap = {
-            -1: {
-                'title': "Test",
-                'shortname': "Test",
-                'constraint_type': const.CourseTrackGroupType.course_choice_sync,
-                'notes': None,
-                'track_ids': event.tracks.keys(),
-                'sortkey': 1,
-            },
+        # delete existent track groups to avoid interference
+        for tg_id in event.track_groups.keys():
+            self.assertTrue(self.event.delete_track_group(self.key, tg_id))
+
+        new_track_group = {
+            'title': "Test",
+            'shortname': "Test",
+            'constraint_type': const.CourseTrackGroupType.course_choice_sync,
+            'notes': None,
+            'track_ids': event.tracks.keys(),
+            'sortkey': 1,
         }
-        assert tg_data[-1] is not None
         # Test incompatible tracks.
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        with self.assertRaisesRegex(ValueError, "must have the same number of choices"):
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test empty tracks.
-        tg_data[-1]['track_ids'] = []
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        new_track_group['track_ids'] = []
+        with self.assertRaisesRegex(ValueError, "Must not be empty."):
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test unknown tracks.
-        tg_data[-1]['track_ids'] = {1, 2}
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        new_track_group['track_ids'] = {1, 2}
+        with self.assertRaisesRegex(ValueError, "Unknown track."):
+            self.event.add_track_group(self.key, event_id, new_track_group)
+
+        # Test correct tracks with incompatible choices:
+        reg_data = {
+            "event_id": event_id,
+            "parts": {
+                part_id: {
+                    "status": const.RegistrationPartStati.applied,
+                }
+                for part_id in event.parts
+            },
+            "tracks": {
+                track_id: {
+                    "choices": [11] if track_id == 6 else [],
+                }
+                for track_id in event.tracks
+            },
+            "persona_id": 1,
+            "notes": None,
+            "list_consent": True,
+            "mixed_lodging": True,
+        }
+        registration_id = self.event.create_registration(self.key, reg_data)
+
+        new_track_group['track_ids'] = {6, 7}
+        with self.assertRaisesRegex(ValueError, "incompatible existing course choices"):
+            self.event.add_track_group(self.key, event_id, new_track_group)
+
+        self.assertTrue(
+            self.event.delete_registration(
+                self.key,
+                registration_id,
+                {"registration_parts", "registration_tracks", "course_choices"},
+            )
+        )
 
         # Test correct tracks.
-        tg_data[-1]['track_ids'] = {6, 7}
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        self.assertTrue(self.event.add_track_group(self.key, event_id, new_track_group))
         event = self.event.get_event(self.key, event_id)
-        tg = tg_data[-1].copy()
-        tg['id'] = 1003
-        tg['event_id'] = event_id
-        tg['tracks'] = {
+        expectation: CdEDBObject = new_track_group.copy()
+        expectation['id'] = 1001
+        expectation['event_id'] = event_id
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
         # Test duplicate tracks.
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
-        # Test dupliclate title.
-        with self.assertRaises(psycopg2.errors.UniqueViolation):
-            tmp = copy.deepcopy(tg_data)
-            assert tmp[-1] is not None
-            tmp[-1]['track_ids'] = [8]
-            self.event.set_track_groups(self.key, event_id, tmp)
+            self.event.add_track_group(self.key, event_id, new_track_group)
+        # Test duplicate title.
+        with self.assertRaises(ValueError):
+            tmp = copy.copy(new_track_group)
+            tmp['track_ids'] = [8]
+            self.event.add_track_group(self.key, event_id, tmp)
 
         # Test update
-        tg_update: CdEDBOptionalMap = {
-            1003: {
-                'title': "tEST",
-                'track_ids': {7, 8},
-            },
+        tg_update = {
+            'title': "tEST",
+            'track_ids': {7, 8},
         }
-        assert tg_update[1003] is not None
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        # updating track_ids is forbidden
+        with self.assertRaises(KeyError):
+            self.event.change_track_group(self.key, 1001, tg_update)
+        del tg_update['track_ids']
+        self.assertTrue(self.event.change_track_group(self.key, 1001, tg_update))
         event = self.event.get_event(self.key, event_id)
-        tg.update(tg_update[1003])
-        tg['tracks'] = {
+        expectation.update(tg_update)
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
     @as_users("emilia")
     def test_course_choice_sync(self) -> None:
@@ -1737,7 +1764,7 @@ class TestEventBackend(BackendTest):
             ),
         }
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
 
         new_group: CdEDBObject = {
@@ -1755,7 +1782,7 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
         update = {
             'id': new_group_id,
@@ -1765,7 +1792,7 @@ class TestEventBackend(BackendTest):
         new_group.update(update)
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
 
         new_lodgement: CdEDBObject = {
@@ -1792,19 +1819,19 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
 
         expectation_groups[new_group_id] = models.LodgementGroup(**new_group)
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
         self.assertLess(
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
         del expectation_groups[new_group_id]
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
 
         self.assertNotIn(
@@ -1829,7 +1856,7 @@ class TestEventBackend(BackendTest):
         with self.switch_user("annika"):
             new_event_id = self.event.create_event(self.key, new_event_data)
 
-        groups = self.event.new_get_lodgement_groups(self.key, new_event_id)
+        groups = self.event.get_lodgement_groups(self.key, new_event_id)
         groups_expectation = {
             1002: models.LodgementGroup(
                 id=vtypes.ID(1002),

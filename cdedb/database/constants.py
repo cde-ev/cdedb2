@@ -373,8 +373,10 @@ class MailinglistDomain(CdEIntEnum):
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
         members without moderation."""
+        if self == MailinglistDomain.aka:
+            return {"tickets.cde-ev.de"}
         if self == MailinglistDomain.lists:
-            return {"cde-ev.de", "lists.schuelerakademie.de"}
+            return {"cde-ev.de", "lists.schuelerakademie.de", "tickets.cde-ev.de"}
         if self == MailinglistDomain.cdelokal:
             return {"cdelokal.schuelerakademie.de"}
         return set()

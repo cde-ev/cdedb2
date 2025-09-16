@@ -87,5 +87,11 @@ class CryptographyError(Exception):
     """
 
 
+class AdverseCompanionError(Exception):
+    """Exception signalling that adding an adverse companion was blocked."""
+    def __init__(self, msg: str = n_("Adverse companion."), /, *args: Any):
+        super().__init__(msg, *args)
+
+
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""

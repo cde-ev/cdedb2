@@ -2,7 +2,7 @@
 Ungereimtheiten
 ***************
 
-Die Datenbank kann für viele Situation, die im Laufe der Organisation einer
+Die Datenbank kann für viele Situationen, die im Laufe der Organisation einer
 Veranstaltung auftreten können -- aber eigentlich nicht sollen -- Hinweise, Warnungen
 bzw. sogar Fehlermeldungen ausgeben. Übergreifend werden diese als Ungereimtheiten
 bezeichnet.
@@ -23,7 +23,7 @@ schwerwiegend diese sind und wie schnell sich darum gekümmert werden sollte:
   Softwarefehler, korrumpierte Daten oder einen Fehler außerhalb der Macht des Orgateams.
 
 In diesem Dokument werden die einzelnen Arten von Ungereimtheiten, auf die die
-Datenbank hinweisen kann näher erläutert.
+Datenbank hinweisen kann, näher erläutert.
 
 Fehler bei Anmeldungen
 ======================

@@ -839,7 +839,8 @@ class EventLowLevelBackend(AbstractBackend):
             if track_group is None:  # pragma: no cover
                 return 0
             type_ = const.CourseTrackGroupType(track_group['constraint_type'])
-            ret *= self.sql_delete_one(rs, "event.track_groups", track_group_id)
+            ret *= self.sql_delete_one(
+                rs, models.TrackGroup.database_table, track_group_id)
             self.event_log(rs, const.EventLogCodes.track_group_deleted,
                            event_id=track_group["event_id"],
                            change_note=f"{track_group['title']} ({type_.name})")
@@ -847,39 +848,6 @@ class EventLowLevelBackend(AbstractBackend):
             raise ValueError(  # pragma: no cover
                 n_("Deletion of %(type)s blocked by %(block)s."),
                 {"type": "track group", "block": blockers.keys()})
-        return ret
-
-    @internal
-    def _set_track_group_tracks(self, rs: RequestState, event_id: int,
-                                track_group_id: int, track_group_title: str,
-                                track_ids: set[int], tracks: CdEDBObjectMap,
-                                constraint_type: const.CourseTrackGroupType,
-                                ) -> DefaultReturnCode:
-        """Helper to link the given course traks to the given track group."""
-        ret = 1
-        self.affirm_atomized_context(rs)
-
-        current_track_ids = {e['track_id'] for e in self.sql_select(
-            rs, "event.track_group_tracks", ("track_id",), (track_group_id,),
-            entity_key="track_group_id")}
-
-        if deleted_track_ids := current_track_ids - track_ids:
-            query = ("DELETE FROM event.track_group_tracks"
-                     " WHERE track_group_id = %s AND track_id = ANY(%s)")
-            ret *= self.query_exec(rs, query, (track_group_id, deleted_track_ids))
-            for x in mixed_existence_sorter(deleted_track_ids):
-                self.event_log(
-                    rs, const.EventLogCodes.track_group_link_deleted, event_id,
-                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
-
-        if new_track_ids := track_ids - current_track_ids:
-            inserter = []
-            for x in mixed_existence_sorter(new_track_ids):
-                inserter.append({'track_group_id': track_group_id, 'track_id': x})
-                self.event_log(
-                    rs, const.EventLogCodes.track_group_link_created, event_id,
-                    change_note=f"{tracks[x]['title']} -> {track_group_title}")
-            ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
         return ret
 
     def _track_groups_sanity_check(self, rs: RequestState, event_id: int) -> None:
@@ -948,45 +916,12 @@ class EventLowLevelBackend(AbstractBackend):
     @access("event")
     def may_create_ccs_group(self, rs: RequestState, track_ids: Collection[int],
                              ) -> bool:
-        """Determine whether a CCS group with the given tracks may be created."""
+        """Determine whether a CCS group with the given tracks may be created.
+
+        Performs more involved checks which can not be done in the validation due to
+        missing data, like registrations.
+        """
         track_ids = affirm_set(vtypes.ID, track_ids)
-
-        # Check that the given tracks are from the same event.
-        query = """
-            SELECT COUNT(DISTINCT ep.event_id)
-            FROM event.event_parts AS ep
-                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
-            WHERE ct.id = ANY(%s)
-            HAVING COUNT(DISTINCT ep.event_id) > 1
-        """
-        params = (track_ids,)
-        if self.query_all(rs, query, params):
-            return False
-
-        # Check that the given tracks have the same number of choices.
-        query = """
-            SELECT COUNT(*)
-            FROM (
-                SELECT DISTINCT num_choices, min_choices
-                FROM event.course_tracks
-                WHERE id = ANY(%s)
-            ) AS tmp
-            HAVING COUNT(*) > 1
-        """
-        params = (track_ids,)
-        if self.query_all(rs, query, params):
-            return False
-
-        # Check that the given tracks are not part of another CCS group.
-        query = """
-            SELECT tgt.track_id
-            FROM event.track_group_tracks AS tgt
-                LEFT JOIN event.track_groups AS tg on tg.id = tgt.track_group_id
-            WHERE tg.constraint_type = %s AND tgt.track_id = ANY(%s)
-        """
-        params = (const.CourseTrackGroupType.course_choice_sync, track_ids)
-        if self.query_all(rs, query, params):
-            return False
 
         # Check that course choices and course instructors are compatible.
         query = """

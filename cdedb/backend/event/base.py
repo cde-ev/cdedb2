@@ -53,9 +53,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS,
     EVENT_FEE_FIELDS,
-    EVENT_PART_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
     PERSONA_EVENT_FIELDS,
@@ -861,104 +859,84 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def set_track_groups(self, rs: RequestState, event_id: int,
-                         track_groups: CdEDBOptionalMap) -> DefaultReturnCode:
-        """Create, delete and/or update track groups for one event."""
+    def add_track_group(self, rs: RequestState, event_id: int, track_group: CdEDBObject
+                       ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
-        track_groups = affirm(vtypes.EventTrackGroupSetter, track_groups)
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-
         ret = 1
-        if not track_groups:
-            return ret
 
         with Atomizer(rs):
-            parts = {e['id']: e for e in self.sql_select(
-                rs, "event.event_parts", EVENT_PART_FIELDS, (event_id,),
-                entity_key="event_id")}
-            tracks = {e['id']: e for e in self.sql_select(
-                rs, "event.course_tracks", COURSE_TRACK_FIELDS, parts.keys(),
-                entity_key="part_id")}
+            event = self.get_event(rs, event_id)
 
-            existing_track_groups = {unwrap(e) for e in self.sql_select(
-                rs, "event.track_groups", ("id",), (event_id,), entity_key="event_id")}
-            new_track_groups = {x for x in track_groups if x < 0}
-            updated_track_groups = {
-                x for x in track_groups if x > 0 and track_groups[x] is not None}
-            deleted_track_groups = {
-                x for x in track_groups if x > 0 and track_groups[x] is None}
-
-            tmp = updated_track_groups | deleted_track_groups
-            if not tmp <= existing_track_groups:
-                raise ValueError(n_("Unknown track group."))
-
-            # Defer unique constraints until end of transaction.
-            self.sql_defer_constraints(
-                rs, "event.track_groups_event_id_shortname_key",
-                "event.track_groups_event_id_title_key",
-                "event.track_group_tracks_track_id_track_group_id_key",
-            )
-
-            # new
-            for x in mixed_existence_sorter(new_track_groups):
-                new_track_group = track_groups[x]
-                assert new_track_group is not None
-                new_track_group['event_id'] = event_id
-                track_ids = affirm_set(vtypes.ID, new_track_group.pop('track_ids'))
-                new_id = self.sql_insert(rs, "event.track_groups", new_track_group)
-                ret *= new_id
+            track_group = affirm(models.TrackGroup, track_group, creation=True,
+                                 event=event)
+            track_group['event_id'] = event_id
+            track_ids = track_group.pop("track_ids")
+            if (track_group["constraint_type"].is_sync()
+                    and not self.may_create_ccs_group(rs, track_ids)):
+                raise ValueError(
+                    n_("Cannot create CCS group due to incompatible existing course choices.")
+                )
+            new_id = self.sql_insert(rs, models.TrackGroup.database_table, track_group)
+            ret *= new_id
+            self.event_log(
+                rs, const.EventLogCodes.track_group_created, event_id,
+                change_note=track_group['title'])
+            inserter = []
+            for track_id in track_ids:
+                inserter.append({'track_group_id': new_id, 'track_id': track_id})
+                change_note = f"{event.tracks[track_id].title} -> {track_group['title']}"
                 self.event_log(
-                    rs, const.EventLogCodes.track_group_created, event_id,
-                    change_note=new_track_group['title'])
-                if track_ids:
-                    if not track_ids <= tracks.keys():
-                        raise ValueError(n_("Unknown track for the given event."))
-                    ret *= self._set_track_group_tracks(
-                        rs, event_id, track_group_id=new_id, track_ids=track_ids,
-                        tracks=tracks, track_group_title=new_track_group['title'],
-                        constraint_type=new_track_group['constraint_type'])
+                    rs, const.EventLogCodes.track_group_link_created, event_id,
+                    change_note=change_note)
+            if track_ids:
+                ret *= self.sql_insert_many(rs, "event.track_group_tracks", inserter)
+            self._track_groups_sanity_check(rs, event_id)
 
-            # updated
-            if updated_track_groups:
-                current_track_group_data = {e['id']: e for e in self.sql_select(
-                    rs, models.TrackGroup.database_table,
-                    models.TrackGroup.database_fields(), updated_track_groups)}
-                for x in mixed_existence_sorter(updated_track_groups):
-                    current = current_track_group_data[x]
-                    updated = track_groups[x]
-                    assert updated is not None
-                    updated['id'] = x
-                    # Changing constraint type is not allowed.
-                    new_ct = updated.pop('contraint_type', None)
-                    old_ct = current_track_group_data[x]['constraint_type']
-                    if new_ct and new_ct != old_ct:
-                        raise ValueError(n_("May not change constraint type."))
-                    track_ids = updated.pop('track_ids', None)
-                    title = updated.get('title', current_track_group_data[x]['title'])
-                    if any(updated[k] != current_track_group_data[x][k]
-                           for k in updated):
-                        ret *= self.sql_update(rs, "event.track_groups", updated)
-                        self.event_log(
-                            rs, const.EventLogCodes.track_group_changed, event_id,
-                            change_note=title)
-                    if track_ids is not None:
-                        track_ids = affirm_set(vtypes.ID, track_ids)
-                        if not track_ids <= tracks.keys():
-                            raise ValueError(n_("Unknown track for the given event."))
-                        ret *= self._set_track_group_tracks(
-                            rs, event_id, track_group_id=x, track_ids=track_ids,
-                            tracks=tracks, track_group_title=title,
-                            constraint_type=const.CourseTrackGroupType(
-                                current['constraint_type']))
+        return ret
 
-            if deleted_track_groups:
-                cascade = ("track_group_tracks",)
-                for x in mixed_existence_sorter(deleted_track_groups):
-                    ret *= self._delete_track_group(
-                        rs, track_group_id=x, cascade=cascade)
+    @access("event")
+    def change_track_group(self, rs: RequestState, track_group_id: int,
+                          track_group: CdEDBObject) -> DefaultReturnCode:
+        track_group_id = affirm(vtypes.ID, track_group_id)
+        track_group["id"] = track_group_id
 
+        ret = 1
+        with Atomizer(rs):
+            event_id = unwrap(self.sql_select_one(
+                rs, models.TrackGroup.database_table, ("event_id", ), track_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            event = self.get_event(rs, event_id)
+            track_group = affirm(models.TrackGroup, track_group, event=event)
+            current = event.track_groups[track_group["id"]].as_dict()
+            if any(track_group[k] != current[k] for k in track_group):
+                ret *= self.sql_update(rs, models.TrackGroup.database_table, track_group)
+                self.event_log(
+                    rs, const.EventLogCodes.track_group_changed, event_id,
+                    change_note=track_group.get('title', current['title']))
+            self._track_groups_sanity_check(rs, event_id)
+
+        return ret
+
+    @access("event")
+    def delete_track_group(self, rs: RequestState, track_group_id: int
+                          ) -> DefaultReturnCode:
+        track_group_id = affirm(vtypes.ID, track_group_id)
+
+        with Atomizer(rs):
+            event_id = unwrap(self.sql_select_one(
+                rs, models.TrackGroup.database_table, ("event_id", ), track_group_id))
+            if event_id is None:
+                raise ValueError
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            ret = self._delete_track_group(rs, track_group_id=track_group_id,
+                                           cascade=("track_group_tracks",))
             self._track_groups_sanity_check(rs, event_id)
 
         return ret
