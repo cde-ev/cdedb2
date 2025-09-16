@@ -43,7 +43,7 @@
     {% set target = 'event/change_course' if ambience['course'] else 'event/create_course' %}
     <form action="{{ cdedblink(target) }}" method="POST" id="configurecourseform" class="form-horizontal">
         {{ util.anti_csrf_token(target) }}
-        {{ util.h("Meta", level=3, underline=True) }}
+        {{ util.h(n_("Meta"), level=3, underline=True) }}
         {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
@@ -59,13 +59,13 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
 
         {% set multitrack = ambience['event'].tracks|length > 1 %}
-        {{ util.h("Course", level=3, underline=True) }}
+        {{ util.h(n_("Course"), level=3, underline=True) }}
         {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)"), type="number", attributes='min="0"') }}
         {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)"), type="number", attributes='min="0"') }}
 
         {% if multitrack %}
-            {{ util.h("Course Tracks", level=3, underline=True) }}
+            {{ util.h(n_("Course Tracks"), level=3, underline=True) }}
         {% endif %}
 
         {% for track in ambience['event'].tracks.values() %}
