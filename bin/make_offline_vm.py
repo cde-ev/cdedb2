@@ -252,7 +252,8 @@ def work(
         models.CheckinPeriod.database_table,
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
-        'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        'event.stored_queries', models.TrackGroup.database_table,
+        'event.track_group_tracks',
         models.PersonalizedFee.database_table,
         OrgaToken.database_table,
     )
