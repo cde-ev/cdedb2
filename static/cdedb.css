@@ -572,6 +572,9 @@ input[type=number].no-number-arrows {
     font-size: 85%;
     color: #777;
 }
+.selectize-dropdown .option.selected .meta {
+    color: #ddd;
+}
 .selectize-dropdown-content {
     max-height: max(50vh, 300px);
 }

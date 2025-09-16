@@ -177,9 +177,9 @@ class Case(CdEDataclass):
         all_entries = list(log_entries) + mutable_entries
         all_entries = xsorted(
             all_entries,
-            key=lambda e: e.all_versions[-1].timestamp
-            if isinstance(e, ComplaintEntry)
-            else e['ctime'],
+            key=lambda e: (
+                e.get_sortkey() if isinstance(e, ComplaintEntry) else (e['ctime'],)
+            ),
         )
         return all_entries
 
@@ -309,7 +309,7 @@ class ComplaintEntry(CdEDataclass):
         return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
-        return ()
+        return (self.all_versions[-1].timestamp,)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
@@ -377,7 +377,7 @@ class ComplaintEntryVersion(CdEDataclass):
         return Fernet(key).decrypt(description).decode("utf-8")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.timestamp, self.ctime)
+        return (self.entry_id, self.ctime)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:

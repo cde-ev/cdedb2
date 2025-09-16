@@ -130,7 +130,7 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
-        admin = {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen", "Log"}
+        admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
@@ -146,7 +146,7 @@ class TestEventFrontend(FrontendTest):
             out = set()
         # event helpers
         elif self.user_in('petra'):
-            ins = everyone | {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen"}
+            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"}
             out = {"Log"}
         # auditors
         elif self.user_in('katarina'):
@@ -447,7 +447,7 @@ class TestEventFrontend(FrontendTest):
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
             "Teilnehmerliste", "Anmeldungen",
-            "Log", "Checkin", "Verstöße gegen Beschränkungen",
+            "Log", "Checkin", "Ungereimtheiten",
         }
 
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -4416,13 +4416,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("garcia")
     def test_course_assignment_violations(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                      "Verstöße gegen Beschränkungen")
+                      "Ungereimtheiten")
         self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
         self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
         self.traverse("Kabarett")
         self.assertPresence(r"Findet nicht statt aber hat \d+ Teilnehmende.",
                             regex=True, div="track-violations-2")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Fehlende Kurseinteilungen")
         self.assertPresence("Anton", div='NoCourseAssignedCV-list')
         self.traverse("Anton")
@@ -4444,7 +4444,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['assign_action'] = 0
         self.submit(f)
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Fehlerhafte Kurseinteilungen")
         self.assertPresence("Garcia Generalis ist in Kaffee in einen nicht"
                             " gewählten Kurs (ε. Backup) eingeteilt.",
@@ -4463,7 +4463,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("Wird in Kaffee nicht angeboten aber hat",
                             div="constraint-violations-list")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
 
         # Reduce max size of "Heldentum".
         self.traverse("Kurse", "Heldentum", "Bearbeiten")
@@ -4471,7 +4471,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['max_size'] = 1
         self.submit(f)
         self.assertPresence("Zu viele Teilnehmende (3 > 1).")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.",
                             div="IncorrectNumAttendeesCV-list")
         f['max_size'] = 3
@@ -4489,7 +4489,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
         self.submit(f)
         self.assertPresence("1 Kursleitende aber keine Teilnehmenden.")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
                             " in Sitzung.", div="LonelyAttendeesCV-list")
 
@@ -6532,14 +6532,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("emilia")
     def test_constraint_violations(self) -> None:
         self.traverse("TripelAkademie")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmeausschließlichkeit",
                             div="constraint-violations")
         self.assertPresence("Es gibt 5 Verstöße gegen Kursausschließlichkeit",
                             div="constraint-violations")
-        self.traverse("Kurse", "Verstöße gegen Beschränkungen")
-        self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
+        self.traverse("Kurse", "Ungereimtheiten")
+        self.assertTitle("TripelAkademie – Ungereimtheiten")
         self.assertPresence("Teilnahmeausschließlichkeit")
         self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
@@ -6554,8 +6553,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Change Emilia's registration.
         self.traverse({"href": "/event/event/4/registration/10/show"})
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Ist an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
@@ -6576,15 +6574,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['part9.status'] = f['part11.status'] = const.RegistrationPartStati.participant
         self.submit(f)
 
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Ist an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
         self.assertPresence("Nimmt an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen teil (K2, O2).",
                             div="constraint-violations-list")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen teil (K2, O2).",
                             div="MutuallyExclusiveParticipationCV-list")
@@ -6593,13 +6590,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertNonPresence("sich gegenseitig ausschließenden")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertNonPresence("Teilnahmebeschränkungen")
 
         # Change the Akrobatik course's active segments.
         self.traverse("4. Akrobatik")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Findet in sich gegenseitig ausschließenden"
                             " Kursschienen statt (KK1, OK1).",
                             div="constraint-violations-list")
@@ -6651,7 +6647,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         f['active_segments'] = [6, 11, 12]
         self.submit(f)
-        self.assertNonPresence("Verstöße gegen Beschränkungen",
+        self.assertNonPresence("Ungereimtheiten",
                                div="constraint-violations", check_div=False)
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
@@ -6666,14 +6662,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             }
             self.event.set_course(self.key, data)
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertNonPresence("Kursausschließlichkeit")
 
     @as_users("anton")
     def test_financial_violations(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence(
             "Es gibt 1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
             div="constraint-violations")
@@ -6684,7 +6679,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
             div="constraint-violations")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         f = self.response.forms['filterconstraintsform']
         f['violation_kind'] = models_cv.ViolationKind.financial
         self.submit(f, check_notification=False)
@@ -6714,7 +6709,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 3")
         execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 5")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         texts = [
             "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).",
             "Anton Administrator muss insgesamt einen negativen Betrag bezahlen (-5,00 €).",
@@ -6752,10 +6747,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Anton Administrator")
         self.assertPresence("Hat einen negativen Betrag bezahlt (-5,00 €).")
         self.assertPresence("Muss insgesamt einen negativen Betrag bezahlen (-5,00 €).")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.traverse("Emilia")
         self.assertPresence("Hat bezahlt, aber kein Bezahlungsdatum.")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         # Garcia is orga.
         f = self.response.forms['quickregistrationform']
         f['phrase'] = "Garcia"
@@ -6765,7 +6760,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Ist involviert, muss aber keinen Beitrag bezahlen.",
             div="constraint-violations", check_div=False,
         )
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.traverse("Akira")
         self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
         self.traverse("Übersicht")
@@ -6830,13 +6825,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika", "petra")
     def test_constraint_violations_summary(self) -> None:
-        self.traverse("Veranstaltungen", "Verstöße gegen Beschränkungen")
-        self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+        self.traverse("Veranstaltungen", "Ungereimtheiten")
+        self.assertTitle("Übersicht über Ungereimtheiten")
 
         all_event_ids = set(self.event.list_events(self.key))
 
         def test_events_shown(*event_ids: int) -> None:
-            self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+            self.assertTitle("Übersicht über Ungereimtheiten")
             for event_id in event_ids:
                 self.assertHasNotClass(
                     div=f"event_{event_id}", html_class="softhide",

@@ -912,6 +912,10 @@ class LodgementGroup(EventDataclass):
         data['lodgement_ids'] = set(data['lodgement_ids'])
         return super().from_database(data)
 
+    @classmethod
+    def entries(cls, groups: CdEDataclassMap[Self]) -> list[tuple[vtypes.ID, str]]:
+        return [(group.id, group.title) for group in groups.values()]
+
     def get_sortkey(self) -> Sortkey:
         return (self.title, )
 

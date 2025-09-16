@@ -67,6 +67,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This initiates the genesis process.
         """
+        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
+        if rs.has_validation_errors():
+            return self.genesis_request_form(rs)
+        assert realm is not None
+
         if attachment or attachment_hash:
             # We need to extract the hash before, and save it to rs.values after the
             #  call to extract_and_check, so we stash them in between.
@@ -75,10 +80,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                     attachment_hash, attachment_filename)
 
-        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
-        if rs.has_validation_errors():
-            return self.genesis_request_form(rs)
-        assert realm is not None
         case_model = models.GenesisCase.get_model_by_realm(realm)
         mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
         data = extract_and_check_dataclass(

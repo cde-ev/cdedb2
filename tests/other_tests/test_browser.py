@@ -32,8 +32,9 @@ def make_page(*args: Any, headless: bool = True,
                 # FIXME firefox fails to deterministically reproduce result
                 for name in ['chromium']:
                     browser = getattr(pw, name).launch(headless=headless)
-                    page = browser.new_page(locale='de-DE')
+                    page: Page = browser.new_page(locale='de-DE')
                     page.set_default_timeout(timeout)
+                    page.set_default_navigation_timeout(timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
                         func(self, *fargs, **fkwargs)
