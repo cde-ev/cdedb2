@@ -6800,13 +6800,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 selector(filtered_severity), root_node=parents[0], check_exists=False
             )
             if not only_severity:
-                nodes.extend(
-                    self._get_nodes(
-                        selector(severity), root_node=parents[0], check_exists=False
-                    )
-                    for severity in models_cv.ViolationSeverity
-                    if severity > filtered_severity
-                )
+                for severity in models_cv.ViolationSeverity:
+                    if severity > filtered_severity:
+                        nodes.extend(
+                            self._get_nodes(
+                                selector(severity),
+                                root_node=parents[0],
+                                check_exists=False,
+                            )
+                        )
             if not nodes:
                 self.fail(
                     f"Did not find violations for severity {filtered_severity.name} for event {event_id}."
