@@ -2217,7 +2217,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    type_ = hints[name]
+                    type_ = cast(type[Any], hints[name])
                     if optional := is_optional_type(type_):
                         type_ = typing.get_args(type_)[0]
 
@@ -2486,6 +2486,7 @@ def check_validation(
     name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
 
+
 @overload
 def check_validation(
     rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
@@ -2522,6 +2523,7 @@ def check_validation_optional(
     rs: RequestState, type_: type[CdEDataclass], value: Any,
     name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
+
 
 @overload
 def check_validation_optional(
