@@ -467,7 +467,7 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, new_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, new_id)[new_group_id],
         )
 
         new_lodgement = {
@@ -1671,7 +1671,7 @@ class TestEventBackend(BackendTest):
             ),
         }
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
 
         new_group: CdEDBObject = {
@@ -1689,7 +1689,7 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
         update = {
             'id': new_group_id,
@@ -1699,7 +1699,7 @@ class TestEventBackend(BackendTest):
         new_group.update(update)
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
 
         new_lodgement: CdEDBObject = {
@@ -1726,19 +1726,19 @@ class TestEventBackend(BackendTest):
         })
         self.assertEqual(
             models.LodgementGroup(**new_group),
-            self.event.new_get_lodgement_groups(self.key, event_id)[new_group_id],
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
 
         expectation_groups[new_group_id] = models.LodgementGroup(**new_group)
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
         self.assertLess(
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
         del expectation_groups[new_group_id]
         self.assertEqual(
-            expectation_groups, self.event.new_get_lodgement_groups(self.key, event_id)
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
 
         self.assertNotIn(
@@ -1763,7 +1763,7 @@ class TestEventBackend(BackendTest):
         with self.switch_user("annika"):
             new_event_id = self.event.create_event(self.key, new_event_data)
 
-        groups = self.event.new_get_lodgement_groups(self.key, new_event_id)
+        groups = self.event.get_lodgement_groups(self.key, new_event_id)
         groups_expectation = {
             1002: models.LodgementGroup(
                 id=vtypes.ID(1002),

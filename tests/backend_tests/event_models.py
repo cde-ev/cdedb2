@@ -908,7 +908,7 @@ class TestEventModels(BackendTest):
             ),
         }
 
-        reality = self.event.new_get_lodgement_groups(self.key, event_id)
+        reality = self.event.get_lodgement_groups(self.key, event_id)
 
         self.assertEqual(
             expectation,

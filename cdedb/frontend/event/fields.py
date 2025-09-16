@@ -177,7 +177,7 @@ class EventFieldMixin(EventBaseFrontend):
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
             entities = self.eventproxy.get_lodgements(rs, ids)
-            groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+            groups = self.eventproxy.get_lodgement_groups(rs, event_id)
             labels = {
                 lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
                          else safe_filter(f"{lodg['title']}, <em>"
