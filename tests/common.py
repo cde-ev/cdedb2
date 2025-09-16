@@ -28,7 +28,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import (
-    Collection,
     Generator,
     Iterable,
     Mapping,
@@ -48,7 +47,7 @@ from typing import (
     no_type_check,
 )
 
-import lxml
+import lxml.html
 import PIL.Image
 import webtest
 import webtest.utils
@@ -1430,29 +1429,38 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(title.strip(), normalized)
 
-    def get_content(self, div: str = "content", check_div: bool = True) -> str:
-        """Retrieve the content of the (first) element with the given id."""
-        if (
-            self.response.content_type.startswith("text/")
-            and self.response.content_type != "text/html"
-        ):
-            return self.response.text
-        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-        if not tmp:
-            if check_div:
-                self.fail(f"Div '{div}' not found.")
-            return ""
-        return re.sub(r'\s+', ' ', tmp[0].text_content())
-
-    def assertDivNotExists(self, div: str) -> None:
-        """Assert that the given id is not used by any element on the page.
-
-        This element is not required to be a div.
-        """
+    def _get_nodes(
+            self, selector: str, *, check_exists: bool = True
+    ) -> list["lxml.html.Element"]:
+        """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
-            self.fail("No valid html document.")
-        if self.response.lxml.xpath(f"//*[@id='{div}']"):
-            self.fail(f"Element with id {div} found")
+            raise ValueError("Not a HTML page.")
+        nodes = self.response.lxml.cssselect(selector)
+        if not nodes and check_exists:
+            self.fail(f"Element '{selector}' not found.")
+        return nodes
+
+    def _get_content(self, selector: str, *, check_exists: bool = True, index: int = 0) -> str:
+        """Like `get_content` but accepts any css selector."""
+        nodes = self._get_nodes(selector, check_exists=check_exists)
+        if not nodes and not check_exists:
+            return ""
+        try:
+            node = nodes[index]
+        except IndexError:
+            self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
+        return re.sub(r'\s+', ' ', node.text_content())
+
+    def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
+        """Retrieve the normalized text content of the (nth) element with the given id."""
+        return self._get_content(f"#{div}", check_exists=check_exists, index=index)
+
+    def assertDivNotExists(self, selector: str) -> None:
+        """Assert that the given selector does not match any element on the page."""
+        self.assertFalse(
+            self._get_nodes(selector, check_exists=False),
+            msg=f"Element '{selector}' found.",
+        )
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
         """Assert that the form input has a specific HTML DOM attribute.
@@ -1461,26 +1469,6 @@ class FrontendTest(BackendTest):
         more easy to use.
         """
         self.assertIn(attr, input_field.attrs)
-
-    def assertHasClass(self, div: str, html_class: str) -> None:
-        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-        if not tmp:
-            self.fail(f"Div '{div}' not found.")
-        classes = tmp[0].classes
-        self.assertIn(
-            html_class, classes,
-            f"{html_class} not in {list(classes)} of div {div!r}.",
-        )
-
-    def assertHasNotClass(self, div: str, html_class: str) -> None:
-        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-        if not tmp:
-            self.fail(f"Div '{div}' not found.")
-        classes = tmp[0].classes
-        self.assertNotIn(
-            html_class, classes,
-            f"{html_class} unexpectedly in {list(classes)} of div {div!r}.",
-        )
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
@@ -1508,7 +1496,7 @@ class FrontendTest(BackendTest):
         :param regex: If True, do a RegEx match of the given string.
         :param exact: If True, require an exact match.
         """
-        content = self.get_content(div, check_div=True)
+        content = self.get_content(div, check_exists=True)
         if regex:
             self.assertTrue(re.search(s.strip(), content), msg=msg)
         elif exact:
@@ -1525,31 +1513,40 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        content = self.get_content(div, check_div=check_div)
+        content = self.get_content(div, check_exists=check_div)
         self.assertNotIn(s.strip(), content)
 
-    def assertClassPresent(self, nodes: Collection["lxml.etree._HTMLElement"], htmlclass: str) -> None:
-        for node in nodes:
-            self.assertIn(htmlclass, node.classes, f"Node {node!r} does not have class {htmlclass!r}: {set(node.classes)!r}.")
+    def assertHasClass(self, selector: str, html_class: str) -> None:
+        nodes = self._get_nodes(selector)
+        for i, node in enumerate(nodes):
+            self.assertIn(
+                html_class,
+                node.classes,
+                f"Element {selector!r} does not have class {html_class!r}: {set(node.classes)!r}.",
+            )
 
-    def assertClassNotPresent(self, nodes: Collection["lxml.etree._HTMLElement"], htmlclass: str) -> None:
-        for node in nodes:
-            self.assertNotIn(htmlclass, node.classes, f"Node {node!r} unexpectedly has class {htmlclass!r}: {set(node.classes)!r}.")
+    def assertNotHasClass(self, selector: str, html_class: str) -> None:
+        nodes = self._get_nodes(selector)
+        for i, node in enumerate(nodes):
+            self.assertNotIn(
+                html_class,
+                node.classes,
+                f"Element {selector!r}[{i}/{len(nodes)}] unexpectedly has class {html_class!r}: {set(node.classes)!r}.",
+            )
 
-    def _get_nodes(self, selector: str) -> list["lxml.etree._HTMLElement"]:
-        nodes = self.response.lxml.cssselect(selector)
-        if not nodes:
-            self.fail(f"Element '{selector}' not found.")
-        return nodes
+    def assertHidden(self, *selectors: str) -> None:
+        """Assert that a collection of HTML elements are hidden.
 
-    def assertHidden(self, *divs: Collection[str]) -> None:
-        """Assert that a collection of HTML elements are hidden."""
-        for div in divs:
-            self.assertClassPresent(self._get_nodes(div), "softhide")
+        Takes any number of strings which are each interpreted as css selectors.
+        Also ensures that every selector finds at least one element.
+        """
+        for selector in selectors:
+            self.assertHasClass(selector, "softhide")
 
-    def assertNotHidden(self, *divs: Collection[str]) -> None:
-        for div in divs:
-            self.assertClassNotPresent(self._get_nodes(div), "softhide")
+    def assertNotHidden(self, *selectors: str) -> None:
+        """See `assertHidden`."""
+        for selector in selectors:
+            self.assertNotHasClass(selector, "softhide")
 
     def assertTextContainedInElement(self, search_text: str, element_tag: str,
                                      div: str = "content") -> None:
@@ -1691,8 +1688,7 @@ class FrontendTest(BackendTest):
 
     def assertLogin(self, name: str) -> None:
         """Assert that a user is logged in by checking their display name."""
-        span = self.response.lxml.xpath("//span[@id='displayname']")[0]
-        self.assertEqual(name.strip(), span.text_content().strip())
+        self.assertPresence(name, div="displayname", exact=True)
 
     def assertValidationError(
             self, fieldname: str, message: str = "", index: Optional[int] = None,
@@ -1916,9 +1912,8 @@ class FrontendTest(BackendTest):
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
-        self.assertNonPresence("", check_div=False, div="pagination-0")
-        self.assertNonPresence("", check_div=False,
-                               div=f"pagination-{str(total // 50 + 2)}")
+        self.assertDivNotExists("#pagination-0")
+        self.assertDivNotExists(f"#pagination-{str(total // 50 + 2)}")
         # check translations
         self.assertNonPresence("LogCodes")
 

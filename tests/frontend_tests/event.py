@@ -1371,7 +1371,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Universale Akademie", div="part1001")
         self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
         self.assertPresence('07.06.2345', div='part1001_end', exact=True)
-        self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
+        self.assertDivNotExists("#trackrow1001_1001")
 
         # Check log
         log_expectation: list[CdEDBObject] = [
@@ -1444,7 +1444,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Konfiguration", "Veranstaltungsteile")
         self.assertPresence("Alternative Akademie", div="part1002")
         self.assertPresence("Alternative Akademie", div="trackrow1002_1001")
-        self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
+        self.assertDivNotExists("#trackrow1002_1002")
 
         # Check event log
         log_expectation.extend([
@@ -2363,15 +2363,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
-        self.assertHasClass("eventfee-title-1", "alert-success")
-        self.assertHasClass("eventfee-title-2", "alert-success")
-        self.assertHasClass("eventfee-title-3", "alert-success")
-        self.assertHasClass("eventfee-title-4", "alert-danger")
-        self.assertHasClass("eventfee-title-5", "alert-danger")
-        self.assertHasClass("eventfee-title-6", "alert-danger")
-        self.assertHasClass("eventfee-title-7", "alert-danger")
-        self.assertHasClass("eventfee-title-8", "alert-success")
-        self.assertHasClass("eventfee-title-9", "alert-success")
+        self.assertHasClass("#eventfee-title-1", "alert-success")
+        self.assertHasClass("#eventfee-title-2", "alert-success")
+        self.assertHasClass("#eventfee-title-3", "alert-success")
+        self.assertHasClass("#eventfee-title-4", "alert-danger")
+        self.assertHasClass("#eventfee-title-5", "alert-danger")
+        self.assertHasClass("#eventfee-title-6", "alert-danger")
+        self.assertHasClass("#eventfee-title-7", "alert-danger")
+        self.assertHasClass("#eventfee-title-8", "alert-success")
+        self.assertHasClass("#eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
 
@@ -6833,13 +6833,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         def test_events_shown(*event_ids: int) -> None:
             self.assertTitle("Übersicht über Ungereimtheiten")
             for event_id in event_ids:
-                self.assertHasNotClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertNotHidden(f"event_{event_id}")
             for event_id in all_event_ids - set(event_ids):
-                self.assertHasClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertHidden(f"event_{event_id}")
 
         test_events_shown(1, 2, 3, 4)
 
