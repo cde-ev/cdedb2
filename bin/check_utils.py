@@ -25,7 +25,7 @@ class MyTextTestRunner(unittest.TextTestRunner):
         failed = sorted(set(failed))
         if not result.wasSuccessful():
             print(
-                f"To rerun failed tests execute the following:"
+                f"To rerun failed tests execute the following:\n"
                 f" /cdedb2/bin/check.py {'-v' if self.verbosity > 1 else ''}"
                 f" {' '.join(failed)}", file=self.stream
             )
