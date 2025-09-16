@@ -4477,7 +4477,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['max_size'] = 3
         self.submit(f)
         self.traverse("Kurse")
-        self.assertHasClass("course-1-track-3", "course-exactly-full")
+        self.assertHasClass("#course-1-track-3", "course-exactly-full")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
@@ -6833,9 +6833,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         def test_events_shown(*event_ids: int) -> None:
             self.assertTitle("Übersicht über Ungereimtheiten")
             for event_id in event_ids:
-                self.assertNotHidden(f"event_{event_id}")
+                self.assertNotHidden(f"#event_{event_id}")
             for event_id in all_event_ids - set(event_ids):
-                self.assertHidden(f"event_{event_id}")
+                self.assertHidden(f"#event_{event_id}")
 
         test_events_shown(1, 2, 3, 4)
 
