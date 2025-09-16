@@ -292,7 +292,7 @@ def create_lodgement_wishes_graph(
         rs: RequestState,
         registrations: CdEDBObjectMap, wishes: list[LodgementWish],
         lodgements: CdEDBObjectMap,
-        lodgement_groups: CdEDBObjectMap,
+        lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
         event: models.Event,
         personas: CdEDBObjectMap,
         camping_mat_field_names: Mapping[int, Optional[str]],
@@ -381,7 +381,7 @@ def create_lodgement_wishes_graph(
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_group_{lodgement_group_id}',
-                graph_attr={'label': lodgement_group['title']})
+                graph_attr={'label': lodgement_group.title})
 
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():

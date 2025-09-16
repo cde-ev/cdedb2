@@ -1,4 +1,4 @@
-{% set sidenav_active = "event_register_preview" if preview else "event_register" %}
+{% set sidenav_active = "event_register_config" if preview else "event_register" %}
 {% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
@@ -26,6 +26,7 @@
                                           or ambience['event']['id'] in user.orga
                                           or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
     {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
         {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
                                 gettext("Registration Preview"), active=True) }}
     {% else %}
@@ -38,13 +39,23 @@
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
-{% block content %}
-    {% if preview %}
+{% macro button_par() %}
+    {% if is_privileged_for("event/configure_registration") %}
         <div class="p button-par">
             {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
                          gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
+            {% if not preview %}
+                {{ util.href(cdedblink("event/register", {"preview": True}),
+                             gettext("Registration Preview"), aclass="btn btn-info btn-sm", icon="eye") }}
+            {% endif %}
+            {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
+                         gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
         </div>
     {% endif %}
+{% endmacro %}
+
+{% block content %}
+    {{ button_par() }}
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}
             {% trans %}
@@ -187,12 +198,7 @@
         {% endif %}
     </form>
 
-    {% if preview %}
-        <div class="p button-par">
-            {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
-                         gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
-        </div>
-    {% endif %}
+    {{ button_par() }}
 
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');

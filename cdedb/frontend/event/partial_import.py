@@ -135,10 +135,7 @@ class EventImportMixin(EventBaseFrontend):
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
-            rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         # TODO use dataclasses here
         courses = {
@@ -240,7 +237,7 @@ class EventImportMixin(EventBaseFrontend):
                 if val is None and lodgements.get(anid))),
 
             'changed_lodgement_groups': {
-                anid: flatten_recursive_delta(val, lodgement_groups[anid])
+                anid: flatten_recursive_delta(val, lodgement_groups[anid].as_dict())
                 for anid, val in delta.get('lodgement_groups', {}).items()
                 if anid > 0 and val},
             'new_lodgement_group_ids': tuple(xsorted(

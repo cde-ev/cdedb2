@@ -1,4 +1,4 @@
-{% set sidenav_active='event_course_choices' %}
+{% set sidenav_active='event_course_stats' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='weak' %}
@@ -12,9 +12,10 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), icon="crosshairs", active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), icon="crosshairs", active=True) }}
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Course Choices"), ambience['event']['title'],

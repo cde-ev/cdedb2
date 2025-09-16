@@ -123,13 +123,6 @@
         this.initFieldSelects = function() {
             /* Add event handler, and selectize.js for add*field select boxes */
             /* No refreshs/filling with options for now, as they are done later by init() */
-            $viewFieldSelect.change(function() {
-                if ($(this).val() === '')
-                    return;
-                obj.addViewRow($(this).val());
-                obj.refreshViewFieldSelect();
-                $viewFieldSelect[0].selectize.focus();
-            });
             $viewFieldSelect.selectize({
                 'placeholder': settings.labels['add_field'] || '',
                 copyClassesToDropdown: false,
@@ -140,13 +133,14 @@
                     },
                 }
             });
-
-            $filterFieldSelect.change(function() {
+            $viewFieldSelect.on("change", function() {
                 if ($(this).val() === '')
                     return;
-                obj.addFilterRow($(this).val(), true);
-                obj.refreshFilterFieldSelect();
+                obj.addViewRow($(this).val());
+                obj.refreshViewFieldSelect();
+                $viewFieldSelect[0].selectize.focus();
             });
+
             $filterFieldSelect.selectize({
                 'placeholder': settings.labels['add_filter'] || '',
                 copyClassesToDropdown: false,
@@ -157,14 +151,13 @@
                     },
                 }
             });
-
-            $sortFieldSelect.change(function() {
+            $filterFieldSelect.on("change", function() {
                 if ($(this).val() === '')
                     return;
-                obj.addSortRow($(this).val(),'True');
-                obj.updateSortInputs();
-                obj.refreshSortFieldSelect();
+                obj.addFilterRow($(this).val(), true);
+                obj.refreshFilterFieldSelect();
             });
+
             $sortFieldSelect.selectize({
                 'placeholder': settings.labels['add_sort'] || '',
                 copyClassesToDropdown: false,
@@ -174,6 +167,13 @@
                         return '<div class="optgroup-header">' + escape(data.label) + '</div>';
                     },
                 }
+            });
+            $sortFieldSelect.on("change", function() {
+                if ($(this).val() === '')
+                    return;
+                obj.addSortRow($(this).val(),'True');
+                obj.updateSortInputs();
+                obj.refreshSortFieldSelect();
             });
 
             this.refreshViewFieldSelect();
@@ -209,7 +209,7 @@
                 'aria-label': settings.labels['filter_op'] || ''
             })
                 .append(f.input_filter_op.children('option').slice(1).clone())
-                .change(function() {
+                .on("change", function() {
                     f.input_filter_op.val($(this).val());
                     f.error = null;
                     $(this).siblings('.help-block').detach();
@@ -296,7 +296,7 @@
                         'class' : "form-control input-sm input-slim",
                         'aria-label': settings.labels['filter_val'] || ''
                     })
-                            .change(changeFunction);
+                            .on("change", changeFunction);
                     if (f.type == 'list') {
                         for (var i=0; i < f.choices.length; i++)
                             $s.append($('<option>',{'value' : f.choices[i]['value']}).text(f.choices[i]['text']))
@@ -319,7 +319,7 @@
                         'type': inputTypes[f.type] ?? 'text',
                         'aria-label': settings.labels['filter_val'] || ''
                     })
-                        .change(changeFunction)
+                        .on("change", changeFunction)
                         .val(f.input_filter_value.val());
                     if (f.type == 'date' || f.type == 'ranged_date')
                         $i.attr('placeholder','YYYY-MM-DD');
@@ -367,7 +367,7 @@
                     $inputs.attr('placeholder','YYYY-MM-DD');
                 else if (f.type == 'datetime' || f.type == 'ranged_datetime')
                     $inputs.attr('placeholder','YYYY-MM-DDThh:mm');
-                $inputs.change(function() {
+                $inputs.on("change", function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
                     f.input_filter_value.val(val);
                 });
@@ -400,7 +400,7 @@
                     'placeholder': placeholders[f.type],
                     'aria-label': settings.labels['filter_vals'] || ''
                 })
-                    .change(function() { f.input_filter_value.val($(this).val()); })
+                    .on("change", function() { f.input_filter_value.val($(this).val()); })
                     .attr('size','40')
                     .val(f.input_filter_value.val())
                     .appendTo($fieldbox);
@@ -438,7 +438,7 @@
                 'title': settings.labels['del_field'] || ''
             })
                 .append($('<span></span>',{'class': 'fas fa-minus'}))
-                .click(function() {
+                .on("click", function() {
                     f.input_select.prop('checked',false);
                     $(this).parent().detach();
                     obj.refreshViewFieldSelect();
@@ -487,7 +487,7 @@
                 .append(new Option(sort_labels[0], 'True'))
                 .append(new Option(sort_labels[1], 'False'))
                 .val(sorting)
-                .change(function() {
+                .on("change", function() {
                     obj.updateSortInputs();
                 });
             var $item = $('<li></li>',
@@ -808,7 +808,7 @@
 
             // Custom submit handler
             // Inspired by http://stackoverflow.com/a/5169572 and http://www.billerickson.net/code/hide-empty-fields-get-form/
-            $(this).submit(function(e) {
+            $(this).on("submit", function(e) {
                 //Prevent default handler
                 e.preventDefault();
                 //Gather input fields that will be disabled in a jQuery object
@@ -843,7 +843,7 @@
                 },100);
             });
             var $form = $(this);
-            $(this).find('button[type="submit"],input[type="submit"]').click(function() {
+            $(this).find('button[type="submit"],input[type="submit"]').on("click", function() {
                 // Add submit button value as a hidden input to pass it through the above submit handler
                 if ($(this).attr('name')) {
                     $form.append($('<input />', {

@@ -21,7 +21,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    read_conditional_write_composer,
     singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -71,72 +70,17 @@ class LodgementInhabitants:
 
 
 class EventLodgementBackend(EventBaseBackend, abc.ABC):
-    @access("event")
-    def list_lodgement_groups(self, rs: RequestState, event_id: int) -> dict[int, str]:
-        """List all lodgement groups for an event.
-
-        :returns: dict mapping ids to names
-        """
-        event_id = affirm(vtypes.ID, event_id)
-        if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(
-            rs,
-            "event.lodgement_groups",
-            ("id", "title"),
-            (event_id,),
-            entity_key="event_id",
-        )
-        return {e['id']: e['title'] for e in data}
+    def _get_event_id_from_group_id(self, rs: RequestState, group_id: int) -> int:
+        q = f"SELECT event_id FROM {models.LodgementGroup.database_table} WHERE id = %s"
+        event_id = unwrap(self.query_one(rs, q, [group_id]))
+        if event_id is None:
+            raise KeyError(
+                "Unknown lodgement group: %(group_id)s", {"group_id": group_id}
+            )
+        return event_id
 
     @access("event")
     def get_lodgement_groups(
-        self, rs: RequestState, group_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        """Retrieve data for some lodgement groups.
-
-        All have to be from the same event.
-
-        For all lodgements belonging to a group, their ids are collected into a set of
-        lodgement_ids and their capacities (regular and camping mat) are summed.
-        """
-        group_ids = affirm_set(vtypes.ID, group_ids)
-        with Atomizer(rs):
-            query = """
-                SELECT
-                    lg.id, lg.event_id, lg.title,
-                    ARRAY_REMOVE(ARRAY_AGG(l.id), NULL) AS lodgement_ids,
-                    COALESCE(SUM(l.regular_capacity), 0) as regular_capacity,
-                    COALESCE(SUM(l.camping_mat_capacity), 0) AS camping_mat_capacity
-                FROM event.lodgement_groups AS lg
-                    LEFT JOIN event.lodgements AS l on lg.id = l.group_id
-                WHERE lg.id = ANY(%s)
-                GROUP BY lg.id
-            """
-            data = self.query_all(rs, query, (group_ids,))
-            if not data:
-                return {}
-            events = {e['event_id'] for e in data}
-            if len(events) > 1:
-                raise ValueError(
-                    n_("Only lodgement groups from exactly one event allowed!")
-                )
-            event_id = unwrap(events)
-            if not is_privileged(
-                rs, EventPrivileges.lodgements_read, event_id=event_id
-            ):
-                raise PrivilegeError(n_("Not privileged."))
-        return {e['id']: e for e in data}
-
-    class _GetLodgementGroupProtocol(Protocol):
-        def __call__(self, rs: RequestState, group_id: int) -> CdEDBObject: ...
-
-    get_lodgement_group: _GetLodgementGroupProtocol = singularize(
-        get_lodgement_groups, "group_ids", "group_id"
-    )
-
-    @access("event")
-    def new_get_lodgement_groups(
         self, rs: RequestState, event_id: int
     ) -> models.CdEDataclassMap[models.LodgementGroup]:
         event_id = affirm(vtypes.ID, event_id)
@@ -154,33 +98,25 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         data = affirm(vtypes.LodgementGroup, data)
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
-            event_id, title = current['event_id'], current['title']
+            event_id = self._get_event_id_from_group_id(rs, data["id"])
             if not is_privileged(
                 rs, EventPrivileges.lodgements_write, event_id=event_id
             ):
-                raise PrivilegeError(n_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
             self.assert_lock(rs, event_id=event_id)
+            current = self.get_lodgement_groups(rs, event_id)[data["id"]]
 
             # Do the actual work:
-            ret *= self.sql_update(rs, "event.lodgement_groups", data)
-            self.event_log(
-                rs,
-                const.EventLogCodes.lodgement_group_changed,
-                event_id,
-                change_note=title,
-            )
+            if data != current.as_dict():
+                ret *= self.sql_update(rs, models.LodgementGroup.database_table, data)
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.lodgement_group_changed,
+                    event_id,
+                    change_note=data.get("title") or current.title,
+                )
 
         return ret
-
-    class _RCWLodgementGroupProtocol(Protocol):
-        def __call__(
-            self, rs: RequestState, data: CdEDBObject
-        ) -> DefaultReturnCode: ...
-
-    rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
-        get_lodgement_group, set_lodgement_group, id_param_name='group_id'
-    )
 
     @access("event")
     def delete_lodgement_group_blockers(
@@ -216,6 +152,10 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             remove or ignore. If None or empty, cascade none.
         """
         group_id = affirm(vtypes.ID, group_id)
+        event_id = self._get_event_id_from_group_id(rs, group_id)
+        if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
+
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
         if not cascade:
             cascade = set()
@@ -244,13 +184,13 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 blockers = self.delete_lodgement_group_blockers(rs, group_id)
 
             if not blockers:
-                group = self.get_lodgement_group(rs, group_id)
+                group = self.get_lodgement_groups(rs, event_id)[group_id]
                 ret *= self.sql_delete_one(rs, "event.lodgement_groups", group_id)
                 self.event_log(
                     rs,
                     const.EventLogCodes.lodgement_group_deleted,
-                    event_id=group['event_id'],
-                    change_note=group['title'],
+                    event_id=event_id,
+                    change_note=group.title,
                 )
             else:
                 raise ValueError(
@@ -637,11 +577,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         """Move lodgements from one group to another or delete them with the group."""
         ret = 1
         with Atomizer(rs):
-            group = self.get_lodgement_group(rs, group_id)
+            event_id = self._get_event_id_from_group_id(rs, group_id)
             msg = "Snapshot vor Verschieben/Löschen von Unterkünften."
-            self.event_keeper_commit(rs, group['event_id'], msg)
+            self.event_keeper_commit(rs, event_id, msg)
             if target_group_id:
-                lodgement_ids = self.list_lodgements(rs, group['event_id'], group_id)
+                lodgement_ids = self.list_lodgements(rs, event_id, group_id)
                 for l_id in xsorted(lodgement_ids):
                     update = {
                         'id': l_id,
@@ -652,5 +592,5 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 cascade = ("lodgements",)
                 ret *= self.delete_lodgement_group(rs, group_id, cascade)
             msg = "Verschiebe/Lösche Unterkünfte."
-            self.event_keeper_commit(rs, group['event_id'], msg, after_change=True)
+            self.event_keeper_commit(rs, event_id, msg, after_change=True)
         return ret

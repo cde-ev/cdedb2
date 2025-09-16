@@ -183,7 +183,7 @@ class EventQueryMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         scope = QueryScope.registration
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
@@ -494,7 +494,7 @@ class EventQueryMixin(EventBaseFrontend):
         scope = QueryScope.lodgement
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         spec = scope.get_spec(event=rs.ambience['event'], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)

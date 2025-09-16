@@ -3,7 +3,6 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('selectize/selectize.min.js') }}
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -68,11 +67,11 @@
                                           defaultvalue=DEFAULT_COUNTRY) }}
             {% endif %}
             {% if ambience['genesis_case'].realm == "cde" %}
-                {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
-                                          nulloption=nbsp, label=gettext("Past Event"), sort=True, selectize=True) }}
+                {{ util.form_input_select(name="pevent_id", entries=pevent_entries, small=True,
+                                          nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
                 {% if values.get('pevent_id') %}
-                    {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
-                                              nulloption=nbsp, label=gettext("Course"), defaultvalue='', sort=True) }}
+                    {{ util.form_input_select(name="pcourse_id", entries=pcourse_entries, small=True,
+                                              nulloption=nbsp, label=gettext("Course"), defaultvalue='', selectize=True) }}
                 {% else %}
                     {{ util.form_input_static(name="pcourse_id", aclass='text-info genesis-realm-specific', icon='info-circle', small=True, label=gettext("Course"),
                                               value=gettext("Course can be specified if past event is given.")) }}

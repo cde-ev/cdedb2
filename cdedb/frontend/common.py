@@ -111,6 +111,7 @@ from cdedb.common import (
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
+    is_optional_type,
     json_serialize,
     make_proxy,
     merge_dicts,
@@ -1878,9 +1879,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
               ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
+        Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],  # type: ignore[has-type]
               'group_id', 'group',
-              ((lambda a: do_assert(a['group']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['group'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
               ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
@@ -2216,12 +2217,9 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if typing.get_origin(hints[name]) is Union:
-                        type_, _ = hints[name].__args__
-                        optional = True
-                    else:
-                        type_ = hints[name]
-                        optional = False
+                    type_ = hints[name]
+                    if optional := is_optional_type(type_):
+                        type_ = typing.get_args(type_)[0]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
@@ -2789,7 +2787,7 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             vtypes.EventPartGroup, vtypes.EventField}:
+                             models_event.PartGroup, vtypes.EventField}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

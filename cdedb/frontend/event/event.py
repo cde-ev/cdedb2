@@ -42,7 +42,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_PART_GROUP_COMMON_FIELDS,
     EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
@@ -537,7 +536,7 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
-        data = check(rs, vtypes.EventPart, data)
+        data = check(rs, vtypes.EventPart, data, creation=True)
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
         assert data is not None
@@ -876,36 +875,19 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
         return self.render(rs, "event/configure_part_group", {},
-                           get_mandatory_form_fields(self.add_part_group))
+                           models.PartGroup.mandatory_form_fields(creation=True))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata(*EVENT_PART_GROUP_COMMON_FIELDS)
-    def add_part_group(self, rs: RequestState, event_id: int, title: str,
-                       shortname: str, notes: Optional[str],
-                       constraint_type: const.EventPartGroupType,
-                       part_ids: Collection[int]) -> Response:
-        if part_ids and not set(part_ids) <= rs.ambience['event'].parts.keys():
-            rs.append_validation_error(("part_ids", ValueError(n_("Unknown part."))))
-        data = {
-            'title': title,
-            'shortname': shortname,
-            'notes': notes,
-            'constraint_type': constraint_type,
-            'part_ids': part_ids,
-        }
-        existing = {pg.title for pg in rs.ambience['event'].part_groups.values()}
-        if data['title'] in existing:
-            rs.append_validation_error(('title', ValueError(n_(
-                "A part group with this name already exists."))))
-        existing = {pg.shortname for pg in rs.ambience['event'].part_groups.values()}
-        if data['shortname'] in existing:
-            rs.append_validation_error(('shortname', ValueError(n_(
-                "A part group with this name already exists."))))
-        data = check(rs, vtypes.EventPartGroup, data)
+    @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=True))
+    def add_part_group(self, rs: RequestState, event_id: int, data: CdEDBObject
+                       ) -> Response:
+        data = check(rs, models.PartGroup, data, creation=True,
+                     event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
-        code = self.eventproxy.set_part_groups(rs, event_id, {-1: data})
+        assert data is not None
+        code = self.eventproxy.add_part_group(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
@@ -917,31 +899,19 @@ class EventEventMixin(EventBaseFrontend):
         # add this to autofill the values correctly (they are readonly anyway)
         merge_dicts(rs.values, {"part_ids": rs.ambience['part_group'].parts.keys()})
         return self.render(rs, "event/configure_part_group", {},
-                           get_mandatory_form_fields(self.change_part_group))
+                           models.PartGroup.mandatory_form_fields(creation=False))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("title", "shortname", "notes")
+    @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=False))
     def change_part_group(self, rs: RequestState, event_id: int,
-                          part_group_id: int, title: str, shortname: str,
-                          notes: Optional[str]) -> Response:
-        data: CdEDBObject = {
-            'title': title,
-            'shortname': shortname,
-            'notes': notes,
-        }
-        existing = {pg.title for pg in rs.ambience['event'].part_groups.values()}
-        if data['title'] in existing - {rs.ambience['part_group'].title}:
-            rs.append_validation_error(('title', ValueError(n_(
-                "A part group with this name already exists."))))
-        existing = {pg.shortname for pg in rs.ambience['event'].part_groups.values()}
-        if data['shortname'] in existing - {rs.ambience['part_group'].shortname}:
-            rs.append_validation_error(('shortname', ValueError(n_(
-                "A part group with this name already exists."))))
-        data = check(rs, vtypes.EventPartGroup, data)
+                          part_group_id: int, data: CdEDBObject) -> Response:
+        data["id"] = part_group_id
+        data = check(rs, models.PartGroup, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
-        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: data})
+        assert data is not None
+        code = self.eventproxy.change_part_group(rs, part_group_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
@@ -951,7 +921,7 @@ class EventEventMixin(EventBaseFrontend):
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
-        code = self.eventproxy.set_part_groups(rs, event_id, {part_group_id: None})
+        code = self.eventproxy.delete_part_group(rs, part_group_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 

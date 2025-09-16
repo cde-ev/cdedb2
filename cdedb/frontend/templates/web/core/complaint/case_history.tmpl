@@ -65,14 +65,14 @@
                 <hr class="nosp" />
                 {% for version in entry.all_versions %}
                     <div class="row">
-                        <div class="col-md-11 col-md-offset-1">
+                        <div class="col-md-11 col-md-offset-1 {% if version.dtime %}text-muted{% endif %}">
                             {% if not loop.first %}
                                 <hr class="nosp" />
                             {% endif %}
                             <div class="float-right text-right">
-                                {{ entry.active_version.timestamp|datetime(lang=lang) }}
-                                {% if entry.active_version.etime %}
-                                    – {{ entry.active_version.etime|datetime(lang=lang) }}
+                                {{ version.timestamp|datetime(lang=lang) }}
+                                {% if version.etime %}
+                                    – {{ version.etime|datetime(lang=lang) }}
                                 {% endif %}
                             </div>
                             <strong>{{ gettext("Version %s")|format(loop.index)}}</strong>

@@ -193,23 +193,23 @@ class Event(EventDataclass):
 
         for part in self.parts.values():
             part.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in part.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in part.tracks
             }
             for track in part.tracks.values():
                 track.part = part
         for part_group in self.part_groups.values():
             part_group.parts = {
-                part_id: self.parts[part_id]
-                for part_id in part_group.parts
+                part.id: part
+                for part in self.parts.values() if part.id in part_group.part_ids
             }
             for part in part_group.parts.values():
                 part.part_groups[part_group.id] = part_group
                 part.part_group_ids.add(part_group.id)
         for track_group in self.track_groups.values():
             track_group.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in track_group.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in track_group.tracks
             }
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
@@ -637,15 +637,23 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
     notes: Optional[str]
-    constraint_type: const.EventPartGroupType
+    constraint_type: const.EventPartGroupType = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     parts: CdEDataclassMap[EventPart] = dataclasses.field(
-        default_factory=dict, metadata=Meta.asdict_include.as_dict)
+        init=False, compare=False, repr=False,
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
+    )
+    part_ids: set[int] = dataclasses.field(
+        default_factory=set,
+        metadata=(Meta.input_update_exclude | Meta.database_exclude).as_dict
+    )
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -658,7 +666,7 @@ class PartGroup(EventDataclass):
                     SELECT part_id
                     FROM event.part_group_parts
                     WHERE part_group_id = part_groups.id
-                ) AS parts
+                ) AS part_ids
             FROM
                 event.part_groups
             WHERE
@@ -895,6 +903,10 @@ class LodgementGroup(EventDataclass):
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['lodgement_ids'] = set(data['lodgement_ids'])
         return super().from_database(data)
+
+    @classmethod
+    def entries(cls, groups: CdEDataclassMap[Self]) -> list[tuple[vtypes.ID, str]]:
+        return [(group.id, group.title) for group in groups.values()]
 
     def get_sortkey(self) -> Sortkey:
         return (self.title, )

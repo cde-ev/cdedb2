@@ -89,7 +89,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
                                | EP.participant_list)
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
-                                | EP.payment_write | EP.balance)
+                                | EP.registrations_stats | EP.payment_write | EP.balance)
 
     return (
         # Special case for conclude which requires two admin privileges.
