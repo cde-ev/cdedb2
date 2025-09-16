@@ -597,19 +597,52 @@ class TestEventBackend(BackendTest):
             'sortkey': 1,
         }
         # Test incompatible tracks.
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "must have the same number of choices"):
             self.event.add_track_group(self.key, event_id, new_track_group)
         # Test empty tracks.
         new_track_group['track_ids'] = []
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "Must not be empty."):
             self.event.add_track_group(self.key, event_id, new_track_group)
         # Test unknown tracks.
         new_track_group['track_ids'] = {1, 2}
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "Unknown track."):
             self.event.add_track_group(self.key, event_id, new_track_group)
 
-        # Test correct tracks.
+        # Test correct tracks with incompatible choices:
+        reg_data = {
+            "event_id": event_id,
+            "parts": {
+                part_id: {
+                    "status": const.RegistrationPartStati.applied,
+                }
+                for part_id in event.parts
+            },
+            "tracks": {
+                track_id: {
+                    "choices": [11] if track_id == 6 else [],
+                }
+                for track_id in event.tracks
+            },
+            "persona_id": 1,
+            "notes": None,
+            "list_consent": True,
+            "mixed_lodging": True,
+        }
+        registration_id = self.event.create_registration(self.key, reg_data)
+
         new_track_group['track_ids'] = {6, 7}
+        with self.assertRaisesRegex(ValueError, "incompatible existing course choices"):
+            self.event.add_track_group(self.key, event_id, new_track_group)
+
+        self.assertTrue(
+            self.event.delete_registration(
+                self.key,
+                registration_id,
+                {"registration_parts", "registration_tracks", "course_choices"},
+            )
+        )
+
+        # Test correct tracks.
         self.assertTrue(self.event.add_track_group(self.key, event_id, new_track_group))
         event = self.event.get_event(self.key, event_id)
         expectation: CdEDBObject = new_track_group.copy()

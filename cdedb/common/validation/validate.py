@@ -2647,14 +2647,14 @@ def _event_track_group(
                     for tg in event.track_groups.values()):
                 errs.append(ValueError("track_ids", n_(
                     "Cannot have more than one course choice sync track group per track.")))
-            track_choice_config = {
+            track_choice_configs = set(
                 (event.tracks[track_id].num_choices, event.tracks[track_id].min_choices)
                 for track_id in val["track_ids"]
-            }
-            if len(track_choice_config) != 1:
+            )
+            if len(track_choice_configs) != 1:
                 errs.append(ValueError("track_ids", n_(
                     "Tracks of a course choice sync track group must have the same"
-                    " number course of choices.")))
+                    " number of choices.")))
 
     old_title = set()
     old_shortname = set()
