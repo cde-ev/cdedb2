@@ -1475,7 +1475,7 @@ class FrontendTest(BackendTest):
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        selector = f"span#{anid}, input[type=checkbox][name={anid}]"
+        selector = f'span#{anid}, input[type="checkbox"][name="{anid}"]'
         nodes = self._get_nodes(selector)
         if len(nodes) != 1:
             self.fail(f"More or than one checkbox ({len(nodes)}) {selector!r} found.")
@@ -1752,7 +1752,7 @@ class FrontendTest(BackendTest):
         if notification is not None:
             self.assertNotification(notification, alert_type)
 
-        nodes = self._get_nodes(f":is(input, select, textarea)[name={fieldname}]")
+        nodes = self._get_nodes(f':is(input, select, textarea)[name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:
