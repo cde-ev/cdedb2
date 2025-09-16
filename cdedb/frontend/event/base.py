@@ -662,7 +662,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event_admin", "auditor")
+    @access("event_admin", "finance_admin", "auditor")
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
