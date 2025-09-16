@@ -1475,20 +1475,17 @@ class FrontendTest(BackendTest):
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = (self.response.html.find_all(id=anid)
-               or self.response.html.find_all(attrs={'name': anid}))
-        if not tmp:
-            self.fail(f"ID '{anid}' not found.")
-        if len(tmp) != 1:
-            self.fail(f"More or less then one hit ({len(tmp)}) for div '{anid}'.")
-        checkbox = tmp[0]
-        if "data-checked" in checkbox.attrs:
-            self.assertEqual(str(status), checkbox['data-checked'])
-        elif "type" in checkbox.attrs:
-            self.assertEqual("checkbox", checkbox['type'])
-            self.assertEqual(status, checkbox.get('checked') == 'checked')
+        selector = f"span#{anid}, input[type=checkbox][name={anid}]"
+        nodes = self._get_nodes(selector)
+        if len(nodes) != 1:
+            self.fail(f"More or than one checkbox ({len(nodes)}) {selector!r} found.")
+        checkbox = nodes[0]
+        if checkbox.tag == "span":
+            # Deko checkbox.
+            self.assertEqual(str(status), checkbox.get('data-checked'))
         else:
-            self.fail(f"ID '{anid}' doesn't belong to a checkbox: {checkbox!r}")
+            # Input checkbox.
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False, msg: Optional[str] = None) -> None:
@@ -1684,14 +1681,10 @@ class FrontendTest(BackendTest):
             ntype = 'danger'
 
         div = 'static-notifications' if static else 'notifications'
-        alert_type_class = f" alert-{ntype}" if ntype is not None else ""
-        # source: https://devhints.io/xpath#string-functions
-        notifications = self.response.lxml.xpath(
-                f"//div[@id='{div}']/div[starts-with(@class,'alert{alert_type_class}')]"
-                "/span[@class='notificationMessage']")
-        self.assertTrue(notifications,
-                        msg=(f"No{alert_type_class} notification found."
-                             if msg is None else msg))
+        alert_type_class = f".alert-{ntype}" if ntype is not None else ""
+        notifications = self._get_nodes(
+            f"div#{div} div.alert{alert_type_class} span.notificationMessage"
+        )
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
             all_texts = " | ".join(n.text_content().strip() for n in notifications)
@@ -1759,17 +1752,15 @@ class FrontendTest(BackendTest):
         if notification is not None:
             self.assertNotification(notification, alert_type)
 
-        nodes = self.response.lxml.xpath(
-            f'(//input|//select|//textarea)[@name="{fieldname}"]')
+        nodes = self._get_nodes(f":is(input, select, textarea)[name={fieldname}]")
         f = fieldname
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif not nodes:  # pragma: no cover
-                self.fail(f"No input with name {f!r} found.")
             else:  # pragma: no cover
-                self.fail(f"More than one input with name {f!r} found."
-                          f" Need to specify index.")
+                self.fail(
+                    f"More than one input with name {f!r} found. Need to specify index."
+                )
         else:
             try:
                 node = nodes[index]
@@ -1779,12 +1770,12 @@ class FrontendTest(BackendTest):
                     f" {len(nodes)} inputs with name {f!r} found.") from None
 
         # From https://devhints.io/xpath#class-check
-        container = node.xpath(
-            "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
-            f"' has-{kind} ')]")
-        if not container:
+        for ancestor in node.iterancestors():
+            if f"has-{kind}" in ancestor.classes:
+                break
+        else:
             self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
-        normalized = re.sub(r'\s+', ' ', container[0].text_content())
+        normalized = re.sub(r'\s+', ' ', ancestor.text_content())
         errmsg = (f"Expected error message not found near input with name {f!r}:\n"
                   f"{normalized}")
         self.assertIn(message, normalized, errmsg)
