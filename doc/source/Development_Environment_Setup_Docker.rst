@@ -125,6 +125,8 @@ For more information refer to the ``docker``/``docker compose`` documentation
 or execute ``docker compose help``.
 
 
+.. _development-environment-docker-logs:
+
 Accessing the container logs
 ----------------------------
 
