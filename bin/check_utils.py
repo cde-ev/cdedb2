@@ -22,12 +22,11 @@ class MyTextTestRunner(unittest.TextTestRunner):
             (result.errors + result.failures
              + [(unex_succ, "") for unex_succ in result.unexpectedSuccesses])
         )
-        failed = sorted(set(failed))
         if not result.wasSuccessful():
             print(
                 f"To rerun failed tests execute the following:\n"
                 f"/cdedb2/bin/check.py {'-v' if self.verbosity > 1 else ''}"
-                f" {' '.join(failed)}", file=self.stream
+                f" {' '.join(sorted(set(failed)))}", file=self.stream
             )
         return result
 
