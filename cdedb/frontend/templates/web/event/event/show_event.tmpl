@@ -116,6 +116,16 @@
                     {% trans %}None{% endtrans %}
                 {% endfor %}
             </dd>
+            <dt title="{% trans %}Caretakers{% endtrans %}">
+                {% trans %}Caretakers{% endtrans %}
+            </dt>
+            <dd id="caretakers">
+                {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
+                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
+                {% else %}
+                    {% trans %}None{% endtrans %}
+                {% endfor %}
+            </dd>
         {% endif %}
     </dl>
     {% if orga_view or 'event_mgmt' in user.admin_views %}
@@ -260,7 +270,7 @@
                             </form>
                         </li>
                     {% endfor %}
-                    {% if caretakers %}<hr class="nosp" />{% endif %}
+                    {% if orgas and caretakers %}<hr class="nosp" />{% endif %}
                     {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.make_icon("hands-holding-circle", title=gettext("Caretaker"), aclass="text-muted") }}
@@ -317,8 +327,7 @@
     </div>
 
 
-    {% if "event_mgmt" in user.admin_views or "finance" in user.admin_views or (
-            (values['event_id'] in user.orga or values['event_id'] in user.caretaker) and (not ambience['event']['orga_address'] or not participant_list)) %}
+    {% if "finance" in user.admin_views or orga_view and (not ambience['event']['orga_address'] or not participant_list)) %}
         {# This ensures no empty box is shown for orgas. #}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['event']['orga_address'] %}

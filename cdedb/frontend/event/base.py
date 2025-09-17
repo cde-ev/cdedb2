@@ -124,13 +124,17 @@ class EventBaseFrontend(AbstractUserFrontend):
 
             is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
             if (
-                event_id in rs.user.orga
-                or event_id in rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker
                 or 'event_orga' not in rs.user.available_admin_views
                 or not consider_admin_view
             ):
                 return is_privileged
             return is_privileged and 'event_orga' in rs.user.admin_views
+
+        orga_view = (
+            rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
+            or 'event_orga' in rs.user.admin_views
+        )
 
         params = params or {}
         if 'event' in rs.ambience:
@@ -162,6 +166,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
+        params['orga_view'] = orga_view
 
         return super().render(rs, templatename, params=params,
                               mandatory_fields=mandatory_fields)

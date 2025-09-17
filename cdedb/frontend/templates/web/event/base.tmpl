@@ -5,7 +5,6 @@
             {% set jshint='weak' %}
         {% endif %}
     {% endif %}
-    {% set orga_view = ambience['event'].id in user.orga or ambience['event'].id in user.caretaker or 'event_orga' in user.admin_views %}
 {% elif "event_list" in user.admin_views %}
     {% if not jshint %}
         {% set jshint='weak' %}

@@ -1,7 +1,7 @@
 Liebes Akademieteam,
 
 {{ orga|persona_name(include_nickname=true) }} wurde der Veranstaltung "{{ event.title }}"
-durch {{ user|persona_name(include_nickname=true) }} als Orga hinzugefügt.
+durch {{ user|persona_name(include_nickname=true) }} als {% if as_caretaker %}Betreuer{% else %}Orga{% endif %} hinzugefügt.
 
 Viele Grüße
 

@@ -309,8 +309,9 @@ class EventBaseBackend(EventLowLevelBackend):
             return 1
 
     @access("event_admin")
-    def validate_persona_ids(self, rs: RequestState, persona_ids: Collection[int],
-                             ) -> None:
+    def validate_event_persona_ids(
+        self, rs: RequestState, persona_ids: Collection[int],
+    ) -> None:
         """Validate whether persona_ids are valid for receiving event privileges."""
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_(
@@ -326,7 +327,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            self.validate_persona_ids(rs, persona_ids)
+            self.validate_event_persona_ids(rs, persona_ids)
             for anid in xsorted(persona_ids):
                 # on conflict do nothing
                 r = self.sql_insert(rs, "event.helpers", {'persona_id': anid},
@@ -379,7 +380,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            self.validate_persona_ids(rs, persona_ids)
+            self.validate_event_persona_ids(rs, persona_ids)
 
             for anid in xsorted(persona_ids):
                 new_orga = {
@@ -439,7 +440,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            self.validate_persona_ids(rs, persona_ids)
+            self.validate_event_persona_ids(rs, persona_ids)
 
             for anid in xsorted(persona_ids):
                 new_caretaker = {

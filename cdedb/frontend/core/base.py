@@ -600,7 +600,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if event_id:
             is_admin = "event_admin" in rs.user.roles
             is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
-            is_orgalike = event_id in rs.user.orga or event_id in rs.user.caretaker
+            is_orgalike = event_id in rs.user.orga | rs.user.caretaker
             if is_orgalike or is_admin:
                 is_participant = self.eventproxy.list_registrations(
                     rs, event_id, persona_id)

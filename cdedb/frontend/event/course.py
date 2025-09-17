@@ -208,8 +208,7 @@ class EventCourseMixin(EventBaseFrontend):
 
         # TODO Handle the admin view in a smart way
         show_course_state = (rs.ambience['event'].is_course_state_visible
-                             or event_id in rs.user.orga
-                             or event_id in rs.user.caretaker
+                             or event_id in rs.user.orga | rs.user.caretaker
                              or 'event_orga' in rs.user.admin_views)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = {}
