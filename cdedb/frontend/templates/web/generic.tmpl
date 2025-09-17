@@ -690,17 +690,17 @@
                               nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
 
     {# Show pcourse input if event was selected and has courses. #}
-    <div class="pcourse-input {{ "softhide" if not (values.get("pevent_id") and pcourse_entries) }}">
+    <div class="pcourse-input {{ "softhide" if not (values.get(input_name_prefix + "pevent_id") and pcourse_entries) }}">
         {{ util.form_input_select(name=input_name_prefix + "pcourse_id", entries=pcourse_entries, small=small, aclass=select_class,
                                   nulloption=gettext("--- select course ---"), label=gettext("Course"), defaultvalue='') }}
     </div>
     {# Show info if event was selected but has no courses. #}
-    <div class="pcourse-nocourses-info {{ "softhide" if not (values.get("pevent_id") and not pcourse_entries) }}"">
+    <div class="pcourse-nocourses-info {{ "softhide" if not (values.get(input_name_prefix + "pevent_id") and not pcourse_entries) }}"">
         {{ util.form_input_static(aclass='text-info genesis-realm-specific pcourse-info', icon='info-circle', label=gettext("Course"),
                                   value=gettext("No courses available for this event."), small=small) }}
     </div>
     {# Show info if no event was selected. #}
-    <div class="pcourse-noevent-info pcourse-nojs-info {{ "softhide" if values.get("pevent_id") }}">
+    <div class="pcourse-noevent-info pcourse-nojs-info {{ "softhide" if values.get(input_name_prefix + "pevent_id") }}">
         {{ util.form_input_static(aclass='text-info genesis-realm-specific pcourse-info', icon='info-circle', label=gettext("Course"),
                                   value=gettext("Course choices will be displayed after selecting an event."), small=small) }}
     </div>
@@ -708,6 +708,6 @@
         {{ util.raise_for_test("jshint not set for 'generic.past_course_select'.") }}
     {% endif %}
     <script nonce={{ csp_nonce }}>
-        $(':input[name="{{ input_name_prefix }}pcourse_id"]').cdedbSelectPastCourse({{ pcourse_entries_by_event|tojson }});
+        $(':input[name="{{ input_name_prefix }}pcourse_id"]').cdedbSelectPastCourse({{ (pcourse_entries_by_event or None)|tojson }});
     </script>
 {% endmacro %}

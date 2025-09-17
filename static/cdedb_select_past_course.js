@@ -27,6 +27,10 @@
                 pastCourseNoCoursesInfo.hide();
                 pastCourseSelect.val("");
             } else {
+                if (optionsByPastEvent === null) {
+                    pastCourseSelect.cdedbSelectize();
+                    return;
+                }
                 options = optionsByPastEvent[pastEventSelect.val()] ?? [];
 
                 if (options.length) {
