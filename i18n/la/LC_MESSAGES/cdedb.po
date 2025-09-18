@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-17 01:06+0200\n"
+"POT-Creation-Date: 2025-09-18 21:40+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3061,7 +3061,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:108
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:113
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:101
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:62
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:73
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:86
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:71
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:80
@@ -6021,7 +6021,7 @@ msgstr ""
 #: cdedb/frontend/event/query_stats.py:735
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:63
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:74
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:47
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:73
 msgid "Instructors"
@@ -13457,44 +13457,46 @@ msgid ""
 "users."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:64
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:62
+msgid ""
+"Cancelled courses are no longer choosable by participants and are marked in "
+"the courselist and the course assignment view."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:67
+#, python-format
+msgid ""
+"\"%(is_cancelled)s\" is an orga-internal marker to help with course "
+"assignment. To make cancelled courses public, check Configuration → "
+"Visibility of cancelled courses."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:71
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:91
+msgid "Takes place"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:75
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:51
 msgid "Minimum Size (excl. instr.)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:65
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:76
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:49
 msgid "Maximum Size (excl. instr.)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:68
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:79
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:60
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:65
 #, fuzzy
 msgid "Course Tracks"
 msgstr "quaesitio curriculorum"
 
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:76
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:88
 #, fuzzy
 msgid "Is offered"
 msgstr "annuntiatus:a (TODO: gender specific string)"
-
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:79
-msgid "Takes place"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:81
-msgid ""
-"Cancelled courses are no longer choosable by participants and are marked in "
-"the courselist and the course assignment view."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:87
-msgid ""
-"This is an orga-internal marker to help with course assignment. To make "
-"cancelled courses public, check Configuration → Visibility of cancelled "
-"courses."
-msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:10
 #, fuzzy, python-format

@@ -59,6 +59,17 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
 
         {% set multitrack = ambience['event'].tracks|length > 1 %}
+        {% set cancel_info = gettext(
+                    "Cancelled courses are no longer choosable by participants and "
+                    "are marked in the courselist and the course assignment view."
+                )
+                if ambience['event']['is_course_state_visible'] else
+                gettext(
+                    "\"%(is_cancelled)s\" is an orga-internal marker to help with course assignment. To "
+                    "make cancelled courses public, check Configuration → Visibility of "
+                    "cancelled courses."
+                )|format(is_cancelled=gettext("Takes place")) %}
+
         {{ util.h(n_("Course"), level=3, underline=True) }}
         {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)"), type="number", attributes='min="0"') }}
@@ -66,6 +77,7 @@
 
         {% if multitrack %}
             {{ util.h(n_("Course Tracks"), level=3, underline=True) }}
+            {{ util.output_info(cancel_info, aclass="text-info") }}
         {% endif %}
 
         {% for track in ambience['event'].tracks.values() %}
@@ -77,19 +89,7 @@
                     aclass="segment-offered", attributes='data-track_id={}'.format(track.id)) }}
             {{ util.form_input_checkbox(
                     "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if not ambience['course'] else "",
-                    aclass="segment-" + track.id|string,
-                    info=gettext(
-                            "Cancelled courses are no longer choosable by participants and "
-                            "are marked in the courselist and the course assignment view."
-                         )
-                         if ambience['event']['is_course_state_visible']
-                         else
-                         gettext(
-                            "This is an orga-internal marker to help with course assignment. To "
-                            "make cancelled courses public, check Configuration → Visibility of "
-                            "cancelled courses."
-                         ),
-                    ) }}
+                    aclass="segment-" + track.id|string, info=cancel_info if not multitrack else "") }}
         {% endfor %}
 
         {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}

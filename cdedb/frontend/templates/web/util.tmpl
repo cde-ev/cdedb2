@@ -278,9 +278,9 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link=none) %}
+{% macro output_info(info, link=none, aclass="help-block no-color") %}
     {%- if info %}
-        <p class="help-block no-color">
+        <p class="{{ aclass }}">
             {{ make_icon('info-circle') }} {{ info }}
             {{ link }}
         </p>
