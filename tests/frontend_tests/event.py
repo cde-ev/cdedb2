@@ -430,8 +430,6 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
-    # remove event admin rights from farin
-    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
               "farin", "petra", maintain_data=True)
     def test_sidebar_one_event(self) -> None:
@@ -446,8 +444,7 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen",
-            "Log", "Checkin", "Ungereimtheiten",
+            "Teilnehmerliste", "Anmeldungen", "Log", "Checkin", "Ungereimtheiten",
         }
 
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -494,8 +491,8 @@ class TestEventFrontend(FrontendTest):
             ins = (
                     everyone | not_registered | privileged
                     | registered_or_privileged
-            ) - registrations_stats | {"Teilnahmebeiträge"}
-            out = registered | orga | registrations_stats - {"Teilnahmebeiträge"}
+            ) - registrations_stats | {"Teilnahmebeiträge", "Log"}
+            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -7077,15 +7074,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['title'] = f['shortname'] = "abc"
         f['track_ids'] = []
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'track_ids', "Darf nicht leer sein.", index=0)
+        self.assertValidationError('track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'track_ids', "Inkompatible Kursschienen", index=0)
-        self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
-                         " inkompatible Kurswahlen existieren.", index=0)
+        course_choices_error_mgs = (
+            "Alle Kursschienen einer Kurswahlsynchronisierung müssen die gleiche"
+            " Kurswahl-Anzahl haben.")
+        self.assertValidationError('track_ids', course_choices_error_mgs, index=0)
 
         # Now a valid one. (TripelAkademie)
         self.get('/event/event/4/part/summary')
@@ -7100,8 +7095,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertValidationError('track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [6, 15]
         self.submit(f, check_notification=False)
-        self.assertPresence("Maximal eine Kurswahlsynchronisierung pro Kursschiene.")
-        self.assertPresence("Inkompatible Kursschienen.")
+        self.assertValidationError(
+            'track_ids', "Maximal eine Kurswahlsynchronisierung pro Kursschiene.", index=0)
+        self.assertValidationError('track_ids', course_choices_error_mgs, index=0)
         f['track_ids'] = [15]
         self.submit(f)
 

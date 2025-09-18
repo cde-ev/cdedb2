@@ -628,7 +628,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=1,
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 2: models.SyncTrackGroup(
                     id=2,  # type: ignore[arg-type]
@@ -638,7 +638,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=4,
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 3: models.SyncTrackGroup(
                     id=3,  # type: ignore[arg-type]
@@ -648,7 +648,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=3,
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
                 4: models.TrackGroup(
                     id=4,  # type: ignore[arg-type]
@@ -660,7 +660,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 5: models.TrackGroup(
                     id=5,  # type: ignore[arg-type]
@@ -672,7 +672,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 6: models.TrackGroup(
                     id=6,  # type: ignore[arg-type]
@@ -684,7 +684,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
             },
         )
