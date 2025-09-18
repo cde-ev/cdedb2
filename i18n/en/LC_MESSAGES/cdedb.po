@@ -11595,7 +11595,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:15
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:220
 msgid "Edit Account Request"
-msgstr "Accountanfrage bearbeiten"
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:37
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:38

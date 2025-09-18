@@ -289,6 +289,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+
         persona = reviewer = pevent = pcourse = None
         if case.persona_id:
             persona = self.coreproxy.get_persona(rs, case.persona_id)
@@ -300,6 +301,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 pevent = self.pasteventproxy.get_past_event(rs, case.pevent_id)
             if case.pcourse_id:
                 pcourse = self.pasteventproxy.get_past_course(rs, case.pcourse_id)
+
         persona_data = case.persona.as_dict()
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
@@ -355,15 +357,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
-        case_model = models.GenesisCase.get_model_by_realm(
-            rs.ambience['genesis_case'].realm)
+        case = rs.ambience['genesis_case']
+        case_model = models.GenesisCase.get_model_by_realm(case.realm)
         data = extract_and_check_dataclass(rs, case_model, creation=False,
                                            additional_data={"id": genesis_case_id})
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
 
-        if data['username'] != rs.ambience['genesis_case'].persona.username:
+        if data['username'] != case.persona.username:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
@@ -376,7 +378,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 
-        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs) and case.relative_admin not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.status != const.GenesisStati.to_review:
