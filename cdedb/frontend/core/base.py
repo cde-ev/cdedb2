@@ -94,7 +94,11 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
-from cdedb.models.past_event import past_course_entries, past_event_entries
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -1970,22 +1974,25 @@ class CoreBaseFrontend(AbstractFrontend):
         if pevent_id := rs.values.get('pevent_id'):
             pcourse_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
             pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
 
         mandatory_fields = get_mandatory_form_fields(
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
             "pevent_entries": past_event_entries(pevents),
             "pcourse_entries": past_course_entries(pcourses),
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata("target_realm", "change_note", "pevent_id", "is_orga", "is_instructor",
-                 "pcourse_id")
+                 "pcourse_id", "prev_pevent_id")
     def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
-                     target_realm: vtypes.Realm, pevent_id: Optional[int],
-                     is_orga: bool, is_instructor: bool,
-                     pcourse_id: Optional[int], data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, pevent_id: int | None,
+                     is_orga: bool, is_instructor: bool, prev_pevent_id: int | None,
+                     pcourse_id: int | None, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -2021,11 +2028,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True)
-        if pevent_id is not None:
-            # Show the form again, if past event was selected for the first time.
-            if pcourse_id == -1:
-                return self.promote_user_form(
-                    rs, persona_id, target_realm=target_realm, internal=True)
+        if pevent_id is not None and pevent_id != prev_pevent_id:
+            # Show the form again, if past event changed.
+            #  This is suppressed by in the js variant.
+            return self.promote_user_form(
+                rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)

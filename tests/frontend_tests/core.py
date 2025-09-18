@@ -2133,16 +2133,27 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
         f = self.response.forms['promotionform']
-        f['pevent_id'] = 2
-        self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['pevent_id'] = 1
         f['is_orga'] = True
         self.assertValidationError('change_note', "Darf nicht leer sein.")
         f['change_note'] = change_note = "Hat eine Akademie organisiert."
         self.submit(f, check_notification=False)
+
+        self.assertNotHidden(".pcourse-input")
+        self.assertHidden(".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-nocourses-info")
+
+        f['pevent_id'] = 2
+        self.submit(f, check_notification=False)
+
+        self.assertNotHidden(".pcourse-nocourses-info")
+        self.assertHidden(".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-input")
+
         f = self.response.forms['promotionform']
-        self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
-        f['pcourse_id'] = ''
         self.submit(f, check_notification=False)
         # ignore phone number ValidationWarning
         # TODO list this warnings anywhere?
@@ -2522,19 +2533,43 @@ class TestCoreFrontend(FrontendTest):
             self.response = saved
 
         # select a past course
-        self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
+        self.traverse("bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         f['pevent_id'] = ''
         self.submit(f, check_notification=False)
-        self.assertValidationError('pevent_id',
-                                   "nicht mit der angegebenen Vergangenen")
+        self.assertValidationError('pevent_id', "nicht mit der angegebenen Vergangenen")
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
         f = self.response.forms['genesismodifyform']
-        self.assertPresence("Kurs kann angegeben werden, wenn eine Vergangene")
-        f['pevent_id'] = 1
+        f['pevent_id'] = ''
+        f['pcourse_id'] = ''
         self.submit(f)
-        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
+        f = self.response.forms['genesismodifyform']
+        f['pevent_id'] = 2
+        f['pcourse_id'] = ''
+        self.submit(f)
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-nocourses-info")
+        self.assertHidden(".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-input")
+
+        f = self.response.forms['genesismodifyform']
+        f['pevent_id'] = 1
+        f['pcourse_id'] = ''
+        self.submit(f)
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-input")
+        self.assertHidden(".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-nocourses-info")
+
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         self.submit(f)
