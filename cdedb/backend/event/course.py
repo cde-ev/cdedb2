@@ -4,6 +4,7 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
+
 import abc
 from collections.abc import Collection
 from typing import Optional, Protocol
@@ -40,20 +41,21 @@ from cdedb.database.query import DatabaseValue_s
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
-    def list_courses(self, rs: RequestState,
-                        event_id: int) -> dict[int, str]:
+    def list_courses(self, rs: RequestState, event_id: int) -> dict[int, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
         """
         event_id = affirm(vtypes.ID, event_id)
-        data = self.sql_select(rs, "event.courses", ("id", "title"),
-                               (event_id,), entity_key="event_id")
+        data = self.sql_select(
+            rs, "event.courses", ("id", "title"), (event_id,), entity_key="event_id"
+        )
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_courses(self, rs: RequestState, course_ids: Collection[int],
-                        ) -> models.CdEDataclassMap[models.Course]:
+    def get_courses(
+        self, rs: RequestState, course_ids: Collection[int]
+    ) -> models.CdEDataclassMap[models.Course]:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
@@ -74,7 +76,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             event = self.get_event(rs, event_id)
 
             segment_data = self.query_all(
-                rs, *models.CourseSegment.get_select_query(course_ids))
+                rs, *models.CourseSegment.get_select_query(course_ids)
+            )
 
             for course in course_data.values():
                 course['event'] = event
@@ -86,10 +89,13 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
+
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def set_course(self, rs: RequestState, course_id: int, data: CdEDBObject) -> DefaultReturnCode:
+    def set_course(
+        self, rs: RequestState, course_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Update some keys of a course linked to an event organized via DB.
 
         If the 'segments' key is present you have to pass the complete list
@@ -115,7 +121,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             changed = False
             data["id"] = course_id
             changed_data = {
-                k: v for k, v in data.items()
+                k: v
+                for k, v in data.items()
                 if k in course_fields and v != current_dict[k]
             }
             if changed_data:
@@ -125,7 +132,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
             if 'fields' in data:
                 fdata = {
-                    k: v for k, v in data['fields'].items()
+                    k: v
+                    for k, v in data['fields'].items()
                     if k not in current.fields or v != current.fields[k]
                 }
                 if fdata:
@@ -137,8 +145,10 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
             if changed:
                 self.event_log(
-                    rs, const.EventLogCodes.course_changed, current.event_id,
-                    change_note=current.title
+                    rs,
+                    const.EventLogCodes.course_changed,
+                    current.event_id,
+                    change_note=current.title,
                 )
 
             if 'segments' in data:
@@ -146,7 +156,9 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    def _set_course_segments(self, rs: RequestState, segment_data: CdEDBOptionalMap, course: models.Course) -> DefaultReturnCode:
+    def _set_course_segments(
+        self, rs: RequestState, segment_data: CdEDBOptionalMap, course: models.Course
+    ) -> DefaultReturnCode:
         """Uninlined code from set_course."""
 
         self.affirm_atomized_context(rs)
@@ -156,24 +168,29 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             raise ValueError(n_("Invalid tracks specified."))
 
         deleted = {
-            track_id for track_id, segment in segment_data.items()
+            track_id
+            for track_id, segment in segment_data.items()
             if segment is None and track_id in course.segments
         }
         new = {
-            track_id: segment for track_id, segment in segment_data.items()
+            track_id: segment
+            for track_id, segment in segment_data.items()
             if segment is not None and track_id not in course.segments
         }
         changed = {
-            track_id: segment for track_id, segment in segment_data.items()
-            if segment is not None and track_id in course.segments
-               and segment != course.segments[track_id].as_dict()
+            track_id: segment
+            for track_id, segment in segment_data.items()
+            if segment is not None
+            and track_id in course.segments
+            and segment != course.segments[track_id].as_dict()
         }
 
         cn = lambda track_id: f"{course.title} ({course.event.tracks[track_id].title})"
 
         if deleted:
             params: dict[str, DatabaseValue_s] = {
-                "course_id": course.id, "track_ids": deleted
+                "course_id": course.id,
+                "track_ids": deleted,
             }
             query = f"""
                 DELETE FROM {models.CourseSegment.database_table}
@@ -182,13 +199,17 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             ret *= self.query_exec(rs, query, params)
             for track_id in xsorted(deleted):
                 self.event_log(
-                    rs, const.EventLogCodes.course_segment_deleted,
-                    course.event_id, change_note=cn(track_id),
+                    rs,
+                    const.EventLogCodes.course_segment_deleted,
+                    course.event_id,
+                    change_note=cn(track_id),
                 )
                 if course.segments[track_id].is_active:
                     self.event_log(
-                        rs, const.EventLogCodes.course_segment_deactivated,
-                        course.event_id, change_note=cn(track_id),
+                        rs,
+                        const.EventLogCodes.course_segment_deactivated,
+                        course.event_id,
+                        change_note=cn(track_id),
                     )
 
         for track_id, segment in xsorted(new.items()):
@@ -196,21 +217,28 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             segment = {**segment, **_metadata}
             ret *= self.sql_insert(rs, models.CourseSegment.database_table, segment)
             self.event_log(
-                rs, const.EventLogCodes.course_segment_created,
-                course.event_id, change_note=cn(track_id),
+                rs,
+                const.EventLogCodes.course_segment_created,
+                course.event_id,
+                change_note=cn(track_id),
             )
             if segment["is_active"]:
                 self.event_log(
-                    rs, const.EventLogCodes.course_segment_activated,
-                    course.event_id, change_note=cn(track_id),
+                    rs,
+                    const.EventLogCodes.course_segment_activated,
+                    course.event_id,
+                    change_note=cn(track_id),
                 )
 
         for track_id, segment in xsorted(changed.items()):
             _metadata = {"course_id": course.id, "track_id": track_id}
             segment = {**segment, **_metadata}
             ret *= self.sql_insert(
-                rs, models.CourseSegment.database_table, segment,
-                update_on_conflict=True, conflict_target="course_id, track_id",
+                rs,
+                models.CourseSegment.database_table,
+                segment,
+                update_on_conflict=True,
+                conflict_target="course_id, track_id",
             )
             if segment["is_active"] != course.segments[track_id].is_active:
                 if segment["is_active"]:
@@ -222,7 +250,9 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         return ret
 
     @access("event")
-    def create_course(self, rs: RequestState, event_id: int, data: CdEDBObject) -> DefaultReturnCode:
+    def create_course(
+        self, rs: RequestState, event_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Make a new course organized via DB."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
@@ -236,19 +266,23 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             course_fields = set(models.Course.database_fields())
             data['fields'] = PsycoJson(data.get('fields', {}))
             data['event_id'] = event_id
-            course_data = {
-                k: v for k, v in data.items() if k in course_fields
-            }
+            course_data = {k: v for k, v in data.items() if k in course_fields}
             new_id = self.sql_insert(rs, models.Course.database_table, course_data)
-            self.event_log(rs, const.EventLogCodes.course_created, event_id, change_note=data['title'])
+            self.event_log(
+                rs,
+                const.EventLogCodes.course_created,
+                event_id,
+                change_note=data['title'],
+            )
 
             course = self.get_course(rs, new_id)
             self._set_course_segments(rs, data['segments'], course)
         return new_id
 
     @access("event")
-    def delete_course_blockers(self, rs: RequestState,
-                               course_id: int) -> DeletionBlockers:
+    def delete_course_blockers(
+        self, rs: RequestState, course_id: int
+    ) -> DeletionBlockers:
         """Determine what keeps a course from beeing deleted.
 
         Possible blockers:
@@ -267,34 +301,46 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         blockers = {}
 
         attendees = self.sql_select(
-            rs, "event.registration_tracks", ("id",), (course_id,),
-            entity_key="course_id")
+            rs,
+            "event.registration_tracks",
+            ("id",),
+            (course_id,),
+            entity_key="course_id",
+        )
         if attendees:
             blockers["attendees"] = [e["id"] for e in attendees]
 
         instructors = self.sql_select(
-            rs, "event.registration_tracks", ("id",), (course_id,),
-            entity_key="course_instructor")
+            rs,
+            "event.registration_tracks",
+            ("id",),
+            (course_id,),
+            entity_key="course_instructor",
+        )
         if instructors:
             blockers["instructors"] = [e["id"] for e in instructors]
 
         course_choices = self.sql_select(
-            rs, "event.course_choices", ("id",), (course_id,),
-            entity_key="course_id")
+            rs, "event.course_choices", ("id",), (course_id,), entity_key="course_id"
+        )
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
 
         course_segments = self.sql_select(
-            rs, "event.course_segments", ("id",), (course_id,),
-            entity_key="course_id")
+            rs, "event.course_segments", ("id",), (course_id,), entity_key="course_id"
+        )
         if course_segments:
             blockers["course_segments"] = [e["id"] for e in course_segments]
 
         return blockers
 
     @access("event")
-    def delete_course(self, rs: RequestState, course_id: int,
-                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+    def delete_course(
+        self,
+        rs: RequestState,
+        course_id: int,
+        cascade: Optional[Collection[str]] = None,
+    ) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 
         :param cascade: Specify which deletion blockers to cascadingly remove
@@ -302,7 +348,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         """
         course_id = affirm(vtypes.ID, course_id)
         current = self.sql_select_one(
-            rs, "event.courses", ("title", "event_id"), course_id)
+            rs, "event.courses", ("title", "event_id"), course_id
+        )
         assert current is not None
         if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
             raise PrivilegeError(n_("Not privileged."))
@@ -311,11 +358,13 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         blockers = self.delete_course_blockers(rs, course_id)
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
-            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
-                             {
-                                 "type": "course",
-                                 "block": blockers.keys() - cascade,
-                             })
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {
+                    "type": "course",
+                    "block": blockers.keys() - cascade,
+                },
+            )
 
         ret = 1
         with Atomizer(rs):
@@ -327,31 +376,35 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                             'course_id': None,
                             'id': anid,
                         }
-                        ret *= self.sql_update(
-                            rs, "event.registration_tracks", deletor)
+                        ret *= self.sql_update(rs, "event.registration_tracks", deletor)
                 if "instructors" in cascade:
                     for anid in blockers["instructors"]:
                         deletor = {
                             'course_instructor': None,
                             'id': anid,
                         }
-                        ret *= self.sql_update(
-                            rs, "event.registration_tracks", deletor)
+                        ret *= self.sql_update(rs, "event.registration_tracks", deletor)
                 if "course_choices" in cascade:
                     # Get the data of the affected choices grouped by track.
                     data = self.sql_select(
-                        rs, "event.course_choices",
+                        rs,
+                        "event.course_choices",
                         ("track_id", "registration_id"),
-                        blockers["course_choices"])
+                        blockers["course_choices"],
+                    )
                     data_by_tracks = {
-                        track_id: [e["registration_id"] for e in data
-                                   if e["track_id"] == track_id]
+                        track_id: [
+                            e["registration_id"]
+                            for e in data
+                            if e["track_id"] == track_id
+                        ]
                         for track_id in set(e["track_id"] for e in data)
                     }
 
                     # Delete choices of the deletable course.
                     ret *= self.sql_delete(
-                        rs, "event.course_choices", blockers["course_choices"])
+                        rs, "event.course_choices", blockers["course_choices"]
+                    )
 
                     # Construct list of inserts.
                     choices: list[CdEDBObject] = []
@@ -381,18 +434,24 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                     self.sql_insert_many(rs, "event.course_choices", choices)
 
                 if "course_segments" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_segments",
-                                           blockers["course_segments"])
+                    ret *= self.sql_delete(
+                        rs, "event.course_segments", blockers["course_segments"]
+                    )
 
                 # check if course is deletable after cascading
                 blockers = self.delete_course_blockers(rs, course_id)
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.courses", course_id)
-                self.event_log(rs, const.EventLogCodes.course_deleted,
-                               current['event_id'], change_note=current['title'])
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.course_deleted,
+                    current['event_id'],
+                    change_note=current['title'],
+                )
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
-                    {"type": "course", "block": blockers.keys()})
+                    {"type": "course", "block": blockers.keys()},
+                )
         return ret
