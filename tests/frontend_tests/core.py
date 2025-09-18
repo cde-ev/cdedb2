@@ -2367,7 +2367,8 @@ class TestCoreFrontend(FrontendTest):
         link = self.fetch_link()
         self.submit(f, button="decision", value=str(GenesisDecision.approve),
                     check_notification=False)
-        self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
+        self.assertPresence("Anfrage befindet sich nicht in der Begutachtung.",
+                            div="notifications")
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
         self.get(link)
@@ -2987,7 +2988,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         # Set persona_id to the value of the second radio button.
         f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.update),
+        self.submit(f, button="decision", value=str(GenesisDecision.approve),
                     check_notification=False)
         self.assertPresence("Ungültiger Benutzer für Aktualisierung."
                             " Füge zunächst folgenden Bereich hinzu: cde.",
@@ -2996,24 +2997,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyrealmform']
         self.submit(f)
 
-        # Check that approving the request fails if a persona is selected.
-        f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.approve),
-                    check_notification=False)
-        self.assertPresence("Existierender Account ausgewählt,"
-                            " aber Accountanfrage bestätigt.", div="notifications")
-
         # Now merge the genesis request into the existing account.
         # Submit without selecting doppelganger.
         f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = ""
-        self.submit(f, button="decision", value=str(GenesisDecision.update),
-                    check_notification=False)
-        self.assertPresence("Kein Account ausgewählt.", div="notifications")
-        # Now for real.
         f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Benutzer aktualisiert", div="notifications")
         log_expectation.extend([
             {
@@ -3083,7 +3071,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
                          f" {self.CDE_GENESIS_DATA['family_name']}")
         self.assertPresence(alternate_username)
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1001)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
 
         # Check that the data of the second genesis request persisted
         self.traverse("Änderungen prüfen", f"{self.CDE_GENESIS_DATA['given_names']}"
@@ -3103,7 +3091,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = hades['id']
-        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
     def _decide_genesis_case(self, decision: GenesisDecision,
@@ -3152,17 +3140,17 @@ class TestCoreFrontend(FrontendTest):
         # The original user. This option is disabled, but webtest allows it anyway.
         self.assertFalse(self.core.is_relative_admin(self.key, existing_user['id']))
         with self.assertRaises(PrivilegeError):
-            self._decide_genesis_case(GenesisDecision.update, existing_user['id'])
+            self._decide_genesis_case(GenesisDecision.approve, existing_user['id'])
 
         # The ml-user. This option is disabled, but webtest allows it anyway.
         self.assertFalse(self.core.is_relative_admin(self.key, 1001))
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1001, check=False)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001, check=False)
         self.assertPresence(
             "Ungültiger Benutzer für Aktualisierung.", div="notifications")
 
         # The event user. This option should work.
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1002)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1002)
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')

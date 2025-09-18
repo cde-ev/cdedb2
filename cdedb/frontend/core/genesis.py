@@ -433,26 +433,22 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # Do privilege and sanity checks.
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if decision.is_create():
-            if self.coreproxy.verify_existence(
-                    rs, case.persona.username, include_genesis=False):
-                rs.notify("error", n_("Email address already taken."))
-                return self.redirect(rs, "core/genesis_show_case")
-            if persona_id:
-                rs.notify("error", n_("Persona selected, but genesis case approved."))
-                return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update():
-            if not persona_id:
-                rs.notify("error", n_("No persona selected."))
-                return self.redirect(rs, "core/genesis_show_case")
-            elif not self.coreproxy.verify_persona(
-                    rs, persona_id, (case.realm,)):
-                rs.notify("error", n_("Invalid persona for update."
-                                      " Add additional realm first: %(realm)s."),
-                          {'realm': case.realm})
-                return self.redirect(rs, "core/genesis_show_case")
         if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
+            return self.redirect(rs, "core/genesis_show_case")
+        # simplify the UI by displaying only one button
+        if persona_id and decision == GenesisDecision.approve:
+            decision = GenesisDecision.update
+        if decision.is_create() and self.coreproxy.verify_existence(
+                rs, case.persona.username, include_genesis=False):
+            rs.notify("error", n_("Email address already taken."))
+            return self.redirect(rs, "core/genesis_show_case")
+        if decision.is_update() and not self.coreproxy.verify_persona(
+                rs, persona_id, (case.realm,)):  # type: ignore[arg-type]
+            rs.notify("error", n_(
+                "Invalid persona for update. Add additional realm first: %(realm)s."),
+                {'realm': case.realm}
+            )
             return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
