@@ -326,11 +326,8 @@
         {% endif %}
     </div>
 
-
-    {% if "finance" in user.admin_views or orga_view and (not ambience['event']['orga_address'] or not participant_list)) %}
-        {# This ensures no empty box is shown for orgas. #}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
-            {% if not ambience['event']['orga_address'] %}
+    {% call util.conditional_bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
+            {% if not ambience['event']['orga_address'] and orga_view %}
                 <div class="row" id="create-orga-list">
                     <div class="col-sm-4">
                         <div class="p">
@@ -355,7 +352,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if not participant_list %}
+            {% if not participant_list and orga_view %}
                 <div class="row" id="create-participant-list">
                     <div class="col-sm-4">
                         <div class="p">
@@ -472,6 +469,5 @@
                     </div>
                 </div>
             {% endif %}
-        {% endcall %}
-    {% endif %}
+    {% endcall %}
 {% endblock %}

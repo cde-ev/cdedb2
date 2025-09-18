@@ -131,10 +131,13 @@ class EventBaseFrontend(AbstractUserFrontend):
                 return is_privileged
             return is_privileged and 'event_orga' in rs.user.admin_views
 
-        orga_view = (
-            rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
-            or 'event_orga' in rs.user.admin_views
-        )
+        if 'event' in rs.ambience:
+            orga_view = (
+                rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
+                or 'event_orga' in rs.user.admin_views
+            )
+        else:
+            orga_view = None
 
         params = params or {}
         if 'event' in rs.ambience:
