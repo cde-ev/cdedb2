@@ -15,7 +15,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import Any, NamedTuple, Optional, Protocol, TypeVar, cast
+from typing import NamedTuple, Optional, Protocol, TypeVar, cast
 
 import psycopg2.extensions
 
@@ -65,6 +65,7 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import Params
 from cdedb.filter import datetime_filter, money_filter
 from cdedb.models.event import CheckinPeriod, ReducedCheckinPeriod
 
@@ -205,13 +206,13 @@ class EventRegistrationBackend(EventBaseBackend):
                 LEFT OUTER JOIN event.course_segments AS segments
                 ON courses.id = segments.course_id
             )
-            WHERE courses.event_id = %s
+            WHERE courses.event_id = %(event_id)s
             GROUP BY courses.id
         """
 
         return {
             row['id']: set(row['segments'])
-            for row in self.query_all(rs, query, (event_id,))
+            for row in self.query_all(rs, query, {"event_id": event_id})
         }
 
     def _get_involved_tracks(self, rs: RequestState, registration_id: int) -> set[int]:
@@ -221,13 +222,13 @@ class EventRegistrationBackend(EventBaseBackend):
             FROM event.course_tracks
             WHERE course_tracks.part_id IN (
                 SELECT part_id FROM event.registration_parts
-                WHERE registration_id = %s AND status = ANY(%s)
+                WHERE registration_id = %(registration_id)s AND status = ANY(%(stati)s)
             )
         """
-        p = (
-            registration_id,
-            [x for x in const.RegistrationPartStati if x.is_involved()],
-        )
+        p: Params = {
+            "registration_id": registration_id,
+            "stati": [x for x in const.RegistrationPartStati if x.is_involved()],
+        }
         return {e['id'] for e in self.query_all(rs, q, p)}
 
     def _get_synced_tracks(
@@ -244,15 +245,18 @@ class EventRegistrationBackend(EventBaseBackend):
             LEFT JOIN (
                 SELECT ct.id, ARRAY_AGG(tgt2.track_id) AS synced_tracks
                 FROM event.course_tracks AS ct
-                LEFT JOIN event.track_group_tracks AS tgt ON ct.id = tgt.track_id
-                LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
-                LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
-                WHERE tg.constraint_type = %s AND tg.event_id = %s
+                    LEFT JOIN event.track_group_tracks AS tgt ON ct.id = tgt.track_id
+                    LEFT JOIN event.track_groups AS tg ON tgt.track_group_id = tg.id
+                    LEFT JOIN event.track_group_tracks AS tgt2 on tg.id = tgt2.track_group_id
+                WHERE tg.constraint_type = %(constraint_type)s AND tg.event_id = %(event_id)s
                 GROUP BY ct.id
             ) AS tmp ON tmp.id = ct.id
-            WHERE ep.event_id = %s
+            WHERE ep.event_id = %(event_id)s
         """
-        p = (const.CourseTrackGroupType.course_choice_sync, event_id, event_id)
+        p = {
+            "constraint_type": const.CourseTrackGroupType.course_choice_sync,
+            "event_id": event_id,
+        }
         return {e['id']: set(e['synced_tracks']) for e in self.query_all(rs, q, p)}
 
     @access("event")
@@ -289,9 +293,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 SELECT ct.id
                 FROM event.course_tracks AS ct
                     JOIN event.event_parts AS ep on ep.id = ct.part_id
-                WHERE ep.id = ANY(%s)
+                WHERE ep.id = ANY(%(part_ids)s)
             """
-            involved_tracks = {e['id'] for e in self.query_all(rs, q, (part_ids,))}
+            involved_tracks = {
+                e['id'] for e in self.query_all(rs, q, {"part_ids": part_ids})
+            }
         else:
             # For multiedit, we cannot reliably determine part ids, but we don't need
             #  them either, so not returning anything does not hurt.
@@ -343,23 +349,24 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: A map of <track id> -> [<course_id>, ...], indicating that these
             courses can be chosen in the given track.
         """
-        query = """
+        event_id = affirm(vtypes.ID, event_id)
+        active_only = affirm(bool, active_only)
+
+        query = f"""
             SELECT ct.id, ARRAY_REMOVE(ARRAY_AGG(cs.course_id), NULL) AS courses
             FROM (
                 event.course_tracks AS ct
                 LEFT JOIN event.event_parts AS ep ON ct.part_id = ep.id
-                LEFT JOIN event.course_segments AS cs ON ct.id = cs.track_id {}
+                LEFT JOIN event.course_segments AS cs ON ct.id = cs.track_id
+                    {"AND is_active = True" if active_only else ""}
             )
-            WHERE ep.event_id = %s
+            WHERE ep.event_id = %(event_id)s
             GROUP BY ct.id
         """
 
-        event_id = affirm(vtypes.ID, event_id)
-        active_only = affirm(bool, active_only)
-        query = query.format("AND is_active = True" if active_only else "")
-
         return {
-            e['id']: set(e['courses']) for e in self.query_all(rs, query, (event_id,))
+            e['id']: set(e['courses'])
+            for e in self.query_all(rs, query, {"event_id": event_id})
         }
 
     @access("event")
@@ -377,31 +384,29 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: A map of <track id> -> [<course_id>, ...], indicating that these
             courses can be chosen in the given track.
         """
-        query = """
+        event_id = affirm(vtypes.ID, event_id)
+        active_only = affirm(bool, active_only)
+        involved_parts = affirm_optional(set[vtypes.ID], involved_parts)
+
+        query = f"""
             SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
             FROM event.track_groups AS tg
-                LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
-                LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {is_active}
-                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id
-            WHERE tg.event_id = %s AND tg.constraint_type = %s {involved_parts}
+                LEFT JOIN event.track_group_tracks AS tgt
+                    ON tg.id = tgt.track_group_id
+                LEFT JOIN event.course_segments AS cs
+                    ON tgt.track_id = cs.track_id {"AND is_active = True" if active_only else ""}
+                LEFT JOIN event.course_tracks AS ct
+                    ON cs.track_id = ct.id
+            WHERE tg.event_id = %(event_id)s AND tg.constraint_type = %(constraint_type)s
+                {"AND ct.par_id = ANY(%(involved_parts)s)" if involved_parts else ""}
             GROUP BY tg.id
         """
 
-        event_id = affirm(vtypes.ID, event_id)
-        active_only = affirm(bool, active_only)
-
-        params: list[Any] = [event_id, const.CourseTrackGroupType.course_choice_sync]
-
-        if involved_parts is not None:
-            involved_parts = affirm_set(vtypes.ID, involved_parts)
-            params.append(involved_parts)
-
-        query = query.format(
-            is_active="AND is_active = True" if active_only else "",
-            involved_parts=(
-                "AND ct.part_id = ANY(%s)" if involved_parts is not None else ""
-            ),
-        )
+        params = {
+            "event_id": event_id,
+            "constraint_type": const.CourseTrackGroupType.course_choice_sync,
+            "involved_parts": involved_parts,
+        }
 
         return {e['id']: set(e['courses']) for e in self.query_all(rs, query, params)}
 
@@ -435,9 +440,10 @@ class EventRegistrationBackend(EventBaseBackend):
         if not new_registration:
             query = """
                 DELETE FROM event.course_choices
-                WHERE registration_id = %s AND track_id = %s
+                WHERE registration_id = %(registration_id)s AND track_id = %(track_id)s
             """
-            self.query_exec(rs, query, (registration_id, track_id))
+            params = {"registration_id": registration_id, "track_id": track_id}
+            self.query_exec(rs, query, params)
         for rank, course_id in enumerate(choices):
             new_choice = {
                 "registration_id": registration_id,
@@ -479,9 +485,9 @@ class EventRegistrationBackend(EventBaseBackend):
             FROM event.registrations
                 LEFT JOIN event.registration_parts
                     ON registrations.id = registration_parts.registration_id
-            WHERE persona_id = %s
+            WHERE persona_id = %(persona_id)s
         """
-        data = self.query_all(rs, query, (persona_id,))
+        data = self.query_all(rs, query, {"persona_id": persona_id})
         ret: dict[int, dict[int, dict[int, const.RegistrationPartStati]]] = {}
         for e in data:
             reg = e.setdefault(e['event_id'], {}).setdefault(e['registration_id'], {})
@@ -501,10 +507,8 @@ class EventRegistrationBackend(EventBaseBackend):
         :param persona_ids: If passed restrict to registrations by these personas.
         :returns: Mapping of registration ids to persona_ids.
         """
-        if not persona_ids:
-            persona_ids = set()
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm_optional(set[vtypes.ID], persona_ids)
 
         if persona_ids != {rs.user.persona_id} and not is_privileged(
             rs, EventPrivileges.registrations_read_internal, event_id=event_id
@@ -512,11 +516,13 @@ class EventRegistrationBackend(EventBaseBackend):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
-        conditions = ["event_id = %s"]
-        params: list[Any] = [event_id]
+        conditions = ["event_id = %(event_id)s"]
+        params = {
+            "event_id": event_id,
+            "persona_ids": persona_ids,
+        }
         if persona_ids:
-            conditions.append("persona_id = ANY(%s)")
-            params.append(persona_ids)
+            conditions.append("persona_id = ANY(%(persona_ids)s)")
         query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
@@ -556,8 +562,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 LEFT OUTER JOIN event.registration_parts AS rparts
                     ON rparts.registration_id = regs.id
         """
-        conditions = ["regs.event_id = %s", "rparts.status = %s"]
-        params = [event_id, const.RegistrationPartStati.participant]
+        conditions = ["regs.event_id = %(event_id)s", "rparts.status = %(reg_status)s"]
+        params = {
+            "event_id": event_id,
+            "reg_stratus": const.RegistrationPartStati.participant,
+        }
         query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
@@ -687,7 +696,6 @@ class EventRegistrationBackend(EventBaseBackend):
             elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
             ret: dict[int, Optional[list[int]]] = {}
-            waitlist = const.RegistrationPartStati.waitlist
             query = "SELECT id, fields FROM event.registrations WHERE event_id = %s"
             for part_id in part_ids:
                 part = event.parts[part_id]
@@ -700,11 +708,15 @@ class EventRegistrationBackend(EventBaseBackend):
                     FROM event.registrations AS reg
                         LEFT JOIN event.registration_parts AS rparts
                             ON reg.id = rparts.registration_id
-                    WHERE rparts.part_id = %s AND rparts.status = %s
+                    WHERE rparts.part_id = %(part_id)s AND rparts.status = %(reg_status)s
                     ORDER BY
                         COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
                 """
-                data = self.query_all(rs, query, (part_id, waitlist))
+                params = {
+                    "part_id": part_id,
+                    "reg_status": const.RegistrationPartStati.waitlist,
+                }
+                data = self.query_all(rs, query, params)
                 ret[part_id] = [e['id'] for e in data]
             return ret
 
@@ -779,8 +791,7 @@ class EventRegistrationBackend(EventBaseBackend):
         track_id = affirm_optional(vtypes.ID, track_id)
         course_id = affirm_optional(vtypes.ID, course_id)
         position = affirm_optional(InfiniteEnum[CourseFilterPositions], position)
-        reg_ids = reg_ids or set()
-        reg_ids = affirm_set(vtypes.ID, reg_ids)
+        reg_ids = affirm_optional(set[vtypes.ID], reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)
         if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -802,26 +813,30 @@ class EventRegistrationBackend(EventBaseBackend):
                     event.course_choices AS choices
                     ON choices.registration_id = regs.id AND choices.track_id = course_tracks.id
         """
-        conditions = ["regs.event_id = %s", "rparts.status = ANY(%s)"]
-        params: list[Any] = [event_id, reg_states]
+        conditions = ["regs.event_id = %(event_id)s", "rparts.status = ANY(%(stati)s)"]
+        params: Params = {
+            "event_id": event_id,
+            "stati": reg_states,
+            "track_id": track_id,
+            "course_id": course_id,
+            "choice_rank": position.int if position is not None else None,
+            "regsistration_ids": reg_ids,
+        }
         if track_id:
-            conditions.append("course_tracks.id = %s")
-            params.append(track_id)
+            conditions.append("course_tracks.id = %(track_id)s")
         if position is not None:
             cfp = CourseFilterPositions
             sub_conditions = []
             if position.enum in {cfp.instructor, cfp.anywhere}:
                 if course_id:
-                    sub_conditions.append("rtracks.course_instructor = %s")
-                    params.append(course_id)
+                    sub_conditions.append("rtracks.course_instructor = %(course_id)s")
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
             if position.enum in {cfp.any_choice, cfp.anywhere}:
                 if course_id:
                     sub_conditions.append(
-                        "(choices.course_id = %s AND choices.rank < course_tracks.num_choices)"
+                        "(choices.course_id = %(course_id)s AND choices.rank < course_tracks.num_choices)"
                     )
-                    params.append(course_id)
                 else:
                     sub_conditions.append(
                         "(choices.course_id IS NULL AND choices.rank < course_tracks.num_choices)"
@@ -829,25 +844,21 @@ class EventRegistrationBackend(EventBaseBackend):
             if position.enum == cfp.specific_rank:
                 if course_id:
                     sub_conditions.append(
-                        "(choices.course_id = %s AND choices.rank = %s)"
+                        "(choices.course_id = %(course_id)s AND choices.rank = %(choice_rank)s)"
                     )
-                    params.extend((course_id, position.int))
                 else:
                     sub_conditions.append(
-                        "(choices.course_id IS NULL AND choices.rank = %s)"
+                        "(choices.course_id IS NULL AND choices.rank = %(choice_rank)s)"
                     )
-                    params.append(position.int)
             if position.enum in {cfp.assigned, cfp.anywhere}:
                 if course_id:
-                    sub_conditions.append("rtracks.course_id = %s")
-                    params.append(course_id)
+                    sub_conditions.append("rtracks.course_id = %(course_id)s")
                 else:
                     sub_conditions.append("rtracks.course_id IS NULL")
             if sub_conditions:
                 conditions.append(f"( {' OR '.join(sub_conditions)} )")
         if reg_ids:
-            conditions.append("regs.id = ANY(%s)")
-            params.append(reg_ids)
+            conditions.append("regs.id = ANY(%(registration_ids)s)")
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -873,19 +884,20 @@ class EventRegistrationBackend(EventBaseBackend):
             SELECT part_id, COUNT(*) AS num
             FROM event.registration_parts rp
                 JOIN event.event_parts ep on ep.id = rp.part_id
-            WHERE ep.event_id = %s AND rp.status = ANY(%s)
+            WHERE ep.event_id = %(event_id)s AND rp.status = ANY(%(reg_stati)s)
             GROUP BY part_id
         """
-        res = {e['part_id']: e['num'] for e in self.query_all(rs, q, (event_id, stati))}
+        params: Params = {"event_id": event_id, "reg_stati": stati}
+        res = {e['part_id']: e['num'] for e in self.query_all(rs, q, params)}
         if include_total:
             # total registration count
             q = """
                 SELECT COUNT(DISTINCT registration_id)
                 FROM event.registration_parts rp
                     JOIN event.event_parts ep on ep.id = rp.part_id
-                WHERE ep.event_id = %s AND rp.status = ANY(%s)
+                WHERE ep.event_id = %(event_id)s AND rp.status = ANY(%(reg_stati)s)
             """
-            res[None] = unwrap(self.query_one(rs, q, (event_id, stati)))
+            res[None] = unwrap(self.query_one(rs, q, params))
         return res
 
     @access("event")
@@ -1570,9 +1582,9 @@ class EventRegistrationBackend(EventBaseBackend):
         query = f"""
             SELECT event_id, amount_owed - amount_paid AS amount
             FROM {models.Registration.database_table}
-            WHERE persona_id = %s
+            WHERE persona_id = %(persona_id)s
         """
-        params = [persona_id]
+        params = {"persona_id": persona_id}
 
         return {e['event_id']: e['amount'] for e in self.query_all(rs, query, params)}
 
@@ -1586,9 +1598,9 @@ class EventRegistrationBackend(EventBaseBackend):
         query = f"""
             SELECT amount_owed - amount_paid AS amount
             FROM {models.Registration.database_table}
-            WHERE persona_id = %s AND event_id = %s
+            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
         """
-        params = [persona_id, event_id]
+        params = {"persona_id": persona_id, "event_id": event_id}
 
         return unwrap(self.query_one(rs, query, params))
 
@@ -1654,7 +1666,7 @@ class EventRegistrationBackend(EventBaseBackend):
             ) AS u (id, amount_owed, by_kind)
             WHERE r.id = u.id
         """
-        params: list[int | decimal.Decimal | PsycoJson] = list(
+        params: Params = list(
             itertools.chain.from_iterable(
                 (registration_id, fee.amount, PsycoJson(fee.by_kind))
                 for registration_id, fee in fees.items()
