@@ -12644,6 +12644,12 @@ msgstr "Accountanfrage"
 msgid "Edit Account Request"
 msgstr "Accountanfrage bearbeiten"
 
+msgid "You need to %(promote)s this account to %(realm)s realm before merging."
+msgstr "Vor dem Zusammenführen musst du diesem Account den %(realm)s Bereich %(promote)s."
+
+msgid "promote"
+msgstr "hinzufügen"
+
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:37
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:38
 #: cdedb/frontend/templates/web/core/genesis/genesis_request.tmpl:47

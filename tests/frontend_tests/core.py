@@ -2972,6 +2972,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(alternate_username)
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+        # user has already event realm, no need to add it
+        self.assertNonPresence("Bereich hinzufügen.", div="doppelgangers")
         save = self.response
         self.traverse(self.EVENT_GENESIS_DATA['family_name'])
         self.response = save
@@ -2979,6 +2981,9 @@ class TestCoreFrontend(FrontendTest):
         # Check that a cde genesis request cannot be merged into a non-cde account.
         f = self.response.forms['genesismodifyrealmform']
         self.submit(f)
+        self.assertPresence("Vor dem Zusammenführen musst du diesem Account",
+                            div="doppelgangers")
+        self.assertPresence("CdE Bereich hinzufügen.", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         # Set persona_id to the value of the second radio button.
         f['persona_id'] = f['persona_id'].options[1][0]

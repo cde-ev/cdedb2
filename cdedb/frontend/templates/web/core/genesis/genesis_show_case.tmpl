@@ -14,6 +14,19 @@
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"), ambience['genesis_case'].persona|persona_name,
                         active="True", icon="door-open") }}
 {% endblock %}
+
+{% macro print_doppelganger_genesis(doppelganger) %}
+    {{ util.print_doppelganger(doppelganger, link=True) }}
+    {% if doppelganger["id"] in doppelgangers_with_missing_realms %}
+        </br>
+        {% trans promote=util.href(cdedblink('core/promote_user_form', {"persona_id": doppelganger["id"],
+                                   "target_realm": ambience["genesis_case"].realm}), gettext("promote")),
+                 realm=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)%}
+            You need to {{ promote }} this account to {{ realm }} realm before merging.
+        {% endtrans %}
+    {% endif %}
+{% endmacro %}
+
 {% block content %}
     <h4 class="heading-underline">{% trans %}Case Meta-Information{% endtrans %}</h4>
     <dl class="dl-horizontal">
@@ -192,7 +205,7 @@
                 <div role="radiogroup" aria-labelledby="doppelgangers-label" id="doppelgangers">
                     {% set entries = [("", "–")] %}
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
-                        {% do entries.append((key, util.print_doppelganger(value, link=True))) %}
+                        {% do entries.append((key, print_doppelganger_genesis(value))) %}
                     {% endfor %}
                     {# This actually becomes the persona_id to be saved into the genesis request! #}
                     {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}

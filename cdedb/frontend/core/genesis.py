@@ -317,10 +317,16 @@ class CoreGenesisMixin(CoreBaseFrontend):
             for persona_id, not_relative_admin in non_editable_doppelgangers.items()
             if not_relative_admin
         }
+        # the user needs to promote them manually before updating them via genesis
+        doppelgangers_with_missing_realms = {
+            persona_id for persona_id in doppelgangers.keys()
+            if not self.coreproxy.verify_persona(rs, persona_id, [case.realm])
+        }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
             'persona': persona, 'doppelgangers': doppelgangers,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
+            'doppelgangers_with_missing_realms': doppelgangers_with_missing_realms,
         })
 
     @access("core_admin", *models.GenesisCase.all_admins)
