@@ -1368,7 +1368,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Universale Akademie", div="part1001")
         self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
         self.assertPresence('07.06.2345', div='part1001_end', exact=True)
-        self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
+        self.assertDivNotExists("#trackrow1001_1001")
 
         # Check log
         log_expectation: list[CdEDBObject] = [
@@ -1441,7 +1441,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Konfiguration", "Veranstaltungsteile")
         self.assertPresence("Alternative Akademie", div="part1002")
         self.assertPresence("Alternative Akademie", div="trackrow1002_1001")
-        self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
+        self.assertDivNotExists("#trackrow1002_1002")
 
         # Check event log
         log_expectation.extend([
@@ -2410,15 +2410,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
-        self.assertHasClass("eventfee-title-1", "alert-success")
-        self.assertHasClass("eventfee-title-2", "alert-success")
-        self.assertHasClass("eventfee-title-3", "alert-success")
-        self.assertHasClass("eventfee-title-4", "alert-danger")
-        self.assertHasClass("eventfee-title-5", "alert-danger")
-        self.assertHasClass("eventfee-title-6", "alert-danger")
-        self.assertHasClass("eventfee-title-7", "alert-danger")
-        self.assertHasClass("eventfee-title-8", "alert-success")
-        self.assertHasClass("eventfee-title-9", "alert-success")
+        self.assertHasClass("#eventfee-title-1", "alert-success")
+        self.assertHasClass("#eventfee-title-2", "alert-success")
+        self.assertHasClass("#eventfee-title-3", "alert-success")
+        self.assertHasClass("#eventfee-title-4", "alert-danger")
+        self.assertHasClass("#eventfee-title-5", "alert-danger")
+        self.assertHasClass("#eventfee-title-6", "alert-danger")
+        self.assertHasClass("#eventfee-title-7", "alert-danger")
+        self.assertHasClass("#eventfee-title-8", "alert-success")
+        self.assertHasClass("#eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
 
@@ -4524,7 +4524,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['max_size'] = 3
         self.submit(f)
         self.traverse("Kurse")
-        self.assertHasClass("course-1-track-3", "course-exactly-full")
+        self.assertHasClass("#course-1-track-3", "course-exactly-full")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
@@ -4726,6 +4726,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'zip': b"PK\x03\x04",
         }
 
+        def assertLatex(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertIn(phrase, self.response.text)
+
+        def assertLatexNotIn(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertNotIn(phrase, self.response.text)
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -4760,16 +4772,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertLess(1000, len(self.response.body))
         # course puzzle
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Planetenretten für Anfänger')
+        assertLatex('Planetenretten für Anfänger')
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # lodgement puzzle
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Kalte Kammer')
+        assertLatex('Kalte Kammer')
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4779,10 +4789,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # public list
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertNonPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia')  # we don't want nicknames here
+        assertLatexNotIn('Garcia')
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4791,10 +4799,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
             index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia', 'Garcia')  # we don't want nicknames here
 
         # export
         # partial event export
@@ -4815,7 +4820,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
-        self.assertPresence('|cde')
+        self.assertIn('|cde', self.response.text)
         # dokuteam participant list
         self.response = save.click(href='event/event/1/download/dokuteam_participant')
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
@@ -4924,7 +4929,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             if link.endswith('lists'):  # downloads with multiple docs are zipped
                 self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
             else:
-                self.assertPresence('documentclass')
+                self.assertEqual("text/x-tex", self.response.content_type)
+                self.assertIn("documentclass", self.response.text)
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:
@@ -6802,37 +6808,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             texts: list[str], check_complete: bool = True, only_severity: bool = True,
     ) -> None:
 
-        def test_not_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertNotIn("softhide", node.classes)
+                self._assertNodeHasClass(node, "softhide")
 
-        def test_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesNotHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertIn("softhide", node.classes)
+                self._assertNodeNotHasClass(node, "softhide")
 
-        id_ = f"event_{event_id}"
-        parents = self.response.lxml.cssselect(f"#{id_}")
+        parents = self._get_nodes(f"#event_{event_id}", check_exists=False)
         if not parents:
             self.fail(f"Did not find event {event_id}.")
-        test_not_hidden(parents)
+        assertNodesNotHidden(parents)
         if texts:
-            select = lambda node, severity: node.cssselect(
+            selector = lambda severity: (
                 f"[data-severity='{severity.value}']"
-                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else ""),
+                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else "")
             )
-            nodes = select(parents[0], filtered_severity)
+            nodes = self._get_nodes(
+                selector(filtered_severity), root_node=parents[0], check_exists=False
+            )
             if not only_severity:
                 for severity in models_cv.ViolationSeverity:
                     if severity > filtered_severity:
-                        nodes.extend(select(parents[0], severity))
+                        nodes.extend(
+                            self._get_nodes(
+                                selector(severity),
+                                root_node=parents[0],
+                                check_exists=False,
+                            )
+                        )
             if not nodes:
-                self.fail(f"Did not find violations for severity {filtered_severity.name}"
-                          f" for event {event_id}.")
-            test_not_hidden(nodes)
+                self.fail(
+                    f"Did not find violations for severity {filtered_severity.name} for event {event_id}."
+                )
+            assertNodesNotHidden(nodes)
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
@@ -6848,8 +6858,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     f" I found these texts:\n" + "\n".join(node_texts),
                 )
         if not texts:
-            nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
-            test_hidden(nodes)
+            nodes = self._get_nodes(
+                ".violations", root_node=parents[0], check_exists=False
+            )
+            assertNodesHidden(nodes)
 
     @event_keeper
     @as_users("annika", "petra")
@@ -6862,13 +6874,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         def test_events_shown(*event_ids: int) -> None:
             self.assertTitle("Übersicht über Ungereimtheiten")
             for event_id in event_ids:
-                self.assertHasNotClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertNotHidden(f"#event_{event_id}")
             for event_id in all_event_ids - set(event_ids):
-                self.assertHasClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertHidden(f"#event_{event_id}")
 
         test_events_shown(1, 2, 3, 4)
 
