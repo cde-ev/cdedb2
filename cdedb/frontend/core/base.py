@@ -2029,7 +2029,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True)
         if pevent_id is not None and pevent_id != prev_pevent_id:
-            # Show the form again, if past event was selected for the first time.
+            # Show the form again, if past event changed.
+            #  This is suppressed by in the js variant.
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None

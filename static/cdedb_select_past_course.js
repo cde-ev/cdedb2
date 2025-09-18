@@ -6,7 +6,6 @@
      *
      * @param optionsByPastEvent: A mapping of past event id to list of json objects with the courses for that event.
      */
-
     $.fn.cdedbSelectPastCourse = function (optionsByPastEvent, sentinelValue=1) {
         pastCourseSelect = $(this);
         pastEventSelect = pastCourseSelect.closest("form").find(':input.pcourse-pevent-input');
