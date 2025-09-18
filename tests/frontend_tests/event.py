@@ -1553,69 +1553,92 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'},
-                      {'href': '/event/event/1/course/2/change'},
-                      {'href': '/event/event/1/course/2/show'},
-                      {'href': '/event/event/1/course/1/show'},
-                      {'href': '/event/event/1/course/1/change'})
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie", "Kursliste",
+            {'href': '/event/event/1/course/2/change'}, "Abbrechen", "Vorherige",
+            "Bearbeiten",
+        )
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual(None, f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.assertEqual("1", f.get('active_segments', index=0).value)
-        self.assertEqual(None, f.get('active_segments', index=1).value)
-        self.assertEqual("3", f.get('active_segments', index=2).value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("2", f['min_size'].value)
+        self.assertEqual(True, f['segment1'].checked)
+        self.assertEqual(False, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(True, f['segment1.is_active'].checked)
+        self.assertEqual(False, f['segment2.is_active'].checked)
+        self.assertEqual(True, f['segment3.is_active'].checked)
         self.assertEqual("Wald", f['fields.room'].value)
         self.assertEqual(True, f['is_visible'].checked)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
-        f['segments'] = ['2', '3']
-        f['active_segments'] = ['2']
+        f['segment1'] = False
+        f['segment2'] = True
+        f['segment2.is_active'] = True
+        f['segment3.is_active'] = False
         f['fields.room'] = "Canyon"
         f['is_visible'] = False
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
-        self.traverse({'href': '/event/event/1/course/1/change'})
+        self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
         self.assertEqual(f['nr'].value, "ω")
-        self.assertEqual(None, f.get('segments', index=0).value)
-        self.assertEqual("2", f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.assertEqual(None, f.get('active_segments', index=0).value)
-        self.assertEqual("2", f.get('active_segments', index=1).value)
-        self.assertEqual(None, f.get('active_segments', index=2).value)
         self.assertEqual("21", f['max_size'].value)
+        self.assertEqual(False, f['segment1'].checked)
+        self.assertEqual(True, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(False, f['segment1.is_active'].checked)
+        self.assertEqual(True, f['segment2.is_active'].checked)
+        self.assertEqual(False, f['segment3.is_active'].checked)
         self.assertEqual("Canyon", f['fields.room'].value)
         self.assertEqual(False, f['is_visible'].checked)
+
+        log_expecation = [
+            {
+                "code": const.EventLogCodes.course_changed,
+                "change_note": "Planetenretten für Anfänger",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deleted,
+                "change_note": "Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": "Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": "Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": "Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": "Planetenretten für Anfänger (Arbeitssitzung (Zweite Hälfte))",
+            },
+        ]
+        self.assertLogEqual(log_expecation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @event_keeper
     @as_users("annika", "garcia")
     def test_create_delete_course(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("Planetenretten für Anfänger")
         self.assertNonPresence("Abstract Nonsense")
-        self.traverse({'href': '/event/event/1/course/stats'},
-                      {'href': '/event/event/1/course/create'})
+        self.traverse("Kurse", "Kurs hinzufügen")
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual("2", f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        f['title'] = "Abstract Nonsense"
+        f['title'] = title = "Abstract Nonsense"
         f['nr'] = "ω"
         f['shortname'] = "math"
         f['instructors'] = "Alexander Grothendieck"
         f['notes'] = "transcendental appearence"
-        f['segments'] = ['1', '3']
+        f['segment2'] = False
+        f['segment3.is_active'] = False
         self.submit(f)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertNonPresence("Kursfelder gesetzt.", div="notifications")
@@ -1624,15 +1647,42 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("math bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual(None, f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.traverse({'href': '/event/event/1/course/1001/show'})
+        self.assertEqual(True, f['segment1'].checked)
+        self.assertEqual(False, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(True, f['segment1.is_active'].checked)
+        self.assertEqual(False, f['segment2.is_active'].checked)
+        self.assertEqual(False, f['segment3.is_active'].checked)
+        self.traverse("Abbrechen")
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
         self.assertNonPresence("Abstract Nonsense")
+
+        log_expecation = [
+            {
+                "code": const.EventLogCodes.course_created,
+                "change_note": title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": f"{title} (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": f"{title} (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": f"{title} (Arbeitssitzung (Zweite Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_deleted,
+                "change_note": title,
+            },
+        ]
+        self.assertLogEqual(log_expecation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika", "garcia")
     def test_create_course_with_fields(self) -> None:
@@ -4456,7 +4506,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Change "Backup" to "never offered" in "Kaffeekränzchen".
         self.traverse("Kurse", "Backup", "Bearbeiten")
         f = self.response.forms['configurecourseform']
-        f['segments'] = f['active_segments'] = [1, 3]
+        f['segment2'] = False
         self.submit(f)
         self.assertPresence("Wird in Kaffee nicht angeboten aber hat",
                             div="constraint-violations-list")
@@ -6600,64 +6650,46 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
-        # Disabled checkboxes have a `value` of None, but have their `_value` set.
-        self.assertEqual(
-            f.get('active_segments', index=0).value, "8")
-        self.assertEqual(
-            f.get('active_segments', index=0).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=1)._value, "13")
-        self.assertEqual(
-            f.get('active_segments', index=1)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=2)._value, "14")
-        self.assertEqual(
-            f.get('active_segments', index=2)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=3).value, "6")
-        self.assertEqual(
-            f.get('active_segments', index=3).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=4)._value, "9")
-        self.assertEqual(
-            f.get('active_segments', index=4)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=5)._value, "10")
-        self.assertEqual(
-            f.get('active_segments', index=5)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=6)._value, "7")
-        self.assertEqual(
-            f.get('active_segments', index=6)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=7).value, "11")
-        self.assertEqual(
-            f.get('active_segments', index=7).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=8)._value, "12")
-        self.assertEqual(
-            f.get('active_segments', index=8)._checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=9)._value, "15")
-        self.assertEqual(
-            f.get('active_segments', index=9)._checked, False)
+        self.assertEqual(f["segment6"].checked, True)
+        self.assertEqual(f["segment6.is_active"].checked, True)
+        self.assertEqual(f["segment7"].checked, False)
+        self.assertEqual(f["segment7.is_active"].checked, False)
+        self.assertEqual(f["segment8"].checked, True)
+        self.assertEqual(f["segment8.is_active"].checked, True)
+        self.assertEqual(f["segment9"].checked, False)
+        self.assertEqual(f["segment9.is_active"].checked, False)
+        self.assertEqual(f["segment10"].checked, False)
+        self.assertEqual(f["segment10.is_active"].checked, False)
+        self.assertEqual(f["segment11"].checked, True)
+        self.assertEqual(f["segment11.is_active"].checked, True)
+        self.assertEqual(f["segment12"].checked, True)
+        self.assertEqual(f["segment12.is_active"].checked, True)
+        self.assertEqual(f["segment13"].checked, False)
+        self.assertEqual(f["segment13.is_active"].checked, False)
+        self.assertEqual(f["segment14"].checked, False)
+        self.assertEqual(f["segment14.is_active"].checked, False)
+        self.assertEqual(f["segment15"].checked, False)
+        self.assertEqual(f["segment15.is_active"].checked, False)
 
-        f['active_segments'] = [6, 11, 12]
+        f['segment8.is_active'] = False
         self.submit(f)
         self.assertNonPresence("Ungereimtheiten",
                                div="constraint-violations", check_div=False)
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
-        course_ids = self.event.list_courses(self.key, 4)
+        event = self.event.get_event(self.key, 4)
+        course_ids = self.event.list_courses(self.key, event.id)
         for course_id, title in course_ids.items():
             if title == "Akrobatik für Anfangende":
                 continue
             data = {
-                'id': course_id,
-                'active_segments': [],
+                'segments': {
+                    track_id: None
+                    for track_id in event.tracks
+                }
             }
-            self.event.set_course(self.key, data)
+            self.event.set_course(self.key, course_id, data)
 
         self.traverse("Ungereimtheiten")
         self.assertNonPresence("Kursausschließlichkeit")
@@ -7439,7 +7471,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                           'is_participant_list_visible': True,
                           'is_course_assignment_visible': True})
         course_id = 9
-        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+        course = self.event.get_course(self.key, course_id)
+        self.event.set_course(
+            self.key,
+            course_id,
+            {
+                'segments': {
+                    track_id: {"is_active": False}
+                    for track_id in course.segments
+                },
+            },
+        )
 
         self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
         f = self.response.forms['amendregistrationform']

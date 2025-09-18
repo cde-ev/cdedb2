@@ -151,6 +151,8 @@ _CONFIG = LazyConfig()
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
+K = TypeVar('K')
+V = TypeVar('V')
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -190,31 +192,44 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
-    def __setitem__(self, type_: type[T], validator: Callable[..., T]) -> None:
+class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
+    def __setitem__(self, type_: type[T] | UnionType, validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: type[T]) -> Callable[..., T]:
+    def __getitem__(self, type_: type[T] | UnionType) -> Callable[..., T]:
         origin = typing.get_origin(type_)
         if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
-            validator = self[inner_type]
-            return _allow_None(validator)  # type: ignore[return-value]
+            return cast(Callable[..., T], _allow_None(self[inner_type]))
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
-            return make_list_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_list_validator(inner_type))
         elif typing.get_origin(type_) is set:
             [inner_type] = typing.get_args(type_)
-            return make_set_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_set_validator(inner_type))
         elif typing.get_origin(type_) is tuple:
             args = typing.get_args(type_)
             if len(args) == 2:
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
-        # TODO more container types like tuple
+        elif typing.get_origin(type_) is dict:
+            return cast(Callable[..., T], make_dict_validator(cast(type[Any], type_)))
+        elif isinstance(type_, typing.ForwardRef):
+            model_namespaces = [  # type: ignore[unreachable]
+                models_core, models_event, models_ml, models_droid, models_complaint
+            ]
+            for model_namespace in model_namespaces:
+                try:
+                    return self[type_._evaluate(vars(model_namespace), {}, set())]
+                except NameError:
+                    pass
+            raise NameError(
+                f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
+            )
+
         return super().__getitem__(type_)
 
 
@@ -398,7 +413,7 @@ def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[
     _add_typed_validator(the_validator, return_type)
 
 
-def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
+def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass.
 
     The new validator accepts a dict, checking that its keys conform to the
@@ -419,15 +434,18 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
             ) -> CdEDBObject:
                 if isinstance(val, (CdEDataclass, GenericLogFilter)):
                     val = val._to_validation()
-                val = _mapping(val, argname, **kwargs)
+                new_kwargs = {**kwargs_, **kwargs}
+                val = _mapping(val, argname, **new_kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()
                 elif issubclass(type_, CdEDataclass):
                     mandatory, optional = type_.validation_fields(creation=creation)
                 else:
                     raise RuntimeError("Impossible.")
-                val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-                val = fun(val, argname, creation=creation, type_=type_, **kwargs)
+                val = _examine_dictionary_fields(
+                    val, mandatory, optional, **new_kwargs
+                )
+                val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
                 return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
@@ -481,6 +499,9 @@ def _examine_dictionary_fields(
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
+            except KeyError as e:
+                e.args += (key,)
+                raise
         elif not allow_superfluous:
             errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
 
@@ -1175,6 +1196,37 @@ def make_pair_validator(type_: type[T]) -> PairValidator[T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
+
+
+class DictValidator(Protocol[T_co]):
+    def __call__(self, val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        ...
+
+
+def make_dict_validator(type_: type[T]) -> DictValidator[T]:
+    """
+    Given a type `dict[K, V]` create a validator to validate the keys of a mapping as K and the values as V.
+    """
+
+    key_type, value_type = typing.get_args(type_)
+
+    def dict_validator(val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        val = _mapping(val, argname, **kwargs)
+
+        errs = ValidationSummary()
+        new_val = {}
+        for key_val, val_val in val.items():
+            with errs:
+                key_val = _ALL_TYPED[key_type](key_val, f"{argname}.key", **kwargs)
+                val_val = _ALL_TYPED[value_type](val_val, f"{argname}.value", **kwargs)
+                new_val[key_val] = val_val
+
+        if errs:
+            raise errs
+
+        return new_val
+
+    return dict_validator
 
 
 def _set_of(
@@ -2861,84 +2913,26 @@ def _past_course(
     return PastCourse(val)
 
 
-COURSE_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'description': Optional[str],
-    'nr': str,
-    'shortname': LegacyShortname,
-    'instructors': Optional[str],
-    'max_size': Optional[NonNegativeInt],
-    'min_size': Optional[NonNegativeInt],
-    'is_visible': bool,
-    'notes': Optional[str],
-}
-
-COURSE_OPTIONAL_FIELDS: TypeMapping = {
-    'segments': Iterable,
-    'active_segments': Iterable,
-    'fields': Mapping,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.Course, association=const.FieldAssociations.course)
 def _course(
-    val: Any, argname: str = "course", *,
-    creation: bool = False, **kwargs: Any,
-) -> Course:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    # TODO where is creation actually set and can it be places inside kwargs?
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(COURSE_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**COURSE_OPTIONAL_FIELDS}
-        # TODO make dict(field, ...) vs {**fields, ...} consistent
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
-
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
+    val: CdEDBObject, argname: str = "course", *,
+    creation: bool = False, event: models_event.Event, **kwargs: Any,
+) -> CdEDBObject:
 
     errs = ValidationSummary()
-    if 'segments' in val:
-        # TODO why use intermediate set?
-        segments = set()
-        for anid in val['segments']:
-            # TODO replace these internal calls with calls to the public functions?
-            try:
-                v = _id(anid, 'segments', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                segments.add(v)
-        val['segments'] = segments
-    if 'active_segments' in val:
-        active_segments = set()
-        for anid in val['active_segments']:
-            try:
-                v = _id(anid, 'active_segments', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                active_segments.add(v)
-        val['active_segments'] = active_segments
-    if 'segments' in val and 'active_segments' in val:
-        if not val['active_segments'] <= val['segments']:
-            errs.append(ValueError('segments', n_(
-                "Must be a superset of active segments.")))
+
+    if not event.tracks:
+        errs.append(ValueError("event_id", n_("Event without tracks forbids courses.")))
 
     if errs:
         raise errs
 
-    return Course(val)
+    return val
+
+
+@_create_dataclass_validator(models_event.CourseSegment)
+def _course_segment(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
@@ -3080,8 +3074,9 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: dict[int, models_event.EventField],
-    association: FieldAssociations, **kwargs: Any,
+    event: models_event.Event,
+    association: FieldAssociations,
+    **kwargs: Any,
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -3099,17 +3094,17 @@ def _event_associated_fields(
     raw = copy.deepcopy(val)
     optional_fields: TypeMapping = {
         str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
-        for field in fields.values() if field.association == association
+        for field in event.fields.values() if field.association == association
     }
 
     val = _examine_dictionary_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
+    lookup: dict[str, int] = {v.field_name: k for k, v in event.fields.items()}
     for field_name, value in val.items():
         field_id = lookup[field_name]
-        entries = fields[field_id].entries
+        entries = event.fields[field_id].entries
         if entries is not None and value is not None:
             if not any(str(raw[field_name]) == x for x, _ in entries.items()):
                 errs.append(ValueError(
@@ -4760,7 +4755,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment]
         except ValidationSummary as e:
             errs.extend(e)
             continue

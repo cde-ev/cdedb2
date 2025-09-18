@@ -278,9 +278,9 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link=none) %}
+{% macro output_info(info, link=none, aclass="help-block no-color") %}
     {%- if info %}
-        <p class="help-block no-color">
+        <p class="{{ aclass }}">
             {{ make_icon('info-circle') }} {{ info }}
             {{ link }}
         </p>
@@ -575,7 +575,7 @@
             disabled="disabled" if readonly or actualreadonly,
             form=formid,
             **{ 'aria-label': arialabel }
-        )|xmlattr }} {{ attributes }}/>
+        )|xmlattr }} {{ attributes }} />
         {{ label -}}
     </label>
     {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
