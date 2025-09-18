@@ -457,6 +457,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 {'realm': case.realm}
             )
             return self.redirect(rs, "core/genesis_show_case")
+        if case.realm == "cde" and (case.pevent_id is None or case.pcourse_id is None):
+            rs.notify("error", n_("You need to specify a past event and a past course"
+                                  " for CdE genesis requests."))
+            return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
         persona_id = self.coreproxy.genesis_decide(

@@ -2721,6 +2721,11 @@ class TestCoreFrontend(FrontendTest):
         # decide cde request
         self.traverse({"href": "/core/genesis/3/show"})
         self.assertTitle("Accountanfrage von Kristin Zeder")
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        f["pcourse_id"].force_value(1)
+        self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         assert_account_presence(ml=False, event=True, cde=False)
 
@@ -3083,6 +3088,13 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
                          f" {self.CDE_GENESIS_DATA['family_name']}")
+        self._decide_genesis_case(GenesisDecision.approve, check=False)
+        self.assertNotification("vergangene Veranstaltung und Kurs enthalten")
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        f["pcourse_id"].force_value(1)
+        self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         new_persona_id = 1001
 
@@ -3106,6 +3118,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
                          f" {self.CDE_GENESIS_DATA['family_name']}")
         self.assertPresence(alternate_username)
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        f["pcourse_id"].force_value(1)
+        self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
 
         # Check that the data of the second genesis request persisted
