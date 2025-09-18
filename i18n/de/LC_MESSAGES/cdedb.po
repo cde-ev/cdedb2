@@ -13460,6 +13460,12 @@ msgstr "Aktualisieren"
 msgid "Change Realm"
 msgstr "Bereich ändern"
 
+msgid "Change Realm to Event"
+msgstr "Bereich zu Veranstaltung ändern"
+
+msgid "Change Realm to CdE"
+msgstr "Bereich zu CdE ändern"
+
 #: cdedb/frontend/templates/web/core/index.tmpl:8
 #: cdedb/frontend/templates/web/core/login.tmpl:9
 msgid "CdE-Datenbank"

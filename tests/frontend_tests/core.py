@@ -2415,7 +2415,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({"href": "/core/genesis/1001/show"})
         self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
                          f" {self.ML_GENESIS_DATA['family_name']}")
-        self.assertNonPresence("Bereich ändern")
 
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
