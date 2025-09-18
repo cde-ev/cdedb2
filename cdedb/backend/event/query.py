@@ -102,13 +102,13 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 lodgement_groups_view = registration_lodgement_group_view()
                 full_part_tables = "\n".join(
                     f"""
-                    LEFT OUTER JOIN ({reg_part_table}) AS part{part_id}
-                        ON reg.id = part{part_id}.registration_id
-                    LEFT OUTER JOIN ({lodgement_view}) AS lodgement{part_id}
-                        ON part{part_id}.lodgement_id = lodgement{part_id}.id
-                    LEFT OUTER JOIN ({lodgement_groups_view})
-                        AS lodgement_group{part_id}
-                        ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                        LEFT OUTER JOIN ({reg_part_table}) AS part{part_id}
+                            ON reg.id = part{part_id}.registration_id
+                        LEFT OUTER JOIN ({lodgement_view}) AS lodgement{part_id}
+                            ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                        LEFT OUTER JOIN ({lodgement_groups_view})
+                            AS lodgement_group{part_id}
+                            ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
                     """
                     for part_id, reg_part_table in reg_part_tables.items()
                 )
@@ -119,12 +119,12 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 course_view = registration_course_view()
                 full_track_tables = "\n".join(
                     f"""
-                    LEFT OUTER JOIN ({reg_track_table}) AS track{t_id}
-                        ON reg.id = track{t_id}.registration_id
-                    LEFT OUTER JOIN ({course_view}) AS course{t_id}
-                        ON track{t_id}.course_id = course{t_id}.id
-                    LEFT OUTER JOIN ({course_view}) AS course_instructor{t_id}
-                        ON track{t_id}.course_instructor = course_instructor{t_id}.id
+                        LEFT OUTER JOIN ({reg_track_table}) AS track{t_id}
+                            ON reg.id = track{t_id}.registration_id
+                        LEFT OUTER JOIN ({course_view}) AS course{t_id}
+                            ON track{t_id}.course_id = course{t_id}.id
+                        LEFT OUTER JOIN ({course_view}) AS course_instructor{t_id}
+                            ON track{t_id}.course_instructor = course_instructor{t_id}.id
                     """
                     for t_id, reg_track_table in reg_track_tables.items()
                 )
@@ -133,14 +133,18 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                     for track in event.tracks.values()
                 }
                 course_choices_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}"
-                    f" ON reg.id = course_choices{t_id}.base_id"
+                    f"""
+                        LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}
+                            ON reg.id = course_choices{t_id}.base_id
+                    """
                     for t_id, choices_table in course_choices_track_tables.items()
                     if choices_table is not None
                 )
                 personalized_fee_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({personalized_fee_table(fee.id)}) AS fee{fee.id}"
-                    f" ON reg.id = fee{fee.id}.registration_id"
+                    f"""
+                        LEFT OUTER JOIN ({personalized_fee_table(fee.id)}) AS fee{fee.id}
+                            ON reg.id = fee{fee.id}.registration_id
+                    """
                     for fee in event.fees.values()
                     if fee.is_personalized()
                 )
@@ -290,8 +294,10 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                     for rank in range(track.num_choices)
                 }
                 course_choices_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({single_choice_table}) AS cc{rank}"
-                    f" ON base.base_id = cc{rank}.registration_id"
+                    f"""
+                        LEFT OUTER JOIN ({single_choice_table}) AS cc{rank}
+                            ON base.base_id = cc{rank}.registration_id
+                    """
                     for rank, single_choice_table in single_choice_tables.items()
                 )
                 return f"""
@@ -313,8 +319,12 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 return f"""
                     SELECT
                         registration_id, course_id, course_instructor,
-                        (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                         AND course_id = course_instructor) AS is_course_instructor
+                        (
+                            NOT (
+                                course_id IS NULL AND course_instructor IS NOT NULL
+                            )
+                            AND course_id = course_instructor
+                        ) AS is_course_instructor
                     FROM event.registration_tracks
                     WHERE track_id = {track_id}
                 """
@@ -424,11 +434,11 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             # rank and information on whether the course is offered and taking place.
 
             # A base table with all course ids we need in the following tables.
-            base = f"""(
+            base = "({}) as c".format(f"""
                 SELECT id, max_size
                 FROM event.courses
                 WHERE event_id = {event_id}
-            ) AS c"""
+            """)
 
             # Step 3.1: Template for combining all course track information.
             def course_track_table(track: models.CourseTrack) -> str:
@@ -780,11 +790,11 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         try:
             with Atomizer(rs):
                 event = self.get_event(rs, event_id)
-                select = (
-                    f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
-                    f" FROM event.stored_queries"
-                    f" WHERE event_id = %s"
-                )
+                select = f"""
+                    SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
+                    FROM event.stored_queries
+                    WHERE event_id = %s
+                """
                 params: list[DatabaseValue_s] = [event_id]
                 if scopes:
                     select += " AND scope = ANY(%s)"
@@ -903,10 +913,11 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         """Retrieve raw data for stored event queries that cannot be deserialized."""
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        q = (
-            f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
-            f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))"
-        )
+        q = f"""
+            SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
+            FROM event.stored_queries
+            WHERE event_id = %s AND NOT(id = ANY(%s))
+        """
         with Atomizer(rs):
             retrievable_queries = self.get_event_queries(rs, event_id)
             params = (event_id, [q.query_id for q in retrievable_queries.values()])
