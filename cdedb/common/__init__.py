@@ -55,7 +55,7 @@ from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
-    from cdedb.models.event import CdEDataclassMap
+    from cdedb.models.common import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
@@ -835,7 +835,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def is_list_type(type_: type[Any]) -> bool:
+def is_list_type(type_: type[Any] | UnionType) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,
@@ -1452,7 +1452,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 3)
+EVENT_SCHEMA_VERSION = (19, 4)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

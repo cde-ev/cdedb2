@@ -3,6 +3,7 @@
 import datetime as _datetime
 import decimal as _decimal
 from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
+from types import UnionType as _UnionType
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
@@ -19,8 +20,8 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _Mapping[str, type[_Any]]
-MutableTypeMapping = _MutableMapping[_Any, type[_Any]]
+TypeMapping = _Mapping[str, type[_Any] | _UnionType]
+MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -111,7 +112,6 @@ EventFeeSetter = _NewType("EventFeeSetter", _CdEDBOptionalMap)
 EventFeeCondition = _NewType("EventFeeCondition", str)
 EventFeeModifier = _NewType("EventFeeModifier", _CdEDBObject)
 PastCourse = _NewType("PastCourse", _CdEDBObject)
-Course = _NewType("Course", _CdEDBObject)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)

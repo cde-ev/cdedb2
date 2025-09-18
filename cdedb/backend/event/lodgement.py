@@ -343,11 +343,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 ret *= self.sql_update(rs, "event.lodgements", ldata)
             if 'fields' in data:
                 # delayed validation since we need more info
-                event_fields = self._get_event_fields(rs, event_id)
+                event = self.get_event(rs, event_id)
                 fdata = affirm(
                     vtypes.EventAssociatedFields,
                     data['fields'],
-                    fields=models.EventField.many_from_database(event_fields.values()),
+                    event=event,
                     association=const.FieldAssociations.lodgement,
                 )
 
@@ -368,12 +368,12 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         """Make a new lodgement."""
         data = affirm(vtypes.Lodgement, data, creation=True)
         # direct validation since we already have an event_id
-        event_fields = self._get_event_fields(rs, data['event_id'])
+        event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
             vtypes.EventAssociatedFields,
             fdata,
-            fields=models.EventField.many_from_database(event_fields.values()),
+            event=event,
             association=const.FieldAssociations.lodgement,
         )
         data['fields'] = PsycoJson(fdata)

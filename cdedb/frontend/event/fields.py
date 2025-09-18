@@ -306,16 +306,6 @@ class EventFieldMixin(EventBaseFrontend):
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
                 change_note=change_note, internal=True)
 
-        if kind == const.FieldAssociations.registration:
-            entity_setter: EntitySetter = self.eventproxy.set_registration
-        elif kind == const.FieldAssociations.course:
-            entity_setter = self.eventproxy.set_course
-        elif kind == const.FieldAssociations.lodgement:
-            entity_setter = self.eventproxy.set_lodgement
-        else:
-            # this can not happen, since kind was validated successfully
-            raise NotImplementedError(f"Unknown kind {kind}.")
-
         code = 1
         pre_msg = build_msg(
             f"Snapshot vor Setzen von Feld {field.field_name}", change_note)
@@ -327,10 +317,18 @@ class EventFieldMixin(EventBaseFrontend):
                     'id': anid,
                     'fields': {field.field_name: data[f"input{anid}"]},
                 }
-                if msg:
-                    code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
+
+                if kind == const.FieldAssociations.registration:
+                    self.eventproxy.set_registration(rs, new, msg)
+                elif kind == const.FieldAssociations.course:
+                    del new['id']
+                    self.eventproxy.set_course(rs, anid, new)
+                elif kind == const.FieldAssociations.lodgement:
+                    self.eventproxy.set_lodgement(rs, new)
                 else:
-                    code *= entity_setter(rs, new)
+                    # this can not happen, since kind was validated successfully
+                    raise RuntimeError(f"Unknown kind {kind}.")
+
         self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
         rs.notify_return_code(code)
 

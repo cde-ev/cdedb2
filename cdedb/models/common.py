@@ -72,6 +72,10 @@ class MetaFlag(AbstractFlag):
     validate_update_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=False)`.
     Can be used to make a field immutable."""
+    validate_include = auto()
+    """Include this field in `cls.validation_fields()`.
+    Can be used if the field would otherwise be automatically excluded, like
+    a field containing another dataclass."""
     validate_exclude = validate_creation_exclude | validate_update_exclude
     """Omit this field from `cls.validation_fields()`.
     Can be used for fields that are magically inserted elsewhere."""
@@ -128,6 +132,9 @@ class MetaFlag(AbstractFlag):
 
     # asdict
 
+    asdict_exclude = auto()
+    """Exclude this field from `self.asdict()`. Useful for dicts nested in other dicts,
+    making referential ids superfluous."""
     asdict_include = auto()
     """Include the field to `self.asdict()`, even if it would otherwise not be."""
 
@@ -242,10 +249,11 @@ class CdEDataclass:
         return cls(**data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject],
+    def many_from_database(cls, list_of_data: Collection[CdEDBObject], sort: bool = True,
                            ) -> CdEDataclassMap["Self"]:
+        sort = xsorted if sort else list
         return {
-            obj.id: obj for obj in xsorted(map(cls.from_database, list_of_data))
+            obj.id: obj for obj in sort(map(cls.from_database, list_of_data))
         }
 
     @classmethod
@@ -285,7 +293,7 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
-            if MetaFlag.is_excluded(field.type):
+            if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):
                 continue
             field.type = cast(type[Any], field.type)
             if creation:
@@ -436,8 +444,10 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        return (MetaFlag.asdict_include.in_field(field)
-                or not MetaFlag.is_excluded(field.type))
+        return (
+            MetaFlag.asdict_include.in_field(field)
+            or not MetaFlag.is_excluded(field.type)
+        ) and not MetaFlag.asdict_exclude.in_field(field)
 
     @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:

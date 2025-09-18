@@ -243,8 +243,8 @@ def event(context: argparse.Namespace) -> int:
             })
     tracks = event.get_event(rs, ret).tracks
     courses = {
-        t: [event.create_course(rs, {'event_id': ret,
-                                     'title': make_counter(
+        t: [event.create_course(rs, ret,
+                                    {'title': make_counter(
                                          context, 'Veranstaltungskurs'),
                                      'description': '',
                                      'nr': make_counter(context, 'Kursnummer'),
@@ -254,7 +254,11 @@ def event(context: argparse.Namespace) -> int:
                                      'max_size': 12,
                                      'min_size': None,
                                      'notes': '',
-                                     'segments': {t},
+                                     'segments': {
+                                         t: {
+                                             "is_active": True,
+                                         },
+                                     },
                                      'is_visible': True,
                                      })
             for _ in range(1 if context.quick else 10)]

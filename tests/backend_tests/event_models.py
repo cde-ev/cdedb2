@@ -710,50 +710,79 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = 1
+        course_id = vtypes.ID(1)
+        event_id = vtypes.ID(vtypes.ID(1))
 
         expectation = models.Course(
-            id=course_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
-            segments={1, 3},  # type: ignore[arg-type]
-            active_segments={1, 3},  # type: ignore[arg-type]
+            id=course_id,
+            event_id=event_id,
+            segments={
+                1: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(1),
+                    is_active=True,
+                ),
+                3: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(3),
+                    is_active=True,
+                )
+            },
             nr='α',
             title='Planetenretten für Anfänger',
             shortname='Heldentum',
             description='Wir werden die Bäume drücken.',
             instructors='ToFi & Co',
-            min_size=2,
-            max_size=10,
+            min_size=vtypes.NonNegativeInt(2),
+            max_size=vtypes.NonNegativeInt(10),
             is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'},
+            fields=vtypes.EventAssociatedFields({'room': 'Wald'}),
         )
         reality = self.event.get_course(self.key, course_id)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
         course_ids = [1, 2]
 
         expectation = {
             1: expectation,
             2: models.Course(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
-                segments={1, 2, 3},  # type: ignore[arg-type]
-                active_segments={1, 3},  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
+                segments={
+                    1: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(1),
+                        is_active=True,
+                    ),
+                    2: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(2),
+                        is_active=False,
+                    ),
+                    3: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(3),
+                        is_active=True,
+                    )
+                },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',
                 shortname='Kabarett',
                 description='Inklusive Post, Backwaren und frühzeitigem Ableben.',
                 instructors='Bernd Lucke',
-                min_size=10,
-                max_size=20,
+                min_size=vtypes.NonNegativeInt(10),
+                max_size=vtypes.NonNegativeInt(20),
                 is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'},
+                fields=vtypes.EventAssociatedFields({'room': 'Theater'}),
             ),
         }
         reality = self.event.get_courses(self.key, course_ids)

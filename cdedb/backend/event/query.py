@@ -28,7 +28,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
     REGISTRATION_FIELDS,
@@ -306,7 +305,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             def registration_course_view() -> str:
                 course_field_columns = _get_field_select_columns(
                     event.fields, const.FieldAssociations.course)
-                columns = COURSE_FIELDS + course_field_columns
+                columns = tuple(models.Course.database_fields()) + course_field_columns
                 return f"""
                     SELECT {', '.join(columns)}, nr || '. ' || shortname AS nr_shortname
                     FROM event.courses
@@ -377,7 +376,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 return f"""
                     (
                         SELECT
-                            {', '.join(COURSE_FIELDS)},
+                            {', '.join(models.Course.database_fields())},
                             id AS course_id, nr || '. ' || shortname AS nr_shortname
                         FROM event.courses
                         WHERE event_id = {event_id}

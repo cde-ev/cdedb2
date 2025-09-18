@@ -431,7 +431,6 @@ class TestEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
         new_course = {
-            'event_id': new_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -442,12 +441,16 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {1002},
+            'segments': {
+                1002: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
-        new_course_id = self.event.create_course(self.key, new_course)
+        new_course_id = self.event.create_course(self.key, new_id, new_course)
         new_course['id'] = new_course_id
-        new_course['active_segments'] = new_course['segments']
+        new_course['event_id'] = new_id
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
@@ -922,10 +925,10 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_course(self) -> None:
         event_id = 1
+        event = self.event.get_event(self.key, event_id)
         old_courses = self.event.list_courses(self.key, event_id)
-        data = {
-            'event_id': event_id,
-            'title': "Topos theory for the kindergarden",
+        data: CdEDBObject = {
+            'title': (original_title := "Topos theory for the kindergarden"),
             'description': """This is an interesting topic
 
             which will be treated.""",
@@ -933,30 +936,86 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": False,
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
+            'fields': {
+                'room': "outside",
+            },
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         data['id'] = new_id
-        data['fields'] = {}
+        data['event_id'] = event_id
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
-        data['active_segments'] = {1, 3}
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments'],
-            'active_segments': data['active_segments']})
+        data['segments'][2] = None
+        data['segments'][1] = {
+            "is_active": True,
+        }
+        self.event.set_course(self.key, new_id, {
+            'title': data['title'], 'segments': data['segments'],
+        })
+        del data["segments"][2]
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
-        data['active_segments'] = {1}
-        self.event.set_course(self.key, {
-            'id': new_id, 'active_segments': data['active_segments']})
+        data["segments"][3]["is_active"] = True
+        self.event.set_course(self.key, new_id, {'segments': data['segments']})
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
+
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.course_created,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[3].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deleted,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": data["title"] + f" ({event.tracks[3].title})",
+            },
+        ]
+        offset = len(self.get_sample_data("event.log"))
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=offset)
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
@@ -966,7 +1025,6 @@ class TestEventBackend(BackendTest):
     def test_course_delete(self) -> None:
         event_id = 1
         data = {
-            'event_id': event_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -975,13 +1033,19 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": False,
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         self.assertEqual(
             self.event.delete_course_blockers(self.key, new_id).keys(),
             {"course_segments"})
@@ -993,11 +1057,13 @@ class TestEventBackend(BackendTest):
         # Set the status quo.
         for course_id in (1, 2, 3, 4):
             cdata = {
-                "id": course_id,
-                "segments": [1, 2, 3],
-                "active_segments": [1, 2, 3],
+                "segments": {
+                    1: {"is_active": True},
+                    2: {"is_active": True},
+                    3: {"is_active": True},
+                },
             }
-            self.event.set_course(self.key, cdata)
+            self.event.set_course(self.key, course_id, cdata)
         for reg_id in (1, 2, 3, 4):
             rdata = {
                 "id": reg_id,
@@ -2788,12 +2854,16 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_changed,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
             },
             {
                 'change_note': 'Lustigsein für Fortgeschrittene',
@@ -2804,24 +2874,36 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_deleted,
             },
             {
-                'change_note': 'Langer Kurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
             },
             {
-                'change_note': 'Backup-Kurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+            },
+            {
+                'change_note': 'Backup-Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+            },
+            {
+                'change_note': 'Backup-Kurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Blitzkurs',
                 'code': const.EventLogCodes.course_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Blitzkurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+            },
+            {
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
@@ -3623,7 +3705,6 @@ class TestEventBackend(BackendTest):
             },
         })
         data = {
-            'event_id': 1,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -3634,14 +3715,27 @@ class TestEventBackend(BackendTest):
             'max_size': 14,
             'min_size': 5,
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, 1, data)
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments']})
+        data['segments'] = {
+            1: {
+                "is_active": True,
+            },
+            2: None,
+        }
+        self.event.set_course(
+            self.key, new_id, {'title': data['title'], 'segments': data['segments']}
+        )
         new_reg = {
             'event_id': 1,
             'list_consent': True,
@@ -3893,8 +3987,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {
@@ -3903,8 +4012,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {

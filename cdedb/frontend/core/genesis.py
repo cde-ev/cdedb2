@@ -29,7 +29,11 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-from cdedb.models.past_event import past_course_entries, past_event_entries
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
@@ -346,6 +350,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if case.pevent_id:
             pcourse_ids = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
             pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
@@ -354,6 +360,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             "pevent_entries": past_event_entries(pevents),
             "pcourses": pcourses,
             "pcourse_entries": past_course_entries(pcourses),
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }
 
         return self.render(
