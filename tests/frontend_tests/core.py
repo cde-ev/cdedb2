@@ -2723,7 +2723,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
-        f["pcourse_id"].force_value(1)
         self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         assert_account_presence(ml=False, event=True, cde=False)
@@ -3088,11 +3087,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
                          f" {self.CDE_GENESIS_DATA['family_name']}")
         self._decide_genesis_case(GenesisDecision.approve, check=False)
-        self.assertNotification("vergangene Veranstaltung und Kurs enthalten")
+        self.assertNotification("müssen eine vergangene Veranstaltung enthalten")
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
-        f["pcourse_id"].force_value(1)
         self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         new_persona_id = 1001
@@ -3120,7 +3118,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
-        f["pcourse_id"].force_value(1)
         self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
 
@@ -3306,7 +3303,7 @@ class TestCoreFrontend(FrontendTest):
         # Now check it
         self.traverse({'description': 'Index'},
                       {'description': 'Account-Log'})
-        self.log_pagination("Account-Log", list(enumerate(logs, start=1001)))
+        self.log_pagination("Account-Log", tuple(enumerate(logs, start=1001)))
         f = self.response.forms["logshowform"]
         f["codes"] = [const.CoreLogCodes.genesis_verified.value,
                       const.CoreLogCodes.realm_change.value,

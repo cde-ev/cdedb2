@@ -24,9 +24,9 @@ msgstr ""
 "(promote)s."
 
 msgid ""
-"You need to specify a past event and a past course for CdE genesis requests."
+"You need to specify a past event for CdE genesis requests."
 msgstr ""
-"CdE Account Anfragen müssen eine vergangene Veranstaltung und Kurs enthalten."
+"CdE Account Anfragen müssen eine vergangene Veranstaltung enthalten."
 
 msgid "promote"
 msgstr "hinzufügen"
