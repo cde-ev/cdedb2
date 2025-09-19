@@ -40,7 +40,7 @@ def make_page(*args: Any, headless: bool = True,
                     with self.subTest(browser=name):
                         try:
                             func(self, *fargs, **fkwargs)
-                        except Exception:
+                        except Exception:  # pragma: no cover
                             f = tempfile.NamedTemporaryFile("rb", delete=False)
                             page.screenshot(full_page=True, path=f.name)
                             print(f"Saved screenshot at point of failure to {f.name}")
