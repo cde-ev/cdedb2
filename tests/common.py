@@ -640,9 +640,10 @@ class BrowserTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        # pass the cdedb config path to the subprocess
         cls.serverProcess = subprocess.Popen(
             ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
-            stderr=subprocess.DEVNULL)
+            stderr=subprocess.DEVNULL, env=os.environ.copy())
         for _ in range(42):
             try:
                 response = urllib.request.urlopen("http://localhost:5000/",
