@@ -12,7 +12,7 @@ configuration to the root logger.
 In production (and development vm), we store our logs via ``journald``. To access them,
 you can call::
 
-  sudo journalctl --reverse --unit cdedb-app --unit cde-ldap
+  sudo journalctl --unit cdedb-app --unit cde-ldap --since=today
 
 Its possible to filter the logs based on their log level / priority (info, warning ...),
 and display more information like the file and loc where the log entry was produced.

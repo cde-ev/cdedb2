@@ -9,7 +9,7 @@ cd /cdedb2 && make reload
 sudo -u cdb psql -U cdb -d cdb
 
 # access cdedb and ldap logs (most recently first)
-sudo journalctl --reverse --unit cdedb-app --unit cde-ldap
+sudo journalctl --unit cdedb-app --unit cde-ldap --since=today
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data
