@@ -3,6 +3,7 @@
 
 import functools
 import re
+import tempfile
 import unittest
 from typing import Any, Callable
 
@@ -37,7 +38,13 @@ def make_page(*args: Any, headless: bool = True,
                     page.set_default_navigation_timeout(timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
-                        func(self, *fargs, **fkwargs)
+                        try:
+                            func(self, *fargs, **fkwargs)
+                        except Exception:
+                            f = tempfile.NamedTemporaryFile("rb", delete=False)
+                            page.screenshot(full_page=True, path=f.name)
+                            print(f"Saved screenshot at point of failure to {f.name}")
+                            raise
                     browser.close()
         return new_func
 
