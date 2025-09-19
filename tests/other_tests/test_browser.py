@@ -3,6 +3,7 @@
 
 import functools
 import re
+import tempfile
 import unittest
 from typing import Any, Callable
 
@@ -37,7 +38,13 @@ def make_page(*args: Any, headless: bool = True,
                     page.set_default_navigation_timeout(timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
-                        func(self, *fargs, **fkwargs)
+                        try:
+                            func(self, *fargs, **fkwargs)
+                        except Exception:  # pragma: no cover
+                            f = tempfile.NamedTemporaryFile("rb", delete=False)
+                            page.screenshot(full_page=True, path=f.name)
+                            print(f"Saved screenshot at point of failure to {f.name}")
+                            raise
                     browser.close()
         return new_func
 
@@ -261,6 +268,7 @@ class TestBrowser(BrowserTest):
 
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
                      ).nth(1).click()
+        page.wait_for_timeout(100)
         page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
@@ -288,11 +296,34 @@ class TestBrowser(BrowserTest):
         page.get_by_role("button", name="Suche").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
 
-        expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
-        expect(page.locator('#content')).to_contain_text('Emilia')
-        expect(page.locator('#content')).to_contain_text('0,00 €')
-        expect(page.locator('#content')).to_contain_text('weiblich')
-        expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [3]')
+        expect(page.locator('#result-container')).to_contain_text('Emilia')
+        expect(page.locator('#result-container')).to_contain_text('0,00 €')
+        expect(page.locator('#result-container')).to_contain_text('weiblich')
+        expect(page.locator('#result-container')).not_to_contain_text('emilia@example.cde')
+
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\")").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").get_by_text("Nicht Angemeldet").nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Warteliste").click()
+        page.get_by_role("button", name="Suche").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [1]')
+        expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
+
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator("select:not(.selectized)").select_option(label="ist eines aus")
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-input input").focus()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Gast").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Teilnehmer").click()
+        page.locator("#tab_qf_js .filterfield-list").get_by_text("Familienname").locator("button").click()
+
+        page.get_by_role("button", name="Suche").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
+        page.screenshot(path="/tmp/screenshot.png", full_page=True)
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
+        expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmer')
+        expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage
     @make_page

@@ -295,8 +295,7 @@
                     var $s = $('<select>',{
                         'class' : "form-control input-sm input-slim",
                         'aria-label': settings.labels['filter_val'] || ''
-                    })
-                            .on("change", changeFunction);
+                    });
                     if (f.type == 'list') {
                         for (var i=0; i < f.choices.length; i++)
                             $s.append($('<option>',{'value' : f.choices[i]['value']}).text(f.choices[i]['text']))
@@ -313,6 +312,7 @@
 
                     if (f.type == 'list')
                         $s.selectize();
+                    $s.on("change", changeFunction);
                 } else {
                     $i = $('<input>',{
                         'class': "form-control input-sm input-slim",
@@ -400,7 +400,6 @@
                     'placeholder': placeholders[f.type],
                     'aria-label': settings.labels['filter_vals'] || ''
                 })
-                    .on("change", function() { f.input_filter_value.val($(this).val()); })
                     .attr('size','40')
                     .val(f.input_filter_value.val())
                     .appendTo($fieldbox);
@@ -411,6 +410,8 @@
                         options: f.choices
                     });
                 }
+
+                $i.on("change", function() { f.input_filter_value.val($(this).val()); })
 
                 break;
             }
