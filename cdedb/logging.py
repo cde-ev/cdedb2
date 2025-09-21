@@ -1,6 +1,7 @@
 """Everything to setup our logging facility."""
 
 import logging
+import os
 import pathlib
 import sys
 
@@ -28,17 +29,20 @@ def setup_root_logger() -> None:
     # setup handler
     handler: logging.Handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
     if pathlib.Path("/CONTAINER").is_file():
-        handler = logging.StreamHandler(sys.stdout)
-        # imitate the information saved to the journal
-        formatstr = (
-            "[{asctime}]"
-            " [{name}]"
-            " [{levelname}]"
-            " [{funcName} in {pathname} line {lineno}]"
-            " [{CDB_DATABASE_NAME}]"
-            " {message}"
-        )
-        handler.setFormatter(MyFormatter(formatstr, style="{"))
+        # do not log anything in the CI
+        if os.environ.get("CI"):
+            handler = logging.NullHandler()
+        else:
+            handler = logging.StreamHandler(sys.stdout)
+    formatstr = (
+        "[{asctime}]"
+        " [{name}]"
+        " [{levelname}]"
+        " [{funcName} in {pathname} line {lineno}]"
+        " [{CDB_DATABASE_NAME}]"
+        " {message}"
+    )
+    handler.setFormatter(MyFormatter(formatstr, style="{"))
     handler.setLevel(loglevel)
     logger.addHandler(handler)
 
@@ -47,6 +51,8 @@ def setup_root_logger() -> None:
 
 class MyFormatter(logging.Formatter):
     _config = Config()
+    default_time_format = '%Y-%m-%d %H:%M:%S %z'
+    default_msec_format = None
 
     def format(self, record: logging.LogRecord) -> str:
         # to distinguish between tests
