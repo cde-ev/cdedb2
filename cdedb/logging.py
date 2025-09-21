@@ -52,6 +52,8 @@ def setup_root_logger() -> None:
 
 class MyFormatter(logging.Formatter):
     _config = Config()
+    default_time_format = '%Y-%m-%d %H:%M:%S %z'
+    default_msec_format = None
 
     def format(self, record: logging.LogRecord) -> str:
         # to distinguish between tests
