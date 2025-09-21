@@ -517,11 +517,9 @@ class Config(BaseConfig):
             if key in _DEFAULTS
         }
         self._configchain = collections.ChainMap(override, _DEFAULTS)
-
-    def _update_configpath(self) -> bool:
-        if was_updated := super()._update_configpath():
-            _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
-        return was_updated
+        # This is a bit hacky, but the only opportunity to ensure the used log
+        #  level is the one specified in the config.
+        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
 
 
 class TestConfig(Config):
