@@ -11,3 +11,6 @@ sudo cp /cdedb2/related/auto-build/files/stage3/jail.local /etc/fail2ban/
 
 # sudo systemctl restart fail2ban.service
 sudo fail2ban-client reload
+
+# unrelated: update motd
+sudo cp /cdedb2/doc/source/motd-vm.txt /etc/motd
