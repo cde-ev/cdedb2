@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import tabulate
 
@@ -66,28 +66,38 @@ class EntityKeeper:
         self,
         args: list[Union[Path, str, bytes]],
         cwd: Optional[Path] = None,
-        check: Optional[bool] = True,
+        *,
+        check: Literal["raise", "log", "ignore"] = "raise",
     ) -> subprocess.CompletedProcess[bytes]:
         """Custom wrapper of subprocess.run to include proper logging.
 
-        :param check: If True, raise on error. If False, log an error.
-            If None, ignore error."""
+        :param check: Options are "raise", "log" and "ignore".
+        """
         # Delay check to ensure logging
         completed = subprocess.run(
             args, cwd=cwd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         msg = completed.stdout or ""
-        if check is not None and completed.returncode != 0:
-            self.logger.error(
-                "Git error performing command %s in directory %s: %s", args, cwd, msg
-            )
-        else:
-            self.logger.debug(
-                "Git output performing command %s in directory %s: %s", args, cwd, msg
-            )
-        if check:
-            # Now, raise the check extension
+        if check == "raise":
             completed.check_returncode()
+        elif check == "log":
+            if completed.returncode != 0:
+                self.logger.error(
+                    "Git error performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
+        elif check == "ignore":
+            if completed.returncode != 0:
+                self.logger.debug(
+                    "Git output performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
+        else:
+            raise RuntimeError("Invalid 'check' instruction.")
         return completed
 
     def init(self, entity_id: int, exists_ok: bool = False) -> "EntityKeeper":
@@ -199,19 +209,18 @@ class EntityKeeper:
                 # git diff-index reports whether the working directory is clean using
                 # its exit code. If the dir is clean it returns 0, and 1 otherwise.
                 # Does not work for the initial commit since HEAD is not defined yet.
-                completed = self._run(
+                if not self._run(
                     ["git", f"--work-tree={td}", "diff-index", "--exit-code", "HEAD"],
                     cwd=full_dir,
-                    check=None,
-                )
-                if completed.returncode == 0:
+                    check="ignore",
+                ).returncode:
                     return None
             if not may_drop:
                 commit.append("--allow-empty")
 
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
-            return self._run(commit, check=False)
+            return self._run(commit, check="log")
 
     def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
         """Retrieve the ctime of the latest log entry.
@@ -224,7 +233,7 @@ class EntityKeeper:
         # This has a non-zero exit code if HEAD does not point to any commit. This is
         # the case if there are no commits present yet.
         if self._run(
-            ["git", "rev-parse", "HEAD"], check=False, cwd=full_dir
+            ["git", "rev-parse", "HEAD"], check="ignore", cwd=full_dir
         ).returncode:
             return None
         # get the timestamp of the last commit in ISO 8601 format
