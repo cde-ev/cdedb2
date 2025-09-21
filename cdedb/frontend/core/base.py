@@ -2124,6 +2124,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Retrieve profile picture."""
         mimetype = self.coreproxy.get_foto_store(rs).get_mime_type(foto)
         if mimetype is None:
+            self.logger.warning(f"Tried to access nonexistent foto {foto!r}.")
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         path = self.coreproxy.get_foto_store(rs).get_path(foto)
         return self.send_file(rs, path=path, mimetype=mimetype)
