@@ -34,16 +34,15 @@ def setup_root_logger() -> None:
             handler = logging.NullHandler()
         else:
             handler = logging.StreamHandler(sys.stdout)
-        # imitate the information saved to the journal
-        formatstr = (
-            "[{asctime}]"
-            " [{name}]"
-            " [{levelname}]"
-            " [{funcName} in {pathname} line {lineno}]"
-            " [{CDB_DATABASE_NAME}]"
-            " {message}"
-        )
-        handler.setFormatter(MyFormatter(formatstr, style="{"))
+    formatstr = (
+        "[{asctime}]"
+        " [{name}]"
+        " [{levelname}]"
+        " [{funcName} in {pathname} line {lineno}]"
+        " [{CDB_DATABASE_NAME}]"
+        " {message}"
+    )
+    handler.setFormatter(MyFormatter(formatstr, style="{"))
     handler.setLevel(loglevel)
     logger.addHandler(handler)
 
