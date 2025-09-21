@@ -2718,8 +2718,19 @@ def drow_last_index(prefix: str = "") -> str:
 
 C = TypeVar('C', bound=CdEDBObject)
 
+@overload
+def process_dynamic_input(
+    rs: RequestState,
+    type_: type[DC],
+    existing: Collection[int],
+    spec: Mapping[str, Literal["str", "[str]"]],
+    *,
+    additional: Optional[CdEDBObject] = None,
+    creation_spec: Optional[Mapping[str, Literal["str", "[str]"]]] = None,
+    prefix: str = "",
+) -> dict[int, Optional[CdEDBObject]]: ...
 
-# TODO maybe retrieve the spec from the type_?
+@overload
 def process_dynamic_input(
     rs: RequestState,
     type_: type[C],
@@ -2729,7 +2740,20 @@ def process_dynamic_input(
     additional: Optional[CdEDBObject] = None,
     creation_spec: Optional[vtypes.TypeMapping] = None,
     prefix: str = "",
-) -> dict[int, Optional[C]]:
+) -> dict[int, Optional[C]]: ...
+
+
+# TODO maybe retrieve the spec from the type_?
+def process_dynamic_input(  # type:ignore[misc]
+    rs: RequestState,
+    type_: type[C | DC],
+    existing: Collection[int],
+    spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
+    *,
+    additional: Optional[CdEDBObject] = None,
+    creation_spec: Optional[vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]]] = None,
+    prefix: str = "",
+) -> dict[int, Optional[C | CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2760,7 +2784,7 @@ def process_dynamic_input(
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
-    creation_spec = creation_spec or spec
+    creation_spec: vtypes.TypeMapping = creation_spec or spec  # type: ignore[assignment]
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 
@@ -2770,7 +2794,7 @@ def process_dynamic_input(
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
     existing_data_spec: vtypes.TypeMapping = {
-        drow_name(key, anid, prefix): value
+        drow_name(key, anid, prefix): value  # type: ignore[misc]
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
@@ -2779,7 +2803,7 @@ def process_dynamic_input(
 
     # build the return dict of all existing entries and check if they pass validation
     ret: dict[int, Optional[C]] = {
-        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}  # type: ignore[misc]
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2788,12 +2812,12 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             models_event.PartGroup, vtypes.EventField}:
+            if type_ not in {vtypes.BallotCandidate, models_event.PartGroup,
+                             vtypes.EventField}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,  # type: ignore[assignment]
                                          field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
@@ -2805,17 +2829,18 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = type_({
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
+            entry = {key: data[drow_name(key, -marker, prefix)]  # type: ignore[assignment]
+                     for key in creation_spec}
+            assert entry is not None
             entry.update(additional)
-            ret[-marker] = check_validation(
+            ret[-marker] = check_validation(  # type: ignore[assignment]
                 rs, type_, entry, field_prefix=field_prefix,
                 field_postfix=f"_{-marker}", creation=True)
         else:
             break
         marker += 1
     rs.values[drow_last_index(prefix)] = marker - 1
-    return ret
+    return ret  # type: ignore[return-value]
 
 
 class CustomCSVDialect(csv.Dialect):

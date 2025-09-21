@@ -2597,10 +2597,10 @@ def _event_part(
                 creation = anid < 0
                 try:
                     if creation:
-                        track = _ALL_TYPED[EventTrack](
+                        track = _ALL_TYPED[models_event.CourseTrack](
                             track, 'tracks', creation=True, **kwargs)
                     else:
-                        track = _ALL_TYPED[Optional[EventTrack]](  # type: ignore[index]
+                        track = _ALL_TYPED[Optional[models_event.CourseTrack]](  # type: ignore[index]
                             track, 'tracks', **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2644,43 +2644,16 @@ def _event_part_group(
     return val
 
 
-EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'num_choices': NonNegativeInt,
-    'min_choices': NonNegativeInt,
-    'sortkey': int,
-    'course_room_field_id': Optional[ID],  # type: ignore[dict-item]
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
     creation: bool = False, **kwargs: Any,
-) -> EventTrack:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
-
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
+) -> CdEDBObject:
     if ('num_choices' in val and 'min_choices' in val
             and val['min_choices'] > val['num_choices']):
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
-
-    return EventTrack(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.TrackGroup)

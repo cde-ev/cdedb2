@@ -417,7 +417,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ID
+    part_id: vtypes.ID = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     course_room_field_id: Optional[vtypes.ID]
 

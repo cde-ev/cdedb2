@@ -89,10 +89,6 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "waitlist_field_id", "camping_mat_field_id")
 
-#: Fields of a track where courses can happen
-COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "min_choices", "sortkey", "course_room_field_id")
-
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
     "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
