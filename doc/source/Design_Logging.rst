@@ -14,8 +14,20 @@ you can call::
 
   sudo journalctl --unit cdedb-app --unit cde-ldap --since=today
 
-Its possible to filter the logs based on their log level / priority (info, warning ...),
-and display more information like the file and loc where the log entry was produced.
+Its possible to filter the logs based on their log level / priority (info, warning ...)::
+
+    sudo journalctl PRIORITY=info
+
+Beside the fields specified in ``man systemd.journal-fields``, we enable filtering by the
+name of the used database via ``CDB_DATABASE_NAME``. This is useful to distinguish output
+of tests from regular ones. Take care that filtering via ``--unit cdedb-app`` as above
+excludes all test outputs.
+
+At last, its also possible to show only logs issued by the CdEDB python application itself,
+while the ``--unit cdedb-app`` includes also related programs like fail2ban or gunicorn, with::
+
+    sudo journalctl --identifier=cdedb
+
 For further information, see ``man journalctl`` and take a look at ``cdedb/logging.py``.
 See also :doc:`Development_FS-Overview`.
 
