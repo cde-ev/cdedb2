@@ -1935,7 +1935,7 @@ class FrontendTest(BackendTest):
         # we store the absolute values of start and end in an array, because
         # they must not change when we iterate in different ways
         starts = [1]
-        ends = [length - offset - 1]
+        ends = [1]
 
         # ... iterate over all pages:
         # - by using the 'next' button

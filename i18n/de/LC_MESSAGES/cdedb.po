@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-18 21:40+0200\n"
+"POT-Creation-Date: 2025-09-15 23:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "You need to %(promote)s this account to %(realm)s realm before merging."
+msgstr ""
+"Vor dem Zusammenführen musst du diesem Account den %(realm)s Bereich %"
+"(promote)s."
+
+msgid ""
+"You need to specify a past event for CdE genesis requests."
+msgstr ""
+"CdE Account Anfragen müssen eine vergangene Veranstaltung enthalten."
+
+msgid "promote"
+msgstr "hinzufügen"
 
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
@@ -13447,6 +13460,12 @@ msgstr "Aktualisieren"
 msgid "Change Realm"
 msgstr "Bereich ändern"
 
+msgid "Change Realm to Event"
+msgstr "Bereich zu Veranstaltung ändern"
+
+msgid "Change Realm to CdE"
+msgstr "Bereich zu CdE ändern"
+
 #: cdedb/frontend/templates/web/core/index.tmpl:8
 #: cdedb/frontend/templates/web/core/login.tmpl:9
 msgid "CdE-Datenbank"
@@ -14662,8 +14681,8 @@ msgid ""
 "updating of balances."
 msgstr ""
 "Finanz-Admins verwalten Einzugsberechtigungen und Überweisungen von "
-"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, d."
-"h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
+"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, "
+"d.h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
 "Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
@@ -17536,9 +17555,9 @@ msgid ""
 "should usually not be done before the event has been archived and fully "
 "concluded."
 msgstr ""
-"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer irreversibel."
-"Das sollte nicht geschehen, bevor die Veranstaltung nicht archiviert wurde "
-"und vollständig abgeschlossen ist."
+"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer "
+"irreversibel.Das sollte nicht geschehen, bevor die Veranstaltung nicht "
+"archiviert wurde und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:418
 msgid "Balance Event"
