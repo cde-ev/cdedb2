@@ -1,6 +1,7 @@
 """Everything to setup our logging facility."""
 
 import logging
+import os
 import pathlib
 import sys
 
@@ -28,7 +29,11 @@ def setup_root_logger() -> None:
     # setup handler
     handler: logging.Handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
     if pathlib.Path("/CONTAINER").is_file():
-        handler = logging.StreamHandler(sys.stdout)
+        # do not log anything in the CI
+        if os.environ.get("CI"):
+            handler = logging.NullHandler()
+        else:
+            handler = logging.StreamHandler(sys.stdout)
         # imitate the information saved to the journal
         formatstr = (
             "[{asctime}]"
