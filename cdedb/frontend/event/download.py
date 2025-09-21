@@ -64,7 +64,7 @@ class EventDownloadMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         for registration in registrations.values():
@@ -191,7 +191,7 @@ class EventDownloadMixin(EventBaseFrontend):
             (reg_id, registrations[reg_id]) for reg_id in xsorted(registrations,
                                                                   key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         rwish = collections.defaultdict(list)
         if event.lodge_field:
@@ -306,7 +306,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(

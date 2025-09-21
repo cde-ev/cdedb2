@@ -957,11 +957,6 @@ class LodgementGroup(EventDataclass):
         return query, params
 
     @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['lodgement_ids'] = set(data['lodgement_ids'])
-        return super().from_database(data)
-
-    @classmethod
     def entries(cls, groups: CdEDataclassMap[Self]) -> list[tuple[vtypes.ID, str]]:
         return [(group.id, group.title) for group in groups.values()]
 
@@ -988,10 +983,11 @@ class Lodgement(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['fields'] = cast_fields(data['fields'], data.pop('event_fields'))
-        if 'group_data' in data:
-            data['group'] = LodgementGroup.from_database(data.pop('group_data'))
-        return super().from_database(data)
+        event = data.pop("event")
+        data['fields'] = cast_fields(data['fields'], event.fields)
+        ret = super().from_database(data)
+        ret.event = event
+        return ret
 
     def get_sortkey(self) -> Sortkey:
         return self.group.title, self.group.id, self.title

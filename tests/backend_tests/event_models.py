@@ -794,116 +794,112 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_lodgements(self) -> None:
-        lodgement_id = 1
-        # print(self.event.new_get_lodgement(self.key, lodgement_id))
+        lodgement_id = vtypes.ID(1)
+        event_id = vtypes.ID(1)
 
         expectation = models.Lodgement(
-            id=lodgement_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
+            id=lodgement_id,
+            event_id=event_id,
             group=models.LodgementGroup(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
                 title='AußenWohnGruppe',
                 lodgement_ids={1},
                 regular_capacity=5,
                 camping_mat_capacity=1,
             ),
-            group_id=2,  # type: ignore[arg-type]
+            group_id=vtypes.ID(2),
             title='Warme Stube',
-            regular_capacity=5,
-            camping_mat_capacity=1,
+            regular_capacity=vtypes.NonNegativeInt(5),
+            camping_mat_capacity=vtypes.NonNegativeInt(1),
             notes=None,
-            fields={'contamination': 'high'},
+            fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
         )
 
         reality = self.event.new_get_lodgement(self.key, lodgement_id)
 
-        self.assertEqual(
-            vars(expectation),
-            vars(reality),
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
-        event_id = 1
         lodgement_ids = self.event.list_lodgements(self.key, event_id)
-        # print(self.event.new_get_lodgements(self.key, lodgement_ids))
 
         expectation = {
             1: models.Lodgement(
-                id=1,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(1),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=2,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(2),
+                    event_id=event_id,
                     title="AußenWohnGruppe",
                     lodgement_ids={1},
                     regular_capacity=5,
                     camping_mat_capacity=1,
                 ),
-                group_id=2,  # type: ignore[arg-type]
+                group_id=vtypes.ID(2),
                 title='Warme Stube',
-                regular_capacity=5,
-                camping_mat_capacity=1,
+                regular_capacity=vtypes.NonNegativeInt(5),
+                camping_mat_capacity=vtypes.NonNegativeInt(1),
                 notes=None,
-                fields={'contamination': 'high'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
             2: models.Lodgement(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=1,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1),
+                    event_id=event_id,
                     title="Haupthaus",
                     lodgement_ids={2, 4},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=1,  # type: ignore[arg-type]
+                group_id=vtypes.ID(1),
                 title='Kalte Kammer',
-                regular_capacity=10,
-                camping_mat_capacity=2,
+                regular_capacity=vtypes.NonNegativeInt(10),
+                camping_mat_capacity=vtypes.NonNegativeInt(2),
                 notes='Dafür mit Frischluft.',
-                fields={'contamination': 'none'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'none'}),
+            ),
             3: models.Lodgement(
-                id=3,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(3),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=3,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(3),
+                    event_id=event_id,
                     title="Sonstige",
                     lodgement_ids={3},
                     regular_capacity=0,
                     camping_mat_capacity=100,
                 ),
-                group_id=3,  # type: ignore[arg-type]
+                group_id=vtypes.ID(3),
                 title='Kellerverlies',
-                regular_capacity=0,
-                camping_mat_capacity=100,
+                regular_capacity=vtypes.NonNegativeInt(0),
+                camping_mat_capacity=vtypes.NonNegativeInt(100),
                 notes='Nur für Notfälle.',
-                fields={'contamination': 'low'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'low'}),
+            ),
             4: models.Lodgement(
-                id=4,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(4),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=1,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1),
+                    event_id=event_id,
                     title="Haupthaus",
                     lodgement_ids={2, 4},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=1,  # type: ignore[arg-type]
+                group_id=vtypes.ID(1),
                 title='Einzelzelle',
-                regular_capacity=1,
-                camping_mat_capacity=0,
+                regular_capacity=vtypes.NonNegativeInt(1),
+                camping_mat_capacity=vtypes.NonNegativeInt(0),
                 notes=None,
-                fields={'contamination': 'high'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
         }
-
         reality = self.event.new_get_lodgements(self.key, lodgement_ids)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation, reality)
 
     @as_users("anton")
     def test_get_lodgement_groups(self) -> None:

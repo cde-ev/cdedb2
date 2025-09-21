@@ -589,14 +589,14 @@ class EventBaseFrontend(AbstractUserFrontend):
         choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
-        all_lodgements = self.eventproxy.get_lodgements(
+        all_lodgements = self.eventproxy.new_get_lodgements(
             rs, self.eventproxy.list_lodgements(rs, event.id))
         if lodgement_id is None:
             lodgements = all_lodgements
         elif lodgement_id < 0:
             lodgements = {}
         else:
-            lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
+            lodgements = self.eventproxy.new_get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations,

@@ -31,7 +31,6 @@ from cdedb.common import (
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    cast_fields,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -233,44 +232,6 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgements(
-        self, rs: RequestState, lodgement_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        """Retrieve data for some lodgements.
-
-        All have to be from the same event.
-        """
-        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
-        with Atomizer(rs):
-            data = self.sql_select(
-                rs, "event.lodgements", LODGEMENT_FIELDS, lodgement_ids
-            )
-            if not data:
-                return {}
-            events = {e['event_id'] for e in data}
-            if len(events) > 1:
-                raise ValueError(n_("Only lodgements from exactly one event allowed!"))
-            event_id = unwrap(events)
-            if not is_privileged(
-                rs, EventPrivileges.lodgements_read, event_id=event_id
-            ):
-                raise PrivilegeError(n_("Not privileged."))
-            event_fields = models.EventField.many_from_database(
-                self._get_event_fields(rs, event_id).values()
-            )
-            ret = {e['id']: e for e in data}
-            for lodge in ret.values():
-                lodge['fields'] = cast_fields(lodge['fields'], event_fields)
-        return {e['id']: e for e in data}
-
-    class _GetLodgementProtocol(Protocol):
-        def __call__(self, rs: RequestState, lodgement_id: int) -> CdEDBObject: ...
-
-    get_lodgement: _GetLodgementProtocol = singularize(
-        get_lodgements, "lodgement_ids", "lodgement_id"
-    )
-
-    @access("event")
     def new_get_lodgements(
         self, rs: RequestState, lodgement_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Lodgement]:
@@ -289,23 +250,13 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 rs, EventPrivileges.lodgements_read, event_id=event_id
             ):
                 raise PrivilegeError(n_("Not privileged."))
-            group_data = {
-                e['id']: e
-                for e in self.query_all(
-                    rs,
-                    *models.LodgementGroup.get_select_query(
-                        [lodge['group_id'] for lodge in lodgement_data], "id"
-                    ),
-                )
-            }
-            event_fields = self._get_event_fields(rs, event_id)
+            groups = self.get_lodgement_groups(rs, event_id)
+            event = self.get_event(rs, event_id)
         return models.Lodgement.many_from_database([
             {
                 **lodge,
-                'group_data': group_data[lodge['group_id']],
-                'event_fields': models.EventField.many_from_database(
-                    event_fields.values()
-                ),
+                'group': groups[lodge['group_id']],
+                'event': event,
             }
             for lodge in lodgement_data
         ])
@@ -434,8 +385,8 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             remove or ignore. If None or empty, cascade none.
         """
         lodgement_id = affirm(vtypes.ID, lodgement_id)
-        lodgement = self.get_lodgement(rs, lodgement_id)
-        event_id = lodgement["event_id"]
+        lodgement = self.new_get_lodgement(rs, lodgement_id)
+        event_id = lodgement.event_id
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
@@ -469,12 +420,14 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
+                ret *= self.sql_delete_one(
+                    rs, models.Lodgement.database_table, lodgement_id
+                )
                 self.event_log(
                     rs,
                     const.EventLogCodes.lodgement_deleted,
                     event_id,
-                    change_note=lodgement["title"],
+                    change_note=lodgement.title,
                 )
             else:
                 raise ValueError(

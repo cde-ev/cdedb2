@@ -176,16 +176,12 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
-            entities = self.eventproxy.get_lodgements(rs, ids)
-            groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+            lodgements = self.eventproxy.new_get_lodgements(rs, ids)
             labels = {
-                lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
-                         else safe_filter(f"{lodg['title']}, <em>"
-                                          f"{groups[lodg['group_id']].title}</em>")
-                for lodg_id, lodg in entities.items()}
-            ordered_ids = xsorted(
-                entities.keys(),
-                key=lambda anid: EntitySorter.lodgement(entities[anid]))
+                lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
+                for lodg_id, lodg in lodgements.items()
+            }
+            ordered_ids = list(lodgements.keys())
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
