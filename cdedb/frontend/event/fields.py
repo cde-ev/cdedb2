@@ -28,16 +28,18 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
     drow_name,
     process_dynamic_input,
-    request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_extractor,
+    event_guard,
+)
 
 EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
@@ -292,12 +294,9 @@ class EventFieldMixin(EventBaseFrontend):
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
-        data_params: vtypes.TypeMapping = {
-            f"input{anid}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for anid in entities
-        }
-        data = request_extractor(rs, data_params)
+        data = event_associated_fields_extractor(
+            rs, rs.ambience["event"], kind, field_id
+        )
         if rs.has_validation_errors():
             return self.field_multiset_form(
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
@@ -309,19 +308,15 @@ class EventFieldMixin(EventBaseFrontend):
         post_msg = build_msg(f"Setze Feld {field.field_name}", change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
-            if data[f"input{anid}"] != entity['fields'].get(field.field_name):
-                new = {
-                    'id': anid,
-                    'fields': {field.field_name: data[f"input{anid}"]},
-                }
-
+            if data[field.field_name] != entity['fields'].get(field.field_name):
+                update: CdEDBObject = {'fields': data}
                 if kind == const.FieldAssociations.registration:
-                    self.eventproxy.set_registration(rs, new, msg)
+                    update['id'] = anid
+                    self.eventproxy.set_registration(rs, update, msg)
                 elif kind == const.FieldAssociations.course:
-                    del new['id']
-                    self.eventproxy.set_course(rs, anid, new)
+                    self.eventproxy.set_course(rs, anid, update)
                 elif kind == const.FieldAssociations.lodgement:
-                    self.eventproxy.set_lodgement(rs, new)
+                    self.eventproxy.set_lodgement(rs, anid, update)
                 else:
                     # this can not happen, since kind was validated successfully
                     raise RuntimeError(f"Unknown kind {kind}.")

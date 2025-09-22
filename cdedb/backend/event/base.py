@@ -732,15 +732,10 @@ class EventBaseBackend(EventLowLevelBackend):
                 self._set_event_parts(rs, new_id, data['parts'])
             if groups := data.get('lodgement_groups'):
                 for creation_id in mixed_existence_sorter(groups):
-                    lg_data = groups[creation_id]
-                    lg_data['event_id'] = new_id
-                    self.create_lodgement_group(rs, lg_data)
+                    self.create_lodgement_group(rs, new_id, groups[creation_id])
             else:
-                lg_data = vtypes.LodgementGroup({
-                    'title': data['title'],
-                    'event_id': new_id,
-                })
-                self.create_lodgement_group(rs, lg_data)
+                lg_data = {"title": data['title']}
+                self.create_lodgement_group(rs, new_id, lg_data)
             if fees := data.get('fees'):
                 self.set_event_fees(rs, new_id, fees)
             self.event_keeper_create(rs, new_id)
@@ -767,20 +762,25 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def create_lodgement_group(self, rs: RequestState,
-                               data: vtypes.LodgementGroup) -> DefaultReturnCode:
+    def create_lodgement_group(
+            self, rs: RequestState, event_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Make a new lodgement group."""
-        data = affirm(vtypes.LodgementGroup, data, creation=True)
+        event_id = affirm(vtypes.ID, event_id)
+        data = affirm(models.LodgementGroup, data, creation=True)
 
-        if not is_privileged(rs, EventPrivileges.lodgements_write,
-                             event_id=data['event_id']):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_lock(rs, event_id=data['event_id'])
+        if not is_privileged(rs, EventPrivileges.lodgements_write, event_id):
+            raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
         with Atomizer(rs):
-            new_id = self.sql_insert(rs, "event.lodgement_groups", data)
+            self.assert_lock(rs, event_id=event_id)
+            data["event_id"] = event_id
+            new_id = self.sql_insert(rs, models.LodgementGroup.database_table, data)
             self.event_log(
-                rs, const.EventLogCodes.lodgement_group_created,
-                data['event_id'], change_note=data['title'])
+                rs,
+                const.EventLogCodes.lodgement_group_created,
+                data['event_id'],
+                change_note=data['title']
+            )
         return new_id
 
     @access("event")

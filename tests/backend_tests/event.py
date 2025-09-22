@@ -455,33 +455,32 @@ class TestEventBackend(BackendTest):
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
 
-        new_group: CdEDBObject = {
-            'event_id': new_id,
-            'title': "Nebenan",
-        }
+        new_group_data: CdEDBObject = {'title': "Nebenan"}
         new_group_id = self.event.create_lodgement_group(
-            self.key, vtypes.LodgementGroup(new_group))
+            self.key, new_id, new_group_data
+        )
         self.assertLess(0, new_group_id)
-        new_group.update({
+        new_group_data.update({
             'id': new_group_id,
+            'event_id': new_id,
             'lodgement_ids': set(),
             'regular_capacity': 0,
             'camping_mat_capacity': 0,
         })
+        new_group = models.LodgementGroup(**new_group_data)
         self.assertEqual(
-            models.LodgementGroup(**new_group),
+            new_group,
             self.event.get_lodgement_groups(self.key, new_id)[new_group_id],
         )
 
         new_lodgement_data: CdEDBObject = {
-            "event_id": new_id,
             "group_id": new_group_id,
             "title": 'HY',
             "notes": "Notizen",
             "regular_capacity": 42,
             "camping_mat_capacity": 11,
         }
-        new_lodge_id = self.event.create_lodgement(self.key, new_lodgement_data)
+        new_lodge_id = self.event.create_lodgement(self.key, new_id, new_lodgement_data)
         self.assertLess(0, new_lodge_id)
         new_lodgement_data.update({
             'id': new_lodge_id,
@@ -1772,15 +1771,12 @@ class TestEventBackend(BackendTest):
             expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
         )
 
-        new_group: CdEDBObject = {
-            'event_id': event_id,
-            'title': "Nebenan",
-        }
-        new_group_id = self.event.create_lodgement_group(
-            self.key, vtypes.LodgementGroup(new_group))
+        new_group: CdEDBObject = {'title': "Nebenan"}
+        new_group_id = self.event.create_lodgement_group(self.key, event_id, new_group)
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
+            'event_id': event_id,
             'lodgement_ids': set(),
             'camping_mat_capacity': 0,
             'regular_capacity': 0,
@@ -1789,11 +1785,10 @@ class TestEventBackend(BackendTest):
             models.LodgementGroup(**new_group),
             self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
         )
-        update = {
-            'id': new_group_id,
-            'title': "Auf der anderen Rheinseite",
-        }
-        self.assertLess(0, self.event.set_lodgement_group(self.key, update))
+        update = {'title': "Auf der anderen Rheinseite"}
+        self.assertLess(
+            0, self.event.set_lodgement_group(self.key, new_group_id, update)
+        )
         new_group.update(update)
         self.assertEqual(
             models.LodgementGroup(**new_group),
@@ -1801,14 +1796,13 @@ class TestEventBackend(BackendTest):
         )
 
         new_lodgement: CdEDBObject = {
-            'event_id': event_id,
             'regular_capacity': 42,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
         }
-        new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
+        new_lodgement_id = self.event.create_lodgement(self.key, event_id, new_lodgement)
         self.assertLess(0, new_lodgement_id)
         new_lodgement['id'] = new_lodgement_id
         new_lodgement['event_id'] = event_id
@@ -1926,23 +1920,22 @@ class TestEventBackend(BackendTest):
         )
         new = {
             'regular_capacity': 42,
-            'event_id': 1,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': 3,
         }
-        new_id = self.event.create_lodgement(self.key, new)
+        new_id = self.event.create_lodgement(self.key, event_id, new)
         self.assertLess(0, new_id)
         new['id'] = new_id
+        new['event_id'] = event_id
         new['fields'] = {}
         self.assertEqual(new, self.event.new_get_lodgement(self.key, new_id).as_dict())
         update = {
             'regular_capacity': 21,
             'notes': None,
-            'id': new_id,
         }
-        self.assertLess(0, self.event.set_lodgement(self.key, update))
+        self.assertLess(0, self.event.set_lodgement(self.key, new_id, update))
         new.update(update)
         self.assertEqual(new, self.event.new_get_lodgement(self.key, new_id).as_dict())
         expectation_list = {
@@ -3829,19 +3822,17 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, data, change_note="Boring change.")
         new = {
             'regular_capacity': 42,
-            'event_id': 1,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': 1,
         }
-        new_id = self.event.create_lodgement(self.key, new)
+        new_id = self.event.create_lodgement(self.key, event_id=1, data=new)
         update = {
             'regular_capacity': 21,
             'notes': None,
-            'id': new_id,
         }
-        self.event.set_lodgement(self.key, update)
+        self.event.set_lodgement(self.key, new_id, update)
         self.event.delete_lodgement(self.key, new_id)
         data: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
             const.QuestionnaireUsages.additional:

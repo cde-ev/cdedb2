@@ -96,12 +96,13 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
 
 
 def event_associated_fields_extractor(
-        rs: RequestState, event: models.Event, association: const.FieldAssociations
+        rs: RequestState, event: models.Event, association: const.FieldAssociations,
+        field_id: int | None = None,
 ) -> CdEDBObject:
     """Given an event, extract inputs for all event fields of the given association."""
     fields = [
         field for field in event.fields.values()
-        if field.association == association
+        if field.association == association and (field_id is None or field.id == field_id)
     ]
     field_params: vtypes.TypeMapping = {
         field.request_name: FIELD_DATATYPE_VALIDATORS[field.kind] | None
