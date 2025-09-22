@@ -2847,7 +2847,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.lodgement_changed,
             },
             {
-                'change_note': 'Kalte Kammer',
+                'change_note': 'Kalte Kammer -> Kühle Kammer',
                 'code': const.EventLogCodes.lodgement_changed,
             },
             {

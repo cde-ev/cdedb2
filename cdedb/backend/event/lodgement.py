@@ -327,11 +327,15 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                     changed = True
 
             if changed:
+                if not data.get("title") or data["title"] == current.title:
+                    change_note = current.title
+                else:
+                    change_note = f"{current.title} -> {data['title']}"
                 self.event_log(
                     rs,
                     const.EventLogCodes.lodgement_changed,
                     current.event_id,
-                    change_note=data.get("title") or current.title,
+                    change_note=change_note,
                 )
 
         return ret
