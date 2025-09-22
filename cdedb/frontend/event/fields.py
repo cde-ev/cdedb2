@@ -177,6 +177,7 @@ class EventFieldMixin(EventBaseFrontend):
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
             lodgements = self.eventproxy.new_get_lodgements(rs, ids)
+            entities = {lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()}
             labels = {
                 lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
                 for lodg_id, lodg in lodgements.items()
