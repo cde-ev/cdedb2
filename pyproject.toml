@@ -40,9 +40,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "mypy==1.14.0",
+    "mypy==1.18.2",
     "lxml-stubs",
-    "ruff==0.8.4",
+    "ruff==0.12.8",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
