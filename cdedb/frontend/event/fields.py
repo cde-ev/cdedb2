@@ -37,7 +37,8 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import (
     EventBaseFrontend,
-    event_associated_fields_extractor,
+    event_associated_fields_multi_extractor,
+    event_associated_fields_to_request_multi,
     event_guard,
 )
 
@@ -254,15 +255,17 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
-        values = {f"input{anid}": entity['fields'].get(field.field_name)
-                  for anid, entity in entities.items()}
-        merge_dicts(rs.values, values)
+        merge_dicts(
+            rs.values,
+            *event_associated_fields_to_request_multi(rs.ambience['event'], entities),
+        )
         return self.render(
             rs, "fields/field_multiset", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
                 'entities': entities, 'labels': labels, 'ordered': ordered_ids,
                 'kind': kind.value, 'change_note': change_note,
                 'cancellink': self.FIELD_REDIRECT[kind],
+                'field': rs.ambience['event'].fields[field_id] if field_id else None,
             },
             get_mandatory_form_fields(self.field_multiset),
         )
@@ -294,8 +297,8 @@ class EventFieldMixin(EventBaseFrontend):
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
-        data = event_associated_fields_extractor(
-            rs, rs.ambience["event"], kind, field_id
+        data = event_associated_fields_multi_extractor(
+            rs, rs.ambience["event"], kind, entities, field_id
         )
         if rs.has_validation_errors():
             return self.field_multiset_form(
@@ -308,8 +311,8 @@ class EventFieldMixin(EventBaseFrontend):
         post_msg = build_msg(f"Setze Feld {field.field_name}", change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
-            if data[field.field_name] != entity['fields'].get(field.field_name):
-                update: CdEDBObject = {'fields': data}
+            if data[anid][field.field_name] != entity['fields'].get(field.field_name):
+                update: CdEDBObject = {'fields': data[anid]}
                 if kind == const.FieldAssociations.registration:
                     update['id'] = anid
                     self.eventproxy.set_registration(rs, update, msg)

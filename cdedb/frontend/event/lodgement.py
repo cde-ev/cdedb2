@@ -416,7 +416,9 @@ class EventLodgementMixin(EventBaseFrontend):
                               lodgement_id: int) -> Response:
         """Render form."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
-        field_values = event_associated_fields_to_request(rs.ambience["lodgement"])
+        field_values = event_associated_fields_to_request(
+            rs.ambience['event'], rs.ambience["lodgement"]
+        )
         merge_dicts(rs.values, rs.ambience['lodgement'].as_dict(), field_values)
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups},
                            models.Lodgement.mandatory_form_fields(creation=False))
