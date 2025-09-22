@@ -1389,9 +1389,8 @@ class FrontendTest(BackendTest):
         for path in mails:
             with open(path, encoding="utf-8") as f:
                 raw = f.read()
-                parser = email.parser.Parser(policy=email.policy.default)  # type: ignore[arg-type]
-                msg = cast(email.message.EmailMessage, parser.parsestr(raw))
-                ret.append(msg)
+                parser = email.parser.Parser(policy=email.policy.default)
+                ret.append(parser.parsestr(raw))
         return ret
 
     def fetch_mail_content(self, index: int = 0) -> str:

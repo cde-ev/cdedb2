@@ -125,6 +125,7 @@ from cdedb.common.query import (
     NO_VALUE_OPERATORS,
     VALID_QUERY_OPERATORS,
     Query,
+    QueryConstraint,
     QueryOperators,
     QueryOrder,
     QueryScope,
@@ -2437,7 +2438,7 @@ EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any], atype: type[T], argname: str,
     creation_only: bool, **kwargs: Any,
-) -> Mapping[int, Optional[T]]:
+) -> Mapping[int, T | None]:
     """Helper to validate a `CdEDBOptionalMap` of a given type.
 
     The map may contain positive or negative IDs. Positive IDs may be either None,
@@ -2447,7 +2448,7 @@ def _optional_object_mapping_helper(
 
     :param creation_only: If True, only allow negative IDs.
     """
-    ret = {}
+    ret: dict[int, T | None] = {}
     errs = ValidationSummary()
     for anid, val in val_dict.items():
         with errs:
@@ -2457,12 +2458,12 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](
+                new_val = _ALL_TYPED[atype](
                     val, argname, creation=creation, id_=anid, **kwargs)
             else:
-                val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
+                new_val = _ALL_TYPED[atype | None](
                     val, argname, creation=creation, id_=anid, **kwargs)
-            ret[anid] = val
+            ret[anid] = new_val
 
     if errs:
         raise errs
@@ -2754,7 +2755,7 @@ def _event_field(
         creation=creation)
 
     if 'entries' in optional_fields:
-        optional_fields['entries'] = Any  # type: ignore[assignment]
+        optional_fields['entries'] = Any
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2979,24 +2980,22 @@ def _registration(
 
     errs = ValidationSummary()
     if 'parts' in val:
-        newparts = {}
+        newparts: dict[int, RegistrationPart | None] = {}
         for anid, part in val['parts'].items():
             try:
                 anid = _id(anid, 'parts', **kwargs)
-                part = _ALL_TYPED[Optional[RegistrationPart]](  # type: ignore[index]
-                    part, 'parts', **kwargs)
+                part = _ALL_TYPED[RegistrationPart | None](part, 'parts', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
                 newparts[anid] = part
         val['parts'] = newparts
     if 'tracks' in val:
-        newtracks = {}
+        newtracks: dict[int, RegistrationTrack | None] = {}
         for anid, track in val['tracks'].items():
             try:
                 anid = _id(anid, 'tracks', **kwargs)
-                track = _ALL_TYPED[Optional[RegistrationTrack]](  # type: ignore[index]
-                    track, 'tracks', **kwargs)
+                track = _ALL_TYPED[RegistrationTrack | None](track, 'tracks', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -3694,12 +3693,13 @@ def _partial_registration(
                 newtracks[anid] = track
         val['tracks'] = newtracks
     if 'personalized_fees' in val:
-        newfees = {}
+        newfees: dict[int, decimal.Decimal | None] = {}
         for fee_id, amount in val['personalized_fees'].items():
             try:
                 fee_id = _id(fee_id, 'personalized_fees', **kwargs)
-                amount = _ALL_TYPED[Optional[decimal.Decimal]](  # type: ignore[index]
-                    amount, 'personalized_fees', **kwargs)
+                amount = _ALL_TYPED[decimal.Decimal | None](
+                    amount, 'personalized_fees', **kwargs
+                )
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -4233,7 +4233,7 @@ def _ballot(
                         "Mustn’t be before end of voting period.")))
 
     if 'candidates' in val:
-        newcandidates = {}
+        newcandidates: dict[int, BallotCandidate | None] = {}
         for anid, candidate in val['candidates'].items():
             try:
                 anid = _int(anid, 'candidates', **kwargs)
@@ -4242,8 +4242,9 @@ def _ballot(
             else:
                 creation = anid < 0
                 try:
-                    candidate = _ALL_TYPED[Optional[BallotCandidate]](  # type: ignore[index]
-                        candidate, 'candidates', creation=creation, **kwargs)
+                    candidate = _ALL_TYPED[BallotCandidate | None](
+                        candidate, 'candidates', creation=creation, **kwargs
+                    )
                 except ValidationSummary as e:
                     errs.extend(e)
                 else:
@@ -4516,7 +4517,7 @@ def _query_input(
     if val.get("query_id"):
         query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
-    constraints = []
+    constraints: list[QueryConstraint] = []
     order: list[QueryOrder] = []
     errs = ValidationSummary()
 
