@@ -115,7 +115,7 @@ def event_associated_fields_extractor(
 
 
 def event_associated_fields_to_request(
-        entity: models.Course
+        entity: models.Course | models.Lodgement
 ) -> CdEDBObject:
     """
     Given an entity, prepare the associated field data to be put into a form.

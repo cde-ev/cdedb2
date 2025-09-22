@@ -969,7 +969,9 @@ class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
 
-    # event: Event
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, default=cast(Event, None),
+    )
     event_id: vtypes.ID
     group: LodgementGroup
     group_id: vtypes.ID
