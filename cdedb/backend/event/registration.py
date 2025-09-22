@@ -490,7 +490,7 @@ class EventRegistrationBackend(EventBaseBackend):
         data = self.query_all(rs, query, {"persona_id": persona_id})
         ret: dict[int, dict[int, dict[int, const.RegistrationPartStati]]] = {}
         for e in data:
-            reg = e.setdefault(e['event_id'], {}).setdefault(e['registration_id'], {})
+            reg = ret.setdefault(e['event_id'], {}).setdefault(e['registration_id'], {})
             reg[e['part_id']] = const.RegistrationPartStati(e['status'])
         return ret
 
