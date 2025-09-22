@@ -119,7 +119,7 @@ class TestOffline(FrontendTest):
             self.submit(f)
             self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
             f = self.response.forms['fieldform']
-            f['input1'] = "Ich will auf jeden Fall mit Anton A. auf ein Zimmer!"
+            f['fields.lodge1'] = "Ich will auf jeden Fall mit Anton A. auf ein Zimmer!"
             f['change_note'] = "EventKeeper test commit."
             self.submit(f)
 
