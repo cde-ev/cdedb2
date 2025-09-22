@@ -17,7 +17,7 @@ import enum
 import itertools
 import re
 from collections.abc import Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 from typing_extensions import TypeAlias
 
@@ -251,12 +251,6 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
 QueryConstraint = tuple[str, QueryOperators, Any]
-
-
-class QueryConstraintType(NamedTuple):
-    field: str
-    op: QueryOperators
-    value: Any
 
 
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting

@@ -469,25 +469,19 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
 
-            entry_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntry,
-                    entry_data,
-                    creation=True,
-                    passthrough=True,
-                    entries=case.entries,
-                ),
+            entry_data = affirm(
+                models.ComplaintEntry,
+                entry_data,
+                creation=True,
+                passthrough=True,
+                entries=case.entries,
             )
-            version_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntryVersion,
-                    version_data,
-                    creation=True,
-                    passthrough=True,
-                    entry_type=entry_data['entry_type'],
-                ),
+            version_data = affirm(
+                models.ComplaintEntryVersion,
+                version_data,
+                creation=True,
+                passthrough=True,
+                entry_type=entry_data['entry_type'],
             )
 
             entry_data["case_id"] = case_id
@@ -508,15 +502,12 @@ class ComplaintBackend(AbstractBackend):
         """Add a new version of an existing complaint entry."""
         entry_id = affirm(vtypes.ID, entry_id)
         entry = self.get_case(rs, self._get_case_id(rs, entry_id)).entries[entry_id]
-        data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                data,
-                creation=False,
-                passthrough=True,
-                entry_type=entry.entry_type,
-            ),
+        data = affirm(
+            models.ComplaintEntryVersion,
+            data,
+            creation=False,
+            passthrough=True,
+            entry_type=entry.entry_type,
         )
         dreason = affirm_optional(str, dreason)
 
@@ -563,15 +554,12 @@ class ComplaintBackend(AbstractBackend):
 
         revocation_type = const.ComplaintEntryType.revocation_explanation
 
-        version_data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                version_data,
-                creation=True,
-                passthrough=True,
-                entry_type=revocation_type,
-            ),
+        version_data = affirm(
+            models.ComplaintEntryVersion,
+            version_data,
+            creation=True,
+            passthrough=True,
+            entry_type=revocation_type,
         )
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
