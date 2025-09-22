@@ -398,7 +398,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 LEFT JOIN event.course_tracks AS ct
                     ON cs.track_id = ct.id
             WHERE tg.event_id = %(event_id)s AND tg.constraint_type = %(constraint_type)s
-                {"AND ct.par_id = ANY(%(involved_parts)s)" if involved_parts else ""}
+                {"AND ct.part_id = ANY(%(involved_parts)s)" if involved_parts else ""}
             GROUP BY tg.id
         """
 
@@ -565,7 +565,7 @@ class EventRegistrationBackend(EventBaseBackend):
         conditions = ["regs.event_id = %(event_id)s", "rparts.status = %(reg_status)s"]
         params = {
             "event_id": event_id,
-            "reg_stratus": const.RegistrationPartStati.participant,
+            "reg_status": const.RegistrationPartStati.participant,
         }
         query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
@@ -820,7 +820,7 @@ class EventRegistrationBackend(EventBaseBackend):
             "track_id": track_id,
             "course_id": course_id,
             "choice_rank": position.int if position is not None else None,
-            "regsistration_ids": reg_ids,
+            "registration_ids": reg_ids,
         }
         if track_id:
             conditions.append("course_tracks.id = %(track_id)s")
