@@ -319,8 +319,6 @@ class Application(BaseApp):
                 realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
                 if user.persona_id in self.complaintproxy.list_enforcers(rs):
                     realm_roles['complaint'].add('enforcer')
-                if user.persona_id in self.complaintproxy.list_monitors(rs):
-                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')
