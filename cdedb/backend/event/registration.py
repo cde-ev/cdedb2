@@ -15,7 +15,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import NamedTuple, Optional, Protocol, TypeVar, cast
+from typing import NamedTuple, Optional, Protocol, TypeVar
 
 import psycopg2.extensions
 
@@ -1774,7 +1774,7 @@ class EventRegistrationBackend(EventBaseBackend):
         This does some validation but currently cannot guarantee that the registration
         object is sufficient to calculate the fee without raising an error.
         """
-        reg = cast(CdEDBObject, affirm(Mapping, reg))  # type: ignore[type-abstract]
+        reg = affirm(Mapping, reg)  # type: ignore[type-abstract]
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
         return self._calculate_complex_fee(rs, reg, event=event).amount

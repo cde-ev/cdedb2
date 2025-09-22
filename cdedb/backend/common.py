@@ -615,6 +615,7 @@ def affirm_validation(
     assertion: type[CdEDataclass], value: Any, **kwargs: Any
 ) -> CdEDBObject: ...
 
+
 @overload
 def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
 
@@ -629,10 +630,7 @@ def affirm_validation(
     Therefore, the frontend has to handle ValidationWarnings properly, while the backend
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
-    return cast(
-        T | CdEDBObject,
-        validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
-    )
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
 @overload
