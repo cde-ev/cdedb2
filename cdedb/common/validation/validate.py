@@ -2799,6 +2799,14 @@ def _event_fee(
         for k in ('amount', 'condition'):
             errs.append(ValueError(
                 k, n_("Cannot have amount without condition or vice versa.")))
+
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
+
+        titles = {fee['title']: fee.get('id', id_) for fee in event['fees'].values()}
+        if titles.get(val["title"], id_) != id_:
+            errs.append(ValueError("title", n_("Duplicate title.")))
+
     if errs:
         raise errs
 

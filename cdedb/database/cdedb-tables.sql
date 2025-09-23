@@ -960,6 +960,8 @@ CREATE TABLE event.event_fees (
         -- see cdedb.database.constants.EventFeeType
         kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
+        CONSTRAINT event_fee_title_constraint
+            UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         amount                       numeric(8, 2),
         condition                    varchar,
         CONSTRAINT event_fee_amount_condition
