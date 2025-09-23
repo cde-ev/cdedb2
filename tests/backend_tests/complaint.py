@@ -1521,12 +1521,16 @@ class TestComplaintValidation(TestValidationBase):
                 ),
                 (
                     {
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                        ),
                         "authors": ["DB-1-9"],
                     },
                     {
                         "description": None,
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                        ),
                         "authors": [1],
                         "etime": None,
                     },

@@ -1734,6 +1734,9 @@ def _datetime(
     if not isinstance(val, datetime.datetime):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a datetime.datetime.")))
+    if val.tzinfo is None:
+        raise ValidationSummary(
+            TypeError(argname, n_("Must be timezone aware.")))
     return val
 
 

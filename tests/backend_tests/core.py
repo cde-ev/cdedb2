@@ -1201,8 +1201,8 @@ class TestCoreBackend(BackendTest):
             "account_owner": "Der Opa",
             "account_address": "Nebenan",
             "notes": "Ganz wichtige Notizen",
-            "granted_at": datetime.datetime.fromisoformat("2000-01-01"),
-            "revoked_at": datetime.datetime.fromisoformat("2000-01-01"),
+            "granted_at": datetime.datetime.fromisoformat("2000-01-01").replace(tzinfo=datetime.timezone.utc),
+            "revoked_at": datetime.datetime.fromisoformat("2000-01-01").replace(tzinfo=datetime.timezone.utc),
         }
         old_ls_id = self.cde.create_lastschrift(
             self.key, ls_data, initial_donation=decimal.Decimal("5"))

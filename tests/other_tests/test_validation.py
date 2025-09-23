@@ -406,7 +406,7 @@ class TestValidation(TestValidationBase):
         now_aware = datetime.datetime.now(datetime.timezone.utc)
         now_other = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York'))
         self.do_validator_test(datetime.datetime, (
-            (now, now, None),
+            (now, None, TypeError("Must be timezone aware. (None)")),
             (now_aware, now_aware, None),
             (now_other, now_other, None),
             (now.date(), None, TypeError),
@@ -430,7 +430,7 @@ class TestValidation(TestValidationBase):
             # ("more garbage", None, TypeError),
         ))
         self.do_validator_test(datetime.datetime, (
-            (now, now, None),
+            (now, None, TypeError("Must be timezone aware. (None)")),
             (now_aware, now_aware, None),
             (now_other, now_other, None),
             (now.date(), None, TypeError),
