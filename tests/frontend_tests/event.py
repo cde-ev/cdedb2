@@ -5758,12 +5758,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -5939,12 +5935,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -6178,10 +6170,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # set all choices in all tracks to 0
         self.get("/event/event/1/part/2/change")
         f = self.response.forms['changepartform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
-        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0

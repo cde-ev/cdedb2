@@ -20,7 +20,6 @@ from cdedb.common.validation.types import (
     Email,
     EmptyDict,
     EmptyList,
-    LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
     NonNegativeLargeDecimal,
@@ -33,7 +32,6 @@ from cdedb.common.validation.types import (
     PrintableASCIIType,
     Realm,
     SafeStr,
-    ShortnameRestrictiveIdentifier,
     StringType,
     Vote,
 )
@@ -247,25 +245,6 @@ class TestValidation(TestValidationBase):
             ("", None, ValueError),
             (54, "54", None),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
-        ))
-
-    def test_shortname(self) -> None:
-        self.do_validator_test(ShortnameRestrictiveIdentifier, (
-            ("asdf", "asdf", None),
-            ("a" * 11, None, ValidationWarning),
-            ("^", None, ValueError),
-        ), ignore_warnings=False)
-        self.do_validator_test(ShortnameRestrictiveIdentifier, (
-            ("asdf", "asdf", None),
-            ("a" * 11, "a" * 11, None),
-        ))
-        self.do_validator_test(LegacyShortname, (
-            ("a" * 11, "a" * 11, None),
-            ("a" * 31, None, ValidationWarning),
-        ), ignore_warnings=False)
-        self.do_validator_test(LegacyShortname, (
-            ("a" * 11, "a" * 11, None),
-            ("a" * 31, "a" * 31, None),
         ))
 
     def test_bytes(self) -> None:

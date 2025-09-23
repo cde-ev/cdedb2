@@ -866,42 +866,6 @@ def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
 
 
 @_add_typed_validator
-def _shortname(val: Any, argname: Optional[str] = None, *,
-               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
-    """A string used as shortname with therefore limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
-    return Shortname(val)
-
-
-@_add_typed_validator
-def _shortname_restrictive_identifier(
-        val: Any, argname: Optional[str] = None, *,
-        ignore_warnings: bool = False,
-        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and as restrictive identifier"""
-    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                  **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameRestrictiveIdentifier(val)
-
-
-@_add_typed_validator
-def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
-                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
-    """A string used as shortname, but with increased but still limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
-    return LegacyShortname(val)
-
-
-@_add_typed_validator
 def _bytes(
     val: Any, argname: Optional[str] = None, *,
     encoding: str = "utf-8", **kwargs: Any,
@@ -2345,7 +2309,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': Identifier,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2647,7 +2611,7 @@ def _event_part_group(
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
@@ -3472,7 +3436,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': LegacyShortname,
+    'shortname': str,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -4296,7 +4260,7 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': ShortnameRestrictiveIdentifier,
+    'shortname': RestrictiveIdentifier,
 }
 
 

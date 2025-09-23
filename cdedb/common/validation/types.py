@@ -47,10 +47,6 @@ EmptyList = _NewType("EmptyList", list[_Any])
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
 Url = _NewType("Url", str)
-Shortname = _NewType("Shortname", str)
-ShortnameRestrictiveIdentifier = _NewType(
-    "ShortnameRestrictiveIdentifier", Shortname)
-LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Identifier = _NewType("Identifier", str)
