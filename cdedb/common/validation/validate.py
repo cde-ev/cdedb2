@@ -854,6 +854,10 @@ def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     return val
 
 
+def _whitespace_normalized_str(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
 @_add_typed_validator
 def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
@@ -4201,6 +4205,16 @@ def _ballot(
                     errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
+        titles = [
+            candidate["title"] for candidate in newcandidates.values() if candidate
+        ]
+        shortnames = [
+            candidate["shortname"] for candidate in newcandidates.values() if candidate
+        ]
+        if len(titles) != len(set(titles)):
+            errs.append(ValueError("candidates.title", n_("Duplicate title.")))
+        if len(shortnames) != len(set(shortnames)):
+            errs.append(ValueError("candidates.shortname", n_("Duplicate shortname.")))
         val['candidates'] = newcandidates
 
     if val.get('abs_quorum') and val.get('rel_quorum'):
@@ -4276,6 +4290,8 @@ def _ballot_candidate(
     errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
 
     if errs:
         raise errs

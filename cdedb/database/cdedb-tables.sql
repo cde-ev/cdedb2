@@ -1467,8 +1467,11 @@ CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         title                   varchar NOT NULL,
+        CONSTRAINT candidate_title_constraint
+            UNIQUE (ballot_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         shortname               varchar NOT NULL,
-        CONSTRAINT candidate_shortname_constraint UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
+        CONSTRAINT candidate_shortname_constraint
+            UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
 );
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
