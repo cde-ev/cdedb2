@@ -960,10 +960,6 @@ class TestEventFrontend(FrontendTest):
         )
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        # prevent warnings about too long shortname for this test
-        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
