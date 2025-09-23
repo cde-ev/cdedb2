@@ -2280,28 +2280,6 @@ def _sepa_meta(
     return SepaMeta(val)
 
 
-@_add_typed_validator
-def _safe_str(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> SafeStr:
-    """This allows alpha-numeric, whitespace and known good others."""
-    allowed_chars = ".,-+()/"
-    val = _str(val, argname, **kwargs)
-    errs = ValidationSummary()
-
-    forbidden_chars = "".join(xsorted({
-        c for c in val
-        if not (c.isalnum() or c.isspace() or c in allowed_chars)
-    }))
-    if forbidden_chars:
-        errs.append(ValueError(argname, n_(
-            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
-    if errs:
-        raise errs
-
-    return SafeStr(val)
-
-
 @_create_dataclass_validator(models_core.MetaInfo)
 def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val

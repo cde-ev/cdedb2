@@ -31,7 +31,6 @@ from cdedb.common.validation.types import (
     PrintableASCII,
     PrintableASCIIType,
     Realm,
-    SafeStr,
     StringType,
     Vote,
 )
@@ -683,17 +682,6 @@ class TestValidation(TestValidationBase):
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8-sig'))
         self.assertEqual("\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
-
-    def test_safe_str(self) -> None:
-        spec = [
-            ("abc123 .,-+()/", "abc123 .,-+()/", None),
-            ("", None, ValueError),
-            (1, "1", None),
-            ((1, 2, 3), "(1, 2, 3)", None),
-            ("abc[]&def", None, ValueError(
-                "Forbidden characters (%(chars)s). (None)", {"chars": "[]&"})),
-        ]
-        self.do_validator_test(SafeStr, spec)
 
     def test_generic_list(self) -> None:
         self.do_validator_test(list[int], [
