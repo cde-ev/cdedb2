@@ -1442,6 +1442,9 @@ class FrontendTest(BackendTest):
             self.fail(f"Element '{selector}' not found.")
         return nodes
 
+    def _normalize_whitespace(self, s: str) -> str:
+        return re.sub(r'\s+', ' ', s).strip()
+
     def _get_content(self, selector: str, *, check_exists: bool = True, index: int = 0) -> str:
         """Like `get_content` but accepts any css selector."""
         nodes = self._get_nodes(selector, check_exists=check_exists)
@@ -1451,7 +1454,7 @@ class FrontendTest(BackendTest):
             node = nodes[index]
         except IndexError:
             self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
-        return re.sub(r'\s+', ' ', node.text_content())
+        return self._normalize_whitespace(node.text_content())
 
     def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
         """Retrieve the normalized text content of the (nth) element with the given id."""
@@ -1681,12 +1684,26 @@ class FrontendTest(BackendTest):
 
         div = 'static-notifications' if static else 'notifications'
         alert_type_class = f".alert-{ntype}" if ntype is not None else ""
-        notifications = self._get_nodes(
-            f"div#{div} div.alert{alert_type_class} span.notificationMessage"
-        )
+        selector = f"div#{div} div.alert{alert_type_class} span.notificationMessage"
+        notifications = self._get_nodes(selector, check_exists=False)
+        if not notifications:
+            other_selector = f"div#{div} div.alert"
+            msg = msg or f"Couldn't find any such notification: {selector!r}."
+            if other_notifications := self._get_nodes(other_selector, check_exists=False):
+                msg += " I found these notifications instead:\n"
+                msg += "\n".join(
+                    f"{' '.join(sorted(node.classes))}:"
+                    f" {self._normalize_whitespace(node.text_content())}"
+                    for node in other_notifications
+                )
+            else:
+                msg += " (There were no notifications)."
+            self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
-            all_texts = " | ".join(n.text_content().strip() for n in notifications)
+            all_texts = " | ".join(
+                self._normalize_whitespace(n.text_content()) for n in notifications
+            )
             self.assertIn(ntext, all_texts, msg=msg)
 
     def assertLogin(self, name: str) -> None:
