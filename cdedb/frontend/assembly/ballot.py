@@ -916,7 +916,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             'candidates': candidates,
         }
         data = check(rs, vtypes.Ballot, data)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors() or not data:
             errors_dict = rs.get_validation_errors_dict()
             if title_errors := errors_dict.get("candidates.title"):
                 rs.extend_validation_errors(
