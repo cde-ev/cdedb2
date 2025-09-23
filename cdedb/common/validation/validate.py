@@ -2295,7 +2295,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Identifier,
+    'shortname': str,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
