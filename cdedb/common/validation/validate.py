@@ -2604,6 +2604,12 @@ def _event_part_group(
         errs.append(ValueError('shortname', n_(
             "A part group with this name already exists.")))
 
+    shortname = val.get("shortname") or event.part_groups[val["id"]].shortname
+    constraint_type = val.get("constraint_type") or event.part_groups[val["id"]].constraint_type
+    if constraint_type == const.EventPartGroupType.mailinglist_link:
+        with errs:
+            val["shortname"] = _ALL_TYPED[EmailLocalPart](shortname, "shortname", **kwargs)
+
     if errs:
         raise errs
     return val
