@@ -252,7 +252,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 lodge_field_columns = _get_field_select_columns(
                     event.fields, const.FieldAssociations.lodgement
                 )
-                columns = models.Lodgement.database_fields() + lodge_field_columns
+                columns = models.Lodgement.database_fields() + list(lodge_field_columns)
                 return f"""
                     SELECT {', '.join(columns)}
                     FROM event.lodgements
