@@ -975,7 +975,7 @@ class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, default=cast(Event, None),

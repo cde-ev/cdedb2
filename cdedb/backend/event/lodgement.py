@@ -34,7 +34,6 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
@@ -294,10 +293,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ret = 1
             changed = False
             current_dict = current.as_dict()
+            lodgement_fields = set(models.Lodgement.database_fields()) - {"fields"}
             changed_data = {
                 k: v
                 for k, v in data.items()
-                if k in LODGEMENT_FIELDS and k != "fields" and v != current_dict[k]
+                if k in lodgement_fields and v != current_dict[k]
             }
             if changed_data:
                 changed_data["id"] = current.id

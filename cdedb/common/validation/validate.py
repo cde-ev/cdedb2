@@ -3115,11 +3115,6 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-LODGEMENT_GROUP_FIELDS: TypeMapping = {
-    'title': str,
-}
-
-
 @_create_dataclass_validator(models_event.LodgementGroup)
 def _lodgement_group(
     val: CdEDBObject, argname: str = "lodgement_group", *,

@@ -54,8 +54,6 @@ from cdedb.common import (
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_FEE_FIELDS,
-    LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS,
     PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
@@ -1368,11 +1366,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('course_id', 'track_id', 'is_active'), courses.keys(),
                 entity_key='course_id')
             lodgement_groups = list_to_dict(self.sql_select(
-                rs, 'event.lodgement_groups', LODGEMENT_GROUP_FIELDS,
+                rs, models.LodgementGroup.database_table,
+                models.LodgementGroup.database_fields(),
                 (event_id,), entity_key='event_id'))
             lodgements = list_to_dict(self.sql_select(
-                rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
-                entity_key='event_id'))
+                rs, models.Lodgement.database_table, models.Lodgement.database_fields(),
+                (event_id,), entity_key='event_id'))
             registrations = self._get_registration_data(rs, event_id)
             registration_parts = self.sql_select(
                 rs, 'event.registration_parts',
