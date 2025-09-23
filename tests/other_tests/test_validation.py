@@ -246,6 +246,23 @@ class TestValidation(TestValidationBase):
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
 
+    def test_unicode(self) -> None:
+        # Normalize using NFC by default.
+        self.do_validator_test(str, (
+            ("\u0065\u0301", "\u00e9", None),  # Combining characters are composed.
+            ("\u00e9", "\u00e9", None),
+            ("é", "\u00e9", None),  # This input is actually two characters.
+            ("é", "\u00e9", None),
+            ("²", "²", None),  # This remains, NFKC would convert it to "2".
+        ))
+        self.do_validator_test(str, (
+            ("\u0065\u0301", "\u0065\u0301", None),
+            ("\u00e9", "\u00e9", None),
+            ("é", "\u0065\u0301", None),  # This input is actually two characters.
+            ("é", "\u00e9", None),
+            ("²", "²", None),
+        ), extraparams={"unicode_normalize": False})
+
     def test_bytes(self) -> None:
         self.do_validator_test(bytes, (
             ("asdf", b"asdf", None),

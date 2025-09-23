@@ -67,6 +67,7 @@ import pathlib
 import re
 import string
 import typing
+import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
@@ -815,7 +816,8 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True,
+    unicode_normalize: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -833,6 +835,8 @@ def _str_type(
         val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    if unicode_normalize:
+        val = unicodedata.normalize('NFC', val)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
     if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
