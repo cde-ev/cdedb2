@@ -1175,14 +1175,6 @@ td.b-right, th.b-right {
 .course-colored .course-cancelled, .lodgement-illegal-mixing {
     background-color: #e6b3f2;
 }
-tr th.filtered_column {
-    background-color: #31708f;
-    color: #fff;
-}
-tr td.filtered_column {
-    border-left: solid 1px #31708f;
-    border-right: solid 1px #31708f;
-}
 span.color-legend {
     display: inline-block;
     width: 30px;
