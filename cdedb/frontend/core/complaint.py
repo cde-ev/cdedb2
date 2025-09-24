@@ -1039,16 +1039,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)
-        monitor_ids = self.complaintproxy.list_monitors(rs)
-        personas = self.coreproxy.get_personas(rs, enforcer_ids | monitor_ids)
-        enforcers = {enforcer_id: personas[enforcer_id] for enforcer_id in enforcer_ids}
-        monitors = {monitor_id: personas[monitor_id] for monitor_id in monitor_ids}
+        enforcers = self.coreproxy.get_personas(rs, enforcer_ids)
         return self.render(
             rs,
             "complaint/list_complaint_helpers",
             {
                 "enforcers": enforcers,
-                "monitors": monitors,
             },
         )
 

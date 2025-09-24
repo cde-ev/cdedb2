@@ -1504,7 +1504,6 @@ class CoreBaseBackend(AbstractBackend):
             # Disallow archival of realm helpers.
             helper_queries = (
                 "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
-                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
                 "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
             )
             if any(
@@ -1680,7 +1679,6 @@ class CoreBaseBackend(AbstractBackend):
             # Disallow archival of realm helpers.
             helper_queries = (
                 "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
-                "SELECT COUNT(*) FROM complaint.monitors WHERE persona_id = %s",
                 "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s"
             )
             if any(
