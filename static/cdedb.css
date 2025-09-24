@@ -1139,37 +1139,40 @@ td.b-right, th.b-right {
     color: rgba(255, 255, 255, .8);
     background-color: rgba(45, 129, 156, 0.5);
 }
-.course-primary {
+/* For the coloring of course cells to take precedence over the .ls-selected coloring,
+   some parent element (usually the <table>) needs to get the .course-colored class
+   s.t. this color has higher specificity */
+.course-colored .course-primary {
     background-color: #e6e6e6;
 }
-.course-primary.course-too-few, .lodgement-primary.lodge-too-few {
+.course-colored .course-primary.course-too-few, .lodgement-primary.lodge-too-few {
     background-color: #dfd181;
 }
-.course-too-few, .lodgement-too-few {
+.course-colored .course-too-few, .lodgement-too-few {
     background-color: #f2e8b3;
 }
-.course-primary.course-exactly-full, .lodgement-primary.lodge-exactly-full {
+.course-colored .course-primary.course-exactly-full, .lodgement-primary.lodge-exactly-full {
     background-color: #99cf99;
 }
-.course-exactly-full, .lodgement-exact-full {
+.course-colored .course-exactly-full, .lodgement-exact-full {
     background-color: #b3f2b3;
 }
-.course-primary.course-cancelled-ok, .lodgement-primary.lodgement-illegal-camping-mat {
+.course-colored .course-primary.course-cancelled-ok, .lodgement-primary.lodgement-illegal-camping-mat {
     background-color: #b8ceef;
 }
-.course-cancelled-ok, .lodgement-illegal-camping-mat {
+.course-colored .course-cancelled-ok, .lodgement-illegal-camping-mat {
     background-color: #ceefff;
 }
-.course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
+.course-colored .course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
     background-color: #e08282;
 }
-.course-too-many, .lodgement-too-many {
+.course-colored .course-too-many, .lodgement-too-many {
     background-color: #f2b3b3;
 }
-.course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
+.course-colored .course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
     background-color: #cb86e6;
 }
-.course-cancelled, .lodgement-illegal-mixing {
+.course-colored .course-cancelled, .lodgement-illegal-mixing {
     background-color: #e6b3f2;
 }
 tr th.filtered_column {
