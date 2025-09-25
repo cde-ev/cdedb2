@@ -299,7 +299,7 @@ class EventLowLevelBackend(AbstractBackend):
             (part_id,),
             entity_key="part_id",
         )
-        current = {e['id']: {k: v for k, v in e.items()} for e in current}
+        current = {e['id']: e for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))

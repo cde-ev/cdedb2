@@ -1532,7 +1532,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 del part[f]
             for track in part['tracks'].values():
                 del track['id']
-                del track['part_id']
                 del track['track_group_ids']
                 for f in ('course_room_field_id',):
                     new_key = f.removesuffix("_id")

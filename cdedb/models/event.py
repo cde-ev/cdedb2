@@ -373,11 +373,11 @@ class CourseChoiceObject(abc.ABC):
     id: vtypes.ID
 
     title: str
-    shortname: str
+    shortname: vtypes.Shortname
     sortkey: int
 
-    num_choices: int
-    min_choices: int
+    num_choices: vtypes.NonNegativeInt
+    min_choices: vtypes.NonNegativeInt
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
         init=False, compare=False, repr=False)
@@ -417,7 +417,8 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ID = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    part_id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict)
 
     course_room_field_id: Optional[vtypes.ID]
 
