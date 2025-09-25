@@ -191,7 +191,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
+        data = check(rs, vtypes.Event, data, event=rs.ambience['event'])
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event'].shortname
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
@@ -643,7 +643,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, models.CourseTrack, track_existing,
             spec=dict(models.CourseTrack.requestdict_fields(creation=False)),
             creation_spec=dict(models.CourseTrack.requestdict_fields(creation=True)),
-            additional={"part_id": part_id}, prefix="track",
+            additional_validation={"event": rs.ambience["event"]}, prefix="track",
         )
 
         if rs.has_validation_errors():

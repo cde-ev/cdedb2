@@ -653,7 +653,7 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             current = self.get_event(rs, event_id)
-            data = affirm(vtypes.Event, data, current=current)
+            data = affirm(vtypes.Event, data, event=current)
             data['id'] = event_id
 
             if not is_privileged(

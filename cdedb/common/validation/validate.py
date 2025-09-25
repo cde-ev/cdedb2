@@ -2453,6 +2453,10 @@ def _optional_object_mapping_helper(
     """
     ret: dict[int, T | None] = {}
     errs = ValidationSummary()
+    # remove id_ from kwargs to make nested calls to this helper possible
+    kwargs = dict(kwargs)
+    if "id_" in kwargs:
+        del kwargs["id_"]
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
@@ -2464,6 +2468,8 @@ def _optional_object_mapping_helper(
                 new_val = _ALL_TYPED[atype](
                     val, argname, creation=creation, id_=anid, **kwargs)
             else:
+                # if isinstance(val, dict):
+                #     val["id"] = anid
                 new_val = _ALL_TYPED[atype | None](
                     val, argname, creation=creation, id_=anid, **kwargs)
             ret[anid] = new_val
@@ -2483,6 +2489,8 @@ def _event(
       of a new entity.
     """
     val = _mapping(val, argname, **kwargs)
+    if creation:
+        kwargs['event'] = None
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
@@ -2497,8 +2505,6 @@ def _event(
 
     configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
     if configuration_fields:
-        if creation:
-            kwargs['current'] = None
         with errs:
             configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
                 configuration_fields, argname, creation=creation, **kwargs)
@@ -2530,6 +2536,7 @@ def _event(
 
     if 'fees' in val:
         with errs:
+            del kwargs["event"]
             val['fees'] = _optional_object_mapping_helper(
                 val['fees'], models_event.EventFee, 'fees', creation_only=creation,
                 event=val, questionnaire={}, **kwargs)
@@ -2591,6 +2598,10 @@ def _event_part(
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
+        # with errs:
+        #     val['tracks'] = _optional_object_mapping_helper(
+        #         val['tracks'], models_event.CourseTrack, 'tracks',
+        #         creation_only=creation, **kwargs)
         newtracks = {}
         for anid, track in val['tracks'].items():
             try:
@@ -2604,6 +2615,7 @@ def _event_part(
                         track = _ALL_TYPED[models_event.CourseTrack](
                             track, 'tracks', creation=True, **kwargs)
                     else:
+                        track["id"] = anid
                         track = _ALL_TYPED[models_event.CourseTrack | None](
                             track, 'tracks', **kwargs)
                 except ValidationSummary as e:
@@ -3908,12 +3920,13 @@ def _serialized_event_questionnaire(
 def _serialized_event_configuration(
     val: Any, argname: str = "serialized_event_configuration", *,
     creation: bool = False,
-    current: Optional[models_event.Event],
+    event: Optional[models_event.Event],
     skip_field_validation: bool = False,
     **kwargs: Any,
 ) -> SerializedEventConfiguration:
 
     val = _mapping(val, argname, **kwargs)
+    current = event
 
     if creation:
         mandatory_fields = dict(**EVENT_COMMON_FIELDS)

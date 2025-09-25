@@ -2753,6 +2753,7 @@ def process_dynamic_input(
     spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
     *,
     additional: Optional[CdEDBObject] = None,
+    additional_validation: Optional[CdEDBObject] = None,
     creation_spec: Optional[vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]]] = None,
     prefix: str = "",
 ) -> CdEDBOptionalMap:
@@ -2781,6 +2782,7 @@ def process_dynamic_input(
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param additional_validation: additional keywords passed through to the validation
     :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
@@ -2819,8 +2821,9 @@ def process_dynamic_input(
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")
+            ret[anid] = check_validation(
+                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{anid}",
+                **additional_validation)
 
     # extract the new entries which shall be created
     marker = 1
@@ -2835,8 +2838,8 @@ def process_dynamic_input(
                      for key in creation_spec}
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)
+                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{-marker}",
+                creation=True, **additional_validation)
         else:
             break
         marker += 1
