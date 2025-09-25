@@ -194,7 +194,7 @@ class EventLodgementMixin(EventBaseFrontend):
             if group is None:
                 code *= self.eventproxy.delete_lodgement_group(rs, group_id)
             elif group_id < 0:
-                code *= self.eventproxy.create_lodgement_group(rs, group)
+                code *= self.eventproxy.create_lodgement_group(rs, group)  # type: ignore[arg-type]
             else:
                 del group['event_id']
                 code *= self.eventproxy.set_lodgement_group(rs, group)

@@ -97,6 +97,7 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBMultiDict,
     CdEDBObject,
+    CdEDBOptionalMap,
     CustomJSONEncoder,
     Error,
     Notification,
@@ -2718,6 +2719,7 @@ def drow_last_index(prefix: str = "") -> str:
 
 C = TypeVar('C', bound=CdEDBObject)
 
+
 @overload
 def process_dynamic_input(
     rs: RequestState,
@@ -2728,7 +2730,7 @@ def process_dynamic_input(
     additional: Optional[CdEDBObject] = None,
     creation_spec: Optional[Mapping[str, Literal["str", "[str]"]]] = None,
     prefix: str = "",
-) -> dict[int, Optional[CdEDBObject]]: ...
+) -> CdEDBOptionalMap: ...
 
 @overload
 def process_dynamic_input(
@@ -2740,11 +2742,11 @@ def process_dynamic_input(
     additional: Optional[CdEDBObject] = None,
     creation_spec: Optional[vtypes.TypeMapping] = None,
     prefix: str = "",
-) -> dict[int, Optional[C]]: ...
+) -> CdEDBOptionalMap: ...
 
 
 # TODO maybe retrieve the spec from the type_?
-def process_dynamic_input(  # type:ignore[misc]
+def process_dynamic_input(
     rs: RequestState,
     type_: type[C | DC],
     existing: Collection[int],
@@ -2753,7 +2755,7 @@ def process_dynamic_input(  # type:ignore[misc]
     additional: Optional[CdEDBObject] = None,
     creation_spec: Optional[vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]]] = None,
     prefix: str = "",
-) -> dict[int, Optional[C | CdEDBObject]]:
+) -> CdEDBOptionalMap:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2802,8 +2804,8 @@ def process_dynamic_input(  # type:ignore[misc]
     data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
-    ret: dict[int, Optional[C]] = {
-        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}  # type: ignore[misc]
+    ret: dict[int, CdEDBObject | None] = {
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2817,7 +2819,7 @@ def process_dynamic_input(  # type:ignore[misc]
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,  # type: ignore[assignment]
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
                                          field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
@@ -2829,18 +2831,17 @@ def process_dynamic_input(  # type:ignore[misc]
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = {key: data[drow_name(key, -marker, prefix)]  # type: ignore[assignment]
+            entry = {key: data[drow_name(key, -marker, prefix)]
                      for key in creation_spec}
-            assert entry is not None
             entry.update(additional)
-            ret[-marker] = check_validation(  # type: ignore[assignment]
+            ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,
                 field_postfix=f"_{-marker}", creation=True)
         else:
             break
         marker += 1
     rs.values[drow_last_index(prefix)] = marker - 1
-    return ret  # type: ignore[return-value]
+    return ret
 
 
 class CustomCSVDialect(csv.Dialect):

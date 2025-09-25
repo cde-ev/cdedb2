@@ -2604,7 +2604,7 @@ def _event_part(
                         track = _ALL_TYPED[models_event.CourseTrack](
                             track, 'tracks', creation=True, **kwargs)
                     else:
-                        track = _ALL_TYPED[Optional[models_event.CourseTrack]](  # type: ignore[index]
+                        track = _ALL_TYPED[models_event.CourseTrack | None](
                             track, 'tracks', **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)

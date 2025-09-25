@@ -641,8 +641,8 @@ class EventEventMixin(EventBaseFrontend):
         track_existing = rs.ambience['event'].parts[part_id].tracks
         track_data = process_dynamic_input(
             rs, models.CourseTrack, track_existing,
-            spec={k: v for k, v in models.CourseTrack.requestdict_fields(creation=False)},
-            creation_spec={k: v for k, v in models.CourseTrack.requestdict_fields(creation=True)},
+            spec=dict(models.CourseTrack.requestdict_fields(creation=False)),
+            creation_spec=dict(models.CourseTrack.requestdict_fields(creation=True)),
             additional={"part_id": part_id}, prefix="track",
         )
 
