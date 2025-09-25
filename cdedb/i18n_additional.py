@@ -442,8 +442,6 @@ I18N_STRINGS = (
     n_("ComplaintLogCodes.companion_removed"),
     n_("ComplaintLogCodes.enforcer_added"),
     n_("ComplaintLogCodes.enforcer_removed"),
-    n_("ComplaintLogCodes.monitor_added"),
-    n_("ComplaintLogCodes.monitor_removed"),
     n_("ComplaintLogCodes.case_unlocked"),
     n_("ComplaintLogCodes.concealed_case_detected"),
 

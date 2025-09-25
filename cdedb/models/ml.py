@@ -838,9 +838,8 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
 
 
 @dataclass
-class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, GeneralMailinglist):
+class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailinglist):
     allow_unsub = False
-    notify_owner_on_bounce = True
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
                                  ) -> set[int]:
