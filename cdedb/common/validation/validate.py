@@ -2651,10 +2651,17 @@ def _event_part_group(
 @_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    creation: bool = False, **kwargs: Any,
+    event: models_event.Event, creation: bool = False, **kwargs: Any,
 ) -> CdEDBObject:
-    if ('num_choices' in val and 'min_choices' in val
-            and val['min_choices'] > val['num_choices']):
+    if creation:
+        min_choices = val["min_choices"]
+        num_choices = val["num_choices"]
+    else:
+        track = event.tracks[val["id"]]
+        min_choices = val.get("min_choices", track.min_choices)
+        num_choices = val.get("num_choices", track.num_choices)
+
+    if min_choices > num_choices:
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
     return val
