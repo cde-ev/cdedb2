@@ -11,6 +11,7 @@ to apache or similar.
 Depending on the specific use case, one may choose to use one EntityKeeper for each
 individual entity, or for all entities of a specific type.
 """
+
 import datetime
 import logging
 import shutil
@@ -18,7 +19,7 @@ import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import tabulate
 
@@ -33,8 +34,13 @@ tabulate.PRESERVE_WHITESPACE = True
 
 
 class EntityKeeper:
-    def __init__(self, conf: Config, directory: PathLike,
-                 log_keys: Sequence[str], log_timestamp_key: str):
+    def __init__(
+        self,
+        conf: Config,
+        directory: PathLike,
+        log_keys: Sequence[str],
+        log_timestamp_key: str,
+    ):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
@@ -47,31 +53,51 @@ class EntityKeeper:
         # Initialize logger.
         logger_name = "cdedb.backend.entitykeeper"
         setup_logger(
-            logger_name, self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+            logger_name,
+            self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
+            self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"],
+        )
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
-    def _run(self, args: list[Union[Path, str, bytes]], cwd: Optional[Path] = None,
-             check: Optional[bool] = True) -> subprocess.CompletedProcess[bytes]:
+    def _run(
+        self,
+        args: list[Union[Path, str, bytes]],
+        cwd: Optional[Path] = None,
+        *,
+        check: Literal["raise", "log", "ignore"] = "raise",
+    ) -> subprocess.CompletedProcess[bytes]:
         """Custom wrapper of subprocess.run to include proper logging.
 
-        :param check: If True, raise on error. If False, log an error.
-            If None, ignore error."""
+        :param check: Options are "raise", "log" and "ignore".
+        """
         # Delay check to ensure logging
-        completed = subprocess.run(args, cwd=cwd, check=False,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        completed = subprocess.run(
+            args, cwd=cwd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
         msg = completed.stdout or ""
-        if check is not None and completed.returncode != 0:
-            self.logger.error("Git error performing command %s in directory %s: %s",
-                              args, cwd, msg)
-        else:
-            self.logger.debug("Git output performing command %s in directory %s: %s",
-                              args, cwd, msg)
-        if check:
-            # Now, raise the check extension
+        if check == "raise":
             completed.check_returncode()
+        elif check == "log":
+            if completed.returncode != 0:
+                self.logger.error(
+                    "Git error performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
+        elif check == "ignore":
+            if completed.returncode != 0:
+                self.logger.debug(
+                    "Git output performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
+        else:
+            raise RuntimeError("Invalid 'check' instruction.")
         return completed
 
     def init(self, entity_id: int, exists_ok: bool = False) -> "EntityKeeper":
@@ -89,13 +115,18 @@ class EntityKeeper:
         self._run(["git", "init", "-b", "master"], cwd=full_dir)
         self._run(["git", "config", "user.name", "CdE-Datenbank"], cwd=full_dir)
         self._run(["git", "config", "user.email", "datenbank@cde-ev.de"], cwd=full_dir)
-        shutil.move(full_dir / ".git/hooks/post-update.sample",
-                    full_dir / ".git/hooks/post-update")
+        shutil.move(
+            full_dir / ".git/hooks/post-update.sample",
+            full_dir / ".git/hooks/post-update",
+        )
         # Additionally run post-commit since we commit on the repository itself
-        shutil.copy(full_dir / ".git/hooks/post-update",
-                    full_dir / ".git/hooks/post-commit")
-        self._run(["chmod", "a+x", ".git/hooks/post-update", ".git/hooks/post-commit"],
-                  cwd=full_dir)
+        shutil.copy(
+            full_dir / ".git/hooks/post-update", full_dir / ".git/hooks/post-commit"
+        )
+        self._run(
+            ["chmod", "a+x", ".git/hooks/post-update", ".git/hooks/post-commit"],
+            cwd=full_dir,
+        )
         self._run(["git", "update-server-info"], cwd=full_dir)
 
         return self
@@ -118,10 +149,17 @@ class EntityKeeper:
         assert formatted is not None
         return formatted.encode("utf-8")
 
-    def commit(self, entity_id: int, file_text: str, commit_msg: str,
-               author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: Optional[Sequence[CdEDBObject]] = None,
-               ) -> Optional[subprocess.CompletedProcess[bytes]]:
+    def commit(
+        self,
+        entity_id: int,
+        file_text: str,
+        commit_msg: str,
+        author_name: str = "",
+        author_email: str = "",
+        *,
+        may_drop: bool = True,
+        logs: Optional[Sequence[CdEDBObject]] = None,
+    ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -133,7 +171,7 @@ class EntityKeeper:
         :returns: Representation of the finished commit, if one was done, else None
         """
         entity_id = affirm(int, entity_id)
-        file_text = affirm(vtypes.StringType, file_text)
+        file_text = affirm(vtypes.StringType, file_text, limit_size=False)
         commit_msg = affirm(str, commit_msg)
         full_dir = self._dir / str(entity_id)
         filename = f"{entity_id}.json"
@@ -153,12 +191,14 @@ class EntityKeeper:
                 commit.append(formated_logs)
                 # set the date of the commit to the ctime of the latest log entry
                 commit.extend([
-                    "--date", self.format_datetime(logs[-1][self.log_timestamp_key]),
+                    "--date",
+                    self.format_datetime(logs[-1][self.log_timestamp_key]),
                 ])
             else:
                 # explicitly set commit date. Allows mocking time for testing.
                 commit.extend([
-                    "--date", self.format_datetime(now()),
+                    "--date",
+                    self.format_datetime(now()),
                 ])
             if author_name or author_email:
                 commit.append("--author")
@@ -169,17 +209,18 @@ class EntityKeeper:
                 # git diff-index reports whether the working directory is clean using
                 # its exit code. If the dir is clean it returns 0, and 1 otherwise.
                 # Does not work for the initial commit since HEAD is not defined yet.
-                completed = self._run(
+                if not self._run(
                     ["git", f"--work-tree={td}", "diff-index", "--exit-code", "HEAD"],
-                    cwd=full_dir, check=None)
-                if completed.returncode == 0:
+                    cwd=full_dir,
+                    check="ignore",
+                ).returncode:
                     return None
             if not may_drop:
                 commit.append("--allow-empty")
 
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
-            return self._run(commit, check=False)
+            return self._run(commit, check="log")
 
     def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
         """Retrieve the ctime of the latest log entry.
@@ -191,14 +232,17 @@ class EntityKeeper:
         full_dir = self._dir / str(entity_id)
         # This has a non-zero exit code if HEAD does not point to any commit. This is
         # the case if there are no commits present yet.
-        if self._run(["git", "rev-parse", "HEAD"],
-                     check=False, cwd=full_dir).returncode:
+        if self._run(
+            ["git", "rev-parse", "HEAD"], check="ignore", cwd=full_dir
+        ).returncode:
             return None
         # get the timestamp of the last commit in ISO 8601 format
         # Important: Use "%ad" instead of "%cd" to use the date excplicitly set when
         #  committing, rather than the time of the commit.
-        response = self._run(["git", "show", "-s", "--format=%ad",
-                              "--date=iso-strict-local", "HEAD"], cwd=full_dir)
+        response = self._run(
+            ["git", "show", "-s", "--format=%ad", "--date=iso-strict-local", "HEAD"],
+            cwd=full_dir,
+        )
         # the response contains a \n
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)

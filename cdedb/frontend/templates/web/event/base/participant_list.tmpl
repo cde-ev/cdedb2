@@ -22,7 +22,7 @@
         {% with course_id = registration['tracks'][track.id]['course_id'] %}
             {% if course_id %}
                 {{ util.href(cdedblink('event/course_list') + '#course-' + course_id|string,
-                             (courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'])) }}
+                             (courses[course_id].nr + "." + nbsp + courses[course_id].shortname)) }}
                 {% if registration['tracks'][track.id]['course_instructor'] == course_id %}
                     {{ "(KL)" }}
                 {% endif %}
@@ -107,10 +107,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, util.persona_name(persona, include_nickname=True, with_family_name=False)) }}</td>
+                            <td>{{ profile_link(persona, persona|persona_name(include_nickname=True, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ util.persona_name(persona, include_nickname=True, with_family_name=False) }}</td>
+                            <td>{{ persona|persona_name(include_nickname=True, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>
@@ -151,10 +151,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, util.persona_name(persona, include_nickname=True, with_family_name=False)) }}</td>
+                            <td>{{ profile_link(persona, persona|persona_name(include_nickname=True, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ util.persona_name(persona, include_nickname=True, with_family_name=False) }}</td>
+                            <td>{{ persona|persona_name(include_nickname=True, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>

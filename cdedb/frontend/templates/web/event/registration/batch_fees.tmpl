@@ -1,8 +1,9 @@
-{% set sidenav_active='event_batch_fees' %}
+{% set sidenav_active='event_fees' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_csv_tools.js') }}
 {% endblock %}
 
@@ -17,6 +18,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
     {{ util.breadcrumb_link(cdedblink("event/batch_fees"), gettext("Enter Money Transfers"), active=True) }}
 {% endblock %}
 
@@ -29,115 +31,83 @@
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.input_hidden(name="checksum") }}
-        {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
-        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications"), defaultvalue="True",
-                info=gettext("If checked, all affected users will be notified and the orgateam will receive a summary of all fees.")) }}
-        {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers"),
+        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Individual Notifications"), defaultvalue="True",
+                info=gettext("If checked, all affected users will be notified. Regardless of this the orgateam will receive a summary of all fees.")) }}
+        {{ util.form_input_file(name="transfers_file", horizontal=False, label=gettext("Transfers"),
                 accept="text/csv,.csv") }}
-        {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10", anid="input-data") }}
+        {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_icon('info-circle') }}
-            {% trans %}Enter one dataset per line.{% endtrans %}
+            {{ util.make_icon('info-circle') }}{{ nbsp }}{% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
-        <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("Amount"), _("CdEDB-ID"), _("Family Name"), _("Given Names"), _("Date"))|s }}</pre>
+        <pre>
+            {#- -#}
+            "{%- trans %}Transaction Date{% endtrans %}";"
+            {%- trans %}Amount{% endtrans %}";"
+            {%- trans %}CdEDB-ID{% endtrans %}";"
+            {%- trans %}Family Name{% endtrans %}";"
+            {%- trans %}Given Names{% endtrans -%}"
+            {#- -#}
+        </pre>
         <p class="help-block">
-            {% trans %}e.g.{% endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
+            {% trans %}e.g.{% endtrans %} <code>01.04.2018;123.00;DB-9-4;Iota;Inga</code>
         </p>
         <p class="help-block">
-            {% trans infolink=util.href(docurl("Handbuch_Email_Templates",
-                                               anchor="email-templates-for-realm-event-template-transfer-received-tmpl"),
-                                        gettext("email template list")) %}
+            {% trans infolink=util.href(
+                    docurl("Handbuch_Email_Templates", anchor="email-templates-for-realm-event-template-transfer-received-tmpl"),
+                    gettext("email template list")) %}
                 The template for the notification can be found on the %(infolink)s.
             {% endtrans %}
         </p>
 
-    {% if data %}
-        <h2>{% trans %}Validation Results{% endtrans %}</h2>
-        {% for dataset in data %}
-            <strong>
-                <span  class="row-key" data-row="{{ dataset['lineno'] }}">
-                    {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans %}
-                </span>:
-                {# We don't use util.persona_name() here, b/c dataset['raw'] is no full persona object #}
-                {% trans amount=dataset['amount']|money(lang=lang), name=("%s %s"|format(
-                        dataset['raw']['given_names'], dataset['raw']['family_name'])) -%}
-                    {{ amount }} for {{ name }}
-                {% endtrans %}
-            </strong>
-            <div class="batch-line-body">
-                {% if dataset['problems'] or dataset['warnings'] or dataset['infos'] %}
-                    <ul id="line{{ dataset['lineno'] }}_problems" class="list-unstyled">
-                    {% for key, problem in dataset['problems'] %}
-                        <li class="text-danger">
-                            {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
-                            {% if key %}
-                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                    data-col="{{ csvfields.get(key, -1) }}">
-                                    {{ key -}}
-                                </em>:
-                            {% endif %}
-                            {{ util.format_error(problem) }}
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    <ul id="line{{ dataset['lineno'] }}_warnings" class="list-unstyled">
-                    {% for key, warning in dataset['warnings'] %}
-                        <li class="text-warning">
-                            {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
-                            {% if key %}
-                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                    data-col="{{ csvfields.get(key, -1) }}">
-                                    {{ key -}}
-                                </em>:
-                            {% endif %}
-                            {{ util.format_error(warning) }}
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    <ul id="line{{ dataset['lineno'] }}_infos" class="list-unstyled">
-                    {% for key, info in dataset['infos'] %}
-                        <li class="text-info">
-                            {{ util.make_icon('info-circle', title=gettext("Info")) }}
-                            {% if key %}
-                                <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
-                                    data-col="{{ csvfields.get(key, -1) }}">
-                                    {{ key -}}
-                                </em>:
-                            {% endif %}
-                            {{ util.format_error(info) }}
-                        </li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-        {% endfor %}
+        {% if data %}
+            <h2>{% trans %}Validation Results{% endtrans %}</h2>
+            <ol class="list-unstyled" id="transfer-validation">
+                {% for dataset in data %}
+                    <li>
+                    <strong>
+                        <span class="row-key" data-row="{{ dataset['lineno'] }}">
+                            {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
+                        </span>:
+                        {% if dataset['persona'] %}
+                            {% trans amount=dataset['amount']|money(lang=lang), name=dataset['persona']|persona_name %}
+                                {{ amount }} for {{ name }}
+                            {% endtrans %}
+                        {% else %}
+                            {% trans amount=dataset['amount']|money(lang=lang) %}
+                                {{ amount }} for unknown user.
+                            {% endtrans %}
+                        {% endif %}
+                    </strong>
+                    {{ util.print_money_transfer_problems(dataset, csvfields) }}
+                {% endfor %}
+            </ol>
 
-        <script nonce="{{ csp_nonce }}">
-            $(function() {
-                var $textinput = $('#input-data');
-                $('.row-col-key').addClass('clickable').click(function() {
-                    $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
+            <script nonce="{{ csp_nonce }}">
+                $(function() {
+                    var $textinput = $('#input-data');
+                    $('.row-col-key').addClass('clickable').click(function() {
+                        $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
+                    });
+                    $('.row-key').addClass('clickable').click(function() {
+                        $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
+                    });
+                    $('#transfersform').cdedbProtectChanges();
                 });
-                $('.row-key').addClass('clickable').click(function() {
-                    $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
-                });
-            });
-        </script>
-    {% endif %}
+            </script>
+        {% endif %}
 
         {% if saldo %}
             {% trans %}Saldo{% endtrans %}: {{ saldo|money(lang=lang) }}
         {% endif %}
 
         {% if values['checksum'] %}
+            {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
             <p class="help-block">
-                {{ util.make_icon('info-circle') }}
+                {{ util.make_icon('info-circle') }}{{ nbsp }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
-            {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
         {% else %}
             {{ util.form_input_submit(label=gettext("Validate"), icon="chevron-right", horizontal=False) }}
         {% endif %}

@@ -2,6 +2,7 @@
 
 """Basic services for the core realm."""
 
+import base64
 import collections
 import datetime
 import decimal
@@ -22,13 +23,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
     Realm,
     RequestState,
     User,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     now,
@@ -49,16 +50,17 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
     PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS,
     ADMIN_VIEWS_COOKIE_NAME,
     ALL_ADMIN_VIEWS,
+    ALL_ADMINS,
     REALM_ADMINS,
     REALM_INHERITANCE,
     extract_roles,
@@ -67,6 +69,7 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_COMMON_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
@@ -91,6 +94,11 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -127,7 +135,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     "core/login", "wants", wants,
                     persona_id=rs.user.persona_id,
                     timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
-            return self.render(rs, "login", {'meta_info': meta_info})
+            return self.render(rs, "login", {'meta_info': meta_info},
+                               get_mandatory_form_fields(self.login))
 
         else:
             # Redirect to wanted page, if user meanwhile logged in
@@ -136,7 +145,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
             # genesis cases
             genesis_realms = []
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS:
+            for realm in models.GenesisCase.available_realms:
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:
@@ -257,7 +266,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
     def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
-        data = check(rs, vtypes.MetaInfo, data)
+        data = check(rs, models.MetaInfo, data)
         if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
         assert data is not None
@@ -416,7 +425,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=True)
         persona = self.coreproxy.get_persona(rs, persona_id)
         filename = sanitize_filename(make_persona_name(persona))
 
@@ -429,15 +438,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
 
-        vcard = self._create_vcard(rs, persona_id)
+        vcard = self._create_vcard(rs, persona_id, include_foto=False)
 
         buffer = io.BytesIO()
         segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
-    @staticmethod
-    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+    def _make_vcard_data(self, rs: RequestState, persona: CdEDBObject, include_foto: bool) -> str:
         """Creates a string encoding the contact information as vCard 3.0.
 
         Only a subset of available `vCard 3.0 properties
@@ -460,9 +468,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona['nickname']:
             data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
-            address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
-                       persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
-                       rs.gettext(format_country_code(persona[f'country{sub}']))]
+            if persona[f'show_address{sub}']:
+                address = [persona[f'address_supplement{sub}'], persona[f'address{sub}']]
+            else:
+                address = ["", ""]
+            address += [persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
+                        rs.gettext(format_country_code(persona[f'country{sub}']))]
             if any(address):
                 if not sub:
                     prefix = 'ADR;TYPE=intl,home,postal,pref:;'
@@ -471,11 +482,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 data.append(prefix + ";".join(escape(e or "") for e in address))
         if persona['birthday'] != datetime.date.min:
             data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        if persona['foto'] and include_foto:
+            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
+            foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
+            if mime_type and foto_data:
+                data.append(f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}')
         data.append('END:VCARD')
         data.append('')
         return '\r\n'.join(data)
 
-    def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
+    def _create_vcard(self, rs: RequestState, persona_id: int, include_foto: bool) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
 
@@ -490,7 +506,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        vcard = self._make_vcard_data(rs, persona)
+        vcard = self._make_vcard_data(rs, persona, include_foto)
         return vcard
 
     @access("persona")
@@ -718,14 +734,15 @@ class CoreBaseFrontend(AbstractFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_membership_fee_reference(data)
-
+        mandatory_fields = get_mandatory_form_fields(
+            self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-        })
+        }, mandatory_fields)
 
     @access("member")
     def my_lastschrift(self, rs: RequestState) -> Response:
@@ -954,8 +971,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but for archived users.
+        - ``admin_persona``: Search for users as
+          (core|cde|complaint|ml)_admin or auditor.
+        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -987,10 +1005,13 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
+            if not (
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "admin_all_users":
-            if "core_admin" not in rs.user.roles:
+            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
@@ -1056,8 +1077,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         data: Optional[tuple[CdEDBObject, ...]] = None
 
-        # Core admins are allowed to search by raw ID or CDEDB-ID
-        if "core_admin" in rs.user.roles:
+        # Allow admins to search by (CdEDB)ID
+        if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
@@ -1204,13 +1225,17 @@ class CoreBaseFrontend(AbstractFrontend):
             and not min_donation <= data["donation"] <= max_donation)
 
         merge_dicts(rs.values, data)
+        mandatory_fields = (
+            get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
+            | {'address', 'location'}  # we enforce this by hand in change_user
+        )
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
             'min_donation': min_donation,
             'max_donation': max_donation,
             'has_special_donation': has_special_donation,
-        })
+        }, mandatory_fields)
 
     @access("persona", modi={"POST"})
     @REQUESTdata("generation")
@@ -1292,7 +1317,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             del realms["assembly"]
             del realms["ml"]
-        return self.render(rs, "create_user", {'realms': realms})
+        return self.render(rs, "create_user", {'realms': realms},
+                           get_mandatory_form_fields(self.create_user))
 
     @access("core_admin")
     @REQUESTdata("realm")
@@ -1342,7 +1368,10 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
-        })
+            # We have users with an unknown birthday (this shouldn't
+            # be a blocker for admins to edit those users at all) and want to
+            # be able to correct wrong birthdays into missing ones.
+        }, get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'})
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note")
@@ -1388,6 +1417,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # meta admins
             "meta": self.coreproxy.list_admins(rs, "meta"),
             "core": self.coreproxy.list_admins(rs, "core"),
+            "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
         display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
@@ -1435,8 +1465,13 @@ class CoreBaseFrontend(AbstractFrontend):
         for email, infos in email_reports.items():
             if infos.status in const.EmailStatus.notable_states():
                 grouped_reports[infos.status][email] = infos
-        return self.render(rs, "email_status_overview", {
-            'grouped_reports': grouped_reports, 'personas': personas, 'mls': mls})
+        mandatory_fields = get_mandatory_form_fields(self.set_email_status)
+        return self.render(
+            rs,
+            "email_status_overview",
+            {'grouped_reports': grouped_reports, 'personas': personas, 'mls': mls},
+            mandatory_fields,
+        )
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdata("address", "notes", "status")
@@ -1467,7 +1502,8 @@ class CoreBaseFrontend(AbstractFrontend):
         #  works with valid recipients, so no need to test validity here.
         rs.ignore_validation_errors()
         addresses = self.conf["CONTACT_ADDRESSES"]
-        return self.render(rs, "contact", {"addresses": addresses})
+        return self.render(rs, "contact", {"addresses": addresses},
+                           get_mandatory_form_fields(self.contact))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("to", "anonymous", "subject", "msg")
@@ -1491,7 +1527,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if anonymous_from:
             message, key = models.AnonymousMessageData.encrypt(
-                recipient=to, persona_id=vtypes.ID(vtypes.ProtoID(rs.user.persona_id)),
+                recipient=to, persona_id=vtypes.ID(rs.user.persona_id),
                 username=vtypes.Email(rs.user.username), subject=subject,
             )
             if not self.coreproxy.log_anonymous_message(rs, message):
@@ -1557,7 +1593,8 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> Response:
         """Render the reply form. Takes a message id via GET to prefill the form."""
         rs.ignore_validation_errors()
-        return self.render(rs, "contact_reply")
+        return self.render(rs, "contact_reply",
+                           mandatory_fields=get_mandatory_form_fields(self.contact_reply))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("secret", "reply_message")
@@ -1712,7 +1749,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {"privilege_change_id": privilege_change_id})
 
         merge_dicts(rs.values, rs.ambience['persona'])
-        return self.render(rs, "change_privileges")
+        return self.render(rs, "change_privileges", {},
+                           get_mandatory_form_fields(self.change_privileges))
 
     @access("meta_admin", modi={"POST"})
     @REQUESTdata(*ADMIN_KEYS, "notes")
@@ -1721,7 +1759,8 @@ class CoreBaseFrontend(AbstractFrontend):
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          is_auditor: bool, notes: str) -> Response:
+                          is_complaint_admin: bool, is_auditor: bool, notes: str,
+                          ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1768,7 +1807,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if ADMIN_KEYS & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             rs.notify_return_code(code, success=n_("Privilege change waiting for"
-                                                   " approval by another Meta-Admin."))
+                                                   " approval by another meta admin."))
             if not code:
                 return self.change_privileges_form(rs, persona_id)
         else:
@@ -1805,13 +1844,13 @@ class CoreBaseFrontend(AbstractFrontend):
         if (privilege_change["is_meta_admin"] is not None
                 and privilege_change["persona_id"] == rs.user.persona_id):
             rs.notify(
-                "info", n_("This privilege change is affecting your Meta-Admin"
-                           " privileges, so it has to be approved by another "
-                           "Meta-Admin."))
+                "info", n_("This privilege change is affecting your meta admin"
+                           " privileges, so it has to be approved by another"
+                           " meta admin."))
         if privilege_change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info", n_("This privilege change was submitted by you, so it "
-                           "has to be approved by another Meta-Admin."))
+                           "has to be approved by another meta admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
         submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
@@ -1929,22 +1968,31 @@ class CoreBaseFrontend(AbstractFrontend):
         if target_realm and rs.ambience['persona'][f'is_{target_realm}_realm']:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
-        past_events = self.pasteventproxy.list_past_events(rs)
-        past_courses = {}
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        pcourses = {}
         if pevent_id := rs.values.get('pevent_id'):
-            past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+            pcourse_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
+            pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
+
+        mandatory_fields = get_mandatory_form_fields(
+            CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
-            "past_events": past_events, "past_courses": past_courses,
-        })
+            "pevent_entries": past_event_entries(pevents),
+            "pcourse_entries": past_course_entries(pcourses),
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
+        }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata("target_realm", "change_note", "pevent_id", "is_orga", "is_instructor",
-                 "pcourse_id")
+                 "pcourse_id", "prev_pevent_id")
     def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
-                     target_realm: vtypes.Realm, pevent_id: Optional[int],
-                     is_orga: bool, is_instructor: bool,
-                     pcourse_id: Optional[int], data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, pevent_id: int | None,
+                     is_orga: bool, is_instructor: bool, prev_pevent_id: int | None,
+                     pcourse_id: int | None, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -1980,11 +2028,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True)
-        if pevent_id is not None:
-            # Show the form again, if past event was selected for the first time.
-            if pcourse_id == -1:
-                return self.promote_user_form(
-                    rs, persona_id, target_realm=target_realm, internal=True)
+        if pevent_id is not None and pevent_id != prev_pevent_id:
+            # Show the form again, if past event changed.
+            #  This is suppressed by in the js variant.
+            return self.promote_user_form(
+                rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
@@ -2058,7 +2106,8 @@ class CoreBaseFrontend(AbstractFrontend):
         trial_member = persona['trial_member']
         return self.render(
             rs, "modify_balance",
-            {'old_balance': old_balance, 'trial_member': trial_member})
+            {'old_balance': old_balance, 'trial_member': trial_member},
+            get_mandatory_form_fields(self.modify_balance))
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("new_balance", "change_note")
@@ -2155,7 +2204,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     def change_password_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "change_password")
+        return self.render(rs, "change_password", {},
+                           get_mandatory_form_fields(self.change_password))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("old_password", "new_password", "new_password2")
@@ -2210,7 +2260,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This starts the process of anonymously resetting a password.
         """
-        return self.render(rs, "reset_password")
+        return self.render(rs, "reset_password", {},
+                           get_mandatory_form_fields(self.send_password_reset_link))
 
     @access("anonymous")
     @REQUESTdata("email")
@@ -2320,7 +2371,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email, persona_id=None)
-        return self.render(rs, "do_password_reset")
+        return self.render(rs, "do_password_reset", {},
+                           get_mandatory_form_fields(self.do_password_reset))
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata("#email", "new_password", "new_password2", "cookie")
@@ -2365,7 +2417,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     def change_username_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "change_username")
+        return self.render(rs, "change_username", {},
+                           get_mandatory_form_fields(self.send_username_change_link))
 
     @access("persona")
     @REQUESTdata("new_username")
@@ -2403,8 +2456,9 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username,
             rs.user.persona_id)
-        return self.render(rs, "do_username_change", {
-            'raw_email': new_username})
+        return self.render(
+            rs, "do_username_change", {'raw_email': new_username},
+            get_mandatory_form_fields(self.do_username_change))
 
     @access("persona", modi={"POST"})
     @REQUESTdata("#new_username", "password")
@@ -2421,6 +2475,14 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/change_username_form")
         else:
+            # Warn management of possible privilege escalation
+            if rs.user.roles & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': rs.user})
             self.do_mail(rs, "username_change_info",
                          {'To': (rs.user.username,),
                           'Subject': "Deine E-Mail-Adresse wurde geändert"},
@@ -2437,7 +2499,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
-        return self.render(rs, "admin_username_change", {'data': data})
+        return self.render(rs, "admin_username_change", {'data': data},
+                           get_mandatory_form_fields(self.admin_username_change))
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
@@ -2455,6 +2518,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")
         else:
+            # Warn management of possible privilege escalation
+            persona = rs.ambience['persona']
+            if extract_roles(persona, introspection_only=True) & ALL_ADMINS:
+                to = (self.conf["MANAGEMENT_ADDRESS"],
+                      self.conf["TROUBLESHOOTING_ADDRESS"])
+                self.do_mail(rs, "admin_username_change_info",
+                             {'To': to,
+                              'Subject': "E-Mail-Adresse von Admin wurde geändert"},
+                             {'new_username': new_username, 'persona': persona})
             return self.redirect_show_user(rs, persona_id)
 
     @access(*REALM_ADMINS, modi={"POST"})
@@ -2588,7 +2660,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         data = self.coreproxy.get_persona(rs, persona_id)
-        return self.render(rs, "dearchive_user", {'data': data})
+        return self.render(rs, "dearchive_user", {'data': data},
+                           get_mandatory_form_fields(self.dearchive_persona))
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")

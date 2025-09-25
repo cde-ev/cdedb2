@@ -40,6 +40,7 @@ from typing import (
     ForwardRef,
     Optional,
     Self,
+    cast,
     get_args,
     get_origin,
 )
@@ -48,7 +49,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import Accounts, User, cast_fields, now
+from cdedb.common import CdEDBObject, User, cast_fields, n_, now
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
     QueryScope,
@@ -59,12 +61,11 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import datetime_filter
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from cdedb.common import CdEDBObject
     from cdedb.database.query import (
         DatabaseValue_s,
     )
@@ -117,26 +118,24 @@ class Event(EventDataclass):
 
     # Exclude from request to avoid unsetting when submitting `change_event_form`.
     description: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     registration_text: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     mail_text: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     participant_info: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     notes: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
     field_definition_notes: Optional[str] = dataclasses.field(
-        metadata={'update_request_exclude': True})
+        metadata=Meta.request_update_exclude.as_dict)
 
     # Disallow setting via request altogether.
-    offline_lock: bool = dataclasses.field(
-        metadata={'request_exclude': True})
-    is_archived: bool = dataclasses.field(
-        metadata={'request_exclude': True})
+    is_locked: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    is_archived: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    is_balanced: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     is_cancelled: bool
-    is_balanced: bool
     is_visible: bool
     is_course_list_visible: bool
     is_course_state_visible: bool
@@ -148,17 +147,25 @@ class Event(EventDataclass):
     lodge_field_id: Optional[vtypes.ID]
     reimbursement_iban_field_id: Optional[vtypes.ID]
 
-    parts: CdEDataclassMap["EventPart"]
-    tracks: CdEDataclassMap["CourseTrack"]
+    parts: CdEDataclassMap["EventPart"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
+    tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
 
-    fields: CdEDataclassMap["EventField"]
-    custom_query_filters: CdEDataclassMap["CustomQueryFilter"]
-    fees: CdEDataclassMap["EventFee"]
+    fields: CdEDataclassMap["EventField"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
+    custom_query_filters: CdEDataclassMap["CustomQueryFilter"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
+    fees: CdEDataclassMap["EventFee"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
 
-    part_groups: CdEDataclassMap["PartGroup"]
-    track_groups: CdEDataclassMap["TrackGroup"]
+    part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
+    track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict)
 
-    orgas: set[vtypes.ID] = dataclasses.field(default_factory=set)
+    orgas: set[vtypes.ID] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict)
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
@@ -186,23 +193,23 @@ class Event(EventDataclass):
 
         for part in self.parts.values():
             part.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in part.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in part.tracks
             }
             for track in part.tracks.values():
                 track.part = part
         for part_group in self.part_groups.values():
             part_group.parts = {
-                part_id: self.parts[part_id]
-                for part_id in part_group.parts
+                part.id: part
+                for part in self.parts.values() if part.id in part_group.part_ids
             }
             for part in part_group.parts.values():
                 part.part_groups[part_group.id] = part_group
                 part.part_group_ids.add(part_group.id)
         for track_group in self.track_groups.values():
             track_group.tracks = {
-                track_id: self.tracks[track_id]
-                for track_id in track_group.tracks
+                track.id: track
+                for track in self.tracks.values() if track.id in track_group.track_ids
             }
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
@@ -300,7 +307,9 @@ class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ID = dataclasses.field(
+        metadata=Meta.input_exclude.as_dict,
+    )
 
     title: str
     shortname: str
@@ -311,11 +320,13 @@ class EventPart(EventDataclass):
     waitlist_field_id: Optional[vtypes.ID]
     camping_mat_field_id: Optional[vtypes.ID]
 
-    tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
+    tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
+        default_factory=dict, metadata=Meta.asdict_include.as_dict)
 
     part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(
         default_factory=dict, compare=False, repr=False)
-    part_group_ids: set[int] = dataclasses.field(default_factory=set)
+    part_group_ids: set[int] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -359,7 +370,7 @@ class EventPart(EventDataclass):
 
 @dataclasses.dataclass
 class CourseChoiceObject(abc.ABC):
-    id: vtypes.ProtoID
+    id: vtypes.ID
 
     title: str
     shortname: str
@@ -406,13 +417,14 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ProtoID
+    part_id: vtypes.ID
 
     course_room_field_id: Optional[vtypes.ID]
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
         default_factory=dict, compare=False, repr=False)
-    track_group_ids: set[int] = dataclasses.field(default_factory=set)
+    track_group_ids: set[int] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict)
 
     def is_complex(self) -> bool:
         return False
@@ -452,14 +464,12 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
-    event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
-    )
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True},
+        metadata=Meta.input_exclude.as_dict,
     )
 
     kind: const.EventFeeType
@@ -469,9 +479,9 @@ class EventFee(EventDataclass):
     condition: Optional[vtypes.EventFeeCondition]
     amount: Optional[decimal.Decimal]
     amount_min: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+        default=None, metadata=Meta.exclude.as_dict)
     amount_max: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+        default=None, metadata=Meta.exclude.as_dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -502,7 +512,10 @@ class EventFee(EventDataclass):
             return ""
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
-            parse_result, {}, {}, {}, condition_only=True)[1]
+            parse_result,
+            data={},  # type: ignore[typeddict-item]
+            condition_only=True,
+        )
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
@@ -512,22 +525,20 @@ class EventFee(EventDataclass):
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
-    event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
-    )
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
     event_id: vtypes.ID = dataclasses.field(
-        metadata={'validation_exclude': True, 'request_exclude': True},
+        metadata=Meta.input_exclude.as_dict,
     )
 
     # Internal metadata.
     field_name: vtypes.RestrictiveIdentifier = dataclasses.field(
-        metadata={'update_exclude': True})
+        metadata=Meta.input_update_exclude.as_dict)
     kind: const.FieldDatatypes
     association: const.FieldAssociations = dataclasses.field(
-        metadata={'update_exclude': True})
+        metadata=Meta.input_update_exclude.as_dict)
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
@@ -540,6 +551,10 @@ class EventField(EventDataclass):
 
     entries: Optional[dict[str, str]] = None
 
+    @property
+    def request_name(self) -> str:
+        return f"fields.{self.field_name}"
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['entries'] = dict(data['entries'] or []) or None
@@ -547,7 +562,6 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (
-            self.event,
             self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
             self.sortkey,
             self.title,
@@ -559,15 +573,14 @@ class EventField(EventDataclass):
 class CustomQueryFilter(EventDataclass):
     database_table = "event.custom_query_filters"
 
-    event: Event = dataclasses.field(
-        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
-    )
-    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exclude': True})
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ID = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict)
 
-    scope: QueryScope = dataclasses.field(metadata={'update_exclude': True})
+    scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
     notes: Optional[str]
-    fields: set[str] = dataclasses.field(metadata={'database_include': True})
+    fields: set[str] = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     def __post_init__(self) -> None:
         if isinstance(self.fields, str):  # type: ignore[unreachable]
@@ -578,8 +591,14 @@ class CustomQueryFilter(EventDataclass):
         ret['fields'] = self.get_field_string()
         return ret
 
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        if data.get("fields") and isinstance(data["fields"], str):
+            data["fields"] = set(data["fields"].split(','))
+        return super().from_database(data)
+
     def get_sortkey(self) -> Sortkey:
-        return (self.event_id, self.scope, self.title)
+        return self.scope, self.title
 
     @staticmethod
     def _get_field_string(fields: Collection[str]) -> str:
@@ -593,7 +612,9 @@ class CustomQueryFilter(EventDataclass):
         if self.scope != scope or not self.is_valid(spec):
             return
         type_ = spec[next(iter(self.fields))].type
-        spec[self.get_field_string()] = QuerySpecEntry(type_, self.title)
+        spec[self.get_field_string()] = QuerySpecEntry(
+            type_, self.title, group_base=n_("Custom Filters"),
+        )
 
     def is_valid(self, spec: QuerySpec) -> bool:
         """Check whether all fields are in the spec and of the same type."""
@@ -620,14 +641,23 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
     notes: Optional[str]
-    constraint_type: const.EventPartGroupType
+    constraint_type: const.EventPartGroupType = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
-    parts: CdEDataclassMap[EventPart] = dataclasses.field(default_factory=dict)
+    parts: CdEDataclassMap[EventPart] = dataclasses.field(
+        init=False, compare=False, repr=False,
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
+    )
+    part_ids: set[int] = dataclasses.field(
+        default_factory=set,
+        metadata=(Meta.input_update_exclude | Meta.database_exclude).as_dict
+    )
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -640,7 +670,7 @@ class PartGroup(EventDataclass):
                     SELECT part_id
                     FROM event.part_group_parts
                     WHERE part_group_id = part_groups.id
-                ) AS parts
+                ) AS part_ids
             FROM
                 event.part_groups
             WHERE
@@ -650,7 +680,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return (self.constraint_type, self.title)
+        return self.constraint_type, self.title
 
 
 @dataclasses.dataclass
@@ -658,15 +688,24 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
     notes: Optional[str]
     sortkey: int
-    constraint_type: const.CourseTrackGroupType
+    constraint_type: const.CourseTrackGroupType = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
-    tracks: CdEDataclassMap[CourseTrack] = dataclasses.field(default_factory=dict)
+    tracks: CdEDataclassMap[CourseTrack] = dataclasses.field(
+        init=False, compare=False, repr=False,
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
+    )
+    track_ids: set[int] = dataclasses.field(
+        default_factory=set,
+        metadata=(Meta.input_update_exclude | Meta.database_exclude).as_dict
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "TrackGroup":
@@ -685,7 +724,7 @@ class TrackGroup(EventDataclass):
                     SELECT track_id
                     FROM event.track_group_tracks
                     WHERE track_group_id = track_groups.id
-                ) AS tracks
+                ) AS track_ids
             FROM
                 event.track_groups
             WHERE
@@ -764,63 +803,118 @@ class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    # event: Event
-    event_id: vtypes.ID
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
-    segments: set[vtypes.ID]
-    active_segments: set[vtypes.ID]
+    # Give event a default, so automatic sorting of course segments is less horrible.
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, default=cast(Event, None),
+        metadata=Meta.input_exclude.as_dict,
+    )
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+
+    segments: CdEDataclassMap["CourseSegment"] = dataclasses.field(
+        metadata=(Meta.validate_include | Meta.asdict_include).as_dict
+    )
+
+    @property
+    def active_segments(self) -> set[int]:
+        return {
+            segment.track_id for segment in self.segments.values() if segment.is_active
+        }
 
     nr: str
     title: str
     shortname: str
-    description: str
+    description: str | None
 
-    instructors: Optional[str]
+    instructors: str | None
 
-    min_size: int
-    max_size: int
+    min_size: vtypes.NonNegativeInt | None
+    max_size: vtypes.NonNegativeInt | None
 
     is_visible: bool
 
-    notes: Optional[str]
+    notes: str | None
 
-    fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    fields: vtypes.EventAssociatedFields = dataclasses.field(
+        default_factory=cast(type[vtypes.EventAssociatedFields], dict),
+        metadata=Meta.request_exclude.as_dict,
+    )
 
-    @classmethod
-    def get_select_query(cls, entities: Collection[int],
-                         entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
-        query = f"""
-                SELECT
-                    {', '.join(cls.database_fields())},
-                    array(
-                        SELECT track_id
-                        FROM event.course_segments
-                        WHERE course_id = event.courses.id
-                    ) AS segments,
-                    array(
-                        SELECT track_id
-                        FROM event.course_segments
-                        WHERE course_id = event.courses.id AND is_active = True
-                    ) AS active_segments
-                FROM
-                    event.courses
-                WHERE
-                    {entity_key or cls.entity_key} = ANY(%s)
-            """
-        params = (entities,)
-        return query, params
+    @property
+    def label(self) -> str:
+        return f"{self.nr}. {self.title}"
+
+    @property
+    def shortlabel(self) -> str:
+        return f"{self.nr}. {self.shortname}"
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['fields'] = cast_fields(
-            data['fields'], EventField.many_from_database(data.pop('event_fields')))
-        data['segments'] = set(data['segments'])
-        data['active_segments'] = set(data['active_segments'])
-        return super().from_database(data)
+        event = data.pop("event")
+        data['fields'] = cast_fields(data['fields'], event.fields)
+        data['segments'] = CourseSegment.many_from_database(
+            data['segments'], sort=False
+        )
+        ret = super().from_database(data)
+        ret.event = event
+        return ret
+
+    def __post_init__(self) -> None:
+        for segment in self.segments.values():
+            segment.course = self
+        self.segments = {
+            segment.track_id: segment for segment in xsorted(self.segments.values())
+        }
 
     def get_sortkey(self) -> Sortkey:
         return self.nr, self.shortname
+
+    @classmethod
+    def validation_fields(
+            cls, *, creation: bool,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        for ret in (mandatory, optional):
+            if "segments" in ret:
+                # During validation we also accept None, meaning to delete the segment,
+                #  i.e. it is not (or no longer) offered.
+                ret["segments"] = CdEDataclassMap[CourseSegment | None]
+        return mandatory, optional
+
+
+@dataclasses.dataclass
+class CourseSegment(EventDataclass):
+    database_table = "event.course_segments"
+    entity_key = "course_id"
+
+    id: vtypes.ID = dataclasses.field(
+        compare=False, repr=False,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+    )
+
+    course: Course = dataclasses.field(init=False, compare=False, repr=False)
+    course_id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
+    track_id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
+    is_active: bool
+
+    def get_sortkey(self) -> Sortkey:
+        ret = self.course.get_sortkey()
+        if self.course.event:
+            ret += self.course.event.tracks[self.track_id].get_sortkey()
+        return ret
+
+
+@dataclasses.dataclass
+class CourseInstructors:
+    database_table = "event.course_instructors"
+
 
 #
 # get_lodgement_group + get_lodgement
@@ -835,12 +929,12 @@ class LodgementGroup(EventDataclass):
     event_id: vtypes.ID
     title: str
 
-    lodgement_ids: set[int] = dataclasses.field(default_factory=set,
-                                                metadata={'database_exclude': True})
-    regular_capacity: int = dataclasses.field(default=0,
-                                              metadata={'database_exclude': True})
-    camping_mat_capacity: int = dataclasses.field(default=0,
-                                                  metadata={'database_exclude': True})
+    lodgement_ids: set[int] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict)
+    regular_capacity: int = dataclasses.field(
+        default=0, metadata=Meta.database_exclude.as_dict)
+    camping_mat_capacity: int = dataclasses.field(
+        default=0, metadata=Meta.database_exclude.as_dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -867,6 +961,10 @@ class LodgementGroup(EventDataclass):
         data['lodgement_ids'] = set(data['lodgement_ids'])
         return super().from_database(data)
 
+    @classmethod
+    def entries(cls, groups: CdEDataclassMap[Self]) -> list[tuple[vtypes.ID, str]]:
+        return [(group.id, group.title) for group in groups.values()]
+
     def get_sortkey(self) -> Sortkey:
         return (self.title, )
 
@@ -878,7 +976,7 @@ class Lodgement(EventDataclass):
 
     # event: Event
     event_id: vtypes.ID
-    group: LodgementGroup = dataclasses.field(metadata={'database_exclude': True})
+    group: LodgementGroup
     group_id: vtypes.ID
 
     title: str

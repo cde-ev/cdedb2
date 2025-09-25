@@ -10,10 +10,8 @@ All parts are combined together in the `CdEBackend` class via multiple inheritan
 together with a handful of high-level methods that use functionalities of multiple
 backend parts.
 """
-import collections
 import copy
 import dataclasses
-import datetime
 import decimal
 from collections import OrderedDict
 from typing import Optional, Union
@@ -22,11 +20,11 @@ import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.finance as models_finance
 from cdedb.backend.common import (
     AbstractBackend,
     access,
     affirm_array_validation as affirm_array,
-    affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.event import EventBackend
@@ -38,6 +36,7 @@ from cdedb.common import (
     DefaultReturnCode,
     LineResolutions,
     RequestState,
+    is_optional_type,
     make_proxy,
     unwrap,
 )
@@ -46,9 +45,9 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    is_optional,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
@@ -75,32 +74,6 @@ class BatchAdmissionStats:
             self.modified_accounts.add(persona_id)
         else:
             raise RuntimeError(n_("Impossible"))
-
-
-@dataclasses.dataclass
-class MoneyTransfer:
-    persona: CdEDBObject
-    amount: decimal.Decimal
-    date: datetime.date
-
-    registration: Optional[CdEDBObject] = None
-
-
-@dataclasses.dataclass
-class MoneyTransfersResult:
-    success: bool = True
-    index: int = -1
-
-    membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
-    event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
-        default_factory=lambda: collections.defaultdict(list))
-    event_reimbursements: dict[int, list[MoneyTransfer]] = dataclasses.field(
-        default_factory=lambda: collections.defaultdict(list))
-
-    new_members: int = 0
-
-    def __bool__(self) -> bool:
-        return self.success
 
 
 class CdEBaseBackend(AbstractBackend):
@@ -147,7 +120,7 @@ class CdEBaseBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(CdELogFilter, log_filter)
+        log_filter = affirm(CdELogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
@@ -158,13 +131,16 @@ class CdEBaseBackend(AbstractBackend):
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = affirm_dataclass(FinanceLogFilter, log_filter)
+        log_filter = affirm(FinanceLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
     def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
-                             ) -> MoneyTransfersResult:
+                             ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        # This ensures that membership fees are handled before event fees for each day.
+        transfers = xsorted(transfers,
+                            key=lambda t: (t['date'], t['registration_id'] is not None))
         index = 0
 
         changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
@@ -172,7 +148,7 @@ class CdEBaseBackend(AbstractBackend):
 
         try:
             with Atomizer(rs):
-                result = MoneyTransfersResult()
+                result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
                 personas = self.core.get_total_personas(rs, persona_ids)
                 for index, transfer in enumerate(transfers):
@@ -199,9 +175,10 @@ class CdEBaseBackend(AbstractBackend):
                             code = self.core.change_membership_easy_mode(
                                 rs, persona['id'], is_member=True)
                             result.new_members += bool(code)
+                            persona['is_member'] = bool(code)
 
                         # Add to tally.
-                        result.membership_fees.append(MoneyTransfer(
+                        result.membership_fees.append(models_finance.MoneyTransfer(
                             persona=persona, amount=amount, date=date,
                         ))
 
@@ -209,10 +186,12 @@ class CdEBaseBackend(AbstractBackend):
                         persona['balance'] = new_balance
                     else:
                         registration = self.event.book_registration_payment(
-                            rs, transfer['registration_id'], amount, date,
+                            rs, registration_id=transfer['registration_id'],
+                            amount=amount, date=date, by_orga=False,
+                            is_member=persona['is_member'],
                         )
                         event_id = registration['event_id']
-                        ret = MoneyTransfer(
+                        ret = models_finance.MoneyTransfer(
                             persona=persona, amount=amount, date=date,
                             registration=registration,
                         )
@@ -222,7 +201,7 @@ class CdEBaseBackend(AbstractBackend):
                             result.event_reimbursements[event_id].append(ret)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors could happen.
-            return MoneyTransfersResult(success=False)
+            return models_finance.MoneyTransfersResult(success=False)
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -235,7 +214,7 @@ class CdEBaseBackend(AbstractBackend):
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
 
-            return MoneyTransfersResult(success=False, index=index)
+            return models_finance.MoneyTransfersResult(success=False, index=index)
         return result
 
     @access("cde")
@@ -462,7 +441,7 @@ class CdEBaseBackend(AbstractBackend):
                 # transition. The remaining data will be updated later.
                 mandatory_fields = {
                     field for field, validator in CDE_TRANSITION_FIELDS.items()
-                    if field not in upgrades and not is_optional(validator)
+                    if field not in upgrades and not is_optional_type(validator)
                 }
                 assert mandatory_fields <= set(batch_fields)
                 # It is pure incident that only event users have additional (optional)
@@ -554,7 +533,10 @@ class CdEBaseBackend(AbstractBackend):
             # frustrating for the users -- hence some extra error handling
             # here.
             self.logger.error(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation <<<\n<<<\n<<<\n<<<")
+                f">>>\n>>>\n>>>\n>>>"
+                f" Exception during batch creation ({index=})"
+                f" <<<\n<<<\n<<<\n<<<"
+            )
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

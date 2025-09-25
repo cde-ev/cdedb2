@@ -30,13 +30,17 @@ from cdedb.common import (
     RequestState,
     abbreviation_mapper,
     get_hash,
+    get_mandatory_form_fields,
     merge_dicts,
     now,
     unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import BALLOT_EXPOSED_FIELDS
+from cdedb.common.validation.validate import (
+    BALLOT_CANDIDATE_COMMON_FIELDS,
+    BALLOT_EXPOSED_FIELDS,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
@@ -135,7 +139,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             })
         return self.render(rs, "ballot/ballot_template", {
             'assembly_entries': assembly_entries,
-        })
+        }, mandatory_fields=get_mandatory_form_fields(self.ballot_template_redirect))
 
     @access("assembly")
     @REQUESTdata("target_assembly_id", "source_id")
@@ -184,17 +188,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
-        selectize_data = [
-            {'id': version['attachment_id'], 'name': version['title']}
-            for version in xsorted(
-                attachment_versions.values(),
-                key=EntitySorter.attachment)
-        ]
 
-        return self.render(rs, "ballot/configure_ballot", {
-            'attachment_entries': attachment_entries,
-            'selectize_data': selectize_data,
-        })
+        return self.render(
+            rs,
+            "ballot/configure_ballot",
+            {'attachment_entries': attachment_entries},
+            get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS)
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -653,12 +653,6 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"])
                               for attachment_id, version in attachment_versions.items()]
-        selectize_data = [
-            {'id': version['attachment_id'], 'name': version['title']}
-            for version in xsorted(
-                attachment_versions.values(),
-                key=EntitySorter.attachment)
-        ]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
@@ -667,10 +661,12 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
-        return self.render(rs, "ballot/configure_ballot", {
-            "attachment_entries": attachment_entries,
-            "selectize_data": selectize_data,
-        })
+        return self.render(
+            rs,
+            "ballot/configure_ballot",
+            {"attachment_entries": attachment_entries},
+            get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS)
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -703,17 +699,19 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/reschedule_ballots")
 
         config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
-        return self.render(rs, "ballot/reschedule_ballots", {
-            'ballots': grouped.upcoming, 'config_grouped': config_grouped})
+        return self.render(rs, "ballot/reschedule_ballots",
+                           {'ballots': grouped.upcoming,
+                            'config_grouped': config_grouped},
+                           get_mandatory_form_fields(self.reschedule_ballots))
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("ballot_ids", "vote_begin", "vote_end", "vote_extension_end")
     def reschedule_ballots(
             self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
-            vote_begin: Optional[datetime.datetime],
-            vote_end: Optional[datetime.datetime],
-            vote_extension_end: Optional[datetime.datetime]) -> Response:
+            vote_begin: datetime.datetime,
+            vote_end: datetime.datetime,
+            vote_extension_end: datetime.datetime | None) -> Response:
         """Change the voting dates for all selected ballots."""
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
@@ -908,14 +906,10 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
-
-        spec = {
-            'shortname': vtypes.ShortnameRestrictiveIdentifier,
-            'title': vtypes.LegacyShortname,
-        }
         existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, vtypes.BallotCandidate, existing_candidates, spec)
+            rs, vtypes.BallotCandidate, existing_candidates,
+            BALLOT_CANDIDATE_COMMON_FIELDS)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
 

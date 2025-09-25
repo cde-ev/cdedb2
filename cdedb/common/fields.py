@@ -15,9 +15,10 @@ Realm = str
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin", "is_finance_admin",
-    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
-    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_cdelokal_admin",
-    "is_auditor", "is_member", "is_searchable", "is_archived", "is_purged",
+    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_complaint_admin",
+    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
+    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
+    "is_purged",
 )
 
 #: Names of all columns associated to an abstract persona.
@@ -59,22 +60,6 @@ PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 
-#: Maps all realms to their respective fields
-REALMS_TO_FIELDS = {
-    "core": PERSONA_CORE_FIELDS,
-    "ml": PERSONA_ML_FIELDS,
-    "assembly": PERSONA_ASSEMBLY_FIELDS,
-    "event": PERSONA_EVENT_FIELDS,
-    "cde": PERSONA_CDE_FIELDS,
-}
-
-#: Fields of a persona creation case.
-GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "given_names", "family_name", "gender", "birthday",
-    "telephone", "mobile", "address_supplement", "address", "postal_code", "location",
-    "country", "birth_name", "attachment_hash", "realm", "notes", "case_status",
-    "reviewer", "persona_id", "pevent_id", "pcourse_id")
-
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
@@ -92,8 +77,8 @@ REALM_SPECIFIC_GENESIS_FIELDS: dict[Realm, tuple[str, ...]] = {
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
     "is_core_admin", "is_cde_admin", "is_finance_admin", "is_event_admin",
-    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes",
-    "reviewer",
+    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_complaint_admin",
+    "is_auditor", "notes", "reviewer",
 )
 
 #: Fields of a concluded event
@@ -119,13 +104,6 @@ EVENT_FEE_FIELDS = ("id", "event_id", "kind", "title", "amount", "condition", "n
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
-
-#: Fields of a course associated to an event organized via the CdEDB
-COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "max_size", "min_size", "is_visible", "notes", "fields")
-
-#: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (

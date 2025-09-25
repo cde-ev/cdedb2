@@ -8,6 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import builtins
+import collections
 import enum
 from typing import Optional
 
@@ -255,7 +256,7 @@ class NotifyOnRegistration(CdEIntEnum):
 
 @enum.unique
 class GenesisStati(CdEIntEnum):
-    """Spec for field case_status of core.genesis_cases."""
+    """Spec for field status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
     unconfirmed = 1
     #: email confirmed, awaiting review
@@ -335,6 +336,14 @@ class MailinglistTypes(CdEIntEnum):
 
     public_member_implicit = 70
 
+    complaint_admin_implicit = 80
+
+    def optgroup_label(self) -> str:
+        from cdedb.models.ml import ML_TYPE_MAP  # noqa: PLC0415
+        if self in ML_TYPE_MAP:
+            return str(ML_TYPE_MAP[self].sortkey)
+        return ""
+
 
 @enum.unique
 class MailinglistDomain(CdEIntEnum):
@@ -364,8 +373,10 @@ class MailinglistDomain(CdEIntEnum):
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
         members without moderation."""
+        if self == MailinglistDomain.aka:
+            return {"tickets.cde-ev.de"}
         if self == MailinglistDomain.lists:
-            return {"cde-ev.de", "lists.schuelerakademie.de"}
+            return {"cde-ev.de", "lists.schuelerakademie.de", "tickets.cde-ev.de"}
         if self == MailinglistDomain.cdelokal:
             return {"cdelokal.schuelerakademie.de"}
         return set()
@@ -463,6 +474,234 @@ class PastInstitutions(CdEIntEnum):
 
 
 @enum.unique
+class ComplaintKind(CdEIntEnum):
+    """Rough kinds a complaint may have"""
+    physical_sexual_transgression = 1
+    physical_nonsexual_violence = 2
+    nonphysical_sexual_transgression = 3
+    verbal_abuse = 4
+    volunteer_harassment = 11
+    other_harassment = 15
+    mobbing = 21
+    bad_administration = 31
+    other = 1001
+
+
+@enum.unique
+class ComplaintInvolvementType(CdEIntEnum):
+    """Types of involvements in a complaint case."""
+    affected = 1
+    appellant = 11  #: presumed not to be primarily affected. Always informed
+    target = 21  #: whom a complaint is "against"
+    other = 51  #: especially for cases which are no actual complaints
+    withheld = 100  #: hides complaint even if otherwise visible to user
+
+    def adverse(self) -> set["ComplaintInvolvementType"]:
+        t = ComplaintInvolvementType
+        return {
+            t.affected: {t.target},
+            t.appellant: {t.target},
+            t.target: {t.affected, t.appellant},
+        }.get(self, set())
+
+    def get_icon(self) -> str:
+        return {
+            ComplaintInvolvementType.affected: "user-injured",
+            ComplaintInvolvementType.appellant: "comment",
+            ComplaintInvolvementType.target: "crosshairs",
+            ComplaintInvolvementType.other: "question",
+            ComplaintInvolvementType.withheld: "eye-slash",
+        }[self]
+
+    @property
+    def shortname(self) -> str:
+        return {
+            ComplaintInvolvementType.affected: "Bt",
+            ComplaintInvolvementType.appellant: "Bf",
+            ComplaintInvolvementType.target: "Zp",
+            ComplaintInvolvementType.other: "Sonst",
+            ComplaintInvolvementType.withheld: "Pst",
+        }[self]
+
+
+@enum.unique
+class ComplaintEntryType(CdEIntEnum):
+    """Type of entries in the history of a complaint.
+
+    Some things are shown in the entries, even though they are pulled in
+    from the logs instead. Those can not be replaced later on.
+    """
+    # Initial
+    generic_information = 101  #:
+
+    # Statements
+    provisional_statement_given = 201  #:
+    statement_signed = 211  #:
+    # statement_withdrawn = 221  #:
+    statement_cleared = 231  #: there has been consent to use this for further cases
+    statement_sent = 241  #: statement has been printed and sent to Vereinsarchiv
+    statement_received = 246  #: statement has been received at Vereinsarchiv
+
+    # Agreements
+    agreement = 301  #: the factions reached a formal agreement as a partial resolution
+    agreement_measure = 311  #:
+
+    # Provisional arbitration
+    provisional_to_arbcom = 401  #:
+    provisional_measure = 411  #:
+
+    # Definite arbitration
+    definite_to_arbcom = 501  #:
+    definite_measure = 511  #:
+
+    # Measure details
+    measure_explanation = 601
+    measure_comment = 611
+
+    # Conclusion
+    faction_summary = 1001  #: of some companions for a faction
+    synthesis = 1011  #:
+
+    # Special
+    revocation_explanation = 10001  #: Can be child of everything
+
+    @classmethod
+    def measure_types(cls) -> set["ComplaintEntryType"]:
+        return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
+
+    @property
+    def is_measure(self) -> bool:
+        return self in self.measure_types()
+
+    @classmethod
+    def visible_types(cls) -> set["ComplaintEntryType"]:
+        return cls.measure_types()
+
+    @classmethod
+    def hidden_types(cls) -> set["ComplaintEntryType"]:
+        return set(cls) - cls.visible_types()
+
+    @property
+    def _is_hidden(self) -> bool:
+        return self not in self.visible_types()
+
+    @classmethod
+    def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
+        et = ComplaintEntryType
+        children: dict[ComplaintEntryType, set[ComplaintEntryType]]
+        children = collections.defaultdict(set)
+        children.update({
+            et.provisional_statement_given: {
+                et.statement_signed,
+                et.statement_cleared,
+                et.statement_sent,
+                et.statement_received,
+            },
+            et.agreement: {et.agreement_measure},
+            et.agreement_measure: {
+                et.measure_explanation,
+                et.measure_comment,
+            },
+            et.provisional_to_arbcom: {et.provisional_measure},
+            et.provisional_measure: {
+                et.measure_explanation,
+                et.measure_comment,
+            },
+            et.definite_to_arbcom: {et.definite_measure},
+            et.definite_measure: {
+                et.measure_explanation,
+                et.measure_comment,
+            },
+        })
+        for t in et:
+            children[t].add(et.revocation_explanation)
+        return children
+
+    @classmethod
+    def all_children(cls) -> set["ComplaintEntryType"]:
+        ret = set()
+        for children in cls._get_children_map().values():
+            ret.update(children)
+        return ret
+
+    @property
+    def possible_children(self) -> set["ComplaintEntryType"]:
+        return self._get_children_map().get(self, set())
+
+    @property
+    def has_description(self) -> bool:
+        et = ComplaintEntryType
+        return self not in {
+            et.statement_signed, et.statement_sent, et.statement_received,
+        }
+
+    @property
+    def is_hidden(self) -> bool:
+        return self.has_description and self._is_hidden
+
+    @property
+    def has_concerned(self) -> bool:
+        return self in {
+            ComplaintEntryType.provisional_statement_given,
+            ComplaintEntryType.provisional_measure,
+            ComplaintEntryType.definite_measure,
+            ComplaintEntryType.agreement_measure,
+        }
+
+    def get_icon(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.generic_information: "info",
+            et.provisional_statement_given: "file-lines",
+            et.statement_signed: "file-signature",
+            et.statement_cleared: "file-export",
+            et.statement_sent: "envelope-open-text",
+            et.statement_received: "box-archive",
+            et.agreement: "handshake",
+            et.agreement_measure: "shield-heart",
+            et.provisional_to_arbcom: "scale-unbalanced",
+            et.provisional_measure: "bandage",
+            et.definite_to_arbcom: "scale-unbalanced",
+            et.definite_measure: "shield-halved",
+            et.measure_explanation: "scale-balanced",
+            et.measure_comment: "file-shield",
+            et.faction_summary: "clipboard-user",
+            et.synthesis: "clipboard-check",
+            et.revocation_explanation: "rotate-left",
+        }[self]
+
+    @property
+    def right_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.statement_signed: n_("signed"),
+            et.statement_cleared: n_("cleared"),
+            et.statement_sent: n_("sent"),
+            et.statement_received: n_("received"),
+            et.agreement_measure: n_("measure"),
+            et.provisional_measure: n_("measure"),
+            et.definite_measure: n_("measure"),
+            et.measure_explanation: n_("explanation"),
+            et.measure_comment: n_("comment"),
+            et.revocation_explanation: n_("revoked"),
+        }.get(self, str(self))
+
+    @property
+    def left_shortname(self) -> str:
+        et = ComplaintEntryType
+        return {
+            et.provisional_statement_given: n_("Statement_[[in a case]]"),
+            et.agreement: n_("Agreement"),
+            et.agreement_measure: n_("Measure"),
+            et.provisional_to_arbcom: n_("Arbcom"),
+            et.provisional_measure: n_("Provisional measure"),
+            et.definite_to_arbcom: n_("Arbcom"),
+            et.definite_measure: n_("Measure"),
+            et.revocation_explanation: n_("Revocation"),
+        }.get(self, str(self))
+
+
+@enum.unique
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:
@@ -492,6 +731,41 @@ class CoreLogCodes(CdEIntEnum):
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:
+
+
+@enum.unique
+class ComplaintLogCodes(CdEIntEnum):
+    case_created = 1  #:
+    case_changed_kind = 2  #:
+    case_changed_grave = 3  #:
+    case_changed_summary = 4  #:
+    case_changed_start_date = 5  #:
+    case_changed_end_date = 6  #:
+
+    # case_deleted = 21  #:
+    # case_concluded = 22  #:
+    # case_aborted = 23  #:
+
+    involved_added = 41  #:
+    involved_removed = 42  #:
+    involved_informed = 46  #:
+    involved_uninformed = 47  #:
+
+    companion_added = 51  #:
+    companion_withdrawn = 52  #:
+    companion_reinstated = 53  #:
+    companion_removed = 54  #:
+
+    enforcer_added = 101  #:
+    enforcer_removed = 102  #:
+
+    case_unlocked = 201  #:
+    concealed_case_detected = 202  #:
+
+    @property
+    def is_historic(self) -> bool:
+        """List log codes which are relevant to display on a case history"""
+        return 1 < self.value < 100
 
 
 @enum.unique
@@ -565,14 +839,18 @@ class EventLogCodes(CdEIntEnum):
     track_removed = 37  #:
     course_created = 40  #:
     course_changed = 41  #:
-    course_segments_changed = 42  #:
-    course_segment_activity_changed = 43  #:
+    course_segment_deleted = 420  #:
+    course_segment_created = 421  #:
+    course_segment_deactivated = 430  #:
+    course_segment_activated = 431  #:
     course_deleted = 44  #:
     registration_created = 50  #:
     registration_changed = 51  #:
     registration_deleted = 52  #:
     registration_payment_received = 55  #:
     registration_payment_reimbursed = 56  #:
+    registration_payment_received_orga = 57  #:
+    registration_payment_reimbursed_orga = 58  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:

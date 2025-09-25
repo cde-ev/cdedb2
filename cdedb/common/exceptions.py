@@ -7,7 +7,6 @@ from typing import Any
 import werkzeug.exceptions
 
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import xsorted
 
 
 class QuotaException(werkzeug.exceptions.TooManyRequests):
@@ -67,7 +66,8 @@ class DeletionBlockedError(Exception):
             "Deletion of '%(entity_name)s' blocked by %(blockers)s",
             {
                 "entity_name": entity_name,
-                "blockers": ", ".join(xsorted(remaining_blockers)),
+                # no xsorted here to avoid circular import
+                "blockers": ", ".join(sorted(remaining_blockers)),
             },
         )
 
@@ -76,11 +76,21 @@ class DeletionImpossibleError(Exception):
     """Exception signalling that deletion is permanently blocked."""
 
 
+class EventIsBalancedError(Exception):
+    """Exception signalling, that a change to a balanced event was blocked."""
+
+
 class CryptographyError(Exception):
     """Exception signalling that a cryptographic action failed.
 
     Suppresses detailed logging to avoid leaking secrets into log.
     """
+
+
+class AdverseCompanionError(Exception):
+    """Exception signalling that adding an adverse companion was blocked."""
+    def __init__(self, msg: str = n_("Adverse companion."), /, *args: Any):
+        super().__init__(msg, *args)
 
 
 class ValidationWarning(Exception):

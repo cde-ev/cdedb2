@@ -18,6 +18,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     LodgementsSortkeys,
     RequestState,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
     unwrap,
@@ -37,11 +38,10 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     drow_name,
-    event_guard,
     process_dynamic_input,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph,
     detect_lodgement_wishes,
@@ -81,15 +81,14 @@ class EventLodgementMixin(EventBaseFrontend):
         )
         lodgements = violation_data['lodgements']
         inhabitants = violation_data['inhabitants']
-        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         # Sum inhabitants per group, part and status.
         inhabitants_per_group = {
             group_id: {
                 part_id: sum(
                     (inhabitants[lodgement_id][part_id]
-                     for lodgement_id in group['lodgement_ids']),
+                     for lodgement_id in group.lodgement_ids),
                     start=LodgementInhabitants(),
                 )
                 for part_id in parts
@@ -106,8 +105,8 @@ class EventLodgementMixin(EventBaseFrontend):
             for part_id in parts
         }
         # Calculate sum of lodgement regular and camping mat capacities
-        total_reg_capacity = sum(g['regular_capacity'] for g in groups.values())
-        total_cm_capacity = sum(g['camping_mat_capacity'] for g in groups.values())
+        total_reg_capacity = sum(g.regular_capacity for g in groups.values())
+        total_cm_capacity = sum(g.camping_mat_capacity for g in groups.values())
 
         def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
             primary_sort: Sortkey
@@ -137,15 +136,14 @@ class EventLodgementMixin(EventBaseFrontend):
 
         # now sort the lodgements inside their group
         grouped_lodgements = {
-            group_id: dict(keydictsort_filter(
+            group.id: dict(keydictsort_filter(
                 {
                     lodgement_id: lodgements[lodgement_id]
-                    for lodgement_id in group['lodgement_ids']
+                    for lodgement_id in group.lodgement_ids
                 },
                 sortkey=sort_lodgement, reverse=reverse,
             ))
-            for group_id, group in keydictsort_filter(
-                groups, EntitySorter.lodgement_group)
+            for group in groups.values()
         }
         sorted_parts = xsorted(parts.values())
 
@@ -168,29 +166,24 @@ class EventLodgementMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary_form(self, rs: RequestState, event_id: int,
                                      ) -> Response:
-        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
-        sorted_group_ids = [
-            e["id"] for e in xsorted(groups.values(), key=EntitySorter.lodgement_group)]
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         current = {
             drow_name(field_name=key, entity_id=group_id): value
             for group_id, group in groups.items()
-            for key, value in group.items() if key != 'id'}
+            for key, value in group.as_dict().items() if key != 'id'}
         merge_dicts(rs.values, current)
 
-        return self.render(rs, "lodgement/lodgement_group_summary", {
-            'sorted_group_ids': sorted_group_ids, 'groups': groups,
-        })
+        return self.render(rs, "lodgement/lodgement_group_summary", {'groups': groups})
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Manipulate groups of lodgements."""
-        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         spec: vtypes.TypeMapping = {'title': str}
-        groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
+        groups = process_dynamic_input(rs, vtypes.LodgementGroup, groups.keys(),
                                        spec, additional={'event_id': event_id})
 
         if rs.has_validation_errors():
@@ -204,7 +197,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 code *= self.eventproxy.create_lodgement_group(rs, group)
             else:
                 del group['event_id']
-                code *= self.eventproxy.rcw_lodgement_group(rs, group)
+                code *= self.eventproxy.set_lodgement_group(rs, group)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
@@ -228,10 +221,10 @@ class EventLodgementMixin(EventBaseFrontend):
 
         lodgements = violation_data['all_lodgements']
 
-        lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
-        params['groups'] = lodgement_groups
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+        params['groups'] = groups
         for lodge in lodgements.values():
-            lodge['group_title'] = lodgement_groups.get(lodge['group_id'])
+            lodge['group_title'] = group.title if (group := groups.get(lodge['group_id'])) else None
         sorted_ids = xsorted(
             lodgements.keys(),
             key=lambda id_: EntitySorter.lodgement_by_group(lodgements[id_]))
@@ -245,7 +238,6 @@ class EventLodgementMixin(EventBaseFrontend):
             params['involved_inhabitants'] = involved_inhabitants
             params['uninvolved_inhabitants'] = uninvolved_inhabitants
             params['registrations'] = violation_data['all_registrations']
-            params['personas'] = violation_data['personas']
             params['violations'] = violation_data['violations']
         else:
             params['violations'] = violation_data['violations'].get(registration_id=None)
@@ -297,9 +289,12 @@ class EventLodgementMixin(EventBaseFrontend):
                 registrations, personas, event, restrict_part_id=None)
         else:
             problems = []
-        lodgement_groups = self.eventproxy.list_lodgement_groups(rs, event_id)
-        return self.render(rs, "lodgement/lodgement_wishes_graph_form",
-                           {'problems': problems, 'lodgement_groups': lodgement_groups})
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+        return self.render(
+            rs, "lodgement/lodgement_wishes_graph_form",
+            {'problems': problems, 'lodgement_groups': lodgement_groups},
+            get_mandatory_form_fields(self.lodgement_wishes_graph),
+        )
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
@@ -337,8 +332,7 @@ class EventLodgementMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         camping_mat_field_names = self._get_camping_mat_field_names(
@@ -363,12 +357,16 @@ class EventLodgementMixin(EventBaseFrontend):
                               group_id: Optional[int] = None) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         if len(groups) == 1:
             group_id = unwrap(groups.keys())
         if group_id:
             rs.values['group_id'] = group_id
-        return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
+        mandatory_fields = get_mandatory_form_fields(
+            self.create_lodgement, LODGEMENT_COMMON_FIELDS) - {'group_id'}
+        return self.render(
+            rs, "lodgement/create_lodgement", {'groups': groups}, mandatory_fields
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
@@ -420,12 +418,13 @@ class EventLodgementMixin(EventBaseFrontend):
     def change_lodgement_form(self, rs: RequestState, event_id: int,
                               lodgement_id: int) -> Response:
         """Render form."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         field_values = {
             f"fields.{field_name}": value
             for field_name, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
-        return self.render(rs, "lodgement/change_lodgement", {'groups': groups})
+        return self.render(rs, "lodgement/change_lodgement", {'groups': groups},
+                           get_mandatory_form_fields(LODGEMENT_COMMON_FIELDS))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
@@ -511,7 +510,8 @@ class EventLodgementMixin(EventBaseFrontend):
             part_id: xsorted(
                 (
                     (registration_id, make_persona_name(
-                        personas[registrations[registration_id]['persona_id']]))
+                        personas[registrations[registration_id]['persona_id']],
+                        include_nickname=True))
                     for registration_id in registrations
                     if _check_without_lodgement(registration_id, part_id)
                 ),
@@ -531,9 +531,8 @@ class EventLodgementMixin(EventBaseFrontend):
 
         selectize_data = {
             part_id: xsorted(
-                [{'name': (personas[registration['persona_id']]['given_names']
-                           + " " + personas[registration['persona_id']]
-                           ['family_name']),
+                [{'name': make_persona_name(personas[registration['persona_id']],
+                                            include_nickname=True),
                   'group_id': registration['parts'][part_id]['lodgement_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
@@ -681,11 +680,17 @@ class EventLodgementMixin(EventBaseFrontend):
     def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int,
                              ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
-        return self.render(rs, "lodgement/move_lodgements", {
-            'groups': groups, 'lodgements_in_group': lodgements_in_group,
-        })
+        return self.render(
+            rs,
+            "lodgement/move_lodgements",
+            {
+                'groups': groups,
+                'lodgements_in_group': lodgements_in_group,
+            },
+            get_mandatory_form_fields(self.move_lodgements),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
@@ -694,7 +699,7 @@ class EventLodgementMixin(EventBaseFrontend):
                         lodgement_ids: Collection[int], target_group_id: Optional[int],
                         delete_group: bool) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
-        groups = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         lodgements_in_group = self.eventproxy.list_lodgements(rs, event_id, group_id)
         if rs.has_validation_errors():
             return self.move_lodgements_form(rs, event_id, group_id)

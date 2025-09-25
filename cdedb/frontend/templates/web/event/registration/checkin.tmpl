@@ -2,7 +2,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% set pagename = gettext("Checkout") if checkout else gettext("Checkin") %}
 {% block title %}
@@ -32,14 +35,14 @@
     {% else %}
         <div class="panel panel-primary panel-condensed">
             <div class="panel-heading">
-                <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
+                <h3 class="panel-title">{{ util.make_icon("search") }}{{ nbsp }}{{ gettext("Filter") }}</h3>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('event/checkin_form') }}" method="GET" id="checkinfilterform"
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
-                        entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
+                        entries=ambience['event']['parts']|entries('id', 'title')) }}
                     {{ util.input_hidden(name="checkout", value=checkout) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
@@ -73,7 +76,7 @@
                 <div class="row">
                     <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
-                            {{ util.persona_name(personas[registration['persona_id']], include_nickname=True) }}
+                            {{ personas[registration['persona_id']]|persona_name(include_nickname=True) }}
                         </span>
                         {% if registration['age'].is_minor() %}
                             {{ gettext(registration['age']|string) }}

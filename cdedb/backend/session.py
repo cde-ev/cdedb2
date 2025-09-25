@@ -23,7 +23,11 @@ from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.models.droid import DynamicAPIToken, StaticAPIToken, resolve_droid_name
+from cdedb.models.droid import (
+    DynamicAPIToken,
+    StaticAPIToken,
+    resolve_droid_name,
+)
 
 
 class SessionBackend:
@@ -33,6 +37,7 @@ class SessionBackend:
     :py:class:`cdedb.backend.common.AbstractBackend` since the general
     base class makes more assumptions than we can fulfill.
     """
+
     realm = "session"
 
     def __init__(self) -> None:
@@ -41,12 +46,16 @@ class SessionBackend:
 
         # local variable also to prevent closure over secrets
         self._validate_static_droid_secret = lambda droid, secret: consteq(
-            secrets['API_TOKENS'][droid], secret)
+            secrets['API_TOKENS'][droid], secret
+        )
 
         setup_logger(
-            "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
+            "cdedb.backend.session",
+            self.conf["LOG_DIR"] / "cdedb-backend-session.log",
+            self.conf["LOG_LEVEL"],
+            syslog_level=self.conf["SYSLOG_LEVEL"],
+            console_log_level=self.conf["CONSOLE_LOG_LEVEL"],
+        )
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
         # To prevent lots of serialization failures due to races for
@@ -58,9 +67,13 @@ class SessionBackend:
         # updating atime (which does not suffer too much from a lost write,
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
-            self.conf["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_persona"),
-            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"],
-            isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
+            self.conf["CDB_DATABASE_NAME"],
+            ("cdb_anonymous", "cdb_persona"),
+            secrets,
+            self.conf["DB_HOST"],
+            self.conf["DB_PORT"],
+            isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED,
+        )
 
     def _is_locked_down(self) -> bool:
         """Helper to determine if CdEDB is locked."""
@@ -86,8 +99,11 @@ class SessionBackend:
         sessionkey, sessionkey_errs = inspect(vtypes.PrintableASCII, sessionkey)
         ip, ip_errs = inspect(vtypes.PrintableASCII, ip)
         if not sessionkey_errs and not ip_errs:
-            query = ("SELECT persona_id, ip, is_active, atime, ctime"
-                     " FROM core.sessions WHERE sessionkey = %s")
+            query = """
+                SELECT persona_id, ip, is_active, atime, ctime
+                FROM core.sessions
+                WHERE sessionkey = %s
+            """
             with self.connpool["cdb_anonymous"] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
@@ -95,17 +111,14 @@ class SessionBackend:
                         data = cur.fetchone()
                     else:
                         # log message to be picked up by fail2ban
-                        self.logger.warning(
-                            f"CdEDB invalid session key from {ip}")
+                        self.logger.warning(f"CdEDB invalid session key from {ip}")
         if data:
             deactivate = False
             if data["is_active"]:
                 if data["ip"] == ip:
                     timestamp = now()
-                    if (data["atime"] + self.conf["SESSION_TIMEOUT"]
-                            >= timestamp):
-                        if (data["ctime"] + self.conf["SESSION_LIFESPAN"]
-                                >= timestamp):
+                    if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
+                        if data["ctime"] + self.conf["SESSION_LIFESPAN"] >= timestamp:
                             # here we finally verified the session key
                             persona_id = data["persona_id"]
                         else:
@@ -117,12 +130,16 @@ class SessionBackend:
                 else:
                     deactivate = True
                     self.logger.info(
-                        f"IP mismatch ({ip} vs {data['ip']}) for {sessionkey}")
+                        f"IP mismatch ({ip} vs {data['ip']}) for {sessionkey}"
+                    )
             else:
                 self.logger.info(f"Got inactive session key {sessionkey}.")
             if deactivate:
-                query = ("UPDATE core.sessions SET is_active = False"
-                         " WHERE sessionkey = %s")
+                query = """
+                    UPDATE core.sessions
+                    SET is_active = False
+                    WHERE sessionkey = %s
+                """
                 with self.connpool["cdb_anonymous"] as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
@@ -131,25 +148,30 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        query2 = (f"SELECT id AS persona_id, given_names,"
-                  f" family_name, username, {', '.join(PERSONA_STATUS_FIELDS)}"
-                  f" FROM core.personas WHERE id = %s")
+        query2 = f"""
+            SELECT
+                id AS persona_id, given_names, nickname, family_name, username,
+                {', '.join(PERSONA_STATUS_FIELDS)}
+            FROM core.personas
+            WHERE id = %s
+        """
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
                 assert data is not None
-        if self._is_locked_down() and not (data['is_meta_admin']
-                                           or data['is_core_admin']):
+        if self._is_locked_down() and not (
+            data['is_meta_admin'] or data['is_core_admin']
+        ):
             # Short circuit in case of lockdown
             return User()
         if not data["is_active"]:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
-                                     'family_name')}
+        pkeys = ('persona_id', 'username', 'given_names', 'nickname', 'family_name')
+        vals = {k: data[k] for k in pkeys}
         return User(roles=extract_roles(data), **vals)
 
     def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
@@ -169,18 +191,18 @@ class SessionBackend:
 
         try:
             droid_class, token_id = resolve_droid_name(droid_name)
-
             if droid_class is None:
                 # Droid name did not match any known droid.
                 self.logger.warning(
-                    f"API token did not match any known droid: {droid_name!r}.")
+                    f"API token did not match any known droid: {droid_name!r}."
+                )
                 raise APITokenError(n_("Unknown droid name."))
-            elif issubclass(droid_class, StaticAPIToken):
+            elif issubclass(droid_class, StaticAPIToken) and token_id is None:
                 if self._validate_static_droid_secret(droid_class.name, secret):
-                    ret = droid_class.get_user()
+                    ret = droid_class().get_user()
                 else:
                     raise APITokenError
-            elif issubclass(droid_class, DynamicAPIToken) and token_id:
+            elif issubclass(droid_class, DynamicAPIToken) and token_id is not None:
                 ret = self._validate_dynamic_droid_secret(droid_class, token_id, secret)
             else:
                 raise APITokenError
@@ -195,9 +217,9 @@ class SessionBackend:
 
         return ret
 
-    def _validate_dynamic_droid_secret(self, droid_class: type[DynamicAPIToken],
-                                       token_id: int, secret: str) -> User:
-
+    def _validate_dynamic_droid_secret(
+        self, droid_class: type[DynamicAPIToken], token_id: int, secret: str
+    ) -> User:
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             raise APITokenError(n_("This API is not available in offline mode."))
 
@@ -215,8 +237,8 @@ class SessionBackend:
                 # Not a valid token id. Probably garbage input or deleted token.
                 if not data:
                     self.logger.warning(
-                        f"Access using unknown {droid_class.name}"
-                        f" token id: {token_id}.")
+                        f"Access using unknown {droid_class.name} token id: {token_id}."
+                    )
                     raise APITokenError(
                         n_("Unknown %(droid_name)s token."),
                         {'droid_name': droid_class.name},
@@ -228,7 +250,8 @@ class SessionBackend:
 
                 if secret_hash is None or token.rtime:
                     self.logger.warning(
-                        f"Access using inactive {droid_class.name} token {token}.")
+                        f"Access using inactive {droid_class.name} token {token}."
+                    )
                     if token.rtime:
                         raise APITokenError(
                             n_("This %(droid_name)s token has been revoked."),
@@ -236,21 +259,25 @@ class SessionBackend:
                         )
                     else:
                         raise APITokenError(
-                            n_("Could not verify %(droid_name)s token."
-                               " This could be the result of a misconfigured"
-                               " offline instance."),
+                            n_(
+                                "Could not verify %(droid_name)s token."
+                                " This could be the result of a misconfigured"
+                                " offline instance."
+                            ),
                             {'droid_name': droid_class.name},
                         )
                 if not verify_password(secret, secret_hash):
                     self.logger.warning(
-                        f"Invalid secret for {droid_class.name} token {token}.")
+                        f"Invalid secret for {droid_class.name} token {token}."
+                    )
                     raise APITokenError(
                         n_("Invalid %(droid_name)s token."),
                         {'droid_name': droid_class.name},
                     )
                 if now() > token.etime:
                     self.logger.warning(
-                        f"Access using expired {droid_class.name} token {token}.")
+                        f"Access using expired {droid_class.name} token {token}."
+                    )
                     raise APITokenError(
                         n_("This %(droid_name)s token has expired."),
                         {'droid_name': droid_class.name},

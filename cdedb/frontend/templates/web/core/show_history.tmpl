@@ -4,18 +4,18 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(committed) %}
+    {% trans name=committed|persona_name %}
         Change History of {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, committed['id']), util.persona_name(committed), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, committed['id']), committed|persona_name, icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Change History"), util.persona_name(committed), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Change History"), committed|persona_name, 'user', gettext("User")) }}
 {% endblock %}
 
 {% block static_notifications %}
@@ -155,7 +155,7 @@
         {% call history_field(gettext("Name")) %}
             {% call(entry) print_multifield_history(
                     ['title','given_names', 'nickname', 'family_name', 'name_supplement']) %}
-                {{ util.persona_name(entry, include_nickname=True, with_titles=True) }}
+                {{ entry|persona_name(include_nickname=True, with_titles=True) }}
             {% endcall %}
         {% endcall %}
 

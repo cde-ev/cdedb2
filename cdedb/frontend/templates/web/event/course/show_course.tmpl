@@ -3,11 +3,12 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] %}
+    {% trans course=ambience['course'].shortname, title=ambience['event'].title %}
     	Course {{ course }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -15,15 +16,16 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], active=True,
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course'].shortname, active=True,
             icon='book') }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course']['nr'],
-                                                                        course=ambience['course']['shortname']),
+    {# TODO use course.shortlabel instead? #}
+    {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course'].nr,
+                                                                        course=ambience['course'].shortname),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     <div class="subtitle">
-        {{ ambience['course']['title'] }}
+        {{ ambience['course'].title }}
     </div>
 {% endblock %}
 
@@ -43,11 +45,11 @@
 
             <dl class="dl-horizontal">
                 <dt title="{% trans %}Instructors{% endtrans %}">{% trans %}Instructors{% endtrans %}</dt>
-                <dd>{{ ambience['course']['instructors'] }}</dd>
+                <dd>{{ ambience['course'].instructors }}</dd>
                 <dt title="{% trans %}Maximum Size (excl. instr.){% endtrans %}">{% trans %}Maximum Size (excl. instr.){% endtrans %}</dt>
-                <dd>{{ ambience['course']['max_size'] }}</dd>
+                <dd>{{ ambience['course'].max_size }}</dd>
                 <dt title="{% trans %}Minimum Size (excl. instr.){% endtrans %}">{% trans %}Minimum Size (excl. instr.){% endtrans %}</dt>
-                <dd>{{ ambience['course']['min_size'] }}</dd>
+                <dd>{{ ambience['course'].min_size }}</dd>
                 <dt title="{% trans %}Visibility on Courselist{% endtrans %}">{% trans %}Visibility on Courselist{% endtrans %}</dt>
                 <dd>
                     {{ util.deko_checkbox(ambience['course']['is_visible'],
@@ -60,21 +62,21 @@
                     {% if field['association'] == enums['FieldAssociations'].course %}
                         <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
                         <dd>
-                            {{ generic_event.display_field(field, ambience['course']['fields'].get(field['field_name'])) }}
+                            {{ generic_event.display_field(field, ambience['course'].fields.get(field['field_name'])) }}
                         </dd>
                     {% endif %}
                 {% endfor %}
             </dl>
 
-    {% if ambience['course']['notes'] %}
+    {% if ambience['course'].notes %}
         {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                      aclass="panel-default panel-condensed") %}
-            {{ ambience['course']['notes']|md }}
+            {{ ambience['course'].notes|md }}
         {% endcall %}
     {% endif %}
 
     {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set general_violations = violations.get(course_id=ambience['course']['id'], track_not=ambience['course']['segments']) %}
+    {% set general_violations = violations.get(course=ambience['course'], track_not=ambience['course'].segments) %}
     {% if general_violations.max_severity >= min_severity %}
         {% call generic_event.constraint_violations_panel(general_violations.max_severity) %}
             {{ generic_event.list_violations("constraint-violations", general_violations, entity_page="course") }}
@@ -83,11 +85,11 @@
 
     <h2>{% trans %}Attendees{% endtrans %}</h2>
     {% set relevant_tracks = [] %}
-    {% for batch in ambience['event']['tracks'].values()|sort|selectattr('id', 'in', ambience['course']['segments'])|batch(3) %}
+    {% for batch in ambience['event']['tracks'].values()|sort|selectattr('id', 'in', ambience['course'].segments)|batch(3) %}
         <div class="row">
         {% for track in batch %}
-            {% set involved_attendees = attendee_stats.involved[(ambience['course']['id'], track.id)] %}
-            {% set uninvolved_attendees = attendee_stats.uninvolved[(ambience['course']['id'], track.id)] %}
+            {% set involved_attendees = attendee_stats.involved[(ambience['course'].id, track.id)] %}
+            {% set uninvolved_attendees = attendee_stats.uninvolved[(ambience['course'].id, track.id)] %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track.id }}-attendees">
                     <div class="panel-heading">
@@ -101,11 +103,11 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        {% set track_violations = violations.get(course_id=ambience['course']['id'], track=track) %}
+                        {% set track_violations = violations.get(course=ambience['course'], track=track) %}
                         <div id="track-violations-{{ track.id }}">
                             {# Skip violations where the assigned course matches but the instructed course does not. #}
                             {% for violation in track_violations if violation.severity >= enums['ViolationSeverity'].DEBUG and (
-                                    not violation.instructed_course or violation.instructed_course['id'] == ambience['course']['id']) %}
+                                    not violation.instructed_course or violation.instructed_course.id == ambience['course'].id) %}
                                 {% set text = generic_event.print_violation(violation, entity_page="course").strip() %}
                                 {% if text %}
                                     <p class="{{ violation.severity.html_class() }}">
@@ -119,16 +121,16 @@
                             {% endfor %}
                         </div>
                         {%- if involved_attendees.num or uninvolved_attendees.num %}
-                            {% if personas %}
+                            {% if registrations %}
                                 <ul class="slim">
                                     {%- for involved, attendees in [(True, involved_attendees), (False, uninvolved_attendees)] %}
                                         {%- for instructor, registrations in [(True, attendees.instructors), (False, attendees.learners)] %}
-                                            {%- for reg in registrations|sort %}
+                                            {%- for reg in registrations|keysort(EntitySorter.registration_with_persona) %}
                                                 <li>
                                                     {%- if not involved %}<s>{% endif %}
                                                     {{- util.href(cdedblink('event/show_registration',
                                                                         {'registration_id': reg['id']}),
-                                                                 util.persona_name(personas[reg['persona_id']], include_nickname=True)) }}
+                                                                  reg['persona']|persona_name(include_nickname=True)) }}
                                                     {%- if instructor %} ({% trans %}Instr.{% endtrans %}){%- endif %}
                                                     {%- if not involved %}</s>{% endif %}
                                                     {%- if reg['parts'][track.part_id]['status'] != enums['RegistrationPartStati'].participant %}
@@ -151,7 +153,7 @@
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                             'track_id': track.id,
-                                                            'course_id': ambience['course']['id'],
+                                                            'course_id': ambience['course'].id,
                                                             'position': enums.CourseFilterPositions.anywhere.value,
                                                             'submitform': True}),
                                              label=gettext("All Course Choices"),
@@ -162,7 +164,7 @@
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                  'track_id': track.id,
-                                                 'course_id': ambience['course']['id'],
+                                                 'course_id': ambience['course'].id,
                                                  'position': enums.CourseFilterPositions.assigned.value,
                                                  'include_active': True,
                                                  'submitform': True}),
@@ -189,12 +191,12 @@
                 icon="thumbtack", aclass="panel-default panel-condensed",
                 title=
                     gettext("Description") + " (<i>{}</i>)".format(gettext("not visible"))|s
-                    if not ambience['course']['is_visible'] else
+                    if not ambience['course'].is_visible else
                     util.href(
-                        cdedblink("event/course_list") + "#course-{}".format(ambience['course']['id'])|s,
+                        cdedblink("event/course_list") + "#course-{}".format(ambience['course'].id)|s,
                         gettext("Description"), title=gettext("Show on Courselist"))
                 ) %}
-        {{ ambience['course']['description']|md }}
+        {{ ambience['course'].description|md }}
     {% endcall %}
 
     {{ util.pager('event/show_course', 'course_id', prev_course, next_course, "label") }}
@@ -208,7 +210,7 @@
                         {{ util.anti_csrf_token('event/delete_course') }}
                         {{ util.input_submit(label=gettext("Delete"), readonly=not is_privileged_for("delete_course") or blockers,
                                              aclass="btn btn-danger", icon="trash-alt", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                        {{ util.ack_delete(gettext("The course will be permanently deleted.")) }}
                     </form>
                 </div>
             </div>
@@ -219,9 +221,4 @@
             </div>
         </div>
     {% endcall %}
-    <script nonce="{{ csp_nonce }}">
-        $('#deletecourseform')
-            .cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}")
-            .find('[name="ack_delete"]').prop('checked', true).parent().hide();
-    </script>
 {% endblock %}

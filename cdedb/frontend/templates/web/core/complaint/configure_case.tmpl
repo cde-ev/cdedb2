@@ -1,0 +1,110 @@
+{% if ambience['case'] %}
+    {% set action_target = "core/change_case" %}
+    {% set sidenav_active='complaint_index' %}
+{% else %}
+    {% set action_target = "core/create_case" %}
+    {% set sidenav_active='complaint_index' %}
+{% endif %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% if ambience["case"] %}
+        {% trans id=ambience["case"].id|string %}
+            Edit Case {{ id }}
+        {% endtrans %}
+    {% else %}
+        {% trans %}Create Case{% endtrans %}
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {% if ambience["case"] %}
+        {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+                                icon="gavel") }}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Change"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink(action_target), gettext("Create Case"), active=True) }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink(action_target) }}" method="POST" id="configurecaseform" class="form-horizontal">
+        {{ util.anti_csrf_token(action_target) }}
+
+        <h3 class="heading-underline">{% trans %}Metadata{% endtrans %}</h3>
+        {{ util.form_input_text(name="summary", label=gettext("Summary"),
+                                info=gettext("A short anonymized summary what this case is about.")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True,
+                                info=gettext("Further notes. Will be visible without unlocking the case. Do not enter sensitive or personal information here.")) }}
+        {{ util.form_input_select(name="kind", label=gettext("Kind"),
+                                  entries=enums['ComplaintKind']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_checkbox(name="is_grave", label=gettext("is extraordinarily grave")) }}
+        {{ util.form_input_text(name="start_date", label=gettext("Start Date"), type="date",
+                                info=gettext("All events covered by this complaint are known to have happened after this date.")) }}
+        {{ util.form_input_text(name="end_date", label=gettext("End Date"), type="date",
+                                info=gettext("All events covered by this complaint are known to have happened before this date.")) }}
+
+        {% if ambience["case"] %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
+        {% else %}
+            <h3 class="heading-underline">{% trans %}Involved{% endtrans %}</h3>
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}{{ nbsp -}}
+                {% trans %}
+                    Enter affected appellants as affected and mark them as informed.
+                {% endtrans %}
+                {% trans %}
+                    You can add further involved people later.
+                {% endtrans %}
+            </p>
+            {{ util.form_input_text(name="affected_ids", label=gettext("Affected"), anid="input-affected_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-affected_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [{{ user.persona_id }}], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+            {{ util.form_input_text(name="appellant_ids", label=gettext("Appellants"), anid="input-appellant_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-appellant_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [{{ user.persona_id }}], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+            {{ util.form_input_text(name="target_ids", label=gettext("Targets"), anid="input-target_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-target_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [{{ user.persona_id }}], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+            {{ util.form_input_text(name="withheld_ids", label=gettext("Withheld From"), anid="input-withheld_ids",
+                                    placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…")) }}
+            <script nonce="{{ csp_nonce }}">
+                $('#input-withheld_ids').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_all_users'},
+                    [{{ user.persona_id }}], false, true, "{{ gettext("ID, name, email") }}"
+                );
+            </script>
+            <h3 class="heading-underline">{% trans %}Initial Entry{% endtrans %}</h3>
+            {{ util.form_input_text(name="timestamp", label=gettext("Timestamp"), type="datetime-local",
+                                    placeholder=now().strftime("%b %d %Y %H:%M:%S"),
+                                    info=gettext("When did you first receive this case?")) }}
+            {{ util.form_input_textarea(name="info", label=gettext("Initial Information"), rows="20", markdown=True,
+                                        info=gettext("Avoid using names of affected individuals in this field.")) }}
+            {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}
+        {% endif %}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configureassemblyform').cdedbProtectChanges();
+    </script>
+{% endblock %}

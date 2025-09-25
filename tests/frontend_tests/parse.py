@@ -12,7 +12,8 @@ import webtest
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models_event
 from cdedb.backend.event import EventBackend
-from cdedb.common import Accounts, CdEDBObject, now
+from cdedb.common import CdEDBObject, now
+from cdedb.common.parse.util import Accounts
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
 
@@ -127,7 +128,8 @@ class TestParseFrontend(FrontendTest):
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount})
-        transaction._match_event(rs=self.key, event_backend=event_backend)
+        events = self.event.get_events(self.key, self.event.list_events(self.key))
+        transaction._match_event(rs=self.key, event_backend=event_backend, events=events)
 
         # Check that reference match is better.
         self.assertIsNotNone(transaction.event)
@@ -250,8 +252,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            transaction_date="29.12.2018",
-            category_old="TestAka",
+            date="29.12.2018",
+            category="TestAka",
         )
         self.check_dict(
             result[1],
@@ -259,8 +261,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            transaction_date="28.12.2018",
-            category_old="TestAka",
+            date="28.12.2018",
+            category="TestAka",
         )
         self.check_dict(
             result[2],
@@ -268,8 +270,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia",
-            transaction_date="27.12.2018",
-            category_old="TestAka",
+            date="27.12.2018",
+            category="TestAka",
         )
         self.check_dict(
             result[3],
@@ -277,8 +279,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            transaction_date="26.12.2018",
-            category_old="Mitgliedsbeitrag",
+            date="26.12.2018",
+            category="Mitgliedsbeitrag",
         )
         self.check_dict(
             result[4],
@@ -286,8 +288,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-2-7",
             family_name="Beispiel",
             given_names="Bertå",
-            transaction_date="25.12.2018",
-            category_old="Mitgliedsbeitrag",
+            date="25.12.2018",
+            category="Mitgliedsbeitrag",
         )
         self.check_dict(
             result[5],
@@ -295,8 +297,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia",
-            transaction_date="24.12.2018",
-            category_old="Mitgliedsbeitrag",
+            date="24.12.2018",
+            category="Mitgliedsbeitrag",
         )
         self.check_dict(
             result[6],
@@ -304,8 +306,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-4-3",
             family_name="Dino",
             given_names="Daniel",
-            transaction_date="23.12.2018",
-            category_old="Mitgliedsbeitrag",
+            date="23.12.2018",
+            category="Mitgliedsbeitrag",
         )
         self.check_dict(
             result[7],
@@ -313,8 +315,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            transaction_date="21.12.2018",
-            category_old="Mitgliedsbeitrag",
+            date="21.12.2018",
+            category="Mitgliedsbeitrag",
         )
         self.check_dict(
             result[8],
@@ -322,8 +324,8 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-5-1",
             family_name="Eventis",
             given_names="Emilia",
-            transaction_date="20.12.2018",
-            category_old="TestAka",
+            date="20.12.2018",
+            category="TestAka",
         )
 
         # check transactions files
@@ -334,85 +336,85 @@ class TestParseFrontend(FrontendTest):
                                      dialect=CustomCSVDialect))
         self.check_dict(
             result[0],
-            transaction_date="26.12.2018",
+            date="26.12.2018",
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            category_old="Mitgliedsbeitrag",
+            category="Mitgliedsbeitrag",
             account_nr="8068900",
         )
         self.check_dict(
             result[1],
-            transaction_date="25.12.2018",
+            date="25.12.2018",
             amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
             given_names="Bertå",
-            category_old="Mitgliedsbeitrag",
+            category="Mitgliedsbeitrag",
             account_nr="8068900",
         )
         self.check_dict(
             result[2],
-            transaction_date="24.12.2018",
+            date="24.12.2018",
             amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia",
-            category_old="Mitgliedsbeitrag",
+            category="Mitgliedsbeitrag",
             account_nr="8068900",
         )
         self.check_dict(
             result[3],
-            transaction_date="23.12.2018",
+            date="23.12.2018",
             amount_german="2,50",
             cdedbid="DB-4-3",
             family_name="Dino",
             given_names="Daniel",
-            category_old="Mitgliedsbeitrag",
+            category="Mitgliedsbeitrag",
             account_nr="8068900",
             reference="Mitgliedsbeitrag",
             account_holder="Daniel Dino",
         )
         self.check_dict(
             result[4],
-            transaction_date="22.12.2018",
+            date="22.12.2018",
             amount_german="50,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            category_old="Sonstiges",
+            category="Sonstiges",
             account_nr="8068900",
             reference="Anton Administrator DB-1-9 Spende",
         )
         self.check_dict(
             result[5],
-            transaction_date="21.12.2018",
+            date="21.12.2018",
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            category_old="Mitgliedsbeitrag",
+            category="Mitgliedsbeitrag",
             account_nr="8068900",
         )
         self.check_dict(
             result[6],
-            transaction_date="20.12.2018",
+            date="20.12.2018",
             amount_german="466,49",
             cdedbid="DB-5-1",
             family_name="Eventis",
             given_names="Emilia",
-            category_old="TestAka",
+            category="TestAka",
             account_nr="8068900",
         )
         self.check_dict(
             result[7],
-            transaction_date="19.12.2018",
+            date="19.12.2018",
             amount_german="1234,50",
             cdedbid="",
             family_name="",
             given_names="",
-            category_old="Sonstiges",
+            category="Sonstiges",
             account_nr="8068900",
         )
 
@@ -424,55 +426,55 @@ class TestParseFrontend(FrontendTest):
 
         self.check_dict(
             result[0],
-            transaction_date="31.12.2018",
+            date="31.12.2018",
             amount_german="-18,54",
             cdedbid="",
             family_name="",
             given_names="",
-            category_old="Sonstiges",
+            category="Sonstiges",
             account_nr="8068901",
             In_reference="Genutzte Freiposten",
         )
         self.check_dict(
             result[1],
-            transaction_date="30.12.2018",
+            date="30.12.2018",
             amount_german="-52,50",
             cdedbid="",
             family_name="",
             given_names="",
-            category_old="Sonstiges",
+            category="Sonstiges",
             account_nr="8068901",
             reference="KONTOFUEHRUNGSGEBUEHREN",
         )
         self.check_dict(
             result[2],
-            transaction_date="29.12.2018",
+            date="29.12.2018",
             amount_german="-584,49",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            category_old="TestAka",
+            category="TestAka",
             account_nr="8068901",
             account_holder="Anton Administrator",
             In_reference="KL-Erstattung TestAka, Anton Administrator (DB-1-9)",
         )
         self.check_dict(
             result[3],
-            transaction_date="28.12.2018",
+            date="28.12.2018",
             amount_german="353,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton",
-            category_old="TestAka",
+            category="TestAka",
             account_nr="8068901",
         )
         self.check_dict(
             result[4],
-            transaction_date="27.12.2018",
+            date="27.12.2018",
             amount_german="504,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia",
-            category_old="TestAka",
+            category="TestAka",
             account_nr="8068901",
         )

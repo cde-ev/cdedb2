@@ -3,13 +3,13 @@
 import dataclasses
 import datetime
 import decimal
+import enum
 from collections.abc import Collection
 from typing import Any, ClassVar, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, diacritic_patterns
-from cdedb.common.validation.types import TypeMapping
 from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
 from cdedb.filter import cdedbid_filter
@@ -31,6 +31,12 @@ _DEFAULT_PERSONA_COLUMNS = (
 )
 
 
+class IncludeEmpty(enum.Enum):
+    yes = enum.auto()
+    no = enum.auto()
+    only = enum.auto()
+
+
 @dataclasses.dataclass
 class GenericLogFilter:
     """Dataclass to validate, pass and process filter parameters for querying a log.
@@ -47,9 +53,9 @@ class GenericLogFilter:
 
     # Pagination parameters.
     offset: Optional[int] = None  # How many entries to skip at the start.
-    _offset: Optional[int] = dataclasses.field(default=None)  # Unmodified offset.
+    _offset: Optional[int] = None  # Unmodified offset.
     length: int = 0  # How many entries to list. Set default in post_init.
-    _length: int = dataclasses.field(default=0)  # Unmodified length.
+    _length: int = 0  # Unmodified length.
 
     # Generic attributes available for all logs.
     codes: list[int] = dataclasses.field(default_factory=list)  # Log codes to filter.
@@ -133,7 +139,7 @@ class GenericLogFilter:
             if field.name not in {"_offset", "_length"}
         ]
 
-    def to_validation(self) -> CdEDBObject:
+    def _to_validation(self) -> CdEDBObject:
         """Turn an instance of the dataclass into a dict, that can be validated.
 
         Because CdEDB-ID validation is not idempotent, we need to fix some data.
@@ -144,17 +150,20 @@ class GenericLogFilter:
         return ret
 
     @classmethod
-    def validation_fields(cls) -> tuple[TypeMapping, TypeMapping]:
+    def validation_fields(
+            cls,
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Create a specification for validating the dataclass.
 
         Returns two dicts, with mandatory and optional keys respectively.
         Some type annotations differ slightly from the validation type.
         """
-        mandatory: TypeMapping = {'length': int}
-        optional: TypeMapping = {
+        mandatory: vtypes.MutableTypeMapping = {}
+        optional: vtypes.MutableTypeMapping = {
             field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
-        del optional['length']
+        # allow empty strings to be validated as None and replaced by the default length
+        optional['length'] = Optional[int]  # type: ignore[assignment]
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
         for k in cls.get_persona_columns():
             optional[k] = Optional[vtypes.CdedbID]  # type: ignore[assignment]
@@ -201,6 +210,43 @@ class ChangelogLogFilter(GenericLogFilter):
         if self.reviewed_by:
             conditions.append("reviewed_by = %s")
             params.append(self.reviewed_by)
+
+        return conditions, params
+
+
+@dataclasses.dataclass
+class ComplaintLogFilter(GenericLogFilter):
+    log_table = "complaint.log"
+    log_code_class = const.ComplaintLogCodes
+    additional_columns = ("case_id", "companion_id")
+    additional_persona_columns = ("companion_id",)
+
+    case_id: int | None = None
+    _case_ids: list[int] = dataclasses.field(default_factory=list)
+    case_id_include_empty: IncludeEmpty | None = IncludeEmpty.yes
+
+    companion_id: int | None = None
+
+    def case_ids(self) -> list[int]:
+        if self.case_id:
+            return [self.case_id]
+        return self._case_ids
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.case_id_include_empty == IncludeEmpty.only:
+            conditions.append("case_id IS NULL")
+        elif self.case_id_include_empty == IncludeEmpty.no:
+            conditions.append("case_id IS NOT NULL")
+            conditions.append("case_id = ANY(%s)")
+            params.append(self.case_ids())
+        else:  # include_empty == yes or None
+            conditions.append("(case_id IS NULL OR case_id = ANY(%s))")
+            params.append(self.case_ids())
+        if self.companion_id:
+            conditions.append("companion_id = %s")
+            params.append(self.companion_id)
 
         return conditions, params
 
@@ -383,6 +429,7 @@ ALL_LOG_FILTERS: tuple[type[GenericLogFilter], ...] = (
     CoreLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     FinanceLogFilter,
     AssemblyLogFilter,
     EventLogFilter,

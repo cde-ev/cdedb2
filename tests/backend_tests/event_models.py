@@ -6,7 +6,8 @@ import decimal
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import Accounts, NearlyNow, nearly_now
+from cdedb.common import NearlyNow, nearly_now
+from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
 
@@ -17,7 +18,7 @@ class TestEventModels(BackendTest):
         event_id = 1
 
         expectation = models.Event(
-            id=vtypes.ProtoID(1),
+            id=vtypes.ID(1),
             title="Große Testakademie 2222",
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
@@ -41,7 +42,7 @@ class TestEventModels(BackendTest):
                              " nicht wahr?",
             notes="Todoliste ... just kidding ;)",
             field_definition_notes="Die Sortierung der Felder bitte nicht ändern!",
-            offline_lock=False,
+            is_locked=False,
             is_archived=False,
             is_cancelled=False,
             is_balanced=False,
@@ -57,7 +58,7 @@ class TestEventModels(BackendTest):
             parts={
                 1: models.EventPart(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Warmup",
                     shortname="Wu",
                     part_begin=datetime.date(2222, 2, 2),
@@ -68,7 +69,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventPart(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Erste Hälfte",
                     shortname="1.H.",
                     part_begin=datetime.date(2222, 11, 1),
@@ -79,7 +80,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventPart(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     title="Zweite Hälfte",
                     shortname="2.H.",
                     part_begin=datetime.date(2222, 11, 11),
@@ -93,7 +94,7 @@ class TestEventModels(BackendTest):
             tracks={
                 1: models.CourseTrack(
                     id=1,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
                     num_choices=4,
@@ -103,7 +104,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CourseTrack(
                     id=2,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(2),
+                    part_id=vtypes.ID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
                     num_choices=1,
@@ -113,7 +114,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CourseTrack(
                     id=3,  # type: ignore[arg-type]
-                    part_id=vtypes.ProtoID(3),
+                    part_id=vtypes.ID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
                     num_choices=3,
@@ -253,7 +254,7 @@ class TestEventModels(BackendTest):
             custom_query_filters={
                 1: models.CustomQueryFilter(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bälle oder Kind?",
                     notes=None,
@@ -264,7 +265,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CustomQueryFilter(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Kind oder Bälle?",
                     notes=None,
@@ -275,7 +276,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CustomQueryFilter(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Alle Notizen",
                     notes=None,
@@ -286,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.CustomQueryFilter(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Bad Combo!",
                     notes=None,
@@ -297,7 +298,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.CustomQueryFilter(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=vtypes.ID(1),
                     scope=QueryScope.registration,
                     title="Extrem wichtig!",
                     notes="Ups, hätte ich das Feld nicht löschen sollen?",
@@ -341,7 +342,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
-                    condition='part.Wu and field.is_child',  # type: ignore[arg-type]
+                    condition='part.Wu and age.U13',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 5: models.EventFee(
@@ -350,7 +351,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
-                    condition='part.1.H. and field.is_child',  # type: ignore[arg-type]
+                    condition='part.1.H. and age.U16',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 6: models.EventFee(
@@ -359,7 +360,7 @@ class TestEventModels(BackendTest):
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
-                    condition='part.2.H. and field.is_child',  # type: ignore[arg-type]
+                    condition='part.2.H. and age.U18',  # type: ignore[arg-type]
                     notes=None,
                 ),
                 7: models.EventFee(
@@ -416,14 +417,14 @@ class TestEventModels(BackendTest):
         self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
-        event_id = vtypes.ProtoID(4)
+        event_id = vtypes.ID(4)
 
         expectation = models.Event(
             id=event_id,
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
-            iban=Accounts.Sozialbank,
+            iban=Accounts.Skatbank,
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
@@ -437,7 +438,7 @@ class TestEventModels(BackendTest):
             participant_info=None,
             notes=None,
             field_definition_notes=None,
-            offline_lock=False,
+            is_locked=False,
             is_archived=False,
             is_cancelled=False,
             is_balanced=False,
@@ -536,7 +537,7 @@ class TestEventModels(BackendTest):
             fees={
                 17: models.EventFee(
                     id=17,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    event_id=event_id,
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -552,7 +553,7 @@ class TestEventModels(BackendTest):
                     shortname="1.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 2: models.PartGroup(
                     id=2,  # type: ignore[arg-type]
@@ -561,7 +562,7 @@ class TestEventModels(BackendTest):
                     shortname="2.H.",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 3: models.PartGroup(
                     id=3,  # type: ignore[arg-type]
@@ -570,7 +571,7 @@ class TestEventModels(BackendTest):
                     shortname="OW",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(6, 9),  # type: ignore[arg-type]
+                    part_ids={6, 9},
                 ),
                 4: models.PartGroup(
                     id=4,  # type: ignore[arg-type]
@@ -579,7 +580,7 @@ class TestEventModels(BackendTest):
                     shortname="WS",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
                 5: models.PartGroup(
                     id=5,  # type: ignore[arg-type]
@@ -588,7 +589,7 @@ class TestEventModels(BackendTest):
                     shortname="KA",
                     notes=None,
                     constraint_type=const.EventPartGroupType.Statistic,
-                    parts=(8, 11),  # type: ignore[arg-type]
+                    part_ids={8, 11},
                 ),
                 6: models.PartGroup(
                     id=6,  # type: ignore[arg-type]
@@ -597,7 +598,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 1H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
+                    part_ids={6, 7, 8},
                 ),
                 7: models.PartGroup(
                     id=7,  # type: ignore[arg-type]
@@ -606,7 +607,7 @@ class TestEventModels(BackendTest):
                     shortname="TN 2H",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
+                    part_ids={9, 10, 11},
                 ),
                 10: models.PartGroup(
                     id=10,  # type: ignore[arg-type]
@@ -615,7 +616,7 @@ class TestEventModels(BackendTest):
                     shortname="ML W",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mailinglist_link,
-                    parts=(7, 10),  # type: ignore[arg-type]
+                    part_ids={7, 10},
                 ),
             },
             track_groups={
@@ -627,7 +628,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=1,
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 2: models.SyncTrackGroup(
                     id=2,  # type: ignore[arg-type]
@@ -637,7 +638,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=4,
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 3: models.SyncTrackGroup(
                     id=3,  # type: ignore[arg-type]
@@ -647,7 +648,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=3,
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
                 4: models.TrackGroup(
                     id=4,  # type: ignore[arg-type]
@@ -659,7 +660,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 5: models.TrackGroup(
                     id=5,  # type: ignore[arg-type]
@@ -671,7 +672,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 6: models.TrackGroup(
                     id=6,  # type: ignore[arg-type]
@@ -683,7 +684,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
             },
         )
@@ -709,55 +710,82 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = 1
-        # print(self.event.new_get_course(self.key, course_id))
+        course_id = vtypes.ID(1)
+        event_id = vtypes.ID(vtypes.ID(1))
 
         expectation = models.Course(
-            id=course_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
-            segments={1, 3},  # type: ignore[arg-type]
-            active_segments={1, 3},  # type: ignore[arg-type]
+            id=course_id,
+            event_id=event_id,
+            segments={
+                1: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(1),
+                    is_active=True,
+                ),
+                3: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(3),
+                    is_active=True,
+                )
+            },
             nr='α',
             title='Planetenretten für Anfänger',
             shortname='Heldentum',
             description='Wir werden die Bäume drücken.',
             instructors='ToFi & Co',
-            min_size=2,
-            max_size=10,
+            min_size=vtypes.NonNegativeInt(2),
+            max_size=vtypes.NonNegativeInt(10),
             is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'},
+            fields=vtypes.EventAssociatedFields({'room': 'Wald'}),
         )
-        reality = self.event.new_get_course(self.key, course_id)
+        reality = self.event.get_course(self.key, course_id)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
         course_ids = [1, 2]
-        # print(self.event.new_get_courses(self.key, course_ids))
 
         expectation = {
             1: expectation,
             2: models.Course(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
-                segments={1, 2, 3},  # type: ignore[arg-type]
-                active_segments={1, 3},  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
+                segments={
+                    1: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(1),
+                        is_active=True,
+                    ),
+                    2: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(2),
+                        is_active=False,
+                    ),
+                    3: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(3),
+                        is_active=True,
+                    )
+                },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',
                 shortname='Kabarett',
                 description='Inklusive Post, Backwaren und frühzeitigem Ableben.',
                 instructors='Bernd Lucke',
-                min_size=10,
-                max_size=20,
+                min_size=vtypes.NonNegativeInt(10),
+                max_size=vtypes.NonNegativeInt(20),
                 is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'},
+                fields=vtypes.EventAssociatedFields({'room': 'Theater'}),
             ),
         }
-        reality = self.event.new_get_courses(self.key, course_ids)
+        reality = self.event.get_courses(self.key, course_ids)
 
         self.assertEqual(
             expectation,
@@ -909,7 +937,7 @@ class TestEventModels(BackendTest):
             ),
         }
 
-        reality = self.event.new_get_lodgement_groups(self.key, event_id)
+        reality = self.event.get_lodgement_groups(self.key, event_id)
 
         self.assertEqual(
             expectation,

@@ -1,19 +1,19 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=ambience['persona']|persona_name %}
         {{ name }} – Mailinglist Data
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name,
                             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_user_mailinglists"), gettext("Show Mailinglist Data"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Mailinglist Data"), util.persona_name(ambience['persona']),
+    {{ util.context_heading(gettext("Mailinglist Data"), ambience['persona']|persona_name,
                             'user', gettext("User")) }}
 {% endblock %}
 
@@ -24,7 +24,7 @@
                 {% trans %}Name{% endtrans %}
             </dt>
             <dd>
-                {{ util.persona_name(ambience['persona'], with_titles=True) }}
+                {{ ambience['persona']|persona_name(with_titles=True) }}
             </dd>
             <dt title="{% trans %}CdEDB-ID{% endtrans %}">
                 {% trans %}CdEDB-ID{% endtrans %}
@@ -51,7 +51,7 @@
             {{ util.h(group|string, level=5, underline=true) }}
             <div class="row">
                 {% for list in mailinglists[group].values()|sort|slice(2 if mailinglists[group]|length > 5 else 1) %}
-                    <ul class="styleless col-md-6">
+                    <ul class="styleless col-md-6 {% if not loop.last %}nosp{% endif %}">
                         {% for ml in list %}
                             {% set state = subscriptions[ml.id] %}
                             {% set trouble = state in enums["SubscriptionState"].subscribing_states() and not ml['is_receiving'] %}

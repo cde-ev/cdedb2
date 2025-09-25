@@ -3,6 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint='weak' %}
@@ -42,7 +43,7 @@
     {% set target = 'event/change_course' if ambience['course'] else 'event/create_course' %}
     <form action="{{ cdedblink(target) }}" method="POST" id="configurecourseform" class="form-horizontal">
         {{ util.anti_csrf_token(target) }}
-        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
+        {{ util.h(n_("Meta"), level=3, underline=True) }}
         {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
@@ -57,77 +58,62 @@
                                     )) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
 
-        <h3 class="heading-underline">{% trans %}Course{% endtrans %}</h3>
+        {% set multitrack = ambience['event'].tracks|length > 1 %}
+        {% set cancel_info = gettext(
+                    "Cancelled courses are no longer choosable by participants and "
+                    "are marked in the courselist and the course assignment view."
+                )
+                if ambience['event']['is_course_state_visible'] else
+                gettext(
+                    "\"%(is_cancelled)s\" is an orga-internal marker to help with course assignment. To "
+                    "make cancelled courses public, check Configuration → Visibility of "
+                    "cancelled courses."
+                )|format(is_cancelled=gettext("Takes place")) %}
+
+        {{ util.h(n_("Course"), level=3, underline=True) }}
         {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)"), type="number", attributes='min="0"') }}
         {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)"), type="number", attributes='min="0"') }}
-        {% if ambience['event']['tracks']|length == 1 %}
-            {# hide selection of course tracks/segments if the event has only one track #}
-            {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
-        {% else %}
-            {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
-                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
-                                          aclass='checkbox_segment', slice=2,
-                                          info=gettext(
-                                              'Course tracks, in which the Course was originally offered.'
-                                              ' Should only be altered if the course offers has been rescinded.'
-                                              ' For courses cancelled by orgas use "Takes Place" below.'
-                                          ) if ambience['course'] else None,
-                                          sort=False) }}
+
+        {% if multitrack %}
+            {{ util.h(n_("Course Tracks"), level=3, underline=True) }}
+            {{ util.output_info(cancel_info, aclass="text-info") }}
         {% endif %}
 
-        {% if ambience['course'] %}
-            <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
-            {% if ambience['event']['tracks']|length == 1 %}
-                {# show only single checkbox if event has only one course track #}
-                {{ util.form_input_checkbox("active_segments", label=gettext("Takes place"),
-                                            value=(ambience['event']['tracks']|list)[0],
-                                            info=gettext("Cancelled courses are no longer choosable by participants and "
-                                                         "are marked in the courselist and the course assignment view.")
-                                                if ambience['event']['is_course_state_visible']
-                                                else gettext(
-                                                    "This is an orga-internal marker to help with course assignment. To "
-                                                    "make cancelled courses public, check Configuration → Visibility of "
-                                                    "cancelled courses.")) }}
-            {% else %}
-                {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
-                                              entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
-                                              aclass='checkbox_active_segment', slice=2,
-                                              info=gettext("Cancelled courses are no longer choosable by participants and "
-                                                           "are marked in the courselist and the course assignment view.")
-                                                  if ambience['event']['is_course_state_visible']
-                                                  else gettext(
-                                                      "This is an orga-internal marker to help with course assignment. To "
-                                                      "make cancelled courses public, check Configuration → Visibility of "
-                                                      "cancelled courses."),
-                                              sort=False) }}
+        {% for track in ambience['event'].tracks.values() %}
+            {% if multitrack %}
+                {{ util.h(track.title, level=4, underline=True, translate=False) }}
             {% endif %}
-        {% endif %}
+            {{ util.form_input_checkbox(
+                    "segment" + track.id|string, label=gettext("Is offered"), defaultvalue="True" if not ambience['course'] else "",
+                    aclass="segment-offered", attributes='data-track_id={}'.format(track.id)) }}
+            {{ util.form_input_checkbox(
+                    "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if not ambience['course'] else "",
+                    aclass="segment-" + track.id|string, info=cancel_info if not multitrack else "") }}
+        {% endfor %}
 
-        {% if has_course_fields %}
-            {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}
-        {% endif %}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course" if ambience['course'] else "event/course_stats")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
-        $('#configurecourseform').cdedbProtectChanges();
-        $(function(){
-            function updateCheckbox($checkbox, enabled) {
-                if (enabled) {
-                    $checkbox.prop('disabled', false);
-                } else {
-                    $checkbox.prop('checked', false);
-                    $checkbox.prop('disabled', true);
-                }
-            }
-            $('.checkbox_segment').each(function () {
-                var $related_checkbox = $('.checkbox_active_segment[value="' + $(this).val() + '"]');
-                updateCheckbox($related_checkbox, $(this).prop('checked'));
-                $(this).change(function(){
-                    updateCheckbox($related_checkbox, $(this).prop('checked'));
-                });
-            });
-        });
+        function update($inputs, disabled) {
+            $inputs.prop('disabled', disabled);
+            let $form_group = $inputs.closest('.form-group');
+            disabled ? $form_group.hide() : $form_group.show();
+        }
+
+        $('#configurecourseform').cdedbProtectChanges().find('.segment-offered').each(
+            function () {
+                let $relatedInputs = $(this).closest('form').find('.segment-' + $(this).data('track_id'));
+                update($relatedInputs, !$(this).prop('checked'));
+                $(this).on(
+                    'change',
+                    function() {
+                        update($relatedInputs, !$(this).prop('checked'));
+                    },
+               );
+            },
+        );
     </script>
 {% endblock %}

@@ -19,6 +19,7 @@ from cdedb.common import (
     CdEDBObject,
     RequestState,
     determine_age_class,
+    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -44,12 +45,11 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
     inspect_validation as inspect,
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.frontend.event.query_stats import (
     EventCourseStatistic,
     EventRegistrationInXChoiceGrouper,
@@ -117,7 +117,7 @@ class EventQueryMixin(EventBaseFrontend):
             for course_stat in EventCourseStatistic:
                 _tracks: dict[int, set[int]] = {
                     track_id: set(
-                        course['id'] for course in courses.values()
+                        course.id for course in courses.values()
                         if course_stat.test(rs.ambience['event'], course, track_id))
                     for track_id in tracks
                 }
@@ -180,10 +180,10 @@ class EventQueryMixin(EventBaseFrontend):
         This is a pretty versatile method building on the query module.
         """
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         scope = QueryScope.registration
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
@@ -332,16 +332,19 @@ class EventQueryMixin(EventBaseFrontend):
     def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
 
-    def configure_custom_filter_form(self, rs: RequestState, event_id: int,
-                                     scope: QueryScope) -> Response:
+    def configure_custom_filter_form(
+        self, rs: RequestState, event_id: int, scope: QueryScope, creation: bool = True,
+    ) -> Response:
         spec = scope.get_spec(event=rs.ambience['event'])
         fields_by_kind = collections.defaultdict(list)
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
 
-        return self.render(rs, "query/configure_custom_filter", {
-            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
-        })
+        return self.render(
+            rs, "query/configure_custom_filter",
+            {'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind},
+            models.CustomQueryFilter.mandatory_form_fields(creation=creation),
+        )
 
     @staticmethod
     def _validate_custom_filter_uniqueness(rs: RequestState, data: CdEDBObject,
@@ -350,7 +353,8 @@ class EventQueryMixin(EventBaseFrontend):
                for cf in rs.ambience['event'].custom_query_filters.values()):
             rs.append_validation_error(
                 ('title', KeyError(n_("A filter with this title already exists."))))
-        if any(cf.get_field_string() == data['fields'] and cf.id != custom_filter_id
+        field_string = models.CustomQueryFilter._get_field_string(data['fields'])
+        if any(cf.get_field_string() == field_string and cf.id != custom_filter_id
                for cf in rs.ambience['event'].custom_query_filters.values()):
             rs.append_validation_error(
                 ('field', KeyError(n_(
@@ -369,17 +373,15 @@ class EventQueryMixin(EventBaseFrontend):
 
         data.update({
             'fields': self.retrieve_custom_filter_fields(rs, spec),
-            'id': -1,
             'event_id': event_id,
         })
-        data = check(rs, vtypes.CustomQueryFilter, data, creation=True, query_spec=spec)
+        data = check(rs, models.CustomQueryFilter, data, creation=True, query_spec=spec)
         if data:
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
         if rs.has_validation_errors() or not data:
             return self.configure_custom_filter_form(rs, event_id, scope)
-        custom_filter = models.CustomQueryFilter(**data)
-        custom_filter.event = None  # type: ignore[assignment]
-        code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
+        code = self.eventproxy.add_custom_query_filter(
+            rs, scope=scope, event_id=event_id, data=data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
@@ -396,7 +398,8 @@ class EventQueryMixin(EventBaseFrontend):
         })
         merge_dicts(rs.values, values)
 
-        return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
+        return self.configure_custom_filter_form(
+            rs, event_id, custom_filter.scope, creation=False)
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -409,7 +412,7 @@ class EventQueryMixin(EventBaseFrontend):
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id
 
-        data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
+        data = check(rs, models.CustomQueryFilter, data, query_spec=spec)
         if data:
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id)
         if rs.has_validation_errors() or not data:
@@ -439,7 +442,7 @@ class EventQueryMixin(EventBaseFrontend):
                      ) -> Response:
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)
@@ -491,7 +494,7 @@ class EventQueryMixin(EventBaseFrontend):
         scope = QueryScope.lodgement
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         spec = scope.get_spec(event=rs.ambience['event'], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)
@@ -637,8 +640,7 @@ class EventQueryMixin(EventBaseFrontend):
                     ("persona_id", "registrations.id", "username", "family_name",
                      "given_names", "nickname", "legal_given_names"),
                     search, (("registrations.id", True),))
-                data = list(self.eventproxy.submit_general_query(
-                    rs, query, event_id=aux))
+                data = list(self.eventproxy.submit_general_query(rs, query, event_id=aux))
                 # add 'id' to each object, to enable usage of EntitySorter.persona
                 for datum in data:
                     datum["id"] = datum["persona_id"]
@@ -648,16 +650,13 @@ class EventQueryMixin(EventBaseFrontend):
         if len(data) > num_preview_personas:
             data = data[:num_preview_personas]
 
-        def name(x: CdEDBObject) -> str:
-            return "{} {}".format(x['given_names'], x['family_name'])
-
         # Generate return JSON list
         ret = []
         for entry in data:
             result = {
-                'id': entry['id'],
+                'id': entry['registrations.id'],
                 'email': entry['username'],
-                'name': name(entry),
+                'name': make_persona_name(entry, include_nickname=True),
             }
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})

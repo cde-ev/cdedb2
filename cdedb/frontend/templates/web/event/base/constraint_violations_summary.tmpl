@@ -1,0 +1,143 @@
+{% set sidenav_active="violations_summary" %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint = 'weak' %}
+{% import "web/generic.tmpl" as generic with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block title %}
+    {% trans %}Inconsistencies Summary{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations_summary"), gettext("Inconsistencies")) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Inconsistencies")) }}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_search_event.js') }}
+    {{ util.cdedb_script('cdedb_filter_violations.js') }}
+    {{ util.cdedb_script('cdedb_tabs.js') }}
+    <style>
+        /* Locally override col-sm-3 to apply to slightly smaller screen sizes. */
+        @media (min-width: 650px) {
+            .col-sm-3 {
+                width: 25%;
+                float: left;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% macro print_violation_summary_item(violations, class_name, event, min_severity, include_title=True) %}
+    <li class="violations violations-severity-{{ violations.max_severity.name }} violations-kind-{{ violations[0].kind.name }}
+            {%- if (violations.max_severity < min_severity
+                    or violation_kind and violation_kind != violations[0].kind) %}
+                softhide
+            {%- endif -%}
+        "
+        data-max_severity="{{ violations.max_severity.value }}"  {# For toggling visibility by the filter JS. #}
+        data-violation_kind="{{ violations[0].kind.value }}"  {# For toggling visibility by the filter JS. -#}
+        id="event_{{ event.id }}_violations_{{ class_name }}">
+        {% set link = cdedblink("event/constraint_violations", {'event_id': event.id, 'min_severity': min_severity}) + "#" + class_name %}
+        {% call util.href(link, label=none, aclass=violations.max_severity.html_class(),
+                          readonly=not is_privileged_for("event/constraint_violations", event_id=event.id, consider_admin_view=False)) %}
+            {% for severity in enums['ViolationSeverity'] %}
+                {% set filtered_violations = violations|selectattr("severity", "ge", severity)|list %}
+                {% if filtered_violations %}
+                    <span class="violations-only violations-only-{{ severity.name }} {{ "softhide" if severity != min_severity }}"
+                          data-severity="{{ severity.value }}"  {# For toggling visibility by the filter JS and finding visible text in the tests. -#}
+                    >
+                        {% if include_title %}
+                            {% trans count=filtered_violations|length, class_name=gettext(class_name), event_title=event.title %}
+                                There are {{ count }} {{ class_name }} for {{ event_title }}.
+                            {% endtrans %}
+                        {% else %}
+                            {% trans count=filtered_violations|length, class_name=gettext(class_name) %}
+                                There are {{ count }} {{ class_name }}.
+                            {% endtrans %}
+                        {% endif %}
+                    </span>
+                {% endif %}
+            {% endfor %}
+        {% endcall %}
+    </li>
+{% endmacro %}
+
+{% macro event_wrapper(event) %}
+    <div id="event_{{ event.id }}" data-event_id="{{ event.id }}"
+         class="event maybehide {# This comment used to be important for spacing, but it no longer needs to exist :) #}
+            {%- if event.is_archived %} event-is-archived {% endif %}
+            {%- if event.is_balanced %} event-is-balanced {% endif %}
+            {%- if event.is_cancelled or now().date() >= event.end %} event-is-concluded {% endif -%}
+            {%- if (event_ids and event.id not in event_ids
+                    or is_archived is not none and (event.is_archived != is_archived)
+                    or is_balanced is not none and (event.is_balanced != is_balanced)
+                    or is_concluded is not none and ((event.is_cancelled or now().date() >= event.end)) != is_concluded) -%}
+                softhide
+            {%- endif -%}
+        ">
+        {{ caller() }}
+    </div>
+{% endmacro %}
+
+{% block content %}
+
+    {{ generic_event.filter_violations("event/constraint_violations_summary", "violations", event_options=event_options) }}
+
+    {% call generic.tabs("violations", [
+            {"target": "#tab_group_by_event", "label": gettext("Group by Event"), "icon": "chalkboard-teacher", "anid": "event_tab"},
+            {"target": "#tab_group_by_violation", "label": gettext("Group by Type of Inconsistency"), "icon": "exclamation-circle", "anid":"violation_tab"},
+    ], formid="filterconstraintsform") %}
+        {% call generic.tab_pane("tab_group_by_event", "event_tab", gettext("Group by Event")) %}
+            {% for event in all_events.values()|sort %}
+                {% call event_wrapper(event) %}
+                    {% set event_violations = violations.get(event_id=event.id) %}
+                    {{ util.h(title=util.href(cdedblink("event/show_event", {'event_id': event.id}), event.title, icon="chalkboard-teacher"),
+                              anchor="event" + event.id|string, level=4) }}
+                    <div class="violation-list maybehide">
+                        {% if event_violations %}
+                            <ul>
+                            {% for class_name, violations_ in event_violations.by_class.items() %}
+                                {{ print_violation_summary_item(violations_, class_name, event, min_severity, include_title=False) }}
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="maybenothide text-muted">
+                        {% trans %}
+                            There are currently no inconsistencies.
+                        {% endtrans %}
+                    </div>
+                {% endcall %}
+            {% endfor %}
+            <p class="maybenothide">
+                {% trans %}Filter matched no events.{% endtrans %}
+            </p>
+        {% endcall %}
+        {% call generic.tab_pane("tab_group_by_violation", "violation_tab", gettext("Group by Type of Inconsistency")) %}
+            {% for class_name, violations_ in violations.by_class.items() %}
+                <div class="violation-list maybehide">
+                    {{ util.doclink_("Handbuch_Orga_Ungereimtheiten", class_name|lower) }}
+                    {{ util.h(class_name, level=4) }}
+                    <ul>
+                    {% for event in all_events.values()|sort %}
+                        {% set event_violations = violations_.get(event_id=event.id) %}
+                        {% if event_violations %}
+                            {% call event_wrapper(event) %}
+                                {{ print_violation_summary_item(event_violations, class_name, event, min_severity, include_title=True) }}
+                            {% endcall %}
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+            <p class="maybenothide text-muted">
+                {% trans %}There are currently no inconsistencies.{% endtrans %}
+            </p>
+        {% endcall %}
+    {% endcall %}
+
+{% endblock %}

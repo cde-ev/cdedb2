@@ -2,7 +2,10 @@
 {% set sidenav_active='event_lodgements' %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans lodgement=ambience['lodgement']['title'], title=ambience['event']['title'] %}
@@ -44,7 +47,7 @@
                         {% trans %}Lodgement Group{% endtrans %}
                     </dt>
                     <dd>
-                        {{ groups[ambience['lodgement']['group_id']] }}
+                        {{ groups[ambience['lodgement']['group_id']].title }}
                     </dd>
                 {% endif %}
             </dl>
@@ -103,19 +106,22 @@
                             {%- if involved_inhabitants or uninvolved_inhabitants -%}
                                 <ul class="slim">
                                     {% for involved, inhabitants in [(True, involved_inhabitants), (False, uninvolved_inhabitants)] %}
-                                        {% for registration in inhabitants[part.id].all %}
+                                        {% for registration in inhabitants[part.id].all|keysort(EntitySorter.registration_with_persona) %}
                                             <li>
                                                 {% if not involved %}<s>{% endif %}
                                                     {{ util.href(cdedblink('event/show_registration',
                                                                         {'registration_id': registration['id']}),
-                                                                util.persona_name(personas[registration['persona_id']], include_nickname=True)) }}
+                                                                registration['persona']|persona_name(include_nickname=True)) }}
                                                 {% if not involved %}</s>{% endif %}
-                                                {{- generic_event.camping_mat_icon(
-                                                    registration['parts'][part.id]['is_camping_mat'],
-                                                    registration['fields'].get(part.camping_mat_field.field_name or "")) }}
                                                 {% if registration['parts'][part.id]['status'] != enums['RegistrationPartStati'].participant %}
-                                                    <small>({{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }})</small>
+                                                    <small>({{ gettext(registration['parts'][part.id]['status']|string) }})</small>
                                                 {% endif -%}
+                                                {% if registrations[registration.id]['parts'][part.id]['age'] != enums['AgeClasses'].full %}
+                                                    <small>({{ gettext(registrations[registration.id]['parts'][part.id]['age']|string) }})</small>
+                                                {% endif %}
+                                                <small>{{- generic_event.camping_mat_icon(
+                                                    registration['parts'][part.id]['is_camping_mat'],
+                                                    registration['fields'].get(part.camping_mat_field.field_name or "")) }}</small>
                                             </li>
                                         {% endfor %}
                                     {% endfor %}
@@ -154,14 +160,8 @@
                         {{ util.anti_csrf_token('event/delete_lodgement') }}
                         {{ util.input_submit(gettext("Delete"), readonly=not is_privileged_for("delete_lodgement"),
                                 aclass="btn btn-sm btn-danger", icon='trash-alt') }}
-                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"),
-                                               readonly=not is_privileged_for("delete_lodgement")) }}
+                         {{ util.ack_delete(gettext("The Lodgement will be permanently deleted.")) }}
                     </form>
-                    <script nonce="{{ csp_nonce }}">
-                        $('#deletelodgementform').cdedbProtectAction(
-                            "{{ gettext("The Lodgement will be permanently deleted.") }}");
-                        $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 </div>
             </div>
             <div class="col-sm-8">

@@ -2,6 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% set jshint='weak' %}
@@ -69,7 +70,9 @@
         {{ util.input_hidden(name="personalized", value=personalized) }}
         {% if ambience['registration'] %}
             <hr />
-            {{ util.form_input_static(gettext("Initially affected Registrations"), value=util.href('event/show_registration', util.persona_name(persona))) }}
+            {{ util.form_input_static(
+                    gettext("Initially affected Registrations"),
+                    value=util.href('event/show_registration', persona|persona_name(include_nickname=true))) }}
             {{ util.form_input_static(value=gettext("Set initial personalized amount to") + ":") }}
             {{ util.form_input_text(
                     type="number", name="amount", addon="€", attributes='step="0.01"'|s, label=gettext("Amount")) }}

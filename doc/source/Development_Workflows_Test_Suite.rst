@@ -56,13 +56,14 @@ olaf@example.cde        DB-15-9   secret     a disabled user (and member and CdE
 paulchen@axample.cde    DB-16-7   secret     core admin and cde user
 quintus@example.cde     DB-17-5   secret     cde admin and not searchable member
 rowena@example.cde      DB-18-3   secret     assembly and event but not cde user
+simon@example.cde       DB-19-1   secret     complaint admin
 vera@example.cde        DB-22-1   secret     former member, corresponding to Mitgliederverwaltung
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
-farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
+farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand (but without event admin)
 katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 ludwig@example.cde      DB-38-8   secret     former member, corresponding to CdElokal-Koordination
-petra@example.cde       DB-42-6   secret     honorary member
+petra@example.cde       DB-42-6   secret     honorary member and event helper
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================

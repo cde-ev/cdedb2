@@ -16,14 +16,13 @@ from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import Sortkey, xsorted
-from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain,
     MailinglistRosterVisibility,
     MailinglistTypes,
 )
 from cdedb.database.query import DatabaseValue_s
-from cdedb.models.common import CdEDataclass, requestdict_field_spec
+from cdedb.models.common import CdEDataclass, MetaFlag as Meta, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
@@ -91,8 +90,11 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: set[vtypes.ID]
-    whitelist: set[vtypes.Email]
+    moderators: set[vtypes.ID] = dataclasses.field(
+        metadata=Meta.io_exclude.as_dict)
+    whitelist: set[vtypes.Email] = dataclasses.field(
+        metadata=(Meta.io_exclude
+                  | Meta.validate_creation_optional).as_dict)
 
     description: Optional[str]
     additional_footer: Optional[str]
@@ -107,6 +109,7 @@ class Mailinglist(CdEDataclass):
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
+    notify_owner_on_bounce: ClassVar[bool] = False
 
     database_table = "ml.mailinglists"
 
@@ -144,20 +147,6 @@ class Mailinglist(CdEDataclass):
     @property
     def domain_str(self) -> str:
         return self.domain.get_domain()
-
-    @classmethod
-    def database_fields(cls) -> list[str]:
-        return [field.name for field in fields(cls)
-                if field.name not in {"moderators", "whitelist"}]
-
-    @classmethod
-    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
-        mandatory, optional = super().validation_fields(creation=creation)
-        # make whitelist optional during Mailinglist creation
-        if "whitelist" in mandatory:
-            optional["whitelist"] = mandatory["whitelist"]
-            del mandatory["whitelist"]
-        return mandatory, optional
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -402,6 +391,7 @@ class TeamMeta(GeneralMailinglist):
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
     maxsize_default = vtypes.PositiveInt(4096)
+    notify_owner_on_bounce = True
 
 
 @dataclass
@@ -847,6 +837,16 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
     pass
 
 
+@dataclass
+class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailinglist):
+    allow_unsub = False
+
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+                                 ) -> set[int]:
+        """Return a set of all complaint admins."""
+        return set(bc.core.list_admins(rs, realm="complaint"))
+
+
 MLType = type[Mailinglist]
 
 
@@ -877,6 +877,7 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
+    MailinglistTypes.complaint_admin_implicit: ComplaintAdminImplicitMailinglist,
 }
 
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}

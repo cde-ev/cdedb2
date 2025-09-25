@@ -292,7 +292,7 @@ def create_lodgement_wishes_graph(
         rs: RequestState,
         registrations: CdEDBObjectMap, wishes: list[LodgementWish],
         lodgements: CdEDBObjectMap,
-        lodgement_groups: CdEDBObjectMap,
+        lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
         event: models.Event,
         personas: CdEDBObjectMap,
         camping_mat_field_names: Mapping[int, Optional[str]],
@@ -381,7 +381,7 @@ def create_lodgement_wishes_graph(
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_group_{lodgement_group_id}',
-                graph_attr={'label': lodgement_group['title']})
+                graph_attr={'label': lodgement_group.title})
 
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():
@@ -416,7 +416,8 @@ def create_lodgement_wishes_graph(
             return graph
         subgraph.node(
             str(registration['id']),
-            _make_node_label(registration, personas, event, camping_mat_field_names),
+            _make_node_label(rs, registration, personas, event,
+                             camping_mat_field_names),
             tooltip=_make_node_tooltip(rs, registration, personas, event),
             fillcolor=_make_node_color(registration, personas, event),
             color=("black" if registration['fields'].get(wish_field_name)
@@ -479,17 +480,21 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
     return ""
 
 
-def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: models.Event,
+def _make_node_label(rs: RequestState, registration: CdEDBObject,
+                     personas: CdEDBObjectMap, event: models.Event,
                      camping_mat_field_names: Mapping[int, Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {p: _camping_mat_icon(
         registration['fields'].get(camping_mat_field_names[p]),
         registration['parts'][p]['is_camping_mat'])
         for p in presence_parts}
-    parts = ', '.join(
-        f"{event.parts[p].shortname if len(event.parts) > 1 else ''}{icons[p]}"
-        for p in _sort_parts(presence_parts, event))
+    parts = ""
+    if len(event.parts) > 1:
+        parts = ', '.join(
+            f"{event.parts[p].shortname}{icons[p]}"
+            for p in _sort_parts(presence_parts, event))
+    elif p := _parts_with_status(registration, {RegistrationPartStati.guest}):
+        parts = f"{rs.gettext(str(RegistrationPartStati.guest))}{icons[p.pop()]}"
     persona = personas[registration['persona_id']]
     linebreak = "\n" if parts else ""
     return f"{make_persona_name(persona)}{linebreak}{parts}"
@@ -497,20 +502,34 @@ def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
                        personas: CdEDBObjectMap, event: models.Event) -> str:
-    parts = ""
+    parts_string = ""
     if len(event.parts) > 1:
-        parts = "\n"
-        present_parts = _parts_with_status(registration, PRESENT_STATI)
-        parts += ', '.join(event.parts[p].title
-                           for p in _sort_parts(present_parts, event))
-        waitlist_parts = _parts_with_status(registration,
-                                            {RegistrationPartStati.waitlist})
+        parts = ["\n"]
+        participant_parts = _parts_with_status(
+            registration, {RegistrationPartStati.participant})
+        parts.append(', '.join(event.parts[p].title
+                               for p in _sort_parts(participant_parts, event)))
+        guest_parts = _parts_with_status(
+            registration, {RegistrationPartStati.guest})
+        if guest_parts:
+            if participant_parts:
+                parts.append("  |  ")
+            parts.append(rs.gettext(str(RegistrationPartStati.guest)) + ": ")
+            parts.append(', '.join(event.parts[p].title
+                                   for p in _sort_parts(guest_parts, event)))
+        waitlist_parts = _parts_with_status(
+            registration, {RegistrationPartStati.waitlist})
         if waitlist_parts:
-            if present_parts:
-                parts += "  |  "
-            parts += (rs.gettext("Waitlist: ")
-                      + ', '.join(event.parts[p].title
-                                  for p in _sort_parts(waitlist_parts, event)))
+            if participant_parts or guest_parts:
+                parts.append("  |  ")
+            parts.append(rs.gettext(str(RegistrationPartStati.waitlist)) + ": ")
+            parts.append(', '.join(event.parts[p].title
+                                   for p in _sort_parts(waitlist_parts, event)))
+        parts_string = "".join(parts)
+    elif _parts_with_status(registration, {RegistrationPartStati.guest}):
+        parts_string = "\n" + rs.gettext(str(RegistrationPartStati.guest))
+    elif _parts_with_status(registration, {RegistrationPartStati.waitlist}):
+        parts_string = "\n" + rs.gettext(str(RegistrationPartStati.waitlist))
 
     persona = personas[registration['persona_id']]
     lodge_field_name = event.fields[event.lodge_field.id].field_name  # type: ignore[union-attr]
@@ -520,7 +539,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     return "{name}\n{email}{parts}{wishes}".format(
         name=make_persona_name(persona, include_nickname=True),
         email=persona['username'],
-        parts=parts,
+        parts=parts_string,
         wishes=wishes,
     )
 

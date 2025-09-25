@@ -20,6 +20,8 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
     CourseChoiceToolActions,
     CourseFilterPositions,
     InfiniteEnum,
@@ -32,20 +34,21 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import (
-    COURSE_COMMON_FIELDS,
-    FIELD_DATATYPE_VALIDATORS,
-)
-from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
     check_validation as check,
-    event_guard,
+    request_dict_extractor,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_extractor,
+    event_associated_fields_to_request,
+    event_guard,
+)
+from cdedb.models.common import CdEDataclassMap
 from cdedb.models.event_constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(
@@ -216,19 +219,19 @@ class EventCourseMixin(EventBaseFrontend):
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
             courses = {
                 course_id: course for course_id, course in courses.items()
-                if (course['active_segments'] if active_only and show_course_state
-                    else course['segments']).intersection(track_ids)
+                if (course.active_segments if active_only and show_course_state
+                    else course.segments.keys()) & set(track_ids)
             }
             visible_courses = {
                 course_id: course for course_id, course in courses.items()
-                if course['is_visible']
+                if course.is_visible
             }
             num_hidden_courses = len(courses) - len(visible_courses)
         else:
             visible_courses = {}
             num_hidden_courses = 0
         return self.render(rs, "course/course_list", {
-            'courses': keydictsort_filter(visible_courses, EntitySorter.course),
+            'courses': visible_courses,
             'show_course_state': show_course_state,
             'courses_exist': courses_exist,
             'num_hidden_courses': num_hidden_courses,
@@ -243,7 +246,7 @@ class EventCourseMixin(EventBaseFrontend):
         params: CdEDBObject = {}
         params['num_attendees'] = params['num_learners'] = None
         params['instructor_emails'] = []
-        all_courses = {}
+        all_courses: CdEDataclassMap[models.Course] = {}
         if self.is_privileged(rs, EventPrivileges.registrations_stats):
             violation_data = self.get_constraint_violations(
                 rs, rs.ambience['event'], registration_id=None, course_id=course_id)
@@ -253,7 +256,6 @@ class EventCourseMixin(EventBaseFrontend):
             violations: ViolationList = violation_data['violations']
 
             if self.is_privileged(rs, EventPrivileges.registrations_read):
-                params['personas'] = violation_data['personas']
                 params['registrations'] = violation_data['registrations']
                 instructor_ids = set(
                     reg['persona_id']
@@ -262,7 +264,7 @@ class EventCourseMixin(EventBaseFrontend):
                            for reg_track in reg['tracks'].values())
                 )
                 params['instructor_emails'] = [
-                    params['personas'][instructor_id]['username']
+                    violation_data['personas'][instructor_id]['username']
                     for instructor_id in instructor_ids
                 ]
                 params['violations'] = violations
@@ -296,14 +298,10 @@ class EventCourseMixin(EventBaseFrontend):
             course_ids = self.eventproxy.list_courses(rs, event_id)
             all_courses = self.eventproxy.get_courses(rs, course_ids)
 
-        sorted_courses = xsorted(all_courses.values(), key=EntitySorter.course)
-        i = [course['id'] for course in sorted_courses].index(course_id)
-        for c in sorted_courses:
-            c['label'] = f"{c['nr']}. {c['shortname']}"
-
-        params['prev_course'] = sorted_courses[i - 1] if i > 0 else None
-        params['next_course'] = \
-            sorted_courses[i + 1] if i + 1 < len(sorted_courses) else None
+        courses = list(all_courses.values())
+        i = [course.id for course in courses].index(course_id)  # type: ignore[arg-type]
+        params['prev_course'] = courses[i - 1] if i > 0 else None
+        params['next_course'] = courses[i + 1] if i + 1 < len(courses) else None
 
         return self.render(rs, "course/show_course", params)
 
@@ -312,48 +310,65 @@ class EventCourseMixin(EventBaseFrontend):
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
-        if 'segments' not in rs.values:
-            rs.values.setlist('segments', rs.ambience['course']['segments'])
-        if 'active_segments' not in rs.values:
-            rs.values.setlist('active_segments',
-                              rs.ambience['course']['active_segments'])
-        field_values = {
-            f"fields.{key}": value
-            for key, value in rs.ambience['course']['fields'].items()}
-        merge_dicts(rs.values, rs.ambience['course'], field_values)
-        return self.render(rs, "course/configure_course", {
-            'has_course_fields': any(
-                field.association == const.FieldAssociations.course
-                for field in rs.ambience['event'].fields.values()
+        field_values = event_associated_fields_to_request(rs.ambience['course'])
+        segment_values = [
+            {
+                f"segment{track_id}": True,
+                f"segment{track_id}.is_active": segment.is_active,
+            }
+            for track_id, segment in rs.ambience['course'].segments.items()
+        ]
+        merge_dicts(rs.values, rs.ambience['course'].as_dict(), field_values, *segment_values)
+        mandatory_fields = models.Course.mandatory_form_fields(creation=False)
+        return self.render(
+            rs, "course/configure_course",
+            mandatory_fields=mandatory_fields,
+        )
+
+    @staticmethod
+    def _dynamic_extract_course(
+            rs: RequestState, *, creation: bool, event: models.Event
+    ) -> CdEDBObject:
+        ret: CdEDBObject = {
+            "fields": event_associated_fields_extractor(
+                rs, event, const.FieldAssociations.course
             ),
-        })
+        }
+
+        segment_data: CdEDBOptionalMap = {}
+        for track in event.tracks.values():
+            segment_offered_key = f"segment{track.id}"
+            segment_offered_data = request_extractor(rs, {segment_offered_key: bool})
+            if not segment_offered_data[segment_offered_key]:
+                segment_data[track.id] = None
+            else:
+                segment_params = {
+                    f"segment{track.id}.{key}": val
+                    for key, val in models.CourseSegment.requestdict_fields(creation=creation)
+                }
+                segment_data[track.id] = {
+                    key.removeprefix(f"segment{track.id}."): val
+                    for key, val in request_dict_extractor(rs, segment_params).items()
+                }
+        ret["segments"] = segment_data
+
+        return ret
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
-    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
-    @REQUESTdata("segments", "active_segments")
-    def change_course(self, rs: RequestState, event_id: int, course_id: int,
-                      segments: Collection[int],
-                      active_segments: Collection[int], data: CdEDBObject,
-                      ) -> Response:
+    @REQUESTdatadict(*models.Course.requestdict_fields(creation=False))
+    def change_course(
+            self, rs: RequestState, event_id: int, course_id: int, data: CdEDBObject
+    ) -> Response:
         """Modify a course associated to an event organized via DB."""
-        data['id'] = course_id
-        data['segments'] = segments
-        data['active_segments'] = active_segments
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.course
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, vtypes.Course, data)
-        if rs.has_validation_errors():
+        data.update(
+            self._dynamic_extract_course(rs, creation=False, event=rs.ambience['event'])
+        )
+        data = check(rs, models.Course, data, creation=False, event=rs.ambience['event'])
+        if rs.has_validation_errors() or not data:
             return self.change_course_form(rs, event_id, course_id)
-        assert data is not None
-        code = self.eventproxy.set_course(rs, data)
+
+        code = self.eventproxy.set_course(rs, course_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
@@ -366,40 +381,27 @@ class EventCourseMixin(EventBaseFrontend):
         if not tracks:
             rs.notify("error", n_("Event without tracks forbids courses."))
             return self.redirect(rs, 'event/course_stats')
-        if 'segments' not in rs.values:
-            rs.values.setlist('segments', tracks)
-        return self.render(rs, "course/configure_course", {
-            'has_course_fields': any(
-                field.association == const.FieldAssociations.course
-                for field in rs.ambience['event'].fields.values()
-            ),
-        })
+        mandatory_fields = models.Course.mandatory_form_fields(creation=True)
+        return self.render(
+            rs, "course/configure_course",
+            mandatory_fields=mandatory_fields,
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
-    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
-    @REQUESTdata("segments")
-    def create_course(self, rs: RequestState, event_id: int,
-                      segments: Collection[int], data: CdEDBObject) -> Response:
+    @REQUESTdatadict(*models.Course.requestdict_fields(creation=True))
+    def create_course(
+            self, rs: RequestState, event_id: int, data: CdEDBObject
+    ) -> Response:
         """Create a new course associated to an event organized via DB."""
-        data['event_id'] = event_id
-        data['segments'] = segments
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.course
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()
-        }
-        data = check(rs, vtypes.Course, data, creation=True)
-        if rs.has_validation_errors():
+        data.update(
+            self._dynamic_extract_course(rs, creation=True, event=rs.ambience['event'])
+        )
+        data = check(rs, models.Course, data, creation=True, event=rs.ambience['event'])
+        if rs.has_validation_errors() or not data:
             return self.create_course_form(rs, event_id)
-        assert data is not None
 
-        new_id = self.eventproxy.create_course(rs, data)
+        new_id = self.eventproxy.create_course(rs, event_id, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
@@ -421,8 +423,8 @@ class EventCourseMixin(EventBaseFrontend):
                                   "has attendees."))
             return self.redirect(rs, "event/show_course")
 
-        pre_msg = f"Snapshot vor Löschen von Kurs {rs.ambience['course']['shortname']}."
-        post_msg = f"Lösche Kurs {rs.ambience['course']['shortname']}."
+        pre_msg = f"Snapshot vor Löschen von Kurs {rs.ambience['course'].shortname}."
+        post_msg = f"Lösche Kurs {rs.ambience['course'].shortname}."
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
@@ -493,15 +495,14 @@ class EventCourseMixin(EventBaseFrontend):
                 course_infos[(course_id_, track.id)] = {
                     'assigned': assigned,
                     'assigned_instructors': assigned_instructors,
-                    'is_happening': track.id in course['segments'],
+                    'is_happening': track.id in course.segments,
                 }
         corresponding_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
-            ["reg.id", "persona.given_names", "persona.family_name",
-             "persona.username"] + [
-                f"course{track_id}.id"
-                for track_id in tracks],
+            ["persona.given_names", "persona.family_name", "persona.username"] + [
+                f"track{track_id}.course_id" for track_id in tracks
+            ],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True)),
         )
@@ -622,13 +623,11 @@ class EventCourseMixin(EventBaseFrontend):
                 elif assign_action.enum == CourseChoiceToolActions.assign_auto:
                     cid = reg_track['course_id']
                     assert courses is not None
-                    if cid and atrack_id in courses[cid]['active_segments']:
+                    if cid and atrack_id in courses[cid].active_segments:
                         # Do not modify a valid assignment
                         continue
                     instructor = reg_track['course_instructor']
-                    if (instructor
-                            and atrack_id in courses[instructor]
-                            ['active_segments']):
+                    if (instructor and atrack_id in courses[instructor].active_segments):
                         # Let instructors instruct
                         tmp['tracks'][atrack_id] = {'course_id': instructor}
                         continue
@@ -636,7 +635,7 @@ class EventCourseMixin(EventBaseFrontend):
                     # 95% sure is correct.
                     for choice in (
                             reg_track['choices'][:tracks[atrack_id].num_choices]):
-                        if atrack_id in courses[choice]['active_segments']:
+                        if atrack_id in courses[choice].active_segments:
                             # Assign first possible choice
                             tmp['tracks'][atrack_id] = {'course_id': choice}
                             break
@@ -670,15 +669,10 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     def get_course_stats(
-            self, rs: RequestState, event: models.Event,
+            self, rs: RequestState, event: models.Event, registrations: CdEDBObjectMap,
     ) -> tuple[ChoiceStats, AttendeeStats]:
         """Generate choice counts and attendee counts"""
         course_ids = self.eventproxy.list_courses(rs, event.id)
-        registration_ids = self.eventproxy.list_registrations(rs, event.id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_event_users(
-            rs, [reg['persona_id'] for reg in registrations.values()], event_id=event.id,
-        )
 
         # Collection of number of choices in two categories: participant and involved.
         choice_counts_data = {
@@ -718,7 +712,6 @@ class EventCourseMixin(EventBaseFrontend):
 
         # Convert the collected attendee lists into helper class, separating
         #  instructors and learners.
-        sortkey = lambda reg: EntitySorter.persona(personas[reg['persona_id']])
         attendees_data = {}
         for k, lists in [
             ('involved', involved_attendees_lists),
@@ -727,20 +720,14 @@ class EventCourseMixin(EventBaseFrontend):
             attendees_data[k] = {
                 course_id: {
                     track_id: CourseAttendees(
-                        xsorted(
-                            (
-                                reg for reg in lists[(course_id, track_id)]
-                                if reg['tracks'][track_id]['course_instructor'] != course_id
-                            ),
-                            key=sortkey,
-                        ),
-                        xsorted(
-                            (
-                                reg for reg in lists[(course_id, track_id)]
-                                if reg['tracks'][track_id]['course_instructor'] == course_id
-                            ),
-                            key=sortkey,
-                        ),
+                        [
+                            reg for reg in lists[(course_id, track_id)]
+                            if reg['tracks'][track_id]['course_instructor'] != course_id
+                        ],
+                        [
+                            reg for reg in lists[(course_id, track_id)]
+                            if reg['tracks'][track_id]['course_instructor'] == course_id
+                        ],
                     )
                     for track_id, track in event.tracks.items()
                 }
@@ -818,7 +805,8 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: xsorted(
                 (
                     (registration_id, make_persona_name(
-                        personas[registrations[registration_id]['persona_id']]))
+                        personas[registrations[registration_id]['persona_id']],
+                        include_nickname=True))
                     for registration_id in registrations
                     if _check_without_course(registration_id, track_id)
                 ),
@@ -840,7 +828,8 @@ class EventCourseMixin(EventBaseFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                ({'name': make_persona_name(personas[registration['persona_id']]),
+                ({'name': make_persona_name(personas[registration['persona_id']],
+                                            include_nickname=True),
                   'group_id': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
@@ -854,9 +843,8 @@ class EventCourseMixin(EventBaseFrontend):
         }
         courses = self.eventproxy.list_courses(rs, event_id)
         course_names = {
-            course['id']: "{}. {}".format(course['nr'], course['shortname'])
-            for course_id, course
-            in self.eventproxy.get_courses(rs, courses.keys()).items()
+            course.id: course.shortlabel
+            for course in self.eventproxy.get_courses(rs, courses.keys()).values()
         }
 
         return self.render(rs, "course/manage_attendees", {
@@ -877,17 +865,17 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: [reg_id for reg_id, registration in registrations.items()
                        if registration['tracks'][track_id]['course_id']
                        == course_id]
-            for track_id in rs.ambience['course']['segments']}
+            for track_id in rs.ambience['course'].segments}
 
         # Parse request data
         params: vtypes.TypeMapping = {
             **{
                 f"new_{track_id}": Collection[Optional[vtypes.ID]]
-                for track_id in rs.ambience['course']['segments']
+                for track_id in rs.ambience['course'].segments
             },
             **{
                 f"delete_{track_id}_{reg_id}": bool
-                for track_id in rs.ambience['course']['segments']
+                for track_id in rs.ambience['course'].segments
                 for reg_id in current_attendees[track_id]
             },
         }
@@ -898,7 +886,7 @@ class EventCourseMixin(EventBaseFrontend):
         # Iterate all registrations to find changed ones
         code = 1
         change_note = ("Kursteilnehmer von"
-                       f" {rs.ambience['course']['shortname']} geändert.")
+                       f" {rs.ambience['course'].shortname} geändert.")
 
         reg_data = []
         for reg_id, registration in registrations.items():
@@ -908,7 +896,7 @@ class EventCourseMixin(EventBaseFrontend):
             }
             # Check if registration is new attendee or deleted attendee
             # in any track of the course
-            for track_id in rs.ambience['course']['segments']:
+            for track_id in rs.ambience['course'].segments:
                 new_attendee = reg_id in data[f"new_{track_id}"]
                 deleted_attendee = data.get(f"delete_{track_id}_{reg_id}", False)
                 if new_attendee or deleted_attendee:

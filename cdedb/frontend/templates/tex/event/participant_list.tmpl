@@ -93,10 +93,10 @@
                             <<% if registration['tracks'][t.id]['course_instructor']
                                     == registration['tracks'][t.id]['course_id'] -%>>
                                 \emph{
-                                    <<<- courses[registration['tracks'][t.id]['course_id']]['shortname']|te ->>>
+                                    <<<- courses[registration['tracks'][t.id]['course_id']].shortname|te ->>>
                                 }
                             <<%- else -%>>
-                                <<<- courses[registration['tracks'][t.id]['course_id']]['shortname']|te ->>>
+                                <<<- courses[registration['tracks'][t.id]['course_id']].shortname|te ->>>
                             <<% endif -%>>
                         <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                             \emph{<<% trans %>> Orga <<% endtrans %>>}

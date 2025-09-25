@@ -7,7 +7,7 @@ from typing import Any, Callable, Protocol, TypeVar, Union
 
 import icu
 
-from cdedb.common.n_ import n_
+from cdedb.common import make_persona_forename
 
 # Global unified collator to be used when sorting.
 # The locale provided here must exist as collation in SQL for this to
@@ -56,28 +56,6 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
-def make_persona_forename(persona: CdEDBObject,
-                          use_legal_name: bool = False,
-                          include_nickname: bool = False) -> str:
-    """Construct the forename of a persona according to the display name specification.
-
-    The name specification can be found at the documentation page about
-    "User Experience Conventions".
-    """
-    if use_legal_name and include_nickname:
-        raise RuntimeError(n_("Invalid use of keyword parameters."))
-    nickname: str = persona.get('nickname', "")
-    given_names: str = persona['given_names']
-    if use_legal_name:
-        return persona['legal_given_names'] or given_names
-    if include_nickname:
-        if not nickname:
-            return given_names
-        else:
-            return f"{given_names} ({nickname})"
-    return given_names
-
-
 class Comparable(Protocol):
     def __lt__(self, other: Any) -> bool: ...
 
@@ -114,6 +92,26 @@ def _make_persona_sorter(include_nickname: bool = False,
     return sorter
 
 
+def _make_address_sorter(
+    # don't call argument 'gettext' to avoid extracting string below
+    gtxt: Callable[[str], str], default_country_code: str
+) -> KeyFunction:
+    def sorter(persona: CdEDBObject) -> Sortkey:
+        country = persona.get('country', "") or ""
+        postal_code = persona.get('postal_code', "") or ""
+        location = persona.get('location', "") or ""
+        address = persona.get('address', "") or ""
+        return (
+            # we want to show Germany first, python sorts False first
+            country != default_country_code,
+            gtxt(f"CountryCodes.{country}"),
+            postal_code,
+            location,
+            address
+        )
+    return sorter
+
+
 # noinspection PyRedundantParentheses
 class EntitySorter:
     """Provide a singular point for common sortkeys.
@@ -131,18 +129,11 @@ class EntitySorter:
     def email(persona: CdEDBObject) -> Sortkey:
         return (str(persona['username']),)
 
-    @staticmethod
-    def address(persona: CdEDBObject) -> Sortkey:
-        # TODO sort by translated country instead of country code?
-        country = persona.get('country', "") or ""
-        postal_code = persona.get('postal_code', "") or ""
-        location = persona.get('location', "") or ""
-        address = persona.get('address', "") or ""
-        return (country, postal_code, location, address)
+    make_address_sorter = staticmethod(_make_address_sorter)
 
     @staticmethod
-    def course(course: CdEDBObject) -> Sortkey:
-        return (course['nr'], course['shortname'], course['id'])
+    def registration_with_persona(registration: CdEDBObject) -> Sortkey:
+        return EntitySorter.persona(registration['persona'])
 
     @staticmethod
     def lodgement(lodgement: CdEDBObject) -> Sortkey:
@@ -152,10 +143,6 @@ class EntitySorter:
     def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
         return (lodgement['group_title'], lodgement['group_id'], lodgement['title'],
                 lodgement['id'])
-
-    @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['title'], lodgement_group['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -181,6 +168,14 @@ class EntitySorter:
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
         return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_event_select_entries(past_event: CdEDBObject) -> Sortkey:
+        """
+        This groups the events by year descending, and then orders them by title for
+        better UX in _very_ long select inputs.
+        """
+        return (-past_event['tempus'].year, past_event['title'], past_event['id'])
 
     @staticmethod
     def past_course(past_course: CdEDBObject) -> Sortkey:

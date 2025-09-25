@@ -216,16 +216,16 @@ def execute_sql_script(
                 if not statement.strip():
                     continue
 
-                if verbose > 2:
-                    click.echo(cur.query)
-                if verbose > 1:
-                    click.echo(cur.statusmessage)
-
                 try:
                     cur.execute(statement)
                 except psycopg2.ProgrammingError as e:
                     click.echo(e)
                     continue
+
+                if verbose > 2:
+                    click.echo(cur.query)
+                if verbose > 1:
+                    click.echo(cur.statusmessage)
 
                 if verbose > 0:
                     try:

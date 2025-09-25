@@ -1,30 +1,48 @@
 {% set sidenav_active = 'event_constraint_violations' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% set jshint = 'weak' %}
 {% import "web/event/generic.tmpl" as generic with context %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_filter_violations.js') }}
+{% endblock %}
 {% block title %}
-    {{ ambience['event']['title'] }} – {% trans %}Constraint Violations{% endtrans %}
+    {{ ambience['event']['title'] }} – {% trans %}Inconsistencies{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
-    {{ util.breadcrumb_link(cdedblink("event/constraint_violations"), gettext("Constraint Violations"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations"), gettext("Inconsistencies"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Inconsistencies"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% if violations.max_severity < min_severity %}
-        {% trans %}
-            There are currently no constraints being violated.
-        {% endtrans %}
+    {% if violations %}
+        {{ generic.filter_violations("event/constraint_violations", "violations", filter_event=False) }}
+
+        <div id="violations">
+            <div id="event_{{ ambience['event'].id }}" class="event">
+                {% for class_name, violation_list in violations.by_class.items() %}
+                    <div class="violation-list maybehide">
+                        {{ util.doclink_("Handbuch_Orga_Ungereimtheiten", class_name|lower) }}
+                        {{ util.h(class_name, underline=true) }}
+                        {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity, violation_kind=violation_list[0].kind) }}
+                    </div>
+                {% endfor %}
+                <div class="maybenothide text-muted">
+                    {% trans %}
+                        There are currently no inconsistencies matching the filter.
+                    {% endtrans %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-muted">
+            {% trans %}
+                There are currently no inconsistencies.
+            {% endtrans %}
+        </div>
     {% endif %}
-
-    {% for class_name, violations_ in violations.by_class.items() if violations_.max_severity >= min_severity %}
-        {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
-        {{ util.h(class_name, underline=true) }}
-        {{ generic.list_violations(class_name, violations_, entity_page="") }}
-    {% endfor %}
-
 {% endblock %}

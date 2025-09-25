@@ -11,6 +11,7 @@ import email.parser
 import email.policy
 import functools
 import gettext
+import html
 import io
 import json
 import os
@@ -26,7 +27,13 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Generator,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from re import Pattern
 from typing import (
     Any,
@@ -40,6 +47,7 @@ from typing import (
     no_type_check,
 )
 
+import lxml.html
 import PIL.Image
 import webtest
 import webtest.utils
@@ -48,6 +56,7 @@ from psycopg2.extras import RealDictCursor
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -66,8 +75,10 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
+    NearlyNow,
     PathLike,
     RequestState,
+    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -79,6 +90,7 @@ from cdedb.common.query.log_filter import (
     AssemblyLogFilter,
     CdELogFilter,
     ChangelogLogFilter,
+    ComplaintLogFilter,
     CoreLogFilter,
     EventLogFilter,
     FinanceLogFilter,
@@ -98,7 +110,6 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
     AbstractFrontend,
     Worker,
-    make_persona_name,
     setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend
@@ -180,7 +191,9 @@ _SAMPLE_DATA = _read_sample_data()
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def _make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(
+        backend: B, internal: bool = False, allow_private: bool = False,
+) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -237,6 +250,9 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
+        if hasattr(backend, "list_enforcers"):
+            if rs.user.persona_id in backend.list_enforcers(rs):
+                rs.user.realm_roles["complaint"] = {"enforcer"}
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
             rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
@@ -261,7 +277,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if name == "_event_keeper":
                 return attr
             if any([
-                not getattr(attr, "access", False),
+                not getattr(attr, "access", False) and not allow_private,
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
@@ -443,12 +459,14 @@ class BackendTest(CdEDBTest):
     """
     maxDiff = None
     session: ClassVar[SessionBackend]
+    _raw_backend: ClassVar[CoreBackend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
     event: ClassVar[EventBackend]
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
@@ -457,12 +475,14 @@ class BackendTest(CdEDBTest):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.session = cls.initialize_raw_backend(SessionBackend)
+        cls._raw_backend = cls.initialze_private_backend(CoreBackend)
         cls.core = cls.initialize_backend(CoreBackend)
         cls.cde = cls.initialize_backend(CdEBackend)
         cls.event = cls.initialize_backend(EventBackend)
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
+        cls.complaint = cls.initialize_backend(ComplaintBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
@@ -495,10 +515,15 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        self.core.logout(self.key)
+        if allow_anonymous:
+            try:
+                self.core.logout(self.key)
+            except PrivilegeError:
+                pass
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            self.core.logout(self.key)
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -506,6 +531,7 @@ class BackendTest(CdEDBTest):
     def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
+        new_user = get_user(new_user)
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
@@ -529,6 +555,7 @@ class BackendTest(CdEDBTest):
             'event': (self.event.retrieve_log, EventLogFilter),
             'ml': (self.ml.retrieve_log, MlLogFilter),
             'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+            'complaint': (self.complaint.retrieve_log, ComplaintLogFilter),
         }
         log_retriever, log_filter_class = logs[realm]
         _, log = log_retriever(self.key, log_filter_class(**kwargs))
@@ -540,13 +567,13 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
                 if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date', 'companion_id'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -554,6 +581,12 @@ class BackendTest(CdEDBTest):
                     exp[k] = decimal.Decimal(exp[k])
             if real['change_note']:
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
+
+        if log != tuple(log_expectation):
+            for log_entry, exp_entry in zip(log, log_expectation):
+                if log_entry['ctime'] == exp_entry['ctime']:
+                    if isinstance(exp_entry['ctime'], NearlyNow):
+                        exp_entry['ctime'] = log_entry['ctime']
         self.assertEqual(log, tuple(log_expectation))
 
     def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
@@ -595,7 +628,11 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+
+    @classmethod
+    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
@@ -821,6 +858,16 @@ USER_DICT: dict[str, UserObject] = {
         'family_name': "Ravenclaw",
         'default_name_format': "Rowena Ravenclaw",
     },
+    "simon": {
+        'id': 19,
+        'DB-ID': "DB-19-1",
+        'username': "simon@example.cde",
+        'password': "secret",
+        'given_names': "Simon",
+        'legal_given_names': None,
+        'family_name': "Struktur",
+        'default_name_format': "Simon Struktur",
+    },
     "vera": {
         'id': 22,
         'DB-ID': "DB-22-1",
@@ -866,6 +913,7 @@ USER_DICT: dict[str, UserObject] = {
         'DB-ID': "DB-37-X",
         'username': "katarina@example.cde",
         'password': "secret",
+        'given_names': "Katarina",
         'legal_given_names': None,
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
@@ -934,8 +982,8 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
-                                                 Callable[..., None]]:
+def as_users(*users: UserIdentifier, maintain_data: bool = False,
+             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
@@ -944,7 +992,12 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
-                        self.setUp()
+                        if maintain_data:
+                            if isinstance(self, FrontendTest):
+                                self.get("/")
+                            self.logout(allow_anonymous=True)
+                        else:
+                            self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
@@ -962,12 +1015,12 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str) -> Callable[[F], F]:
+def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(*args: Any, **kwargs: Any) -> Any:
-            execsql(sql)
+            execsql(sql, verbose=verbose)
             return fun(*args, **kwargs)
         return cast(F, new_fun)
     return decorator
@@ -985,9 +1038,9 @@ def event_keeper(fun: F) -> F:
     return storage(fun)
 
 
-def execsql(sql: str) -> None:
+def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql)
+    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):
@@ -1094,7 +1147,7 @@ class FrontendTest(BackendTest):
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
         self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
-        self.follow()
+        self.follow(**kwargs)
         self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs: Any) -> None:
@@ -1137,9 +1190,10 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "", *,
+    def submit(self, form: webtest.Form, button: str = "submitform", *,
                check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: Optional[str] = None) -> None:
+               verbose: bool = False, value: Optional[str] = None,
+               check_mandatory_filled: bool = True) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1149,10 +1203,22 @@ class FrontendTest(BackendTest):
             that the submission produces a notification indicating success.
         :param check_button_attrs: If True and button is given, check whether the
             button specifies a different form action and/or method.
+        :param check_mandatory_filled: If True, check that all fields with a `required`
+            attribute are non-empty. Most browers do this.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        if check_mandatory_filled:
+            # check that all required inputs are filled
+            for fieldname, field_list in form.fields.items():
+                if len(field_list) > 1:  # these are checkboxes or submit buttons
+                    # TODO: handle checkboxes when required-attr implemented there
+                    continue
+                field: webtest.forms.Field = unwrap(field_list)
+                if "required" in field.attrs:
+                    self.assertNotEqual(
+                        field.value, "", f"Required field {fieldname} left empty!")
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
@@ -1165,6 +1231,8 @@ class FrontendTest(BackendTest):
         if value and not button:
             raise ValueError(
                 "Cannot specify button value without specifying button name.")  # pragma: no cover
+        if not form.get(button, index=0, default=None):
+            self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1195,7 +1263,7 @@ class FrontendTest(BackendTest):
         """
         for link in links:
             if isinstance(link, str):
-                link = {'description': link}
+                link = {'description': html.escape(link)}
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -1219,7 +1287,8 @@ class FrontendTest(BackendTest):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        check_mandatory_filled=False)
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
@@ -1232,12 +1301,19 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):  # pragma: no cover
-            if not allow_anonymous:
-                raise self.failureException("Already logged out.")
-        else:
+        def _logout() -> None:
             f = self.response.forms['logoutform']
-            self.submit(f, check_notification=False, verbose=verbose)
+            self.submit(f, check_notification=False, verbose=verbose,
+                        button="submitlogout", check_mandatory_filled=False)
+
+        if allow_anonymous:
+            if not self.user_in("anonymous"):
+                if 'logoutform' in self.response.forms:
+                    _logout()
+        else:
+            if self.user_in("anonymous"):
+                self.fail("Already logged out.")
+            _logout()
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
@@ -1313,9 +1389,8 @@ class FrontendTest(BackendTest):
         for path in mails:
             with open(path, encoding="utf-8") as f:
                 raw = f.read()
-                parser = email.parser.Parser(policy=email.policy.default)  # type: ignore[arg-type]
-                msg = cast(email.message.EmailMessage, parser.parsestr(raw))
-                ret.append(msg)
+                parser = email.parser.Parser(policy=email.policy.default)
+                ret.append(parser.parsestr(raw))
         return ret
 
     def fetch_mail_content(self, index: int = 0) -> str:
@@ -1353,28 +1428,44 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(title.strip(), normalized)
 
-    def get_content(self, div: str = "content") -> str:
-        """Retrieve the content of the (first) element with the given id."""
-        if (
-            self.response.content_type.startswith("text/")
-            and self.response.content_type != "text/html"
-        ):
-            return self.response.text
-        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-        if not tmp:
-            self.fail(f"Div '{div}' not found.")
-        content = tmp[0]
-        return content.text_content()
-
-    def assertDivNotExists(self, div: str) -> None:
-        """Assert that the given id is not used by any element on the page.
-
-        This element is not required to be a div.
-        """
+    def _get_nodes(
+            self, selector: str, *, check_exists: bool = True, root_node: "lxml.html.Element | None" = None
+    ) -> list["lxml.html.Element"]:
+        """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
-            self.fail("No valid html document.")
-        if self.response.lxml.xpath(f"//*[@id='{div}']"):
-            self.fail(f"Element with id {div} found")
+            raise ValueError("Not a HTML page.")
+        if root_node is not None:
+            nodes = root_node.cssselect(selector)
+        else:
+            nodes = self.response.lxml.cssselect(selector)
+        if not nodes and check_exists:
+            self.fail(f"Element '{selector}' not found.")
+        return nodes
+
+    def _normalize_whitespace(self, s: str) -> str:
+        return re.sub(r'\s+', ' ', s).strip()
+
+    def _get_content(self, selector: str, *, check_exists: bool = True, index: int = 0) -> str:
+        """Like `get_content` but accepts any css selector."""
+        nodes = self._get_nodes(selector, check_exists=check_exists)
+        if not nodes and not check_exists:
+            return ""
+        try:
+            node = nodes[index]
+        except IndexError:
+            self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
+        return self._normalize_whitespace(node.text_content())
+
+    def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
+        """Retrieve the normalized text content of the (nth) element with the given id."""
+        return self._get_content(f"#{div}", check_exists=check_exists, index=index)
+
+    def assertDivNotExists(self, selector: str) -> None:
+        """Assert that the given selector does not match any element on the page."""
+        self.assertFalse(
+            self._get_nodes(selector, check_exists=False),
+            msg=f"Element '{selector}' found.",
+        )
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
         """Assert that the form input has a specific HTML DOM attribute.
@@ -1384,29 +1475,19 @@ class FrontendTest(BackendTest):
         """
         self.assertIn(attr, input_field.attrs)
 
-    def assertHasClass(self, div: str, html_class: str) -> None:
-        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-        if not tmp:
-            self.fail(f"Div '{div}' not found.")
-        classes = tmp[0].classes
-        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
-
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = (self.response.html.find_all(id=anid)
-               or self.response.html.find_all(attrs={'name': anid}))
-        if not tmp:
-            self.fail(f"ID '{anid}' not found.")
-        if len(tmp) != 1:
-            self.fail(f"More or less then one hit ({len(tmp)}) for div '{anid}'.")
-        checkbox = tmp[0]
-        if "data-checked" in checkbox.attrs:
-            self.assertEqual(str(status), checkbox['data-checked'])
-        elif "type" in checkbox.attrs:
-            self.assertEqual("checkbox", checkbox['type'])
-            self.assertEqual(status, checkbox.get('checked') == 'checked')
+        selector = f'span#{anid}, input[type="checkbox"][name="{anid}"]'
+        nodes = self._get_nodes(selector)
+        if len(nodes) != 1:
+            self.fail(f"More or than one checkbox ({len(nodes)}) {selector!r} found.")
+        checkbox = nodes[0]
+        if checkbox.tag == "span":
+            # Deko checkbox.
+            self.assertEqual(str(status), checkbox.get('data-checked'))
         else:
-            self.fail(f"ID '{anid}' doesn't belong to a checkbox: {checkbox!r}")
+            # Input checkbox.
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False, msg: Optional[str] = None) -> None:
@@ -1417,14 +1498,13 @@ class FrontendTest(BackendTest):
         :param regex: If True, do a RegEx match of the given string.
         :param exact: If True, require an exact match.
         """
-        target = self.get_content(div)
-        normalized = re.sub(r'\s+', ' ', target)
+        content = self.get_content(div, check_exists=True)
         if regex:
-            self.assertTrue(re.search(s.strip(), normalized), msg=msg)
+            self.assertTrue(re.search(s.strip(), content), msg=msg)
         elif exact:
-            self.assertEqual(s.strip(), normalized.strip(), msg=msg)
+            self.assertEqual(s.strip(), content.strip(), msg=msg)
         else:
-            self.assertIn(s.strip(), normalized, msg=msg)
+            self.assertIn(s.strip(), content, msg=msg)
 
     def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
@@ -1435,17 +1515,48 @@ class FrontendTest(BackendTest):
         if s is None:
             # Allow short-circuiting via dict.get()
             return
-        if (
-            self.response.content_type.startswith("text/")
-            and self.response.content_type != "text/html"
-        ):
-            self.assertNotIn(s.strip(), self.response.text)
-        else:
-            tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
-            if tmp:
-                self.assertNotIn(s.strip(), tmp[0].text_content())
-            elif check_div:
-                self.fail(f"Specified div {div!r} not found.")
+        content = self.get_content(div, check_exists=check_div)
+        self.assertNotIn(s.strip(), content)
+
+    def _assertNodeHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+        default_message = f"Node <{node.tag} id={node.get('id')}> does not have class {html_class!r}: {set(node.classes)!r}."
+        self.assertIn(html_class, node.classes, msg=msg or default_message)
+
+    def _assertNodeNotHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+        default_message = f"Node <{node.tag} id={node.get('id')}> unexpectedly has class {html_class!r}: {set(node.classes)!r}."
+        self.assertNotIn(html_class, node.classes, msg=msg or default_message)
+
+    def assertHasClass(self, selector: str, html_class: str) -> None:
+        nodes = self._get_nodes(selector)
+        for i, node in enumerate(nodes):
+            self._assertNodeHasClass(
+                node,
+                html_class,
+                f"Element {selector!r}[{i}/{len(nodes)}] does not have class {html_class!r}: {set(node.classes)!r}.",
+            )
+
+    def assertNotHasClass(self, selector: str, html_class: str) -> None:
+        nodes = self._get_nodes(selector)
+        for i, node in enumerate(nodes):
+            self._assertNodeNotHasClass(
+                node,
+                html_class,
+                f"Element {selector!r}[{i}/{len(nodes)}] unexpectedly has class {html_class!r}: {set(node.classes)!r}.",
+            )
+
+    def assertHidden(self, *selectors: str) -> None:
+        """Assert that a collection of HTML elements are hidden.
+
+        Takes any number of strings which are each interpreted as css selectors.
+        Also ensures that every selector finds at least one element.
+        """
+        for selector in selectors:
+            self.assertHasClass(selector, "softhide")
+
+    def assertNotHidden(self, *selectors: str) -> None:
+        """See `assertHidden`."""
+        for selector in selectors:
+            self.assertNotHasClass(selector, "softhide")
 
     def assertTextContainedInElement(self, search_text: str, element_tag: str,
                                      div: str = "content") -> None:
@@ -1572,23 +1683,32 @@ class FrontendTest(BackendTest):
             ntype = 'danger'
 
         div = 'static-notifications' if static else 'notifications'
-        alert_type_class = f" alert-{ntype}" if ntype is not None else ""
-        # source: https://devhints.io/xpath#string-functions
-        notifications = self.response.lxml.xpath(
-                f"//div[@id='{div}']/div[starts-with(@class,'alert{alert_type_class}')]"
-                "/span[@class='notificationMessage']")
-        self.assertTrue(notifications,
-                        msg=(f"No{alert_type_class} notification found."
-                             if msg is None else msg))
+        alert_type_class = f".alert-{ntype}" if ntype is not None else ""
+        selector = f"div#{div} div.alert{alert_type_class} span.notificationMessage"
+        notifications = self._get_nodes(selector, check_exists=False)
+        if not notifications:
+            other_selector = f"div#{div} div.alert"
+            msg = msg or f"Couldn't find any such notification: {selector!r}."
+            if other_notifications := self._get_nodes(other_selector, check_exists=False):
+                msg += " I found these notifications instead:\n"
+                msg += "\n".join(
+                    f"{' '.join(sorted(node.classes))}:"
+                    f" {self._normalize_whitespace(node.text_content())}"
+                    for node in other_notifications
+                )
+            else:
+                msg += " (There were no notifications)."
+            self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
-            all_texts = " | ".join(n.text_content().strip() for n in notifications)
+            all_texts = " | ".join(
+                self._normalize_whitespace(n.text_content()) for n in notifications
+            )
             self.assertIn(ntext, all_texts, msg=msg)
 
     def assertLogin(self, name: str) -> None:
         """Assert that a user is logged in by checking their display name."""
-        span = self.response.lxml.xpath("//span[@id='displayname']")[0]
-        self.assertEqual(name.strip(), span.text_content().strip())
+        self.assertPresence(name, div="displayname", exact=True)
 
     def assertValidationError(
             self, fieldname: str, message: str = "", index: Optional[int] = None,
@@ -1648,17 +1768,15 @@ class FrontendTest(BackendTest):
         if notification is not None:
             self.assertNotification(notification, alert_type)
 
-        nodes = self.response.lxml.xpath(
-            f'(//input|//select|//textarea)[@name="{fieldname}"]')
+        nodes = self._get_nodes(f':is(input, select, textarea)[name="{fieldname}"]')
         f = fieldname
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif not nodes:  # pragma: no cover
-                self.fail(f"No input with name {f!r} found.")
             else:  # pragma: no cover
-                self.fail(f"More than one input with name {f!r} found."
-                          f" Need to specify index.")
+                self.fail(
+                    f"More than one input with name {f!r} found. Need to specify index."
+                )
         else:
             try:
                 node = nodes[index]
@@ -1667,16 +1785,17 @@ class FrontendTest(BackendTest):
                     f"Input with name {f!r} and index {index} not found."
                     f" {len(nodes)} inputs with name {f!r} found.") from None
 
-        # From https://devhints.io/xpath#class-check
-        container = node.xpath(
-            "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
-            f"' has-{kind} ')]")
-        if not container:
+        error_containers = [
+            ancestor.text_content()
+            for ancestor in node.iterancestors()
+            if f"has-{kind}" in ancestor.classes
+        ]
+        if not error_containers:
             self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
-        normalized = re.sub(r'\s+', ' ', container[0].text_content())
-        errmsg = (f"Expected error message not found near input with name {f!r}:\n"
-                  f"{normalized}")
-        self.assertIn(message, normalized, errmsg)
+
+        normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
+        if not any(message in content for content in normalized):
+            self.fail(f"Expected error message not found near input with name {f!r}:\n{normalized}")
 
     def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
                      tag: str = 'a', href_attr: str = 'href',
@@ -1724,7 +1843,13 @@ class FrontendTest(BackendTest):
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
         personas = self.core.get_personas(self.key, persona_ids)
-        entity_key = "mailinglist_id" if realm == "ml" else f"{realm}_id"
+
+        if realm == "ml":
+            entity_key = "mailinglist_id"
+        elif realm == "complaint":
+            entity_key = "case_id"
+        else:
+            entity_key = f"{realm}_id"
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
@@ -1756,6 +1881,10 @@ class FrontendTest(BackendTest):
         elif realm == "changelog":
             self.get("/core/changelog/view")
             entities = {}
+        elif realm == "complaint":
+            entities = {case_id: {'title': f"Fall {case_id}"} for case_id in entity_ids}
+            self.get("/core/complaint/log")
+
         else:
             self.get(f"/{realm}/log")
             entities = {}
@@ -1774,8 +1903,13 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name = make_persona_name(personas[entry['persona_id']])
-                self.assertPresence(name, div=f"{i}-{log_id}")
+                name1 = make_persona_name(personas[entry['persona_id']])
+                name2 = make_persona_name(
+                    personas[entry['persona_id']], include_nickname=True,
+                )
+                self.assertPresence(
+                    f'({re.escape(name1)}|{re.escape(name2)})',
+                    regex=True, div=f"{i}-{log_id}")
             if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 
@@ -1797,9 +1931,8 @@ class FrontendTest(BackendTest):
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
-        self.assertNonPresence("", check_div=False, div="pagination-0")
-        self.assertNonPresence("", check_div=False,
-                               div=f"pagination-{str(total // 50 + 2)}")
+        self.assertDivNotExists("#pagination-0")
+        self.assertDivNotExists(f"#pagination-{str(total // 50 + 2)}")
         # check translations
         self.assertNonPresence("LogCodes")
 
@@ -1818,7 +1951,7 @@ class FrontendTest(BackendTest):
         # we store the absolute values of start and end in an array, because
         # they must not change when we iterate in different ways
         starts = [1]
-        ends = [length - offset - 1]
+        ends = [1]
 
         # ... iterate over all pages:
         # - by using the 'next' button
@@ -1991,7 +2124,7 @@ class FrontendTest(BackendTest):
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('new_username', "Darf nicht leer sein.")
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "zeruda@example.cde"

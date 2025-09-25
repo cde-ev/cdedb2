@@ -10,7 +10,7 @@ Prerequisites
 To utilise the images you need to have Docker installed. Furthermore the use
 of ``docker compose`` (which is a separate plugin) is advised for ease of
 use.  The images and the compose file can also be run by podman
-or similar OCI compatibel tools.
+or similar OCI compatible tools.
 
 To get started, clone the git repository and activate our custom :ref:`githooks`::
 
@@ -40,7 +40,7 @@ Before starting any containers you have to build the corresponding images.
 As the compose file is in a subdirectory you have to tell ``docker compose``
 where it has to look for it using the ``--file`` flag.
 The flag needs to be places between ``docker compose`` and the subcommand.
-Another possibility is to simply change you working directory
+Another possibility is to simply change your working directory
 to the parent directory of the compose file.
 This applies to (almost) all subcommands.
 
@@ -49,6 +49,7 @@ Should you see the need to manually rebuild them you can do so using
 
 .. warning:: To build the dev-container you will first need to build the non-dev
           variant as the dependency is not publicly resolvable.
+          To do this, target the docker-compose-run.yaml file.
 
 Starting the containers
 -----------------------

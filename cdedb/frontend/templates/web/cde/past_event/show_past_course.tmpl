@@ -1,13 +1,15 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}
-    {% if "past_event" in user.admin_views %}
+
+{% if "past_event" in user.admin_views %}
+    {% set jshint='weak' %}
+    {% block scripts %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
-    {% endif %}
-{% endblock %}
-{% set jshint='strong' %}
+    {% endblock %}
+{% endif %}
+
 {% block title %}{{ ambience['pcourse']['title'] }} ({{ ambience['pevent']['title'] }}){% endblock %}
 {% block heading %}
     {{ util.context_heading(ambience['pcourse']['nr'] + ". " + ambience['pcourse']['title'],
@@ -77,9 +79,9 @@
                 <li class="hide-hover-container clearfix-after">
                     {% if participant['instructor'] %}<strong>{% endif %}
                     {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
+                        {{ util.persona_anchor(personas[anid], include_nickname=true, quote_me=not is_admin) }}
                     {% else %}
-                        {{ util.persona_name(personas[anid]) }}
+                        {{ personas[anid]|persona_name(include_nickname=true) }}
                     {% endif %}
                     {% if participant['instructor'] %}</strong>{% endif %}
                     {% if participant['instructor'] %}({% trans %}Instructor{% endtrans %}){% endif %}
@@ -91,7 +93,7 @@
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-                            {{ util.input_hidden(name="course_page", value=True) }}
+                            {{ util.ack_delete(gettext("The Participant will be removed from this Course.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus",
                                     aclass="btn btn-xs btn-danger list-button-float",
                                     label="") }}
@@ -135,7 +137,7 @@
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
                             {{ util.input_submit(label=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                            {{ util.ack_delete(gettext("The Course will be permanently deleted.")) }}
                         </form>
                     </div>
                 </div>
@@ -146,11 +148,6 @@
                 </div>
             </div>
         {% endcall %}
-        <script nonce="{{ csp_nonce }}">
-            $('#deletecourseform').cdedbProtectAction("{{ gettext("The Course will be permanently deleted.") }}");
-            $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from this Course.") }}");
-        </script>
     {% endif %}
 
 {% endblock %}

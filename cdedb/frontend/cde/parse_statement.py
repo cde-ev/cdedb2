@@ -3,26 +3,33 @@
 import dataclasses
 import datetime
 import decimal
+import functools
 import json
 import re
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable
 
 import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT,
-    Accounts,
     CdEDBObject,
     CdEDBObjectMap,
-    ConfidenceLevel,
     Error,
     RequestState,
-    TransactionType,
     asciificator,
     diacritic_patterns,
     now,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import (
+    Accounts,
+    ConfidenceLevel,
+    ParseAmountError,
+    TransactionType,
+    number_to_german,
+    parse_amount,
+    simplify_amount,
+)
 from cdedb.config import LazyConfig
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
@@ -65,12 +72,7 @@ class EventMatch:
 
 
 class StatementCSVKeys:
-    """CSV keys present in the export from BFS.
-
-    As of the onlinebanking update in April 2023, these are no longer configurable.
-
-    Presence of all keys is checked, but additional keys are allowed.
-    """
+    """CSV keys present in the export from BFfS/Sozialbank."""
     # Information about our account.
     cde_account = "Bezeichnung Auftragskonto"
     cde_iban = "IBAN Auftragskonto"
@@ -86,8 +88,9 @@ class StatementCSVKeys:
     amount = "Betrag"
     currency = "Waehrung"
     notes = "Bemerkung"
-    category = "Kategorie"
-    tax_relevant = "Steuerrelevant"
+    marked = "Gekennzeichneter Umsatz"
+    # category = "Kategorie"
+    # tax_relevant = "Steuerrelevant"
 
     # Information about the other party.
     account_holder = "Name Zahlungsbeteiligter"
@@ -101,33 +104,26 @@ class StatementCSVKeys:
         return {v for k, v in vars(cls).items()}
 
 
+STATEMENT_DATE_FIELD = StatementCSVKeys.valuta
+
+
 class ExportFields:
     """Specifications for the fields to include in the different download files"""
 
     # For the unified import (event fees and membership fees).
     db_import = (
-        "transaction_date", "amount_german", "cdedbid", "family_name", "given_names",
-        "category_old",
-    )
-
-    # For import in CdE-Realm `money_transfers`.
-    member_fees = (
-        "amount", "cdedbid", "family_name", "given_names", "transaction_date",
-    )
-
-    # For import in Event-Realm `batch_fees`.
-    event_fees = (
-        "amount", "cdedbid", "family_name", "given_names", "transaction_date",
+        "date", "amount_german", "cdedbid", "family_name", "given_names",
+        "category",
     )
 
     # For use in Excel-based bookkeeping.
     excel = (
-        "transaction_date", "amount_german", "cdedbid", "family_name", "given_names",
-        "category_old", "account_nr", "reference", "account_holder", "iban",
+        "date", "amount_german", "cdedbid", "family_name", "given_names",
+        "category", "account_nr", "reference", "account_holder", "iban",
     )
 
     festgeld = (
-        "transaction_date", "amount_german", "reference",
+        "date", "amount_german", "reference",
     )
 
 
@@ -137,7 +133,7 @@ class PostingPatterns:
     account_fee = re.compile(r"Abschluss", flags=re.I)
 
     # Most actively sent outgoing payments, either individual or as a collection.
-    payment = re.compile(r"Überweisungsauftrag", flags=re.I)
+    payment = re.compile(r"Überweisungsauftrag|SEPA Überweisung", flags=re.I)
 
     retoure = re.compile(r"(Retouren|Storno)", flags=re.I)
 
@@ -208,52 +204,10 @@ def date_from_filename(filename: str) -> datetime.date:
     return now().date()
 
 
-class ParseAmountError(Exception):
-    """Thrown if the amount string for a transaction could not be parsed."""
-
-
-def parse_amount(amount: str) -> decimal.Decimal:
-    """Safely determine how to interpret a string as Decimal."""
-    if not amount:
-        raise ParseAmountError
-    try:
-        ret = decimal.Decimal(amount)
-    except decimal.InvalidOperation:
-        amount = number_from_german(amount)
-        try:
-            ret = decimal.Decimal(amount)
-        except decimal.InvalidOperation as e:
-            raise ParseAmountError from e
-    return ret
-
-
-def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
-    """Helper to convert an input to a number in german format."""
-    if isinstance(number, decimal.Decimal):
-        ret = f"{number:,.2f}"
-    else:
-        ret = str(number)
-    ret = ret.replace(",", "").replace(".", ",")
-    return ret
-
-
-def number_from_german(number: str) -> str:
-    """Helper to convert a number in german format to english format."""
-    if not isinstance(number, str):
-        raise ValueError
-    ret = number.replace(".", "_").replace(",", ".")
-    return ret
-
-
-def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
-    """Helper to convert a number to german and strip decimal zeros."""
-    return str(number_to_german(amt)).rstrip("0").rstrip(",")
-
-
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data: CdEDBObject, index: Optional[int] = None) -> None:
+    def __init__(self, data: CdEDBObject, index: int | None = None) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
         # Fix parameter suffix.
         if index is not None:
@@ -262,7 +216,7 @@ class Transaction:
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
-        self.transaction_date = data["transaction_date"]
+        self.date = data["date"]
         self.amount = data["amount"]
         self.reference = re.sub(r"\s+", " ", data["reference"] or "")
         self.account_holder = data["account_holder"]
@@ -273,11 +227,11 @@ class Transaction:
         # We need the following fields, but we actually set them later.
         self.errors = data.get("errors", [])
         self.warnings = data.get("warnings", [])
-        self.type: Optional[TransactionType] = data.get("type")
+        self.type: TransactionType | None = data.get("type")
         self._event_id = data.get("event_id")
-        self.event: Optional[models_event.Event] = None
+        self.event: models_event.Event | None = None
         self._persona_id = data.get("cdedbid")
-        self.persona: Optional[CdEDBObject] = None
+        self.persona: CdEDBObject | None = None
 
         # We can be confident in our data if it was manually confirmed.
         cl = ConfidenceLevel
@@ -323,14 +277,13 @@ class Transaction:
             data["account"] = Accounts.Unknown
 
         try:
-            data["transaction_date"] = datetime.datetime.strptime(
-                raw[StatementCSVKeys.transaction_date], STATEMENT_INPUT_DATEFORMAT,
+            data["date"] = datetime.datetime.strptime(
+                raw[STATEMENT_DATE_FIELD], STATEMENT_INPUT_DATEFORMAT,
             ).date()
         except ValueError:
-            errors.append((StatementCSVKeys.transaction_date,
+            errors.append((STATEMENT_DATE_FIELD,
                            ValueError("Incorrect Date Format in Transaction %(t_id)s",
                                       {"t_id": t_id})))
-            data["statement_date"] = datetime.datetime.now().date()
 
         try:
             data["amount"] = parse_amount(raw[StatementCSVKeys.amount])
@@ -369,7 +322,7 @@ class Transaction:
         return Transaction(data)
 
     @staticmethod
-    def get_request_params(index: Optional[int] = None, *, hidden_only: bool = False,
+    def get_request_params(index: int | None = None, *, hidden_only: bool = False,
                            ) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.
@@ -384,12 +337,12 @@ class Transaction:
         ret: vtypes.TypeMapping = {
             f"t_id{suffix}": vtypes.ID,
             f"account{suffix}": Accounts,
-            f"transaction_date{suffix}": datetime.date,
+            f"date{suffix}": datetime.date,
             f"amount{suffix}": decimal.Decimal,
-            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
-            f"bic{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"reference{suffix}": str | None,
+            f"account_holder{suffix}": str | None,
+            f"iban{suffix}": vtypes.IBAN | None,
+            f"bic{suffix}": str | None,
             f"posting{suffix}": str,
             f"type_confidence{suffix}": ConfidenceLevel,
             f"persona_confidence{suffix}": ConfidenceLevel,
@@ -399,9 +352,9 @@ class Transaction:
             ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+                f"cdedbid{suffix}": vtypes.CdedbID | None,
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"event_id{suffix}": vtypes.ID | None,
                 f"event_confirm{suffix}": bool,
             })
         return ret
@@ -440,25 +393,25 @@ class Transaction:
         return ret
 
     def parse(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
-              ) -> None:
+              events: models_event.EventDataclassMap) -> None:
         """Try to determine the type of the transaction and referenced entities."""
-        self._get_entities(rs, core, event)
+        self._get_entities(rs, core, events)
         self._match_persona(rs, core)
-        self._match_event(rs, event)
+        self._match_event(rs, event_backend=event, events=events)
         self._determine_type()
 
     def _get_entities(self, rs: RequestState, core: "CoreBackend",
-                      event: "EventBackend") -> None:
+                      events: models_event.EventDataclassMap) -> None:
         """Try retrieving the persona and event belonging to this transaction."""
-        if self._persona_id:
+        if self._persona_id and not self.persona:
             try:
                 self.persona = core.get_persona(rs, self._persona_id)
             except KeyError:
                 self._persona_id = None
                 self.persona = None
-        if self._event_id:
+        if self._event_id and not self.event:
             try:
-                self.event = event.get_event(rs, self._event_id)
+                self.event = events[self._event_id]
             except KeyError:
                 self._event_id = None
                 self.event = None
@@ -544,15 +497,15 @@ class Transaction:
         if persona_matches:
             best_persona_id = max(
                 persona_matches, key=lambda p_id: persona_matches[p_id])
-            self.persona = personas[best_persona_id]
+            self.persona = personas.get(best_persona_id)
             self.persona_confidence = persona_matches[best_persona_id]
 
-    def _match_event(self, rs: RequestState, event_backend: "EventBackend") -> None:
+    def _match_event(self, rs: RequestState, event_backend: "EventBackend",
+                     events: models_event.EventDataclassMap) -> None:
         """Try to match an event to this transaction."""
         if self.event:
             return
 
-        events = event_backend.get_events(rs, event_backend.list_events(rs))
         if not self.persona:
             amounts_owed = {}
         else:
@@ -575,7 +528,9 @@ class Transaction:
             self.errors.extend(best_match.errors)
             self.warnings.extend(best_match.warnings)
 
+    # The cache needs to be able to hold all patterns for all events, so (4 * num events).
     @staticmethod
+    @functools.lru_cache(1024)
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
         s = "|".join(map(
             re.escape,
@@ -586,8 +541,8 @@ class Transaction:
         return re.compile(s, flags=re.I)
 
     def _match_one_event(self, event: models_event.Event,
-                         amount_owed: Optional[decimal.Decimal] = None,
-                         ) -> Optional[EventMatch]:
+                         amount_owed: decimal.Decimal | None = None,
+                         ) -> EventMatch | None:
         if self.compile_pattern(event.shortname, strict=True).search(self.reference):
             ret = EventMatch(event, ConfidenceLevel.Full)
         elif self.compile_pattern(event.title, strict=True).search(self.reference):
@@ -740,9 +695,9 @@ class Transaction:
             raise RuntimeError(n_("Impossible."))
 
     def validate(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
-                 ) -> None:
+                 events: models_event.EventDataclassMap) -> None:
         """Inspect transaction for problems."""
-        self._get_entities(rs, core, event)
+        self._get_entities(rs, core, events)
 
         cutoff = ConfidenceLevel.High
         if not self.type:
@@ -867,15 +822,14 @@ class Transaction:
             "account": str(self.account),
             "account_nr": self.account.display_str(),
             "account_iban": self.account.value,
-            "transaction_date": self.transaction_date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            "date": self.date.strftime(PARSE_OUTPUT_DATEFORMAT),
             "amount": self.amount_english,
             "amount_german": self.amount_german,
             "account_holder": self.account_holder,
             "posting": self.posting,
             "type": self.type,
-            "category": ((self.event.shortname + '-') if self.event else '')
-                        + self.type.display_str(),
             "type_confidence": self.type_confidence,
+            "category": self.event.shortname if self.event else self.type.category(),
             "cdedbid": cdedbid_filter(self.persona['id']) if self.persona else None,
             "persona_confidence": self.persona_confidence,
             "given_names": self.persona['given_names'] if self.persona else "",
@@ -894,7 +848,6 @@ class Transaction:
             "iban": self.iban,
             "bic": self.bic,
             "t_id": self.t_id,
-            "category_old": self.event.shortname if self.event else self.type.old(),
         }
         ret["summary"] = json.dumps(ret)
         ret["persona"] = self.persona

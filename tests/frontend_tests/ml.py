@@ -29,7 +29,7 @@ def _get_registration_part_stati(f: webtest.Form) -> set[const.RegistrationPartS
 
 
 class TestMlFrontend(FrontendTest):
-    @as_users("berta", "emilia", "janis")
+    @as_users("berta", "emilia", "janis", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'href': '/ml/'})
 
@@ -53,7 +53,7 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence("Mailman-Synchronisation")
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
-              "katarina")
+              "katarina", maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
@@ -139,7 +139,7 @@ class TestMlFrontend(FrontendTest):
         checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
         self.assertFalse(checkbox.get('data-checked') == 'True')
 
-    @as_users("nina", "vera")
+    @as_users("nina", "vera", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglistennutzerverwaltung")
@@ -158,6 +158,10 @@ class TestMlFrontend(FrontendTest):
     def test_create_archive_user(self) -> None:
         self.check_create_archive_user('ml')
 
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
     @as_users("nina")
     def test_merge_accounts(self) -> None:
         self.traverse({'description': "Mailinglisten"},
@@ -187,14 +191,7 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = "DB-100000-4"
         self.submit(f, check_notification=False)
-        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
-        self.assertValidationError('target_persona_id', msg)
-
-        f = self.response.forms['merge-accounts']
-        f['source_persona_id'] = janis_id
-        f['target_persona_id'] = USER_DICT['hades']['DB-ID']
-        self.submit(f, check_notification=False)
-        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        msg = "Dieser Benutzer existiert nicht."
         self.assertValidationError('target_persona_id', msg)
 
         # The next case is possible in principle, but has a blocking mailinglist ...
@@ -221,6 +218,30 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f)
+
+    @prepsql(
+        # remove archival blocker
+        f"DELETE FROM complaint.enforcers WHERE persona_id = {USER_DICT['janis']['id']}"
+    )
+    @as_users("anton", "nina")
+    def test_merge_archived_accounts(self) -> None:
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+
+        hades_id = USER_DICT['hades']['DB-ID']
+        janis_id = USER_DICT['janis']['DB-ID']
+
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = hades_id
+        if self.user_in("anton"):
+            self.submit(f)
+        else:
+            self.submit(f, check_notification=False)
+            msg = "Du darfst diesen Benutzer nicht aus dem Archiv wiederherstellen."
+            self.assertValidationError('target_persona_id', msg)
 
     @as_users("anton")
     def test_ml_admin_views(self) -> None:
@@ -270,14 +291,14 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("I can change this!", f['notes'].value)
         self.assertEqual("Spaß", f['subject_prefix'].value)
 
-    @as_users("berta", "charly")
+    @as_users("berta", "charly", maintain_data=True)
     def test_show_mailinglist(self) -> None:
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
-    @as_users("kalif", "janis")
+    @as_users("kalif", "janis", maintain_data=True)
     def test_assembly_ml_privileges(self) -> None:
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -287,7 +308,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Kanonische Beispielversammlung")
         self.assertNoLink(content="Kanonische Beispielversammlung")
 
-    @as_users("berta", "emilia", "annika", "nina")
+    @as_users("berta", "emilia", "annika", "nina", maintain_data=True)
     def test_hide_admin_notes(self) -> None:
         # CdElokal Hogwarts
         ml_data = self.get_sample_datum('ml.mailinglists', 65)
@@ -303,7 +324,7 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence(ml_data['notes'])
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
-              "katarina")
+              "katarina", maintain_data=True)
     def test_sidebar_one_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
@@ -330,7 +351,7 @@ class TestMlFrontend(FrontendTest):
 
         self.check_sidebar(ins, out)
 
-    @as_users("anton", "janis")
+    @as_users("anton", "janis", maintain_data=True)
     def test_show_ml_buttons_change_address(self) -> None:
         # not-mandatory
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'})
@@ -360,7 +381,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("changeaddressform", self.response.forms)
         self.assertPresence("Diese Mailingliste ist obligatorisch.")
 
-    @as_users("anton", "charly")
+    @as_users("anton", "charly", maintain_data=True)
     def test_show_ml_buttons_mod_opt_in(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
@@ -375,9 +396,9 @@ class TestMlFrontend(FrontendTest):
                             "Bestätigung durch einen Moderator. ")
         self.assertIn("cancel-request-form", self.response.forms)
 
-    @as_users("anton", "berta")
+    @as_users("anton", "berta", maintain_data=True)
     def test_show_ml_buttons_opt_in(self) -> None:
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7/'})
         self.assertTitle("Aktivenforum 2001")
         self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
         self.assertIn("subscribe-no-mod-form", self.response.forms)
@@ -387,7 +408,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Du hast diese Mailingliste abonniert.")
         self.assertIn("unsubscribeform", self.response.forms)
 
-    @as_users("akira", "inga")
+    @as_users("akira", "inga", maintain_data=True)
     def test_show_ml_buttons_blocked(self) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/11'})
         self.assertTitle("Kampfbrief-Kommentare")
@@ -840,7 +861,7 @@ class TestMlFrontend(FrontendTest):
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("moderators", errormsg)
         # Check that invalid DB-IDs are catched (regression test #2632)
         errormsg = "Falsches Format."
@@ -1062,7 +1083,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
-    @as_users("charly", "inga")
+    @as_users("charly", "inga", maintain_data=True)
     def test_subscribe_unsubscribe(self) -> None:
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/3'})
@@ -1212,7 +1233,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNotification("Der Nutzer ist aktuell blockiert.", 'error')
 
-    @as_users("berta", "janis")
+    @as_users("berta", "janis", maintain_data=True)
     def test_moderator_access(self) -> None:
         self.traverse({"href": "/ml"},
                       {"href": "/ml/mailinglist/3/show"})

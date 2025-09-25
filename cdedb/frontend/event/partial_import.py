@@ -16,7 +16,13 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, json_serialize
+from cdedb.common import (
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    get_mandatory_form_fields,
+    json_serialize,
+)
 from cdedb.common.exceptions import PartialImportError
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
@@ -27,9 +33,8 @@ from cdedb.frontend.common import (
     REQUESTfile,
     access,
     check_validation as check,
-    event_guard,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 from cdedb.models.event import ReducedCheckinPeriod
 
 
@@ -38,7 +43,8 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
-        return self.render(rs, "import/questionnaire_import")
+        return self.render(rs, "import/questionnaire_import", {},
+                           get_mandatory_form_fields(self.questionnaire_import))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -76,13 +82,14 @@ class EventImportMixin(EventBaseFrontend):
             rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_additional_questionnaire")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
-        return self.render(rs, "import/partial_import")
+        return self.render(rs, "import/partial_import", {},
+                           get_mandatory_form_fields(self.partial_import))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.entities_write)
@@ -108,12 +115,12 @@ class EventImportMixin(EventBaseFrontend):
         if partial_import_data:
             data = check(
                 rs, vtypes.SerializedPartialEvent, json.loads(partial_import_data),
-                fields=rs.ambience['event'].fields,
+                event=rs.ambience['event'],
             )
         else:
             data = check(
                 rs, vtypes.SerializedPartialEventUpload, json_file,
-                fields=rs.ambience['event'].fields,
+                event=rs.ambience['event'],
             )
         if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
@@ -128,12 +135,13 @@ class EventImportMixin(EventBaseFrontend):
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
-            rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        # TODO use dataclasses here
+        courses = {
+            course_id: course.as_dict()
+            for course_id, course in self.eventproxy.get_courses(rs, course_ids).items()
+            }
         persona_ids = (
             ({e['persona_id'] for e in registrations.values()}
              | {e.get('persona_id')
@@ -164,8 +172,8 @@ class EventImportMixin(EventBaseFrontend):
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
             course['segments'] = {
-                id: id in course['active_segments']
-                for id in course['segments']
+                id: segment["is_active"]
+                for id, segment in course['segments'].items()
             }
 
         # Fifth prepare summary
@@ -229,7 +237,7 @@ class EventImportMixin(EventBaseFrontend):
                 if val is None and lodgements.get(anid))),
 
             'changed_lodgement_groups': {
-                anid: flatten_recursive_delta(val, lodgement_groups[anid])
+                anid: flatten_recursive_delta(val, lodgement_groups[anid].as_dict())
                 for anid, val in delta.get('lodgement_groups', {}).items()
                 if anid > 0 and val},
             'new_lodgement_group_ids': tuple(xsorted(

@@ -225,17 +225,17 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: models.Event, *, part_group_id: int) -> Sequence[int]:
-        return tuple(event.part_groups[part_group_id].parts.keys())
+        return xsorted(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
     def get_track_ids(event: models.Event, *, part_id: Optional[int] = None,
                       part_group_id: Optional[int] = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return tuple(event.parts[part_id].tracks.keys())
+            return xsorted(event.parts[part_id].tracks.keys())
         if part_group_id:
             parts = event.part_groups[part_group_id].parts.values()
-            return tuple(itertools.chain.from_iterable(p.tracks for p in parts))
+            return xsorted(itertools.chain.from_iterable(p.tracks for p in parts))
         return ()
 
     @abc.abstractmethod
@@ -254,12 +254,15 @@ class StatisticPartMixin(StatisticMixin):
     def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
+        queries = [self.get_query(event, part_id) for part_id
+                   in self.get_part_ids(event, part_group_id=part_group_id)]
         if self.is_mergeable():
-            queries = [self.get_query(event, part_id) for part_id
-                       in self.get_part_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
-        return self.get_query_by_ids(event, registration_ids)
+        ret = self.get_query_by_ids(event, registration_ids)
+        for q in queries:
+            ret.fields_of_interest.extend(q.fields_of_interest)
+        return ret
 
     def get_link_id(self, *, track_id: Optional[int] = None,
                     part_id: Optional[int] = None, part_group_id: Optional[int] = None,
@@ -663,16 +666,16 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         # All queries have only a single constraint.
         return True
 
-    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: models.Event, course: models.Course, track_id: int) -> bool:  # type: ignore[override]
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
-            return track_id in course['segments']
+            return track_id in course.segments
         elif self == self.cancelled:
-            return (track_id in course['segments']
-                    and track_id not in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id not in course.active_segments)
         elif self == self.taking_place:
-            return (track_id in course['segments']
-                    and track_id in course['active_segments'])
+            return (track_id in course.segments
+                    and track_id in course.active_segments)
         else:
             raise RuntimeError(n_("Impossible."))
 

@@ -40,7 +40,8 @@
                     </td>
                     <td class="">
                         {{ generic_event.active_fee_registration_query_link(
-                                kind_stats.registrations_owed, gettext("Registrations"), anid="{}_owed_query".format(fee_kind.name)) }}
+                                kind_stats.registrations_owed, gettext("Registrations"),
+                                anid="{}_owed_query".format(fee_kind.name), kind=fee_kind) }}
                     </td>
                     <td class="text-right {{ 'text-danger' if kind_stats.total_paid < 0 }}">
                         <strong>
@@ -48,7 +49,8 @@
                         </strong>
                     <td class="">
                         {{ generic_event.active_fee_registration_query_link(
-                                kind_stats.registrations_paid, gettext("Registrations"), anid="{}_paid_query".format(fee_kind.name)) }}
+                                kind_stats.registrations_paid, gettext("Registrations"),
+                                anid="{}_paid_query".format(fee_kind.name), kind=fee_kind) }}
                     </td>
                 </tr>
             {% endfor %}

@@ -1,23 +1,23 @@
-{% set sidenav_active='registrations' %}
+{% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
-    {% trans persona_name=util.persona_name(persona) %}
+    {% trans persona_name=persona|persona_name %}
         Fee Details for {{ persona_name }}
     {% endtrans %} ({{ ambience['event']['title'] }})
 {% endblock %}
 {% block heading %}
     {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
     {{ util.context_heading(gettext("Fee Details"),
-                            util.persona_name(persona, include_nickname=True), 'user', gettext("Registration"),
+                            persona|persona_name(include_nickname=True), 'user', gettext("Registration"),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, icon="user") }}
     {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), active=True) }}
 {% endblock %}
 
@@ -25,11 +25,11 @@
 
     <h4 class="heading-underline">{% trans %}Overview{% endtrans %}</h4>
     <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
-    <dd>
+    <dd id="amount-owed">
         {% if complex_fee.is_complex() %}
             {{ generic_event.fee_breakdown_by_kind() }}
         {% else %}
-            {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+            {{ complex_fee.amount|money(lang=lang) }}
         {% endif %}
     </dd>
     <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>

@@ -1,9 +1,12 @@
-{% set sidenav_active = 'event_configure_additional_questionnaire' if preview else 'event_quest' %}
+{% set sidenav_active = "event_quest_config" if preview else "event_quest" %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='weak' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% if preview %}
         {% trans title=ambience['event']['title'] %}
@@ -16,97 +19,113 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{% if not preview %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                            gettext("Questionnaire"), active=True) }}
-{% else %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
-    {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                            gettext("Questionnaire Preview"), active=True) }}
-{% endif %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
+    {% if preview %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire_form"), gettext("Configure Questionnaire")) }}
+        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
+                                gettext("Questionnaire Preview"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire"),
+                                gettext("Questionnaire"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Questionnaire Preview") if preview else gettext("Participant Questionnaire"),
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
+
+{% macro button_par() %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
+                     gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
+        {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                         aclass="btn btn-default btn-sm", icon="eye") }}
+    </div>
+{% endmacro %}
+
 {% block content %}
     {% if preview %}
+        {{ button_par() }}
         <div class="form-horizontal">
     {% else %}
-    <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
-          class="form-horizontal">
-        {{ util.anti_csrf_token('event/additional_questionnaire') }}
-    {% endif %}
-        {% for entry in add_questionnaire %}
-            {{ generic_event.print_questionnaire_entry(entry) }}
-        {% endfor %}
-        {% if not preview %}
-            {{ util.form_input_submit(label=gettext("Submit"), cancellink=cdedblink("event/registration_status"),
-                                      readonly=is_locked) }}
+        {% if is_privileged_for("event/configure_additional_questionnaire") %}
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
+                             gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+            </div>
         {% endif %}
-        {% if lodgement_wishes %}
-            <hr />
-            {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}
+        <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
+              class="form-horizontal">
+            {{ util.anti_csrf_token('event/additional_questionnaire') }}
+    {% endif %}
+    {% for entry in add_questionnaire %}
+        {{ generic_event.print_questionnaire_entry(entry) }}
+    {% endfor %}
+    {% if not preview %}
+        {{ util.form_input_submit(label=gettext("Submit"), cancellink=cdedblink("event/registration_status"),
+                                  readonly=is_locked) }}
+        </form>
+        <script nonce="{{ csp_nonce }}">
+            $('#questionnaireform').cdedbProtectChanges();
+        </script>
+    {% else %}
+        </div>
+        <hr />
+        {{ button_par() }}
+    {% endif %}
+    {% if lodgement_wishes %}
+        <hr />
+        {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}
+            <div class="p">
+                {% trans link=util.href("#field.{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
+                    You can enter lodgement wishes in the respective {{ link }} in the following formats:
+                {% endtrans %}
+                {% trans %}
+                    Full name (any given name plus family name), forename/nickname plus family name, email address or CdEDB-ID ("DB-0000-X")
+                {% endtrans %}
+            </div>
+            {% if lodgement_wishes['wished_personas'] %}
                 <div class="p">
-                    {% trans link=util.href("#field.{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
-                        You can enter lodgement wishes in the respective {{ link }} in the following formats:
+                    {% trans %}
+                        The following lodgement wishes were detected from your input.
                     {% endtrans %}
                     {% trans %}
-                        Full name (any given name plus family name), forename/nickname plus family name, email address or CdEDB-ID ("DB-0000-X")
+                        If a wish is missing from this list, check that you spelled the name
+                        correctly and that both you and they appear on the participant list.
                     {% endtrans %}
                 </div>
-                {% if lodgement_wishes['wished_personas'] %}
-                    <div class="p">
-                        {% trans %}
-                            The following lodgement wishes were detected from your input.
-                        {% endtrans %}
-                        {% trans %}
-                            If a wish is missing from this list, check that you spelled the name
-                            correctly and that both you and they appear on the participant list.
-                        {% endtrans %}
-                    </div>
-                    <ul id="lodgement-wishes-list">
-                        {# Already sorted list of wished personas #}
-                        {% for persona in lodgement_wishes['wished_personas'] %}
-                            <li class="text-info">
-                                {{ util.persona_name(persona, include_nickname=True) }}
-                            </li>
+                <ul id="lodgement-wishes-list">
+                    {# Already sorted list of wished personas #}
+                    {% for persona in lodgement_wishes['wished_personas'] %}
+                        <li class="text-info">
+                            {{ persona|persona_name(include_nickname=True) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="p">
+                    {% trans %}
+                        Detected wishes will be shown here. No wishes have currently been detected.
+                    {% endtrans %}
+                    {% trans %}
+                        If a wish is missing from this list, check that you spelled the name
+                        correctly and that both you and they appear on the participant list.
+                    {% endtrans %}
+                </div>
+            {% endif %}
+            {% if lodgement_wishes['problems'] %}
+                <div class="p">
+                    {% trans %}The following problems with your lodgement wishes were detected{% endtrans %}:
+                </div>
+                <ul>
+                    {% with texttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"} %}
+                        {% for ntype, message, params in lodgement_wishes['problems'] %}
+                            <li class="text-{{ texttypes[ntype] }}">{{ gettext(message)|e|format(**params) }}</li>
                         {% endfor %}
-                    </ul>
-                {% else %}
-                    <div class="p">
-                        {% trans %}
-                            Detected wishes will be shown here. No wishes have currently been detected.
-                        {% endtrans %}
-                        {% trans %}
-                            If a wish is missing from this list, check that you spelled the name
-                            correctly and that both you and they appear on the participant list.
-                        {% endtrans %}
-                    </div>
-                {% endif %}
-                {% if lodgement_wishes['problems'] %}
-                    <div class="p">
-                        {% trans %}The following problems with your lodgement wishes were detected{% endtrans %}:
-                    </div>
-                    <ul>
-                        {% with texttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"} %}
-                            {% for ntype, message, params in lodgement_wishes['problems'] %}
-                                <li class="text-{{ texttypes[ntype] }}">{{ gettext(message)|e|format(**params) }}</li>
-                            {% endfor %}
-                        {% endwith %}
-                    </ul>
-                {% endif %}
-            {% endcall %}
-        {% endif %}
-    {% if preview %}
-        </div>
-    {% else %}
-    </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#questionnaireform').cdedbProtectChanges();
-    </script>
+                    {% endwith %}
+                </ul>
+            {% endif %}
+        {% endcall %}
     {% endif %}
 {% endblock %}

@@ -3,6 +3,13 @@
  * *********** */
 html, body {
     height: 100%;
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion) {
+    html, body {
+        scroll-behavior: auto;
+    }
 }
 
 body{
@@ -67,6 +74,9 @@ body{
 }
 .input-group-addon label {
     margin-bottom: 0;
+}
+.input-group, .input-group > *, .input-group-btn>.btn {
+    height: 100%;
 }
 .alert-info a {
     text-decoration: underline;
@@ -137,6 +147,9 @@ ul.slim {
 .details-list > li > details >  summary {
     margin-left: -15px;
 }
+.list-group.nosp {
+    margin-bottom: 5px;
+}
 .list-group-item {
     padding: 7px 8px;
 }
@@ -144,7 +157,11 @@ ul.slim {
     color: #777;
     background-color: #eee;
 }
-.list-group-item-muted a, .text-muted a, a.text-muted {
+.list-group-item-muted .text-unmuted {
+    /* TODO: replace this with the --bs-* variable for text color in bootstrap 4/5 */
+    color: #333;
+}
+.list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;
 }
 
@@ -191,7 +208,8 @@ h4, .h4, h5, .h5, h6, .h6 {
     margin-top: 12px;
     margin-bottom: 6px;
 }
-h4.heading-underline, h5.heading-underline, h6.heading-underline {
+h4.heading-underline, h5.heading-underline, h6.heading-underline,
+h4.panel-title, h5.panel-title, h6.panel-title {
     font-weight: inherit;
 }
 @media (max-width: 767px) {
@@ -291,7 +309,7 @@ summary.btn {
 }
 
 /* no-space and more-space classes */
-p.nosp {
+p.nosp, .form-group.nosp {
     margin-bottom: 0;
 }
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
@@ -341,7 +359,7 @@ ul.nosp, ol.nosp {
 .btn.mosp, img.mosp {
     margin-bottom: 5px
 }
-.panel-body>:last-child {
+.panel-body>:last-child, .panel-body>:last-child.row>[class*="col-"]>:last-child {
     margin-bottom: 0;
 }
 .strip-inner-space>:first-child {
@@ -481,6 +499,17 @@ h1.title {
 .align-top {
     vertical-align: top;
 }
+
+.row:has(> .float-bottomright) {
+    position: relative;
+}
+
+.float-bottomright {
+    position: absolute;
+    right: 15px;
+    bottom: 0;
+}
+
 /* Hide Arrows in number fields. (https://www.w3schools.com/howto/howto_css_hide_arrow_number.asp) */
 /* Chrome, Safari, Edge, Opera */
 input[type=number].no-number-arrows::-webkit-outer-spin-button,
@@ -542,6 +571,30 @@ input[type=number].no-number-arrows {
 .selectize-dropdown .option .meta {
     font-size: 85%;
     color: #777;
+}
+.selectize-dropdown .option.selected .meta {
+    color: #ddd;
+}
+.selectize-dropdown-content {
+    max-height: max(50vh, 300px);
+}
+.selectize-dropdown .optgroup-header {
+    color: revert;
+    font-weight: bold;
+    font-size: revert;
+}
+.selectize-dropdown .optgroup .option {
+    padding-left: 24px;
+}
+.selectize-dropdown .optgroup::before {
+    margin: 2px 0;
+}
+.selectize-dropdown .optgroup:has(+ .option)::after {
+    content: ' ';
+    display: block;
+    height: 1px;
+    margin: 2px -12px;
+    background-color: #e5e5e5;
 }
 
 /* ************* *
@@ -675,7 +728,7 @@ table {
     display: inline-block;
     min-width: 100%;
 }
-.wide-content-page {
+#wide-content-page {
     display: inline-block;
     background: #fff;
     border: solid 1px #ddd;
@@ -683,15 +736,16 @@ table {
     padding: 20px;
     margin: -30px 20px 0 20px;
     position: relative;
+    scroll-margin-top: 100px;
 }
 @media(max-width: 767px) {
-    .wide-content-page {
+    #wide-content-page {
         margin-left: 0;
         margin-right: 0;
     }
 }
 
-.wide-content-page table {
+#wide-content-page table {
     white-space: nowrap;
 }
 
@@ -699,7 +753,8 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td, tr:target td{
+tr.ls-selected td, tr:target td, .list-group-item:target
+{
     background: #d9edf7;
 }
 .ls-item {
@@ -1212,9 +1267,12 @@ tr.eventfee .money-positive {
 .nowrap {
     white-space: nowrap;
 }
-.link-disabled {
+.link-disabled:not(.text-muted,.text-info,.text-warning,.text-danger) {
     /* Make text look like a disabled link */
     color: #777;
+}
+.link-disabled {
+    /* Make text look like a disabled link */
     cursor: not-allowed;
 }
 .link-hidden {
@@ -1290,9 +1348,79 @@ ul.styleless {
     width: fit-content;
 }
 
+/* mark mandatory form fields */
+label .required-marker::after, th.required-col::after {
+    content: " *";
+    color: #a94442;
+    position: absolute;
+}
+
 /* Display icons in light gray. */
 span.fag {
     color: #aaaaaa;
+}
+
+/* Classes for dynamically hiding results of the constraint violation filter.
+ *
+ * Elements with `.maybehide` are hidden by default, but will be displayed
+ *  depending on their contents.
+ *
+ * Elements with `.maybenothide` are shown by default, but are hidden if they are
+ *  preceded by a `.maybehide` that is not hidden.
+ * In other words they are shown iff all preceding `.maybehide` elements are hidden.
+ * They serve as dynamically shown/hidden alt texts to the `.maybehide` elements.
+ */
+
+.maybehide {
+    display: none;
+}
+.maybenothide {
+    display: block;
+}
+
+/* On the global violation summary there are two sections with three layers each.
+ *
+ * 1. The view by event. This has a list of events with a list of violations each.
+ *    The classes are nested like so: .event .violations-list .violations
+ *
+ * 2. The view by violation class. Each violation class has a list of events.
+ *    The outer classes are reversed: .violations-list .event .violations
+ *
+ * Selector 1 is responsible for showing the violation list inside an event in view 1.
+ * Selector 2 is responsible for showing one event for one violation class in view 2.
+ * Selector 3 is responsible for showing the outer event in view 1.
+ * Selector 4 is repsonsible for showing the outer violation class in view 2.
+ *
+ * Selectors 1 and 2 are symmetrical, but 3 and 4 are not. This is because the heading
+ *  for the violation class in view 2 should become hidden if there are no not-hidden
+ *  violations listed for it. On the other hand the event heading in view 1 will stay
+ *  visible and an alt-text (.maybenothide) is displayed instead.
+ *
+ * On the violation pages for individual events a variation of view 1 is used, where
+ *  everything is wrapped in an '.event' element without '.maybehide'. This activates
+ *  selector 1, because selector 4 would break the view, since the '.violation-list'
+ *  elements do not have '.event' descendants. Selector 3 is not needed here.
+ */
+
+/* 1 */.event .violation-list.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 2 */.violation-list .event.maybehide:not(.softhide):has( .violations:not(.softhide)),
+/* 3 */.event.maybehide:not(.softhide):has( .violation-list:not( .softhide)),
+/* 4 */.violation-list.maybehide:not(.softhide):has( .event:not( .softhide)):has( .violations:not(.softhide)) {
+    display: block;
+
+    & ~.maybenothide {
+        display: none;
+    }
+}
+
+/* In modals, main content and note are separate divs to more easily update them
+ * programmatically, but should have no visual separation.
+ */
+#cdedb-modal-content {
+    padding-bottom: 0;
+}
+#cdedb-modal-content-note {
+    padding-top: 0;
 }
 
 /*

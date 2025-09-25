@@ -99,6 +99,69 @@ Ein Beispiel mit allen möglichen Operationen findet sich am Ende
           <https://tracker.cde-ev.de/gitea/orgas/cdedb_data_imports>`_. Mit
           diesen ist es bspw. möglich alle Höfe in Kirchheim anzulegen.
 
+Erlaubte Felder
+---------------
+
+Beim Bearbeiten von Anmeldungen, Kursen, Unterkünften und Unterkunftsgruppen sind alle
+Felder optional. Beim Neuanlagen sind einige Felder allerdings zwingend erforderlich.
+
+Erlaubte Felder für eine Anmeldung sind:
+
+- Notwendige Felder für eine neue Anmeldung:
+    - ``mixed_lodging``
+    - ``list_consent``
+    - ``notes``
+    - ``parts``
+    - ``tracks``
+- Optionale Felder:
+    - ``parental_agreement``
+    - ``orga_notes``
+    - ``fields``
+    - ``personalized_fees``
+    - ``checkin_periods``
+- Erlaubte aber ignorierte Felder:
+    - ``amount_paid``
+    - ``payment``
+    - ``is_member``
+    - ``amount_owed``
+    - ``amount_owed_by_kind``
+    - ``persona``
+    - ``ctime``
+    - ``mtime``
+
+Erlaubte Felder für einen Kurs sind:
+
+- Notwendige Felder für einen neuen Kurs:
+    - ``title``
+    - ``description``
+    - ``nr``
+    - ``shortname``
+    - ``instructors``
+    - ``max_size``
+    - ``min_size``
+    - ``notes``
+    - ``is_visible``
+- Optionale Felder:
+    - ``segments``
+    - ``fields``
+
+Erlaubte Felder für eine Unterkunft sind:
+
+- Notwendige Felder für eine neue Unterkunft:
+    - ``title``
+    - ``reglar_capacity``
+    - ``camping_mat_capacity``
+    - ``notes``
+    - ``group_id``
+- Optionale Felder:
+    - ``fields``
+
+Erlaubte Felder für eine Unterkunftsgruppe sind:
+
+- Notwendige Felder für eine neue Unterkunftsgruppe:
+    - ``title``
+
+
 Hinweise
 --------
 
@@ -170,6 +233,15 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (19, 4): Die Log-Codes "Kurs: angebotene Schienen geändert" und
+  "Kurs: stattfindende Schienen geändert" wurden entfernt.
+* Version (19, 3): Im partiellen Export ist die ``amount_owed`` einer Anmeldung nun auch
+  ``by_kind`` aufgeschlüsselt.
+  Im partiellen Import einer Anmeldung sind nun alle Felder erlaubt, die auch im partiellen Export
+  enthalten sind. Alle neu dazugekommenen Felder werden jedoch ignoriert, sodass sich an der
+  Funktionilität nichts verändert hat.
+* Version (19, 2): Die Veranstaltungssperre wurde von ``offline_lock`` zu ``is_locked``
+  umbenannt. Der Voll-Import von Veranstaltungen aus einer Mitnahmeversion wurde abgeschafft.
 * Version (19, 1): Neues Veranstaltungsfeld ``is_balanced``.
 * Version (19, 0): Ersatz des Checkin-Zeitpunkts durch eine Liste von Checkins und Checkouts
 * Version (18, 0): Umstellung des Namensmodells von Personen

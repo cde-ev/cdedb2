@@ -2,7 +2,8 @@
 
 import datetime as _datetime
 import decimal as _decimal
-from collections.abc import MutableMapping as _MutableMapping
+from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
+from types import UnionType as _UnionType
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
@@ -19,7 +20,8 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _MutableMapping[str, type[_Any]]
+TypeMapping = _Mapping[str, type[_Any] | _UnionType]
+MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -27,9 +29,7 @@ NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
 NonZeroInt = _NewType("NonZeroInt", int)
-ProtoID = _NewType("ProtoID", int)
-ID = _NewType("ID", ProtoID)
-CreationID = _NewType("CreationID", ProtoID)
+ID = _NewType("ID", int)
 CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
@@ -48,9 +48,8 @@ Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
 Url = _NewType("Url", str)
 Shortname = _NewType("Shortname", str)
-ShortnameIdentifier = _NewType("ShortnameIdentifier", Shortname)
 ShortnameRestrictiveIdentifier = _NewType(
-    "ShortnameRestrictiveIdentifier", ShortnameIdentifier)
+    "ShortnameRestrictiveIdentifier", Shortname)
 LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
@@ -74,7 +73,6 @@ NonRegex = _NewType("NonRegex", str)
 IntCSVList = _NewType("IntCSVList", list[int])
 CdedbIDList = _NewType("CdedbIDList", list[CdedbID])
 
-OrgaToken = _NewType("OrgaToken", _CdEDBObject)
 APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", _datetime.date)
@@ -95,38 +93,29 @@ ByFieldDatatype = _NewType("ByFieldDatatype", str)
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
 
 Persona = _NewType("Persona", _CdEDBObject)
-GenesisCase = _NewType("GenesisCase", _CdEDBObject)
 BatchAdmissionEntry = _NewType("BatchAdmissionEntry", _CdEDBObject)
 PrivilegeChange = _NewType("PrivilegeChange", _CdEDBObject)
-AnonymousMessage = _NewType("AnonymousMessage", _CdEDBObject)
 Period = _NewType("Period", _CdEDBObject)
 ExPuls = _NewType("ExPuls", _CdEDBObject)
 MoneyTransferEntry = _NewType("MoneyTransferEntry", _CdEDBObject)
 Lastschrift = _NewType("Lastschrift", _CdEDBObject)
 SepaTransactions = _NewType("SepaTransactions", list[_CdEDBObject])
 SepaMeta = _NewType("SepaMeta", _CdEDBObject)
-MetaInfo = _NewType("MetaInfo", _CdEDBObject)
 Institution = _NewType("Institution", _CdEDBObject)
 PastEvent = _NewType("PastEvent", _CdEDBObject)
 Event = _NewType("Event", _CdEDBObject)
 EventPart = _NewType("EventPart", _CdEDBObject)
-EventPartGroup = _NewType("EventPartGroup", _CdEDBObject)
-EventPartGroupSetter = _NewType("EventPartGroupSetter", _CdEDBOptionalMap)
 EventTrack = _NewType("EventTrack", _CdEDBObject)
-EventTrackGroup = _NewType("EventTrackGroup", _CdEDBObject)
-EventTrackGroupSetter = _NewType("EventTrackGroupSetter", _CdEDBOptionalMap)
 EventField = _NewType("EventField", _CdEDBObject)
 EventFee = _NewType("EventFee", _CdEDBObject)
 EventFeeSetter = _NewType("EventFeeSetter", _CdEDBOptionalMap)
 EventFeeCondition = _NewType("EventFeeCondition", str)
 EventFeeModifier = _NewType("EventFeeModifier", _CdEDBObject)
 PastCourse = _NewType("PastCourse", _CdEDBObject)
-Course = _NewType("Course", _CdEDBObject)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", _CdEDBObject)
-FeeBookingEntry = _NewType("FeeBookingEntry", _CdEDBObject)
 LodgementGroup = _NewType("LodgementGroup", _CdEDBObject)
 Lodgement = _NewType("Lodgement", _CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", _CdEDBObject)
@@ -153,7 +142,6 @@ PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
 PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
                                             _CdEDBObject)
 
-Mailinglist = _NewType("Mailinglist", _CdEDBObject)
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)
 SubscriptionIdentifier = _NewType("SubscriptionIdentifier", _CdEDBObject)
 SubscriptionDataset = _NewType("SubscriptionDataset", _CdEDBObject)
@@ -164,8 +152,6 @@ BallotCandidate = _NewType("BallotCandidate", _CdEDBObject)
 AssemblyAttachment = _NewType("AssemblyAttachment", _CdEDBObject)
 AssemblyAttachmentVersion = _NewType("AssemblyAttachmentVersion", _CdEDBObject)
 QueryInput = _NewType("QueryInput", _Query)
-LogFilter = _NewType("LogFilter", _CdEDBObject)
-CustomQueryFilter = _NewType("CustomQueryFilter", _CdEDBObject)
 
 
 QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
@@ -175,7 +161,8 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "float": float,
     "date": _datetime.date,
     "datetime": _datetime.datetime,
-    "checkin_datetime": _datetime.datetime,
+    "ranged_date": _datetime.date,
+    "ranged_datetime": _datetime.datetime,
     "bool": bool,
     "non_negative_int": NonNegativeInt,
     "non_negative_float": NonNegativeFloat,
@@ -185,4 +172,5 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "enum_int": int,
     "enum_str": str,
     "money": float,
+    "cdedbid": CdedbID,
 }

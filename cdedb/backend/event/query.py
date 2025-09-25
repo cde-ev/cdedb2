@@ -4,6 +4,8 @@
 The `EventQueryBackend` subclasses the `EventBaseBackend` and provides functionality
 for querying information about an event aswell as storing and retrieving such queries.
 """
+
+import abc
 from collections.abc import Collection
 from typing import Optional
 
@@ -13,7 +15,6 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP,
     access,
-    affirm_dataclass,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
@@ -24,10 +25,10 @@ from cdedb.common import (
     DefaultReturnCode,
     RequestState,
     json_serialize,
+    merge_dicts,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS,
     LODGEMENT_FIELDS,
     LODGEMENT_GROUP_FIELDS,
     REGISTRATION_FIELDS,
@@ -51,21 +52,28 @@ from cdedb.database.query import DatabaseValue_s
 from cdedb.models.event import CustomQueryFilter
 
 
-def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
-                              association: const.FieldAssociations) -> tuple[str, ...]:
+def _get_field_select_columns(
+    fields: models.CdEDataclassMap[models.EventField],
+    association: const.FieldAssociations,
+) -> tuple[str, ...]:
     """Construct SELECT column entries for the given fields of the given association."""
     colum_template = '''(fields->>'{name}')::{kind} AS "xfield_{name}"'''
     return tuple(
         colum_template.format(name=e.field_name, kind=PYTHON_TO_SQL_MAP[e.kind])
-        for e in fields.values() if e.association == association
+        for e in fields.values()
+        if e.association == association
     )
 
 
-class EventQueryBackend(EventBaseBackend):
+class EventQueryBackend(EventBaseBackend, abc.ABC):
     @access("event", "core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState, query: Query,
-                             event_id: Optional[int] = None, aggregate: bool = False,
-                             ) -> tuple[CdEDBObject, ...]:
+    def submit_general_query(
+        self,
+        rs: RequestState,
+        query: Query,
+        event_id: Optional[int] = None,
+        aggregate: bool = False,
+    ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
@@ -77,8 +85,9 @@ class EventQueryBackend(EventBaseBackend):
         if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if not is_privileged(rs, EventPrivileges.registrations_read_internal,
-                                 event_id=event_id):
+            if not is_privileged(
+                rs, EventPrivileges.registrations_read_internal, event_id=event_id
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -91,42 +100,53 @@ class EventQueryBackend(EventBaseBackend):
                 }
                 lodgement_view = registration_lodgement_view()
                 lodgement_groups_view = registration_lodgement_group_view()
-                full_part_tables = "\n".join(f"""
-                    LEFT OUTER JOIN ({reg_part_table}) AS part{part_id}
-                        ON reg.id = part{part_id}.registration_id
-                    LEFT OUTER JOIN ({lodgement_view}) AS lodgement{part_id}
-                        ON part{part_id}.lodgement_id = lodgement{part_id}.id
-                    LEFT OUTER JOIN ({lodgement_groups_view})
-                        AS lodgement_group{part_id}
-                        ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
-                    """ for part_id, reg_part_table in reg_part_tables.items())
+                full_part_tables = "\n".join(
+                    f"""
+                        LEFT OUTER JOIN ({reg_part_table}) AS part{part_id}
+                            ON reg.id = part{part_id}.registration_id
+                        LEFT OUTER JOIN ({lodgement_view}) AS lodgement{part_id}
+                            ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                        LEFT OUTER JOIN ({lodgement_groups_view})
+                            AS lodgement_group{part_id}
+                            ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                    """
+                    for part_id, reg_part_table in reg_part_tables.items()
+                )
                 reg_track_tables = {
                     track.id: registration_track_table(track.id)
                     for track in event.tracks.values()
                 }
                 course_view = registration_course_view()
-                full_track_tables = "\n".join(f"""
-                    LEFT OUTER JOIN ({reg_track_table}) AS track{t_id}
-                        ON reg.id = track{t_id}.registration_id
-                    LEFT OUTER JOIN ({course_view}) AS course{t_id}
-                        ON track{t_id}.course_id = course{t_id}.id
-                    LEFT OUTER JOIN ({course_view}) AS course_instructor{t_id}
-                        ON track{t_id}.course_instructor = course_instructor{t_id}.id
-                    """ for t_id, reg_track_table in reg_track_tables.items())
+                full_track_tables = "\n".join(
+                    f"""
+                        LEFT OUTER JOIN ({reg_track_table}) AS track{t_id}
+                            ON reg.id = track{t_id}.registration_id
+                        LEFT OUTER JOIN ({course_view}) AS course{t_id}
+                            ON track{t_id}.course_id = course{t_id}.id
+                        LEFT OUTER JOIN ({course_view}) AS course_instructor{t_id}
+                            ON track{t_id}.course_instructor = course_instructor{t_id}.id
+                    """
+                    for t_id, reg_track_table in reg_track_tables.items()
+                )
                 course_choices_track_tables = {
                     track.id: course_choices_track_table(track)
                     for track in event.tracks.values()
                 }
                 course_choices_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}"
-                    f" ON reg.id = course_choices{t_id}.base_id"
+                    f"""
+                        LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}
+                            ON reg.id = course_choices{t_id}.base_id
+                    """
                     for t_id, choices_table in course_choices_track_tables.items()
                     if choices_table is not None
                 )
                 personalized_fee_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({personalized_fee_table(fee.id)}) AS fee{fee.id}"
-                    f" ON reg.id = fee{fee.id}.registration_id"
-                    for fee in event.fees.values() if fee.is_personalized()
+                    f"""
+                        LEFT OUTER JOIN ({personalized_fee_table(fee.id)}) AS fee{fee.id}
+                            ON reg.id = fee{fee.id}.registration_id
+                    """
+                    for fee in event.fees.values()
+                    if fee.is_personalized()
                 )
                 return f"""
                     (
@@ -154,6 +174,9 @@ class EventQueryBackend(EventBaseBackend):
                     LEFT OUTER JOIN (
                         {registration_fields_table()}
                     ) AS reg_fields on reg.id = reg_fields.id
+                    LEFT OUTER JOIN (
+                        {complex_amount_owed_table()}
+                    ) AS amount_owed ON reg.id = amount_owed.id
                     LEFT OUTER JOIN (
                         {timestamp_table(creation=True)}
                     ) AS ctime ON reg.persona_id = ctime.persona_id
@@ -185,14 +208,27 @@ class EventQueryBackend(EventBaseBackend):
             # Step 2.1: Construct table for custom registration fields.
             def registration_fields_table() -> str:
                 reg_field_columns = _get_field_select_columns(
-                    event.fields, const.FieldAssociations.registration)
+                    event.fields, const.FieldAssociations.registration
+                )
                 return f"""
                     SELECT {', '.join(reg_field_columns + ('id',))}
                     FROM event.registrations
                     WHERE event_id = {event_id}
                 """
 
-            # Step 2.2: Construct table for personalized fee amounts.
+            # Step 2.2: Construct table for complex amount_owed.
+            def complex_amount_owed_table() -> str:
+                fee_kind_columns = [
+                    f'''(amount_owed_by_kind->>'{kind.value}')::numeric AS "{kind.name}"'''
+                    for kind in const.EventFeeType
+                ]
+                return f"""
+                    SELECT {', '.join(fee_kind_columns + ['id'])}
+                    FROM event.registrations
+                    WHERE event_id = {event_id}
+                """
+
+            # Step 2.3: Construct table for personalized fee amounts.
             def personalized_fee_table(fee_id: int) -> str:
                 return f"""
                     SELECT amount, registration_id
@@ -208,7 +244,7 @@ class EventQueryBackend(EventBaseBackend):
             # Step 3.1: Prepare template for registration part information.
             def registration_part_table(part_id: int) -> str:
                 return f"""
-                    SELECT {', '. join(REGISTRATION_PART_FIELDS)}
+                    SELECT {', '.join(REGISTRATION_PART_FIELDS)}
                     FROM event.registration_parts
                     WHERE part_id = {part_id}
                 """
@@ -216,7 +252,8 @@ class EventQueryBackend(EventBaseBackend):
             # Step 3.2: Prepare view for lodgement information.
             def registration_lodgement_view() -> str:
                 lodge_field_columns = _get_field_select_columns(
-                    event.fields, const.FieldAssociations.lodgement)
+                    event.fields, const.FieldAssociations.lodgement
+                )
                 columns = LODGEMENT_FIELDS + lodge_field_columns
                 return f"""
                     SELECT {', '.join(columns)}
@@ -257,8 +294,10 @@ class EventQueryBackend(EventBaseBackend):
                     for rank in range(track.num_choices)
                 }
                 course_choices_tables = "\n".join(
-                    f"LEFT OUTER JOIN ({single_choice_table}) AS cc{rank}"
-                    f" ON base.base_id = cc{rank}.registration_id"
+                    f"""
+                        LEFT OUTER JOIN ({single_choice_table}) AS cc{rank}
+                            ON base.base_id = cc{rank}.registration_id
+                    """
                     for rank, single_choice_table in single_choice_tables.items()
                 )
                 return f"""
@@ -280,8 +319,12 @@ class EventQueryBackend(EventBaseBackend):
                 return f"""
                     SELECT
                         registration_id, course_id, course_instructor,
-                        (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                         AND course_id = course_instructor) AS is_course_instructor
+                        (
+                            NOT (
+                                course_id IS NULL AND course_instructor IS NOT NULL
+                            )
+                            AND course_id = course_instructor
+                        ) AS is_course_instructor
                     FROM event.registration_tracks
                     WHERE track_id = {track_id}
                 """
@@ -289,8 +332,9 @@ class EventQueryBackend(EventBaseBackend):
             # Step 5.2: Prepare view for course information.
             def registration_course_view() -> str:
                 course_field_columns = _get_field_select_columns(
-                    event.fields, const.FieldAssociations.course)
-                columns = COURSE_FIELDS + course_field_columns
+                    event.fields, const.FieldAssociations.course
+                )
+                columns = tuple(models.Course.database_fields()) + course_field_columns
                 return f"""
                     SELECT {', '.join(columns)}, nr || '. ' || shortname AS nr_shortname
                     FROM event.courses
@@ -316,8 +360,9 @@ class EventQueryBackend(EventBaseBackend):
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
-            if not is_privileged(rs, EventPrivileges.registrations_read,
-                                 event_id=event_id):
+            if not is_privileged(
+                rs, EventPrivileges.registrations_read, event_id=event_id
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
@@ -336,14 +381,16 @@ class EventQueryBackend(EventBaseBackend):
 
             # Exclude users of any higher realm (implying event)
             for realm in implying_realms('event'):
-                query.constraints.append(
-                    (f"is_{realm}_realm", QueryOperators.equal, False))
+                query.constraints.append((
+                    f"is_{realm}_realm",
+                    QueryOperators.equal,
+                    False,
+                ))
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if not is_privileged(rs, EventPrivileges.courses_read,
-                                 event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.courses_read, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -361,7 +408,7 @@ class EventQueryBackend(EventBaseBackend):
                 return f"""
                     (
                         SELECT
-                            {', '.join(COURSE_FIELDS)},
+                            {', '.join(models.Course.database_fields())},
                             id AS course_id, nr || '. ' || shortname AS nr_shortname
                         FROM event.courses
                         WHERE event_id = {event_id}
@@ -374,7 +421,8 @@ class EventQueryBackend(EventBaseBackend):
 
             # Step 2: Dynamically construct custom datafield table.
             course_field_columns = _get_field_select_columns(
-                event.fields, const.FieldAssociations.course)
+                event.fields, const.FieldAssociations.course
+            )
             course_fields_table = f"""
                 SELECT {', '.join(course_field_columns + ('id',))}
                 FROM event.courses
@@ -386,11 +434,11 @@ class EventQueryBackend(EventBaseBackend):
             # rank and information on whether the course is offered and taking place.
 
             # A base table with all course ids we need in the following tables.
-            base = f"""(
+            base = "({}) as c".format(f"""
                 SELECT id, max_size
                 FROM event.courses
                 WHERE event_id = {event_id}
-            ) AS c"""
+            """)
 
             # Step 3.1: Template for combining all course track information.
             def course_track_table(track: models.CourseTrack) -> str:
@@ -419,33 +467,43 @@ class EventQueryBackend(EventBaseBackend):
                         )
                     ) AS segment ON c.id = segment.base_id
                     LEFT OUTER JOIN (
-                        {registration_track_count_table(
-                            track, param_name='attendees')}
+                        {registration_track_count_table(track, param_name='attendees')}
                     ) AS attendees ON c.id = attendees.base_id
                     LEFT OUTER JOIN (
-                        {registration_track_count_table(
-                            track, param_name='attendees_and_guests')}
+                        {
+                    registration_track_count_table(
+                        track, param_name='attendees_and_guests'
+                    )
+                }
                     ) AS attendees_and_guests ON c.id = attendees_and_guests.base_id
                     LEFT OUTER JOIN (
-                        {registration_track_count_table(
-                            track, param_name='instructors')}
+                        {
+                    registration_track_count_table(track, param_name='instructors')
+                }
                     ) AS instructors ON c.id = instructors.base_id
                     LEFT OUTER JOIN (
-                        {registration_track_count_table(
-                            track, param_name='assigned_instructors')}
+                        {
+                    registration_track_count_table(
+                        track, param_name='assigned_instructors'
+                    )
+                }
                     ) AS assigned_instructors
                         ON c.id = assigned_instructors.base_id
                     LEFT OUTER JOIN (
-                        {registration_track_count_table(
-                            track, param_name='potential_instructors')}
+                        {
+                    registration_track_count_table(
+                        track, param_name='potential_instructors'
+                    )
+                }
                     ) AS potential_instructors
                         ON c.id = potential_instructors.base_id
                     {course_choices_tables}
                 """
 
             # Step 3.2: Template for counting instructors and attendees.
-            def registration_track_count_table(track: models.CourseTrack,
-                                               param_name: str) -> str:
+            def registration_track_count_table(
+                track: models.CourseTrack, param_name: str
+            ) -> str:
                 """
                 Construct a table to gather registration track information.
 
@@ -460,13 +518,18 @@ class EventQueryBackend(EventBaseBackend):
                 constraint = ''
                 col = 'course_instructor'
                 stati = [const.RegistrationPartStati.participant]
+                additional_columns = [f"COUNT(registration_id) AS {param_name}"]
 
                 if param_name == 'attendees':
                     col = 'course_id'
+                    additional_columns.append(
+                        "max_size - COUNT(registration_id) AS remaining_capacity"
+                    )
                 elif param_name == 'attendees_and_guests':
                     col = 'course_id'
-                    stati = [rps for rps in const.RegistrationPartStati
-                             if rps.is_present()]
+                    stati = [
+                        rps for rps in const.RegistrationPartStati if rps.is_present()
+                    ]
                 elif param_name == 'instructors':
                     pass
                 elif param_name == 'assigned_instructors':
@@ -477,9 +540,7 @@ class EventQueryBackend(EventBaseBackend):
                 stati_str = ','.join(map(str, map(int, stati)))
                 return f"""
                     SELECT
-                        id AS base_id, COUNT(registration_id) AS {param_name}
-                        {", max_size - COUNT(registration_id) AS remaining_capacity"
-                         if param_name == 'attendees' else ""}
+                        id AS base_id, {", ".join(additional_columns)}
                     FROM (
                         {base}
                         LEFT OUTER JOIN (
@@ -523,8 +584,9 @@ class EventQueryBackend(EventBaseBackend):
         elif query.scope == QueryScope.lodgement:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            if not is_privileged(rs, EventPrivileges.lodgements_read,
-                                 event_id=event_id):
+            if not is_privileged(
+                rs, EventPrivileges.lodgements_read, event_id=event_id
+            ):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -536,8 +598,7 @@ class EventQueryBackend(EventBaseBackend):
                 total = 'regular_capacity + camping_mat_capacity AS total_capacity'
                 columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id, total)
                 event_part_tables = {
-                    part.id: event_part_table(part)
-                    for part in event.parts.values()
+                    part.id: event_part_table(part) for part in event.parts.values()
                 }
                 part_tables = "\n".join(
                     f"LEFT OUTER JOIN ({ept}) AS part{p} ON lodgement.id = part{p}.id"
@@ -561,7 +622,8 @@ class EventQueryBackend(EventBaseBackend):
 
             # Step 2: Dynamically construct custom datafield table.
             lodgement_field_columns = _get_field_select_columns(
-                event.fields, const.FieldAssociations.lodgement)
+                event.fields, const.FieldAssociations.lodgement
+            )
             lodgement_fields_table = f"""
                 SELECT {', '.join(lodgement_field_columns + ('id',))}
                 FROM event.lodgements
@@ -626,8 +688,9 @@ class EventQueryBackend(EventBaseBackend):
                 """
 
             # Step 4.2: Template for counting inhabitants.
-            def registration_part_count_table(p_id: int, is_camping_mat: Optional[bool],
-                                              ) -> str:
+            def registration_part_count_table(
+                p_id: int, is_camping_mat: Optional[bool]
+            ) -> str:
                 if is_camping_mat is None:
                     param_name = 'total_inhabitants'
                     remaining_name = 'total_remaining'
@@ -659,40 +722,44 @@ class EventQueryBackend(EventBaseBackend):
                 """
 
             # Step 4.3: Template for lodgement inhabitant counts.
-            lodgement_inhabitants_view = lambda part_id: f"""
-                SELECT
-                    base.id AS base_id, tmp_group_id,
-                    regular_inhabitants, camping_mat_inhabitants, total_inhabitants,
-                    regular_remaining, camping_mat_remaining, total_remaining
-                FROM (
-                    {base}
-                    LEFT OUTER JOiN (
-                        {registration_part_count_table(part_id, is_camping_mat=False)}
-                    ) AS regular_inhabitants ON base.id = regular_inhabitants.base_id
-                    LEFT OUTER JOiN (
-                        {registration_part_count_table(part_id, is_camping_mat=True)}
-                    ) AS camping_inhabitants ON base.id = camping_inhabitants.base_id
-                    LEFT OUTER JOiN (
-                        {registration_part_count_table(part_id, is_camping_mat=None)}
-                    ) AS total_inhabitants ON base.id = total_inhabitants.base_id
-                )
-            """
+            lodgement_inhabitants_view = (
+                lambda part_id: f"""
+                    SELECT
+                        base.id AS base_id, tmp_group_id,
+                        regular_inhabitants, camping_mat_inhabitants, total_inhabitants,
+                        regular_remaining, camping_mat_remaining, total_remaining
+                    FROM (
+                        {base}
+                        LEFT OUTER JOiN (
+                            {registration_part_count_table(part_id, is_camping_mat=False)}
+                        ) AS regular_inhabitants ON base.id = regular_inhabitants.base_id
+                        LEFT OUTER JOiN (
+                            {registration_part_count_table(part_id, is_camping_mat=True)}
+                        ) AS camping_inhabitants ON base.id = camping_inhabitants.base_id
+                        LEFT OUTER JOiN (
+                            {registration_part_count_table(part_id, is_camping_mat=None)}
+                        ) AS total_inhabitants ON base.id = total_inhabitants.base_id
+                    )
+                """
+            )
 
             # Step 4.4: Template for lodgement group inhabitant counts.
-            group_inhabitants_view = lambda part_id: f"""
-                SELECT
-                    tmp_group_id,
-                    COALESCE(SUM(regular_inhabitants)::bigint, 0)
-                        AS group_regular_inhabitants,
-                    COALESCE(SUM(camping_mat_inhabitants)::bigint, 0)
-                        AS group_camping_mat_inhabitants,
-                    COALESCE(SUM(total_inhabitants)::bigint, 0)
-                        AS group_total_inhabitants
-                FROM (
-                    {lodgement_inhabitants_view(part_id)}
-                ) AS inhabitants
-                GROUP BY tmp_group_id
-            """
+            group_inhabitants_view = (
+                lambda part_id: f"""
+                    SELECT
+                        tmp_group_id,
+                        COALESCE(SUM(regular_inhabitants)::bigint, 0)
+                            AS group_regular_inhabitants,
+                        COALESCE(SUM(camping_mat_inhabitants)::bigint, 0)
+                            AS group_camping_mat_inhabitants,
+                        COALESCE(SUM(total_inhabitants)::bigint, 0)
+                            AS group_total_inhabitants
+                    FROM (
+                        {lodgement_inhabitants_view(part_id)}
+                    ) AS inhabitants
+                    GROUP BY tmp_group_id
+                """
+            )
 
             view = lodgement_view()
         else:
@@ -700,10 +767,13 @@ class EventQueryBackend(EventBaseBackend):
         return self.general_query(rs, query, view=view, aggregate=aggregate)
 
     @access("event")
-    def get_event_queries(self, rs: RequestState, event_id: int,
-                          scopes: Optional[Collection[QueryScope]] = None,
-                          query_ids: Optional[Collection[int]] = None,
-                          ) -> dict[str, Query]:
+    def get_event_queries(
+        self,
+        rs: RequestState,
+        event_id: int,
+        scopes: Optional[Collection[QueryScope]] = None,
+        query_ids: Optional[Collection[int]] = None,
+    ) -> dict[str, Query]:
         """Retrieve all stored queries for the given event and scope.
 
         If no scopes are given, all queries are returned instead.
@@ -720,9 +790,11 @@ class EventQueryBackend(EventBaseBackend):
         try:
             with Atomizer(rs):
                 event = self.get_event(rs, event_id)
-                select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
-                          f" FROM event.stored_queries"
-                          f" WHERE event_id = %s")
+                select = f"""
+                    SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
+                    FROM event.stored_queries
+                    WHERE event_id = %s
+                """
                 params: list[DatabaseValue_s] = [event_id]
                 if scopes:
                     select += " AND scope = ANY(%s)"
@@ -739,8 +811,12 @@ class EventQueryBackend(EventBaseBackend):
                     spec = scope.get_spec(event=event)
                     try:
                         # The QueryInput takes care of deserialization.
-                        q: Query = affirm(vtypes.QueryInput, qd["serialized_query"],
-                                          spec=spec, allow_empty=False)
+                        q: Query = affirm(
+                            vtypes.QueryInput,
+                            qd["serialized_query"],
+                            spec=spec,
+                            allow_empty=False,
+                        )
                         assert q.name is not None and q.query_id is not None
                     except (ValueError, TypeError):
                         fail_count += 1
@@ -754,12 +830,15 @@ class EventQueryBackend(EventBaseBackend):
         except Exception:
             self.logger.exception(
                 f"Fatal error during retrieval of stored event queries for"
-                f" event_id={event_id} and scopes={scopes}.")
+                f" event_id={event_id} and scopes={scopes}."
+            )
             return {}
         if fail_count:
             rs.notify(
-                "info", n_("%(count)s stored queries could not be retrieved."),
-                {'count': fail_count})
+                "info",
+                n_("%(count)s stored queries could not be retrieved."),
+                {'count': fail_count},
+            )
         return ret
 
     @access("event")
@@ -768,30 +847,35 @@ class EventQueryBackend(EventBaseBackend):
         query_id = affirm(vtypes.ID, query_id)
         with Atomizer(rs):
             q = self.sql_select_one(
-                rs, "event.stored_queries", ("event_id", "query_name"), query_id)
+                rs, "event.stored_queries", ("event_id", "query_name"), query_id
+            )
             if q is None:
                 return 0
-            if not is_privileged(rs, EventPrivileges.basic_write,
-                                 event_id=q['event_id']):
-                raise PrivilegeError(n_(
-                    "Must be orga to delete queries for an event."))
+            if not is_privileged(
+                rs, EventPrivileges.basic_write, event_id=q['event_id']
+            ):
+                raise PrivilegeError(n_("Must be orga to delete queries for an event."))
 
             ret = self.sql_delete_one(rs, "event.stored_queries", query_id)
             if ret:
-                self.event_log(rs, const.EventLogCodes.query_deleted,
-                               event_id=q['event_id'], change_note=q['query_name'])
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.query_deleted,
+                    event_id=q['event_id'],
+                    change_note=q['query_name'],
+                )
             return ret
 
     @access("event")
-    def store_event_query(self, rs: RequestState, event_id: int,
-                          query: Query) -> DefaultReturnCode:
+    def store_event_query(
+        self, rs: RequestState, event_id: int, query: Query
+    ) -> DefaultReturnCode:
         """Store a single event query in the database."""
         event_id = affirm(vtypes.ID, event_id)
         query = affirm(Query, query)
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
-            raise PrivilegeError(n_(
-                "Must be orga to store queries for an event."))
+            raise PrivilegeError(n_("Must be orga to store queries for an event."))
         if not query.scope.supports_storing():
             raise ValueError(n_("Cannot store this kind of query."))
         if not query.name:
@@ -805,23 +889,35 @@ class EventQueryBackend(EventBaseBackend):
         }
         with Atomizer(rs):
             new_id = self.sql_insert(
-                rs, "event.stored_queries", data, drop_on_conflict=True)
+                rs, "event.stored_queries", data, drop_on_conflict=True
+            )
             if not new_id:
-                rs.notify("error", n_("Query with name '%(query)s' already exists"
-                                      " for this event."), {"query": query.name})
+                rs.notify(
+                    "error",
+                    n_("Query with name '%(query)s' already exists for this event."),
+                    {"query": query.name},
+                )
                 return 0
-            self.event_log(rs, const.EventLogCodes.query_stored,
-                           event_id=event_id, change_note=query.name)
+            self.event_log(
+                rs,
+                const.EventLogCodes.query_stored,
+                event_id=event_id,
+                change_note=query.name,
+            )
         return new_id
 
     @access("event")
-    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
-                                         ) -> CdEDBObjectMap:
+    def get_invalid_stored_event_queries(
+        self, rs: RequestState, event_id: int
+    ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
-        q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
-             f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
+        q = f"""
+            SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
+            FROM event.stored_queries
+            WHERE event_id = %s AND NOT(id = ANY(%s))
+        """
         with Atomizer(rs):
             retrievable_queries = self.get_event_queries(rs, event_id)
             params = (event_id, [q.query_id for q in retrievable_queries.values()])
@@ -829,92 +925,126 @@ class EventQueryBackend(EventBaseBackend):
             return {e["id"]: e for e in data}
 
     @access("event")
-    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
-                                            ) -> int:
+    def delete_invalid_stored_event_queries(
+        self, rs: RequestState, event_id: int
+    ) -> int:
         """Delete invalid stored event queries."""
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
-        self.logger.warning(f"Invalid stored queries were automatically deleted:"
-                            f" {invalid_queries}")
+        self.logger.warning(
+            f"Invalid stored queries were automatically deleted: {invalid_queries}"
+        )
         return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
 
     @access("event")
-    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter,
-                                ) -> DefaultReturnCode:
-        if not isinstance(data, CustomQueryFilter):
-            raise ValueError
-
-        event_id = affirm(vtypes.ID, data.event_id)
-        scope = affirm(QueryScope, data.scope)
+    def add_custom_query_filter(
+        self,
+        rs: RequestState,
+        scope: QueryScope,
+        event_id: int,
+        data: CdEDBObject,
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        scope = affirm(QueryScope, scope)
+        data["event_id"] = event_id
+        data["scope"] = scope
 
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             spec = scope.get_spec(event=event)
 
-            custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
-                                             creation=True)
+            data = affirm(CustomQueryFilter, data, query_spec=spec, creation=True)
+            query = CustomQueryFilter(id=vtypes.ID(-1), **data)
 
-            new_id = self.sql_insert_dataclass(rs, custom_filter)
-            self.event_log(rs, const.EventLogCodes.custom_filter_created, event_id,
-                           change_note=data.title)
+            new_id = self.sql_insert(
+                rs, CustomQueryFilter.database_table, query.to_database()
+            )
+            self.event_log(
+                rs,
+                const.EventLogCodes.custom_filter_created,
+                event_id,
+                change_note=data["title"],
+            )
         return new_id
 
     @access("event")
-    def change_custom_query_filter(self, rs: RequestState, data: CdEDBObject,
-                                   ) -> DefaultReturnCode:
+    def change_custom_query_filter(
+        self, rs: RequestState, data: CdEDBObject
+    ) -> DefaultReturnCode:
         custom_filter_id = affirm(vtypes.ID, data['id'])
         with Atomizer(rs):
             current_data = self.sql_select_one(
-                rs, CustomQueryFilter.database_table,
-                CustomQueryFilter.database_fields(), entity=custom_filter_id)
+                rs,
+                CustomQueryFilter.database_table,
+                CustomQueryFilter.database_fields(),
+                entity=custom_filter_id,
+            )
 
             if not current_data:
                 raise KeyError(n_("Unknown custom filter."))
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not is_privileged(rs, EventPrivileges.basic_write,
-                                 event_id=current.event_id):
+            if not is_privileged(
+                rs, EventPrivileges.basic_write, event_id=current.event_id
+            ):
                 raise PrivilegeError
 
             event = self.get_event(rs, event_id)
             spec = current.scope.get_spec(event=event)
 
-            affirm(vtypes.CustomQueryFilter, data, query_spec=spec)
+            data = affirm(CustomQueryFilter, data, query_spec=spec)
+            merge_dicts(data, current.as_dict())
+            updated = CustomQueryFilter(**data)
 
             ret = 1
-            if any(data[k] != current_data[k] for k in data):
-                ret *= self.sql_update(rs, CustomQueryFilter.database_table, data)
-
-                if 'title' in data and data['title'] != current.title:
-                    change_note = f"'{current.title}' -> '{data['title']}'"
+            if current != updated:
+                ret *= self.sql_update(
+                    rs, CustomQueryFilter.database_table, updated.to_database()
+                )
+                if updated.title != current.title:
+                    change_note = f"'{current.title}' -> '{updated.title}'"
                 else:
                     change_note = current.title
-                self.event_log(rs, const.EventLogCodes.custom_filter_changed,
-                               event_id, change_note=change_note)
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.custom_filter_changed,
+                    event_id,
+                    change_note=change_note,
+                )
             return ret
 
     @access("event")
-    def delete_custom_query_filter(self, rs: RequestState, custom_filter_id: int,
-                                   ) -> DefaultReturnCode:
+    def delete_custom_query_filter(
+        self, rs: RequestState, custom_filter_id: int
+    ) -> DefaultReturnCode:
         custom_filter_id = affirm(vtypes.ID, custom_filter_id)
         with Atomizer(rs):
             current_data = self.sql_select_one(
-                rs, CustomQueryFilter.database_table,
-                CustomQueryFilter.database_fields(), entity=custom_filter_id)
+                rs,
+                CustomQueryFilter.database_table,
+                CustomQueryFilter.database_fields(),
+                entity=custom_filter_id,
+            )
 
             if not current_data:
                 raise KeyError(n_("Unknown custom filter."))
             current = CustomQueryFilter.from_database(current_data)
             event_id = current.event_id
 
-            if not is_privileged(rs, EventPrivileges.basic_write,
-                                 event_id=current.event_id):
+            if not is_privileged(
+                rs, EventPrivileges.basic_write, event_id=current.event_id
+            ):
                 raise PrivilegeError
 
             ret = self.sql_delete_one(
-                rs, CustomQueryFilter.database_table, custom_filter_id)
-            self.event_log(rs, const.EventLogCodes.custom_filter_deleted,
-                           event_id, change_note=current.title)
+                rs, CustomQueryFilter.database_table, custom_filter_id
+            )
+            self.event_log(
+                rs,
+                const.EventLogCodes.custom_filter_deleted,
+                event_id,
+                change_note=current.title,
+            )
         return ret

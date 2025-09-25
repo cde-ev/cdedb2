@@ -92,6 +92,14 @@ _DEFAULTS = {
     # Global stuff #
     ################
 
+    # host of the http application, since we do not trust apaches Host Header
+    "HTTP_HOSTS": [
+        "localhost",  # used in test suite
+        "localhost:20443",  # regular forwarded port from vm
+        "localhost:8443",  # used by docker
+        "localhost:5000",  # interactive debugger
+    ],
+
     # file system path to this repository
     "REPOSITORY_PATH": _repopath,
 
@@ -235,6 +243,8 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
     # email for replies to finance mails
     "FINANCE_ADMIN_ADDRESS": "buchhaltung@lists.cde-ev.de",
+    # email for event related finance mails
+    "EVENT_FINANCE_ADMIN_ADDRESS": "aka-finanzen@lists.cde-ev.de",
 
     # email for privilege changes
     "META_ADMIN_ADDRESS": "admin@cde-ev.de",
@@ -348,6 +358,13 @@ _DEFAULTS = {
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
 
+    #
+    # complaint stuff
+    #
+
+    # time which a access to a case remains active for.
+    "COMPLAINT_UNLOCK_TIMEOUT": datetime.timedelta(minutes=30),
+
     ###############
     # Query stuff #
     ###############
@@ -375,6 +392,8 @@ _SECRECTS_DEFAULTS = {
     # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
+    # encrypt complaint descriptions with this secret to prevent accidental retrieval/leaks.
+    "COMPLAINT_SECRET": b'gy81i7pj8-0WkTweXbUxBykgA38V2aSEOoPizqXWVGg=',
 
     # mailman REST API password
     "MAILMAN_PASSWORD": "secret",

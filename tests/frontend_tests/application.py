@@ -15,7 +15,7 @@ class TestApplication(FrontendTest):
         self.assertNonPresence("Mitglieder", div="navbar-collapse-1")
         self.assertNonPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertNonPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertNonPresence("", div="displayname", check_div=False)
+        self.assertDivNotExists("#displayname")
 
     @as_users("berta")
     def test_404(self) -> None:
@@ -64,7 +64,7 @@ class TestApplication(FrontendTest):
         self.assertNonPresence("Mitglieder", div="navbar-collapse-1")
         self.assertNonPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertNonPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertNonPresence("", div="displayname", check_div=False)
+        self.assertDivNotExists("#displayname")
 
     @as_users("berta")
     def test_500(self) -> None:

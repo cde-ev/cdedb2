@@ -17,7 +17,13 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
+from cdedb.common import (
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    get_mandatory_form_fields,
+    merge_dicts,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
@@ -35,6 +41,7 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
 )
+from cdedb.models.past_event import past_event_entries
 
 COURSESEARCH_DEFAULTS = {
     'qsel_courses.title': True,
@@ -247,7 +254,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
-        return self.render(rs, "past_event/change_past_event")
+        return self.render(rs, "past_event/change_past_event", {},
+                           get_mandatory_form_fields(PAST_EVENT_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -266,7 +274,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "past_event/create_past_event")
+        return self.render(
+            rs, "past_event/create_past_event", {},
+            get_mandatory_form_fields(PAST_EVENT_FIELDS, self.create_past_event))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -327,7 +337,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                 pcourse_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
-        return self.render(rs, "past_event/change_past_course")
+        return self.render(rs, "past_event/change_past_course", {},
+                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -347,7 +358,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def create_past_course_form(self, rs: RequestState, pevent_id: int,
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "past_event/create_past_course")
+        return self.render(rs, "past_event/create_past_course", {},
+                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -423,13 +435,20 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "pcourse_id")
+    @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
     def remove_participant(self, rs: RequestState, pevent_id: int,
                            persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID],
+                           ack_delete: bool,
                            ) -> Response:
         """Remove participant."""
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.show_past_event(rs, pevent_id)
+            if pcourse_id:
+                return self.show_past_course(rs, pevent_id, pcourse_id)
+            else:
+                return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)
         rs.notify_return_code(code)
@@ -450,6 +469,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.generic_view_log(
             rs, data, PastEventLogFilter, self.pasteventproxy.retrieve_past_log,
             download=download, template="past_event/view_past_log", template_kwargs={
-                'pevents': pevents,
+                'pevents': pevents, 'pevent_entries': past_event_entries(pevents),
             },
         )

@@ -1,8 +1,9 @@
-{% set sidenav_active='event_parts' %}
+{% set sidenav_active='event_config' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
 {% block scripts %}
+    {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_dynamicrow.js') }}
 {% endblock %}
@@ -21,6 +22,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
     {{ util.breadcrumb_link("", ambience['event']['parts'][part_id]['title'], icon="clock", readonly=True) }}
     {{ util.breadcrumb_link(cdedblink("event/change_part"), gettext("Change"), active=True) }}
@@ -58,12 +60,24 @@
         <table class="table table-condensed" id="track-drow-table">
             <thead>
                 <tr>
-                    <th class="col-sm-4">{% trans %}Coursetrack{% endtrans %}</th>
-                    <th class="col-sm-2">{% trans %}Shortname{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Course Choices{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Req. Choices{% endtrans %}</th>
-                    <th class="col-sm-1">{% trans %}Sortkey{% endtrans %}</th>
-                    <th class="col-sm-3">{% trans %}Course Room Field{% endtrans %}</th>
+                    <th class="col-sm-4{% if 'title' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Coursetrack{% endtrans %}
+                    </th>
+                    <th class="col-sm-2{% if 'shortname' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Shortname{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'num_choices' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Course Choices{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'min_choices' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Req. Choices{% endtrans %}
+                    </th>
+                    <th class="col-sm-1{% if 'sortkey' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Sortkey{% endtrans %}
+                    </th>
+                    <th class="col-sm-3{% if 'course_room_field_id' in mandatory_fields %} required-col{% endif %}">
+                        {% trans %}Course Room Field{% endtrans %}
+                    </th>
                     <th></th>
                 </tr>
             </thead>

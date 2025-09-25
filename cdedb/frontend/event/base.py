@@ -14,11 +14,12 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
+import functools
 import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -26,12 +27,13 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
+import cdedb.models.event_constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
-    determine_age_class,
+    get_mandatory_form_fields,
     merge_dicts,
     unwrap,
 )
@@ -52,40 +54,78 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
-    event_guard,
     periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event_constraint_violations import (
-    AbsentCheckedinCV,
-    CancelledWithAttendeesCV,
-    ConstraintViolation,
-    CourseChoiceSyncCV,
-    HiddenCourseCV,
-    IllegalMixedLodgementCV,
-    IllegalMixedLodgingCV,
-    InconsistentPaymentCV,
-    IncorrectCampingMatAssignmentCV,
-    IncorrectCourseAssignedCV,
-    IncorrectNumAttendeesCV,
-    IncorrectNumInhabitantsCV,
-    LonelyAttendeesCV,
-    MissingMinorFormCV,
-    MutuallyExclusiveCoursesCV,
-    MutuallyExclusiveParticipationCV,
-    NegativeAmountOwedCV,
-    NegativeRemainingOwedCV,
-    NoCourseAssignedCV,
-    NoLodgementCV,
-    NotPaidCV,
-    PresentNeverCheckedinCV,
-    RemainingOwedCV,
-    ViolationList,
-    ZeroAmountOwedCV,
-)
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
+    """This decorator checks the access with respect to a specific event. The
+    event is specified by id which has either to be a keyword
+    parameter or the first positional parameter after the request state.
+
+    The event has to be organized via the DB. Only orgas and privileged
+    users are admitted. Additionally this can check for the event
+    lock, so that no modifications happen to locked events.
+    """
+
+    def wrap(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(obj: "EventBaseFrontend", rs: RequestState, *args: Any,
+                    **kwargs: Any) -> Any:
+            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
+                raise werkzeug.exceptions.Forbidden(
+                    n_("This page can only be accessed by orgas."))
+            if required_privilege & EventPrivileges.all_write:
+                if obj.is_locked(rs.ambience['event']):
+                    raise werkzeug.exceptions.Forbidden(
+                        n_("This event is locked."))
+            return fun(obj, rs, *args, **kwargs)
+
+        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
+
+        return cast(F, new_fun)
+
+    return wrap
+
+
+def event_associated_fields_extractor(
+        rs: RequestState, event: models.Event, association: const.FieldAssociations
+) -> CdEDBObject:
+    """Given an event, extract inputs for all event fields of the given association."""
+    fields = [
+        field for field in event.fields.values()
+        if field.association == association
+    ]
+    field_params: vtypes.TypeMapping = {
+        field.request_name: FIELD_DATATYPE_VALIDATORS[field.kind] | None
+        for field in fields
+    }
+    raw_fields = request_extractor(rs, field_params)
+    return {
+        field.field_name: raw_fields.get(field.request_name)
+        for field in fields
+    }
+
+
+def event_associated_fields_to_request(
+        entity: models.Course
+) -> CdEDBObject:
+    """
+    Given an entity, prepare the associated field data to be put into a form.
+
+    This is the inverse of `event_associated_fields_extractor`.
+    """
+    return {
+        field.request_name: entity.fields[field.field_name]
+        for field in entity.event.fields.values() if field.field_name in entity.fields
+    }
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -93,7 +133,38 @@ class EventBaseFrontend(AbstractUserFrontend):
     realm = "event"
 
     def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None) -> Response:
+               params: Optional[CdEDBObject] = None,
+               mandatory_fields: Optional[Collection[str]] = None) -> Response:
+
+        def is_privileged(
+                required_privilege: EventPrivileges = EventPrivileges.basic_read,
+                *, event_id: int | None = None,
+        ) -> bool:
+            return self.is_privileged(rs, required_privilege, event_id=event_id)
+
+        def is_privileged_for(
+                endpoint: str,
+                *,
+                event_id: int | None = None,
+                consider_admin_view: bool = True,
+        ) -> bool:
+            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            privilege = getattr(
+                getattr(self, endpoint), "event_required_privilege",
+            )
+
+            if event_id is None and 'event' in rs.ambience:
+                event_id = rs.ambience['event'].id
+
+            is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
+            if (
+                event_id in rs.user.orga
+                or 'event_orga' not in rs.user.available_admin_views
+                or not consider_admin_view
+            ):
+                return is_privileged
+            return is_privileged and 'event_orga' in rs.user.admin_views
+
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -109,30 +180,24 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+        else:
+            all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+            event_options = [
+                {
+                    'title': event.title,
+                    'shortname': event.shortname,
+                    'id': event.id,
+                }
+                for event in xsorted(all_events.values(), reverse=True)
+            ]
+            params['all_events'] = all_events
+            params['event_options'] = event_options
 
-            def is_privileged(
-                    required_privilege: EventPrivileges = EventPrivileges.basic_read,
-            ) -> bool:
-                return self.is_privileged(rs, required_privilege)
+        params['is_privileged'] = is_privileged
+        params['is_privileged_for'] = is_privileged_for
 
-            def is_privileged_for(endpoint: str) -> bool:
-                endpoint = endpoint.removeprefix(f"{self.realm}/")
-                privilege = getattr(
-                    getattr(self, endpoint), "event_required_privilege",
-                )
-
-                is_privileged = self.is_privileged(rs, privilege)
-                if (
-                    rs.user.persona_id in rs.ambience['event'].orgas
-                    or 'event_orga' not in rs.user.available_admin_views
-                ):
-                    return is_privileged
-                return is_privileged and 'event_orga' in rs.user.admin_views
-
-            params['is_privileged'] = is_privileged
-            params['is_privileged_for'] = is_privileged_for
-
-        return super().render(rs, templatename, params=params)
+        return super().render(rs, templatename, params=params,
+                              mandatory_fields=mandatory_fields)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -145,14 +210,17 @@ class EventBaseFrontend(AbstractUserFrontend):
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        if (self.is_locked(rs.ambience['event']) and
-                required_privilege & EventPrivileges.all_write):
+        if event := rs.ambience.get('event'):
+            is_locked = event.is_locked
+        else:
+            is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
+        if is_locked and required_privilege & EventPrivileges.all_write:
             return False
         return is_privileged_event(rs, required_privilege, event_id)
 
     def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""
-        return event.offline_lock != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+        return event.is_locked and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
     @access("core_admin", "event_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -161,7 +229,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return self.render(rs, "user/create_user")
+        return self.render(
+            rs, "user/create_user", {},
+            get_mandatory_form_fields(filter_none(PERSONA_FULL_CREATION['event'])))
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
@@ -204,15 +274,12 @@ class EventBaseFrontend(AbstractUserFrontend):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
-        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+        if not self.is_privileged(rs, EventPrivileges.participant_list):
             assert rs.user.persona_id is not None
             if not self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
                     {const.RegistrationPartStati.participant}):
                 rs.notify('warning', n_("No participant of event."))
-                return self.redirect(rs, "event/show_event")
-            if not rs.ambience['event'].is_participant_list_visible:
-                rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
             reg_list = self.eventproxy.list_registrations(rs, event_id,
                                                           rs.user.persona_id)
@@ -220,6 +287,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             list_consent = registration['list_consent']
         else:
             list_consent = True
+        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+            if not rs.ambience['event'].is_participant_list_visible:
+                rs.notify("error", n_("Participant list not published yet."))
+                return self.redirect(rs, "event/show_event")
 
         if part_id:
             part_ids: Collection[int] = [part_id]
@@ -280,8 +351,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
-            "address": EntitySorter.address,
-            "course": EntitySorter.course,
+            "address": EntitySorter.make_address_sorter(
+                rs.gettext, self.conf["DEFAULT_COUNTRY"]
+            ),
+            # "course": use dataclass sorting,
             # the default sorting is, in contrast to EntitySorter.persona, by forename
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
@@ -308,7 +381,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
                     if course_id:
-                        prim_rank += prim_sorter(courses[course_id])
+                        prim_rank += courses[course_id].get_sortkey()
                     else:
                         prim_rank += ("0", "", "")
             else:
@@ -428,6 +501,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
+                # TODO remove when migrating lodgements to dataclasses here
+                if isinstance(instance, models.EventDataclass):
+                    instance = instance.as_dict()
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
@@ -480,11 +556,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         :param course_id: Same as `registration_id`.
         :return: A collection of data pertaining to the constraint violations.
         """
-        violations: list[ConstraintViolation] = []
-
-        sorted_tracks = xsorted(event.tracks.values())
-        sorted_parts = xsorted(event.parts.values())
-
         # Retrieve registrations.
         all_registrations = self.eventproxy.get_registrations(
                 rs, self.eventproxy.list_registrations(rs, event.id))
@@ -515,7 +586,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         choice_stats: "ChoiceStats"  # noqa: UP037
         attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event)  # type: ignore[attr-defined]
+        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.get_lodgements(
@@ -528,196 +599,19 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event.id, involved=True,
+            rs, event.id, involved=True, _registrations=all_registrations,
         )
 
-        _vs_type = dict[str, dict[tuple[type[ConstraintViolation], ...], list[str]]]
-        reg_violation_spec: _vs_type = {
-            'base': {
-                (
-                    InconsistentPaymentCV,
-                    NotPaidCV,
-                    ZeroAmountOwedCV,
-                    NegativeAmountOwedCV,
-                    NegativeRemainingOwedCV,
-                    RemainingOwedCV,
-                    AbsentCheckedinCV,
-                    MissingMinorFormCV,
-                    IllegalMixedLodgingCV,
-                ): [
-                    'registration', 'persona',
-                ],
-            },
-            'part': {
-                (
-                    PresentNeverCheckedinCV,
-                ): [
-                    'registration', 'persona', 'part',
-                ],
-                (
-                    IncorrectCampingMatAssignmentCV,
-                    NoLodgementCV,
-                ): [
-                    'registration', 'persona', 'part', 'lodgements',
-                ],
-            },
-            'track': {
-                (
-                    NoCourseAssignedCV,
-                ): [
-                    'registration', 'persona', 'track',
-                ],
-                (
-                    IncorrectCourseAssignedCV,
-                ): [
-                    'registration', 'persona', 'track', 'assigned_course',
-                    'instructed_course',
-                ],
-            },
-            'part_group': {
-                (
-                    MutuallyExclusiveParticipationCV,
-                ): [
-                    'registration', 'persona', 'part_group',
-                ],
-            },
-            'track_group': {
-                (
-                    CourseChoiceSyncCV,
-                ): [
-                    'registration', 'persona', 'track_group',
-                ],
-            },
-        }
-        course_violation_spec: _vs_type = {
-            'base': {
-                (
-                    HiddenCourseCV,
-                ): [
-                    'course',
-                ],
-            },
-            'track': {
-                (
-                    CancelledWithAttendeesCV,
-                    IncorrectNumAttendeesCV,
-                    LonelyAttendeesCV,
-                ): [
-                    'course', 'track', 'attendees',
-                ],
-            },
-            'track_group': {
-                (
-                    MutuallyExclusiveCoursesCV,
-                ): [
-                    'course', 'track_group',
-                ],
-            },
-        }
-        lodgement_violation_spec: _vs_type = {
-            'base': {},
-            'part': {
-                (
-                    IncorrectNumInhabitantsCV,
-                ): [
-                    'lodgement', 'part', 'inhabitants',
-                ],
-                (
-                    IllegalMixedLodgementCV,
-                ): [
-                    'lodgement', 'part', 'inhabitants', 'personas',
-                ],
-            },
-        }
-
-        def _check_violation(
-                violation_spec: dict[tuple[type[ConstraintViolation], ...], list[str]],
-                params: CdEDBObject,
-        ) -> None:
-            for violation_class_list, keys in violation_spec.items():
-                for violation_class in violation_class_list:
-                    kwargs = {k: params[k] for k in keys}
-                    if v := violation_class.check(event, **kwargs):
-                        violations.append(v)
-
-        for reg_id, reg in registrations.items():
-            for part in event.parts.values():
-                reg['parts'][part.id]['age'] = determine_age_class(
-                    personas[reg['persona_id']]['birthday'], part.part_begin)
-            reg['age'] = determine_age_class(
-                personas[reg['persona_id']]['birthday'], event.begin)
-            reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
-
-            parameters: CdEDBObject = {
-                'registration': reg,
-                'persona': personas[reg['persona_id']],
-                'lodgements': all_lodgements,
-            }
-            _check_violation(reg_violation_spec['base'], parameters)
-
-            for part in sorted_parts:
-                parameters.update({
-                    'part': part,
-                })
-                _check_violation(reg_violation_spec['part'], parameters)
-
-            for track in sorted_tracks:
-                parameters.update({
-                    'track': track,
-                    'assigned_course': all_courses.get(
-                        reg['tracks'][track.id]['course_id']),
-                    'instructed_course': all_courses.get(
-                        reg['tracks'][track.id]['course_instructor']),
-                })
-                _check_violation(reg_violation_spec['track'], parameters)
-
-            for part_group in xsorted(event.part_groups.values()):
-                parameters.update({
-                    'part_group': part_group,
-                })
-                _check_violation(reg_violation_spec['part_group'], parameters)
-
-            for track_group in xsorted(event.track_groups.values()):
-                parameters.update({
-                    'track_group': track_group,
-                })
-                _check_violation(reg_violation_spec['track_group'], parameters)
-
-        for course in xsorted(courses.values(), key=EntitySorter.course):
-            parameters = {
-                'course': course,
-            }
-            _check_violation(course_violation_spec['base'], parameters)
-
-            for track in sorted_tracks:
-                parameters.update({
-                    'track': track,
-                    'attendees': attendee_stats.involved[course['id'], track.id],
-                })
-                _check_violation(course_violation_spec['track'], parameters)
-
-            for track_group in xsorted(event.track_groups.values()):
-                parameters.update({
-                    'track_group': track_group,
-                })
-                _check_violation(course_violation_spec['track_group'], parameters)
-
-        for lodgement in xsorted(lodgements.values(), key=EntitySorter.lodgement):
-            parameters = {
-                'lodgement': lodgement,
-            }
-            _check_violation(lodgement_violation_spec['base'], parameters)
-
-            for part in sorted_parts:
-                parameters.update({
-                    'part': part,
-                    'inhabitants': inhabitants[lodgement['id']][part.id],
-                    'personas': personas,
-                })
-                _check_violation(lodgement_violation_spec['part'], parameters)
+        violations = models_cv.ViolationAux(
+            event=event, registrations=registrations, personas=personas,
+            all_courses=all_courses, courses=courses,
+            all_lodgements=all_lodgements, lodgements=lodgements,
+            attendee_data=attendee_stats, choices_data=choice_stats,
+            inhabitants_data=inhabitants,
+        ).evaluate_all()
 
         return {
-            'violations': ViolationList(violations),
+            'violations': violations,
             'all_registrations': all_registrations,
             'registrations': registrations,
             'personas': personas,
@@ -733,16 +627,76 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
-    def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("min_severity", "violation_kind", _omit_missing=True)
+    def constraint_violations(
+            self, rs: RequestState, event_id: int,
+            min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+            violation_kind: models_cv.ViolationKind | None = None,
+    ) -> Response:
+        rs.ignore_validation_errors()
+
         params = self.get_constraint_violations(
             rs, rs.ambience['event'],
             registration_id=None, course_id=None, lodgement_id=None,
         )
+
+        params['min_severity'] = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
+        params['violation_kind'] = violation_kind
+
         return self.render(rs, "base/constraint_violations", params)
+
+    @access("event.event_helper", "event_admin", "finance_admin")
+    @REQUESTdata("event_ids", "violation_classes", "is_archived", "is_balanced",
+                 "is_concluded", "min_severity", "violation_kind", _omit_missing=True)
+    def constraint_violations_summary(
+            self, rs: RequestState,
+            event_ids: vtypes.IntCSVList | None = None,
+            violation_classes: list[str] | None = None,
+            is_archived: int = -1,
+            is_balanced: int = -1,
+            is_concluded: int = -1,
+            min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
+            violation_kind: models_cv.ViolationKind | None = None,
+    ) -> Response:
+        rs.ignore_validation_errors()
+
+        is_archived = bool(is_archived) if is_archived != -1 else None
+        is_balanced = bool(is_balanced) if is_balanced != -1 else None
+        is_concluded = bool(is_concluded) if is_concluded != -1 else None
+        event_ids = set(event_ids or [])
+        min_severity = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
+
+        all_event_ids = self.eventproxy.list_events(rs)
+        all_events = self.eventproxy.get_events(rs, all_event_ids)
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(all_events.values(), reverse=True)
+        ]
+
+        violations = models_cv.ViolationList()
+        for event in all_events.values():
+            violations.extend(
+                self.get_constraint_violations(
+                    rs, event, registration_id=None, course_id=None, lodgement_id=None,
+                )['violations'],
+            )
+        violations.sort()
+
+        return self.render(rs, "base/constraint_violations_summary", {
+            'violations': violations, 'all_events': all_events,
+            'event_options': event_options, 'event_ids': event_ids,
+            'is_archived': is_archived, 'is_balanced': is_balanced,
+            'is_concluded': is_concluded, 'min_severity': min_severity,
+            'violation_kind': violation_kind,
+        })
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event_admin", "auditor")
+    @access("event_admin", "finance_admin", "auditor")
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)

@@ -20,6 +20,7 @@ from cdedb.common import (
     CdEDBObjectMap,
     RequestState,
     build_msg,
+    get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
 )
@@ -33,11 +34,10 @@ from cdedb.frontend.common import (
     REQUESTdata,
     access,
     drow_name,
-    event_guard,
     process_dynamic_input,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.frontend.event.base import EventBaseFrontend, event_guard
 
 EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
@@ -85,9 +85,10 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("active_tab")
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
-                      ) -> Response:
+    @REQUESTdata("nav_tab_active")
+    def field_summary(
+            self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
+    ) -> Response:
         """Manipulate the fields of an event."""
         mandatory, optional = models.EventField.validation_fields(creation=False)
         spec = dict(mandatory) | dict(optional)
@@ -124,8 +125,7 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, "Ändere Datenfelder.", after_change=True)
         rs.notify_return_code(code)
         return self.redirect(
-            rs, "event/field_summary_form", anchor=(
-                ("tab:" + active_tab) if active_tab is not None else None))
+            rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#"))
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
@@ -168,22 +168,20 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
-            entities = self.eventproxy.get_courses(rs, ids)
-            labels = {course_id: f"{course['nr']} {course['shortname']}"
-                      for course_id, course in entities.items()}
-            ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.course(entities[anid]))
+            courses = self.eventproxy.get_courses(rs, ids)
+            # TODO remove after migrating lodgements and registrations to dataclasses
+            entities = {course.id: course.as_dict() for course in courses.values()}
+            labels = {course.id: course.shortlabel for course in courses.values()}
+            ordered_ids = list(courses.keys())
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
             entities = self.eventproxy.get_lodgements(rs, ids)
-            group_ids = {lodgement['group_id'] for lodgement in entities.values()
-                         if lodgement['group_id'] is not None}
-            groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+            groups = self.eventproxy.get_lodgement_groups(rs, event_id)
             labels = {
                 lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
                          else safe_filter(f"{lodg['title']}, <em>"
-                                          f"{groups[lodg['group_id']]['title']}</em>")
+                                          f"{groups[lodg['group_id']].title}</em>")
                 for lodg_id, lodg in entities.items()}
             ordered_ids = xsorted(
                 entities.keys(),
@@ -260,11 +258,15 @@ class EventFieldMixin(EventBaseFrontend):
         values = {f"input{anid}": entity['fields'].get(field.field_name)
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
-        return self.render(rs, "fields/field_multiset", {
-            'ids': (','.join(str(i) for i in ids) if ids else None),
-            'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-            'kind': kind.value, 'change_note': change_note,
-            'cancellink': self.FIELD_REDIRECT[kind]})
+        return self.render(
+            rs, "fields/field_multiset", {
+                'ids': (','.join(str(i) for i in ids) if ids else None),
+                'entities': entities, 'labels': labels, 'ordered': ordered_ids,
+                'kind': kind.value, 'change_note': change_note,
+                'cancellink': self.FIELD_REDIRECT[kind],
+            },
+            get_mandatory_form_fields(self.field_multiset),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
@@ -304,16 +306,6 @@ class EventFieldMixin(EventBaseFrontend):
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
                 change_note=change_note, internal=True)
 
-        if kind == const.FieldAssociations.registration:
-            entity_setter: EntitySetter = self.eventproxy.set_registration
-        elif kind == const.FieldAssociations.course:
-            entity_setter = self.eventproxy.set_course
-        elif kind == const.FieldAssociations.lodgement:
-            entity_setter = self.eventproxy.set_lodgement
-        else:
-            # this can not happen, since kind was validated successfully
-            raise NotImplementedError(f"Unknown kind {kind}.")
-
         code = 1
         pre_msg = build_msg(
             f"Snapshot vor Setzen von Feld {field.field_name}", change_note)
@@ -325,10 +317,18 @@ class EventFieldMixin(EventBaseFrontend):
                     'id': anid,
                     'fields': {field.field_name: data[f"input{anid}"]},
                 }
-                if msg:
-                    code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
+
+                if kind == const.FieldAssociations.registration:
+                    self.eventproxy.set_registration(rs, new, msg)
+                elif kind == const.FieldAssociations.course:
+                    del new['id']
+                    self.eventproxy.set_course(rs, anid, new)
+                elif kind == const.FieldAssociations.lodgement:
+                    self.eventproxy.set_lodgement(rs, new)
                 else:
-                    code *= entity_setter(rs, new)
+                    # this can not happen, since kind was validated successfully
+                    raise RuntimeError(f"Unknown kind {kind}.")
+
         self.eventproxy.event_keeper_commit(rs, event_id, post_msg, after_change=True)
         rs.notify_return_code(code)
 

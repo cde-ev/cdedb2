@@ -34,7 +34,6 @@ from passlib.hash import sha512_crypt
 from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
-    DefaultReturnCode,
     Error,
     RequestState,
     Role,
@@ -45,11 +44,10 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators
+from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.validation import validate
 from cdedb.config import Config
-from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.models.common import CdEDataclass
@@ -111,45 +109,6 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
     return singularized
 
 
-def read_conditional_write_composer(
-        reader: Callable[..., Any], writer: Callable[..., int],
-        id_param_name: str = "anid", datum_param_name: str = "data",
-        id_key_name: str = "id") -> Callable[..., int]:
-    """This takes two functions and returns a combined version.
-
-    The overall semantics are similar to the writer. However the write is
-    elided if the reader returns a value equal to the object to be written
-    (i.e. there is no change).
-
-    :param id_param_name: Name of the reader argument specifying the object
-        id.
-    :param datum_param_name: Name of the writer argument specifying the
-        object value.
-    :param id_key_name: Key associated to the id in the object value
-        dictionary.
-    """
-
-    @functools.wraps(writer)
-    def composed(self: "AbstractBackend", rs: RequestState, *args: Any,
-                 **kwargs: Any) -> DefaultReturnCode:
-        ret = 1
-        reader_kwargs = kwargs.copy()
-        reader_args = args[:]
-        if datum_param_name in reader_kwargs:
-            data = reader_kwargs.pop(datum_param_name)
-            reader_kwargs[id_param_name] = data[id_key_name]
-        else:
-            data = reader_args[0]
-            reader_args = (data[id_key_name],) + reader_args[1:]
-        with Atomizer(rs):
-            current = reader(self, rs, *reader_args, **reader_kwargs)
-            if {k: v for k, v in current.items() if k in data} != data:
-                ret = writer(self, rs, *args, **kwargs)
-        return ret
-
-    return composed
-
-
 def access(*roles: Role) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
@@ -165,11 +124,11 @@ def access(*roles: Role) -> Callable[[F], F]:
         @functools.wraps(function)
         def wrapper(self: "AbstractBackend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if rs.user.roles.isdisjoint(roles):
+            if rs.user.all_roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),
-                    {"user_roles": rs.user.roles, "roles": roles,
+                    {"user_roles": rs.user.all_roles, "roles": roles,
                      "method": function.__name__},
                 )
             return function(self, rs, *args, **kwargs)
@@ -412,8 +371,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.less:
                 phrase = "{} < %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.lessornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
+                params.extend((value,) * len(columns))
+            elif operator == _ops.lessequalornull:
+                phrase = "( {0} < %s OR {0} IS NULL )"
                 params.extend((value,) * len(columns))
             elif operator in {_ops.between, _ops.outside}:
                 if operator == _ops.between:
@@ -424,33 +389,52 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             elif operator == _ops.greaterequal:
                 phrase = "{} >= %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.greaterequalornull:
+                phrase = "( {0} >= %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,) * len(columns))
+            elif operator == _ops.greaterornull:
+                phrase = "( {0} > %s OR {0} IS NULL )"
+                params.extend((value,) * len(columns))
             # These are hard coded special cases for some useful, but very specific
             # conditions. Modelling with special query operators is more flexible.
-            elif operator in VALID_QUERY_OPERATORS["checkin_datetime"]:
+            elif operator in VALID_QUERY_OPERATORS["ranged_datetime"]:
+                if len(columns) != 2:
+                    # This would not be hard to extend to an even number of columns.
+                    # However, let's keep it simple while we do not need it.
+                    raise RuntimeError(n_("Need to specify exactly two columns."))
+                if query.scope != QueryScope.registration:
+                    raise RuntimeError(n_("Operator only allowed for registration query."))
+                if columns != ["checkin_at.checkin_time", "checkin_at.checkout_time"]:
+                    raise RuntimeError(n_("Operator only alloed for checkin times."))
                 phrase = "/* {} */ "
-                subphrase = """
-                    checkin_at.checkin_time < %s AND (
-                        checkin_at.checkout_time > %s
-                        OR checkin_at.checkout_time IS NULL)
+                subphrase = f"""
+                    {columns[0]} < %s AND ({columns[1]} > %s OR {columns[1]} IS NULL)
                 """
-                if operator == _ops.checkedin_at:
+                exists_phrase = f"""
+                    EXISTS (
+                        SELECT * FROM event.checkin_periods AS checkin_at
+                        WHERE registration_id = reg.id AND {subphrase}
+                    )
+                """
+                not_exists_phrase = f"NOT {exists_phrase}"
+                if operator == _ops.ranged_at:
                     phrase += subphrase
                     params.extend((value,) * 2 * len(columns))
-                elif operator == _ops.checkedin_notat:
-                    phrase += "NOT(" + subphrase + ")"
+                elif operator == _ops.ranged_notat:
+                    phrase += not_exists_phrase
                     params.extend((value,) * 2 * len(columns))
                 else:
-                    if operator == _ops.checkedin_oneof:
+                    if operator == _ops.ranged_oneof:
                         phrase += " OR ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedin_noneof:
-                        phrase += "NOT (" + " OR ".join((subphrase,) * len(value)) + ")"
-                    elif operator == _ops.checkedin_allof:
-                        phrase += " AND ".join((subphrase,) * len(value))
-                    elif operator == _ops.checkedin_notallof:
-                        phrase += "NOT (" + " AND ".join((subphrase,) * len(value)) + ")"
+                    elif operator == _ops.ranged_noneof:
+                        phrase += " AND ".join((not_exists_phrase,) * len(value))
+                    elif operator == _ops.ranged_allof:
+                        phrase += " AND ".join((exists_phrase,) * len(value))
+                    elif operator == _ops.ranged_notallof:
+                        phrase += " OR ".join((not_exists_phrase,) * len(value))
                     else:
                         raise RuntimeError(n_("Impossible."))
                     extension: list[str] = []
@@ -482,9 +466,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         way. It allows to filter the entries for specific
         codes or a specific entity (think event or mailinglist).
 
-        This does not do authentication, which has to be done by the
-        caller. However it does validation which thus may be omitted by the
-        caller.
+        This does not do authentication or validation, which have to be
+        done by the caller.
 
         This is separate from the changelog for member data (which keeps
         a lot more information to be able to reconstruct the entire
@@ -627,7 +610,19 @@ class DatabaseLock:
         return False
 
 
-def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T:
+@overload
+def affirm_validation(
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any
+) -> CdEDBObject: ...
+
+
+@overload
+def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
+
+
+def affirm_validation(
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any
+) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     ValidationWarnings are used to hint the user to re-think about a given valid entry.
@@ -638,35 +633,47 @@ def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+@overload
+def affirm_validation_optional(
+    assertion: type[CdEDataclass], value: Any, **kwargs: Any,
+) -> Optional[CdEDBObject]: ...
 
-    This is similar to :func:`~cdedb.backend.common.affirm_validation`
-    but used for dataclass objects.
-    """
-    return validate.validate_assert_dataclass(
-        assertion, value, ignore_warnings=True, **kwargs)
+@overload
+def affirm_validation_optional(
+    assertion: type[T], value: Any, **kwargs: Any,
+) -> Optional[T]: ...
 
 
 def affirm_validation_optional(
-    assertion: type[T], value: Any, **kwargs: Any,
-) -> Optional[T]:
+    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any,
+) -> Optional[T | CdEDBObject]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.backend.common.affirm_validation`
     but also allows optional/falsy values.
     """
     return validate.validate_assert_optional(
-        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore[arg-type]
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore[call-overload]
+
+
+@overload
+def affirm_array_validation(
+    assertion: type[CdEDataclass], values: Iterable[Any], **kwargs: Any,
+) -> tuple[CdEDBObject, ...]: ...
+
+@overload
+def affirm_array_validation(
+    assertion: type[T], values: Iterable[Any], **kwargs: Any,
+) -> tuple[T, ...]: ...
 
 
 def affirm_array_validation(
-    assertion: type[T], values: Iterable[Any], **kwargs: Any,
-) -> tuple[T, ...]:
+    assertion: type[T | CdEDataclass], values: Iterable[Any], **kwargs: Any,
+) -> tuple[T, ...] | tuple[CdEDBObject, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
-    return tuple(
-        affirm_validation(assertion, value, **kwargs)
-        for value in values
+    return cast(
+        tuple[T, ...] | tuple[CdEDBObject, ...],
+        tuple(affirm_validation(assertion, value, **kwargs) for value in values)
     )
 
 
@@ -691,9 +698,22 @@ def affirm_dict_validation(
     }
 
 
+@overload
+def inspect_validation(
+    type_: type[CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
+) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+
+@overload
 def inspect_validation(
     type_: type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
+) -> tuple[Optional[T], list[Error]]: ...
+
+
+def inspect_validation(
+    type_: type[T | CdEDataclass], value: Any, *, ignore_warnings: bool = True,
+    **kwargs: Any,
+) -> tuple[Optional[T | CdEDBObject], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to

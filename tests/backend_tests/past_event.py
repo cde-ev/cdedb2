@@ -5,13 +5,13 @@ import datetime
 import cdedb.database.constants as const
 from cdedb.common import nearly_now
 from cdedb.common.sorting import xsorted
-from tests.common import BackendTest, as_users
+from tests.common import BackendTest, as_users, event_keeper
 
 
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
-    @as_users("vera", "berta")
+    @as_users("vera", "berta", maintain_data=True)
     def test_participation_infos(self) -> None:
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {
@@ -65,12 +65,8 @@ class TestPastEventBackend(BackendTest):
     def test_delete_past_course_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         # add the past course to a genesis case
-        genesis_case = self.core.genesis_get_case(self.key, 3)
-        genesis_case.update({
-            'pevent_id': 1,
-            'pcourse_id': 1,
-            'reviewer': self.user['id']})
-        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+        update = {'id': 3, 'pevent_id': 1, 'pcourse_id': 1}
+        self.assertTrue(self.core.genesis_modify_case(self.key, update))
 
         with self.assertRaises(ValueError) as e:
             self.pastevent.delete_past_course(
@@ -91,11 +87,8 @@ class TestPastEventBackend(BackendTest):
         pevent['description'] = "changed"
         self.assertTrue(self.pastevent.set_past_event(self.key, pevent))
         # add the past event to a genesis case
-        genesis_case = self.core.genesis_get_case(self.key, 3)
-        genesis_case.update({
-            'pevent_id': 1,
-            'reviewer': self.user['id']})
-        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+        update = {"id": 3, "pevent_id": 1}
+        self.assertTrue(self.core.genesis_modify_case(self.key, update))
 
         with self.assertRaises(ValueError) as e:
             self.pastevent.delete_past_event(
@@ -317,13 +310,14 @@ class TestPastEventBackend(BackendTest):
              'submitted_by': self.user['id']})
         self.assertLogEqual(expectation, 'past_event')
 
+    @event_keeper
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
         self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
-        new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+        new_ids = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
@@ -349,7 +343,7 @@ class TestPastEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
+        new_ids = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(

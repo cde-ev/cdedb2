@@ -1,7 +1,10 @@
 {% set sidenav_active='event_lodgements' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'], group_title=ambience['group']['title'] %}
@@ -26,7 +29,7 @@
         {% for l_id in lodgements_in_group %}
             {{ util.input_hidden('lodgement_ids', l_id) }}
         {% endfor %}
-        {{ util.form_input_select('target_group_id', groups.items(), label=gettext("Target Group"),
+        {{ util.form_input_select('target_group_id', (groups.values()|first).entries(groups), label=gettext("Target Group"),
                                   nulloption=gettext("- do not move lodgements -"), sort=True) }}
 
         <div class="form-group mosp">
