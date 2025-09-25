@@ -948,6 +948,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
 .prefvote_spacer {
     text-align: center;
     padding-block: .8em;
+    position: relative;
 }
 .prefvote_container.active .prefvote_spacer {
     cursor: pointer;
