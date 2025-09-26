@@ -2727,8 +2727,9 @@ def process_dynamic_input(
     existing: Collection[int],
     spec: Mapping[str, Literal["str", "[str]"]],
     *,
-    additional: Optional[CdEDBObject] = None,
-    creation_spec: Optional[Mapping[str, Literal["str", "[str]"]]] = None,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: Mapping[str, Literal["str", "[str]"]] | None = None,
     prefix: str = "",
 ) -> CdEDBOptionalMap: ...
 
@@ -2739,8 +2740,9 @@ def process_dynamic_input(
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
-    additional: Optional[CdEDBObject] = None,
-    creation_spec: Optional[vtypes.TypeMapping] = None,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: vtypes.TypeMapping | None = None,
     prefix: str = "",
 ) -> CdEDBOptionalMap: ...
 
@@ -2752,9 +2754,9 @@ def process_dynamic_input(
     existing: Collection[int],
     spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
     *,
-    additional: Optional[CdEDBObject] = None,
-    additional_validation: Optional[CdEDBObject] = None,
-    creation_spec: Optional[vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]]] = None,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]] | None = None,
     prefix: str = "",
 ) -> CdEDBOptionalMap:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.

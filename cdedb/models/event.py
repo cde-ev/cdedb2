@@ -373,7 +373,7 @@ class CourseChoiceObject(abc.ABC):
     id: vtypes.ID
 
     title: str
-    shortname: vtypes.Shortname
+    shortname: str
     sortkey: int
 
     num_choices: vtypes.NonNegativeInt
@@ -753,20 +753,20 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
         return list(self.tracks.values())[0]
 
     @property
-    def num_choices(self) -> int:
+    def num_choices(self) -> vtypes.NonNegativeInt:
         return self.reference_track.num_choices
 
     @num_choices.setter
-    def num_choices(self, value: int) -> None:
+    def num_choices(self, value: vtypes.NonNegativeInt) -> None:
         for track in self.tracks.values():
             track.num_choices = value
 
     @property
-    def min_choices(self) -> int:
+    def min_choices(self) -> vtypes.NonNegativeInt:
         return self.reference_track.min_choices
 
     @min_choices.setter
-    def min_choices(self, value: int) -> None:
+    def min_choices(self, value: vtypes.NonNegativeInt) -> None:
         for track in self.tracks.values():
             track.min_choices = value
 
