@@ -31,7 +31,7 @@ _DEFAULT_PERSONA_COLUMNS = (
 )
 
 
-class IncludeEmpty(enum.Enum):
+class IncludeEmpty(CdEIntEnum):
     yes = enum.auto()
     no = enum.auto()
     only = enum.auto()

@@ -46,6 +46,7 @@ from cdedb.common import (
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.models.common import CdEDataclassMap
+from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
 td = datetime.timedelta
 
 
-class ViolationSeverity(enum.Enum):
+class ViolationSeverity(CdEIntEnum):
     """Enum to indicate how severe a violation ist. Used for sorting and formatting."""
     CRITICAL = 4
     ERROR = 3
@@ -95,7 +96,7 @@ class ViolationSeverity(enum.Enum):
         return self.value >= other.value
 
 
-class ViolationKind(enum.Enum):
+class ViolationKind(CdEIntEnum):
     """Different kinds to filter by."""
     financial = enum.auto()
     minors_and_mixed_lodging = enum.auto()

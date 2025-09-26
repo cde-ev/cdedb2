@@ -1,10 +1,46 @@
 #!/usr/bin/env python3
 
 """Additional strings for i18n which do not occur literally."""
+import itertools
 
 from cdedb.common.n_ import n_
+from cdedb.uncommon.intenum import CdEIntEnum
 
-I18N_STRINGS = (
+# ruff: noqa: PLC0415
+
+
+def main() -> None:
+    import cdedb.enums
+    from cdedb.common.validation.data import COUNTRY_CODES
+    from cdedb.models.event_constraint_violations import ConstraintViolation
+
+    enum_strings = []
+    for cls in CdEIntEnum.__subclasses__():
+        if issubclass(cls, CdEIntEnum) and cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
+            for enum_member in cls:
+                enum_strings.append(str(enum_member))
+
+    abstract, nonabstract = ConstraintViolation._get_subclasses()
+    for cls in abstract:
+        abstract_, nonabstract_ = cls._get_subclasses()
+        abstract.extend(abstract_)
+        nonabstract.extend(nonabstract_)
+
+    violation_strings = [cls.__name__ for cls in nonabstract]
+
+    country_code_strings = [f"CountryCodes.{cc}" for cc in COUNTRY_CODES]
+
+    assert set(enum_strings) == set(ENUM_STRINGS)
+    assert set(violation_strings) == set(VIOLATION_STRINGS)
+    assert set(country_code_strings) == set(COUNTRY_CODE_STRINGS)
+
+    print("from cdedb.common.n_ import n_\n\n")
+    for msg in itertools.chain(enum_strings, violation_strings, OTHER_STRINGS, country_code_strings):
+        msg = msg.replace('"', '\\"')
+        print(f'n_("{msg}")')
+
+
+ENUM_STRINGS = (
     #
     # Enums
     #
@@ -335,10 +371,6 @@ I18N_STRINGS = (
     n_("QueryOperators.ranged_allof"),
     n_("QueryOperators.ranged_notallof"),
 
-    n_("QueryScope.registration"),
-    n_("QueryScope.event_course"),
-    n_("QueryScope.lodgement"),
-
     n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
@@ -445,6 +477,24 @@ I18N_STRINGS = (
     n_("ComplaintLogCodes.case_unlocked"),
     n_("ComplaintLogCodes.concealed_case_detected"),
 
+    n_("IncludeEmpty.yes"),
+    n_("IncludeEmpty.no"),
+    n_("IncludeEmpty.only"),
+
+    n_("ViolationSeverity.DEBUG"),
+    n_("ViolationSeverity.INFO"),
+    n_("ViolationSeverity.WARNING"),
+    n_("ViolationSeverity.ERROR"),
+    n_("ViolationSeverity.CRITICAL"),
+
+    n_("ViolationKind.financial"),
+    n_("ViolationKind.minors_and_mixed_lodging"),
+    n_("ViolationKind.courses"),
+    n_("ViolationKind.lodgements"),
+    n_("ViolationKind.other"),
+)
+
+VIOLATION_STRINGS = (
     # Registration violations.
     n_("MutuallyExclusiveParticipationCV"),
     n_("CourseChoiceSyncCV"),
@@ -473,22 +523,15 @@ I18N_STRINGS = (
     n_("IllegalMixedLodgementCV"),
     # General violations.
     n_("IncorrectIBANCV"),
+)
 
-    n_("ViolationSeverity.DEBUG"),
-    n_("ViolationSeverity.INFO"),
-    n_("ViolationSeverity.WARNING"),
-    n_("ViolationSeverity.ERROR"),
-    n_("ViolationSeverity.CRITICAL"),
-
-    n_("ViolationKind.financial"),
-    n_("ViolationKind.minors_and_mixed_lodging"),
-    n_("ViolationKind.courses"),
-    n_("ViolationKind.lodgements"),
-    n_("ViolationKind.other"),
-
-    n_("IncludeEmpty.yes"),
-    n_("IncludeEmpty.no"),
-    n_("IncludeEmpty.only"),
+OTHER_STRINGS = (
+    #
+    # Query scopes
+    #
+    n_("QueryScope.registration"),
+    n_("QueryScope.event_course"),
+    n_("QueryScope.lodgement"),
 
     #
     # Query datatypes
@@ -590,7 +633,9 @@ I18N_STRINGS = (
     #
     n_("Cancel"),
     n_("Save"),
+)
 
+COUNTRY_CODE_STRINGS = (
     #
     # country codes, see validationdata.py
     #
@@ -845,3 +890,7 @@ I18N_STRINGS = (
     n_("CountryCodes.ZM"),
     n_("CountryCodes.ZW"),
 )
+
+
+if __name__ == "__main__":
+    main()
