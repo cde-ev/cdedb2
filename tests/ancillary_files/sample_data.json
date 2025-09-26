@@ -6682,6 +6682,7 @@
             "event_id": 4
         }
     ],
+    "event.caretakers": [],
     "event.helpers": [
         {
             "id": 1,

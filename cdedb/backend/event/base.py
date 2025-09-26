@@ -147,7 +147,6 @@ class EventBaseBackend(EventLowLevelBackend):
         caretaker_infos, "persona_ids", "persona_id"
     )
 
-
     @access("persona")
     def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
         """List all event helpers."""

@@ -232,6 +232,7 @@ class TestEventBackend(BackendTest):
         data['part_groups'] = {}
         data['track_groups'] = {}
         data['custom_query_filters'] = {}
+        data['caretakers'] = set()
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -2547,6 +2548,7 @@ class TestEventBackend(BackendTest):
         ) as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
+        expectation['event']['caretakers'] = set(expectation['event']['caretakers'])
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None

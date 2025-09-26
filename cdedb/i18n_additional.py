@@ -90,6 +90,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.helper_removed"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
+    n_("EventLogCodes.caretaker_added"),
+    n_("EventLogCodes.caretaker_removed"),
     n_("EventLogCodes.part_created"),
     n_("EventLogCodes.part_changed"),
     n_("EventLogCodes.part_deleted"),

@@ -85,7 +85,7 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     EP = EventPrivileges
     admin_privileges = ~(EP.conclude | EP.balance)
     orga_privileges = ~(EP.conclude | EP.balance | EP.delete | EP.orgas_change)
-    caretaker_privileges = orga_privileges  | EP.orgas_change
+    caretaker_privileges = orga_privileges | EP.orgas_change
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
                                | EP.registrations_stats | EP.registrations_read_internal
                                | EP.participant_list)

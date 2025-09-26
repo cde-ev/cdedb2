@@ -412,7 +412,7 @@ class EventEventMixin(EventBaseFrontend):
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
             self.do_mail(
                 rs,
-                "orga_added",
+                "orga_removed",
                 {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
                 {
                     'orga': orga,
