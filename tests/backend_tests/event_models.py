@@ -904,7 +904,6 @@ class TestEventModels(BackendTest):
     @as_users("anton")
     def test_get_lodgement_groups(self) -> None:
         event_id = 1
-        # print(self.event.new_get_lodgement_groups(self.key, event_id))
 
         expectation = {
             1: models.LodgementGroup(
@@ -912,7 +911,7 @@ class TestEventModels(BackendTest):
                 event_id=event_id,  # type: ignore[arg-type]
                 title="Haupthaus",
                 lodgement_ids={2, 4},
-                regular_capacity=11,
+                regular_capacity=vtypes.NonNegativeInt(11),
                 camping_mat_capacity=2,
             ),
             2: models.LodgementGroup(

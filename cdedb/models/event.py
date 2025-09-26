@@ -31,7 +31,7 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Collection, Mapping
+from collections.abc import Collection
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -925,8 +925,10 @@ class CourseInstructors:
 class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
 
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+
     # event: Event
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     title: str
 
     lodgement_ids: set[int] = dataclasses.field(
@@ -964,24 +966,33 @@ class LodgementGroup(EventDataclass):
         return (self.title, )
 
 
+# ID to be given when validating a lodgement for a yet to be created group.
+LODGEMENT_GROUP_PLACEHOLDER_ID = vtypes.ID(1)
+
+
 @dataclasses.dataclass
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
 
+    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, default=cast(Event, None),
+        metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     group: LodgementGroup
     group_id: vtypes.ID
 
     title: str
-    regular_capacity: int
-    camping_mat_capacity: int
-    notes: Optional[str]
+    regular_capacity: vtypes.NonNegativeInt
+    camping_mat_capacity: vtypes.NonNegativeInt
+    notes: str | None
 
-    fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    fields: vtypes.EventAssociatedFields = dataclasses.field(
+        default_factory=cast(type[vtypes.EventAssociatedFields], dict)
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":

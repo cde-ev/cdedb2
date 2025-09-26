@@ -2779,7 +2779,7 @@ def process_dynamic_input(
 
     # build the return dict of all existing entries and check if they pass validation
     ret: dict[int, Optional[C]] = {
-        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
+        anid: cast(C, {key: data[drow_name(key, anid, prefix)] for key in spec})
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2788,8 +2788,10 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             models_event.PartGroup, vtypes.EventField}:
+            if type_ not in {
+                vtypes.EventTrack, vtypes.BallotCandidate, models_event.PartGroup,
+                vtypes.EventField, models_event.LodgementGroup
+            }:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
@@ -2805,8 +2807,7 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = type_({
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
+            entry = cast(C, {key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,

@@ -2521,7 +2521,7 @@ def _event(
     if 'lodgement_groups' in val:
         with errs:
             val['lodgement_groups'] = _optional_object_mapping_helper(
-                val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
+                val['lodgement_groups'], models_event.LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
 
     if 'fees' in val:
@@ -3115,78 +3115,44 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-LODGEMENT_GROUP_FIELDS: TypeMapping = {
-    'title': str,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.LodgementGroup)
 def _lodgement_group(
-    val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, nested_creation: bool = False, **kwargs: Any,
-) -> LodgementGroup:
-    """
-    :param creation: If ``True`` test the data set for fitness for creation
-        of a new entity.
-    :param nested_creation: If ``True`` do not require an event_id for creation,
-        because the event is being created at the same time as the group.
-    """
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS)
-        if not nested_creation:
-            mandatory_fields['event_id'] = ID
-        optional_fields: TypeMapping = {}
-    else:
-        # no event_id, since the associated event should be fixed.
-        mandatory_fields = {'id': ID}
-        optional_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
-
-    return LodgementGroup(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
-LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'regular_capacity': NonNegativeInt,
-    'camping_mat_capacity': NonNegativeInt,
-    'notes': Optional[str],
-    'group_id': ID,
-}
-
-LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
-    'fields': Mapping,
-}
-
-
-@_add_typed_validator
-def _lodgement(
-    val: Any, argname: str = "lodgement", *,
+    val: CdEDBObject, argname: str = "lodgement_group", *,
     creation: bool = False, **kwargs: Any,
-) -> Lodgement:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
+) -> CdEDBObject:
 
-    val = _mapping(val, argname, **kwargs)
+    return val
 
-    if creation:
-        mandatory_fields = dict(LODGEMENT_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**LODGEMENT_OPTIONAL_FIELDS}
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
+@_create_dataclass_validator(models_event.Lodgement, association=const.FieldAssociations.lodgement)
+def _lodgement(
+    val: CdEDBObject, argname: str = "lodgement", *,
+    creation: bool = False, event: models_event.Event,
+    groups: models_event.CdEDataclassMap[models_event.LodgementGroup],
+    create_new_group: bool = False, **kwargs: Any
+) -> CdEDBObject:
 
-    return Lodgement(val)
+    errs = ValidationSummary()
+
+    if create_new_group:
+        if (
+            "group_id" not in val
+            or val["group_id"] != models_event.LODGEMENT_GROUP_PLACEHOLDER_ID
+        ):
+            errs.append(
+                ValueError(
+                    "group_id", n_("Invalid placeholder for new lodgement group.")
+                )
+            )
+    elif "group_id" in val and val["group_id"] not in groups:
+        errs.append(
+            ValueError("group_id", n_("Unknown lodgement group for this event."))
+        )
+
+    if errs:
+        raise errs
+
+    return val
 
 
 FIELD_DATATYPE_VALIDATORS = {
