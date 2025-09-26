@@ -413,10 +413,13 @@ class EventBaseBackend(EventLowLevelBackend):
         if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
-        query = ("DELETE FROM event.orgas"
-                 " WHERE persona_id = %s AND event_id = %s")
+        query = """
+            DELETE FROM event.orgas
+            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
+        """
+        params = {"persona_id": persona_id, "event_id": event_id}
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (persona_id, event_id))
+            ret = self.query_exec(rs, query, params)
             if ret:
                 self.event_log(rs, const.EventLogCodes.orga_removed,
                                event_id, persona_id=persona_id)
@@ -472,10 +475,13 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
-        query = ("DELETE FROM event.caretakers"
-                 " WHERE persona_id = %s AND event_id = %s")
+        query = """
+            DELETE FROM event.caretakers
+            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
+        """
+        params = {"persona_id": persona_id, "event_id": event_id}
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (persona_id, event_id))
+            ret = self.query_exec(rs, query, params)
             if ret:
                 self.event_log(
                     rs,
