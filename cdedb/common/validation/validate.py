@@ -2468,8 +2468,6 @@ def _optional_object_mapping_helper(
                 new_val = _ALL_TYPED[atype](
                     val, argname, creation=creation, id_=anid, **kwargs)
             else:
-                # if isinstance(val, dict):
-                #     val["id"] = anid
                 new_val = _ALL_TYPED[atype | None](
                     val, argname, creation=creation, id_=anid, **kwargs)
             ret[anid] = new_val
@@ -2536,10 +2534,10 @@ def _event(
 
     if 'fees' in val:
         with errs:
-            del kwargs["event"]
+            kwargs_ = dict(kwargs, event=val)
             val['fees'] = _optional_object_mapping_helper(
                 val['fees'], models_event.EventFee, 'fees', creation_only=creation,
-                event=val, questionnaire={}, **kwargs)
+                questionnaire={}, **kwargs_)
 
     if errs:
         raise errs
@@ -2598,31 +2596,10 @@ def _event_part(
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
-        # with errs:
-        #     val['tracks'] = _optional_object_mapping_helper(
-        #         val['tracks'], models_event.CourseTrack, 'tracks',
-        #         creation_only=creation, **kwargs)
-        newtracks = {}
-        for anid, track in val['tracks'].items():
-            try:
-                anid = _int(anid, 'tracks', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = anid < 0
-                try:
-                    if creation:
-                        track = _ALL_TYPED[models_event.CourseTrack](
-                            track, 'tracks', creation=True, **kwargs)
-                    else:
-                        track["id"] = anid
-                        track = _ALL_TYPED[models_event.CourseTrack | None](
-                            track, 'tracks', **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newtracks[anid] = track
-        val['tracks'] = newtracks
+        with errs:
+            val['tracks'] = _optional_object_mapping_helper(
+                val['tracks'], models_event.CourseTrack, 'tracks',
+                creation_only=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2663,13 +2640,13 @@ def _event_part_group(
 @_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    event: models_event.Event, creation: bool = False, **kwargs: Any,
+    event: models_event.Event, creation: bool = False, id_: int, **kwargs: Any,
 ) -> CdEDBObject:
     if creation:
         min_choices = val["min_choices"]
         num_choices = val["num_choices"]
     else:
-        track = event.tracks[val["id"]]
+        track = event.tracks[id_]
         min_choices = val.get("min_choices", track.min_choices)
         num_choices = val.get("num_choices", track.num_choices)
 

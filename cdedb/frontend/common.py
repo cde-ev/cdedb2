@@ -2788,6 +2788,7 @@ def process_dynamic_input(
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    additional_validation = additional_validation or dict()
     creation_spec: vtypes.TypeMapping = creation_spec or spec  # type: ignore[assignment]
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
@@ -2817,13 +2818,13 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {vtypes.BallotCandidate, models_event.PartGroup,
-                             vtypes.EventField}:
+                             vtypes.EventField, models_event.CourseTrack}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{anid}",
-                **additional_validation)
+                **additional_validation, id_=anid)
 
     # extract the new entries which shall be created
     marker = 1
@@ -2839,7 +2840,7 @@ def process_dynamic_input(
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{-marker}",
-                creation=True, **additional_validation)
+                creation=True, **additional_validation, id_=-marker)
         else:
             break
         marker += 1
