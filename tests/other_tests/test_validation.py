@@ -805,4 +805,4 @@ class TestValidation(TestValidationBase):
             validate._serialized_event_configuration({
                 'id': -1,
                 'iban': "DE75512108001245126199",
-            }, "", creation=True, current=None)
+            }, "", creation=True, event=None)
