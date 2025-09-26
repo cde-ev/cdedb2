@@ -415,6 +415,10 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     database_table = "event.course_tracks"
     entity_key = "part_id"
 
+    id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
     part_id: vtypes.ID = dataclasses.field(

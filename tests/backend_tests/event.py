@@ -225,8 +225,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})
         data['parts'][-2].update({'id': 1002})
-        data['parts'][-1]['tracks'][-1]['id'] = 1001
-        data['parts'][-2]['tracks'][-1]['id'] = 1002
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
@@ -373,7 +371,6 @@ class TestEventBackend(BackendTest):
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
         changed_part['shortname'] = "second"
-        changed_part['tracks'][1002]['id'] = 1002
         data['parts'][part_map["Second coming"]] = changed_part
         for part in data['parts'].values():
             part['part_group_ids'] = set()
@@ -393,7 +390,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1002: {
-                'id': 1002,
                 'title': 'Second lecture v2',
                 'shortname': "Second v2",
                 'num_choices': 5,
@@ -403,7 +399,6 @@ class TestEventBackend(BackendTest):
                 'track_group_ids': set(),
             },
             1003: {
-                'id': 1003,
                 'title': 'Third lecture',
                 'shortname': 'Third',
                 'num_choices': 2,
@@ -565,7 +560,6 @@ class TestEventBackend(BackendTest):
             'camping_mat_field_id': None,
             'tracks': {
                 6: {
-                    'id': 6,
                     'title': "Oberwesel Kurs 1",
                     'shortname': "OK1",
                     'num_choices': 4,
