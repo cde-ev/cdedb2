@@ -256,7 +256,7 @@
         {% if "event_mgmt" in user.admin_views or ambience['event'].id in user.caretaker %}
             <div class="col-md-6" id="manage-orgas">
                 {% call util.bootstrap_panel(title=gettext("Orgas and Caretakers"), icon='user-friends') %}
-                <ul>
+                <ul class="slim">
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
@@ -306,6 +306,7 @@
                             {{ util.input_submit(label=gettext("Add"), aclass='btn btn-success') }}
                         </div>
                     </div>
+                    {% endcall %}
                     {% if "event_mgmt" in user.admin_views %}
                         <div class="checkbox" style="margin-bottom:0">
                             {{ util.input_checkbox('as_caretaker', gettext("as Caretaker")) }}
@@ -319,7 +320,6 @@
                             {% endtrans %}
                         </p>
                     {% endif %}
-                {% endcall %}
                 </form>
                 {% endcall %}
             </div>
