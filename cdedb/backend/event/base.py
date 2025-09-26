@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -171,15 +171,17 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :returns: Mapping of event ids to titles.
         """
-        subquery = (
-            "SELECT e.id, e.registration_start, e.title, e.is_archived,"
-            " e.is_cancelled, MAX(p.part_end) AS event_end"
-            " FROM event.events AS e JOIN event.event_parts AS p ON p.event_id = e.id"
-            " GROUP BY e.id"
-        )
+        subquery = f"""
+            SELECT
+                e.id, e.registration_start, e.title, e.is_archived, e.is_cancelled,
+                MAX(p.part_end) AS event_end
+            FROM {models.Event.database_table} AS e
+                JOIN {models.EventPart.database_table} AS p ON p.event_id = e.id
+            GROUP BY e.id
+        """
         query = f"SELECT e.* from ({subquery}) as e"
         constraints = []
-        params = []
+        params = {}
         if current is not None:
             if current:
                 constraints.append("e.event_end > now()")
@@ -187,8 +189,8 @@ class EventBaseBackend(EventLowLevelBackend):
             else:
                 constraints.append("(e.event_end <= now() OR e.is_cancelled = True)")
         if archived is not None:
-            constraints.append("is_archived = %s")
-            params.append(archived)
+            constraints.append("is_archived = %(is_archived)s")
+            params["is_archived"] = archived
 
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
@@ -1238,13 +1240,16 @@ class EventBaseBackend(EventLowLevelBackend):
         if self.is_admin(rs):
             # Admins are exempt
             return True
-        query = (
-            "SELECT COUNT(*) AS num FROM event.log"
-            " WHERE event_id = %s AND code = %s "
-            " AND submitted_by != persona_id "
-            " AND ctime >= now() - interval '24 hours'"
-        )
-        params = (event_id, const.EventLogCodes.registration_created)
+        query = """
+            SELECT COUNT(*) AS num FROM event.log
+            WHERE
+                event_id = %(event_id)s AND code = %(code)s AND submitted_by != persona_id
+                AND ctime >= now() - interval '24 hours'
+        """
+        params = {
+            "event_id": event_id,
+            "code": const.EventLogCodes.registration_created,
+        }
         num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
@@ -1265,12 +1270,12 @@ class EventBaseBackend(EventLowLevelBackend):
         kinds = kinds or []
         affirm_set(const.QuestionnaireUsages, kinds)
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
-        query = f"SELECT {columns} FROM event.questionnaire_rows"
-        constraints = ["event_id = %s"]
-        params: list[Any] = [event_id]
+        query = f"SELECT {columns} FROM {models.QuestionnaireRow.database_table}"
+        constraints = ["event_id = %(event_id)s"]
+        params: CdEDBObject = {"event_id": event_id}
         if kinds:
-            constraints.append("kind = ANY(%s)")
-            params.append(kinds)
+            constraints.append("kind = ANY(%(kinds)s)")
+            params["kinds"] = kinds
         query += " WHERE " + " AND ".join(c for c in constraints)
         d = self.query_all(rs, query, params)
         for row in d:
@@ -1335,18 +1340,19 @@ class EventBaseBackend(EventLowLevelBackend):
                 return 1
             # Otherwise replace rows for all given kinds.
             for kind, rows in data.items():
-                query = (
-                    "DELETE FROM event.questionnaire_rows"
-                    " WHERE event_id = %s AND kind = %s"
-                )
-                params = (event_id, kind)
-                self.query_exec(rs, query, params)
+                query = f"""
+                    DELETE FROM {models.QuestionnaireRow.database_table}
+                    WHERE event_id = %(event_id)s AND kind = %(kind)s
+                """
+                self.query_exec(rs, query, {"event_id": event_id, "kind": kind})
                 for pos, row in enumerate(rows):
                     new_row = copy.deepcopy(row)
                     new_row['pos'] = pos
                     new_row['event_id'] = event_id
                     new_row['kind'] = kind
-                    ret *= self.sql_insert(rs, "event.questionnaire_rows", new_row)
+                    ret *= self.sql_insert(
+                        rs, models.QuestionnaireRow.database_table, new_row
+                    )
             self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
