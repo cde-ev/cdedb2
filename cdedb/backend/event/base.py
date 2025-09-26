@@ -368,8 +368,7 @@ class EventBaseBackend(EventLowLevelBackend):
         This is basically un-inlined code from `set_event`, but may also be
         called separately.
 
-        Note that this is only available to admins and caretakers in contrast to
-        `set_event`.
+        Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -404,8 +403,7 @@ class EventBaseBackend(EventLowLevelBackend):
                           persona_id: int) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
-        Note that this is only available to admins and caretakers in contrast to
-        `set_event`.
+        Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
