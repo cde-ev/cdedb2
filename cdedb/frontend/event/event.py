@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
 
@@ -127,18 +126,24 @@ class EventEventMixin(EventBaseFrontend):
         params: CdEDBObject = {}
         is_registered = False
         if "event" in rs.user.roles:
-            params['orgas'] = OrderedDict(
-                (e['id'], e) for e in xsorted(
+            params['orgas'] = {
+                e['id']: e
+                for e in xsorted(
                     self.coreproxy.get_personas(
-                        rs, rs.ambience['event'].orgas).values(),
-                    key=EntitySorter.persona)
-            )
-            params['caretakers'] = OrderedDict(
-                (e['id'], e) for e in xsorted(
+                        rs, rs.ambience['event'].orgas
+                    ).values(),
+                    key=EntitySorter.persona
+                )
+            }
+            params['caretakers'] = {
+                e['id']: e
+                for e in xsorted(
                     self.coreproxy.get_personas(
-                        rs, rs.ambience['event'].caretakers).values(),
-                    key=EntitySorter.persona)
-            )
+                        rs, rs.ambience['event'].caretakers
+                    ).values(),
+                    key=EntitySorter.persona
+                )
+            }
             is_registered = bool(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id))
         if "ml" in rs.user.roles:
