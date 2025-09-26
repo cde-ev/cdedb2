@@ -471,3 +471,10 @@
             {% endif %}
     {% endcall %}
 {% endblock %}
+
+{% block adminviews %}
+    {{ super() }}
+    {{ util.admin_views_toggle((
+            (gettext("Finance Administration"), ["finance"], None),
+        )) }}
+{% endblock %}
