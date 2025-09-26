@@ -22,7 +22,7 @@ def main() -> None:
 
     enum_strings = []
     for cls in CdEIntEnum.__subclasses__():
-        if issubclass(cls, CdEIntEnum) and cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
+        if cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
             for enum_member in cls:
                 enum_strings.append(str(enum_member))
 
