@@ -1807,7 +1807,7 @@ class AmbienceDict(typing.TypedDict):
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
-    lodgement: NotRequired[CdEDBObject]
+    lodgement: NotRequired[models_event.Lodgement]
     part_group: NotRequired[models_event.PartGroup]
     track_group: NotRequired[models_event.TrackGroup]
     fee: NotRequired[models_event.EventFee]
@@ -1870,9 +1870,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],  # type: ignore[has-type]
               'group_id', 'group',
               ((lambda a: do_assert(a['group'].event_id == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
+        Scout(lambda anid: obj.eventproxy.new_get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['lodgement'].event_id == a['event'].id)),)),
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event'].fields)),)),
@@ -2767,7 +2767,7 @@ def process_dynamic_input(
 
     # build the return dict of all existing entries and check if they pass validation
     ret: dict[int, Optional[C]] = {
-        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
+        anid: cast(C, {key: data[drow_name(key, anid, prefix)] for key in spec})
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2776,8 +2776,10 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             models_event.PartGroup, vtypes.EventField}:
+            if type_ not in {
+                vtypes.EventTrack, vtypes.BallotCandidate, models_event.PartGroup,
+                vtypes.EventField, models_event.LodgementGroup
+            }:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
@@ -2793,8 +2795,7 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = type_({
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
+            entry = cast(C, {key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=field_prefix,

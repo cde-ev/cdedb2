@@ -29,8 +29,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     STORED_EVENT_QUERY_FIELDS,
@@ -254,7 +252,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 lodge_field_columns = _get_field_select_columns(
                     event.fields, const.FieldAssociations.lodgement
                 )
-                columns = LODGEMENT_FIELDS + lodge_field_columns
+                columns = models.Lodgement.database_fields() + list(lodge_field_columns)
                 return f"""
                     SELECT {', '.join(columns)}
                     FROM event.lodgements
@@ -264,7 +262,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             # Step 3.3: Prepare view for lodgement group information.
             def registration_lodgement_group_view() -> str:
                 return f"""
-                    SELECT {', '.join(LODGEMENT_GROUP_FIELDS)}
+                    SELECT {', '.join(models.LodgementGroup.database_fields())}
                     FROM event.lodgement_groups
                     WHERE event_id = {event_id}
                 """
@@ -596,7 +594,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 tmp_group_id = 'COALESCE(group_id, -1) AS tmp_group_id'
                 lodgement_id = 'id AS lodgement_id'
                 total = 'regular_capacity + camping_mat_capacity AS total_capacity'
-                columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id, total)
+                columns = models.Lodgement.database_fields()
+                columns += (tmp_group_id, lodgement_id, total)
                 event_part_tables = {
                     part.id: event_part_table(part) for part in event.parts.values()
                 }

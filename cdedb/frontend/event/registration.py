@@ -1049,7 +1049,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         age = determine_age_class(
             persona['birthday'], rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
@@ -1315,7 +1315,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_event_user(
             rs, registration['persona_id'], event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         course_choice_params = self.get_course_choice_params(rs, event_id)
 
         values = self._prepare_registration_values(rs.ambience['event'], registration)
@@ -1365,7 +1365,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Render form."""
         registrations = self.eventproxy.list_registrations(rs, event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         defaults = {
             f"part{part_id}.status":
                 const.RegistrationPartStati.participant
@@ -1472,7 +1472,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         for reg in reg_vals:
             reg['gender'] = personas[reg['persona_id']]['gender']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         representative = next(iter(registrations.values()))
 
@@ -1618,7 +1618,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],

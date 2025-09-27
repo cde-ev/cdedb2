@@ -134,7 +134,7 @@
                 {% call form_input_optional("part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
                                             anid="part{}_lodgement_id".format(part.id)) %}
                     {{ util.input_select(name="part{}.lodgement_id".format(part.id),
-                                         entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp,
+                                         entries=lodgements|entries('id', 'title'), nulloption=nbsp,
                                          anid="part{}_lodgement_id".format(part.id)) }}
                 {% endcall %}
             {% endif %}

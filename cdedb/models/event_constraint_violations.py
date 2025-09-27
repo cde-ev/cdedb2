@@ -184,7 +184,7 @@ class ViolationList(list['ConstraintViolation']):
             self, *,
             event_id: int = cast(int, _MISSING),
             course: models.Course | None = cast(models.Course, _MISSING),
-            lodgement_id: int | None = cast(int, _MISSING),
+            lodgement: models.Lodgement | None = cast(models.Lodgement, _MISSING),
             registration_id: int | None = cast(int, _MISSING),
             track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
             track_not: Collection[int] = cast(Collection[int], _MISSING),
@@ -193,13 +193,13 @@ class ViolationList(list['ConstraintViolation']):
     ) -> 'ViolationList':
         """Filter and return violations matching the given criteria.
 
-        :param course_id: If None return only violations with no course.
-            If an id, return only violations with a course with that id.
-        :params track: If None return only violations with no track.
-            If a track, return only violations with that track.
+        :param course: If None return only violations with no course.
+            Otherwise return only violations with that course.
+        :param lodgement: Like course.
+        :params track: Like course.
         :param track_not: If given return only violations with no track, or with a
             track whos id is not in the given collection.
-        :param track_group: Like track.
+        :param track_group: Like course.
         """
         return ViolationList([
             v for v in self
@@ -211,10 +211,7 @@ class ViolationList(list['ConstraintViolation']):
                         or getattr(v, 'instructed_course', None) == course
                     )
                 )
-            and (lodgement_id is _MISSING
-                     or v.lodgement is None and lodgement_id is None
-                     or v.lodgement is not None and v.lodgement['id'] == lodgement_id
-                 )
+            and (lodgement is _MISSING or v.lodgement == lodgement)
             and (registration_id is _MISSING
                     or v.registration is None and registration_id is None
                     or v.registration is not None and v.registration['id'] == registration_id
@@ -297,8 +294,8 @@ class ViolationAux:
 
     all_courses: CdEDataclassMap[models.Course]
     courses: CdEDataclassMap[models.Course]  # Violations are only checked for these courses.
-    all_lodgements: CdEDBObjectMap
-    lodgements: CdEDBObjectMap  # Violations are only checked for these lodgements.
+    all_lodgements: CdEDataclassMap[models.Lodgement]
+    lodgements: CdEDataclassMap[models.Lodgement]  # Violations are only checked for these lodgements.
 
     attendee_data: "AttendeeStats"
     choices_data: "ChoiceStats"
@@ -326,7 +323,7 @@ class ViolationContext:
 
     registration: CdEDBObject | None = None
     course: models.Course | None = None
-    lodgement: CdEDBObject | None = None
+    lodgement: models.Lodgement | None = None
 
     part: models.EventPart | None = None
     track: models.CourseTrack | None = None
@@ -375,7 +372,7 @@ class ConstraintViolation(abc.ABC):
         raise NameError
 
     course: models.Course | None = None
-    lodgement: CdEDBObject | None = None
+    lodgement: models.Lodgement | None = None
 
     # Secondary entities.
     part: models.EventPart | None = None
@@ -455,7 +452,7 @@ class ConstraintViolation(abc.ABC):
                 "event/show_lodgement",
                 {
                     'event_id': self.event.id,
-                    'lodgement_id': self.lodgement['id'],
+                    'lodgement_id': self.lodgement.id,
                 },
             )
         return ret
@@ -645,7 +642,7 @@ class CourseTrackGroupConstraintViolation(CourseConstraintViolation, abc.ABC):
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class LodgementConstraintViolation(ConstraintViolation, abc.ABC):
-    lodgement: CdEDBObject
+    lodgement: models.Lodgement
 
     kind = ViolationKind.lodgements
 
@@ -1542,7 +1539,7 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "part": self.part.shortname,
-            "lodgement": self.lodgement['title'] if self.lodgement else "",
+            "lodgement": self.lodgement.title if self.lodgement else "",
         }
         return msgs, params
 
@@ -1980,18 +1977,18 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement['id']][part.id]
+        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
         event_over = now().date() > aux.event.end
         severity = None
 
         if (
-            lodgement['regular_capacity'] is not None
-            and len(inhabitants.regular) > lodgement['regular_capacity']
+            lodgement.regular_capacity is not None
+            and len(inhabitants.regular) > lodgement.regular_capacity
         ):
             # For participants assigned to regular beds only, raise an error rather
             # than a warning if the lodgement is overfull.
             status = const.RegistrationPartStati.participant
-            error = lodgement['regular_capacity'] < len(
+            error = lodgement.regular_capacity < len(
                 [reg for reg in inhabitants.regular
                  if reg['parts'][part.id]['status'] == status.participant])
 
@@ -2002,18 +1999,18 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
             else:
                 severity = ViolationSeverity.WARNING
         if (
-            lodgement['camping_mat_capacity'] is not None
-            and len(inhabitants.camping_mat) > lodgement['camping_mat_capacity']
+            lodgement.camping_mat_capacity is not None
+            and len(inhabitants.camping_mat) > lodgement.camping_mat_capacity
         ):
             if event_over:
                 severity = ViolationSeverity.INFO
             else:
                 severity = ViolationSeverity.WARNING
         if (
-            lodgement['regular_capacity'] is not None
-            and 0 < len(inhabitants.regular) < lodgement['regular_capacity']
-            or lodgement['camping_mat_capacity'] is not None
-            and 0 < len(inhabitants.camping_mat) < lodgement['camping_mat_capacity']
+            lodgement.regular_capacity is not None
+            and 0 < len(inhabitants.regular) < lodgement.regular_capacity
+            or lodgement.camping_mat_capacity is not None
+            and 0 < len(inhabitants.camping_mat) < lodgement.camping_mat_capacity
         ):
             severity = ViolationSeverity.DEBUG
 
@@ -2032,10 +2029,10 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
             self, *, entity_page: str,
     ) -> tuple[list[str], CdEDBObject]:
         if (
-            self.lodgement['regular_capacity'] is not None
-            and self.num_regular > self.lodgement['regular_capacity']
-            or self.lodgement['camping_mat_capacity'] is not None
-            and self.num_camping_mat > self.lodgement['camping_mat_capacity']
+            self.lodgement.regular_capacity is not None
+            and self.num_regular > self.lodgement.regular_capacity
+            or self.lodgement.camping_mat_capacity is not None
+            and self.num_camping_mat > self.lodgement.camping_mat_capacity
         ):
             if entity_page:
                 msg = n_("Overfull lodgement.")
@@ -2047,7 +2044,7 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
             msg = n_("%(lodgement)s is underfull in %(part)s.")
 
         params = {
-            "lodgement": self.lodgement['title'],
+            "lodgement": self.lodgement.title,
             "part": self.part.shortname,
         }
         return [msg], params
@@ -2056,16 +2053,16 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
     def regular_inhabitant_stats_format(self) -> ViolationFormat | None:
         ret = ViolationFormat()
         if (
-            self.lodgement['regular_capacity'] is not None
-            and self.num_regular > self.lodgement['regular_capacity']
+            self.lodgement.regular_capacity is not None
+            and self.num_regular > self.lodgement.regular_capacity
         ):
             ret += ViolationFormat(
                 html_classes=["lodgement-too-many"],
                 titles=[n_("Overfull lodgement.")],
             )
         if (
-            self.lodgement['regular_capacity'] is not None
-            and 0 < self.num_regular < self.lodgement['regular_capacity']
+            self.lodgement.regular_capacity is not None
+            and 0 < self.num_regular < self.lodgement.regular_capacity
         ):
             ret += ViolationFormat(
                 html_classes=["lodgement-too-few"],
@@ -2077,16 +2074,16 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
     def camping_mat_inhabitant_stats_format(self) -> ViolationFormat | None:
         ret = ViolationFormat()
         if (
-            self.lodgement['camping_mat_capacity'] is not None
-            and self.num_camping_mat > self.lodgement['camping_mat_capacity']
+            self.lodgement.camping_mat_capacity is not None
+            and self.num_camping_mat > self.lodgement.camping_mat_capacity
         ):
             ret += ViolationFormat(
                 html_classes=["lodgement-too-many"],
                 titles=[n_("Too many camping mats.")],
             )
         if (
-            self.lodgement['camping_mat_capacity'] is not None
-            and 0 < self.num_camping_mat < self.lodgement['camping_mat_capacity']
+            self.lodgement.camping_mat_capacity is not None
+            and 0 < self.num_camping_mat < self.lodgement.camping_mat_capacity
         ):
             ret += ViolationFormat(
                 html_classes=["lodgement-too-few"],
@@ -2111,7 +2108,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement['id']][part.id]
+        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
         non_mixing_regs = [
             reg for reg in inhabitants.all
             if not reg['mixed_lodging']
@@ -2146,7 +2143,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
             msg = n_("%(lodgement)s is mixed with non-mixing inhabitants in %(part)s.")
 
         params = {
-            "lodgement": self.lodgement['title'],
+            "lodgement": self.lodgement.title,
             "part": self.part.shortname,
         }
         return [msg], params
