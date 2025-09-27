@@ -144,6 +144,8 @@ EXPOSE 443
 # mount the code here
 WORKDIR /cdedb2
 
+RUN mkdir .venv
+
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
