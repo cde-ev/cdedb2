@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 COPY ./doc/source/motd-container.txt /etc/motd.txt
 
-RUN cp /root/.local/bin/uv /root/.local/bin/uvx /sbin
-
 RUN echo 'eval "$(uv generate-shell-completion bash)"' >> /home/cdedb/.bashrc && \
     echo 'eval "$(uv generate-shell-completion bash)"' >> /root/.bashrc && \
     echo 'eval "$(uvx --generate-shell-completion bash)"' >> /home/cdedb/.bashrc && \

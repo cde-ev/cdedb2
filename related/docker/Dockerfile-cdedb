@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     openssl \
     apache2 \
     python3 \
+    python3-pip \
     gunicorn \
     tzdata \
     \
@@ -46,6 +47,8 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 # Ensure the installed uv binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
+
+RUN cp /root/.local/bin/uv /root/.local/bin/uvx /sbin
 
 # install packages
 RUN uv pip install playwright==1.43.0 --system --break-system-packages
