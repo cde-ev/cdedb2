@@ -161,8 +161,6 @@ ruff:
 	@echo $(BANNERLINE)
 	@echo "All of ruff"
 	@echo $(BANNERLINE)
-	sudo mkdir .ruff_cache -p
-	sudo chown cdedb -R .ruff_cache
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
 	$(RUFF) check $(MAKE_LINT_TARGETS) --output-format=grouped
