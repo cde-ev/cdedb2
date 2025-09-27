@@ -38,7 +38,7 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= $(PYTHONBIN) -m ruff --config pyproject.toml
+RUFF ?= uv run ruff --config pyproject.toml
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
