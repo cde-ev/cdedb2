@@ -14,6 +14,7 @@ import gettext
 import html
 import io
 import json
+import logging
 import os
 import pathlib
 import re
@@ -647,9 +648,10 @@ class BrowserTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        # pass the cdedb config path to the subprocess
         cls.serverProcess = subprocess.Popen(
             ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
-            stderr=subprocess.DEVNULL)
+            stderr=subprocess.DEVNULL, env=os.environ.copy())
         for _ in range(42):
             try:
                 response = urllib.request.urlopen("http://localhost:5000/",
@@ -1135,14 +1137,12 @@ class FrontendTest(BackendTest):
         if response is None:
             response = self.response
         # record performance information during test runs
-        with open(
-                self.conf["LOG_DIR"] / "cdedb-timing.log", 'a', encoding="utf-8",
-        ) as f:
-            output = "{} {} {} {}\n".format(
+        logger = logging.getLogger("cdedb.timing")
+        msg = "{} {} {} {}".format(
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
                 response.request.query_string)
-            f.write(output)
+        logger.info(msg)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""

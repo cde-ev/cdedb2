@@ -17,7 +17,7 @@ from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import inspect_validation as inspect, verify_password
-from cdedb.common import User, n_, now, setup_logger
+from cdedb.common import User, n_, now
 from cdedb.common.exceptions import APITokenError
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles
@@ -49,13 +49,6 @@ class SessionBackend:
             secrets['API_TOKENS'][droid], secret
         )
 
-        setup_logger(
-            "cdedb.backend.session",
-            self.conf["LOG_DIR"] / "cdedb-backend-session.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"],
-        )
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
         # To prevent lots of serialization failures due to races for

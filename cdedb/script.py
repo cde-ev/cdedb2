@@ -27,7 +27,14 @@ import psycopg2.extras
 from cdedb.cli.util import fake_rs, redirect_to_file
 from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
-from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb.config import (
+    Config,
+    SecretsConfig,
+    get_configpath,
+    set_configpath,
+    start_freezing_new_configs,
+    stop_freezing_new_configs,
+)
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import AbstractFrontend, setup_translations
 from cdedb.frontend.paths import CDEDB_PATHS
@@ -63,8 +70,10 @@ class TempConfig:
         self._f: Optional[IO[str]] = None
 
     def __enter__(self) -> None:
+        # First, mark all new config instances as frozen
+        start_freezing_new_configs()
         # This also sets the config path to the default one if no config path is set.
-        self._real_configpath = get_configpath(fallback=True)
+        self._real_configpath = get_configpath()
         if self._config:
             secrets = SecretsConfig()
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8")
@@ -92,6 +101,8 @@ class TempConfig:
                  exc_tb: Optional[TracebackType]) -> Optional[bool]:
         # restore the real configpath
         set_configpath(self._real_configpath)
+        # last of all, stop marking new configs as frozen
+        stop_freezing_new_configs()
         if self._f:
             return self._f.__exit__(exc_type, exc_val, exc_tb)
         return False
