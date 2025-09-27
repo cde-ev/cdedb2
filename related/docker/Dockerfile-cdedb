@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     make \
     gettext \
     git \
+    curl \
+    ca-certificates \
     \
     openssl \
     apache2 \
@@ -36,45 +38,22 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-# install playwright dependencies (and pip)
-RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-pip \
-    \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libatomic1 \
-    libatspi2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libenchant-2-2 \
-    libgbm1 \
-    libgles2 \
-    libgstreamer-gl1.0-0 \
-    libharfbuzz-icu0 \
-    libhyphen0 \
-    libmanette-0.2-0 \
-    libnspr4 \
-    libnss3 \
-    libopengl0 \
-    libwayland-client0 \
-    libwoff1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    \
-    && rm -rf /var/lib/apt/lists/*
+# Download the uv installer
+ADD https://astral.sh/uv/0.8.22/install.sh /uv-installer.sh
 
-# install playwright
-# make sure to bump the playwright version in pyproject.toml
-RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1.43.0'
+# Run the uv installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed uv binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
+
+# install packages
+RUN uv pip install playwright==1.43.0 --system --break-system-packages
 
 # Retrieve browser engines, but only do so for root (which runs the tests in
 # the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
 # want to save some disk space.
-RUN /usr/local/bin/playwright install
+RUN uv run playwright install --with-deps
 # RUN sudo -u cdedb /usr/local/bin/playwright install
 
 # utilities and to install packages via pip, and package dependencies
@@ -84,7 +63,6 @@ RUN /usr/local/bin/playwright install
 # - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
 # - libsystemd-dev for systemd-python
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    wget \
     unzip \
     python3-dev \
     g++ \
@@ -97,14 +75,12 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/*
 
-# copy project configuration for pip
+# copy project configuration for uv
 COPY ./pyproject.toml /tmp/
 
 # install packages
 # since this works as a dev and CI container, install dev and ldap (for running tests) too
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
-                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"], *f["project"]["optional-dependencies"]["ldap"])')
+RUN uv pip install --system --break-system-packages -r /tmp/pyproject.toml --group /tmp/pyproject.toml:dev --group /tmp/pyproject.toml:ldap
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh

@@ -11,16 +11,25 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     pkg-config \
     \
     libsystemd-dev \
+    curl \
+    ca-certificates \
     \
     && rm -rf /var/lib/apt/lists/*
 
-# copy project configuration for pip
+# Download the latest uv installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the uv installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed uv binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
+
+# copy project configuration for uv
 COPY ./pyproject.toml /tmp/
 
 # install packages
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
-                      print(*f["project"]["optional-dependencies"]["ldap"])')
+RUN uv pip install --group /tmp/pyproject.toml:ldap --system --break-system-packages
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
