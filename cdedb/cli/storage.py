@@ -155,17 +155,6 @@ def populate_sample_event_keepers(conf: Config) -> None:
 
 
 @sanity_check
-def create_log(conf: Config) -> None:
-    """Create the directory structure of the log directory.
-
-    This will delete the whole content of the log directory, including all log files.
-    """
-    log_dir: pathlib.Path = conf["LOG_DIR"]
-
-    _recreate_directory(log_dir)
-
-
-@sanity_check
 def reset_config(conf: Config) -> tuple[Config, SecretsConfig]:
     """Replace the current config file with the sample config."""
     sample_config_path: pathlib.Path = (

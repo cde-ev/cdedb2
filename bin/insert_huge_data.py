@@ -12,6 +12,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.ml
 from cdedb.backend.event import EventBackend
+from cdedb.common import now
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
 
@@ -19,9 +20,9 @@ from cdedb.uncommon.submanshim import SubscriptionAction
 def output_counters(context: argparse.Namespace, prefix: str = "",
                     final: bool = False) -> None:
     if context.clock is not None:
-        now = datetime.datetime.now()
-        delta = now - context.clock
-        context.clock = now
+        now_ = now()
+        delta = now_ - context.clock
+        context.clock = now_
         print(prefix + f"Processed in {delta}")
     pprint.pprint(dict(context.counters))
 
@@ -112,7 +113,7 @@ def event(context: argparse.Namespace) -> int:
         'is_course_list_visible': True,
         'is_course_state_visible': True,
         'use_additional_questionnaire': True,
-        'registration_start': datetime.datetime(2000, 1, 1, 0, 0, 0),
+        'registration_start': datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
         'is_participant_list_visible': True,
         'is_course_assignment_visible': True,
         'is_cancelled': False,
@@ -231,6 +232,7 @@ def event(context: argparse.Namespace) -> int:
     event: EventBackend = context.script.make_backend('event', proxy=False)
     ret = event.create_event(rs, data)
     lodgement_groups = event.get_lodgement_groups(rs, ret)
+    alodgement = None
     for lg in lodgement_groups:
         for _ in range(1 if context.quick else 5):
             alodgement = event.create_lodgement(rs, ret, {
@@ -320,7 +322,7 @@ def assembly(context: argparse.Namespace) -> int:
                       for _ in range(1 if context.quick else 3)],
         'description': '',
         'notes': None,
-        'signup_end': datetime.datetime(2100, 1, 1, 0, 0, 0),
+        'signup_end': datetime.datetime(2100, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
         'title': make_counter(context, 'Mitgliederversammlung'),
         'shortname': make_counter(context, 'Versammlung'),
     })
@@ -330,11 +332,11 @@ def assembly(context: argparse.Namespace) -> int:
             'use_bar': True,
             'candidates': {
                 -1: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz'),},
+                     'shortname': make_counter(context, 'OptionKurz')},
                 -2: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz'),},
+                     'shortname': make_counter(context, 'OptionKurz')},
                 -3: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz'),},
+                     'shortname': make_counter(context, 'OptionKurz')},
             },
             'description': make_counter(context, 'Abstimmungstext'),
             'notes': None,
@@ -410,7 +412,7 @@ def mailinglist(context: argparse.Namespace) -> int:
 
 def create_everything(context: argparse.Namespace) -> None:
     if context.verbose:
-        context.clock = datetime.datetime.now()
+        context.clock = now()
         print(f"Started at {context.clock}")
         print(f" Creating personas:", end="")
     for idx in range(context.personas * context.factor):
@@ -429,7 +431,7 @@ def create_everything(context: argparse.Namespace) -> None:
         print()
         output_counters(context, "[event] ")
         print(f" Creating assemblies:", end="")
-    for _ in range(context.assemblies * context.factor):
+    for idx in range(context.assemblies * context.factor):
         if context.verbose:
             print(f" {idx}", end="")
         assembly(context)
@@ -448,7 +450,7 @@ def create_everything(context: argparse.Namespace) -> None:
     if context.verbose:
         print()
         output_counters(context, "[mailinglist] ", final=True)
-        print(f"Done in {datetime.datetime.now() - context.start}")
+        print(f"Done in {now() - context.start}")
 
 
 def perform(args: argparse.Namespace) -> None:
@@ -458,7 +460,7 @@ def perform(args: argparse.Namespace) -> None:
     args.script = script
     args.counters = collections.defaultdict(lambda: 0)
     args.clock = None
-    args.start = datetime.datetime.now()
+    args.start = now()
 
     with script:
         create_everything(args)

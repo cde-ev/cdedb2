@@ -132,56 +132,6 @@ class ComplaintBackend(AbstractBackend):
                 )
         return ret
 
-    @access("persona")
-    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
-        """List all monitors."""
-        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
-        return {e['persona_id'] for e in data}
-
-    @access("complaint_admin")
-    def add_monitor(self, rs: RequestState, persona_id: vtypes.ID) -> DefaultReturnCode:
-        """Add a new monitor."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id, is_archived=False):
-            raise ValueError(n_("This user does not exist or is archived."))
-
-        with Atomizer(rs):
-            if persona_id in self.list_monitors(rs):
-                return -1
-            ret = self.sql_insert(rs, "complaint.monitors", {'persona_id': persona_id})
-            if ret:
-                self.complaint_log(
-                    rs=rs,
-                    code=ComplaintLogCodes.monitor_added,
-                    case_id=None,
-                    persona_id=persona_id,
-                )
-        return ret
-
-    @access("complaint_admin")
-    def remove_monitor(
-        self, rs: RequestState, persona_id: vtypes.ID
-    ) -> DefaultReturnCode:
-        """Remove monitor privileges for a persona."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id, is_archived=False):
-            raise ValueError(n_("This user does not exist or is archived."))
-
-        with Atomizer(rs):
-            if persona_id not in self.list_monitors(rs):
-                return -1
-            ret = self.sql_delete(
-                rs, "complaint.monitors", {persona_id}, entity_key="persona_id"
-            )
-            if ret:
-                self.complaint_log(
-                    rs=rs,
-                    code=ComplaintLogCodes.monitor_removed,
-                    case_id=None,
-                    persona_id=persona_id,
-                )
-        return ret
-
     def complaint_log(
         self,
         *,
@@ -469,25 +419,19 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
 
-            entry_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntry,
-                    entry_data,
-                    creation=True,
-                    passthrough=True,
-                    entries=case.entries,
-                ),
+            entry_data = affirm(
+                models.ComplaintEntry,
+                entry_data,
+                creation=True,
+                passthrough=True,
+                entries=case.entries,
             )
-            version_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntryVersion,
-                    version_data,
-                    creation=True,
-                    passthrough=True,
-                    entry_type=entry_data['entry_type'],
-                ),
+            version_data = affirm(
+                models.ComplaintEntryVersion,
+                version_data,
+                creation=True,
+                passthrough=True,
+                entry_type=entry_data['entry_type'],
             )
 
             entry_data["case_id"] = case_id
@@ -508,15 +452,12 @@ class ComplaintBackend(AbstractBackend):
         """Add a new version of an existing complaint entry."""
         entry_id = affirm(vtypes.ID, entry_id)
         entry = self.get_case(rs, self._get_case_id(rs, entry_id)).entries[entry_id]
-        data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                data,
-                creation=False,
-                passthrough=True,
-                entry_type=entry.entry_type,
-            ),
+        data = affirm(
+            models.ComplaintEntryVersion,
+            data,
+            creation=False,
+            passthrough=True,
+            entry_type=entry.entry_type,
         )
         dreason = affirm_optional(str, dreason)
 
@@ -563,15 +504,12 @@ class ComplaintBackend(AbstractBackend):
 
         revocation_type = const.ComplaintEntryType.revocation_explanation
 
-        version_data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                version_data,
-                creation=True,
-                passthrough=True,
-                entry_type=revocation_type,
-            ),
+        version_data = affirm(
+            models.ComplaintEntryVersion,
+            version_data,
+            creation=True,
+            passthrough=True,
+            entry_type=revocation_type,
         )
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)

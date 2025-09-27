@@ -159,13 +159,6 @@ systemctl start pgbouncer
 sudo -u cdedb make sample-data
 
 echo ""
-echo "Create central directory for log files..."
-echo "--------------------------------------------"
-
-# Create the log directory. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data log create
-
-echo ""
 echo "Setting up ldap..."
 echo "--------------------------------------------"
 # copy the systemd service file to the right place
@@ -224,6 +217,8 @@ cp /media/cdrom0/fail2ban-filter-cdedb-sessionkey.conf \
    /etc/fail2ban/filter.d/cdedb-sessionkey.conf
 cp /media/cdrom0/fail2ban-filter-cdedb-apitoken.conf \
    /etc/fail2ban/filter.d/cdedb-apitoken.conf
+cp /media/cdrom0/fail2ban-filter-cdedb-contact.conf \
+   /etc/fail2ban/filter.d/cdedb-contact.conf
 cp /media/cdrom0/jail.local /etc/fail2ban/
 
 # dPROD VMWare adjustments not applicable

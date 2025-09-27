@@ -39,7 +39,6 @@ from cdedb.common import (
     Role,
     diacritic_patterns,
     make_proxy,
-    setup_logger,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -171,18 +170,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     def __init__(self) -> None:
         self.conf = Config()
         # initialize logging
-        setup_logger(
-            "cdedb.backend",
-            self.conf["LOG_DIR"] / "cdedb-backend.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        setup_logger(
-            f"cdedb.backend.{self.realm}",
-            self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
         self.logger.debug(
@@ -615,6 +602,7 @@ def affirm_validation(
     assertion: type[CdEDataclass], value: Any, **kwargs: Any
 ) -> CdEDBObject: ...
 
+
 @overload
 def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
 
@@ -629,10 +617,7 @@ def affirm_validation(
     Therefore, the frontend has to handle ValidationWarnings properly, while the backend
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
-    return cast(
-        T | CdEDBObject,
-        validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
-    )
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
 @overload

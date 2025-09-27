@@ -796,7 +796,7 @@ class TestAssemblyBackend(BackendTest):
             assembly_data = {
                 'description': None,
                 'notes': None,
-                'signup_end': datetime.datetime(2222, 2, 22),
+                'signup_end': datetime.datetime(2222, 2, 22, tzinfo=datetime.timezone.utc),
                 'title': "MGV 2222",
                 'shortname': "mgv2222",
             }

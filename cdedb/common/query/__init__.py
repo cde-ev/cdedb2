@@ -17,7 +17,7 @@ import enum
 import itertools
 import re
 from collections.abc import Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 from typing_extensions import TypeAlias
 
@@ -26,14 +26,14 @@ from cdedb.common import CdEDBObject, RequestState, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import LOCALE, xsorted
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models
 
 
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
@@ -251,12 +251,6 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
 QueryConstraint = tuple[str, QueryOperators, Any]
-
-
-class QueryConstraintType(NamedTuple):
-    field: str
-    op: QueryOperators
-    value: Any
 
 
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
