@@ -817,7 +817,7 @@
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
-                               readonly=readonly, horizontal=horizontal, small=small) }}
+                               readonly=readonly, horizontal=horizontal, small=small, outerclass="alert alert-warning") }}
     {% endif %}
     <div class="form-group mosp {{ outerclass }}">
         <div{% if horizontal %} class="
