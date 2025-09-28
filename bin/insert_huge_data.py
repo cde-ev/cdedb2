@@ -235,9 +235,8 @@ def event(context: argparse.Namespace) -> int:
     alodgement = None
     for lg in lodgement_groups:
         for _ in range(1 if context.quick else 5):
-            alodgement = event.create_lodgement(rs, {
+            alodgement = event.create_lodgement(rs, ret, {
                 'regular_capacity': 42,
-                'event_id': ret,
                 'title': make_counter(context, 'Unterkunft'),
                 'camping_mat_capacity': 11,
                 'notes': '',

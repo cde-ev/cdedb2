@@ -32,6 +32,7 @@ dependencies = [
     "sphinx==5.3.0",
     "sphinx-rtd-theme==1.2.0",
     "subman==0.1.1",
+    "systemd-python==235",
     "tabulate==0.8.9",
     "webtest==3.0.6",
     "werkzeug==2.2.2",
@@ -64,6 +65,7 @@ ldap = [
     "psycopg[binary]==3.1.7",
     "psycopg-pool==3.1.5",
     "subman==0.1.1",
+    "systemd-python==235",
 ]
 
 [tool.setuptools]
@@ -158,6 +160,7 @@ local_partial_types = true
 module = [
     # general
     "icu",
+    "systemd.*",
     # ldap
     "ldaptor.*",
     # frontend

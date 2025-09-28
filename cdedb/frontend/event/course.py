@@ -310,7 +310,9 @@ class EventCourseMixin(EventBaseFrontend):
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
-        field_values = event_associated_fields_to_request(rs.ambience['course'])
+        field_values = event_associated_fields_to_request(
+            rs.ambience['event'], rs.ambience['course']
+        )
         segment_values = [
             {
                 f"segment{track_id}": True,

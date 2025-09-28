@@ -1278,9 +1278,9 @@ etc;anything else""", f['entries_2'].value)
         f['field_id'] = 1001
         self.submit(f)
         f = self.response.forms['fieldform']
-        f['input1'] = "Example Text"
-        f['input2'] = ""
-        f['input3'] = "Other Text"
+        f['fields.CapitalLetters1'] = "Example Text"
+        f['fields.CapitalLetters2'] = ""
+        f['fields.CapitalLetters3'] = "Other Text"
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Anton")
@@ -3955,8 +3955,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld transportation setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("pedes", f['input2'].value)
-        f['input2'] = "etc"
+        self.assertEqual("pedes", f['fields.transportation2'].value)
+        f['fields.transportation2'] = "etc"
         f['change_note'] = "We need to fill missing entries…"
         self.submit(f)
         self.traverse({'href': '/event/event/1/field/setselect'})
@@ -3966,9 +3966,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld transportation setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("etc", f['input2'].value)
+        self.assertEqual("etc", f['fields.transportation2'].value)
         # Value of Inga should not have changed
-        self.assertEqual("etc", f['input4'].value)
+        self.assertEqual("etc", f['fields.transportation4'].value)
 
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})
@@ -3978,8 +3978,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("", f['input4'].value)
-        f['input4'] = "Test\nmit\n\nLeerzeilen"
+        self.assertEqual("", f['fields.lodge4'].value)
+        f['fields.lodge4'] = "Test\nmit\n\nLeerzeilen"
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})
@@ -3989,7 +3989,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("Test\nmit\n\nLeerzeilen", f['input4'].value)
+        self.assertEqual("Test\nmit\n\nLeerzeilen", f['fields.lodge4'].value)
 
         # now, we perform some basic checks for course-associated fields
         self.traverse({'href': '/event/event/1/course/stats'},
@@ -4003,8 +4003,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld room setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("Nirwana", f['input5'].value)
-        f['input5'] = "Ganz wo anders!"
+        self.assertEqual("Nirwana", f['fields.room5'].value)
+        f['fields.room5'] = "Ganz wo anders!"
         self.submit(f)
         self.assertNonPresence("Nirwana")
         self.assertPresence("Ganz wo anders!")
@@ -4021,8 +4021,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld contamination setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("high", f['input1'].value)
-        f['input1'] = "medium"
+        self.assertEqual("high", f['fields.contamination1'].value)
+        f['fields.contamination1'] = "medium"
         self.submit(f)
         self.assertPresence("elevated level of radiation ")
 

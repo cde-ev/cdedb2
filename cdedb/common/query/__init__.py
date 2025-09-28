@@ -26,14 +26,14 @@ from cdedb.common import CdEDBObject, RequestState, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import LOCALE, xsorted
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models
 
 
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
