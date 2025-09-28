@@ -12,16 +12,14 @@ import enum
 import itertools
 from typing import cast
 
+import cdedb.enums
 from cdedb.common.n_ import n_
+from cdedb.common.validation.data import COUNTRY_CODES
+from cdedb.models.event_constraint_violations import ConstraintViolation
 from cdedb.uncommon.intenum import CdEEnumMeta
 
 
 def main() -> None:
-    # ruff: noqa: PLC0415
-    import cdedb.enums
-    from cdedb.common.validation.data import COUNTRY_CODES
-    from cdedb.models.event_constraint_violations import ConstraintViolation
-
     enum_strings = []
     base_cls: type[enum.Enum]
     for base_cls in cast(list[type[enum.Enum]], CdEEnumMeta.__subclasses__()):
