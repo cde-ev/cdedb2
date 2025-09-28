@@ -106,6 +106,7 @@ dependencies = [
     { name = "sphinx" },
     { name = "sphinx-rtd-theme" },
     { name = "subman" },
+    { name = "systemd-python" },
     { name = "tabulate" },
     { name = "webtest" },
     { name = "werkzeug" },
@@ -132,6 +133,7 @@ ldap = [
     { name = "psycopg", extra = ["binary"] },
     { name = "psycopg-pool" },
     { name = "subman" },
+    { name = "systemd-python" },
 ]
 playwright = [
     { name = "playwright" },
@@ -169,6 +171,7 @@ requires-dist = [
     { name = "sphinx", specifier = "==5.3.0" },
     { name = "sphinx-rtd-theme", specifier = "==1.2.0" },
     { name = "subman", specifier = "==0.1.1" },
+    { name = "systemd-python", specifier = "==235" },
     { name = "tabulate", specifier = "==0.8.9" },
     { name = "webtest", specifier = "==3.0.6" },
     { name = "werkzeug", specifier = "==2.2.2" },
@@ -195,6 +198,7 @@ ldap = [
     { name = "psycopg", extras = ["binary"], specifier = "==3.1.7" },
     { name = "psycopg-pool", specifier = "==3.1.5" },
     { name = "subman", specifier = "==0.1.1" },
+    { name = "systemd-python", specifier = "==235" },
 ]
 playwright = [{ name = "playwright", specifier = "==1.43.0" }]
 
@@ -1168,6 +1172,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/41/e9/6cfe001400ce50e2c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/75/0368ebae479f3529c012eb8edf238ed8e78dfff51d08669e92e5f29b5eea/subman-0.1.1-py3-none-any.whl", hash = "sha256:0e83016a97120e718b573c33f816144671f7f2d2128292726ad96b3e7b7321e2", size = 23717, upload-time = "2023-11-22T00:52:20.203Z" },
 ]
+
+[[package]]
+name = "systemd-python"
+version = "235"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/9e/ab4458e00367223bda2dd7ccf0849a72235ee3e29b36dce732685d9b7ad9/systemd-python-235.tar.gz", hash = "sha256:4e57f39797fd5d9e2d22b8806a252d7c0106c936039d1e71c8c6b8008e695c0a", size = 61677, upload-time = "2023-02-11T13:42:16.588Z" }
 
 [[package]]
 name = "tabulate"
