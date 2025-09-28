@@ -187,10 +187,10 @@ class TestCommon(BasicTest):
             shutil.copytree(i18n_path, tmppath)
             outpath = pathlib.Path(tempdir, "i18n-output")
             outpath.mkdir()
-            subprocess.run(["make", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
-                            f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
-                           check=True, capture_output=True)
             try:
+                subprocess.run(["make", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
+                                f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
+                               check=True, capture_output=True)
                 result = subprocess.run(
                     ["make", "-B", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                      f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
