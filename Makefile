@@ -128,8 +128,12 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
+.venv/bin/python:
+	uv venv --clear
+	git restore .venv/.empty_dir
+
 .PHONY: format
-format:
+format: .venv/bin/python
 	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
 	$(RUFF) format $(MAKE_FORMAT_TARGETS)
 
@@ -138,7 +142,7 @@ autoformat: format
 	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
 
 .PHONY: format-diff
-format-diff:
+format-diff: .venv/bin/python
 	$(ISORT) $(MAKE_ISORT_TARGETS) --diff
 	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
@@ -149,7 +153,7 @@ mypy:
 BANNERLINE := "================================================================================"
 
 .PHONY: isort
-isort:
+isort: .venv/bin/python
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
@@ -157,7 +161,7 @@ isort:
 	@echo ""
 
 .PHONY: ruff
-ruff:
+ruff: .venv/bin/python
 	@echo $(BANNERLINE)
 	@echo "All of ruff"
 	@echo $(BANNERLINE)
@@ -172,7 +176,7 @@ endif
 	@echo ""
 
 .PHONY: ruff-fix
-ruff-fix:
+ruff-fix: .venv/bin/python
 	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
 
 .PHONY: template-line-length
