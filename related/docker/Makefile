@@ -25,7 +25,7 @@ start:
 
 .PHONY: shell
 #: Open shell in development environment.
-shell:
+shell: start
 	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml exec -u cdedb app bash
 
 .PHONY: psql
@@ -50,5 +50,5 @@ start-runtime:
 
 .PHONY: shell-runtime
 #: Open shell in runtime environment.
-shell-runtime:
+shell-runtime: start-runtime
 	$(DOCKER-COMPOSE) --file docker-compose-run.yaml exec -u cdedb app bash
