@@ -65,6 +65,8 @@ I18NOUTDIR = ./i18n-output
 # Available languages, by default detected as subdirectories of the translation targets.
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
+UV_PROJECT_ENVIRONMENT ?= .venv
+
 ###########
 # General #
 ###########
@@ -129,11 +131,11 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
-.venv/bin/python:
-	uv venv --clear
+$(UV_PROJECT_ENVIRONMENT)/bin/python:
+	uv venv
 
 .PHONY: venv
-venv: .venv/bin/python
+venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
 
 .PHONY: format
 format: venv
