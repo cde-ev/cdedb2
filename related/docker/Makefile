@@ -21,7 +21,7 @@ clean:
 .PHONY: start
 #: Start up the development environment.
 start:
-	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up -d
 
 .PHONY: shell
 #: Open shell in development environment.
@@ -46,10 +46,9 @@ clean-runtime:
 .PHONY: start-runtime
 #: Start up the runtime environment.
 start-runtime:
-	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up -d
 
 .PHONY: shell-runtime
 #: Open shell in runtime environment.
 shell-runtime:
 	$(DOCKER-COMPOSE) --file docker-compose-run.yaml exec -u cdedb app bash
-
