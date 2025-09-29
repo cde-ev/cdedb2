@@ -35,7 +35,7 @@ def setup_root_logger() -> None:
         else:
             handler = logging.StreamHandler(sys.stdout)
     formatstr = (
-        "[{asctime}]" if is_container else ""
+        ("[{asctime}]" if is_container else "") +
         " [{name}]"
         " [{levelname}]"
         " [{funcName} in {pathname} line {lineno}]"
