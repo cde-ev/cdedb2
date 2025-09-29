@@ -42,7 +42,7 @@ UV ?= uv
 RUFF ?= $(UV) run ruff --config pyproject.toml
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
-MYPY ?= $(UV) run mypy
+MYPY ?= $(UV) run --all-groups mypy
 
 include .ruff_targets
 
