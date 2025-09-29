@@ -56,11 +56,8 @@ from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     PERSONA_ALL_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS,
     PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    PERSONA_ML_FIELDS,
     PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
 )
@@ -2097,7 +2094,11 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         event_id = affirm_optional(vtypes.ID, event_id) or 0
-        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
+        persona_data = self.query_all(
+            rs, *models.EventPersona.get_select_query(persona_ids)
+        )
+        data_ = models.EventPersona.many_from_database(persona_data)
+        ret = {k: v.as_dict() for k, v in data_.items()}
         if (persona_ids != {rs.user.persona_id}
                 and not (rs.user.roles & {"event_admin", "cde_admin",
                                           "complaint_admin", "core_admin"}
@@ -2128,8 +2129,6 @@ class CoreBaseBackend(AbstractBackend):
                 )
             ):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
-        if any(not e['is_event_realm'] for e in ret.values()):
-            raise RuntimeError(n_("Not an event user."))
         return ret
 
     class _GetEventUserProtocol(Protocol):
@@ -2236,9 +2235,11 @@ class CoreBaseBackend(AbstractBackend):
         with Atomizer(rs):
             if self.check_quota(rs, ids=persona_ids):
                 raise QuotaException(n_("Too many queries."))
-            ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_CDE_FIELDS)
-            if any(not e['is_cde_realm'] for e in ret.values()):
-                raise RuntimeError(n_("Not a CdE user."))
+            persona_data = self.query_all(
+                rs, *models.CdEPersona.get_select_query(persona_ids)
+            )
+            data = models.CdEPersona.many_from_database(persona_data)
+            ret = {k: v.as_dict() for k, v in data.items()}
             if (not {"cde_admin", "core_admin"} & rs.user.roles
                     and ("searchable" not in rs.user.roles
                          and any((e['id'] != rs.user.persona_id
@@ -2255,10 +2256,11 @@ class CoreBaseBackend(AbstractBackend):
                      ) -> CdEDBObjectMap:
         """Get an ml view on some data sets."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ML_FIELDS)
-        if any(not e['is_ml_realm'] for e in ret.values()):
-            raise RuntimeError(n_("Not an ml user."))
-        return ret
+        persona_data = self.query_all(
+            rs, *models.MlPersona.get_select_query(persona_ids)
+        )
+        data = models.MlPersona.many_from_database(persona_data)
+        return {k: v.as_dict() for k, v in data.items()}
     get_ml_user: _GetPersonaProtocol = singularize(
         get_ml_users, "persona_ids", "persona_id")
 
@@ -2267,10 +2269,11 @@ class CoreBaseBackend(AbstractBackend):
                            ) -> CdEDBObjectMap:
         """Get an assembly view on some data sets."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_ASSEMBLY_FIELDS)
-        if any(not e['is_assembly_realm'] for e in ret.values()):
-            raise RuntimeError(n_("Not an assembly user."))
-        return ret
+        persona_data = self.query_all(
+            rs, *models.AssemblyPersona.get_select_query(persona_ids)
+        )
+        data = models.AssemblyPersona.many_from_database(persona_data)
+        return {k: v.as_dict() for k, v in data.items()}
     get_assembly_user: _GetPersonaProtocol = singularize(
         get_assembly_users, "persona_ids", "persona_id")
 
