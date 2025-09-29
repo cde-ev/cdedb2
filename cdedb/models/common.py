@@ -293,6 +293,7 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
+            field.type = cast(type[Any], field.type)
             if (state := cls._is_validation_field_mandatory(field, creation=creation)):
                 mandatory[field.name] = field.type
             elif state is None:
@@ -304,7 +305,7 @@ class CdEDataclass:
     @classmethod
     def _is_validation_field_mandatory(
             cls,
-            field: dataclasses.Field,
+            field: dataclasses.Field[Any],
             creation: bool
         ) -> bool | None:
         """Uninlined code to determine a fields validation status.
@@ -314,7 +315,6 @@ class CdEDataclass:
         """
         if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):
             return None
-        field.type = cast(type[Any], field.type)
         if creation:
             if MetaFlag.validate_creation_exclude.in_field(field):
                 return None
@@ -329,7 +329,7 @@ class CdEDataclass:
                 return False
             else:
                 return True
-        else:
+        else:  # noqa: PLR5501
             if MetaFlag.validate_update_exclude.in_field(field):
                 return None
             elif MetaFlag.validate_update_mandatory.in_field(field):

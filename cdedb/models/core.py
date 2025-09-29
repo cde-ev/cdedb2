@@ -409,7 +409,7 @@ class GenesisCase(CdEDataclass):
     @classmethod
     def _is_validation_field_mandatory(
             cls,
-            field: dataclasses.Field,
+            field: dataclasses.Field[Any],
             creation: bool
         ) -> bool | None:
         if creation:
