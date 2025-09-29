@@ -21,11 +21,12 @@ clean:
 .PHONY: start
 #: Start up the development environment.
 start:
-	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up -d
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up
 
 .PHONY: shell
 #: Open shell in development environment.
-shell: start
+shell:
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up -d
 	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml exec -u cdedb app bash
 
 .PHONY: psql
@@ -46,9 +47,10 @@ clean-runtime:
 .PHONY: start-runtime
 #: Start up the runtime environment.
 start-runtime:
-	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up -d
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up
 
 .PHONY: shell-runtime
 #: Open shell in runtime environment.
-shell-runtime: start-runtime
+shell-runtime:
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up -d
 	$(DOCKER-COMPOSE) --file docker-compose-run.yaml exec -u cdedb app bash
