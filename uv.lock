@@ -160,7 +160,7 @@ requires-dist = [
     { name = "phonenumbers", specifier = "==8.12.57" },
     { name = "pillow", specifier = "==9.4.0" },
     { name = "psycopg2-binary", specifier = "==2.9.5" },
-    { name = "pyicu", specifier = ">=2.15.3" },
+    { name = "pyicu", specifier = "==2.10.2" },
     { name = "pyparsing", specifier = "==3.0.9" },
     { name = "python-dateutil", specifier = "==2.8.2" },
     { name = "python-magic", specifier = "==0.4.26" },
@@ -918,9 +918,9 @@ wheels = [
 
 [[package]]
 name = "pyicu"
-version = "2.15.3"
+version = "2.10.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/88/b0/c8b61bac55424e2ff80e20d7251c3f002baff3c07c34cee3849e3505d8f5/pyicu-2.15.3.tar.gz", hash = "sha256:f32e78e1cb64d0aeb14f027e037a8944861d3114548818a6adf0081ef51aefc3", size = 267569, upload-time = "2025-09-15T20:58:50.936Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/00/a531e119a97e54601f616f5061879ec2d4bb058d225014f9acf94b2970c3/PyICU-2.10.2.tar.gz", hash = "sha256:0c3309eea7fab6857507ace62403515b60fe096cbfb4f90d14f55ff75c5441c1", size = 255558, upload-time = "2022-10-25T17:56:26.806Z" }
 
 [[package]]
 name = "pyopenssl"
