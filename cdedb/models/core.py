@@ -203,37 +203,14 @@ class AnonymousMessageData(CdEDataclass):
 
 class PersonaFlag(AbstractFlag):
     """Flags to store special metadata of Persona dataclasses."""
+    # Raise an error if this flag is not true during instantiation
+    mandatory_true_flag = auto()
     # This field is exposed for external account creation.
     genesis_exposed = auto()
 
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(CdEDataclass):
-    username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
-    # This does not include the ``password_hash`` for security reasons.
-
-    # status flags
-    is_active: bool = True
-    is_meta_admin: bool = False
-    is_core_admin: bool = False
-    is_cde_admin: bool = False
-    is_finance_admin: bool = False
-    is_event_admin: bool = False
-    is_ml_admin: bool = False
-    is_assembly_admin: bool = False
-    is_complaint_admin: bool = False
-    is_cde_realm: bool = False
-    is_event_realm: bool = False
-    is_ml_realm: bool = False
-    is_assembly_realm: bool = False
-    is_cdelokal_admin: bool = False
-    is_auditor: bool = False
-    is_member: bool = False
-    is_searchable: bool = False
-    is_archived: bool = False
-    is_purged: bool = False
-
+class PersonaName(CdEDataclass):
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
@@ -242,8 +219,28 @@ class Persona(CdEDataclass):
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
+
+@dataclasses.dataclass(kw_only=True)
+class Persona(PersonaName):
+    database_table: ClassVar[str] = "core.personas"
+
+    username: vtypes.Email = dataclasses.field(
+        metadata=PersonaFlag.genesis_exposed.as_dict)
+    # This does not include the ``password_hash`` for security reasons.
+
+    # status flags
+    is_active: bool = True
+    is_archived: bool = False
+    is_purged: bool = False
+
     # admin notes
     notes: str | None = None
+
+    def __post_init__(self) -> None:
+        for field in dataclasses.fields(self):
+            if PersonaFlag.mandatory_true_flag.in_field(field):
+                if not getattr(self, field.name):
+                    raise RuntimeError
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
@@ -252,11 +249,29 @@ class Persona(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class MlPersona(Persona):
-    ...
+    is_ml_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_ml_admin: bool = False
+    is_cdelokal_admin: bool = False
+
+
+@dataclasses.dataclass(kw_only=True)
+class AssemblyPersona(MlPersona):
+    is_assembly_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_assembly_admin: bool = False
 
 
 @dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
+    is_event_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
     gender: const.Genders = dataclasses.field(
         metadata=PersonaFlag.genesis_exposed.as_dict)
     birthday: vtypes.Birthday = dataclasses.field(
@@ -286,7 +301,19 @@ class EventPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
-class CdEPersona(EventPersona):
+class CdEPersona(AssemblyPersona, EventPersona):
+    is_cde_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_member: bool = False
+    is_searchable: bool = False
+
+    is_cde_admin: bool = False
+    is_core_admin: bool = False
+    is_meta_admin: bool = False
+    is_finance_admin: bool = False
+    is_auditor: bool = False
+
     show_address: bool = True
     show_address2: bool = True
     address_supplement2: str | None = None
@@ -453,14 +480,13 @@ class GenesisCaseMl(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> MlPersona:
-        persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        return persona
+        return copy.deepcopy(self.persona)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -472,15 +498,13 @@ class GenesisCaseEvent(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
-        persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        persona.is_event_realm = True
-        return persona
+        return copy.deepcopy(self.persona)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -493,16 +517,14 @@ class GenesisCaseCdE(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
+        persona_data["is_assembly_realm"] = persona_data["is_cde_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
         persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        persona.is_event_realm = True
-        persona.is_assembly_realm = True
-        persona.is_cde_realm = True
         persona.is_member = True
         persona.trial_member = True
         return persona
