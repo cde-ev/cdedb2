@@ -51,7 +51,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 RUN cp /root/.local/bin/uv /root/.local/bin/uvx /sbin
 
 # install packages
-RUN uv pip install playwright==1.43.0 --system --break-system-packages
+RUN uv pip install playwright==1.53.0 --system --break-system-packages
 
 # Retrieve browser engines, but only do so for root (which runs the tests in
 # the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
