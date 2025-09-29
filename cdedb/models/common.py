@@ -293,32 +293,49 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
-            if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):
+            if (state := cls._is_validation_field_mandatory(field, creation=creation)):
+                mandatory[field.name] = field.type
+            elif state is None:
                 continue
-            field.type = cast(type[Any], field.type)
-            if creation:
-                if MetaFlag.validate_creation_exclude.in_field(field):
-                    continue
-                if MetaFlag.validate_creation_optional.in_field(field):
-                    optional[field.name] = field.type
-                    continue
-                if (
-                        is_optional_type(field.type)
-                        # Fields with a default are optional at creation.
-                        or field.default is not dataclasses.MISSING
-                        or field.default_factory is not dataclasses.MISSING
-                ):
-                    optional[field.name] = field.type
-                else:
-                    mandatory[field.name] = field.type
             else:
-                if MetaFlag.validate_update_exclude.in_field(field):
-                    continue
-                if MetaFlag.validate_update_mandatory.in_field(field):
-                    mandatory[field.name] = field.type
-                else:
-                    optional[field.name] = field.type
+                optional[field.name] = field.type
         return mandatory, optional
+
+    @classmethod
+    def _is_validation_field_mandatory(
+            cls,
+            field: dataclasses.Field,
+            creation: bool
+        ) -> bool | None:
+        """Uninlined code to determine a fields validation status.
+
+        Returns 'true' if the field is mandatory, 'false' if the field is optional,
+        and 'None' if the field is excluded from validation.
+        """
+        if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):
+            return None
+        field.type = cast(type[Any], field.type)
+        if creation:
+            if MetaFlag.validate_creation_exclude.in_field(field):
+                return None
+            elif MetaFlag.validate_creation_optional.in_field(field):
+                return False
+            elif (
+                    is_optional_type(field.type)
+                    # Fields with a default are optional at creation.
+                    or field.default is not dataclasses.MISSING
+                    or field.default_factory is not dataclasses.MISSING
+            ):
+                return False
+            else:
+                return True
+        else:
+            if MetaFlag.validate_update_exclude.in_field(field):
+                return None
+            elif MetaFlag.validate_update_mandatory.in_field(field):
+                return True
+            else:
+                return False
 
     def _to_validation(self) -> CdEDBObject:
         """Generate a dict representation of this entity to be validated."""
