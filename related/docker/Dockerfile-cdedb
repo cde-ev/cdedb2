@@ -79,11 +79,11 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # copy project configuration for uv
-COPY ./pyproject.toml /tmp/
+COPY ./pyproject.toml /cdedb2/
 
 # install packages
 # since this works as a dev and CI container, install dev and ldap (for running tests) too
-RUN uv pip install --system --break-system-packages -r /tmp/pyproject.toml --group /tmp/pyproject.toml:dev --group /tmp/pyproject.toml:ldap
+RUN cd /cdedb2 && uv pip install --system --break-system-packages -r /cdedb2/pyproject.toml --group dev --group ldap
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
@@ -141,10 +141,12 @@ VOLUME /var/lib/cdedb
 
 EXPOSE 443
 
+ADD . /cdedb2
+
 # mount the code here
 WORKDIR /cdedb2
 
-RUN mkdir .venv
+RUN uv sync --all-groups
 
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
