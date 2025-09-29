@@ -61,6 +61,8 @@ echo "--------------------------------------------"
 # we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
 
 # move the defaultconfig to the right place
+mkdir /etc/cdedb
+cp /media/cdrom0/localconfig.py /etc/cdedb/config.py
 install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
 chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
