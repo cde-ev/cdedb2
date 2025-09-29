@@ -132,7 +132,7 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 ###################
 
 $(UV_PROJECT_ENVIRONMENT)/bin/python:
-	uv venv
+	$(UV) venv
 
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
