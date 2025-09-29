@@ -205,8 +205,10 @@ class PersonaFlag(AbstractFlag):
     """Flags to store special metadata of Persona dataclasses."""
     # Raise an error if this flag is not true during instantiation
     mandatory_true_flag = auto()
-    # This field is exposed for external account creation.
-    genesis_exposed = auto()
+    # This field is mandatory during external account creation.
+    genesis_validate_creation_mandatory = auto()
+    # This field is optional during external account creation.
+    genesis_validate_creation_optional = auto()
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -214,8 +216,8 @@ class PersonaName(CdEDataclass):
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
-    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
-    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
+    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
@@ -225,7 +227,7 @@ class Persona(PersonaName):
     database_table: ClassVar[str] = "core.personas"
 
     username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     # This does not include the ``password_hash`` for security reasons.
 
     # status flags
@@ -273,28 +275,23 @@ class EventPersona(MlPersona):
     is_complaint_admin: bool = False
 
     gender: const.Genders = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     birthday: vtypes.Birthday = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     telephone: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     mobile: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     address_supplement: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
-    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
-    # its mandatory here.
-    address: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+    address: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     postal_code: vtypes.PrintableASCII | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
-    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
-    # its mandatory here.
-    location: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+    location: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     country: vtypes.Country | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
@@ -334,7 +331,7 @@ class CdEPersona(AssemblyPersona, EventPersona):
     foto: str | None = None
     paper_expuls: bool = True
     birth_name: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     donation: decimal.Decimal = decimal.Decimal()
     honorary_member: bool = False
 
@@ -387,7 +384,8 @@ class GenesisCase(CdEDataclass):
         if cls == GenesisCase:
             persona_class = CdEPersona
         persona_fields = [field for field in dataclasses.fields(persona_class)
-                          if PersonaFlag.genesis_exposed.in_field(field)]
+                          if PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
+                             or PersonaFlag.genesis_validate_creation_optional.in_field(field)]
         if only_persona:
             return tuple(persona_fields)
 
@@ -407,6 +405,19 @@ class GenesisCase(CdEDataclass):
             persona_fields = {field.name for field in cls.dataclass_fields(only_persona=True)}
             ret = [field for field in ret if field in persona_fields]
         return ret
+
+    @classmethod
+    def _is_validation_field_mandatory(
+            cls,
+            field: dataclasses.Field,
+            creation: bool
+        ) -> bool | None:
+        if creation:
+            if PersonaFlag.genesis_validate_creation_mandatory.in_field(field):
+                return True
+            if PersonaFlag.genesis_validate_creation_optional.in_field(field):
+                return False
+        return super()._is_validation_field_mandatory(field, creation)
 
     def get_sortkey(self) -> Sortkey:
         return (self.ctime, *self.persona.get_sortkey())
