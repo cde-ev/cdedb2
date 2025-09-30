@@ -415,12 +415,13 @@ class CoreGenesisBackend(CoreBaseBackend):
             data.pop("id")
             # TODO remove those after adjusting the validation of personas for dataclasses
             merge_dicts(data, PERSONA_DEFAULTS)
-            for admin_bit in ADMIN_KEYS:
+            for admin_bit in case.persona.get_admin_bits():
                 del data[admin_bit]
             del data["is_archived"]
             del data["is_purged"]
             if "balance" in data:
                 del data["balance"]
+            data["notes"] = None
             data = affirm(vtypes.Persona, data, creation=True)
             if case.status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))

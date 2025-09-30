@@ -125,12 +125,14 @@ class TestCoreBackend(BackendTest):
             if not persona_id:
                 break
 
+            status = self.core.get_persona(self.key, persona_id)
+
             # Validate ml data
             persona = self.core.get_ml_user(self.key, persona_id)
             affirm(vtypes.Persona, persona)
 
             # Validate event data if applicable
-            if not persona['is_event_realm']:
+            if not status['is_event_realm']:
                 continue
 
             persona = self.core.get_event_user(self.key, persona_id)
@@ -143,7 +145,7 @@ class TestCoreBackend(BackendTest):
                     "A birthday must be in the past. (birthday)", cm.exception.args)
 
             # Validate cde/total data if applicable
-            if not persona['is_cde_realm']:
+            if not status['is_cde_realm']:
                 continue
 
             persona = self.core.get_total_persona(self.key, persona_id)
@@ -727,7 +729,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.EventPersona(id=None, **persona_data)  # type: ignore[arg-type]
+        expectation_persona = models.EventPersona(  # type: ignore[arg-type]
+            id=None, **persona_data, is_ml_realm=True, is_event_realm=True)
         case_data = {
             'realm': "event",
             'notes': "Some blah",
@@ -786,40 +789,9 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        expectation = {
-            k: v for k, v in expectation.persona.as_dict().items()
-            if k in PERSONA_EVENT_FIELDS}
-        expectation.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_member': False,
-            'is_ml_admin': False,
-            'is_purged': False,
-            'is_cdelokal_admin': False,
-            'is_complaint_admin': False,
-            'is_auditor': False,
-            'id': new_id,
-            'is_active': True,
-            'is_assembly_realm': False,
-            'is_cde_realm': False,
-            'is_event_realm': True,
-            'is_ml_realm': True,
-            'is_searchable': False,
-            'name_supplement': None,
-            'title': None,
-            'nickname': None,
-            'legal_given_names': None,
-            'show_legal_given_names': False,
-            'pronouns': None,
-            'pronouns_nametag': False,
-            'pronouns_profile': False,
-        })
-        self.assertEqual(expectation, value)
+        persona_expectation = expectation.persona.as_dict()
+        persona_expectation["id"] = new_id
+        self.assertEqual(persona_expectation, value)
 
     @as_users("anton")
     def test_genesis_ml(self) -> None:
@@ -828,7 +800,7 @@ class TestCoreBackend(BackendTest):
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
         }
-        expectation_persona = models.MlPersona(id=None, **persona_data)  # type: ignore[arg-type]
+        expectation_persona = models.MlPersona(id=None, **persona_data, is_ml_realm=True)  # type: ignore[arg-type]
         case_data = {
             'realm': "ml",
             'notes': "Some blah",
@@ -869,37 +841,9 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
-        expectation = {
-            k: v for k, v in expectation.persona.as_dict().items()
-            if k in PERSONA_ML_FIELDS}
-        expectation.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_member': False,
-            'is_ml_admin': False,
-            'is_purged': False,
-            'is_cdelokal_admin': False,
-            'is_complaint_admin': False,
-            'is_auditor': False,
-            'id': new_id,
-            'is_active': True,
-            'is_assembly_realm': False,
-            'is_cde_realm': False,
-            'is_event_realm': False,
-            'is_ml_realm': True,
-            'is_searchable': False,
-            'name_supplement': None,
-            'title': None,
-            'nickname': None,
-            'legal_given_names': None,
-            'show_legal_given_names': False,
-        })
-        self.assertEqual(expectation, value)
+        persona_expectation = expectation.persona.as_dict()
+        persona_expectation["id"] = new_id
+        self.assertEqual(persona_expectation, value)
 
     @storage
     @as_users("vera")
@@ -918,7 +862,9 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.CdEPersona(id=None, **persona_data)  # type: ignore[arg-type]
+        expectation_persona = models.CdEPersona(  # type: ignore[arg-type]
+            id=None, **persona_data, is_ml_realm=True, is_event_realm=True,
+            is_assembly_realm=True, is_cde_realm=True)
         case_data = {
             'realm': "cde",
             'notes': "Some blah",
@@ -963,62 +909,9 @@ class TestCoreBackend(BackendTest):
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        expectation = {
-            k: v for k, v in expectation.persona.as_dict().items()
-            if k in PERSONA_CDE_FIELDS}
-        expectation.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_member': True,
-            'is_ml_admin': False,
-            'is_purged': False,
-            'is_cdelokal_admin': False,
-            'is_complaint_admin': False,
-            'is_auditor': False,
-            'id': new_id,
-            'is_active': True,
-            'is_assembly_realm': True,
-            'is_cde_realm': True,
-            'is_event_realm': True,
-            'is_ml_realm': True,
-            'is_searchable': False,
-            'pronouns': None,
-            'pronouns_nametag': False,
-            'pronouns_profile': False,
-            'name_supplement': None,
-            'title': None,
-            'nickname': None,
-            'legal_given_names': None,
-            'balance': decimal.Decimal("0.00"),
-            'donation': decimal.Decimal("0.00"),
-            'trial_member': True,
-            'honorary_member': False,
-            'decided_search': False,
-            'bub_search': False,
-            'address2': None,
-            'address_supplement2': None,
-            'postal_code2': None,
-            'location2': None,
-            'country2': None,
-            'foto': None,
-            'affiliation': None,
-            'free_form': None,
-            'weblink': None,
-            'interests': None,
-            'specialisation': None,
-            'timeline': None,
-            'paper_expuls': True,
-            'show_address': True,
-            'show_address2': True,
-            'show_legal_given_names': False,
-        })
-        value = self.core.get_cde_user(self.key, new_id)
-        self.assertEqual(expectation, value)
+        persona_expectation = expectation.persona.as_dict()
+        persona_expectation["id"] = new_id
+        self.assertEqual(persona_expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
 
     @storage
@@ -1085,29 +978,29 @@ class TestCoreBackend(BackendTest):
             'title': 'Dr.',
             'id': 2,
             'is_active': True,
-            'is_meta_admin': False,
             'is_archived': False,
-            'is_assembly_admin': False,
+            'is_purged': False,
+            'username': 'berta@example.cde'}
+        # TODO check again after adjusting get_persona function
+        # self.assertEqual(expectation, self.core.get_persona(self.key, 2))
+        expectation.update({
+            'is_ml_realm': True,
+            'is_ml_admin': False,
+            'is_cdelokal_admin': False,
+        })
+        self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
+        expectation_assembly = expectation.copy()
+        expectation_assembly.update({
             'is_assembly_realm': True,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_cde_realm': True,
-            'is_core_admin': False,
+            'is_assembly_admin': False,
+        })
+        self.assertEqual(expectation_assembly, self.core.get_assembly_user(self.key, 2))
+        expectation_event = expectation.copy()
+        expectation_event.update({
             'is_event_admin': False,
             'is_event_realm': True,
-            'is_member': True,
-            'is_ml_admin': False,
-            'is_ml_realm': True,
-            'is_cdelokal_admin': False,
             'is_complaint_admin': False,
-            'is_auditor': False,
-            'is_purged': False,
-            'is_searchable': True,
-            'username': 'berta@example.cde'}
-        self.assertEqual(expectation, self.core.get_persona(self.key, 2))
-        self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
-        self.assertEqual(expectation, self.core.get_assembly_user(self.key, 2))
-        expectation.update({
+            'is_member': True,
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
@@ -1123,8 +1016,17 @@ class TestCoreBackend(BackendTest):
             'telephone': '+495432987654321',
             'title': 'Dr.',
             })
-        self.assertEqual(expectation, self.core.get_event_user(self.key, 2))
+        self.assertEqual(expectation_event, self.core.get_event_user(self.key, 2))
+        expectation.update({**expectation_event, **expectation_assembly})
         expectation.update({
+            'is_cde_realm': True,
+            'is_cde_admin': False,
+            'is_member': True,
+            'is_searchable': True,
+            'is_meta_admin': False,
+            'is_finance_admin': False,
+            'is_core_admin': False,
+            'is_auditor': False,
             'address2': 'Strange Road 9 3/4',
             'address_supplement2': None,
             'affiliation': 'Jedermann',
@@ -1154,6 +1056,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
+        self.fail("Reminder to check get_personas")
 
     @as_users("paul", "quintus")
     def test_archive(self) -> None:

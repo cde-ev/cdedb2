@@ -76,6 +76,7 @@ from cdedb.common.validation.validate import (
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
+from cdedb.models.core import EventPersona
 
 if TYPE_CHECKING:
     from cdedb.backend.event.registration import ComplexRegistrationFee
@@ -1588,7 +1589,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona = personas[registration['persona_id']]
             del registration['persona_id']
             persona['is_orga'] = persona['id'] in ret['event']['orgas']
-            for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
+            for attr in EventPersona.get_status_bits() - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
         del ret['event']['orgas']

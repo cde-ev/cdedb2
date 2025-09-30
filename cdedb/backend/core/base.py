@@ -2072,6 +2072,7 @@ class CoreBaseBackend(AbstractBackend):
                      ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
+        # TODO split this function in get_core_users and get_persona_status?
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
 
     class _GetPersonaProtocol(Protocol):

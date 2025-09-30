@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import functools
 import re
 from enum import auto
 from secrets import token_urlsafe
@@ -236,13 +237,32 @@ class Persona(PersonaName):
     is_purged: bool = False
 
     # admin notes
-    notes: str | None = None
+    # TODO how to ensure this is only available for admins?
+    notes: str | None = dataclasses.field(default=None, metadata=Meta.asdict_exclude.as_dict)
 
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
                 if not getattr(self, field.name):
                     raise RuntimeError
+
+    @classmethod
+    @functools.cache
+    def get_status_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_"):
+                ret.add(field.name)
+        return ret
+
+    @classmethod
+    @functools.cache
+    def get_admin_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_") and field.name.endswith("_admin"):
+                ret.add(field.name)
+        return ret
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
@@ -273,6 +293,8 @@ class EventPersona(MlPersona):
     )
     is_event_admin: bool = False
     is_complaint_admin: bool = False
+    # TODO this is currently exposed via partial export, should make a single effort to remove this
+    is_member : bool = False
 
     gender: const.Genders = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
