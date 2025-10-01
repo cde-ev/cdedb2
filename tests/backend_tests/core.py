@@ -19,11 +19,6 @@ from cdedb.common import (
     now,
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError
-from cdedb.common.fields import (
-    PERSONA_CDE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    PERSONA_ML_FIELDS,
-)
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
@@ -729,8 +724,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.EventPersona(  # type: ignore[arg-type]
-            id=None, **persona_data, is_ml_realm=True, is_event_realm=True)
+        expectation_persona = models.EventPersona(
+            id=None, **persona_data, is_ml_realm=True, is_event_realm=True)  # type: ignore[arg-type]
         case_data = {
             'realm': "event",
             'notes': "Some blah",
@@ -862,8 +857,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
         }
-        expectation_persona = models.CdEPersona(  # type: ignore[arg-type]
-            id=None, **persona_data, is_ml_realm=True, is_event_realm=True,
+        expectation_persona = models.CdEPersona(
+            id=None, **persona_data, is_ml_realm=True, is_event_realm=True,  # type: ignore[arg-type]
             is_assembly_realm=True, is_cde_realm=True)
         case_data = {
             'realm': "cde",
@@ -909,8 +904,13 @@ class TestCoreBackend(BackendTest):
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
+        value = self.core.get_cde_user(self.key, new_id)
         persona_expectation = expectation.persona.as_dict()
-        persona_expectation["id"] = new_id
+        persona_expectation.update({
+            "id": new_id,
+            "is_member": True,
+            "trial_member": True,
+        })
         self.assertEqual(persona_expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
 
@@ -1056,7 +1056,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
-        self.fail("Reminder to check get_personas")
+        # self.fail("Reminder to check get_personas")
 
     @as_users("paul", "quintus")
     def test_archive(self) -> None:

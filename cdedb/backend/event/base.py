@@ -55,7 +55,6 @@ from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_FEE_FIELDS,
     PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
@@ -75,8 +74,8 @@ from cdedb.common.validation.validate import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
-from cdedb.models.droid import OrgaToken
 from cdedb.models.core import EventPersona
+from cdedb.models.droid import OrgaToken
 
 if TYPE_CHECKING:
     from cdedb.backend.event.registration import ComplexRegistrationFee
