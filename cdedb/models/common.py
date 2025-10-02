@@ -21,7 +21,12 @@ from typing import (
 )
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, get_mandatory_form_fields, is_optional_type
+from cdedb.common import (
+    CdEDBObject,
+    get_mandatory_form_fields,
+    get_mandatory_type,
+    is_optional_type,
+)
 from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
@@ -295,11 +300,11 @@ class CdEDataclass:
         for field in cls.dataclass_fields():
             field.type = cast(type[Any], field.type)
             if (state := cls._is_validation_field_mandatory(field, creation=creation)):
-                mandatory[field.name] = field.type
+                mandatory[field.name] = get_mandatory_type(field.type)
             elif state is None:
                 continue
             else:
-                optional[field.name] = field.type
+                optional[field.name] = field.type | None
         return mandatory, optional
 
     @classmethod
