@@ -304,7 +304,7 @@ class CdEDataclass:
             elif state is None:
                 continue
             else:
-                optional[field.name] = field.type | None
+                optional[field.name] = field.type
         return mandatory, optional
 
     @classmethod
