@@ -84,6 +84,14 @@ body{
 .alert-info a:hover, .alert-info a:focus, .alert-info a.btn {
     text-decoration: none;
 }
+.form-group.alert {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    & label {
+        font-weight: bold;
+    }
+}
 .table-slim {
     width: auto;
 }
