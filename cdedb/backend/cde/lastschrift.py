@@ -9,7 +9,7 @@ transactions.
 import datetime
 import decimal
 from collections.abc import Collection
-from typing import Any, Optional, Protocol
+from typing import Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -117,15 +117,13 @@ class CdELastschriftBackend(CdEBaseBackend):
             raise PrivilegeError(n_("Not privileged."))
         active = affirm_optional(bool, active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
-        params = []
+        params = {}
         constraints = []
         if persona_ids:
-            constraints.append("persona_id = ANY(%s)")
-            params.append(persona_ids)
+            constraints.append("persona_id = ANY(%(persona_ids)s)")
+            params["persona_ids"] = persona_ids
         if active is not None:
-            constraints.append(
-                "revoked_at {} NULL".format("IS" if active else "IS NOT")
-            )
+            constraints.append(f"revoked_at {'IS' if active else 'IS NOT'} NULL")
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
@@ -335,17 +333,17 @@ class CdELastschriftBackend(CdEBaseBackend):
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
-        params: list[Any] = []
+        params: CdEDBObject = {}
         constraints = []
         if lastschrift_ids:
-            constraints.append("lastschrift_id = ANY(%s)")
-            params.append(lastschrift_ids)
+            constraints.append("lastschrift_id = ANY(%(lastschrift_ids)s)")
+            params["lastschrift_ids"] = lastschrift_ids
         if stati:
-            constraints.append("status = ANY(%s)")
-            params.append(stati)
+            constraints.append("status = ANY(%(stati)s)")
+            params["stati"] = stati
         if periods:
-            constraints.append("period_id = ANY(%s)")
-            params.append(periods)
+            constraints.append("period_id = ANY(%(periods)s)")
+            params["periods"] = periods
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
