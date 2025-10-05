@@ -910,25 +910,26 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         candidates = process_dynamic_input(
             rs, vtypes.BallotCandidate, existing_candidates,
             BALLOT_CANDIDATE_COMMON_FIELDS)
-        if rs.has_validation_errors():
-            return self.show_ballot(rs, assembly_id, ballot_id)
-
-        shortnames: set[str] = set()
-        for candidate_id, candidate in candidates.items():
-            if candidate and candidate['shortname'] in shortnames:
-                rs.append_validation_error(
-                    (drow_name("shortname", candidate_id),
-                     ValueError(n_("Duplicate shortname."))),
-                )
-            if candidate:
-                shortnames.add(candidate['shortname'])
-        if rs.has_validation_errors():
-            return self.show_ballot(rs, assembly_id, ballot_id)
 
         data = {
             'id': ballot_id,
             'candidates': candidates,
         }
+        data = check(rs, vtypes.Ballot, data)
+        if rs.has_validation_errors() or not data:
+            errors_dict = rs.get_validation_errors_dict()
+            if title_errors := errors_dict.get("candidates.title"):
+                rs.extend_validation_errors(
+                    (drow_name("title", candidate_id), e)
+                    for e in title_errors for candidate_id in candidates
+                )
+            if shortname_errors := errors_dict.get("candidates.shortname"):
+                rs.extend_validation_errors(
+                    (drow_name("shortname", candidate_id), e)
+                    for e in shortname_errors for candidate_id in candidates
+                )
+            rs.ignore_validation_errors()
+            return self.show_ballot(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.set_ballot(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")

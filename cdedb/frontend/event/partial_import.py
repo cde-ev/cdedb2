@@ -134,7 +134,10 @@ class EventImportMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = {
+            lodgement_id: lodgement.as_dict()
+            for lodgement_id, lodgement in self.eventproxy.new_get_lodgements(rs, lodgement_ids).items()
+        }
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         # TODO use dataclasses here

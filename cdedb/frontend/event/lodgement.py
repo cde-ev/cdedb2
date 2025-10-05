@@ -12,6 +12,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     CdEDBObject,
@@ -27,10 +28,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    LODGEMENT_COMMON_FIELDS,
-)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -41,7 +38,12 @@ from cdedb.frontend.common import (
     process_dynamic_input,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_extractor,
+    event_associated_fields_to_request,
+    event_guard,
+)
 from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph,
     detect_lodgement_wishes,
@@ -108,7 +110,7 @@ class EventLodgementMixin(EventBaseFrontend):
         total_reg_capacity = sum(g.regular_capacity for g in groups.values())
         total_cm_capacity = sum(g.camping_mat_capacity for g in groups.values())
 
-        def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
+        def sort_lodgement(lodgement: models.Lodgement) -> Sortkey:
             primary_sort: Sortkey
             if sortkey is None:
                 primary_sort = ()
@@ -117,21 +119,21 @@ class EventLodgementMixin(EventBaseFrontend):
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 assert sort_part_id is not None
                 if sortkey == LodgementsSortkeys.used_regular:
-                    num = len(inhabitants[lodgement['id']][sort_part_id].regular)
+                    num = len(inhabitants[lodgement.id][sort_part_id].regular)
                 else:
-                    num = len(inhabitants[lodgement['id']][sort_part_id].camping_mat)
+                    num = len(inhabitants[lodgement.id][sort_part_id].camping_mat)
                 primary_sort = (num,)
             elif sortkey.is_total_sorting():
                 if sortkey == LodgementsSortkeys.total_regular:
-                    num = lodgement['regular_capacity']
+                    num = lodgement.regular_capacity
                 else:
-                    num = lodgement['camping_mat_capacity']
+                    num = lodgement.camping_mat_capacity
                 primary_sort = (num,)
             elif sortkey == LodgementsSortkeys.title:
-                primary_sort = (lodgement["title"],)
+                primary_sort = (lodgement.title,)
             else:
                 primary_sort = ()
-            secondary_sort = EntitySorter.lodgement(lodgement)
+            secondary_sort = lodgement.get_sortkey()
             return primary_sort + secondary_sort
 
         # now sort the lodgements inside their group
@@ -182,9 +184,9 @@ class EventLodgementMixin(EventBaseFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
-        spec: vtypes.TypeMapping = {'title': str}
-        groups = process_dynamic_input(rs, vtypes.LodgementGroup, groups.keys(),
-                                       spec, additional={'event_id': event_id})
+        groups = process_dynamic_input(
+            rs, models.LodgementGroup, groups.keys(), spec={"title": "str"}
+        )
 
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
@@ -194,10 +196,9 @@ class EventLodgementMixin(EventBaseFrontend):
             if group is None:
                 code *= self.eventproxy.delete_lodgement_group(rs, group_id)
             elif group_id < 0:
-                code *= self.eventproxy.create_lodgement_group(rs, group)  # type: ignore[arg-type]
+                code *= self.eventproxy.create_lodgement_group(rs, event_id, group)
             else:
-                del group['event_id']
-                code *= self.eventproxy.set_lodgement_group(rs, group)
+                code *= self.eventproxy.set_lodgement_group(rs, group_id, group)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
@@ -220,14 +221,9 @@ class EventLodgementMixin(EventBaseFrontend):
         )
 
         lodgements = violation_data['all_lodgements']
+        params["groups"] = self.eventproxy.get_lodgement_groups(rs, event_id)
 
-        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
-        params['groups'] = groups
-        for lodge in lodgements.values():
-            lodge['group_title'] = group.title if (group := groups.get(lodge['group_id'])) else None
-        sorted_ids = xsorted(
-            lodgements.keys(),
-            key=lambda id_: EntitySorter.lodgement_by_group(lodgements[id_]))
+        sorted_ids = list(lodgements.keys())
         i = sorted_ids.index(lodgement_id)
 
         params['prev_lodgement'] = lodgements[sorted_ids[i - 1]] if i > 0 else None
@@ -331,7 +327,7 @@ class EventLodgementMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -362,8 +358,7 @@ class EventLodgementMixin(EventBaseFrontend):
             group_id = unwrap(groups.keys())
         if group_id:
             rs.values['group_id'] = group_id
-        mandatory_fields = get_mandatory_form_fields(
-            self.create_lodgement, LODGEMENT_COMMON_FIELDS) - {'group_id'}
+        mandatory_fields = models.Lodgement.mandatory_form_fields(creation=True) - {"group_id"}
         return self.render(
             rs, "lodgement/create_lodgement", {'groups': groups}, mandatory_fields
         )
@@ -371,44 +366,43 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("new_group_title")
-    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
+    @REQUESTdatadict(*models.Lodgement.requestdict_fields(creation=True))
     def create_lodgement(self, rs: RequestState, event_id: int, data: CdEDBObject,
                          new_group_title: Optional[str]) -> Response:
         """Add a new lodgement."""
-        data['event_id'] = event_id
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.lodgement
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()
-        }
+        data['fields'] = event_associated_fields_extractor(
+            rs, rs.ambience['event'], const.FieldAssociations.lodgement
+        )
 
         # Check if a new group should be created.
         create_new_group = False
         if not data.get('group_id') and new_group_title:
             create_new_group = True
-            data['group_id'] = 1  # Placeholder id for validation.
+            data['group_id'] = models.LODGEMENT_GROUP_PLACEHOLDER_ID  # Placeholder id for validation.
 
-        data = check(rs, vtypes.Lodgement, data, creation=True)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+
+        data = check(
+            rs, models.Lodgement, data, event=rs.ambience["event"], creation=True,
+            groups=groups, create_new_group=create_new_group,
+        )
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
         assert data is not None
 
         # Create the new group.
         if create_new_group:
-            new_group_data = {'title': new_group_title, 'event_id': event_id}
+            new_group_data = {'title': new_group_title}
             new_group_data = check(
-                rs, vtypes.LodgementGroup, new_group_data, creation=True)
+                rs, models.LodgementGroup, new_group_data, event=rs.ambience["event"], creation=True
+            )
             if rs.has_validation_errors() or not new_group_data:
                 return self.create_lodgement_form(rs, event_id)
             data['group_id'] = self.eventproxy.create_lodgement_group(
-                rs, new_group_data)
+                rs, event_id, new_group_data
+            )
 
-        new_id = self.eventproxy.create_lodgement(rs, data)
+        new_id = self.eventproxy.create_lodgement(rs, event_id, data)
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_lodgement",
                              {'lodgement_id': new_id})
@@ -419,38 +413,34 @@ class EventLodgementMixin(EventBaseFrontend):
                               lodgement_id: int) -> Response:
         """Render form."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
-        field_values = {
-            f"fields.{field_name}": value
-            for field_name, value in rs.ambience['lodgement']['fields'].items()}
-        merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
+        field_values = event_associated_fields_to_request(
+            rs.ambience['event'], rs.ambience["lodgement"]
+        )
+        merge_dicts(rs.values, rs.ambience['lodgement'].as_dict(), field_values)
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups},
-                           get_mandatory_form_fields(LODGEMENT_COMMON_FIELDS))
+                           models.Lodgement.mandatory_form_fields(creation=False))
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
-    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
+    @REQUESTdatadict(*models.Lodgement.requestdict_fields(creation=False))
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
 
         This does not enable changing the inhabitants of this lodgement.
         """
-        data['id'] = lodgement_id
-        field_params: vtypes.TypeMapping = {
-            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.lodgement
-        }
-        raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
-        data = check(rs, vtypes.Lodgement, data)
+        data["fields"] = event_associated_fields_extractor(
+            rs, rs.ambience["event"], const.FieldAssociations.lodgement
+        )
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+        data = check(
+            rs, models.Lodgement, data, event=rs.ambience["event"], groups=groups
+        )
         if rs.has_validation_errors():
             return self.change_lodgement_form(rs, event_id, lodgement_id)
         assert data is not None
 
-        code = self.eventproxy.set_lodgement(rs, data)
+        code = self.eventproxy.set_lodgement(rs, lodgement_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -466,7 +456,7 @@ class EventLodgementMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
 
-        lodgement_title = rs.ambience['lodgement']['title']
+        lodgement_title = rs.ambience['lodgement'].title
         pre_msg = f"Snapshot vor Löschen von Unterkunft {lodgement_title}."
         post_msg = f"Lösche Unterkunft {lodgement_title}."
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
@@ -594,7 +584,7 @@ class EventLodgementMixin(EventBaseFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         reg_data = []
-        change_note = f"Bewohner von {rs.ambience['lodgement']['title']} geändert."
+        change_note = f"Bewohner von {rs.ambience['lodgement'].title} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
                 'id': reg_id,

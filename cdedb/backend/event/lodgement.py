@@ -31,11 +31,9 @@ from cdedb.common import (
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    cast_fields,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
@@ -92,19 +90,21 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def set_lodgement_group(
-        self, rs: RequestState, data: CdEDBObject
+        self, rs: RequestState, group_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Update some keys of a lodgement group."""
-        data = affirm(vtypes.LodgementGroup, data)
+        group_id = affirm(vtypes.ID, group_id)
+        data = affirm(models.LodgementGroup, data)
+        data['id'] = group_id
         ret = 1
         with Atomizer(rs):
-            event_id = self._get_event_id_from_group_id(rs, data["id"])
+            event_id = self._get_event_id_from_group_id(rs, group_id)
             if not is_privileged(
                 rs, EventPrivileges.lodgements_write, event_id=event_id
             ):
                 raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
             self.assert_lock(rs, event_id=event_id)
-            current = self.get_lodgement_groups(rs, event_id)[data["id"]]
+            current = self.get_lodgement_groups(rs, event_id)[group_id]
 
             # Do the actual work:
             if data != current.as_dict():
@@ -135,7 +135,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         blockers = {}
 
         lodgements = self.sql_select(
-            rs, "event.lodgements", ("id",), (group_id,), entity_key="group_id"
+            rs,
+            models.Lodgement.database_table,
+            ("id",),
+            (group_id,),
+            entity_key="group_id",
         )
         if lodgements:
             blockers["lodgements"] = [e["id"] for e in lodgements]
@@ -233,44 +237,6 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgements(
-        self, rs: RequestState, lodgement_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        """Retrieve data for some lodgements.
-
-        All have to be from the same event.
-        """
-        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
-        with Atomizer(rs):
-            data = self.sql_select(
-                rs, "event.lodgements", LODGEMENT_FIELDS, lodgement_ids
-            )
-            if not data:
-                return {}
-            events = {e['event_id'] for e in data}
-            if len(events) > 1:
-                raise ValueError(n_("Only lodgements from exactly one event allowed!"))
-            event_id = unwrap(events)
-            if not is_privileged(
-                rs, EventPrivileges.lodgements_read, event_id=event_id
-            ):
-                raise PrivilegeError(n_("Not privileged."))
-            event_fields = models.EventField.many_from_database(
-                self._get_event_fields(rs, event_id).values()
-            )
-            ret = {e['id']: e for e in data}
-            for lodge in ret.values():
-                lodge['fields'] = cast_fields(lodge['fields'], event_fields)
-        return {e['id']: e for e in data}
-
-    class _GetLodgementProtocol(Protocol):
-        def __call__(self, rs: RequestState, lodgement_id: int) -> CdEDBObject: ...
-
-    get_lodgement: _GetLodgementProtocol = singularize(
-        get_lodgements, "lodgement_ids", "lodgement_id"
-    )
-
-    @access("event")
     def new_get_lodgements(
         self, rs: RequestState, lodgement_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Lodgement]:
@@ -289,23 +255,13 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 rs, EventPrivileges.lodgements_read, event_id=event_id
             ):
                 raise PrivilegeError(n_("Not privileged."))
-            group_data = {
-                e['id']: e
-                for e in self.query_all(
-                    rs,
-                    *models.LodgementGroup.get_select_query(
-                        [lodge['group_id'] for lodge in lodgement_data], "id"
-                    ),
-                )
-            }
-            event_fields = self._get_event_fields(rs, event_id)
+            groups = self.get_lodgement_groups(rs, event_id)
+            event = self.get_event(rs, event_id)
         return models.Lodgement.many_from_database([
             {
                 **lodge,
-                'group_data': group_data[lodge['group_id']],
-                'event_fields': models.EventField.many_from_database(
-                    event_fields.values()
-                ),
+                'group': groups[lodge['group_id']],
+                'event': event,
             }
             for lodge in lodgement_data
         ])
@@ -318,76 +274,96 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
     )
 
     @access("event")
-    def set_lodgement(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
+    def set_lodgement(
+        self, rs: RequestState, lodgement_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Update some keys of a lodgement."""
-        data = affirm(vtypes.Lodgement, data)
+        lodgement_id = affirm(vtypes.ID, lodgement_id)
         with Atomizer(rs):
-            current = self.sql_select_one(
-                rs, "event.lodgements", ("event_id", "title"), data['id']
-            )
-            if current is None:
-                raise ValueError(n_("Lodgement does not exist."))
-            event_id, title = current['event_id'], current['title']
+            current = self.new_get_lodgement(rs, lodgement_id)
+            groups = self.get_lodgement_groups(rs, current.event_id)
+            data = affirm(models.Lodgement, data, event=current.event, groups=groups)
             if not is_privileged(
-                rs, EventPrivileges.lodgements_write, event_id=event_id
+                rs, EventPrivileges.lodgements_write, event_id=current.event_id
             ):
-                raise PrivilegeError(n_("Not privileged."))
-            self.assert_lock(rs, event_id=event_id)
+                raise PrivilegeError(n_("Not privileged to modify lodgements."))
+            self.assert_lock(rs, event_id=current.event_id)
 
             # now we get to do the actual work
             ret = 1
-            ldata = {
-                k: v for k, v in data.items() if k in LODGEMENT_FIELDS and k != "fields"
+            changed = False
+            current_dict = current.as_dict()
+            lodgement_fields = set(models.Lodgement.database_fields()) - {"fields"}
+            changed_data = {
+                k: v
+                for k, v in data.items()
+                if k in lodgement_fields and v != current_dict[k]
             }
-            if len(ldata) > 1:
-                ret *= self.sql_update(rs, "event.lodgements", ldata)
+            if changed_data:
+                changed_data["id"] = current.id
+                ret *= self.sql_update(
+                    rs, models.Lodgement.database_table, changed_data
+                )
+                changed = True
+
             if 'fields' in data:
                 # delayed validation since we need more info
-                event = self.get_event(rs, event_id)
                 fdata = affirm(
                     vtypes.EventAssociatedFields,
                     data['fields'],
-                    event=event,
+                    event=current.event,
                     association=const.FieldAssociations.lodgement,
                 )
-
-                fupdate = {
-                    'id': data['id'],
-                    'fields': fdata,
+                fdata = {
+                    k: v
+                    for k, v in fdata.items()
+                    if k not in current.fields or v != current.fields[k]
                 }
-                ret *= self.sql_json_inplace_update(rs, "event.lodgements", fupdate)
-            self.event_log(
-                rs, const.EventLogCodes.lodgement_changed, event_id, change_note=title
-            )
+                if fdata:
+                    fupdate = {"id": current.id, "fields": fdata}
+                    ret *= self.sql_json_inplace_update(
+                        rs, models.Lodgement.database_table, fupdate
+                    )
+                    changed = True
+
+            if changed:
+                if not data.get("title") or data["title"] == current.title:
+                    change_note = current.title
+                else:
+                    change_note = f"{current.title} -> {data['title']}"
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.lodgement_changed,
+                    current.event_id,
+                    change_note=change_note,
+                )
+
         return ret
 
     @access("event")
     def create_lodgement(
-        self, rs: RequestState, data: CdEDBObject
+        self, rs: RequestState, event_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Make a new lodgement."""
-        data = affirm(vtypes.Lodgement, data, creation=True)
-        # direct validation since we already have an event_id
-        event = self.get_event(rs, data['event_id'])
-        fdata = data.get('fields') or {}
-        fdata = affirm(
-            vtypes.EventAssociatedFields,
-            fdata,
-            event=event,
-            association=const.FieldAssociations.lodgement,
-        )
-        data['fields'] = PsycoJson(fdata)
-        if not is_privileged(
-            rs, EventPrivileges.lodgements_write, event_id=data['event_id']
-        ):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_lock(rs, event_id=data['event_id'])
+        event_id = affirm(vtypes.ID, event_id)
+
         with Atomizer(rs):
-            new_id = self.sql_insert(rs, "event.lodgements", data)
+            event = self.get_event(rs, event_id)
+            groups = self.get_lodgement_groups(rs, event_id)
+            data = affirm(
+                models.Lodgement, data, event=event, groups=groups, creation=True
+            )
+            self.assert_lock(rs, event_id=event_id)
+            if not is_privileged(rs, EventPrivileges.lodgements_write, event_id):
+                raise PrivilegeError(n_("Not privileged to modify lodgements."))
+
+            data["fields"] = PsycoJson(data.get("fields", {}))
+            data["event_id"] = event_id
+            new_id = self.sql_insert(rs, models.Lodgement.database_table, data)
             self.event_log(
                 rs,
                 const.EventLogCodes.lodgement_created,
-                data['event_id'],
+                event_id,
                 change_note=data['title'],
             )
         return new_id
@@ -434,10 +410,10 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             remove or ignore. If None or empty, cascade none.
         """
         lodgement_id = affirm(vtypes.ID, lodgement_id)
-        lodgement = self.get_lodgement(rs, lodgement_id)
-        event_id = lodgement["event_id"]
+        lodgement = self.new_get_lodgement(rs, lodgement_id)
+        event_id = lodgement.event_id
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged to modify lodgements."))
         self.assert_lock(rs, event_id=event_id)
 
         blockers = self.delete_lodgement_blockers(rs, lodgement_id)
@@ -469,12 +445,14 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
 
             if not blockers:
-                ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
+                ret *= self.sql_delete_one(
+                    rs, models.Lodgement.database_table, lodgement_id
+                )
                 self.event_log(
                     rs,
                     const.EventLogCodes.lodgement_deleted,
                     event_id,
-                    change_note=lodgement["title"],
+                    change_note=lodgement.title,
                 )
             else:
                 raise ValueError(
@@ -583,11 +561,8 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             if target_group_id:
                 lodgement_ids = self.list_lodgements(rs, event_id, group_id)
                 for l_id in xsorted(lodgement_ids):
-                    update = {
-                        'id': l_id,
-                        'group_id': target_group_id,
-                    }
-                    ret *= self.set_lodgement(rs, update)
+                    update = {'group_id': target_group_id}
+                    ret *= self.set_lodgement(rs, l_id, update)
             if delete_group:
                 cascade = ("lodgements",)
                 ret *= self.delete_lodgement_group(rs, group_id, cascade)

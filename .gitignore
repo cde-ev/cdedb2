@@ -40,6 +40,7 @@ i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
 i18n-output/
+cdedb/.i18n_additional.py
 
 # virtual environment
 .venv

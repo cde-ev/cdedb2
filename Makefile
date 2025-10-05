@@ -107,6 +107,7 @@ i18n-refresh: i18n-extract i18n-update
 
 .PHONY: i18n-extract
 i18n-extract: i18n-output-dirs
+	$(PYTHON) cdedb/i18n_additional.py > cdedb/.i18n_additional.py
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
 		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="bin,cdedb"

@@ -67,6 +67,7 @@ import pathlib
 import re
 import string
 import typing
+import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
@@ -136,7 +137,7 @@ from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
@@ -148,7 +149,7 @@ NoneType = type(None)
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
@@ -815,7 +816,8 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True,
+    unicode_normalize: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -833,6 +835,8 @@ def _str_type(
         val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    if unicode_normalize:
+        val = unicodedata.normalize('NFC', val)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
     if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
@@ -850,6 +854,10 @@ def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     return val
 
 
+def _whitespace_normalized_str(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
 @_add_typed_validator
 def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
@@ -863,42 +871,6 @@ def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     if not all([url.scheme, url.netloc, url.path]):
         raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
     return Url(urllib.parse.urlunparse(url))
-
-
-@_add_typed_validator
-def _shortname(val: Any, argname: Optional[str] = None, *,
-               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
-    """A string used as shortname with therefore limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
-    return Shortname(val)
-
-
-@_add_typed_validator
-def _shortname_restrictive_identifier(
-        val: Any, argname: Optional[str] = None, *,
-        ignore_warnings: bool = False,
-        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and as restrictive identifier"""
-    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                  **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameRestrictiveIdentifier(val)
-
-
-@_add_typed_validator
-def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
-                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
-    """A string used as shortname, but with increased but still limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
-    return LegacyShortname(val)
 
 
 @_add_typed_validator
@@ -2319,28 +2291,6 @@ def _sepa_meta(
     return SepaMeta(val)
 
 
-@_add_typed_validator
-def _safe_str(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> SafeStr:
-    """This allows alpha-numeric, whitespace and known good others."""
-    allowed_chars = ".,-+()/"
-    val = _str(val, argname, **kwargs)
-    errs = ValidationSummary()
-
-    forbidden_chars = "".join(xsorted({
-        c for c in val
-        if not (c.isalnum() or c.isspace() or c in allowed_chars)
-    }))
-    if forbidden_chars:
-        errs.append(ValueError(argname, n_(
-            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
-    if errs:
-        raise errs
-
-    return SafeStr(val)
-
-
 @_create_dataclass_validator(models_core.MetaInfo)
 def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
@@ -2348,7 +2298,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2529,7 +2479,7 @@ def _event(
     if 'lodgement_groups' in val:
         with errs:
             val['lodgement_groups'] = _optional_object_mapping_helper(
-                val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
+                val['lodgement_groups'], models_event.LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
 
     if 'fees' in val:
@@ -2631,6 +2581,12 @@ def _event_part_group(
     if val.get('shortname') in existing - old_shortname:
         errs.append(ValueError('shortname', n_(
             "A part group with this name already exists.")))
+
+    shortname = val.get("shortname") or event.part_groups[val["id"]].shortname
+    constraint_type = val.get("constraint_type") or event.part_groups[val["id"]].constraint_type
+    if constraint_type == const.EventPartGroupType.mailinglist_link:
+        with errs:
+            val["shortname"] = _ALL_TYPED[EmailLocalPart](shortname, "shortname", **kwargs)
 
     if errs:
         raise errs
@@ -2815,6 +2771,14 @@ def _event_fee(
         for k in ('amount', 'condition'):
             errs.append(ValueError(
                 k, n_("Cannot have amount without condition or vice versa.")))
+
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
+
+        titles = {fee['title']: fee.get('id', id_) for fee in event['fees'].values()}
+        if titles.get(val["title"], id_) != id_:
+            errs.append(ValueError("title", n_("Duplicate title.")))
+
     if errs:
         raise errs
 
@@ -3086,78 +3050,44 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-LODGEMENT_GROUP_FIELDS: TypeMapping = {
-    'title': str,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.LodgementGroup)
 def _lodgement_group(
-    val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, nested_creation: bool = False, **kwargs: Any,
-) -> LodgementGroup:
-    """
-    :param creation: If ``True`` test the data set for fitness for creation
-        of a new entity.
-    :param nested_creation: If ``True`` do not require an event_id for creation,
-        because the event is being created at the same time as the group.
-    """
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS)
-        if not nested_creation:
-            mandatory_fields['event_id'] = ID
-        optional_fields: TypeMapping = {}
-    else:
-        # no event_id, since the associated event should be fixed.
-        mandatory_fields = {'id': ID}
-        optional_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
-
-    return LodgementGroup(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
-LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'regular_capacity': NonNegativeInt,
-    'camping_mat_capacity': NonNegativeInt,
-    'notes': Optional[str],
-    'group_id': ID,
-}
-
-LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
-    'fields': Mapping,
-}
-
-
-@_add_typed_validator
-def _lodgement(
-    val: Any, argname: str = "lodgement", *,
+    val: CdEDBObject, argname: str = "lodgement_group", *,
     creation: bool = False, **kwargs: Any,
-) -> Lodgement:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
+) -> CdEDBObject:
 
-    val = _mapping(val, argname, **kwargs)
+    return val
 
-    if creation:
-        mandatory_fields = dict(LODGEMENT_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**LODGEMENT_OPTIONAL_FIELDS}
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
+@_create_dataclass_validator(models_event.Lodgement, association=const.FieldAssociations.lodgement)
+def _lodgement(
+    val: CdEDBObject, argname: str = "lodgement", *,
+    creation: bool = False, event: models_event.Event,
+    groups: models_event.CdEDataclassMap[models_event.LodgementGroup],
+    create_new_group: bool = False, **kwargs: Any
+) -> CdEDBObject:
 
-    return Lodgement(val)
+    errs = ValidationSummary()
+
+    if create_new_group:
+        if (
+            "group_id" not in val
+            or val["group_id"] != models_event.LODGEMENT_GROUP_PLACEHOLDER_ID
+        ):
+            errs.append(
+                ValueError(
+                    "group_id", n_("Invalid placeholder for new lodgement group.")
+                )
+            )
+    elif "group_id" in val and val["group_id"] not in groups:
+        errs.append(
+            ValueError("group_id", n_("Unknown lodgement group for this event."))
+        )
+
+    if errs:
+        raise errs
+
+    return val
 
 
 FIELD_DATATYPE_VALIDATORS = {
@@ -3444,7 +3374,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': LegacyShortname,
+    'shortname': str,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -4222,6 +4152,16 @@ def _ballot(
                     errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
+        titles = [
+            candidate["title"] for candidate in newcandidates.values() if candidate
+        ]
+        shortnames = [
+            candidate["shortname"] for candidate in newcandidates.values() if candidate
+        ]
+        if len(titles) != len(set(titles)):
+            errs.append(ValueError("candidates.title", n_("Duplicate title.")))
+        if len(shortnames) != len(set(shortnames)):
+            errs.append(ValueError("candidates.shortname", n_("Duplicate shortname.")))
         val['candidates'] = newcandidates
 
     if val.get('abs_quorum') and val.get('rel_quorum'):
@@ -4269,7 +4209,7 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': ShortnameRestrictiveIdentifier,
+    'shortname': RestrictiveIdentifier,
 }
 
 
@@ -4297,6 +4237,8 @@ def _ballot_candidate(
     errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
 
     if errs:
         raise errs

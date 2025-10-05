@@ -1911,12 +1911,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['candidatessummaryform']
         self.assertEqual("aqua", f['shortname_1001'].value)
         f['shortname_7'] = "rot"
+        f['title_7'] = "Rot"
         self.submit(f, check_notification=False)
-        self.assertValidationError("shortname_7", "Option doppelt gefunden")
+        self.assertValidationError("shortname_7", "Kurzname doppelt vergeben.")
+        self.assertValidationError("title_7", "Titel doppelt vergeben.")
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
         f['shortname_7'] = "gelb"
+        f['shortname_7'] = "Gelb"
         f['shortname_8'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f, check_notification=False)
         self.assertValidationError(
