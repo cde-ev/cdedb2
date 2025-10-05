@@ -317,12 +317,14 @@ class CdEBaseBackend(AbstractBackend):
             order: str,
             limit: int = 0,
         ) -> OrderedDict[str, int]:
-            query = (
-                f"SELECT COUNT(*) AS num, {select} AS datum"
-                f" FROM core.personas"
-                f" WHERE is_member = True AND {condition} IS NOT NULL"
-                f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}"
-            )
+            query = f"""
+                SELECT COUNT(*) AS num, {select} AS datum
+                FROM core.personas
+                WHERE is_member = True AND {condition} IS NOT NULL
+                GROUP BY datum
+                HAVING COUNT(*) > {limit}
+                ORDER BY {order}
+            """
             data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
@@ -349,34 +351,35 @@ class CdEBaseBackend(AbstractBackend):
         }
 
         # Users/Members by first event.
-        query = """SELECT
-            COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
-        FROM
-            (
-                SELECT persona.id, MIN(pevents.tempus) as t
-                FROM
-                    (
-                        SELECT id FROM core.personas
-                        {}
-                    ) as persona
-                    LEFT OUTER JOIN (
-                        SELECT DISTINCT persona_id, pevent_id
-                        FROM past_event.participants
-                    ) AS participants ON persona.id = participants.persona_id
-                    LEFT OUTER JOIN (
-                        SELECT id, tempus
-                        FROM past_event.events
-                    ) AS pevents ON participants.pevent_id = pevents.id
-                WHERE
-                    pevents.id IS NOT NULL
-                GROUP BY
-                    persona.id
-            ) AS min_tempus
-        GROUP BY
-            datum
-        ORDER BY
-            -- num DESC,
-            datum ASC
+        query = """
+            SELECT
+                COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
+            FROM
+                (
+                    SELECT persona.id, MIN(pevents.tempus) as t
+                    FROM
+                        (
+                            SELECT id FROM core.personas
+                            {}
+                        ) as persona
+                        LEFT OUTER JOIN (
+                            SELECT DISTINCT persona_id, pevent_id
+                            FROM past_event.participants
+                        ) AS participants ON persona.id = participants.persona_id
+                        LEFT OUTER JOIN (
+                            SELECT id, tempus
+                            FROM past_event.events
+                        ) AS pevents ON participants.pevent_id = pevents.id
+                    WHERE
+                        pevents.id IS NOT NULL
+                    GROUP BY
+                        persona.id
+                ) AS min_tempus
+            GROUP BY
+                datum
+            ORDER BY
+                -- num DESC,
+                datum ASC
         """
         year_stats[n_("members_by_first_event")] = OrderedDict(
             (e['datum'], e['num'])
@@ -387,22 +390,23 @@ class CdEBaseBackend(AbstractBackend):
         )
 
         # Unique event attendees per year:
-        query = """SELECT
-            COUNT(DISTINCT persona_id) AS num,
-            EXTRACT(year FROM events.tempus)::integer AS datum
-        FROM
-            (
-                past_event.events
-                LEFT OUTER JOIN (
-                    SELECT persona_id, pevent_id FROM past_event.participants
-                ) AS participants ON participants.pevent_id = events.id
-            )
-        WHERE
-            institution = %s
-        GROUP BY
-            datum
-        ORDER BY
-            datum ASC
+        query = """
+            SELECT
+                COUNT(DISTINCT persona_id) AS num,
+                EXTRACT(year FROM events.tempus)::integer AS datum
+            FROM
+                (
+                    past_event.events
+                    LEFT OUTER JOIN (
+                        SELECT persona_id, pevent_id FROM past_event.participants
+                    ) AS participants ON participants.pevent_id = events.id
+                )
+            WHERE
+                institution = %s
+            GROUP BY
+                datum
+            ORDER BY
+                datum ASC
         """
         year_stats[n_("unique_participants_per_year")] = dict(
             (e['datum'], e['num'])
@@ -677,17 +681,17 @@ class CdEBaseBackend(AbstractBackend):
         q = """
             SELECT earth_location
             FROM core.postal_code_locations
-            WHERE postal_code = %s
+            WHERE postal_code = %(postal_code)s
         """
-        data = self.query_all(rs, q, (postal_code,))
+        data = self.query_all(rs, q, {"postal_code": postal_code})
 
         if not data:
             return []
-        earth_pos = data[0]['earth_location']
 
         q = """
             SELECT postal_code
             FROM core.postal_code_locations
-            WHERE earth_distance(earth_location, %s) < %s
+            WHERE earth_distance(earth_location, %(earth_location)s) < %(radius)s
         """
-        return [e['postal_code'] for e in self.query_all(rs, q, (earth_pos, radius))]
+        p = {"earth_location": data[0]["earth_location"], "radius": radius}
+        return [e['postal_code'] for e in self.query_all(rs, q, p)]
