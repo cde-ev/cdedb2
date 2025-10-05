@@ -10,6 +10,7 @@ All parts are combined together in the `CdEBackend` class via multiple inheritan
 together with a handful of high-level methods that use functionalities of multiple
 backend parts.
 """
+
 import copy
 import dataclasses
 import decimal
@@ -81,6 +82,7 @@ class CdEBaseBackend(AbstractBackend):
 
     .. note:: The changelog functionality is to be found in the core backend.
     """
+
     realm = "cde"
 
     def __init__(self) -> None:
@@ -92,9 +94,13 @@ class CdEBaseBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def cde_log(self, rs: RequestState, code: const.CdeLogCodes,
-                persona_id: Optional[int] = None, change_note: Optional[str] = None,
-                ) -> DefaultReturnCode:
+    def cde_log(
+        self,
+        rs: RequestState,
+        code: const.CdeLogCodes,
+        persona_id: Optional[int] = None,
+        change_note: Optional[str] = None,
+    ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -124,8 +130,9 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter,
-                             ) -> CdEDBLog:
+    def retrieve_finance_log(
+        self, rs: RequestState, log_filter: FinanceLogFilter
+    ) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
@@ -135,16 +142,19 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
-    def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
-                             ) -> models_finance.MoneyTransfersResult:
+    def book_money_transfers(
+        self, rs: RequestState, transfers: list[CdEDBObject]
+    ) -> models_finance.MoneyTransfersResult:
         transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
         # This ensures that membership fees are handled before event fees for each day.
-        transfers = xsorted(transfers,
-                            key=lambda t: (t['date'], t['registration_id'] is not None))
+        transfers = xsorted(
+            transfers, key=lambda t: (t['date'], t['registration_id'] is not None)
+        )
         index = 0
 
-        changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
-                                   " (Überwiesen am {date})")
+        changelog_note_template = (
+            "Guthabenänderung um {amount} auf {new_balance} (Überwiesen am {date})"
+        )
 
         try:
             with Atomizer(rs):
@@ -164,35 +174,48 @@ class CdEBaseBackend(AbstractBackend):
 
                         # Increase balance.
                         self.core.change_persona_balance(
-                            rs, persona['id'], new_balance,
+                            rs,
+                            persona['id'],
+                            new_balance,
                             const.FinanceLogCodes.increase_balance,
-                            change_note=change_note, transaction_date=date,
+                            change_note=change_note,
+                            transaction_date=date,
                         )
 
                         # Grant membership if necessary.
-                        if (new_balance >= self.conf["MEMBERSHIP_FEE"]
-                                and not persona['is_member']):
+                        if (
+                            new_balance >= self.conf["MEMBERSHIP_FEE"]
+                            and not persona['is_member']
+                        ):
                             code = self.core.change_membership_easy_mode(
-                                rs, persona['id'], is_member=True)
+                                rs, persona['id'], is_member=True
+                            )
                             result.new_members += bool(code)
                             persona['is_member'] = bool(code)
 
                         # Add to tally.
-                        result.membership_fees.append(models_finance.MoneyTransfer(
-                            persona=persona, amount=amount, date=date,
-                        ))
+                        result.membership_fees.append(
+                            models_finance.MoneyTransfer(
+                                persona=persona, amount=amount, date=date
+                            )
+                        )
 
                         # Remember the changed balance in case of multiple transfers.
                         persona['balance'] = new_balance
                     else:
                         registration = self.event.book_registration_payment(
-                            rs, registration_id=transfer['registration_id'],
-                            amount=amount, date=date, by_orga=False,
+                            rs,
+                            registration_id=transfer['registration_id'],
+                            amount=amount,
+                            date=date,
+                            by_orga=False,
                             is_member=persona['is_member'],
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(
-                            persona=persona, amount=amount, date=date,
+                            persona=persona,
+                            amount=amount,
+                            date=date,
                             registration=registration,
                         )
                         if amount > 0:
@@ -209,7 +232,8 @@ class CdEBaseBackend(AbstractBackend):
             # frustrating for the users -- hence some extra error handling here.
             self.logger.error(
                 ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
-                " <<<\n<<<\n<<<\n<<<")
+                " <<<\n<<<\n<<<\n<<<"
+            )
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
@@ -227,8 +251,9 @@ class CdEBaseBackend(AbstractBackend):
         return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState,
-                         ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
+    def get_member_stats(
+        self, rs: RequestState
+    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
@@ -273,32 +298,45 @@ class CdEBaseBackend(AbstractBackend):
         data = self.query_one(rs, query, ())
         assert data is not None
 
-        simple_stats = OrderedDict((k, data[k]) for k in (
-            n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_of_honorary"), n_("num_of_printed_expuls"), n_("num_ex_members"),
-            n_("num_all"),
-        ))
+        simple_stats = OrderedDict(
+            (k, data[k])
+            for k in (
+                n_("num_members"),
+                n_("num_of_searchable"),
+                n_("num_of_trial"),
+                n_("num_of_honorary"),
+                n_("num_of_printed_expuls"),
+                n_("num_ex_members"),
+                n_("num_all"),
+            )
+        )
 
-        def query_stats(select: str, condition: str, order: str, limit: int = 0,
-                        ) -> OrderedDict[str, int]:
-            query = (f"SELECT COUNT(*) AS num, {select} AS datum"
-                     f" FROM core.personas"
-                     f" WHERE is_member = True AND {condition} IS NOT NULL"
-                     f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}")
+        def query_stats(
+            select: str,
+            condition: str,
+            order: str,
+            limit: int = 0,
+        ) -> OrderedDict[str, int]:
+            query = (
+                f"SELECT COUNT(*) AS num, {select} AS datum"
+                f" FROM core.personas"
+                f" WHERE is_member = True AND {condition} IS NOT NULL"
+                f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}"
+            )
             data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
         # Members by locations.
         other_stats: CdEDBObject = {
             n_("members_by_country"): query_stats(
-                select="country",
-                condition="location",
-                order="num DESC, datum ASC"),
+                select="country", condition="location", order="num DESC, datum ASC"
+            ),
             n_("members_by_city"): query_stats(
                 select="location",
                 condition="location",
                 order="num DESC, datum ASC",
-                limit=9),
+                limit=9,
+            ),
         }
 
         # Members by date.
@@ -306,7 +344,8 @@ class CdEBaseBackend(AbstractBackend):
             n_("members_by_birthday"): query_stats(
                 select="EXTRACT(year FROM birthday)::integer",
                 condition="birthday",
-                order="datum ASC"),
+                order="datum ASC",
+            ),
         }
 
         # Users/Members by first event.
@@ -341,10 +380,11 @@ class CdEBaseBackend(AbstractBackend):
         """
         year_stats[n_("members_by_first_event")] = OrderedDict(
             (e['datum'], e['num'])
-            for e in self.query_all(rs, query.format("WHERE is_member = TRUE"), ()))
+            for e in self.query_all(rs, query.format("WHERE is_member = TRUE"), ())
+        )
         year_stats[n_("users_by_first_event")] = OrderedDict(
-            (e['datum'], e['num'])
-            for e in self.query_all(rs, query.format(""), ()))
+            (e['datum'], e['num']) for e in self.query_all(rs, query.format(""), ())
+        )
 
         # Unique event attendees per year:
         query = """SELECT
@@ -365,14 +405,21 @@ class CdEBaseBackend(AbstractBackend):
             datum ASC
         """
         year_stats[n_("unique_participants_per_year")] = dict(
-            (e['datum'], e['num']) for e in
-            self.query_all(rs, query, [const.PastInstitutions.main_insitution()]))
+            (e['datum'], e['num'])
+            for e in self.query_all(
+                rs, query, [const.PastInstitutions.main_insitution()]
+            )
+        )
 
         return simple_stats, other_stats, year_stats
 
-    def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
-                                     trial_membership: bool, consent: bool,
-                                     ) -> Optional[int]:
+    def _perform_one_batch_admission(
+        self,
+        rs: RequestState,
+        datum: CdEDBObject,
+        trial_membership: bool,
+        consent: bool,
+    ) -> Optional[int]:
         """Uninlined code from perform_batch_admission().
 
         :returns: The affected persona_id, or None if the entry was skipped.
@@ -383,8 +430,8 @@ class CdEBaseBackend(AbstractBackend):
         batch_fields = (
             'family_name', 'given_names', 'legal_given_names', 'title',
             'name_supplement', 'birth_name', 'gender', 'address_supplement', 'address',
-            'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'birthday')  # email omitted as it is handled separately
+            'postal_code', 'location', 'country', 'telephone', 'mobile', 'birthday',
+        )  # fmt: skip  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:
             return None
         elif datum['resolution'] == LineResolutions.create:
@@ -399,7 +446,8 @@ class CdEBaseBackend(AbstractBackend):
             })
             persona_id = self.core.create_persona(rs, new_persona)
             self.core.change_membership_easy_mode(
-                rs, persona_id, is_member=True, trial_member=trial_membership)
+                rs, persona_id, is_member=True, trial_member=trial_membership
+            )
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
@@ -407,16 +455,19 @@ class CdEBaseBackend(AbstractBackend):
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))
                 self.core.dearchive_persona(
-                    rs, persona_id, datum['persona']['username'])
+                    rs, persona_id, datum['persona']['username']
+                )
                 current['username'] = datum['persona']['username']
             if datum['update_username']:
                 if current['username'] != datum['persona']['username']:
                     self.core.change_username(
-                        rs, persona_id, datum['persona']['username'], password=None)
+                        rs, persona_id, datum['persona']['username'], password=None
+                    )
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
-                    field: None for field in CDE_TRANSITION_FIELDS}
+                    field: None for field in CDE_TRANSITION_FIELDS
+                }
                 # The realm independent upgrades of the persona.
                 # They are applied last to prevent unintentional overrides.
                 upgrades = {
@@ -440,7 +491,8 @@ class CdEBaseBackend(AbstractBackend):
                 # This applies a part of the newly imported data necessary for realm
                 # transition. The remaining data will be updated later.
                 mandatory_fields = {
-                    field for field, validator in CDE_TRANSITION_FIELDS.items()
+                    field
+                    for field, validator in CDE_TRANSITION_FIELDS.items()
                     if field not in upgrades and not is_optional_type(validator)
                 }
                 assert mandatory_fields <= set(batch_fields)
@@ -456,7 +508,8 @@ class CdEBaseBackend(AbstractBackend):
                     current = self.core.get_event_user(rs, persona_id)
                     # take care that we do not override existent data
                     current_fields = {
-                        field for field in CDE_TRANSITION_FIELDS
+                        field
+                        for field in CDE_TRANSITION_FIELDS
                         if current.get(field) is not None
                     }
                     for field in current_fields:
@@ -467,31 +520,45 @@ class CdEBaseBackend(AbstractBackend):
                 # apply the actual changes
                 promotion.update(upgrades)
                 self.core.change_persona_realms(
-                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
+                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme"
+                )
             if datum['resolution'].do_trial():
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 self.core.change_membership_easy_mode(
-                    rs, datum['doppelganger_id'], is_member=True, trial_member=True)
+                    rs, datum['doppelganger_id'], is_member=True, trial_member=True
+                )
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]
                 self.core.change_persona(
-                    rs, update, may_wait=True, force_review=True,
-                    change_note="Import aktualisierter Daten.")
+                    rs,
+                    update,
+                    may_wait=True,
+                    force_review=True,
+                    change_note="Import aktualisierter Daten.",
+                )
         else:
             raise RuntimeError(n_("Impossible."))
         if datum['pevent_id'] and persona_id:
             self.pastevent.add_participant(
-                rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
-                is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
+                rs,
+                datum['pevent_id'],
+                datum['pcourse_id'],
+                persona_id,
+                is_instructor=datum['is_instructor'],
+                is_orga=datum['is_orga'],
+            )
         return persona_id
 
     @access("cde_admin")
     def perform_batch_admission(
-            self, rs: RequestState, data: list[CdEDBObject], trial_membership: bool,
-            consent: bool,
+        self,
+        rs: RequestState,
+        data: list[CdEDBObject],
+        trial_membership: bool,
+        consent: bool,
     ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
         """Atomized call to recruit new members.
 
@@ -518,7 +585,8 @@ class CdEBaseBackend(AbstractBackend):
                 stats = BatchAdmissionStats(set(), set(), set())
                 for index, datum in enumerate(data, start=1):
                     persona_id = self._perform_one_batch_admission(
-                        rs, datum, trial_membership, consent)
+                        rs, datum, trial_membership, consent
+                    )
                     if persona_id is None:
                         continue
                     stats.add(persona_id, datum['resolution'])
@@ -544,8 +612,9 @@ class CdEBaseBackend(AbstractBackend):
         return True, stats
 
     @access("searchable", "core_admin", "cde_admin")
-    def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
+    def submit_general_query(
+        self, rs: RequestState, query: Query, aggregate: bool = False
+    ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -584,8 +653,11 @@ class CdEBaseBackend(AbstractBackend):
                 query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
                 query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
                 for realm in implying_realms('cde'):
-                    query.constraints.append(
-                        (f"is_{realm}_realm", QueryOperators.equal, False))
+                    query.constraints.append((
+                        f"is_{realm}_realm",
+                        QueryOperators.equal,
+                        False,
+                    ))
                     query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
@@ -593,7 +665,7 @@ class CdEBaseBackend(AbstractBackend):
 
     @access("searchable")
     def get_nearby_postal_codes(
-            self, rs: RequestState, postal_code: str, radius: int,
+        self, rs: RequestState, postal_code: str, radius: int
     ) -> list[str]:
         """Returns a list of german postal codes in the radius of the given postal code.
 
@@ -618,8 +690,4 @@ class CdEBaseBackend(AbstractBackend):
             FROM core.postal_code_locations
             WHERE earth_distance(earth_location, %s) < %s
         """
-        return [
-            e['postal_code'] for e in self.query_all(
-                rs, q, (earth_pos, radius),
-            )
-        ]
+        return [e['postal_code'] for e in self.query_all(rs, q, (earth_pos, radius))]
