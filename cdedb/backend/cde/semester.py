@@ -13,6 +13,7 @@ For every step "foo" of semester management, there are the following methods:
   - `finish_foo`
     - Advance the semester to the next state so that further steps are allowed.
 """
+
 import dataclasses
 import decimal
 from typing import Optional
@@ -97,8 +98,9 @@ class CdESemesterBackend(CdELastschriftBackend):
                     AND p.honorary_member = False
                     AND l.revoked_at IS NULL
             """
-            ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
-                rs, query, (self.conf["MEMBERSHIP_FEE"],)))
+            ret['lastschrift_low_balance_members'] = unwrap(
+                self.query_one(rs, query, (self.conf["MEMBERSHIP_FEE"],))
+            )
         return ret
 
     @access("cde_admin")
@@ -111,17 +113,16 @@ class CdESemesterBackend(CdELastschriftBackend):
     def get_period(self, rs: RequestState, period_id: int) -> CdEDBObject:
         """Get data for a semester."""
         period_id = affirm(vtypes.ID, period_id)
-        ret = self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
-                                  period_id)
+        ret = self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS, period_id)
         if not ret:
             raise ValueError(n_("This period does not exist."))
-        ret["semester_start"] = unwrap(self.sql_select_one(
-            rs, "cde.org_period", ("semester_done",), period_id - 1))
+        ret["semester_start"] = unwrap(
+            self.sql_select_one(rs, "cde.org_period", ("semester_done",), period_id - 1)
+        )
         return ret
 
     @access("finance_admin")
-    def set_period(self, rs: RequestState,
-                   period: CdEDBObject) -> DefaultReturnCode:
+    def set_period(self, rs: RequestState, period: CdEDBObject) -> DefaultReturnCode:
         """Set data for the current semester."""
         period = affirm(vtypes.Period, period)
         with Atomizer(rs):
@@ -184,13 +185,18 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.sql_update(rs, "cde.org_period", update)
             new_period = {'id': current_id + 1}
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
-            self.cde_log(rs, const.CdeLogCodes.semester_advance,
-                         persona_id=None, change_note=str(ret))
+            self.cde_log(
+                rs,
+                const.CdeLogCodes.semester_advance,
+                persona_id=None,
+                change_note=str(ret),
+            )
         return ret
 
     @access("finance_admin")
-    def finish_semester_bill(self, rs: RequestState,
-                             addresscheck: bool = False) -> DefaultReturnCode:
+    def finish_semester_bill(
+        self, rs: RequestState, addresscheck: bool = False
+    ) -> DefaultReturnCode:
         """Conclude the semester bill step."""
         addresscheck = affirm(bool, addresscheck)
         with Atomizer(rs):
@@ -228,8 +234,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             msg = f"{period['archival_notification_count']} E-Mails versandt."
             self.cde_log(
-                rs, const.CdeLogCodes.automated_archival_notification_done,
-                persona_id=None, change_note=msg)
+                rs,
+                const.CdeLogCodes.automated_archival_notification_done,
+                persona_id=None,
+                change_note=msg,
+            )
         return ret
 
     @access("finance_admin")
@@ -248,8 +257,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             msg = f"{period['archival_count']} Accounts archiviert."
             self.cde_log(
-                rs, const.CdeLogCodes.automated_archival_done,
-                persona_id=None, change_note=msg)
+                rs,
+                const.CdeLogCodes.automated_archival_done,
+                persona_id=None,
+                change_note=msg,
+            )
         return ret
 
     @access("finance_admin")
@@ -270,8 +282,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             msg = f"{period['ejection_count']} inaktive Mitglieder gestrichen."
             self.cde_log(
-                rs, const.CdeLogCodes.semester_ejection, persona_id=None,
-                change_note=msg)
+                rs,
+                const.CdeLogCodes.semester_ejection,
+                persona_id=None,
+                change_note=msg,
+            )
         return ret
 
     @access("finance_admin")
@@ -289,11 +304,16 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             ret = self.set_period(rs, period_update)
             total = money_filter(period["balance_total"], lang="de")
-            msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
-                   f" {total} Guthaben von Mitgliedern abgebucht.")
+            msg = (
+                f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
+                f" {total} Guthaben von Mitgliedern abgebucht."
+            )
             self.cde_log(
-                rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
-                change_note=msg)
+                rs,
+                const.CdeLogCodes.semester_balance_update,
+                persona_id=None,
+                change_note=msg,
+            )
         return ret
 
     @access("finance_admin")
@@ -314,8 +334,11 @@ class CdESemesterBackend(CdELastschriftBackend):
             exmembers = period["exmember_count"]
             msg = f"{exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst."
             self.cde_log(
-                rs, const.CdeLogCodes.semester_exmember_balance, persona_id=None,
-                change_note=msg)
+                rs,
+                const.CdeLogCodes.semester_exmember_balance,
+                persona_id=None,
+                change_note=msg,
+            )
         return ret
 
     @access("cde_admin")
@@ -337,15 +360,15 @@ class CdESemesterBackend(CdELastschriftBackend):
     def get_expuls(self, rs: RequestState, expuls_id: int) -> CdEDBObject:
         """Get data for the an expuls."""
         expuls_id = affirm(vtypes.ID, expuls_id)
-        ret = self.sql_select_one(rs, "cde.expuls_period",
-                                  EXPULS_PERIOD_FIELDS, expuls_id)
+        ret = self.sql_select_one(
+            rs, "cde.expuls_period", EXPULS_PERIOD_FIELDS, expuls_id
+        )
         if not ret:
             raise ValueError(n_("This exPuls does not exist."))
         return ret
 
     @access("finance_admin")
-    def set_expuls(self, rs: RequestState,
-                   expuls: CdEDBObject) -> DefaultReturnCode:
+    def set_expuls(self, rs: RequestState, expuls: CdEDBObject) -> DefaultReturnCode:
         """Set data for the an expuls."""
         expuls = affirm(vtypes.ExPuls, expuls)
         with Atomizer(rs):
@@ -375,21 +398,25 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'expuls_done': None,
             }
             ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
-            self.cde_log(rs, const.CdeLogCodes.expuls_advance,
-                         persona_id=None, change_note=str(ret))
+            self.cde_log(
+                rs,
+                const.CdeLogCodes.expuls_advance,
+                persona_id=None,
+                change_note=str(ret),
+            )
         return ret
 
     @access("finance_admin")
-    def finish_expuls_addresscheck(self, rs: RequestState,
-                                   skip: bool = False) -> DefaultReturnCode:
+    def finish_expuls_addresscheck(
+        self, rs: RequestState, skip: bool = False
+    ) -> DefaultReturnCode:
         """Conclude the expuls addresscheck step."""
         skip = affirm(bool, skip)
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
             if expuls['addresscheck_done'] is not None:
-                raise RuntimeError(n_(
-                    "Addresscheck already done for this expuls."))
+                raise RuntimeError(n_("Addresscheck already done for this expuls."))
             expuls_update = {
                 'id': expuls_id,
                 'addresscheck_state': None,
@@ -398,17 +425,29 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_expuls(rs, expuls_update)
             msg = f"{expuls['addresscheck_count']} E-Mails versandt."
             if skip:
-                self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck_skipped,
-                             persona_id=None, change_note=msg)
+                self.cde_log(
+                    rs,
+                    const.CdeLogCodes.expuls_addresscheck_skipped,
+                    persona_id=None,
+                    change_note=msg,
+                )
             else:
-                self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
-                             persona_id=None, change_note=msg)
+                self.cde_log(
+                    rs,
+                    const.CdeLogCodes.expuls_addresscheck,
+                    persona_id=None,
+                    change_note=msg,
+                )
         return ret
 
     @access("finance_admin")
-    def process_for_semester_bill(self, rs: RequestState, period_id: int,
-                                  addresscheck: bool, testrun: bool,
-                                  ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_semester_bill(
+        self,
+        rs: RequestState,
+        period_id: int,
+        addresscheck: bool,
+        testrun: bool,
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to bill one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -421,7 +460,8 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['billing_state'], is_member=True, is_archived=False)
+                rs, period['billing_state'], is_member=True, is_archived=False
+            )
             if testrun:
                 persona_id = rs.user.persona_id
             # We are finished if we reached the end or if this was previously done.
@@ -441,9 +481,9 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def process_for_semester_prearchival(self, rs: RequestState, period_id: int,
-                                         testrun: bool,
-                                         ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_semester_prearchival(
+        self, rs: RequestState, period_id: int, testrun: bool
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -455,8 +495,11 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['archival_notification_state'], is_member=None,
-                is_archived=False)
+                rs,
+                period['archival_notification_state'],
+                is_member=None,
+                is_archived=False,
+            )
             if testrun:
                 persona_id = rs.user.persona_id
             # We are finished if we reached the end or if this was previously done.
@@ -469,19 +512,22 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'archival_notification_state': persona_id,
             }
             is_archivable = self.core.is_persona_automatically_archivable(
-                rs, persona_id)
+                rs, persona_id
+            )
             persona = None
             if is_archivable or testrun:
                 persona = self.core.get_persona(rs, persona_id)
-                period_update['archival_notification_count'] = \
+                period_update['archival_notification_count'] = (
                     period['archival_notification_count'] + 1
+                )
             if not testrun:
                 self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
-    def process_for_semester_eject(self, rs: RequestState, period_id: int,
-                                   ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_semester_eject(
+        self, rs: RequestState, period_id: int
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to eject one (soon to be ex-)member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -492,7 +538,8 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['ejection_state'], is_member=True, is_archived=False)
+                rs, period['ejection_state'], is_member=True, is_archived=False
+            )
             # We are finished if we reached the end or if this was previously done.
             if not persona_id or period['ejection_done']:
                 if not period['ejection_done']:
@@ -504,9 +551,9 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             persona = self.core.get_cde_user(rs, persona_id)
             do_eject = (
-                    persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                    and not persona['trial_member']
-                    and not persona['honorary_member']
+                persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                and not persona['trial_member']
+                and not persona['honorary_member']
             )
             if do_eject:
                 self.change_membership(rs, persona_id, is_member=False)
@@ -517,8 +564,9 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def process_for_semester_archival(self, rs: RequestState, period_id: int,
-                                      ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_semester_archival(
+        self, rs: RequestState, period_id: int
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -531,7 +579,8 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['archival_state'], is_member=False, is_archived=False)
+                rs, period['archival_state'], is_member=False, is_archived=False
+            )
             # We are finished if we reached the end or if this was previously done.
             if not persona_id or period['archival_done']:
                 if not period['archival_done']:
@@ -543,29 +592,32 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             persona = None
             if self.core.is_persona_automatically_archivable(
-                    rs, persona_id, reference_date=period['billing_done']):
+                rs, persona_id, reference_date=period['billing_done']
+            ):
                 note = "Automatisch archiviert wegen Inaktivität."
                 try:
                     code = self.core.archive_persona(rs, persona_id, note)
                 except ArchiveError:
-                    self.logger.exception(f"Unexpected error during archival of"
-                                          f" persona {persona_id}.")
+                    self.logger.exception(
+                        f"Unexpected error during archival of persona {persona_id}."
+                    )
                     raise
                 else:
                     if code:
-                        period_update['archival_count'] = \
-                            period['archival_count'] + 1
+                        period_update['archival_count'] = period['archival_count'] + 1
                     else:
                         self.logger.error(
                             f"Automated archival of persona {persona_id} failed"
-                            f" for unknown reasons.")
+                            f" for unknown reasons."
+                        )
                         persona = {'id': persona_id}
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
-    def process_for_semester_balance(self, rs: RequestState, period_id: int,
-                                     ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_semester_balance(
+        self, rs: RequestState, period_id: int
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to update the balance of one member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -576,7 +628,8 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['balance_state'], is_member=True, is_archived=False)
+                rs, period['balance_state'], is_member=True, is_archived=False
+            )
             # We are finished if we reached the end or if this was previously done.
             if not persona_id or period['balance_done']:
                 if not period['balance_done']:
@@ -587,34 +640,45 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'id': period_id,
                 'balance_state': persona_id,
             }
-            if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                    and not (persona['trial_member'] or persona['honorary_member'])):
+            if persona['balance'] < self.conf["MEMBERSHIP_FEE"] and not (
+                persona['trial_member'] or persona['honorary_member']
+            ):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
             elif persona['trial_member']:
                 self.core.change_membership_easy_mode(
-                    rs, persona_id, trial_member=False)
-                period_update['balance_trialmembers'] = \
+                    rs, persona_id, trial_member=False
+                )
+                period_update['balance_trialmembers'] = (
                     period['balance_trialmembers'] + 1
+                )
             else:
                 if not persona['honorary_member']:
                     persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
-                    period_update['balance_total'] = \
+                    period_update['balance_total'] = (
                         period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
-                    note = (f"Mitgliedsbeitrag abgebucht"
-                            f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
+                    )
+                    note = (
+                        f"Mitgliedsbeitrag abgebucht"
+                        f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})"
+                    )
                 else:
                     note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
                 self.core.change_persona_balance(
-                    rs, persona_id, persona['balance'],
-                    const.FinanceLogCodes.deduct_membership_fee, change_note=note)
+                    rs,
+                    persona_id,
+                    persona['balance'],
+                    const.FinanceLogCodes.deduct_membership_fee,
+                    change_note=note,
+                )
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
-    def process_for_exmember_balance(self, rs: RequestState, period_id: int,
-                                     ) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_exmember_balance(
+        self, rs: RequestState, period_id: int
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Set the balance of all former members to zero.
 
         We keep the balance of all former members for one semester, so they get their
@@ -625,8 +689,12 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             period = self.get_period(rs, period_id)
             persona_id = self.core.next_persona(
-                rs, period['exmember_state'], is_member=False,
-                is_archived=False, is_cde_realm=True)
+                rs,
+                period['exmember_state'],
+                is_member=False,
+                is_archived=False,
+                is_cde_realm=True,
+            )
             # We are finished if we reached the end or if this was previously done.
             if not persona_id or period['exmember_done']:
                 if not period['exmember_done']:
@@ -639,18 +707,23 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             if persona['balance']:
                 self.core.change_persona_balance(
-                    rs, persona_id, balance=decimal.Decimal("0.00"),
+                    rs,
+                    persona_id,
+                    balance=decimal.Decimal("0.00"),
                     log_code=const.FinanceLogCodes.remove_exmember_balance,
-                    change_note="Guthaben von Exmitglied abgebucht.")
-                period_update['exmember_balance'] = \
+                    change_note="Guthaben von Exmitglied abgebucht.",
+                )
+                period_update['exmember_balance'] = (
                     period['exmember_balance'] + persona['balance']
+                )
                 period_update['exmember_count'] = period['exmember_count'] + 1
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
-    def process_for_expuls_check(self, rs: RequestState, expuls_id: int,
-                                 testrun: bool) -> tuple[bool, Optional[CdEDBObject]]:
+    def process_for_expuls_check(
+        self, rs: RequestState, expuls_id: int, testrun: bool
+    ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to initiate address check.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -662,15 +735,18 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             expuls = self.get_expuls(rs, expuls_id)
             persona_id = self.core.next_persona(
-                rs, expuls['addresscheck_state'],
-                is_member=True, is_archived=False, paper_expuls=True)
+                rs,
+                expuls['addresscheck_state'],
+                is_member=True,
+                is_archived=False,
+                paper_expuls=True,
+            )
             if testrun:
                 persona_id = rs.user.persona_id
             # We are finished if we reached the end or if this was previously done.
             if not persona_id or expuls['addresscheck_done']:
                 if not expuls['addresscheck_done']:
-                    self.finish_expuls_addresscheck(
-                        rs, skip=False)
+                    self.finish_expuls_addresscheck(rs, skip=False)
                 return False, None
             persona = self.core.get_cde_user(rs, persona_id)
             if not testrun:
