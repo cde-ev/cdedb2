@@ -148,27 +148,11 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual(r"a''b", tex_escape_filter(r'a"b'))
 
     def test_enum_member_translations(self) -> None:
-        ignored_enums = {
-            cdedb.enums.SubscriptionState,
-            cdedb.enums.MailinglistDomain,
-            cdedb.enums.LockType,
-            cdedb.enums.TransactionType,
-            cdedb.enums.SubscriptionPolicy,
-            cdedb.enums.SubscriptionAction,
-            cdedb.enums.LodgementsSortkeys,
-            cdedb.enums.Accounts,
-            cdedb.enums.CourseChoiceToolActions,
-            cdedb.enums.CourseFilterPositions,
-            cdedb.enums.QueryScope,
-            cdedb.enums.ConfidenceLevel,
-            cdedb.enums.GenesisDecision,
-            cdedb.enums.EventPrivileges,
-        }
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet
             if lang == "la":
                 continue
-            for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(ignored_enums):
+            for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(cdedb.enums.NON_TRANSLATED_ENUMS):
                 with self.subTest(lang=lang, enum=enum):
                     for member in enum:
                         self.assertNotEqual(
