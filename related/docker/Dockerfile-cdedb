@@ -21,8 +21,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     make \
     gettext \
     git \
-    curl \
-    ca-certificates \
     \
     openssl \
     apache2 \
@@ -39,16 +37,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-# Download the uv installer
-ADD https://astral.sh/uv/0.8.22/install.sh /uv-installer.sh
-
-# Run the uv installer then remove it
-RUN sh /uv-installer.sh && rm /uv-installer.sh
-
-# Ensure the installed uv binary is on the `PATH`
-ENV PATH="/root/.local/bin/:$PATH"
-
-RUN cp /root/.local/bin/uv /root/.local/bin/uvx /sbin
+RUN pip install uv --break-system-packages
 
 # install packages
 RUN uv pip install playwright==1.53.0 --system --break-system-packages
