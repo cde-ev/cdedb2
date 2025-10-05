@@ -100,20 +100,10 @@ python3 -m pip install --no-cache-dir --break-system-packages \
 
 # devtools
 # dPROD not present
+python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --no-cache-dir --break-system-packages \
-    mypy==1.18.2 \
-    ruff==0.12.8 \
-    types-python-dateutil \
-    types-bleach \
-    types-Markdown \
-    types-tabulate \
-    lxml-stubs \
-    types-Pillow \
-    types-ldap3 \
-    types-passlib \
-    types-psycopg2 \
-    types-zxcvbn \
-    'playwright>=1.37.0'
+    --group "/cdedb2/pyproject.toml:dev" \
+    --group "/cdedb2/pyproject.toml:playwright" \
 
 for file in /var/cache/apt/archives/*.deb
 do
