@@ -67,6 +67,7 @@ import pathlib
 import re
 import string
 import typing
+import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
@@ -815,7 +816,8 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True,
+    unicode_normalize: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -833,6 +835,8 @@ def _str_type(
         val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    if unicode_normalize:
+        val = unicodedata.normalize('NFC', val)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
     if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
@@ -850,6 +854,10 @@ def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     return val
 
 
+def _whitespace_normalized_str(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
 @_add_typed_validator
 def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
@@ -863,42 +871,6 @@ def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     if not all([url.scheme, url.netloc, url.path]):
         raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
     return Url(urllib.parse.urlunparse(url))
-
-
-@_add_typed_validator
-def _shortname(val: Any, argname: Optional[str] = None, *,
-               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
-    """A string used as shortname with therefore limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
-    return Shortname(val)
-
-
-@_add_typed_validator
-def _shortname_restrictive_identifier(
-        val: Any, argname: Optional[str] = None, *,
-        ignore_warnings: bool = False,
-        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and as restrictive identifier"""
-    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                  **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameRestrictiveIdentifier(val)
-
-
-@_add_typed_validator
-def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
-                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
-    """A string used as shortname, but with increased but still limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
-    return LegacyShortname(val)
 
 
 @_add_typed_validator
@@ -2319,28 +2291,6 @@ def _sepa_meta(
     return SepaMeta(val)
 
 
-@_add_typed_validator
-def _safe_str(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> SafeStr:
-    """This allows alpha-numeric, whitespace and known good others."""
-    allowed_chars = ".,-+()/"
-    val = _str(val, argname, **kwargs)
-    errs = ValidationSummary()
-
-    forbidden_chars = "".join(xsorted({
-        c for c in val
-        if not (c.isalnum() or c.isspace() or c in allowed_chars)
-    }))
-    if forbidden_chars:
-        errs.append(ValueError(argname, n_(
-            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
-    if errs:
-        raise errs
-
-    return SafeStr(val)
-
-
 @_create_dataclass_validator(models_core.MetaInfo)
 def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
@@ -2348,7 +2298,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2643,6 +2593,12 @@ def _event_part_group(
         errs.append(ValueError('shortname', n_(
             "A part group with this name already exists.")))
 
+    shortname = val.get("shortname") or event.part_groups[val["id"]].shortname
+    constraint_type = val.get("constraint_type") or event.part_groups[val["id"]].constraint_type
+    if constraint_type == const.EventPartGroupType.mailinglist_link:
+        with errs:
+            val["shortname"] = _ALL_TYPED[EmailLocalPart](shortname, "shortname", **kwargs)
+
     if errs:
         raise errs
     return val
@@ -2650,7 +2606,7 @@ def _event_part_group(
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
@@ -2846,6 +2802,14 @@ def _event_fee(
         for k in ('amount', 'condition'):
             errs.append(ValueError(
                 k, n_("Cannot have amount without condition or vice versa.")))
+
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
+
+        titles = {fee['title']: fee.get('id', id_) for fee in event['fees'].values()}
+        if titles.get(val["title"], id_) != id_:
+            errs.append(ValueError("title", n_("Duplicate title.")))
+
     if errs:
         raise errs
 
@@ -3441,7 +3405,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': LegacyShortname,
+    'shortname': str,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -4218,6 +4182,16 @@ def _ballot(
                     errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
+        titles = [
+            candidate["title"] for candidate in newcandidates.values() if candidate
+        ]
+        shortnames = [
+            candidate["shortname"] for candidate in newcandidates.values() if candidate
+        ]
+        if len(titles) != len(set(titles)):
+            errs.append(ValueError("candidates.title", n_("Duplicate title.")))
+        if len(shortnames) != len(set(shortnames)):
+            errs.append(ValueError("candidates.shortname", n_("Duplicate shortname.")))
         val['candidates'] = newcandidates
 
     if val.get('abs_quorum') and val.get('rel_quorum'):
@@ -4265,7 +4239,7 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': ShortnameRestrictiveIdentifier,
+    'shortname': RestrictiveIdentifier,
 }
 
 
@@ -4293,6 +4267,8 @@ def _ballot_candidate(
     errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
 
     if errs:
         raise errs

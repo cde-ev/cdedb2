@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-09-26 18:45+0200\n"
+"POT-Creation-Date: 2025-09-23 21:24+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3299,10 +3299,10 @@ msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
 #: cdedb/backend/assembly.py:402 cdedb/backend/cde/base.py:591
-#: cdedb/backend/complaint.py:1110 cdedb/backend/complaint.py:1172
-#: cdedb/backend/core/base.py:3026 cdedb/backend/core/base.py:3028
-#: cdedb/backend/event/query.py:766 cdedb/backend/ml.py:372
-#: cdedb/backend/past_event.py:883
+#: cdedb/backend/complaint.py:1110 cdedb/backend/complaint.py:1160
+#: cdedb/backend/complaint.py:1172 cdedb/backend/core/base.py:3026
+#: cdedb/backend/core/base.py:3028 cdedb/backend/event/query.py:766
+#: cdedb/backend/ml.py:372 cdedb/backend/past_event.py:883
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
@@ -3891,56 +3891,69 @@ msgstr "Löschungsgrund angegeben für Eintrag ohne aktive Version."
 msgid "Unknown entry."
 msgstr "Unbekannter Eintrag."
 
-#: cdedb/backend/complaint.py:520 cdedb/backend/complaint.py:582
+#: cdedb/backend/complaint.py:520 cdedb/backend/complaint.py:570
+#: cdedb/backend/complaint.py:582
 msgid "Entry already revoked."
 msgstr "Eintrag ist bereits widerrufen."
 
-#: cdedb/backend/complaint.py:522 cdedb/backend/complaint.py:584
+#: cdedb/backend/complaint.py:522 cdedb/backend/complaint.py:572
+#: cdedb/backend/complaint.py:584
 msgid "Entry has no active version."
 msgstr "Eintrag hat keine aktive Version."
 
-#: cdedb/backend/complaint.py:534 cdedb/backend/complaint.py:596
+#: cdedb/backend/complaint.py:534 cdedb/backend/complaint.py:584
+#: cdedb/backend/complaint.py:596
 msgid "Revocation entry without parent."
 msgstr "Widerruf ohne Eltern-Eintrag."
 
-#: cdedb/backend/complaint.py:536 cdedb/backend/complaint.py:598
-#: cdedb/frontend/core/complaint.py:845 cdedb/frontend/core/complaint.py:895
+#: cdedb/backend/complaint.py:536 cdedb/backend/complaint.py:586
+#: cdedb/backend/complaint.py:598 cdedb/frontend/core/complaint.py:845
+#: cdedb/frontend/core/complaint.py:895
 msgid "Cannot chain revoke."
 msgstr "Widerruf eines Widerrufs kann nicht widerrufen werden."
 
-#: cdedb/backend/complaint.py:583 cdedb/backend/complaint.py:645
-#: cdedb/backend/complaint.py:694 cdedb/backend/complaint.py:756
+#: cdedb/backend/complaint.py:583 cdedb/backend/complaint.py:633
+#: cdedb/backend/complaint.py:645 cdedb/backend/complaint.py:694
+#: cdedb/backend/complaint.py:744 cdedb/backend/complaint.py:756
 msgid "Unknown users."
 msgstr "Unbekannte Nutzer."
 
-#: cdedb/backend/complaint.py:615 cdedb/backend/complaint.py:677
+#: cdedb/backend/complaint.py:615 cdedb/backend/complaint.py:665
+#: cdedb/backend/complaint.py:677
 #, python-format
 msgid "%(num)s involved lost their informed status."
 msgstr "%(num)s Personen sind nun nicht mehr informiert."
 
-#: cdedb/backend/complaint.py:620 cdedb/backend/complaint.py:682
+#: cdedb/backend/complaint.py:620 cdedb/backend/complaint.py:670
+#: cdedb/backend/complaint.py:682
 msgid "Already active companions."
 msgstr "Bereits aktive Fallbegleitung."
 
-#: cdedb/backend/complaint.py:744 cdedb/backend/complaint.py:800
-#: cdedb/backend/complaint.py:806 cdedb/backend/complaint.py:862
-#: cdedb/backend/complaint.py:892 cdedb/backend/complaint.py:954
+#: cdedb/backend/complaint.py:744 cdedb/backend/complaint.py:794
+#: cdedb/backend/complaint.py:800 cdedb/backend/complaint.py:806
+#: cdedb/backend/complaint.py:850 cdedb/backend/complaint.py:862
+#: cdedb/backend/complaint.py:892 cdedb/backend/complaint.py:942
+#: cdedb/backend/complaint.py:954
 msgid "Uninvolved user."
 msgstr "Unbeteiligter Nutzer."
 
-#: cdedb/backend/complaint.py:785 cdedb/backend/complaint.py:847
+#: cdedb/backend/complaint.py:785 cdedb/backend/complaint.py:835
+#: cdedb/backend/complaint.py:847
 msgid "Unknown companions."
 msgstr "Unbekannte Fallbegleitung."
 
-#: cdedb/backend/complaint.py:807 cdedb/backend/complaint.py:869
+#: cdedb/backend/complaint.py:807 cdedb/backend/complaint.py:857
+#: cdedb/backend/complaint.py:869
 msgid "Involved companion."
 msgstr "Beteiligte Fallbegleitung."
 
-#: cdedb/backend/complaint.py:894 cdedb/backend/complaint.py:956
+#: cdedb/backend/complaint.py:894 cdedb/backend/complaint.py:944
+#: cdedb/backend/complaint.py:956
 msgid "Not a companion."
 msgstr "Keine Fallbegleitung."
 
-#: cdedb/backend/complaint.py:1226 cdedb/backend/complaint.py:1288
+#: cdedb/backend/complaint.py:1226 cdedb/backend/complaint.py:1276
+#: cdedb/backend/complaint.py:1288
 msgid "Can only list measures."
 msgstr "Kann nur Maßnahmen abrufen."
 
@@ -4091,12 +4104,14 @@ msgstr "Guthabenänderung für Nicht-CdE-Person."
 msgid "Not a CdE account."
 msgstr "Account ist nicht im CdE-Bereich."
 
-#: cdedb/backend/core/base.py:1366 cdedb/common/validation/validate.py:1631
+#: cdedb/backend/core/base.py:1366 cdedb/common/validation/validate.py:1604
+#: cdedb/common/validation/validate.py:1631
 #: cdedb/common/validation/validate.py:1632
 msgid "Trial membership requires membership."
 msgstr "Probemitgliedschaft erfordert Mitgliedschaft."
 
-#: cdedb/backend/core/base.py:1368 cdedb/common/validation/validate.py:1635
+#: cdedb/backend/core/base.py:1368 cdedb/common/validation/validate.py:1608
+#: cdedb/common/validation/validate.py:1635
 #: cdedb/common/validation/validate.py:1636
 msgid "Honorary membership requires membership."
 msgstr "Ehrenmitgliedschaft erfordert Mitgliedschaft."
@@ -4263,6 +4278,7 @@ msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
 #: cdedb/backend/core/base.py:2672 cdedb/backend/core/base.py:2674
+#: cdedb/common/validation/validate.py:1276
 #: cdedb/common/validation/validate.py:1303
 #: cdedb/common/validation/validate.py:1304 cdedb/frontend/core/base.py:2235
 #: cdedb/frontend/core/base.py:2403
@@ -4706,7 +4722,9 @@ msgstr "Muss in der Vergangenheit liegen."
 #: cdedb/backend/event/registration.py:2117
 #: cdedb/backend/event/registration.py:2359
 #: cdedb/backend/event/registration.py:2440
+#: cdedb/common/validation/validate.py:3779
 #: cdedb/common/validation/validate.py:3786
+#: cdedb/common/validation/validate.py:3792
 #: cdedb/common/validation/validate.py:3799
 #: cdedb/common/validation/validate.py:3818
 #: cdedb/common/validation/validate.py:3831
@@ -6682,80 +6700,101 @@ msgstr "Konnte keine Datenbankrolle bestimmen."
 
 #: cdedb/common/validation/validate.py:506
 #: cdedb/common/validation/validate.py:507
+#: cdedb/common/validation/validate.py:508
 msgid "Superfluous key found."
 msgstr "Unerwarteter Eintrag gefunden."
 
 #: cdedb/common/validation/validate.py:512
 #: cdedb/common/validation/validate.py:513
+#: cdedb/common/validation/validate.py:514
 msgid "Mandatory key missing."
 msgstr "Notwendige Angabe fehlt."
 
 #: cdedb/common/validation/validate.py:621
 #: cdedb/common/validation/validate.py:622
+#: cdedb/common/validation/validate.py:623
 msgid "Must be empty."
 msgstr "Muss leer sein."
 
 #: cdedb/common/validation/validate.py:644
 #: cdedb/common/validation/validate.py:645
+#: cdedb/common/validation/validate.py:646
 msgid "Invalid input for integer."
 msgstr "Ungültige Eingabe für eine Ganzzahl."
 
 #: cdedb/common/validation/validate.py:649
 #: cdedb/common/validation/validate.py:650
+#: cdedb/common/validation/validate.py:651
 msgid "Precision loss."
 msgstr "Die Konvertierung führt zu einem Präzisionsverlust."
 
 #: cdedb/common/validation/validate.py:653
 #: cdedb/common/validation/validate.py:654
+#: cdedb/common/validation/validate.py:655
 msgid "Must be an integer."
 msgstr "Muss eine Ganzzahl sein."
 
 #: cdedb/common/validation/validate.py:656
 #: cdedb/common/validation/validate.py:657
+#: cdedb/common/validation/validate.py:658
 msgid "Integer too large."
 msgstr "Ganzzahl zu groß."
 
 #: cdedb/common/validation/validate.py:667
 #: cdedb/common/validation/validate.py:668
+#: cdedb/common/validation/validate.py:669
 #: cdedb/common/validation/validate.py:754
 #: cdedb/common/validation/validate.py:755
+#: cdedb/common/validation/validate.py:756
 msgid "Must not be negative."
 msgstr "Darf nicht negativ sein."
 
 #: cdedb/common/validation/validate.py:677
 #: cdedb/common/validation/validate.py:678
+#: cdedb/common/validation/validate.py:679
 msgid "Must be positive."
 msgstr "Muss positiv sein."
 
 #: cdedb/common/validation/validate.py:687
 #: cdedb/common/validation/validate.py:688
+#: cdedb/common/validation/validate.py:689
 msgid "Must be negative."
 msgstr "Muss negativ sein."
 
 #: cdedb/common/validation/validate.py:697
 #: cdedb/common/validation/validate.py:698
+#: cdedb/common/validation/validate.py:699
 #: cdedb/common/validation/validate.py:723
-#: cdedb/common/validation/validate.py:724 cdedb/frontend/common.py:1448
+#: cdedb/common/validation/validate.py:724
+#: cdedb/common/validation/validate.py:725 cdedb/frontend/common.py:1448
 msgid "Must not be zero."
 msgstr "Darf nicht null sein."
 
 #: cdedb/common/validation/validate.py:711
 #: cdedb/common/validation/validate.py:712
+#: cdedb/common/validation/validate.py:713
 #: cdedb/common/validation/validate.py:848
 #: cdedb/common/validation/validate.py:849
+#: cdedb/common/validation/validate.py:853
+#: cdedb/common/validation/validate.py:1028
 #: cdedb/common/validation/validate.py:1055
 #: cdedb/common/validation/validate.py:1056
+#: cdedb/common/validation/validate.py:1137
 #: cdedb/common/validation/validate.py:1164
 #: cdedb/common/validation/validate.py:1165
+#: cdedb/common/validation/validate.py:2651
 #: cdedb/common/validation/validate.py:2694
 #: cdedb/common/validation/validate.py:2697
 #: cdedb/common/validation/validate.py:2698
+#: cdedb/common/validation/validate.py:4006
 #: cdedb/common/validation/validate.py:4013
 #: cdedb/common/validation/validate.py:4045
 #: cdedb/common/validation/validate.py:4674
+#: cdedb/common/validation/validate.py:4680
 #: cdedb/common/validation/validate.py:4706
 #: cdedb/common/validation/validate.py:4707
 #: cdedb/common/validation/validate.py:4847
+#: cdedb/common/validation/validate.py:4853
 #: cdedb/common/validation/validate.py:4879
 #: cdedb/common/validation/validate.py:4880 cdedb/frontend/cde/base.py:276
 #: cdedb/frontend/cde/base.py:280 cdedb/frontend/common.py:654
@@ -6768,60 +6807,73 @@ msgstr "Darf nicht leer sein."
 
 #: cdedb/common/validation/validate.py:735
 #: cdedb/common/validation/validate.py:736
+#: cdedb/common/validation/validate.py:737
 msgid "Invalid input for float."
 msgstr "Ungültige Eingabe für eine Gleitkommazahl."
 
 #: cdedb/common/validation/validate.py:738
 #: cdedb/common/validation/validate.py:739
+#: cdedb/common/validation/validate.py:740
 msgid "Must be a floating point number."
 msgstr "Muss eine Gleitkommazahl sein."
 
 #: cdedb/common/validation/validate.py:743
 #: cdedb/common/validation/validate.py:744
+#: cdedb/common/validation/validate.py:745
 #: cdedb/common/validation/validate.py:777
 #: cdedb/common/validation/validate.py:778
+#: cdedb/common/validation/validate.py:779
 msgid "Must be smaller than a million."
 msgstr "Muss kleiner sein als eine Million."
 
 #: cdedb/common/validation/validate.py:770
 #: cdedb/common/validation/validate.py:771
+#: cdedb/common/validation/validate.py:772
 msgid "Invalid input for decimal number."
 msgstr "Ungültige Eingabe für eine Dezimalzahl."
 
 #: cdedb/common/validation/validate.py:774
 #: cdedb/common/validation/validate.py:775
+#: cdedb/common/validation/validate.py:776
 msgid "Must be a decimal.Decimal."
 msgstr "Muss eine Zahl sein."
 
 #: cdedb/common/validation/validate.py:780
 #: cdedb/common/validation/validate.py:781
+#: cdedb/common/validation/validate.py:782
 msgid "Must be smaller than a billion."
 msgstr "Muss kleiner sein als eine Milliarde."
 
 #: cdedb/common/validation/validate.py:791
 #: cdedb/common/validation/validate.py:792
+#: cdedb/common/validation/validate.py:793
 #: cdedb/common/validation/validate.py:810
 #: cdedb/common/validation/validate.py:811
+#: cdedb/common/validation/validate.py:812
 msgid "Transfer saldo is negative."
 msgstr "Überweisungsbetrag ist negativ."
 
 #: cdedb/common/validation/validate.py:828
 #: cdedb/common/validation/validate.py:829
+#: cdedb/common/validation/validate.py:831
 msgid "Invalid input for string."
 msgstr "Ungültige Eingabe für eine Zeichenkette."
 
 #: cdedb/common/validation/validate.py:830
 #: cdedb/common/validation/validate.py:831
+#: cdedb/common/validation/validate.py:833
 msgid "Must be a string."
 msgstr "Muss eine Zeichenkette sein."
 
 #: cdedb/common/validation/validate.py:837
 #: cdedb/common/validation/validate.py:838
+#: cdedb/common/validation/validate.py:842
 msgid "Longer than 256 kB."
 msgstr "Länger als 256 kB."
 
 #: cdedb/common/validation/validate.py:863
 #: cdedb/common/validation/validate.py:864
+#: cdedb/common/validation/validate.py:872
 msgid "Malformed URL."
 msgstr "Nicht-wohlgeformte URL."
 
@@ -6833,81 +6885,97 @@ msgstr "Nicht-wohlgeformte URL."
 msgid "Shortname is longer than %(len)s chars."
 msgstr "Kurzname ist länger als %(len)s Zeichen."
 
+#: cdedb/common/validation/validate.py:890
 #: cdedb/common/validation/validate.py:917
 #: cdedb/common/validation/validate.py:918
 msgid "Cannot convert {val_type} to bytes."
 msgstr "Kann Wert {val} nicht in bytes konvertieren."
 
+#: cdedb/common/validation/validate.py:894
 #: cdedb/common/validation/validate.py:921
 #: cdedb/common/validation/validate.py:922
 msgid "Must be a bytes object."
 msgstr "Muss ein bytes-Objekt sein."
 
+#: cdedb/common/validation/validate.py:903
 #: cdedb/common/validation/validate.py:930
 #: cdedb/common/validation/validate.py:931
 msgid "Must be a mapping."
 msgstr "Muss eine Map sein."
 
+#: cdedb/common/validation/validate.py:912
 #: cdedb/common/validation/validate.py:939
 #: cdedb/common/validation/validate.py:940
 msgid "Must be an iterable."
 msgstr "Muss eine Iterable sein."
 
+#: cdedb/common/validation/validate.py:924
 #: cdedb/common/validation/validate.py:951
 #: cdedb/common/validation/validate.py:952
 msgid "Invalid input for sequence."
 msgstr "Keine gültige Sequenz gefunden."
 
+#: cdedb/common/validation/validate.py:926
 #: cdedb/common/validation/validate.py:953
 #: cdedb/common/validation/validate.py:954
 msgid "Must be a sequence."
 msgstr "Muss eine Sequence sein."
 
+#: cdedb/common/validation/validate.py:935
 #: cdedb/common/validation/validate.py:962
 #: cdedb/common/validation/validate.py:963
 msgid "Must be a boolean."
 msgstr "Muss ein Wahrheitswert sein."
 
+#: cdedb/common/validation/validate.py:943
 #: cdedb/common/validation/validate.py:970
 #: cdedb/common/validation/validate.py:971
 msgid "Invalid input for boolean."
 msgstr "Ungültige Eingabe für einen Wahrheitswert."
 
+#: cdedb/common/validation/validate.py:954
 #: cdedb/common/validation/validate.py:981
 #: cdedb/common/validation/validate.py:982
 msgid "Must be an empty dict."
 msgstr "Muss eine leere Map sein."
 
+#: cdedb/common/validation/validate.py:964
 #: cdedb/common/validation/validate.py:991
 #: cdedb/common/validation/validate.py:992
 msgid "Must be an empty list."
 msgstr "Muss eine leere Liste sein."
 
+#: cdedb/common/validation/validate.py:977
 #: cdedb/common/validation/validate.py:1004
 #: cdedb/common/validation/validate.py:1005
 msgid "Not a valid realm."
 msgstr "Muss ein existierender Bereich sein."
 
+#: cdedb/common/validation/validate.py:980
 #: cdedb/common/validation/validate.py:1007
 #: cdedb/common/validation/validate.py:1008
 msgid "This realm is not supported for genesis."
 msgstr "Accountanfragen in diesem Bereich sind nicht möglich."
 
+#: cdedb/common/validation/validate.py:1000
 #: cdedb/common/validation/validate.py:1027
 #: cdedb/common/validation/validate.py:1028 cdedb/frontend/cde/base.py:249
 msgid "Wrong formatting."
 msgstr "Falsches Format."
 
+#: cdedb/common/validation/validate.py:1004
 #: cdedb/common/validation/validate.py:1031
 #: cdedb/common/validation/validate.py:1032
 msgid "Checksum failure."
 msgstr "Checksumme stimmt nicht."
 
+#: cdedb/common/validation/validate.py:1015
 #: cdedb/common/validation/validate.py:1042
 #: cdedb/common/validation/validate.py:1043
 msgid "Must be printable ASCII."
 msgstr "Darf nur aus druckbaren ASCII-Zeichen bestehen."
 
+#: cdedb/common/validation/validate.py:1041
 #: cdedb/common/validation/validate.py:1068
 #: cdedb/common/validation/validate.py:1069
 msgid ""
@@ -6916,6 +6984,7 @@ msgstr ""
 "Muss ein zulässiger Bezeichner sein (nur Buchstaben, Ziffern, Unterstrich, "
 "Punkt und Bindestrich)."
 
+#: cdedb/common/validation/validate.py:1058
 #: cdedb/common/validation/validate.py:1085
 #: cdedb/common/validation/validate.py:1086
 msgid ""
@@ -6924,51 +6993,61 @@ msgstr ""
 "Muss ein zulässiger Bezeichner sein (nur Buchstaben, Ziffern und "
 "Unterstrich)."
 
+#: cdedb/common/validation/validate.py:1070
 #: cdedb/common/validation/validate.py:1097
 #: cdedb/common/validation/validate.py:1098
 msgid "Must be comma separated identifiers."
 msgstr "Muss eine kommagetrennte Liste von zulässigen Bezeichnern sein."
 
+#: cdedb/common/validation/validate.py:1081
 #: cdedb/common/validation/validate.py:1108
 #: cdedb/common/validation/validate.py:1109
 msgid "Must not contain whitespace or parentheses."
 msgstr "Darf keine Leerzeichen oder Klammern enthalten."
 
+#: cdedb/common/validation/validate.py:1095
 #: cdedb/common/validation/validate.py:1122
 #: cdedb/common/validation/validate.py:1123
 msgid "Invalid Base64 string."
 msgstr "Ungültige Base64 Zeichenkette."
 
+#: cdedb/common/validation/validate.py:1280
 #: cdedb/common/validation/validate.py:1307
 #: cdedb/common/validation/validate.py:1308
 msgid "Password too weak for admin account."
 msgstr "Passwort ist zu schwach für einen Admin-Account."
 
+#: cdedb/common/validation/validate.py:1314
 #: cdedb/common/validation/validate.py:1341
 #: cdedb/common/validation/validate.py:1342
 msgid "Expiration time must be in the future."
 msgstr "Ablaufdatum muss in der Zukunft liegen."
 
+#: cdedb/common/validation/validate.py:1334
 #: cdedb/common/validation/validate.py:1361
 #: cdedb/common/validation/validate.py:1362
 msgid "Must be a valid email address."
 msgstr "Muss eine valide E-Mail-Adresse sein."
 
+#: cdedb/common/validation/validate.py:1350
 #: cdedb/common/validation/validate.py:1377
 #: cdedb/common/validation/validate.py:1378
 msgid "Must be a valid email local part."
 msgstr "Muss ein gültiger E-Mail-Lokalteil sein."
 
+#: cdedb/common/validation/validate.py:1562
 #: cdedb/common/validation/validate.py:1589
 #: cdedb/common/validation/validate.py:1590
 msgid "Only one of creation, transition may be specified."
 msgstr "Nur eines von „creation“ und „transition“ darf gewählt werden."
 
+#: cdedb/common/validation/validate.py:1612
 #: cdedb/common/validation/validate.py:1639
 #: cdedb/common/validation/validate.py:1640
 msgid "Nickname is equal to given names and should be removed."
 msgstr "Spitzname entspricht dem Rufnamen und sollte daher entfernt werden."
 
+#: cdedb/common/validation/validate.py:1616
 #: cdedb/common/validation/validate.py:1643
 #: cdedb/common/validation/validate.py:1644
 msgid "Legal given names are equal to given names and should be removed."
@@ -6976,96 +7055,112 @@ msgstr ""
 "Bürgerlicher Vorname entspricht dem Rufnamen und sollte daher entfernt "
 "werden."
 
+#: cdedb/common/validation/validate.py:1620
 #: cdedb/common/validation/validate.py:1647
 #: cdedb/common/validation/validate.py:1648
 msgid "Birth name is equal to family name and should be removed."
 msgstr ""
 "Geburtsname entspricht dem Familiennamen und sollte daher entfernt werden."
 
+#: cdedb/common/validation/validate.py:1668
 #: cdedb/common/validation/validate.py:1695
 #: cdedb/common/validation/validate.py:1696
 msgid "Invalid input for date."
 msgstr "Ungültige Eingabe für ein Datum."
 
+#: cdedb/common/validation/validate.py:1675
 #: cdedb/common/validation/validate.py:1702
 #: cdedb/common/validation/validate.py:1703
 msgid "Must be a datetime.date."
 msgstr "Kein Datum gefunden."
 
+#: cdedb/common/validation/validate.py:1686
 #: cdedb/common/validation/validate.py:1713
 #: cdedb/common/validation/validate.py:1714
 msgid "A birthday must be in the past."
 msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
 
+#: cdedb/common/validation/validate.py:1705
 #: cdedb/common/validation/validate.py:1732
 #: cdedb/common/validation/validate.py:1733
 msgid "Invalid input for datetime."
 msgstr "Ungültige Eingabe für einen Zeitpunkt."
 
+#: cdedb/common/validation/validate.py:1708
 #: cdedb/common/validation/validate.py:1735
 #: cdedb/common/validation/validate.py:1736
 msgid "Must be a datetime.datetime."
 msgstr "Muss ein valides Datum mit Uhrzeit sein."
 
-#: cdedb/common/validation/validate.py:1738
-#: cdedb/common/validation/validate.py:1739
-msgid "Must be timezone aware."
-msgstr "Muss eine Zeitzone haben."
-
+#: cdedb/common/validation/validate.py:1732
 #: cdedb/common/validation/validate.py:1759
 #: cdedb/common/validation/validate.py:1762
 #: cdedb/common/validation/validate.py:1763
 msgid "More than one digit."
 msgstr "Darf nur einstellig sein."
 
+#: cdedb/common/validation/validate.py:1738
+#: cdedb/common/validation/validate.py:1739
+msgid "Must be timezone aware."
+msgstr "Muss eine Zeitzone haben."
+
+#: cdedb/common/validation/validate.py:1749
 #: cdedb/common/validation/validate.py:1776
 #: cdedb/common/validation/validate.py:1779
 #: cdedb/common/validation/validate.py:1780
 msgid "Invalid country code"
 msgstr "Ungültige Länderkennung"
 
+#: cdedb/common/validation/validate.py:1751
 #: cdedb/common/validation/validate.py:1778
 #: cdedb/common/validation/validate.py:1781
 #: cdedb/common/validation/validate.py:1782
 msgid "This is not a phone number."
 msgstr "Das ist keine Telefonnummer."
 
+#: cdedb/common/validation/validate.py:1753
 #: cdedb/common/validation/validate.py:1780
 #: cdedb/common/validation/validate.py:1783
 #: cdedb/common/validation/validate.py:1784
 msgid "Phone number too short"
 msgstr "Telefonnummer zu kurz"
 
+#: cdedb/common/validation/validate.py:1755
 #: cdedb/common/validation/validate.py:1782
 #: cdedb/common/validation/validate.py:1785
 #: cdedb/common/validation/validate.py:1786
 msgid "Phone number too long"
 msgstr "Telefonnummer zu lang"
 
+#: cdedb/common/validation/validate.py:1757
 #: cdedb/common/validation/validate.py:1784
 #: cdedb/common/validation/validate.py:1787
 #: cdedb/common/validation/validate.py:1788
 msgid "Phone number can not be parsed."
 msgstr "Telefonnummer kann nicht validiert werden."
 
+#: cdedb/common/validation/validate.py:1760
 #: cdedb/common/validation/validate.py:1787
 #: cdedb/common/validation/validate.py:1790
 #: cdedb/common/validation/validate.py:1791
 msgid "Phone number seems to be not valid."
 msgstr "Telefonnummer scheint ungültig zu sein."
 
+#: cdedb/common/validation/validate.py:1786
 #: cdedb/common/validation/validate.py:1813
 #: cdedb/common/validation/validate.py:1816
 #: cdedb/common/validation/validate.py:1817
 msgid "Invalid german postal code."
 msgstr "Ungültige Postleitzahl."
 
+#: cdedb/common/validation/validate.py:1814
 #: cdedb/common/validation/validate.py:1841
 #: cdedb/common/validation/validate.py:1844
 #: cdedb/common/validation/validate.py:1845
 msgid "Enter actual country name in English."
 msgstr "Gib den Namen des Landes auf Englisch an."
 
+#: cdedb/common/validation/validate.py:1841
 #: cdedb/common/validation/validate.py:1868
 #: cdedb/common/validation/validate.py:1871
 #: cdedb/common/validation/validate.py:1872
@@ -7073,105 +7168,123 @@ msgid "Birthday was less than a year ago. Please check the birth year."
 msgstr ""
 "Geburtstag war vor weniger als einem Jahr. Bitte überprüfe das Geburtsjahr."
 
+#: cdedb/common/validation/validate.py:1883
 #: cdedb/common/validation/validate.py:1910
 #: cdedb/common/validation/validate.py:1913
 #: cdedb/common/validation/validate.py:1914
 msgid "Not a FileStorage."
 msgstr "Muss ein FileStorage sein."
 
+#: cdedb/common/validation/validate.py:1886
 #: cdedb/common/validation/validate.py:1913
 #: cdedb/common/validation/validate.py:1916
 #: cdedb/common/validation/validate.py:1917
 msgid "Empty FileStorage."
 msgstr "Datei darf nicht leer sein."
 
+#: cdedb/common/validation/validate.py:1907
 #: cdedb/common/validation/validate.py:1934
 #: cdedb/common/validation/validate.py:1937
 #: cdedb/common/validation/validate.py:1938
 msgid "Only text/csv allowed."
 msgstr "Nur text/csv erlaubt."
 
+#: cdedb/common/validation/validate.py:1933
 #: cdedb/common/validation/validate.py:1960
 #: cdedb/common/validation/validate.py:1963
 #: cdedb/common/validation/validate.py:1964
 msgid "Too small."
 msgstr "Zu klein."
 
+#: cdedb/common/validation/validate.py:1935
 #: cdedb/common/validation/validate.py:1962
 #: cdedb/common/validation/validate.py:1965
 #: cdedb/common/validation/validate.py:1966
 msgid "Too big."
 msgstr "Zu groß."
 
+#: cdedb/common/validation/validate.py:1940
 #: cdedb/common/validation/validate.py:1967
 #: cdedb/common/validation/validate.py:1970
 #: cdedb/common/validation/validate.py:1971
 msgid "Only jpg and png allowed."
 msgstr "Nur jpg und png erlaubt."
 
+#: cdedb/common/validation/validate.py:1947
 #: cdedb/common/validation/validate.py:1974
 #: cdedb/common/validation/validate.py:1977
 #: cdedb/common/validation/validate.py:1978
 msgid "Not square enough."
 msgstr "Muss quadratischer sein."
 
+#: cdedb/common/validation/validate.py:1949
 #: cdedb/common/validation/validate.py:1976
 #: cdedb/common/validation/validate.py:1979
 #: cdedb/common/validation/validate.py:1980
 msgid "Resolution too small."
 msgstr "Auflösung zu klein."
 
+#: cdedb/common/validation/validate.py:1977
 #: cdedb/common/validation/validate.py:2004
 #: cdedb/common/validation/validate.py:2007
 #: cdedb/common/validation/validate.py:2008
 msgid "Filesize too large."
 msgstr "Datei zu groß."
 
+#: cdedb/common/validation/validate.py:1980
 #: cdedb/common/validation/validate.py:2007
 #: cdedb/common/validation/validate.py:2010
 #: cdedb/common/validation/validate.py:2011
 msgid "Only pdf allowed."
 msgstr "Nur pdf erlaubt."
 
+#: cdedb/common/validation/validate.py:2000
 #: cdedb/common/validation/validate.py:2027
 #: cdedb/common/validation/validate.py:2030
 #: cdedb/common/validation/validate.py:2031
 #: cdedb/common/validation/validate.py:4768
+#: cdedb/common/validation/validate.py:4774
 #: cdedb/common/validation/validate.py:4800
 #: cdedb/common/validation/validate.py:4801
 msgid "Must contain exactly two elements."
 msgstr "Muss genau zwei Elemente enthalten."
 
+#: cdedb/common/validation/validate.py:2113
 #: cdedb/common/validation/validate.py:2140
 #: cdedb/common/validation/validate.py:2143
 #: cdedb/common/validation/validate.py:2144
 msgid "Too short."
 msgstr "Zu kurz."
 
+#: cdedb/common/validation/validate.py:2120
 #: cdedb/common/validation/validate.py:2147
 #: cdedb/common/validation/validate.py:2150
 #: cdedb/common/validation/validate.py:2151
 msgid "Must start with country code."
 msgstr "Muss mit einem Ländercode beginnen."
 
+#: cdedb/common/validation/validate.py:2124
 #: cdedb/common/validation/validate.py:2151
 #: cdedb/common/validation/validate.py:2154
 #: cdedb/common/validation/validate.py:2155
 msgid "Must have digits for checksum."
 msgstr "Prüfziffer muss aus Ziffern bestehen."
 
+#: cdedb/common/validation/validate.py:2128
 #: cdedb/common/validation/validate.py:2155
 #: cdedb/common/validation/validate.py:2158
 #: cdedb/common/validation/validate.py:2159
 msgid "Invalid character in IBAN."
 msgstr "Ungültiges Zeichen in der IBAN."
 
+#: cdedb/common/validation/validate.py:2130
 #: cdedb/common/validation/validate.py:2157
 #: cdedb/common/validation/validate.py:2160
 #: cdedb/common/validation/validate.py:2161
 msgid "Unknown or unsupported Country Code."
 msgstr "Unbekannter oder nicht unterstützter Ländercode."
 
+#: cdedb/common/validation/validate.py:2135
 #: cdedb/common/validation/validate.py:2162
 #: cdedb/common/validation/validate.py:2165
 #: cdedb/common/validation/validate.py:2166
@@ -7181,15 +7294,20 @@ msgid ""
 msgstr ""
 "Ungültige Länge  %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
 
+#: cdedb/common/validation/validate.py:2144
 #: cdedb/common/validation/validate.py:2171
 #: cdedb/common/validation/validate.py:2174
 #: cdedb/common/validation/validate.py:2175
 msgid "Invalid checksum."
 msgstr "Ungültige Checksumme."
 
+#: cdedb/common/validation/validate.py:2205
 #: cdedb/common/validation/validate.py:2232
 #: cdedb/common/validation/validate.py:2235
 #: cdedb/common/validation/validate.py:2236
+#: cdedb/common/validation/validate.py:2266
+#: cdedb/common/validation/validate.py:2277
+#: cdedb/common/validation/validate.py:2283
 #: cdedb/common/validation/validate.py:2293
 #: cdedb/common/validation/validate.py:2296
 #: cdedb/common/validation/validate.py:2297
@@ -7202,18 +7320,21 @@ msgstr "Ungültige Checksumme."
 msgid "Too long."
 msgstr "Zu lang."
 
+#: cdedb/common/validation/validate.py:2208
 #: cdedb/common/validation/validate.py:2235
 #: cdedb/common/validation/validate.py:2238
 #: cdedb/common/validation/validate.py:2239
 msgid "Invalid constant."
 msgstr "Unzulässiger Wert für Konstante."
 
+#: cdedb/common/validation/validate.py:2269
 #: cdedb/common/validation/validate.py:2296
 #: cdedb/common/validation/validate.py:2299
 #: cdedb/common/validation/validate.py:2300
 msgid "Unsupported constant."
 msgstr "Nicht unterstützter Wert für Konstante."
 
+#: cdedb/common/validation/validate.py:2271
 #: cdedb/common/validation/validate.py:2298
 #: cdedb/common/validation/validate.py:2301
 #: cdedb/common/validation/validate.py:2302
@@ -7227,24 +7348,29 @@ msgstr "Genau zwei Zeilen nötig."
 msgid "Forbidden characters (%(chars)s)."
 msgstr "Verbotene Zeichen (%(chars)s)."
 
+#: cdedb/common/validation/validate.py:2409
 #: cdedb/common/validation/validate.py:2458
 #: cdedb/common/validation/validate.py:2461
 #: cdedb/common/validation/validate.py:2462
 msgid "Only creation allowed."
 msgstr "Nur Erstellen möglich."
 
+#: cdedb/common/validation/validate.py:2538
 #: cdedb/common/validation/validate.py:2587
 #: cdedb/common/validation/validate.py:2590
 #: cdedb/common/validation/validate.py:2591
 msgid "Must be later than begin."
 msgstr "Muss später als Beginn sein."
 
+#: cdedb/common/validation/validate.py:2575
 #: cdedb/common/validation/validate.py:2624
 #: cdedb/common/validation/validate.py:2627
 #: cdedb/common/validation/validate.py:2628
 msgid "Unknown part."
 msgstr "Unbekannter Veranstaltungsteil."
 
+#: cdedb/common/validation/validate.py:2586
+#: cdedb/common/validation/validate.py:2590
 #: cdedb/common/validation/validate.py:2635
 #: cdedb/common/validation/validate.py:2638
 #: cdedb/common/validation/validate.py:2639
@@ -7253,24 +7379,28 @@ msgstr "Unbekannter Veranstaltungsteil."
 msgid "A part group with this name already exists."
 msgstr "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen."
 
+#: cdedb/common/validation/validate.py:2637
 #: cdedb/common/validation/validate.py:2680
 #: cdedb/common/validation/validate.py:2683
 #: cdedb/common/validation/validate.py:2684
 msgid "Must be less or equal than total Course Choices."
 msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 
+#: cdedb/common/validation/validate.py:2653
 #: cdedb/common/validation/validate.py:2696
 #: cdedb/common/validation/validate.py:2699
 #: cdedb/common/validation/validate.py:2700
 msgid "Unknown track."
 msgstr "Unbekannte Kursschiene."
 
+#: cdedb/common/validation/validate.py:2657
 #: cdedb/common/validation/validate.py:2700
 #: cdedb/common/validation/validate.py:2703
 #: cdedb/common/validation/validate.py:2704
 msgid "Cannot have more than one course choice sync track group per track."
 msgstr "Maximal eine Kurswahlsynchronisierung pro Kursschiene."
 
+#: cdedb/common/validation/validate.py:2664
 #: cdedb/common/validation/validate.py:2707
 #: cdedb/common/validation/validate.py:2710
 #: cdedb/common/validation/validate.py:2711
@@ -7281,6 +7411,8 @@ msgstr ""
 "Alle Kursschienen einer Kurswahlsynchronisierung müssen die gleiche Kurswahl-"
 "Anzahl haben."
 
+#: cdedb/common/validation/validate.py:2677
+#: cdedb/common/validation/validate.py:2681
 #: cdedb/common/validation/validate.py:2720
 #: cdedb/common/validation/validate.py:2723
 #: cdedb/common/validation/validate.py:2724
@@ -7289,24 +7421,28 @@ msgstr ""
 msgid "A track group with this name already exists."
 msgstr "Es existiert bereits eine Kursschienengruppe mit diesem Namen."
 
+#: cdedb/common/validation/validate.py:2730
 #: cdedb/common/validation/validate.py:2773
 #: cdedb/common/validation/validate.py:2776
 #: cdedb/common/validation/validate.py:2777
 msgid "Value not well-formed."
 msgstr "Falsch formatierte Eingabe."
 
+#: cdedb/common/validation/validate.py:2737
 #: cdedb/common/validation/validate.py:2780
 #: cdedb/common/validation/validate.py:2783
 #: cdedb/common/validation/validate.py:2784
 msgid "Could not convert to mapping."
 msgstr "Konnte nicht zu einer Map konvertieren."
 
+#: cdedb/common/validation/validate.py:2756
 #: cdedb/common/validation/validate.py:2799
 #: cdedb/common/validation/validate.py:2802
 #: cdedb/common/validation/validate.py:2803
 msgid "Duplicate value."
 msgstr "Doppelter Eintrag."
 
+#: cdedb/common/validation/validate.py:2787
 #: cdedb/common/validation/validate.py:2830
 #: cdedb/common/validation/validate.py:2833
 #: cdedb/common/validation/validate.py:2834
@@ -7314,6 +7450,7 @@ msgid "Cannot set amount for personalized fee."
 msgstr ""
 "Für personalisierte Teilnahmebeiträge kann kein Betrag festgelegt werden."
 
+#: cdedb/common/validation/validate.py:2790
 #: cdedb/common/validation/validate.py:2833
 #: cdedb/common/validation/validate.py:2836
 #: cdedb/common/validation/validate.py:2837
@@ -7321,24 +7458,33 @@ msgid "Cannot set condition for personalized fee."
 msgstr ""
 "Für personalisierte Teilnahmebeiträge kann keine Bedingung festgelegt werden."
 
+#: cdedb/common/validation/validate.py:2794
 #: cdedb/common/validation/validate.py:2837
 #: cdedb/common/validation/validate.py:2840
 #: cdedb/common/validation/validate.py:2841
 msgid "Cannot unset amount for conditional fee."
 msgstr "Bedingte Teilnahmebeiträge müssen einen Betrag haben."
 
+#: cdedb/common/validation/validate.py:2797
 #: cdedb/common/validation/validate.py:2840
 #: cdedb/common/validation/validate.py:2843
 #: cdedb/common/validation/validate.py:2844
 msgid "Cannot unset condition for conditional fee."
 msgstr "Bedingte Teilnahmebeiträge müssen eine Bedingung haben."
 
+#: cdedb/common/validation/validate.py:2801
 #: cdedb/common/validation/validate.py:2844
 #: cdedb/common/validation/validate.py:2847
 #: cdedb/common/validation/validate.py:2848
 msgid "Cannot have amount without condition or vice versa."
 msgstr "Muss entweder Betrag und Bedingung haben oder weder noch."
 
+#: cdedb/common/validation/validate.py:2808
+#: cdedb/common/validation/validate.py:4223
+msgid "Duplicate title."
+msgstr "Titel doppelt vergeben."
+
+#: cdedb/common/validation/validate.py:2890
 #: cdedb/common/validation/validate.py:2925
 #: cdedb/common/validation/validate.py:2928
 #: cdedb/common/validation/validate.py:2929 cdedb/frontend/event/course.py:382
@@ -7347,6 +7493,7 @@ msgstr "Muss entweder Betrag und Bedingung haben oder weder noch."
 msgid "Event without tracks forbids courses."
 msgstr "Kurse sind nur in Veranstaltungen mit Kursschienen möglich."
 
+#: cdedb/common/validation/validate.py:3074
 #: cdedb/common/validation/validate.py:3111
 #: cdedb/common/validation/validate.py:3113
 #: cdedb/common/validation/validate.py:3114
@@ -7361,18 +7508,21 @@ msgstr "Ungültige Unterkunftsgruppe."
 msgid "Unknown lodgement group for this event."
 msgstr "Unbekannte Unterkunftsgruppe für diese Veranstaltung."
 
+#: cdedb/common/validation/validate.py:3221
 #: cdedb/common/validation/validate.py:3229
 #: cdedb/common/validation/validate.py:3260
 #: cdedb/common/validation/validate.py:3261
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr "Ungültige Art für diesen Teil des Fragebogens."
 
+#: cdedb/common/validation/validate.py:3228
 #: cdedb/common/validation/validate.py:3236
 #: cdedb/common/validation/validate.py:3267
 #: cdedb/common/validation/validate.py:3268
 msgid "No kind specified."
 msgstr "Kein Datentyp angegeben."
 
+#: cdedb/common/validation/validate.py:3242
 #: cdedb/common/validation/validate.py:3250
 #: cdedb/common/validation/validate.py:3281
 #: cdedb/common/validation/validate.py:3282
@@ -7380,6 +7530,7 @@ msgid "Cannot specify both field id and field name."
 msgstr ""
 "Es dürfen nicht gleichzeitig Name und ID eines Feldes angegeben werden."
 
+#: cdedb/common/validation/validate.py:3248
 #: cdedb/common/validation/validate.py:3256
 #: cdedb/common/validation/validate.py:3287
 #: cdedb/common/validation/validate.py:3288
@@ -7387,19 +7538,23 @@ msgstr ""
 msgid "No field with name '%(name)s' exists."
 msgstr "Es gibt kein Feld mit dem Namen '%(name)s'."
 
+#: cdedb/common/validation/validate.py:3261
 #: cdedb/common/validation/validate.py:3269
 #: cdedb/common/validation/validate.py:3300
 #: cdedb/common/validation/validate.py:3301
 #: cdedb/common/validation/validate.py:4689
+#: cdedb/common/validation/validate.py:4695
 #: cdedb/common/validation/validate.py:4721
 #: cdedb/common/validation/validate.py:4722
 #: cdedb/common/validation/validate.py:4748
+#: cdedb/common/validation/validate.py:4754
 #: cdedb/common/validation/validate.py:4780
 #: cdedb/common/validation/validate.py:4781
 #: cdedb/frontend/event/questionnaire.py:286
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
+#: cdedb/common/validation/validate.py:3270
 #: cdedb/common/validation/validate.py:3278
 #: cdedb/common/validation/validate.py:3309
 #: cdedb/common/validation/validate.py:3310
@@ -7407,6 +7562,7 @@ msgstr "Unzulässiges Feld."
 msgid "Registration questionnaire rows may not be readonly."
 msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 
+#: cdedb/common/validation/validate.py:3315
 #: cdedb/common/validation/validate.py:3323
 #: cdedb/common/validation/validate.py:3354
 #: cdedb/common/validation/validate.py:3355
@@ -7414,12 +7570,14 @@ msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 msgid "Must not duplicate field ('%(field_name)s')."
 msgstr "Felder dürfen nicht doppelt auftreten ('%(field_name)s')."
 
+#: cdedb/common/validation/validate.py:3339
 #: cdedb/common/validation/validate.py:3347
 #: cdedb/common/validation/validate.py:3378
 #: cdedb/common/validation/validate.py:3379
 msgid "Invalid UTF-8 sequence."
 msgstr "Ungültige UTF-8-Sequenz."
 
+#: cdedb/common/validation/validate.py:3344
 #: cdedb/common/validation/validate.py:3352
 #: cdedb/common/validation/validate.py:3383
 #: cdedb/common/validation/validate.py:3384
@@ -7427,119 +7585,146 @@ msgstr "Ungültige UTF-8-Sequenz."
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr "Ungültige JSON-Syntax (Zeile %(line)s, Spalte %(col)s)."
 
+#: cdedb/common/validation/validate.py:3374
 #: cdedb/common/validation/validate.py:3382
 #: cdedb/common/validation/validate.py:3413
 #: cdedb/common/validation/validate.py:3414
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
+#: cdedb/common/validation/validate.py:3397
 #: cdedb/common/validation/validate.py:3405
 #: cdedb/common/validation/validate.py:3436
 #: cdedb/common/validation/validate.py:3437
 msgid "Schema version mismatch."
 msgstr "Schemaversion weicht ab."
 
+#: cdedb/common/validation/validate.py:3691
 #: cdedb/common/validation/validate.py:3698
 #: cdedb/common/validation/validate.py:3730
 msgid "Checkout time may only be empty for latest checkin period."
 msgstr "Checkoutzeit darf nur für neusten Zeitraum leer sein."
 
+#: cdedb/common/validation/validate.py:3695
 #: cdedb/common/validation/validate.py:3702
 #: cdedb/common/validation/validate.py:3734
 msgid "Inconsistent sequence of checkin periods."
 msgstr "Inkonsistente Folge von Checkinzeiträumen."
 
+#: cdedb/common/validation/validate.py:3841
 #: cdedb/common/validation/validate.py:3848
 #: cdedb/common/validation/validate.py:3880
 #, python-format
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr "Es gibt bereits ein Feld mit diesem Namen ('%(field_name)s')."
 
+#: cdedb/common/validation/validate.py:3916
 #: cdedb/common/validation/validate.py:3923
 #: cdedb/common/validation/validate.py:3955
 msgid "Must be a registered event IBAN."
 msgstr "Muss eine registrierte Veranstaltungs-IBAN sein."
 
+#: cdedb/common/validation/validate.py:3929
 #: cdedb/common/validation/validate.py:3936
 #: cdedb/common/validation/validate.py:3968
 msgid "Must be before hard and soft limit."
 msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
+#: cdedb/common/validation/validate.py:3941
 #: cdedb/common/validation/validate.py:3948
 #: cdedb/common/validation/validate.py:3980
 msgid "Unknown lodge field."
 msgstr "Unbekanntes Hauswunschfeld."
 
+#: cdedb/common/validation/validate.py:3949
 #: cdedb/common/validation/validate.py:3956
 #: cdedb/common/validation/validate.py:3988
 msgid "Lodge field must be a registration field."
 msgstr "Hauswunschfeld muss ein Anmeldungsfeld sein."
 
+#: cdedb/common/validation/validate.py:3954
 #: cdedb/common/validation/validate.py:3961
 #: cdedb/common/validation/validate.py:3993
 msgid "Lodge field must have type 'string'."
 msgstr "Hauswunschfeld muss vom Typ 'Text' sein."
 
+#: cdedb/common/validation/validate.py:3960
 #: cdedb/common/validation/validate.py:3967
 #: cdedb/common/validation/validate.py:3999
 msgid "Unknown reimbursement IBAN field."
 msgstr "Unbekanntes Erstattungs-IBAN-Feld."
 
+#: cdedb/common/validation/validate.py:3970
 #: cdedb/common/validation/validate.py:3977
 #: cdedb/common/validation/validate.py:4009
 msgid "Reimbursement IBAN field must be a registration field."
 msgstr "Erstattungs-IBAN-Feld muss ein Anmeldungsfeld sein."
 
+#: cdedb/common/validation/validate.py:3979
 #: cdedb/common/validation/validate.py:3986
 #: cdedb/common/validation/validate.py:4018
 msgid "Reimbursement IBAN field must have type 'IBAN'."
 msgstr "Erstattungs-IBAN-Feld muss vom Typ 'IBAN' sein."
 
+#: cdedb/common/validation/validate.py:4012
 #: cdedb/common/validation/validate.py:4019
 #: cdedb/common/validation/validate.py:4051
 msgid "Invalid domain for this mailinglist type."
 msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
+#: cdedb/common/validation/validate.py:4017
 #: cdedb/common/validation/validate.py:4024
 #: cdedb/common/validation/validate.py:4056
 msgid "Cannot have event part group without event."
 msgstr ""
 "Kann keine Veranstaltungsteilgruppe haben ohne eine Veranstaltung zu haben."
 
+#: cdedb/common/validation/validate.py:4189
 #: cdedb/common/validation/validate.py:4196
 #: cdedb/common/validation/validate.py:4228
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
+#: cdedb/common/validation/validate.py:4192
 #: cdedb/common/validation/validate.py:4199
 #: cdedb/common/validation/validate.py:4231
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
+#: cdedb/common/validation/validate.py:4196
 #: cdedb/common/validation/validate.py:4203
 #: cdedb/common/validation/validate.py:4235
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
 #: cdedb/common/validation/validate.py:4225
+#: cdedb/frontend/assembly/ballot.py:921
+msgid "Duplicate shortname."
+msgstr "Kurzname doppelt vergeben."
+
+#: cdedb/common/validation/validate.py:4225
+#: cdedb/common/validation/validate.py:4229
 #: cdedb/common/validation/validate.py:4257
 #: cdedb/common/validation/validate.py:4258
 msgid "Must not specify both absolute and relative quorum."
 msgstr "Darf nicht gleichzeitig absolutes und relatives Quorum angeben."
 
 #: cdedb/common/validation/validate.py:4235
+#: cdedb/common/validation/validate.py:4239
 #: cdedb/common/validation/validate.py:4267
 #: cdedb/common/validation/validate.py:4268
 msgid "Relative quorum must be between 0 and 100."
 msgstr "Relatives Quorum muss zwischen 0 und 100 liegen."
 
 #: cdedb/common/validation/validate.py:4238
+#: cdedb/common/validation/validate.py:4242
 #: cdedb/common/validation/validate.py:4270
 #: cdedb/common/validation/validate.py:4271
 msgid "Must be specified if quorum is given."
 msgstr "Muss angegeben werden falls das Quorum benutzt wird."
 
 #: cdedb/common/validation/validate.py:4241
+#: cdedb/common/validation/validate.py:4245
 #: cdedb/common/validation/validate.py:4273
 #: cdedb/common/validation/validate.py:4274
 msgid "Must specify a quorum if vote extension end is given."
@@ -7547,36 +7732,42 @@ msgstr ""
 "Ein Quorum muss angegeben werden, wenn eine Verlängerung angegeben ist."
 
 #: cdedb/common/validation/validate.py:4296
+#: cdedb/common/validation/validate.py:4300
 #: cdedb/common/validation/validate.py:4328
 #: cdedb/common/validation/validate.py:4329
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
 #: cdedb/common/validation/validate.py:4366
+#: cdedb/common/validation/validate.py:4372
 #: cdedb/common/validation/validate.py:4398
 #: cdedb/common/validation/validate.py:4399
 msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
 #: cdedb/common/validation/validate.py:4384
+#: cdedb/common/validation/validate.py:4390
 #: cdedb/common/validation/validate.py:4416
 #: cdedb/common/validation/validate.py:4417
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
 #: cdedb/common/validation/validate.py:4387
+#: cdedb/common/validation/validate.py:4393
 #: cdedb/common/validation/validate.py:4419
 #: cdedb/common/validation/validate.py:4420
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
 #: cdedb/common/validation/validate.py:4389
+#: cdedb/common/validation/validate.py:4395
 #: cdedb/common/validation/validate.py:4421
 #: cdedb/common/validation/validate.py:4422
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
 #: cdedb/common/validation/validate.py:4408
+#: cdedb/common/validation/validate.py:4414
 #: cdedb/common/validation/validate.py:4440
 #: cdedb/common/validation/validate.py:4441
 #, python-format
@@ -7584,6 +7775,7 @@ msgid "Invalid  regular expression (position %(pos)s)."
 msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 
 #: cdedb/common/validation/validate.py:4420
+#: cdedb/common/validation/validate.py:4426
 #: cdedb/common/validation/validate.py:4452
 #: cdedb/common/validation/validate.py:4453
 #, python-format
@@ -7595,12 +7787,14 @@ msgstr ""
 "wohingegen .^$ erlaubt sind."
 
 #: cdedb/common/validation/validate.py:4437
+#: cdedb/common/validation/validate.py:4443
 #: cdedb/common/validation/validate.py:4469
 #: cdedb/common/validation/validate.py:4470
 msgid "Combine a minimum of two fields."
 msgstr "Kombiniere mindestens zwei Felder."
 
 #: cdedb/common/validation/validate.py:4441
+#: cdedb/common/validation/validate.py:4447
 #: cdedb/common/validation/validate.py:4473
 #: cdedb/common/validation/validate.py:4474
 #, python-format
@@ -7608,6 +7802,7 @@ msgid "Unknown field(s): %(fields)s."
 msgstr "Unbekannte(s) Feld(er): %(fields)s."
 
 #: cdedb/common/validation/validate.py:4447
+#: cdedb/common/validation/validate.py:4453
 #: cdedb/common/validation/validate.py:4479
 #: cdedb/common/validation/validate.py:4480
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:103
@@ -7615,30 +7810,35 @@ msgid "Incompatible field types."
 msgstr "Inkompatible Feldtypen."
 
 #: cdedb/common/validation/validate.py:4523
+#: cdedb/common/validation/validate.py:4529
 #: cdedb/common/validation/validate.py:4555
 #: cdedb/common/validation/validate.py:4556
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
 #: cdedb/common/validation/validate.py:4571
+#: cdedb/common/validation/validate.py:4577
 #: cdedb/common/validation/validate.py:4603
 #: cdedb/common/validation/validate.py:4604
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
 #: cdedb/common/validation/validate.py:4605
+#: cdedb/common/validation/validate.py:4611
 #: cdedb/common/validation/validate.py:4637
 #: cdedb/common/validation/validate.py:4638
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
 #: cdedb/common/validation/validate.py:4652
+#: cdedb/common/validation/validate.py:4658
 #: cdedb/common/validation/validate.py:4684
 #: cdedb/common/validation/validate.py:4685
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
 #: cdedb/common/validation/validate.py:4681
+#: cdedb/common/validation/validate.py:4687
 #: cdedb/common/validation/validate.py:4713
 #: cdedb/common/validation/validate.py:4714
 #, python-format
@@ -7646,12 +7846,14 @@ msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
 #: cdedb/common/validation/validate.py:4700
+#: cdedb/common/validation/validate.py:4706
 #: cdedb/common/validation/validate.py:4732
 #: cdedb/common/validation/validate.py:4733
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
 #: cdedb/common/validation/validate.py:4737
+#: cdedb/common/validation/validate.py:4743
 #: cdedb/common/validation/validate.py:4769
 #: cdedb/common/validation/validate.py:4770
 #, python-format
@@ -7659,27 +7861,32 @@ msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
 #: cdedb/common/validation/validate.py:4818
+#: cdedb/common/validation/validate.py:4824
 #: cdedb/common/validation/validate.py:4850
 #: cdedb/common/validation/validate.py:4851
 msgid "Unknown parent entry."
 msgstr "Unbekannter Elterneintrag."
 
 #: cdedb/common/validation/validate.py:4820
+#: cdedb/common/validation/validate.py:4826
 #: cdedb/common/validation/validate.py:4852
 #: cdedb/common/validation/validate.py:4853
 msgid "Invalid parent type."
 msgstr "Ungültiger Elterntyp."
 
 #: cdedb/common/validation/validate.py:4855
+#: cdedb/common/validation/validate.py:4861
 #: cdedb/common/validation/validate.py:4887
 #: cdedb/common/validation/validate.py:4888
 msgid "Must be after timestamp."
 msgstr "Muss nach Zeitstempel liegen."
 
 #: cdedb/common/validation/validate.py:4877
+#: cdedb/common/validation/validate.py:4883
 #: cdedb/common/validation/validate.py:4909
 #: cdedb/common/validation/validate.py:4910
 #: cdedb/common/validation/validate.py:4949
+#: cdedb/common/validation/validate.py:4955
 #: cdedb/common/validation/validate.py:4981
 #: cdedb/common/validation/validate.py:4982
 #, python-format
@@ -7687,6 +7894,7 @@ msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
 #: cdedb/common/validation/validate.py:4929
+#: cdedb/common/validation/validate.py:4935
 #: cdedb/common/validation/validate.py:4961
 #: cdedb/common/validation/validate.py:4962
 msgid "SubscriptionState.none is not written into the database."
@@ -7811,7 +8019,8 @@ msgstr ""
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
-#: cdedb/frontend/application.py:354 cdedb/frontend/application.py:362
+#: cdedb/frontend/application.py:354 cdedb/frontend/application.py:356
+#: cdedb/frontend/application.py:362
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -7823,7 +8032,8 @@ msgstr ""
 "es leider auch zu ungewollten Beschränkungen kommen. Deine Limitierung wird "
 "im Laufe der nächsten Tage automatisch zurückgesetzt."
 
-#: cdedb/frontend/application.py:373 cdedb/frontend/application.py:381
+#: cdedb/frontend/application.py:373 cdedb/frontend/application.py:375
+#: cdedb/frontend/application.py:381
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -7958,10 +8168,6 @@ msgstr "Ablehnung kann nur exklusiv gewählt werden."
 #: cdedb/frontend/assembly/ballot.py:899
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
-
-#: cdedb/frontend/assembly/ballot.py:921
-msgid "Duplicate shortname."
-msgstr "Option doppelt gefunden."
 
 #: cdedb/frontend/assembly/base.py:200 cdedb/frontend/assembly/base.py:221
 #: cdedb/frontend/event/event.py:316 cdedb/frontend/event/event.py:330

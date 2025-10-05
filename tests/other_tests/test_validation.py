@@ -20,7 +20,6 @@ from cdedb.common.validation.types import (
     Email,
     EmptyDict,
     EmptyList,
-    LegacyShortname,
     NonNegativeDecimal,
     NonNegativeInt,
     NonNegativeLargeDecimal,
@@ -32,8 +31,6 @@ from cdedb.common.validation.types import (
     PrintableASCII,
     PrintableASCIIType,
     Realm,
-    SafeStr,
-    ShortnameRestrictiveIdentifier,
     StringType,
     Vote,
 )
@@ -249,24 +246,22 @@ class TestValidation(TestValidationBase):
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
 
-    def test_shortname(self) -> None:
-        self.do_validator_test(ShortnameRestrictiveIdentifier, (
-            ("asdf", "asdf", None),
-            ("a" * 11, None, ValidationWarning),
-            ("^", None, ValueError),
-        ), ignore_warnings=False)
-        self.do_validator_test(ShortnameRestrictiveIdentifier, (
-            ("asdf", "asdf", None),
-            ("a" * 11, "a" * 11, None),
+    def test_unicode(self) -> None:
+        # Normalize using NFC by default.
+        self.do_validator_test(str, (
+            ("\u0065\u0301", "\u00e9", None),  # Combining characters are composed.
+            ("\u00e9", "\u00e9", None),
+            ("é", "\u00e9", None),  # This input is actually two characters.
+            ("é", "\u00e9", None),
+            ("²", "²", None),  # This remains, NFKC would convert it to "2".
         ))
-        self.do_validator_test(LegacyShortname, (
-            ("a" * 11, "a" * 11, None),
-            ("a" * 31, None, ValidationWarning),
-        ), ignore_warnings=False)
-        self.do_validator_test(LegacyShortname, (
-            ("a" * 11, "a" * 11, None),
-            ("a" * 31, "a" * 31, None),
-        ))
+        self.do_validator_test(str, (
+            ("\u0065\u0301", "\u0065\u0301", None),
+            ("\u00e9", "\u00e9", None),
+            ("é", "\u0065\u0301", None),  # This input is actually two characters.
+            ("é", "\u00e9", None),
+            ("²", "²", None),
+        ), extraparams={"unicode_normalize": False})
 
     def test_bytes(self) -> None:
         self.do_validator_test(bytes, (
@@ -704,17 +699,6 @@ class TestValidation(TestValidationBase):
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8-sig'))
         self.assertEqual("\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
-
-    def test_safe_str(self) -> None:
-        spec = [
-            ("abc123 .,-+()/", "abc123 .,-+()/", None),
-            ("", None, ValueError),
-            (1, "1", None),
-            ((1, 2, 3), "(1, 2, 3)", None),
-            ("abc[]&def", None, ValueError(
-                "Forbidden characters (%(chars)s). (None)", {"chars": "[]&"})),
-        ]
-        self.do_validator_test(SafeStr, spec)
 
     def test_generic_list(self) -> None:
         self.do_validator_test(list[int], [
