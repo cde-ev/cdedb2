@@ -1619,16 +1619,20 @@ def _persona(
         if val["birth_name"] == val["family_name"] and not ignore_warnings:
             errs.append(ValidationWarning("birth_name", n_(
                 "Birth name is equal to family name and should be removed.")))
+    if supplement := val.get("name_supplement"):
+        name_keys = ["given_names", "family_name", "legal_given_names", "nickname"]
+        if any(val.get(key) and val[key] in supplement for key in name_keys):
+            msg = n_("Should not contain (parts of) your name.")
+            if not ignore_warnings:
+                errs.append(ValidationWarning("name_supplement", msg))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
-            try:
+            with errs:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
                     aux=val.get('country' + suffix, ""),
                     ignore_warnings=ignore_warnings, **kwargs)
                 val['postal_code' + suffix] = postal_code
-            except ValidationSummary as e:
-                errs.extend(e)
     if errs:
         raise errs
 

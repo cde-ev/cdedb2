@@ -1281,12 +1281,6 @@ class CoreBaseFrontend(AbstractFrontend):
             if address_row in data.keys():
                 if not data[address_row]:
                     rs.append_validation_error((address_row, e))
-        if supplement := data.get("name_supplement"):
-            name_keys = ["given_names", "family_name", "legal_given_names", "nickname"]
-            if any(data.get(key) and data[key] in supplement for key in name_keys):
-                msg = n_("Should not contain (parts of) your name.")
-                if not rs.ignore_warnings:
-                    rs.append_validation_error(("name_supplement", ValidationWarning(msg)))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."
