@@ -607,9 +607,7 @@ class EventBackend(
                     gdelta[group_id] = new_group
                     gprevious[group_id] = None
                     if not dryrun:
-                        new = copy.deepcopy(new_group)
-                        new['event_id'] = event_id
-                        new_id = self.create_lodgement_group(rs, new)
+                        new_id = self.create_lodgement_group(rs, event_id, new_group)
                         gmap[group_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_group)
@@ -617,9 +615,7 @@ class EventBackend(
                         gdelta[group_id] = delta
                         gprevious[group_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = group_id
-                            self.set_lodgement_group(rs, todo)
+                            self.set_lodgement_group(rs, group_id, delta)
             if gdelta:
                 total_delta['lodgement_groups'] = gdelta
                 total_previous['lodgement_groups'] = gprevious
@@ -644,11 +640,10 @@ class EventBackend(
                     lprevious[lodgement_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_lodgement)
-                        new['event_id'] = event_id
                         if new['group_id'] in gmap:
                             old_id = new['group_id']
                             new['group_id'] = gmap[old_id]
-                        new_id = self.create_lodgement(rs, new)
+                        new_id = self.create_lodgement(rs, event_id, new)
                         lmap[lodgement_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_lodgement)
@@ -657,12 +652,11 @@ class EventBackend(
                         lprevious[lodgement_id] = previous
                         if not dryrun:
                             changed_lodgement = copy.deepcopy(delta)
-                            changed_lodgement['id'] = lodgement_id
                             if 'group_id' in changed_lodgement:
                                 old_id = changed_lodgement['group_id']
                                 if old_id in gmap:
                                     changed_lodgement['group_id'] = gmap[old_id]
-                            self.set_lodgement(rs, changed_lodgement)
+                            self.set_lodgement(rs, lodgement_id, changed_lodgement)
             if ldelta:
                 total_delta['lodgements'] = ldelta
                 total_previous['lodgements'] = lprevious

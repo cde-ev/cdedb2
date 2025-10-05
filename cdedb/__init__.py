@@ -5,3 +5,7 @@
 This application offers an electronic member directory and an academy
 coordination component as well as some other functionality to the CdE.
 """
+
+from cdedb.logging_ import setup_root_logger
+
+setup_root_logger()

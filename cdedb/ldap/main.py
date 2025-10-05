@@ -15,7 +15,7 @@ from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 from cdedb.ldap.server import LdapHandler
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("cdedb.ldap")
 
 
 async def main() -> None:
@@ -51,7 +51,7 @@ async def main() -> None:
 
     # Systemd socket activation
     if "LISTEN_FDS" in os.environ:
-        logging.debug("Detected socket activation")
+        logger.debug("Detected socket activation")
         # Systemd passes fds from SD_LISTEN_FDS_START...SD_LISTEN_FDS_START+LISTEN_FDS,
         # SD_LISTEN_FDS_START is always 3, and we only expect one fd to be passed to us.
         # Set family and type to -1 which instructs Python
@@ -70,7 +70,7 @@ async def main() -> None:
     )
 
     for s in server.sockets:
-        logging.info(f"Listening on {s!r}")
+        logger.info(f"Listening on {s!r}")
 
     def shutdown(server: asyncio.Server) -> None:
         # TODO We should probably send a NoticeOfDisconnection
@@ -90,5 +90,4 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

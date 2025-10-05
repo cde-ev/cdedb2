@@ -82,6 +82,7 @@ RUN /usr/local/bin/playwright install
 # - graphviz for the python package with the same name
 # - libicu-dev for pyicu
 # - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
+# - libsystemd-dev for systemd-python
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     wget \
     unzip \
@@ -92,6 +93,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     graphviz \
     libicu-dev \
     libmagic1 \
+    libsystemd-dev \
     \
     && rm -rf /var/lib/apt/lists/*
 

@@ -21,8 +21,7 @@
     {{ util.context_heading(gettext("Course Choices"), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
-{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False,
-                     not_participating=False) %}
+{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, not_participating=False) %}
     {% if course_id %}
         {% with course = courses[course_id] %}
             {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
@@ -30,8 +29,7 @@
                            ('course-too-many' if course['max_size'] and attendees > course['max_size'] else
                             ('course-too-few' if course['min_size'] and attendees < course['min_size'] else
                              ('course-exactly-full' if course['max_size'] and attendees == course['max_size'] else ''))) %}
-            <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
-                       {% if filtered %}filtered_column{% endif %} {{ aclass }}">
+            <td class="{% if border_left %}b-left {% endif %}text-center{% if primary %} course-primary{% endif %} {{ aclass }}">
                 <span title="{{ course.shortlabel }} {# -#}
                             {% if course['max_size'] -%}
                                 ({% trans count=attendees, max=course['max_size'] %}
@@ -50,8 +48,7 @@
         {% endwith %}
     {% else %}
         {% set aclass = 'course-cancelled' if complain_empty else '' %}
-        <td class="{% if border_left %}b-left{% endif %} {% if primary %}course-primary{% endif %} {{ aclass }}
-                   {% if filtered %}filtered_column{% endif %}">
+        <td class="{% if border_left %}b-left{% endif %} {% if primary %}course-primary{% endif %} {{ aclass }}">
         </td>
     {% endif %}
 {% endmacro %}
@@ -169,7 +166,7 @@
         </div>
 
         <div class="table-container">
-        <table class="table table-condensed table-hover ls-list" id="course_choice_table">
+        <table class="table table-condensed table-hover ls-list course-colored" id="course_choice_table">
             <thead>
                 {% if ambience['event']['tracks']|length > 1 %}
                     <tr>
@@ -186,27 +183,15 @@
                         <th>{% trans %}Name{% endtrans %}</th>
                     {% endif %}
 
-                    {# Some definitions to highlight the headings of the filtered columns #}
-                    {% set cfp = enums.CourseFilterPositions %}
-                    {% macro filtered_col_class(track_id, position) -%}
-                        {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
-                            {% if position == values.get('position').int
-                                  or values.get('position').enum == cfp.anywhere
-                                  or (values.get('position').enum == cfp.any_choice
-                                      and position >= 0) -%}
-                                filtered_column
-                            {% endif -%}
-                        {% endif -%}
-                    {% endmacro %}
                     {% for track in ambience['event']['tracks'].values()|sort %}
-                        <th class="b-left text-center {{ filtered_col_class(track.id, cfp.assigned.value) }}">
+                        <th class="b-left text-center">
                             {{ util.make_icon('crosshairs', title=gettext("assigned to")) }}
                         </th>
-                        <th class="b-left text-center {{ filtered_col_class(track.id, cfp.instructor.value) }}">
+                        <th class="b-left text-center">
                             {% trans %}Instr.{% endtrans %}
                         </th>
                         {% for i in range(track['num_choices']) %}
-                            <th class="text-center {{ filtered_col_class(track.id, i) }}">
+                            <th class="text-center">
                                 {{ (i + 1) }}.</th>
                         {% endfor %}
                     {% endfor %}
@@ -227,7 +212,6 @@
                                          persona|persona_name(include_nickname=True)) }}
                         </td>
                         {% for track in ambience['event']['tracks'].values()|sort %}
-                            {% set track_is_filtered = (values['track_id'] in ('', track.id)) %}
                             {% if registration['parts'][track['part_id']]['status'] != enums['RegistrationPartStati'].not_applied %}
                                 {% set is_participant = registration['parts'][track['part_id']]['status']
                                                             == enums['RegistrationPartStati'].participant %}
@@ -279,7 +263,7 @@
     </script>
 
     <hr />
-    <p>
+    <p class="course-colored">
         <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
         <span class="color-legend course-too-few"></span>&nbsp;{% trans %}Not enough Attendees{% endtrans %}&emsp;
         <span class="color-legend course-too-many"></span>&nbsp;{% trans %}Too many Attendees{% endtrans %}&emsp;

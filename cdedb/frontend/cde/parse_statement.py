@@ -30,7 +30,6 @@ from cdedb.common.parse.util import (
     parse_amount,
     simplify_amount,
 )
-from cdedb.config import LazyConfig
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
 from cdedb.models.common import CdEDataclassMap
@@ -40,10 +39,6 @@ if TYPE_CHECKING:
     from cdedb.backend.event import EventBackend
 
 BackendGetter = Callable[[int], CdEDBObject]
-
-
-_CONF = LazyConfig()
-# _LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
 
 
 @dataclasses.dataclass

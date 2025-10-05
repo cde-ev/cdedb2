@@ -111,8 +111,6 @@ Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", _CdEDBObject)
-LodgementGroup = _NewType("LodgementGroup", _CdEDBObject)
-Lodgement = _NewType("Lodgement", _CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", _CdEDBObject)
 # TODO maybe cast keys to str
 Questionnaire = _NewType("Questionnaire", dict[int, list[QuestionnaireRow]])

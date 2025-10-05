@@ -7,11 +7,10 @@ here. An exception are the default queries, which are defined in `query_defaults
 Each config object takes into account the default values found in here. They can
 be overwritten with values in an additional config file, where the path to this
 file has to be present as environment variable CDEDB_CONFIGPATH.
-Note that setting that variable is mandatory, to prevent accidental misses.
 """
 
+import abc
 import collections
-import collections.abc
 import datetime
 import decimal
 import importlib.util
@@ -32,29 +31,41 @@ PathLike = Union[pathlib.Path, str]
 # autobuild, docker-compose and production expect the config per default.
 DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
 
+# Default log level of our application. Note that this is applied not directly at startup,
+#  but shortly afterwards at the first config access.
+DEFAULT_LOG_LEVEL = logging.INFO
+
 
 def set_configpath(path: PathLike) -> None:
     """Helper to set the configpath as environment variable."""
     os.environ["CDEDB_CONFIGPATH"] = str(path)
 
 
-def get_configpath(fallback: bool = False) -> pathlib.Path:
-    """Helper to get the config path from the environment.
-
-    :param fallback: Whether the DEFAULT_CONFIGPATH should be set and returned as config
-        path if CDEDB_CONFIGPATH is not set. This should only be used in helper scripts.
-    """
+def get_configpath() -> pathlib.Path:
+    """Helper to get the config path from the environment."""
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    if fallback:  # TODO: coverage?
-        _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
-        set_configpath(DEFAULT_CONFIGPATH)
-        return DEFAULT_CONFIGPATH
-    raise RuntimeError("No config path set!")  # TODO: coverage
+    return DEFAULT_CONFIGPATH
 
 
-# TODO where exactly does this log?
+def start_freezing_new_configs() -> None:
+    """Frozen configs will not update themselves upon changes of CDEDB_CONFIGPATH.
+
+    This is mainly required for scripts and shall not be used in regular code.
+    The environment variable is read in `BasicConfig`, marking all newly created
+    config objects as frozen. Remember to call `stop_freezing_new_configs` after
+    you are done.
+    """
+    os.environ["CDEDB_CONFIG_FREEZE"] = "True"
+
+
+def stop_freezing_new_configs() -> None:
+    """Counterpart of `start_freezing_new_configs`."""
+    del os.environ["CDEDB_CONFIG_FREEZE"]
+
+
 _LOGGER = logging.getLogger(__name__)
+_ROOT_LOGGER = logging.getLogger()
 
 _currentdir = pathlib.Path(__file__).resolve().parent
 if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: no cover
@@ -143,18 +154,8 @@ _DEFAULTS = {
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
-    # Directory in which all logs will be saved. The name of the specific log file will
-    # be determined by the instance generating the log. The global log is in 'cdedb.log'
-    "LOG_DIR": pathlib.Path("/var/log/cdedb/"),
-
-    # Logging level for CdEDBs own log files
-    "LOG_LEVEL": logging.INFO,
-
-    # Logging level for syslog
-    "SYSLOG_LEVEL": logging.WARNING,
-
-    # Logging level for stdout
-    "CONSOLE_LOG_LEVEL": None,
+    # log level of our application
+    "LOG_LEVEL": DEFAULT_LOG_LEVEL,
 
     # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
@@ -271,8 +272,11 @@ _DEFAULTS = {
     # aliases which are recognized for mailinglists
     "MAILMAN_ACCEPTABLE_ALIASES": {
         "verwaltung@lists.cde-ev.de": ["datenbank@cde-ev.de"],
-        "vorstand@lists.cde-ev.de": ["info@cde-ev.de",
-                                     "thomas.riebe@foerderverein-eisenberg.de"],
+        "vorstand@lists.cde-ev.de": [
+            "info@cde-ev.de",
+            "thomas.riebe@foerderverein-eisenberg.de"
+        ],
+        "akademien@lists.cde-ev.de": ["thomas.riebe@foerderverein-eisenberg.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
         "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
@@ -431,7 +435,70 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     return {key: getattr(override, key) for key in dir(override)}
 
 
-class Config(Mapping[str, Any]):
+class BaseConfig(Mapping[str, Any], abc.ABC):
+    _configpath: pathlib.Path
+    _configchain: collections.ChainMap[str, Any]
+    # Do not update the configpath / configchain on environment variable changes.
+    # Needed for scripts.
+    _is_frozen: bool
+
+    def __init__(self) -> None:
+        configpath = self._get_configpath()
+        self._configpath = configpath
+        self._is_frozen = bool(os.environ.get("CDEDB_CONFIG_FREEZE"))
+
+        if not pathlib.Path(configpath).is_file():
+            raise RuntimeError(  # pragma: no cover
+                f"Config file {configpath} not found!")
+
+        self._process_config_overwrite()
+
+    @abc.abstractmethod
+    def _get_configpath(self) -> pathlib.Path: ...
+
+    @abc.abstractmethod
+    def _process_config_overwrite(self) -> None: ...
+
+    def _update_configpath(self) -> bool:
+        """Adjust config if configpath changed since last access.
+
+        :return: Wheter the configpath had been updated.
+        """
+        if self._is_frozen:
+            return False
+        if (configpath := self._get_configpath()) != self._configpath:
+            old_configpath = self._configpath
+            if not pathlib.Path(configpath).is_file():
+                raise RuntimeError(  # pragma: no cover
+                    f"Config file {configpath} not found!")
+            self._configpath = configpath
+            _LOGGER.info(f"Configpath changed: {old_configpath} -> {configpath}")
+            self._process_config_overwrite()
+            return True
+        return False
+
+    def __getitem__(self, key: str) -> Any:
+        self._update_configpath()
+        return self._configchain.__getitem__(key)
+
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
+        self._update_configpath()
+        return self._configchain.__iter__()
+
+    def __len__(self) -> int:  # pragma: no cover
+        self._update_configpath()
+        return self._configchain.__len__()
+
+    # The repr is only relevant for debugging.
+    def __repr__(self) -> str:  # pragma: no cover
+        self._update_configpath()
+        name = self.__class__.__name__
+        return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
+
+
+class Config(BaseConfig):
     """Main configuration.
 
     Can be overridden through the file specified by the CDEDB_CONFIGPATH environment
@@ -439,94 +506,23 @@ class Config(Mapping[str, Any]):
     the _DEFAULT configuration.
     """
 
-    def __init__(self) -> None:
-        configpath = get_configpath()
-        self._configpath = configpath
+    def _get_configpath(self) -> pathlib.Path:
+        return get_configpath()
 
-        name = self.__class__.__name__
-        _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
-
-        if not configpath:
-            raise RuntimeError(f"No configpath for {name} provided!")  # pragma: no cover
-        if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(  # pragma: no cover
-                f"During initialization of {name}, config file {configpath} not found!")
-
-        override = self._process_config_overwrite()
-        self._configchain = collections.ChainMap(override, _DEFAULTS)
-
-    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
+    def _process_config_overwrite(self) -> None:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow only keys which are already present in _DEFAULT.
         """
-        override = _import_from_file(self._configpath)
-        return {key: value for key, value in override.items() if key in _DEFAULTS}
-
-    def __getitem__(self, key: str) -> Any:
-        return self._configchain.__getitem__(key)
-
-    # The following dunder methods are required to to inheriting from `Mapping`,
-    #  even though we never actually use them.
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover
-        return self._configchain.__iter__()
-
-    def __len__(self) -> int:  # pragma: no cover
-        return self._configchain.__len__()
-
-    # The repr is only relevant for debugging.
-    def __repr__(self) -> str:  # pragma: no cover
-        name = self.__class__.__name__
-        return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
-
-
-class LazyConfig(Config):
-    """Lazy config object for usage global namespace.
-
-    It should be avoided in general, but sometimes a Config object needs to live in the
-    global namespace of a module. If this is the case, importing from this module would
-    cause the Config object to be initialized, which is an unwanted side effect which
-    may not happen during import (f.e. importing from this module and setting the
-    config path environment variable later on will fail).
-
-    To circumvent this, the LazyConfig object may be used instead – it behaves identical
-    to a Config object, beside the initialization happens not on instantiation but on
-    first access.
-    """
-
-    # noinspection PyMissingConstructor
-
-    def __init__(self) -> None:
-        name = self.__class__.__name__
-        _LOGGER.debug(f"Instantiate {name} object from {_LOGGER.findCaller()}.")
-        self.__initialized = False
-
-    def __init(self) -> None:
-        """Perform the initialization decoupled from the instantiation."""
-        if not self.__initialized:
-            name = self.__class__.__name__
-            _LOGGER.debug(f"Initialize {name} object from {_LOGGER.findCaller()}.")
-            super().__init__()
-            self.__initialized = True
-
-    def __getitem__(self, key: str) -> Any:
-        self.__init()
-        return super().__getitem__(key)
-
-    # The following dunder methods are required to to inheriting from `Mapping`,
-    #  even though we never actually use them.
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover
-        self.__init()
-        return super().__iter__()
-
-    def __len__(self) -> int:  # pragma: no cover
-        self.__init()
-        return super().__len__()
-
-    # The repr is only relevant for debugging.
-    def __repr__(self) -> str:  # pragma: no cover
-        self.__init()
-        return super().__repr__()
+        override = {
+            key: value
+            for key, value in _import_from_file(self._configpath).items()
+            if key in _DEFAULTS
+        }
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
+        # This is a bit hacky, but the only opportunity to ensure the used log
+        #  level is the one specified in the config.
+        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
 
 
 class TestConfig(Config):
@@ -537,15 +533,16 @@ class TestConfig(Config):
     all the configuration in our testsuite in a configfile.
     """
 
-    def _process_config_overwrite(self) -> MutableMapping[str, Any]:
+    def _process_config_overwrite(self) -> None:
         """Import the config overwrites from the file specified by the configpath.
 
         Allow additional keys which are not present in _DEFAULT.
         """
-        return _import_from_file(self._configpath)
+        override = _import_from_file(self._configpath)
+        self._configchain = collections.ChainMap(override, _DEFAULTS)
 
 
-class SecretsConfig(Mapping[str, Any]):
+class SecretsConfig(BaseConfig):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -553,20 +550,12 @@ class SecretsConfig(Mapping[str, Any]):
     should not be left in a globally accessible spot.
     """
 
-    def __init__(self) -> None:
+    def _get_configpath(self) -> pathlib.Path:
         config = Config()
-        configpath = config["SECRETS_CONFIGPATH"]
-        self._configpath = configpath
-        _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
+        return config["SECRETS_CONFIGPATH"]
 
-        if not configpath:
-            raise RuntimeError("No configpath for SecretsConfig provided!")  # pragma: no cover
-        if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(  # pragma: no cover
-                f"During initialization of SecretsConfig,"
-                f" config file {configpath} not found!")
-
-        override = _import_from_file(configpath)
+    def _process_config_overwrite(self) -> None:
+        override = _import_from_file(self._configpath)
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
@@ -575,14 +564,3 @@ class SecretsConfig(Mapping[str, Any]):
             self._configchain = collections.ChainMap(override)
         else:
             self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
-
-    def __getitem__(self, key: str) -> Any:
-        return self._configchain.__getitem__(key)
-
-    # The following dunder methods are required to to inheriting from `Mapping`,
-    #  even though we never actually use them.
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover
-        return self._configchain.__iter__()
-
-    def __len__(self) -> int:  # pragma: no cover
-        return self._configchain.__len__()

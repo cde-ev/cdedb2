@@ -30,7 +30,6 @@ from cdedb.common import (
     User,
     make_proxy,
     now,
-    setup_logger,
 )
 from cdedb.common.exceptions import (
     APITokenError,
@@ -83,16 +82,6 @@ class Application(BaseApp):
         self.event = EventFrontend()
         self.assembly = AssemblyFrontend()
         self.ml = MlFrontend()
-        logger_path = self.conf["LOG_DIR"] / "cdedb.log"
-        setup_logger("cdedb", logger_path, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-
-        # Set up a logger for all Worker instances.
-        setup_logger(
-            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
@@ -313,8 +302,6 @@ class Application(BaseApp):
                 realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
                 if user.persona_id in self.complaintproxy.list_enforcers(rs):
                     realm_roles['complaint'].add('enforcer')
-                if user.persona_id in self.complaintproxy.list_monitors(rs):
-                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')

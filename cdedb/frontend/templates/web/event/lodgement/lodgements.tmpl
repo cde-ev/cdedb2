@@ -120,7 +120,7 @@
                 {% endif %}
                 {% for lodgement_id, lodgement in sorted_lodgements.items() %}
                     <tr>
-                        {% set format = violations.get(lodgement_id=lodgement_id, part=None).lodgement_stats_format %}
+                        {% set format = violations.get(lodgement=lodgement, part=None).lodgement_stats_format %}
                         {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                         <td class="indent {{ aclass }}" title="{{ atitle }}"></td>
@@ -129,7 +129,7 @@
                                     readonly=not is_privileged_for('show_lodgement')) }}
                         </td>
                         {% for part in ambience['event']['parts'].values()|sort %}
-                            {% set format = violations.get(lodgement_id=lodgement_id, part=part).regular_inhabitant_stats_format %}
+                            {% set format = violations.get(lodgement=lodgement, part=part).regular_inhabitant_stats_format %}
                             {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                             <td class="text-right {% if loop.first %}b-left{% endif %} regular-inhabitants {{ aclass }}"
@@ -140,7 +140,7 @@
                                 {{ inhabitants[lodgement_id][part.id].regular|length }}
                             </td>
 
-                            {% set format = violations.get(lodgement_id=lodgement_id, part=part).camping_mat_inhabitant_stats_format %}
+                            {% set format = violations.get(lodgement=lodgement, part=part).camping_mat_inhabitant_stats_format %}
                             {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
                             <td class="text-right camping-mat-inhabitants {{ aclass }}" title="{{ atitle }}"
                                     id="lodge_camping_mat_inhabitants_{{ part.id }}_{{ lodgement_id }}">

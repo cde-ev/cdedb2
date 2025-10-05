@@ -28,16 +28,19 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
     drow_name,
     process_dynamic_input,
-    request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_multi_extractor,
+    event_associated_fields_to_request_multi,
+    event_guard,
+)
 
 EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
@@ -176,16 +179,13 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
-            entities = self.eventproxy.get_lodgements(rs, ids)
-            groups = self.eventproxy.get_lodgement_groups(rs, event_id)
+            lodgements = self.eventproxy.new_get_lodgements(rs, ids)
+            entities = {lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()}
             labels = {
-                lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
-                         else safe_filter(f"{lodg['title']}, <em>"
-                                          f"{groups[lodg['group_id']].title}</em>")
-                for lodg_id, lodg in entities.items()}
-            ordered_ids = xsorted(
-                entities.keys(),
-                key=lambda anid: EntitySorter.lodgement(entities[anid]))
+                lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
+                for lodg_id, lodg in lodgements.items()
+            }
+            ordered_ids = list(lodgements.keys())
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
@@ -255,15 +255,17 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
-        values = {f"input{anid}": entity['fields'].get(field.field_name)
-                  for anid, entity in entities.items()}
-        merge_dicts(rs.values, values)
+        merge_dicts(
+            rs.values,
+            *event_associated_fields_to_request_multi(rs.ambience['event'], entities),
+        )
         return self.render(
             rs, "fields/field_multiset", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
                 'entities': entities, 'labels': labels, 'ordered': ordered_ids,
                 'kind': kind.value, 'change_note': change_note,
                 'cancellink': self.FIELD_REDIRECT[kind],
+                'field': rs.ambience['event'].fields[field_id] if field_id else None,
             },
             get_mandatory_form_fields(self.field_multiset),
         )
@@ -295,12 +297,9 @@ class EventFieldMixin(EventBaseFrontend):
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
-        data_params: vtypes.TypeMapping = {
-            f"input{anid}": Optional[  # type: ignore[misc]
-                FIELD_DATATYPE_VALIDATORS[field.kind]]
-            for anid in entities
-        }
-        data = request_extractor(rs, data_params)
+        data = event_associated_fields_multi_extractor(
+            rs, rs.ambience["event"], kind, entities, field_id
+        )
         if rs.has_validation_errors():
             return self.field_multiset_form(
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
@@ -312,19 +311,15 @@ class EventFieldMixin(EventBaseFrontend):
         post_msg = build_msg(f"Setze Feld {field.field_name}", change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
-            if data[f"input{anid}"] != entity['fields'].get(field.field_name):
-                new = {
-                    'id': anid,
-                    'fields': {field.field_name: data[f"input{anid}"]},
-                }
-
+            if data[anid][field.field_name] != entity['fields'].get(field.field_name):
+                update: CdEDBObject = {'fields': data[anid]}
                 if kind == const.FieldAssociations.registration:
-                    self.eventproxy.set_registration(rs, new, msg)
+                    update['id'] = anid
+                    self.eventproxy.set_registration(rs, update, msg)
                 elif kind == const.FieldAssociations.course:
-                    del new['id']
-                    self.eventproxy.set_course(rs, anid, new)
+                    self.eventproxy.set_course(rs, anid, update)
                 elif kind == const.FieldAssociations.lodgement:
-                    self.eventproxy.set_lodgement(rs, new)
+                    self.eventproxy.set_lodgement(rs, anid, update)
                 else:
                     # this can not happen, since kind was validated successfully
                     raise RuntimeError(f"Unknown kind {kind}.")

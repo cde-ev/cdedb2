@@ -21,6 +21,10 @@ services:
         CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:
       - cdb
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
   ldap:
     extends:
       file: docker-compose-base.yaml
