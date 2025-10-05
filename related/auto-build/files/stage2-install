@@ -105,6 +105,11 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     --group "/cdedb2/pyproject.toml:dev" \
     --group "/cdedb2/pyproject.toml:playwright" \
 
+wget -qO- https://astral.sh/uv/install.sh | sh
+echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
+echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
+
+
 for file in /var/cache/apt/archives/*.deb
 do
   shred --iteration=0 --zero --remove $file
@@ -141,6 +146,8 @@ sudo -u cdedb touch /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
 echo "export EDITOR=nano" >> /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
+echo 'eval "$(uv generate-shell-completion bash)"' >> /home/cdedb/.bashrc
+echo 'eval "$(uvx --generate-shell-completion bash)"' >> /home/cdedb/.bashrc
 sudo -u cdedb touch /home/cdedb/.bash_profile
 echo "cd /cdedb2" >> /home/cdedb/.bash_profile
 echo "" >> /home/cdedb/.bash_profile
