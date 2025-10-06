@@ -651,7 +651,7 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             current = self.get_event(rs, event_id)
-            data = affirm(vtypes.Event, data, current=current)
+            data = affirm(vtypes.Event, data, event=current)
             data['id'] = event_id
 
             if not is_privileged(
@@ -1530,8 +1530,6 @@ class EventBaseBackend(EventLowLevelBackend):
                     part[new_key] = None
                 del part[f]
             for track in part['tracks'].values():
-                del track['id']
-                del track['part_id']
                 del track['track_group_ids']
                 for f in ('course_room_field_id',):
                     new_key = f.removesuffix("_id")

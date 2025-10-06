@@ -376,8 +376,8 @@ class CourseChoiceObject(abc.ABC):
     shortname: str
     sortkey: int
 
-    num_choices: int
-    min_choices: int
+    num_choices: vtypes.NonNegativeInt
+    min_choices: vtypes.NonNegativeInt
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
         init=False, compare=False, repr=False)
@@ -415,9 +415,14 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     database_table = "event.course_tracks"
     entity_key = "part_id"
 
+    id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ID
+    part_id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict)
 
     course_room_field_id: Optional[vtypes.ID]
 
@@ -748,20 +753,20 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
         return list(self.tracks.values())[0]
 
     @property
-    def num_choices(self) -> int:
+    def num_choices(self) -> vtypes.NonNegativeInt:
         return self.reference_track.num_choices
 
     @num_choices.setter
-    def num_choices(self, value: int) -> None:
+    def num_choices(self, value: vtypes.NonNegativeInt) -> None:
         for track in self.tracks.values():
             track.num_choices = value
 
     @property
-    def min_choices(self) -> int:
+    def min_choices(self) -> vtypes.NonNegativeInt:
         return self.reference_track.min_choices
 
     @min_choices.setter
-    def min_choices(self, value: int) -> None:
+    def min_choices(self, value: vtypes.NonNegativeInt) -> None:
         for track in self.tracks.values():
             track.min_choices = value
 

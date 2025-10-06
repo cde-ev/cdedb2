@@ -41,9 +41,6 @@ from cdedb.common.query import (
     QuerySpecEntry,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import (
-    EVENT_TRACK_COMMON_FIELDS,
-)
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import (
     Headers,
@@ -194,7 +191,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
+        data = check(rs, vtypes.Event, data, event=rs.ambience['event'])
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event'].shortname
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
@@ -585,7 +582,7 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
         readonly_synced_tracks = set()
         for track_id, track in xsorted(part.tracks.items()):
-            for k in EVENT_TRACK_COMMON_FIELDS:
+            for k, _ in models.CourseTrack.requestdict_fields(creation=None):
                 name = drow_name(k, entity_id=track_id, prefix="track")
                 current[name] = track.as_dict()[k]
             for tg_id, tg in track.track_groups.items():
@@ -642,9 +639,12 @@ class EventEventMixin(EventBaseFrontend):
         # process the dynamic track input
         #
         track_existing = rs.ambience['event'].parts[part_id].tracks
-        track_spec = EVENT_TRACK_COMMON_FIELDS
         track_data = process_dynamic_input(
-            rs, vtypes.EventTrack, track_existing, track_spec, prefix="track")
+            rs, models.CourseTrack, track_existing,
+            spec=dict(models.CourseTrack.requestdict_fields(creation=False)),
+            creation_spec=dict(models.CourseTrack.requestdict_fields(creation=True)),
+            additional_validation={"event": rs.ambience["event"]}, prefix="track",
+        )
 
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)

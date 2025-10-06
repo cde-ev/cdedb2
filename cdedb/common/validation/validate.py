@@ -2403,6 +2403,10 @@ def _optional_object_mapping_helper(
     """
     ret: dict[int, T | None] = {}
     errs = ValidationSummary()
+    # remove id_ from kwargs to make nested calls to this helper possible
+    kwargs = dict(kwargs)
+    if "id_" in kwargs:
+        del kwargs["id_"]
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
@@ -2433,6 +2437,8 @@ def _event(
       of a new entity.
     """
     val = _mapping(val, argname, **kwargs)
+    if creation:
+        kwargs['event'] = None
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
@@ -2447,8 +2453,6 @@ def _event(
 
     configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
     if configuration_fields:
-        if creation:
-            kwargs['current'] = None
         with errs:
             configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
                 configuration_fields, argname, creation=creation, **kwargs)
@@ -2480,9 +2484,10 @@ def _event(
 
     if 'fees' in val:
         with errs:
+            kwargs_ = dict(kwargs, event=val)
             val['fees'] = _optional_object_mapping_helper(
                 val['fees'], models_event.EventFee, 'fees', creation_only=creation,
-                event=val, questionnaire={}, **kwargs)
+                questionnaire={}, **kwargs_)
 
     if errs:
         raise errs
@@ -2541,26 +2546,10 @@ def _event_part(
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
-        newtracks = {}
-        for anid, track in val['tracks'].items():
-            try:
-                anid = _int(anid, 'tracks', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = anid < 0
-                try:
-                    if creation:
-                        track = _ALL_TYPED[EventTrack](
-                            track, 'tracks', creation=True, **kwargs)
-                    else:
-                        track = _ALL_TYPED[Optional[EventTrack]](  # type: ignore[index]
-                            track, 'tracks', **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newtracks[anid] = track
-        val['tracks'] = newtracks
+        with errs:
+            val['tracks'] = _optional_object_mapping_helper(
+                val['tracks'], models_event.CourseTrack, 'tracks',
+                creation_only=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2604,43 +2593,23 @@ def _event_part_group(
     return val
 
 
-EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': str,
-    'num_choices': NonNegativeInt,
-    'min_choices': NonNegativeInt,
-    'sortkey': int,
-    'course_room_field_id': Optional[ID],  # type: ignore[dict-item]
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventTrack:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
+    event: models_event.Event, creation: bool = False, id_: int, **kwargs: Any,
+) -> CdEDBObject:
     if creation:
-        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
+        min_choices = val["min_choices"]
+        num_choices = val["num_choices"]
     else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
+        track = event.tracks[id_]
+        min_choices = val.get("min_choices", track.min_choices)
+        num_choices = val.get("num_choices", track.num_choices)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    if ('num_choices' in val and 'min_choices' in val
-            and val['min_choices'] > val['num_choices']):
+    if min_choices > num_choices:
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
-
-    return EventTrack(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.TrackGroup)
@@ -3858,12 +3827,13 @@ def _serialized_event_questionnaire(
 def _serialized_event_configuration(
     val: Any, argname: str = "serialized_event_configuration", *,
     creation: bool = False,
-    current: Optional[models_event.Event],
+    event: models_event.Event | None,
     skip_field_validation: bool = False,
     **kwargs: Any,
 ) -> SerializedEventConfiguration:
 
     val = _mapping(val, argname, **kwargs)
+    current = event
 
     if creation:
         mandatory_fields = dict(**EVENT_COMMON_FIELDS)

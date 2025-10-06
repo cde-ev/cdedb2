@@ -45,7 +45,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS,
     EVENT_FIELD_SPEC,
     EVENT_PART_FIELDS,
     FIELD_DEFINITION_FIELDS,
@@ -296,14 +295,11 @@ class EventLowLevelBackend(AbstractBackend):
         current = self.sql_select(
             rs,
             "event.course_tracks",
-            COURSE_TRACK_FIELDS,
+            models.CourseTrack.database_fields(),
             (part_id,),
             entity_key="part_id",
         )
-        current = {
-            e['id']: {k: v for k, v in e.items() if k not in {'id', 'part_id'}}
-            for e in current
-        }
+        current = {e['id']: e for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -355,6 +351,7 @@ class EventLowLevelBackend(AbstractBackend):
             assert updated_track is not None
             if any(updated_track[k] != current[x][k] for k in updated_track):
                 updated_track['id'] = x
+                updated_track['part_id'] = part_id
                 ret *= self.sql_update(rs, "event.course_tracks", updated_track)
                 self.event_log(
                     rs,
