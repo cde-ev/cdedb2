@@ -1221,33 +1221,36 @@ class EventEventMixin(EventBaseFrontend):
             return self.create_event_form(rs)
         assert data is not None
 
-        new_id = self.eventproxy.create_event(rs, data)
-        data["id"] = new_id
-        event = self.eventproxy.get_event(rs, new_id)
-        for fee_ in fee_data:
-            self.eventproxy.create_event_fee(rs, new_id, fee_)
+        with TransactionObserver(
+                rs, self, "create_event", recipients=[self.conf["EVENT_ADMIN_ADDRESS"]]
+        ):
+            new_id = self.eventproxy.create_event(rs, data)
+            data["id"] = new_id
+            event = self.eventproxy.get_event(rs, new_id)
+            for fee_ in fee_data:
+                self.eventproxy.create_event_fee(rs, new_id, fee_)
 
-        if create_orga_list:
-            orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
-            if self.mlproxy.verify_existence(rs, orga_ml_data.address):
-                rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': orga_ml_data.address})
-            else:
-                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
-                rs.notify_return_code(code, success=n_("Orga mailinglist created."))
-            code = self.eventproxy.set_event(
-                rs, new_id, {"orga_address": orga_ml_data.address},
-                change_note="Mailadresse der Orgas gesetzt.")
-            rs.notify_return_code(code)
-        if create_participant_list:
-            participant_ml_data = self._get_mailinglist_setter(rs, event)
-            if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
-                code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
-                rs.notify_return_code(code,
-                                      success=n_("Participant mailinglist created."))
-            else:
-                rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': participant_ml_data.address})
+            if create_orga_list:
+                orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
+                if self.mlproxy.verify_existence(rs, orga_ml_data.address):
+                    rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                              {'address': orga_ml_data.address})
+                else:
+                    code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
+                    rs.notify_return_code(code, success=n_("Orga mailinglist created."))
+                code = self.eventproxy.set_event(
+                    rs, new_id, {"orga_address": orga_ml_data.address},
+                    change_note="Mailadresse der Orgas gesetzt.")
+                rs.notify_return_code(code)
+            if create_participant_list:
+                participant_ml_data = self._get_mailinglist_setter(rs, event)
+                if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
+                    code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
+                    rs.notify_return_code(code,
+                                          success=n_("Participant mailinglist created."))
+                else:
+                    rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                              {'address': participant_ml_data.address})
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
