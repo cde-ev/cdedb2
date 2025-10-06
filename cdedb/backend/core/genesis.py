@@ -6,7 +6,7 @@ for "genesis", that is for account creation via anonymous account requests.
 """
 
 from collections.abc import Collection
-from typing import Any, Optional, Protocol
+from typing import Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -186,12 +186,19 @@ class CoreGenesisBackend(CoreBaseBackend):
             is pending review, None if no such case exists.
         """
         email = affirm(str, email)
-        query = "SELECT id FROM core.genesis_cases WHERE username = %s AND status = %s"
-        params = (email, const.GenesisStati.unconfirmed)
+        query = """
+            SELECT id
+            FROM core.genesis_cases
+            WHERE username = %(username)s AND status = %(status)s
+        """
+        params: CdEDBObject = {
+            "username": email,
+            "status": const.GenesisStati.unconfirmed,
+        }
         data = self.query_one(rs, query, params)
         if data:
             return unwrap(data)
-        params = (email, const.GenesisStati.to_review)
+        params["status"] = const.GenesisStati.to_review
         data = self.query_one(rs, query, params)
         # Pylint does not understand, that unwrap(data) cannot be None here.
         return -unwrap(data) if data else None
@@ -220,15 +227,16 @@ class CoreGenesisBackend(CoreBaseBackend):
                 return 0, "core"
             elif not data["status"] == const.GenesisStati.unconfirmed:
                 return -1, data["realm"]
-            query = (
-                "UPDATE core.genesis_cases SET status = %s"
-                " WHERE id = %s AND status = %s"
-            )
-            params = (
-                const.GenesisStati.to_review,
-                case_id,
-                const.GenesisStati.unconfirmed,
-            )
+            query = """
+                UPDATE core.genesis_cases
+                SET status = %(new_status)s
+                WHERE id = %(id)s AND status = %(old_status)s
+            """
+            params = {
+                "new_status": const.GenesisStati.to_review,
+                "id": case_id,
+                "old_status": const.GenesisStati.unconfirmed,
+            }
             ret = self.query_exec(rs, query, params)
             if ret:
                 self.core_log(
@@ -260,18 +268,18 @@ class CoreGenesisBackend(CoreBaseBackend):
             {f"{realm}_admin", "core_admin"} & rs.user.roles for realm in realms
         ):
             raise PrivilegeError(n_("Not privileged."))
-        query = (
-            "SELECT id, ctime, username, given_names, family_name,"
-            " status FROM core.genesis_cases"
-        )
+        query = """
+            SELECT id, ctime, username, given_names, family_name, status
+            FROM core.genesis_cases
+        """
         conditions = []
-        params: list[Any] = []
+        params: CdEDBObject = {}
         if realms:
-            conditions.append("realm = ANY(%s)")
-            params.append(realms)
+            conditions.append("realm = ANY(%(realms)s)")
+            params["realms"] = realms
         if stati:
-            conditions.append("status = ANY(%s)")
-            params.append(stati)
+            conditions.append("status = ANY(%(stati)s)")
+            params["stati"] = stati
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
