@@ -404,17 +404,6 @@ def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     return fun
 
 
-def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[T], *,
-                                       creation_only: bool = False) -> None:
-    def the_validator(val: Any, argname: str = return_type.__qualname__, **kwargs: Any,
-                      ) -> T:
-        val = _mapping(val, argname)
-        val = _optional_object_mapping_helper(
-            val, inner_type, argname, creation_only=creation_only, **kwargs)
-        return cast(T, val)
-    _add_typed_validator(the_validator, return_type)
-
-
 def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass.
 
@@ -2384,7 +2373,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'lodgement_groups': Mapping,
-    'fees': Mapping,
 }
 
 
@@ -2481,13 +2469,6 @@ def _event(
             val['lodgement_groups'] = _optional_object_mapping_helper(
                 val['lodgement_groups'], models_event.LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
-
-    if 'fees' in val:
-        with errs:
-            kwargs_ = dict(kwargs, event=val)
-            val['fees'] = _optional_object_mapping_helper(
-                val['fees'], models_event.EventFee, 'fees', creation_only=creation,
-                questionnaire={}, **kwargs_)
 
     if errs:
         raise errs
@@ -2736,21 +2717,17 @@ def _event_field(
     return EventField(val)
 
 
-_create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
-
-
 @_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        id_: ID,
-        event: CdEDBObject,
+        current: models_event.EventFee | None,
+        event: models_event.Event,
         personalized: Optional[bool] = None,
         **kwargs: Any,
 ) -> CdEDBObject:
     errs = ValidationSummary()
-    current = event['fees'].get(id_)
     if current is not None and personalized is None:
-        personalized = (current['amount'] is None or current['condition'] is None)
+        personalized = (current.amount is None or current.condition is None)
 
     if personalized is not None:
         if personalized:
@@ -2775,9 +2752,14 @@ def _event_fee(
     if "title" in val:
         val["title"] = _whitespace_normalized_str(val["title"])
 
-        titles = {fee['title']: fee.get('id', id_) for fee in event['fees'].values()}
-        if titles.get(val["title"], id_) != id_:
-            errs.append(ValueError("title", n_("Duplicate title.")))
+        titles = {fee.title: fee.id for fee in event.fees.values()}
+
+        err = ValueError("title", n_("Duplicate title."))
+        if current is None:
+            if val["title"] in titles:
+                errs.append(err)
+        elif titles.get(val["title"], current.id) != current.id:
+            errs.append(err)
 
     if errs:
         raise errs
@@ -2788,7 +2770,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject,
+    event: models_event.Event,
     questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any,
 ) -> EventFeeCondition:
@@ -2801,12 +2783,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for f in event.get('fields', {}).values()
-        if f['association'] == const.FieldAssociations.registration
-           and f['kind'] == const.FieldDatatypes.bool
-           and f.get('id') not in additional_questionnaire_fields
+        f.field_name for f in event.fields.values()
+        if f.association == const.FieldAssociations.registration
+           and f.kind == const.FieldDatatypes.bool
+           and f.id not in additional_questionnaire_fields
     }
-    part_names = {p['shortname'] for p in event['parts'].values()}
+    part_names = {p.shortname for p in event.parts.values()}
 
     try:
         parse_result = fcp_parsing.parse(val)

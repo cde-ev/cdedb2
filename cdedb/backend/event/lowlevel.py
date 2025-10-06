@@ -517,9 +517,7 @@ class EventLowLevelBackend(AbstractBackend):
         )
 
     @abc.abstractmethod
-    def set_event_fees(
-        self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
-    ) -> DefaultReturnCode: ...
+    def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode: ...
 
     @internal
     def _delete_event_part_blockers(
@@ -623,10 +621,8 @@ class EventLowLevelBackend(AbstractBackend):
                     rs, "event.part_group_parts", blockers["part_group_parts"]
                 )
             if "event_fees" in cascade:
-                deletor: CdEDBOptionalMap = {
-                    anid: None for anid in blockers["event_fees"]
-                }
-                ret *= self.set_event_fees(rs, part['event_id'], deletor)
+                for fee_id in blockers["event_fees"]:
+                    ret *= self.delete_event_fee(rs, fee_id)
             blockers = self._delete_event_part_blockers(rs, part_id)
 
         if not blockers:
@@ -1246,10 +1242,8 @@ class EventLowLevelBackend(AbstractBackend):
                     }
                     ret *= self.sql_update(rs, "event.event_parts", deletor)
             if "event_fees" in cascade:
-                setter: CdEDBOptionalMap = {
-                    anid: None for anid in blockers["event_fees"]
-                }
-                ret *= self.set_event_fees(rs, current['event_id'], setter)
+                for fee_id in blockers["event_fees"]:
+                    ret *= self.delete_event_fee(rs, fee_id)
             blockers = self._delete_event_field_blockers(rs, field_id)
 
         if not blockers:

@@ -857,9 +857,9 @@ class EventLogCodes(CdEIntEnum):
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
-    fee_modifier_created = 80  #:
-    fee_modifier_changed = 81  #:
-    fee_modifier_deleted = 82  #:
+    event_fee_created = 80  #:
+    event_fee_modified = 81  #:
+    event_fee_deleted = 82  #:
     minor_form_updated = 85  #:
     minor_form_removed = 86  #:
     query_stored = 90  #:
