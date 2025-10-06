@@ -49,7 +49,6 @@ from cdedb.common import (
     decode_parameter,
     encode_parameter,
     get_hash,
-    glue,
     now,
     unwrap,
 )
@@ -85,7 +84,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.database.query import DatabaseValue_s
+from cdedb.database.query import ParamDict
 from cdedb.models.core import EmailAddressReport
 
 
@@ -253,17 +252,17 @@ class CoreBaseBackend(AbstractBackend):
         if atomized:
             self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
-        query = (
-            "INSERT INTO core.log "
-            "(code, submitted_by, persona_id, change_note) "
-            "VALUES (%s, %s, %s, %s)"
-        )
-        params = (
-            code,
-            rs.user.persona_id if not suppress_persona_id else None,
-            persona_id,
-            change_note,
-        )
+        query = """
+            INSERT INTO core.log
+            (code, submitted_by, persona_id, change_note)
+            VALUES (%(code)s, %(submitted_by)s, %(persona_id)s, %(change_note)s)
+        """
+        params = {
+            "code": code,
+            "submitted_by": rs.user.persona_id if not suppress_persona_id else None,
+            "persona_id": persona_id,
+            "change_note": change_note,
+        }
         return self.query_exec(rs, query, params)
 
     @access("persona")
@@ -543,19 +542,17 @@ class CoreBaseBackend(AbstractBackend):
                         if persona[key] != current_state[key]
                     }
                     current_state.update(persona)
-                    query = glue(
-                        "UPDATE core.changelog SET code = %s",
-                        "WHERE persona_id = %s AND code = %s",
-                    )
-                    self.query_exec(
-                        rs,
-                        query,
-                        (
-                            const.PersonaChangeStati.displaced,
-                            data['id'],
-                            const.PersonaChangeStati.pending,
-                        ),
-                    )
+                    query = """
+                        UPDATE core.changelog
+                        SET code = %(new_code)s
+                        WHERE persona_id = %(persona_id)s AND code = %(old_code)s
+                    """
+                    params = {
+                        "new_code": const.PersonaChangeStati.displaced,
+                        "persona_id": data["id"],
+                        "old_code": const.PersonaChangeStati.pending,
+                    }
+                    self.query_exec(rs, query, params)
 
             # determine if something changed
             newly_changed_fields = {
@@ -564,19 +561,17 @@ class CoreBaseBackend(AbstractBackend):
             if not newly_changed_fields:
                 if diff:
                     # reenable old change if we were going to displace it
-                    query = glue(
-                        "UPDATE core.changelog SET code = %s",
-                        "WHERE persona_id = %s AND generation = %s",
-                    )
-                    self.query_exec(
-                        rs,
-                        query,
-                        (
-                            const.PersonaChangeStati.pending,
-                            data['id'],
-                            current_generation,
-                        ),
-                    )
+                    query = """
+                        UPDATE core.changelog
+                        SET code = %(new_code)s
+                        WHERE persona_id = %(persona_id)s AND generation = %(generation)s
+                    """
+                    params = {
+                        "new_code": const.PersonaChangeStati.pending,
+                        "persona_id": data["id"],
+                        "generation": current_generation,
+                    }
+                    self.query_exec(rs, query, params)
                 elif current_state != committed_state and self.is_relative_admin(
                     rs, data['id']
                 ):
@@ -625,26 +620,25 @@ class CoreBaseBackend(AbstractBackend):
             )
 
             # prepare for inserting a new changelog entry
-            query = glue(
-                "SELECT MAX(generation) AS gen FROM core.changelog",
-                "WHERE persona_id = %s",
-            )
-            max_gen = unwrap(self.query_one(rs, query, (data['id'],))) or 1
+            query = """
+                SELECT MAX(generation) AS gen
+                FROM core.changelog
+                WHERE persona_id = %s
+            """
+            max_gen = unwrap(self.query_one(rs, query, [data['id']])) or 1
             next_generation = max_gen + 1
             # the following is a nop if there is no pending change
-            query = glue(
-                "UPDATE core.changelog SET code = %s",
-                "WHERE persona_id = %s AND code = %s",
-            )
-            self.query_exec(
-                rs,
-                query,
-                (
-                    const.PersonaChangeStati.superseded,
-                    data['id'],
-                    const.PersonaChangeStati.pending,
-                ),
-            )
+            query = """
+                UPDATE core.changelog
+                SET code = %(new_code)s
+                WHERE persona_id = %(persona_id)s AND code = %(old_code)s
+            """
+            params = {
+                "new_code": const.PersonaChangeStati.superseded,
+                "persona_id": data["id"],
+                "old_code": const.PersonaChangeStati.pending,
+            }
+            self.query_exec(rs, query, params)
 
             # insert new changelog entry
             insert = copy.deepcopy(current_state)
@@ -713,23 +707,20 @@ class CoreBaseBackend(AbstractBackend):
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
-            query = glue(
-                "UPDATE core.changelog SET reviewed_by = %s,",
-                "code = %s",
-                "WHERE persona_id = %s AND code = %s",
-                "AND generation = %s",
-            )
-            return self.query_exec(
-                rs,
-                query,
-                (
-                    rs.user.persona_id,
-                    const.PersonaChangeStati.nacked,
-                    persona_id,
-                    const.PersonaChangeStati.pending,
-                    generation,
-                ),
-            )
+            query = """
+                UPDATE core.changelog
+                SET reviewed_by = %(reviewed_by)s, code = %(new_code)s
+                WHERE persona_id = %(persona_id)s AND code = %(old_code)s
+                AND generation = %(generation)s
+            """
+            params = {
+                "reviewed_by": rs.user.persona_id,
+                "new_code": const.PersonaChangeStati.nacked,
+                "persona_id": persona_id,
+                "old_code": const.PersonaChangeStati.pending,
+                "generation": generation,
+            }
+            return self.query_exec(rs, query, params)
         with Atomizer(rs):
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(
@@ -739,13 +730,16 @@ class CoreBaseBackend(AbstractBackend):
             if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
-            setters = ["code = %s"]
-            params: list[Any] = [const.PersonaChangeStati.committed]
+            setters = ["code = %(new_code)s"]
+            conditions = ["persona_id = %(persona_id)s", "generation = %(generation)s"]
+            params = {
+                "new_code": const.PersonaChangeStati.committed,
+                "persona_id": persona_id,
+                "generation": generation,
+            }
             if reviewed:
-                setters.append("reviewed_by = %s")
-                params.append(rs.user.persona_id)
-            conditions = ["persona_id = %s", "generation = %s"]
-            params.extend([persona_id, generation])
+                setters.append("reviewed_by = %(reviewed_by)s")
+                params["reviewed_by"] = rs.user.persona_id
             query = query.format(
                 setters=', '.join(setters), conditions=' AND '.join(conditions)
             )
@@ -788,20 +782,23 @@ class CoreBaseBackend(AbstractBackend):
         :param committed_only: Include only committed entries of the changelog.
         :returns: dict mapping ids to generations
         """
-        query = glue(
-            "SELECT persona_id, max(generation) AS generation",
-            "FROM core.changelog WHERE persona_id = ANY(%s)",
-            "AND code = ANY(%s) GROUP BY persona_id",
-        )
-        valid_status: tuple[const.PersonaChangeStati, ...]
+        query = """
+            SELECT persona_id, max(generation) AS generation
+            FROM core.changelog
+            WHERE persona_id = ANY(%(persona_ids)s) AND code = ANY(%(codes)s)
+            GROUP BY persona_id
+        """
+        params: ParamDict = {
+            "persona_ids": ids,
+        }
         if committed_only:
-            valid_status = (const.PersonaChangeStati.committed,)
+            params["codes"] = [const.PersonaChangeStati.committed]
         else:
-            valid_status = (
+            params["codes"] = [
                 const.PersonaChangeStati.pending,
                 const.PersonaChangeStati.committed,
-            )
-        data = self.query_all(rs, query, (ids, valid_status))
+            ]
+        data = self.query_all(rs, query, params)
         return {e['persona_id']: e['generation'] for e in data}
 
     class _ChangelogGetGenerationProtocol(Protocol):
@@ -827,13 +824,14 @@ class CoreBaseBackend(AbstractBackend):
                 for higher_realm in higher_realms:
                     clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
                 clearances.append(clearance)
-        query = (
-            "SELECT persona_id, given_names, family_name,"
-            " generation, ctime FROM core.changelog WHERE code = %s"
-        )
+        query = """
+            SELECT persona_id, given_names, family_name, generation, ctime
+            FROM core.changelog
+            WHERE code = %(code)s
+        """
         if clearances:
             query = query + " AND (" + " OR ".join(clearances) + ")"
-        data = self.query_all(rs, query, (const.PersonaChangeStati.pending,))
+        data = self.query_all(rs, query, {"code": const.PersonaChangeStati.pending})
         return {e['persona_id']: e for e in data}
 
     @access("persona")
@@ -863,11 +861,13 @@ class CoreBaseBackend(AbstractBackend):
             "automated_change",
         ))
         query = "SELECT {fields} FROM core.changelog WHERE {conditions}"
-        conditions = ["persona_id = %s"]
-        params: list[Any] = [persona_id]
+        conditions = ["persona_id = %(persona_id)s"]
+        params: ParamDict = {
+            "persona_id": persona_id,
+        }
         if generations:
-            conditions.append("generation = ANY(%s)")
-            params.append(generations)
+            conditions.append("generation = ANY(%(generations)s)")
+            params["generations"] = generations
         query = query.format(
             fields=', '.join(fields), conditions=' AND '.join(conditions)
         )
@@ -920,7 +920,7 @@ class CoreBaseBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_archived = False"
         if is_active:
             query += " AND is_active = True"
-        data = self.query_all(rs, query, params=tuple())
+        data = self.query_all(rs, query, params=())
         return {e["id"] for e in data}
 
     @internal
@@ -935,7 +935,7 @@ class CoreBaseBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
-        data = self.query_all(rs, query, params=tuple())
+        data = self.query_all(rs, query, params=())
         return {e["id"] for e in data}
 
     @internal
@@ -956,14 +956,14 @@ class CoreBaseBackend(AbstractBackend):
             FROM ml.moderators AS mod
             JOIN ml.mailinglists AS ml ON mod.mailinglist_id = ml.id
         """
-        params: list[DatabaseValue_s] = []
         conditions = []
+        params: ParamDict = {}
         if ml_types is not None:
-            conditions.append("ml.ml_type = ANY(%s)")
-            params.append(ml_types)
+            conditions.append("ml.ml_type = ANY(%(ml_types)s)")
+            params["ml_types"] = ml_types
         if active is not None:
-            conditions.append("ml.is_active = %s")
-            params.append(active)
+            conditions.append("ml.is_active = %(is_active)s")
+            params["is_active"] = active
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
@@ -995,22 +995,22 @@ class CoreBaseBackend(AbstractBackend):
         paper_expuls = affirm_optional(bool, paper_expuls)
         query = "SELECT MIN(id) FROM core.personas"
         constraints = []
-        params: list[Any] = []
+        params: ParamDict = {}
         if persona_id is not None:
-            constraints.append("id > %s")
-            params.append(persona_id)
+            constraints.append("id > %(persona_id)s")
+            params["persona_id"] = persona_id
         if is_member is not None:
-            constraints.append("is_member = %s")
-            params.append(is_member)
+            constraints.append("is_member = %(is_member)s")
+            params["is_member"] = is_member
         if is_cde_realm is not None:
-            constraints.append("is_cde_realm = %s")
-            params.append(is_cde_realm)
+            constraints.append("is_cde_realm = %(is_cde_realm)s")
+            params["is_cde_realm"] = is_cde_realm
         if is_archived is not None:
-            constraints.append("is_archived = %s")
-            params.append(is_archived)
+            constraints.append("is_archived = %(is_archived)s")
+            params["is_archived"] = is_archived
         if paper_expuls is not None:
-            constraints.append("paper_expuls = %s")
-            params.append(paper_expuls)
+            constraints.append("paper_expuls = %(paper_expuls)s")
+            params["paper_expuls"] = paper_expuls
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
@@ -1246,8 +1246,10 @@ class CoreBaseBackend(AbstractBackend):
     @access("cde")
     def get_foto_usage(self, rs: RequestState, file_hash: str) -> bool:
         file_hash = affirm(vtypes.RestrictiveIdentifier, file_hash)
-        query = "SELECT COUNT(*) FROM core.personas WHERE foto = %s"
-        return bool(unwrap(self.query_one(rs, query, (file_hash,))))
+        query = """
+            SELECT COUNT(*) FROM core.personas WHERE foto = %s
+        """
+        return bool(unwrap(self.query_one(rs, query, [file_hash])))
 
     @access("cde")
     def change_foto(
@@ -1453,13 +1455,13 @@ class CoreBaseBackend(AbstractBackend):
 
         query = "SELECT id, persona_id, status FROM core.privilege_changes"
         constraints = []
-        params: list[Any] = []
+        params: ParamDict = {}
         if persona_id:
-            constraints.append("persona_id = %s")
-            params.append(persona_id)
+            constraints.append("persona_id = %(persona_id)s")
+            params["persona_id"] = persona_id
         if stati:
-            constraints.append("status = ANY(%s)")
-            params.append(stati)
+            constraints.append("status = ANY(%(stati)s)")
+            params["stati"] = stati
 
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
@@ -1613,11 +1615,12 @@ class CoreBaseBackend(AbstractBackend):
             if not is_member:
                 # Peek at the CdE-realm, this is somewhat of a transgression,
                 # but sadly necessary duct tape to keep the whole thing working.
-                query = (
-                    "SELECT id FROM cde.lastschrift"
-                    " WHERE persona_id = %s AND revoked_at IS NULL"
-                )
-                params = [persona_id]
+                query = """
+                    SELECT id
+                    FROM cde.lastschrift
+                    WHERE persona_id = %(persona_id)s AND revoked_at IS NULL
+                """
+                params = {"persona_id": persona_id}
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
 
@@ -1686,17 +1689,22 @@ class CoreBaseBackend(AbstractBackend):
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/"
         )
-        query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+        query = """
+            UPDATE core.personas SET password_hash = %(password_hash)s WHERE id = %(id)s
+        """
+        params: ParamDict = {"id": persona_id, "password_hash": password_hash}
 
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (password_hash, persona_id))
+            ret = self.query_exec(rs, query, params)
 
             # Invalidate alle active sessions.
-            query = (
-                "UPDATE core.sessions SET is_active = False "
-                "WHERE persona_id = %s AND is_active = True"
-            )
-            self.query_exec(rs, query, (persona_id,))
+            query = """
+                UPDATE core.sessions
+                SET is_active = False
+                WHERE persona_id = %(persona_id)s AND is_active = True
+            """
+            params = {"persona_id": persona_id}
+            self.query_exec(rs, query, params)
 
             self.core_log(
                 rs, code=const.CoreLogCodes.password_invalidated, persona_id=persona_id
@@ -1714,8 +1722,10 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id)
 
-        query = "SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s"
-        return unwrap(self.query_one(rs, query, (persona_id,)))
+        query = """
+            SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s
+        """
+        return unwrap(self.query_one(rs, query, [persona_id]))
 
     @access("core_admin")
     def is_persona_automatically_archivable(
@@ -1759,12 +1769,12 @@ class CoreBaseBackend(AbstractBackend):
 
             # Disallow archival of realm helpers.
             helper_queries = (
-                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
-                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %(persona_id)s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %(persona_id)s",
             )
+            params = {"persona_id": persona_id}
             if any(
-                unwrap(self.query_one(rs, query, (persona_id,)))
-                for query in helper_queries
+                unwrap(self.query_one(rs, query, params)) for query in helper_queries
             ):
                 return False
 
@@ -1785,11 +1795,13 @@ class CoreBaseBackend(AbstractBackend):
             # Check that the latest update to the persona was before the cutoff date.
             # Normally we would utilize self.changelog_get_generation() to retrieve
             # `generation`, but we exclude automated script changes here.
-            query = (
-                "SELECT MAX(generation) FROM core.changelog"
-                " WHERE persona_id = %s AND automated_change = FALSE"
-            )
-            generation = unwrap(self.query_one(rs, query, (persona_id,)))
+            query = """
+                SELECT MAX(generation)
+                FROM core.changelog
+                WHERE persona_id = %(persona_id)s AND automated_change = FALSE
+            """
+            params = {"persona_id": persona_id}
+            generation = unwrap(self.query_one(rs, query, params))
             if not generation:
                 # Something strange is going on, so better not do anything.
                 self.logger.error(
@@ -1809,14 +1821,16 @@ class CoreBaseBackend(AbstractBackend):
                     event.registrations reg
                     JOIN event.events ON events.id = reg.event_id
                 WHERE
-                    persona_id = %s AND (
-                        reg.event_id > %s AND (amount_owed != amount_paid)
+                    persona_id = %(persona_id)s AND (
+                        reg.event_id > %(event_id_cutoff)s AND (amount_owed != amount_paid)
                         OR events.is_archived = False
                     )
             """
-            ret = self.query_one(
-                rs, query, (persona_id, self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF'])
-            )
+            params = {
+                "persona_id": persona_id,
+                "event_id_cutoff": self.conf["EVENT_ARCHIVAL_BALANCE_CUTOFF"],
+            }
+            ret = self.query_one(rs, query, params)
             if ret and ret['count']:
                 return False
 
@@ -1827,11 +1841,15 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     event.orgas
                     JOIN event.event_parts ON orgas.event_id = event_parts.event_id
-                WHERE persona_id = %s
+                WHERE persona_id = %(persona_id)s
                 GROUP BY orgas.event_id
-                HAVING MAX(part_end) > %s
+                HAVING MAX(part_end) > %(cutoff)s
             """
-            ret = self.query_one(rs, query, (persona_id, cutoff))
+            params = {
+                "persona_id": persona_id,
+                "cutoff": cutoff,
+            }
+            ret = self.query_one(rs, query, params)
             if ret and ret['count']:
                 return False
 
@@ -1841,9 +1859,10 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     assembly.assemblies
                     JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
-                WHERE persona_id = %s AND assemblies.is_active = True
+                WHERE persona_id = %(persona_id)s AND assemblies.is_active = True
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 return False
 
             query = """
@@ -1851,9 +1870,10 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     assembly.assemblies
                     JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
-                WHERE persona_id = %s AND assemblies.is_active = True
+                WHERE persona_id = %(persona_id)s AND assemblies.is_active = True
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 return False
 
             # Check mailinglist subscriptions.
@@ -1864,15 +1884,18 @@ class CoreBaseBackend(AbstractBackend):
                     ml.subscription_states AS ss
                     JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
                 WHERE
-                    persona_id = %s AND subscription_state = ANY(%s)
+                    persona_id = %(persona_id)s AND subscription_state = ANY(%(states)s)
                     AND mailinglists.is_active = True
             """
-            states = {
-                const.SubscriptionState.subscribed,
-                const.SubscriptionState.subscription_override,
-                const.SubscriptionState.pending,
+            params: ParamDict = {
+                "persona_id": persona_id,
+                "states": {
+                    const.SubscriptionState.subscribed,
+                    const.SubscriptionState.subscription_override,
+                    const.SubscriptionState.pending,
+                },
             }
-            if self.query_all(rs, query, (persona_id, states)):
+            if self.query_all(rs, query, params):
                 return False
 
             # Check being the sole moderator of a mailinglist.
@@ -1881,13 +1904,16 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     ml.moderators
                 WHERE mailinglist_id IN (
-                    SELECT mailinglist_id FROM ml.moderators WHERE persona_id = %s
+                    SELECT mailinglist_id
+                    FROM ml.moderators
+                    WHERE persona_id = %(persona_id)s
                 )
                 GROUP BY mailinglist_id
                 HAVING COUNT(persona_id) = 1
                 ORDER BY mailinglist_id
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 return False
 
         return True
@@ -1939,12 +1965,12 @@ class CoreBaseBackend(AbstractBackend):
 
             # Disallow archival of realm helpers.
             helper_queries = (
-                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %s",
-                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %s",
+                "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %(persona_id)s",
+                "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %(persona_id)s",
             )
+            params: ParamDict = {"persona_id": persona_id}
             if any(
-                unwrap(self.query_one(rs, query, (persona_id,)))
-                for query in helper_queries
+                unwrap(self.query_one(rs, query, params)) for query in helper_queries
             ):
                 raise ArchiveError(n_("Cannot archive complaint and event helpers."))
 
@@ -1960,15 +1986,17 @@ class CoreBaseBackend(AbstractBackend):
             )
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
-            query = (
-                "UPDATE cde.lastschrift"
-                " SET (iban, account_owner, account_address)"
-                " = (%s, %s, %s)"
-                " WHERE persona_id = %s"
-                " AND revoked_at < now() - interval '14 month'"
-            )
+            query = """
+                UPDATE cde.lastschrift
+                SET (iban, account_owner, account_address) = (%(empty)s, %(empty)s, %(empty)s)
+                WHERE persona_id = %(persona_id)s AND revoked_at < now() - interval '14 month'
+            """
+            params: ParamDict = {
+                "empty": "",
+                "persona_id": persona_id,
+            }
             if lastschrift:
-                self.query_exec(rs, query, ("", "", "", persona_id))
+                self.query_exec(rs, query, params)
             #
             # 3. Remove complicated attributes ([trial] membership, foto and password)
             #
@@ -1992,8 +2020,14 @@ class CoreBaseBackend(AbstractBackend):
                 "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
                 "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/"
             )
-            query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-            self.query_exec(rs, query, (password_hash, persona_id))
+            query = """
+                UPDATE core.personas SET password_hash = %(password_hash)s WHERE id = %(id)s
+            """
+            params: ParamDict = {
+                "password_hash": password_hash,
+                "id": persona_id,
+            }
+            self.query_exec(rs, query, params)
             #
             # 4. Strip all unnecessary attributes and mark as archived
             #
@@ -2084,20 +2118,24 @@ class CoreBaseBackend(AbstractBackend):
             query = """
                 SELECT
                     COUNT(*) FILTER (WHERE events.is_archived = False) AS count_unarchived,
-                    COUNT(*) FILTER (WHERE reg.event_id > %s AND (amount_owed != amount_paid)) AS count_unbalanced
+                    COUNT(*) FILTER (
+                        WHERE reg.event_id > %(event_id_cutoff)s
+                        AND (amount_owed != amount_paid)
+                    ) AS count_unbalanced
                 FROM
                     event.registrations reg
                     JOIN event.events ON events.id = reg.event_id
                 WHERE
-                    persona_id = %s AND (
-                        reg.event_id > %s AND (amount_owed != amount_paid)
+                    persona_id = %(persona_id)s AND (
+                        reg.event_id > %(event_id_cutoff)s AND (amount_owed != amount_paid)
                         OR events.is_archived = False
                     )
             """
-            cutoff_event_id = self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF']
-            data = self.query_one(
-                rs, query, (cutoff_event_id, persona_id, cutoff_event_id)
-            )
+            params: ParamDict = {
+                "persona_id": persona_id,
+                "event_id_cutoff": self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF'],
+            }
+            data = self.query_one(rs, query, params)
             if data:
                 if data['count_unarchived']:
                     raise ArchiveError(n_("Involved in unfinished event."))
@@ -2107,9 +2145,10 @@ class CoreBaseBackend(AbstractBackend):
             query = """
                 SELECT event_id
                 FROM event.orgas JOIN event.events ON events.id = orgas.event_id
-                WHERE persona_id = %s AND events.is_archived = False
+                WHERE persona_id = %(persona_id)s AND events.is_archived = False
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 raise ArchiveError(n_("Orga of unfinished event."))
 
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
@@ -2124,9 +2163,10 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     assembly.assemblies
                     JOIN assembly.attendees ON attendees.assembly_id = assemblies.id
-                WHERE persona_id = %s AND assemblies.is_active = True
+                WHERE persona_id = %(persona_id)s AND assemblies.is_active = True
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 raise ArchiveError(n_("Attendee of unfinished assembly."))
 
             query = """
@@ -2134,9 +2174,10 @@ class CoreBaseBackend(AbstractBackend):
                 FROM
                     assembly.assemblies
                     JOIN assembly.presiders ON presiders.assembly_id = assemblies.id
-                WHERE persona_id = %s AND assemblies.is_active = True
+                WHERE persona_id = %(persona_id)s AND assemblies.is_active = True
             """
-            if self.query_all(rs, query, (persona_id,)):
+            params = {"persona_id": persona_id}
+            if self.query_all(rs, query, params):
                 raise ArchiveError(n_("Presider of unfinished assembly."))
 
             # 8. Handle ml realm
@@ -2147,23 +2188,26 @@ class CoreBaseBackend(AbstractBackend):
             )
             # Make sure the users moderatored mls will still have moderators.
             # Retrieve moderated mailinglists.
-            query = (
-                "SELECT ARRAY_AGG(mailinglist_id) FROM ml.moderators"
-                " WHERE persona_id = %s GROUP BY persona_id"
-            )
+            query = """
+                SELECT ARRAY_AGG(mailinglist_id)
+                FROM ml.moderators
+                WHERE persona_id = %(persona_id)s
+                GROUP BY persona_id
+            """
+            params: ParamDict = {"persona_id": persona_id}
             moderated_mailinglists = set(
-                unwrap(self.query_one(rs, query, (persona_id,))) or []
+                unwrap(self.query_one(rs, query, params)) or []
             )
             self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
             if moderated_mailinglists:
                 # Retrieve the mailinglists, that _still_ have moderators.
-                query = (
-                    "SELECT ARRAY_AGG(DISTINCT mailinglist_id) as ml_ids"
-                    " FROM ml.moderators WHERE mailinglist_id = ANY(%s)"
-                )
-                ml_ids = set(
-                    unwrap(self.query_one(rs, query, (moderated_mailinglists,))) or []
-                )
+                query = """
+                    SELECT ARRAY_AGG(DISTINCT mailinglist_id) as ml_ids
+                    FROM ml.moderators
+                    WHERE mailinglist_id = ANY(%(ml_ids)s)
+                """
+                params = {"ml_ids": moderated_mailinglists}
+                ml_ids = set(unwrap(self.query_one(rs, query, params)) or [])
                 # Check the difference.
                 unmoderated_mailinglists = moderated_mailinglists - ml_ids
                 if unmoderated_mailinglists:
@@ -2199,17 +2243,28 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 11. Clear changelog
             #
-            query = glue(
-                "SELECT id FROM core.changelog WHERE persona_id = %s",
-                "ORDER BY generation DESC LIMIT 1",
-            )
-            newest = self.query_one(rs, query, (persona_id,))
+            query = """
+                SELECT id
+                FROM core.changelog
+                WHERE persona_id = %(persona_id)s
+                ORDER BY generation DESC LIMIT 1
+            """
+            params = {"persona_id": persona_id}
+            newest = self.query_one(rs, query, params)
             if not newest:
                 # TODO do we want to allow this?
                 # This could happen if this call is wrapped in a Silencer.
                 raise ArchiveError(n_("Cannot archive silently."))
-            query = "DELETE FROM core.changelog WHERE persona_id = %s AND NOT id = %s"
-            ret = self.query_exec(rs, query, (persona_id, newest['id']))
+
+            query = """
+                DELETE FROM core.changelog
+                WHERE persona_id = %(persona_id)s AND NOT id = %(newest)s
+            """
+            params = {
+                "persona_id": persona_id,
+                "newest": newest["id"],
+            }
+            ret = self.query_exec(rs, query, params)
             #
             # 12. Finish
             #
@@ -2310,16 +2365,26 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 3. Clear changelog
             #
-            query = glue(
-                "SELECT id FROM core.changelog WHERE persona_id = %s",
-                "ORDER BY generation DESC LIMIT 1",
-            )
-            newest = self.query_one(rs, query, (persona_id,))
+            query = """
+                SELECT id FROM core.changelog
+                WHERE persona_id = %(persona_id)s
+                ORDER BY generation DESC LIMIT 1
+            """
+            params = {"persona_id": persona_id}
+            newest = self.query_one(rs, query, params)
             if not newest:
                 # TODO allow this?
                 raise ArchiveError(n_("Cannot purge silently."))
-            query = "DELETE FROM core.changelog WHERE persona_id = %s AND NOT id = %s"
-            ret *= self.query_exec(rs, query, (persona_id, newest['id']))
+
+            query = """
+                DELETE FROM core.changelog
+                WHERE persona_id = %(persona_id)s AND NOT id = %(newest)s
+            """
+            params = {
+                "persona_id": persona_id,
+                "newest": newest["id"],
+            }
+            ret *= self.query_exec(rs, query, params)
             #
             # 4. Finish
             #
@@ -2381,7 +2446,7 @@ class CoreBaseBackend(AbstractBackend):
         So we know when a foto is up for garbage collection."""
         foto = affirm(str, foto)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE foto = %s"
-        return unwrap(self.query_one(rs, query, (foto,))) or 0
+        return unwrap(self.query_one(rs, query, [foto])) or 0
 
     @access("persona")
     def get_personas(
@@ -2434,8 +2499,10 @@ class CoreBaseBackend(AbstractBackend):
                         event.registration_parts AS rparts
                     ON rparts.registration_id = regs.id
                 WHERE
-                    regs.event_id = %s"""
-            data = self.query_all(rs, query, [event_id])
+                    regs.event_id = %(event_id)s
+            """
+            params = {"event_id": event_id}
+            data = self.query_all(rs, query, params)
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
             if not (
@@ -2520,25 +2587,37 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = rs.user.persona_id
         now_date = now().date()
 
-        query = (
-            "SELECT last_access_hash, queries FROM core.quota"
-            " WHERE persona_id = %s AND qdate = %s"
-        )
-        data = self.query_one(rs, query, (persona_id, now_date))
+        query = """
+            SELECT last_access_hash, queries
+            FROM core.quota
+            WHERE persona_id = %(persona_id)s AND qdate = %(today)s
+        """
+        params = {
+            "persona_id": persona_id,
+            "today": now_date,
+        }
+        data = self.query_one(rs, query, params)
         # If there was a previous access and the previous access was the same as this
         # one, don't count it. Instead return the previous count of queries.
         if data is not None and data["last_access_hash"] is not None:
             if data["last_access_hash"] == access_hash:
                 return data["queries"]
 
-        query = (
-            "INSERT INTO core.quota (queries, persona_id, qdate, last_access_hash)"
-            " VALUES (%s, %s, %s, %s) ON CONFLICT (persona_id, qdate) DO"
-            " UPDATE SET queries = core.quota.queries + EXCLUDED.queries,"
-            " last_access_hash = EXCLUDED.last_access_hash"
-            " RETURNING core.quota.queries"
-        )
-        params = (num, persona_id, now_date, access_hash)
+        query = """
+            INSERT INTO
+                core.quota (queries, persona_id, qdate, last_access_hash)
+                VALUES (%(queries)s, %(persona_id)s, %(today)s, %(last_access)s)
+                ON CONFLICT (persona_id, qdate) DO UPDATE SET
+                    queries = core.quota.queries + EXCLUDED.queries,
+                    last_access_hash = EXCLUDED.last_access_hash
+            RETURNING core.quota.queries
+        """
+        params = {
+            "queries": num,
+            "persona_id": persona_id,
+            "today": now_date,
+            "last_access": access_hash,
+        }
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
@@ -2735,11 +2814,13 @@ class CoreBaseBackend(AbstractBackend):
         # TODO Extract IP address from RequestState
         ip = affirm(vtypes.PrintableASCII, ip)
         # note the lower-casing for email addresses
-        query = (
-            "SELECT id, is_meta_admin, is_core_admin FROM core.personas"
-            " WHERE username = lower(%s) AND is_active = True"
-        )
-        data = self.query_one(rs, query, (username,))
+        query = """
+            SELECT id, is_meta_admin, is_core_admin
+            FROM core.personas
+            WHERE username = lower(%(username)s) AND is_active = True
+        """
+        params: ParamDict = {"username": username}
+        data = self.query_one(rs, query, params)
         if not data or (
             not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
             and not self.verify_persona_password(rs, password, data["id"])
@@ -2759,30 +2840,47 @@ class CoreBaseBackend(AbstractBackend):
             timestamp = now()
             ctime_cutoff = timestamp - self.conf["SESSION_LIFESPAN"]
             atime_cutoff = timestamp - self.conf["SESSION_TIMEOUT"]
-            query = (
-                "UPDATE core.sessions SET is_active = False"
-                " WHERE persona_id = %s AND is_active = True"
-                " AND (ctime < %s OR atime < %s) "
-            )
-            self.query_exec(rs, query, (data["id"], ctime_cutoff, atime_cutoff))
-            query = (
-                "INSERT INTO core.sessions (persona_id, ip, sessionkey)"
-                " VALUES (%s, %s, %s)"
-            )
-            self.query_exec(rs, query, (data["id"], ip, sessionkey))
+            query = """
+                UPDATE core.sessions
+                SET is_active = False
+                WHERE
+                    persona_id = %(persona_id)s
+                    AND is_active = True
+                    AND (ctime < %(ctime_cutoff)s OR atime < %(atime_cutoff)s)
+            """
+            params = {
+                "persona_id": data["id"],
+                "ctime_cutoff": ctime_cutoff,
+                "atime_cutoff": atime_cutoff,
+            }
+            self.query_exec(rs, query, params)
+            query = """
+                INSERT INTO
+                    core.sessions (persona_id, ip, sessionkey)
+                    VALUES (%(persona_id)s, %(ip)s, %(sessionkey)s)
+            """
+            params = {
+                "persona_id": data["id"],
+                "ip": ip,
+                "sessionkey": sessionkey,
+            }
+            self.query_exec(rs, query, params)
 
             # Terminate oldest sessions if we are over the allowed limit.
-            query = (
-                "SELECT id FROM core.sessions"
-                " WHERE persona_id = %s AND is_active = True"
-                " ORDER BY atime DESC OFFSET %s"
-            )
-            old_sessions = self.query_all(
-                rs, query, (data["id"], self.conf["MAX_ACTIVE_SESSIONS"])
-            )
+            query = """
+                SELECT id
+                FROM core.sessions
+                WHERE persona_id = %(persona_id)s AND is_active = True
+                ORDER BY atime DESC OFFSET %(offset)s
+            """
+            params = {
+                "persona_id": data["id"],
+                "offset": self.conf["MAX_ACTIVE_SESSIONS"],
+            }
+            old_sessions = self.query_all(rs, query, params)
             if old_sessions:
                 query = "UPDATE core.sessions SET is_active = FALSE WHERE id = ANY(%s)"
-                self.query_exec(rs, query, ([e["id"] for e in old_sessions],))
+                self.query_exec(rs, query, [[e["id"] for e in old_sessions]])
 
         # Escalate db privilege role in case of successful login.
         # This will not be deescalated.
@@ -2822,54 +2920,61 @@ class CoreBaseBackend(AbstractBackend):
         this_session = affirm(bool, this_session)
         other_sessions = affirm(bool, other_sessions)
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
-        constraints = ["persona_id = %s", "is_active = True"]
-        params: list[Any] = [rs.user.persona_id]
+        constraints = ["persona_id = %(persona_id)s", "is_active = True"]
+        params: ParamDict = {"persona_id": rs.user.persona_id}
         if not this_session and not other_sessions:
             return 0
         elif not other_sessions:
-            constraints.append("sessionkey = %s")
-            params.append(rs.sessionkey)
+            constraints.append("sessionkey = %(sessionkey)s")
+            params["sessionkey"] = rs.sessionkey
         elif not this_session:
-            constraints.append("sessionkey != %s")
-            params.append(rs.sessionkey)
+            constraints.append("sessionkey != %(sessionkey)s")
+            params["sessionkey"] = rs.sessionkey
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
     @access("persona")
     def count_active_sessions(self, rs: RequestState) -> int:
         """Retrieve number of currently active sessions"""
-        query = (
-            "SELECT COUNT(*) FROM core.sessions"
-            " WHERE is_active = True AND persona_id = %s"
-        )
-        count = unwrap(self.query_one(rs, query, (rs.user.persona_id,))) or 0
+        query = """
+            SELECT COUNT(*)
+            FROM core.sessions
+            WHERE is_active = True AND persona_id = %(persona_id)s
+        """
+        params = {"persona_id": rs.user.persona_id}
+        count = unwrap(self.query_one(rs, query, params)) or 0
         return count
 
     @access("core_admin")
     def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
         """Deactivate old leftover sessions."""
-        query = (
-            "UPDATE core.sessions SET is_active = False"
-            " WHERE is_active = True AND atime < %s"
-        )
+        query = """
+            UPDATE core.sessions
+            SET is_active = False
+            WHERE is_active = True AND atime < %(cutoff)s
+        """
         # Choose longer interval than SESSION_LIFESPAN here to keep sessions active
         # if e.g. the lifespan config is increased at some time. Inactivation of
         # sessions based on lifetime is done in login and lookupsession methods.
-        cutoff = now() - self.conf['SESSION_SAVETIME']
-        return self.query_exec(rs, query, (cutoff,))
+        params = {"cutoff": now() - self.conf['SESSION_SAVETIME']}
+        return self.query_exec(rs, query, params)
 
     @access("core_admin")
     def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
         """Delete old entries from the sessionlog."""
-        query = (
-            "DELETE FROM core.sessions WHERE is_active = False"
-            " AND atime < %s"
-            " AND (persona_id, atime) NOT IN"
-            " (SELECT persona_id, MAX(atime) AS atime FROM core.sessions"
-            "  WHERE is_active = False GROUP BY persona_id)"
-        )
-        cutoff = now() - self.conf['SESSION_SAVETIME']
-        return self.query_exec(rs, query, (cutoff,))
+        query = """
+            DELETE FROM core.sessions
+            WHERE
+                is_active = False AND atime < %(cutoff)s
+                AND (persona_id, atime) NOT IN (
+                    SELECT persona_id, MAX(atime) AS atime
+                    FROM core.sessions
+                    WHERE is_active = False
+                    GROUP BY persona_id
+                )
+        """
+        params = {"cutoff": now() - self.conf['SESSION_SAVETIME']}
+        return self.query_exec(rs, query, params)
 
     @access("persona")
     def verify_ids(
@@ -2887,11 +2992,11 @@ class CoreBaseBackend(AbstractBackend):
         if persona_ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
-        constraints: list[str] = ["id = ANY(%s)"]
-        params: list[Any] = [persona_ids]
+        constraints: list[str] = ["id = ANY(%(persona_ids)s)"]
+        params: ParamDict = {"persona_ids": persona_ids}
         if is_archived is not None:
-            constraints.append("is_archived = %s")
-            params.append(is_archived)
+            constraints.append("is_archived = %(is_archived)s")
+            params["is_archived"] = is_archived
 
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
@@ -2985,16 +3090,22 @@ class CoreBaseBackend(AbstractBackend):
     ) -> bool:
         """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
-        query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
-        num = unwrap(self.query_one(rs, query, (email,))) or 0
+        query = """
+            SELECT COUNT(*) AS num FROM core.personas WHERE username = %(username)s
+        """
+        params: ParamDict = {"username": email}
+        num = unwrap(self.query_one(rs, query, params)) or 0
         if include_genesis:
-            query = glue(
-                "SELECT COUNT(*) AS num FROM core.genesis_cases",
-                "WHERE username = %s AND status = ANY(%s)",
-            )
+            query = """
+                SELECT COUNT(*) AS num
+                FROM core.genesis_cases
+                WHERE username = %(username)s AND status = ANY(%(stati)s)
+            """
             # This should be all stati which are not final.
-            stati = set(const.GenesisStati) - const.GenesisStati.finalized_stati()
-            num += unwrap(self.query_one(rs, query, (email, stati))) or 0
+            params["stati"] = (
+                set(const.GenesisStati) - const.GenesisStati.finalized_stati()
+            )
+            num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
 
     RESET_COOKIE_PAYLOAD = "X"
@@ -3110,12 +3221,18 @@ class CoreBaseBackend(AbstractBackend):
                 rs.conn = self.connpool['cdb_persona']
             # do not use set_persona since it doesn't operate on password
             # hashes by design
-            query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+            query = """
+                UPDATE core.personas
+                SET password_hash = %(password_hash)s
+                WHERE id = %(persona_id)s
+            """
+            params: ParamDict = {
+                "persona_id": persona_id,
+                "password_hash": self.encrypt_password(new_password),
+            }
             with rs.conn as conn:
                 with conn.cursor() as cur:
-                    self.execute_db_query(
-                        cur, query, (self.encrypt_password(new_password), persona_id)
-                    )
+                    self.execute_db_query(cur, query, params)
                     ret = cur.rowcount
         finally:
             # deescalate
@@ -3473,7 +3590,7 @@ class CoreBaseBackend(AbstractBackend):
             meta_info = self.get_meta_info(rs).as_dict()
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
-            return self.query_exec(rs, query, (PsycoJson(meta_info),))
+            return self.query_exec(rs, query, [PsycoJson(meta_info)])
 
     @access("anonymous")
     def is_locked_down(self, rs: RequestState) -> bool:
@@ -3569,10 +3686,10 @@ class CoreBaseBackend(AbstractBackend):
         """
         states = affirm_array(const.EmailStatus, states or [])
         query = "SELECT address, status FROM core.email_states"
-        params: tuple[Collection[const.EmailStatus], ...] = tuple()
+        params = {}
         if states:
-            query += " WHERE status = ANY(%s)"
-            params += (states,)
+            query += " WHERE status = ANY(%(states)s)"
+            params["states"] = states
         data = self.query_all(rs, query, params)
         return {e['address']: e['status'] for e in data}
 
@@ -3619,12 +3736,14 @@ class CoreBaseBackend(AbstractBackend):
                 core.personas.id AS user_id
             FROM core.email_states AS estat
                 LEFT JOIN core.personas ON estat.address = core.personas.username
-            WHERE estat.status = ANY(%s)
+            WHERE estat.status = ANY(%(stati)s)
         """
-        params: tuple[Collection[int], ...] = (stati,)
+        params: ParamDict = {
+            "stati": stati,
+        }
         if persona_ids:
-            query += "AND core.personas.id = ANY(%s)"
-            params += (persona_ids,)
+            query += "AND core.personas.id = ANY(%(persona_ids)s)"
+            params["persona_ids"] = persona_ids
         data: dict[str, dict[str, Any]] = collections.defaultdict(dict)
         for e in self.query_all(rs, query, params):
             data[e['address']] = e
@@ -3637,16 +3756,17 @@ class CoreBaseBackend(AbstractBackend):
                 sa.persona_id AS subscriber_id
             FROM core.email_states AS estat
                 LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
-            WHERE estat.status = ANY(%s)
+            WHERE estat.status = ANY(%(stati)s)
         """
-        params: tuple[Collection[int], ...] = (stati,)
+        params: ParamDict = {
+            "stati": stati,
+        }
         if persona_ids:
-            query += " AND sa.persona_id = ANY(%s)"
-            params += (persona_ids,)
-        query += (
-            " GROUP BY estat.id, estat.address, estat.status, estat.notes,"
-            " subscriber_id"
-        )
+            query += " AND sa.persona_id = ANY(%(persona_ids)s)"
+            params["persona_ids"] = persona_ids
+        query += """
+            GROUP BY estat.id, estat.address, estat.status, estat.notes, subscriber_id
+        """
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
 
