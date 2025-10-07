@@ -416,8 +416,6 @@ class CoreGenesisBackend(CoreBaseBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             for admin_bit in case.persona.get_admin_bits():
                 del data[admin_bit]
-            if "is_auditor" in data:
-                del data["is_auditor"]
             del data["is_archived"]
             del data["is_purged"]
             if "balance" in data:

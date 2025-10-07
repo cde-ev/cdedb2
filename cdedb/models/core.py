@@ -263,6 +263,8 @@ class Persona(PersonaName):
         for field in dataclasses.fields(cls):
             if field.name.startswith("is_") and field.name.endswith("_admin"):
                 ret.add(field.name)
+            elif field.name == "is_auditor":
+                ret.add(field.name)
         return ret
 
     # TODO implement this properly
