@@ -1172,7 +1172,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
 
             data["id"] = fee_id
-            current_fee_data = current_fee.as_dict()
+            current_fee_data = current_fee.to_database()
             if any(data[k] != current_fee_data[k] for k in data):
                 ret = self.sql_update(rs, "event.event_fees", data)
                 self.event_log(
@@ -1222,7 +1222,7 @@ class EventBaseBackend(EventLowLevelBackend):
                         "Mismatch between registration IDs and persona IDs."
                     )
             ret = self.sql_delete(rs, models.EventFee.database_table, [fee_id])
-            for persona_id in mixed_existence_sorter(persona_ids):
+            for persona_id in xsorted(persona_ids):
                 self.event_log(
                     rs,
                     const.EventLogCodes.personalized_fee_amount_deleted,
