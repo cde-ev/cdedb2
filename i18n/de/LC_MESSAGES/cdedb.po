@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-07 13:48+0200\n"
+"POT-Creation-Date: 2025-10-07 15:05+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4186,9 +4186,9 @@ msgstr ""
 "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
 
 #: cdedb/backend/core/genesis.py:127
-#, fuzzy, python-format
+#, python-format
 msgid "Unable to remove genesis case with status '%(status)s'."
-msgstr "Kann Accountanfrage mit Status {} nicht löschen."
+msgstr "Kann Accountanfrage mit Status '%(status)s' nicht löschen."
 
 #: cdedb/backend/core/genesis.py:322 cdedb/backend/core/genesis.py:352
 #: cdedb/backend/core/genesis.py:384
