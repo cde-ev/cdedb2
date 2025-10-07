@@ -3,6 +3,7 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
+
 import difflib
 import json
 import pathlib
@@ -41,8 +42,13 @@ from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_conf
 
 
 @click.group()
-@click.option("--configpath", envvar="CDEDB_CONFIGPATH", default=DEFAULT_CONFIGPATH,
-              type=pathlib.Path, show_default=True)
+@click.option(
+    "--configpath",
+    envvar="CDEDB_CONFIGPATH",
+    default=DEFAULT_CONFIGPATH,
+    type=pathlib.Path,
+    show_default=True,
+)
 def cli(configpath: pathlib.Path) -> None:
     """Command line interface for setup of CdEDB.
 
@@ -79,14 +85,18 @@ def get_default_configpath() -> None:
 
 
 @cli.group(name="filesystem")
-@click.option("--owner",
+@click.option(
+    "--owner",
     help="Use this user as the owner.",
     default=get_user,
-    show_default="current user")
-@click.option("--group",
+    show_default="current user",
+)
+@click.option(
+    "--group",
     help="Use this group for file permissions.",
     default=None,
-    show_default="same as owner")
+    show_default="same as owner",
+)
 @click.pass_context
 def filesystem(ctx: click.Context, owner: str, group: Optional[str]) -> None:
     """Preparations regarding the file system."""
@@ -123,8 +133,9 @@ def populate_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
 @click.argument('event_id', type=int)
 @click.pass_obj
 @pass_config
-def populate_event_keeper_cmd(config: TestConfig, ownership: dict[str, str],
-                              event_id: int) -> None:
+def populate_event_keeper_cmd(
+    config: TestConfig, ownership: dict[str, str], event_id: int
+) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
     click.echo(f"Populate event keeper at {path}.")
@@ -160,11 +171,12 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 # TODO move this in development section
 @database.command(name="populate")
 @click.option(
-    "--xss/--no-xss", default=False, help="prepare the database for xss checks")
+    "--xss/--no-xss", default=False, help="prepare the database for xss checks"
+)
 @pass_secrets
 @pass_config
 def populate_database_cmd(
-    config: TestConfig, secrets: SecretsConfig, xss: bool,
+    config: TestConfig, secrets: SecretsConfig, xss: bool
 ) -> None:
     """Populate the database tables with sample data."""
     click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
@@ -183,19 +195,26 @@ def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 # Development commands
 #
 
+
 @cli.group(name="dev")
 def development() -> None:
     """Helpers for development, expecting a running CdEDBv2."""
 
 
 @development.command(name="compile-sample-data-json")
-@click.option("-o", "--outfile", default="/tmp/sample_data.json",
-              type=click.Path(), help="the place to store the sql file")
+@click.option(
+    "-o",
+    "--outfile",
+    default="/tmp/sample_data.json",
+    type=click.Path(),
+    help="the place to store the sql file",
+)
 @click.option("-s", "--silent", default=False, type=bool)
 @pass_secrets
 @pass_config
-def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
-                             outfile: pathlib.Path, silent: bool) -> None:
+def compile_sample_data_json(
+    config: TestConfig, secrets: SecretsConfig, outfile: pathlib.Path, silent: bool
+) -> None:
     """Generate a JSON-file from the current state of the database."""
     data = sql2json(config, secrets, silent=silent)
     with open(outfile, "w", encoding='UTF-8') as f:
@@ -204,18 +223,31 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
 
 
 @development.command(name="compile-sample-data-sql")
-@click.option("-i", "--infile",
-              default="/cdedb2/tests/ancillary_files/sample_data.json",
-              type=click.Path(), help="the json file containing the sample data")
-@click.option("-o", "--outfile", default="/tmp/sample_data.sql",
-              type=click.Path(), help="the place to store the sql file")
 @click.option(
-    "--xss/--no-xss", default=False, help="prepare sample data for xss checks")
+    "-i",
+    "--infile",
+    default="/cdedb2/tests/ancillary_files/sample_data.json",
+    type=click.Path(),
+    help="the json file containing the sample data",
+)
+@click.option(
+    "-o",
+    "--outfile",
+    default="/tmp/sample_data.sql",
+    type=click.Path(),
+    help="the place to store the sql file",
+)
+@click.option(
+    "--xss/--no-xss", default=False, help="prepare sample data for xss checks"
+)
 @pass_secrets
 @pass_config
 def compile_sample_data_sql(
-    config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
-    outfile: pathlib.Path, xss: bool,
+    config: TestConfig,
+    secrets: SecretsConfig,
+    infile: pathlib.Path,
+    outfile: pathlib.Path,
+    xss: bool,
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -238,14 +270,18 @@ def compile_sample_data_sql(
 
 
 @development.command(name="apply-sample-data")
-@click.option("--owner",
+@click.option(
+    "--owner",
     help="Use this user as the owner of storage and logs.",
     default=get_user,
-    show_default="current user")
-@click.option("--group",
+    show_default="current user",
+)
+@click.option(
+    "--group",
     help="Use this group for file permissions.",
     default=None,
-    show_default="same as owner")
+    show_default="same as owner",
+)
 @pass_config
 def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> None:
     """Repopulates the application with sample data."""
@@ -279,29 +315,47 @@ def serve_debugger_cmd(test: bool) -> None:
 @click.option("--file", "-f", type=pathlib.Path, help="the script to execute")
 @click.option('-v', '--verbose', count=True)
 @click.option("--as-postgres", is_flag=True)
-@click.option("--outfile", "-o", type=pathlib.Path, help="file to write the output to",
-              default=None)
+@click.option(
+    "--outfile",
+    "-o",
+    type=pathlib.Path,
+    help="file to write the output to",
+    default=None,
+)
 @click.option("--outfile-append", is_flag=True)
 @pass_secrets
 @pass_config
 def execute_sql_script_cmd(
-        config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool,
+    config: TestConfig,
+    secrets: SecretsConfig,
+    file: pathlib.Path,
+    verbose: int,
+    as_postgres: bool,
+    outfile: pathlib.Path,
+    outfile_append: bool,
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
-        execute_sql_script(config, secrets, file.read_text('utf-8'), verbose=verbose,
-                           as_postgres=as_postgres)
+        execute_sql_script(
+            config,
+            secrets,
+            file.read_text('utf-8'),
+            verbose=verbose,
+            as_postgres=as_postgres,
+        )
 
 
 @development.command(name="describe-database")
 @click.option("--outfile", "-o", type=pathlib.Path)
 @pass_secrets
 @pass_config
-def describe_database(config: TestConfig, secrets: SecretsConfig,
-                      outfile: pathlib.Path) -> None:
+def describe_database(
+    config: TestConfig, secrets: SecretsConfig, outfile: pathlib.Path
+) -> None:
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
     with redirect_to_file(outfile, append=False):
-        execute_sql_script(config, secrets, description_file.read_text('utf-8'), verbose=2)
+        execute_sql_script(
+            config, secrets, description_file.read_text('utf-8'), verbose=2
+        )
 
 
 @development.command(name="check-sample-data-consistency")
@@ -328,9 +382,15 @@ def check_sample_data_consistency(ctx: click.Context) -> None:
         fresh = f.readlines()
     with open(current_data, encoding='UTF-8') as f:
         current = f.readlines()
-    diff = "".join(difflib.unified_diff(
-        fresh, current, fromfile="Cleanly generated sampledata.",
-        tofile="/cdedb2/tests/ancillary_files/sample_data.json", n=2))
+    diff = "".join(
+        difflib.unified_diff(
+            fresh,
+            current,
+            fromfile="Cleanly generated sampledata.",
+            tofile="/cdedb2/tests/ancillary_files/sample_data.json",
+            n=2,
+        )
+    )
     if diff:
         print(diff, file=sys.stderr)
         sys.exit(1)
