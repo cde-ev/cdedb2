@@ -1806,12 +1806,13 @@ class TestCoreFrontend(FrontendTest):
         # Test warnings about name ambiguity.
         self.traverse("Meine Daten", "Bearbeiten")
         f = self.response.forms['changedataform']
-        f['family_name'] = f['birth_name'] = "Ganondorf"
+        f['family_name'] = f['birth_name'] = f['name_supplement'] = "Ganondorf"
         f['legal_given_names'] = f['nickname'] = f['given_names'].value
         self.submit(f, check_notification=False)
         self.assertValidationWarning('birth_name', "Geburtsname entspricht dem Familiennamen")
         self.assertValidationWarning('legal_given_names', "Bürgerlicher Vorname entspricht dem Rufnamen")
         self.assertValidationWarning('nickname', "Spitzname entspricht dem Rufnamen")
+        self.assertValidationWarning('name_supplement', "Sollte nicht deinen Namen enthalten")
 
         # Test regular changelog facility.
         self.traverse("Meine Daten", "Bearbeiten")

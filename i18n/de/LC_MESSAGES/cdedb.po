@@ -18,6 +18,9 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Should not contain (parts of) your name."
+msgstr "Sollte nicht deinen Namen enthalten (oder einen Teil davon)."
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
