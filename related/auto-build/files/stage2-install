@@ -104,8 +104,8 @@ python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --no-cache-dir --break-system-packages \
     --group "/cdedb2/pyproject.toml:dev" \
     --group "/cdedb2/pyproject.toml:playwright" \
+    uv
 
-wget -qO- https://astral.sh/uv/install.sh | sh
 echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
 echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
 
