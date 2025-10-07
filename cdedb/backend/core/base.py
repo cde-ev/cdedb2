@@ -112,7 +112,7 @@ class CoreBaseBackend(AbstractBackend):
         self._genesis_attachment_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / 'genesis_attachment')
 
-    @access("cde")
+    @access("anonymous")
     def get_foto_store(self, rs: RequestState) -> AttachmentStore:
         return self._foto_store
 
