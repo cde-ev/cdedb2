@@ -9,7 +9,6 @@ Only exception are the per-event-queries, since they need some dynamic informati
 about the event to be created. They can be obtained by calling the respective functions.
 """
 
-
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
 from cdedb.common.n_ import n_
@@ -19,7 +18,7 @@ from cdedb.common.sorting import xsorted
 
 
 def generate_event_registration_default_queries(
-        event: models_event.Event, spec: QuerySpec,
+    event: models_event.Event, spec: QuerySpec
 ) -> dict[str, Query]:
     """
     Generate default queries for registration_query.
@@ -34,7 +33,9 @@ def generate_event_registration_default_queries(
     scope = QueryScope.registration
 
     default_fields_of_interest = (
-        "persona.family_name", "persona.given_names", "persona.username",
+        "persona.family_name",
+        "persona.given_names",
+        "persona.username",
     )
 
     default_sort = (
@@ -44,72 +45,86 @@ def generate_event_registration_default_queries(
     )
 
     all_part_stati_column = ",".join(
-        f"part{part_id}.status" for part_id in xsorted(event.parts))
+        f"part{part_id}.status" for part_id in xsorted(event.parts)
+    )
     any_part_participant_constraint = (
-        all_part_stati_column, QueryOperators.equal,
+        all_part_stati_column,
+        QueryOperators.equal,
         const.RegistrationPartStati.participant.value,
     )
 
     dokuteam_course_picture_fields_of_interest = [
-        "persona.id", "persona.given_names", "persona.family_name"]
+        "persona.id",
+        "persona.given_names",
+        "persona.family_name",
+    ]
     for track_id in event.tracks:
         dokuteam_course_picture_fields_of_interest.append(f"course{track_id}.nr")
         dokuteam_course_picture_fields_of_interest.append(
-            f"track{track_id}.is_course_instructor")
+            f"track{track_id}.is_course_instructor"
+        )
 
     dokuteam_dokuforge_fields_of_interest = [
-        "persona.id", "persona.given_names", "persona.family_name", "persona.username"]
+        "persona.id",
+        "persona.given_names",
+        "persona.family_name",
+        "persona.username",
+    ]
     for track_id in event.tracks:
         dokuteam_dokuforge_fields_of_interest.append(f"course{track_id}.nr")
         dokuteam_dokuforge_fields_of_interest.append(
-            f"track{track_id}.is_course_instructor")
+            f"track{track_id}.is_course_instructor"
+        )
 
     dokuteam_address_fields_of_interest = [
-        "persona.given_names", "persona.family_name", "persona.address",
-        "persona.address_supplement", "persona.postal_code", "persona.location",
-        "persona.country"]
+        "persona.given_names",
+        "persona.family_name",
+        "persona.address",
+        "persona.address_supplement",
+        "persona.postal_code",
+        "persona.location",
+        "persona.country",
+    ]
 
     queries = {
         n_("00_query_event_registration_all"): Query(
-            scope, spec,
+            scope,
+            spec,
             default_fields_of_interest,
             (),
             default_sort,
         ),
         n_("02_query_event_registration_orgas"): Query(
-            scope, spec,
+            scope,
+            spec,
             default_fields_of_interest,
-            (
-                ("reg.is_orga", QueryOperators.equal, True),
-            ),
+            (("reg.is_orga", QueryOperators.equal, True),),
             default_sort,
         ),
         n_("30_query_event_registration_orga_notes"): Query(
-            scope, spec,
+            scope,
+            spec,
             default_fields_of_interest + ("reg.orga_notes",),
-            (
-                ("reg.orga_notes", QueryOperators.nonempty, None),
-            ),
+            (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort,
         ),
         n_("32_query_event_registration_notes"): Query(
-            scope, spec,
+            scope,
+            spec,
             default_fields_of_interest + ("reg.notes",),
-            (
-                ("reg.notes", QueryOperators.nonempty, None),
-            ),
+            (("reg.notes", QueryOperators.nonempty, None),),
             default_sort,
         ),
         n_("60_query_dokuteam_course_picture"): Query(
-            scope, spec,
+            scope,
+            spec,
             dokuteam_course_picture_fields_of_interest,
-            (
-                any_part_participant_constraint,
-            ),
+            (any_part_participant_constraint,),
             default_sort,
         ),
         n_("61_query_dokuteam_dokuforge"): Query(
-            scope, spec,
+            scope,
+            spec,
             dokuteam_dokuforge_fields_of_interest,
             (
                 any_part_participant_constraint,
@@ -118,11 +133,10 @@ def generate_event_registration_default_queries(
             default_sort,
         ),
         n_("62_query_dokuteam_address_export"): Query(
-            scope, spec,
+            scope,
+            spec,
             dokuteam_address_fields_of_interest,
-            (
-                any_part_participant_constraint,
-            ),
+            (any_part_participant_constraint,),
             default_sort,
         ),
     }
@@ -131,7 +145,8 @@ def generate_event_registration_default_queries(
 
 
 def generate_event_course_default_queries(
-        event: models_event.Event, spec: QuerySpec) -> dict[str, Query]:
+    event: models_event.Event, spec: QuerySpec
+) -> dict[str, Query]:
     """
     Generate default queries for course_queries.
 
@@ -147,14 +162,11 @@ def generate_event_course_default_queries(
 
     queries = {
         n_("50_query_dokuteam_courselist"): Query(
-            QueryScope.event_course, spec,
+            QueryScope.event_course,
+            spec,
             ("course.nr", "course.shortname", "course.title"),
-            (
-                (takes_place, QueryOperators.equal, True),
-            ),
-            (
-                ("course.nr", True),
-            ),
+            ((takes_place, QueryOperators.equal, True),),
+            (("course.nr", True),),
         ),
     }
 
@@ -162,7 +174,9 @@ def generate_event_course_default_queries(
 
 
 _default_fields_of_interest = (
-    "personas.id", "given_names", "family_name",
+    "personas.id",
+    "given_names",
+    "family_name",
 )
 
 _default_sort = (
@@ -176,15 +190,15 @@ _not_archived_constraint = ("is_archived", QueryOperators.equal, False)
 DEFAULT_QUERIES = {
     QueryScope.all_cde_users: {
         n_("00_query_cde_user_all"): Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
             _default_fields_of_interest,
-            (
-                _not_archived_constraint,
-            ),
+            (_not_archived_constraint,),
             _default_sort,
         ),
         n_("02_query_cde_members"): Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
             _default_fields_of_interest,
             (
                 _not_archived_constraint,
@@ -193,7 +207,8 @@ DEFAULT_QUERIES = {
             _default_sort,
         ),
         n_("10_query_cde_user_trial_members"): Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
             _default_fields_of_interest,
             (
                 _not_archived_constraint,
@@ -202,10 +217,17 @@ DEFAULT_QUERIES = {
             _default_sort,
         ),
         n_("20_query_cde_user_expuls"): Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
             (
-                "personas.id", "given_names", "family_name", "address",
-                "address_supplement", "postal_code", "location", "country",
+                "personas.id",
+                "given_names",
+                "family_name",
+                "address",
+                "address_supplement",
+                "postal_code",
+                "location",
+                "country",
             ),
             (
                 _not_archived_constraint,
@@ -218,25 +240,24 @@ DEFAULT_QUERIES = {
     },
     QueryScope.all_event_users: {
         n_("00_query_event_user_all"): Query(
-            QueryScope.event_user, QueryScope.event_user.get_spec(),
+            QueryScope.event_user,
+            QueryScope.event_user.get_spec(),
             _default_fields_of_interest,
-            (
-                _not_archived_constraint,
-            ),
+            (_not_archived_constraint,),
             _default_sort,
         ),
     },
     QueryScope.all_core_users: {
         n_("00_query_core_user_all"): Query(
-            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
             _default_fields_of_interest,
-            (
-                _not_archived_constraint,
-            ),
+            (_not_archived_constraint,),
             _default_sort,
         ),
         n_("10_query_core_any_admin"): Query(
-            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
             _default_fields_of_interest + tuple(ADMIN_KEYS),
             (
                 _not_archived_constraint,
@@ -247,21 +268,19 @@ DEFAULT_QUERIES = {
     },
     QueryScope.all_assembly_users: {
         n_("00_query_assembly_user_all"): Query(
-            QueryScope.persona, QueryScope.persona.get_spec(),
+            QueryScope.persona,
+            QueryScope.persona.get_spec(),
             _default_fields_of_interest,
-            (
-                _not_archived_constraint,
-            ),
+            (_not_archived_constraint,),
             _default_sort,
         ),
     },
     QueryScope.all_ml_users: {
         n_("00_query_ml_user_all"): Query(
-            QueryScope.persona, QueryScope.persona.get_spec(),
+            QueryScope.persona,
+            QueryScope.persona.get_spec(),
             _default_fields_of_interest,
-            (
-                _not_archived_constraint,
-            ),
+            (_not_archived_constraint,),
             _default_sort,
         ),
     },
