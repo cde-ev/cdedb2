@@ -120,14 +120,12 @@ class TestCoreBackend(BackendTest):
             if not persona_id:
                 break
 
-            status = self.core.get_persona(self.key, persona_id)
-
             # Validate ml data
             persona = self.core.get_ml_user(self.key, persona_id)
             affirm(vtypes.Persona, persona)
 
             # Validate event data if applicable
-            if not status['is_event_realm']:
+            if not persona['is_event_realm']:
                 continue
 
             persona = self.core.get_event_user(self.key, persona_id)
@@ -140,7 +138,7 @@ class TestCoreBackend(BackendTest):
                     "A birthday must be in the past. (birthday)", cm.exception.args)
 
             # Validate cde/total data if applicable
-            if not status['is_cde_realm']:
+            if not persona['is_cde_realm']:
                 continue
 
             persona = self.core.get_total_persona(self.key, persona_id)
@@ -980,25 +978,26 @@ class TestCoreBackend(BackendTest):
             'is_active': True,
             'is_archived': False,
             'is_purged': False,
+            'is_ml_realm': True,
+            'is_assembly_realm': True,
+            'is_event_realm': True,
+            'is_cde_realm': True,
             'username': 'berta@example.cde'}
         # TODO check again after adjusting get_persona function
         # self.assertEqual(expectation, self.core.get_persona(self.key, 2))
         expectation.update({
-            'is_ml_realm': True,
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
         })
         self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
         expectation_assembly = expectation.copy()
         expectation_assembly.update({
-            'is_assembly_realm': True,
             'is_assembly_admin': False,
         })
         self.assertEqual(expectation_assembly, self.core.get_assembly_user(self.key, 2))
         expectation_event = expectation.copy()
         expectation_event.update({
             'is_event_admin': False,
-            'is_event_realm': True,
             'is_complaint_admin': False,
             'is_member': True,
             'address': 'Im Garten 77',
@@ -1019,7 +1018,6 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation_event, self.core.get_event_user(self.key, 2))
         expectation.update({**expectation_event, **expectation_assembly})
         expectation.update({
-            'is_cde_realm': True,
             'is_cde_admin': False,
             'is_member': True,
             'is_searchable': True,

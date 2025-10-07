@@ -236,6 +236,12 @@ class Persona(PersonaName):
     is_archived: bool = False
     is_purged: bool = False
 
+    # retrieve all realm bits to enable the dataclass to know if its pure
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_event_realm: bool = False
+    is_cde_realm: bool = False
+
     # Do not include admin notes, get this via its own getter.
 
     def __post_init__(self) -> None:
@@ -264,6 +270,10 @@ class Persona(PersonaName):
                 ret.add(field.name)
         return ret
 
+    @property
+    def is_pure(self) -> bool:
+        return False
+
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
         return EntitySorter.persona(self.as_dict())
@@ -277,6 +287,10 @@ class MlPersona(Persona):
     is_ml_admin: bool = False
     is_cdelokal_admin: bool = False
 
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_event_realm or self.is_cde_realm)
+
 
 @dataclasses.dataclass(kw_only=True)
 class AssemblyPersona(MlPersona):
@@ -284,6 +298,10 @@ class AssemblyPersona(MlPersona):
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
     is_assembly_admin: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_event_realm or self.is_cde_realm)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -317,6 +335,10 @@ class EventPersona(MlPersona):
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_cde_realm)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -356,6 +378,10 @@ class CdEPersona(AssemblyPersona, EventPersona):
         default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     donation: decimal.Decimal = decimal.Decimal()
     honorary_member: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return True
 
 
 @dataclasses.dataclass(kw_only=True)
