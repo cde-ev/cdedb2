@@ -1108,13 +1108,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         data['amount'] = None
         fee_data = check(
-            rs, models.EventFee, data, creation=True, id_=-1,
-            event=rs.ambience['event'].as_dict(), questionnaire={}, personalized=True,
+            rs, models.EventFee, data, current=None,
+            event=rs.ambience['event'], questionnaire={}, personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:
             return self.add_new_personalized_fee_form(rs, event_id, registration_id)
 
-        new_fee_id = self.eventproxy.set_event_fees(rs, event_id, {-1: fee_data})
+        new_fee_id = self.eventproxy.create_event_fee(rs, event_id, fee_data)
         if new_fee_id:
             code = self.eventproxy.set_personalized_fee_amount(
                 rs, registration_id, new_fee_id, amount)

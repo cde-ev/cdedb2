@@ -560,7 +560,7 @@ class EventEventMixin(EventBaseFrontend):
                     'amount': fee,
                     'condition': f"part.{data['shortname']}",
                 }
-                self.eventproxy.set_event_fees(rs, event_id, {-1: new_fee})
+                self.eventproxy.create_event_fee(rs, event_id, new_fee)
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -828,13 +828,17 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/fee_summary")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
-            rs, models.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
-            event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
+            rs, models.EventFee, data,
+            event=rs.ambience['event'], questionnaire=questionnaire,
+            current=rs.ambience['event'].fees.get(fee_id or -1),
             personalized=personalized,
         )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
-        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
+        if fee_id:
+            code = self.eventproxy.change_event_fee(rs, fee_id, fee_data)
+        else:
+            code = self.eventproxy.create_event_fee(rs, event_id, fee_data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/fee_summary")
 
@@ -849,7 +853,7 @@ class EventEventMixin(EventBaseFrontend):
         if fee_id not in rs.ambience['event'].fees:
             rs.notify("error", n_("Unknown fee."))
             return self.redirect(rs, "event/fee_summary")
-        code = self.eventproxy.set_event_fees(rs, event_id, {fee_id: None})
+        code = self.eventproxy.delete_event_fee(rs, fee_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/fee_summary")
 
@@ -1168,23 +1172,23 @@ class EventEventMixin(EventBaseFrontend):
                     ),
                 },
             },
-            'fees': {
-                -1: {
-                    'kind': const.EventFeeType.common,
-                    'title': data['title'],
-                    'notes': "Automatisch erstellt.",
-                    'amount': fee,
-                    'condition': f"part.{data['shortname']}",
-                },
-                -2: {
-                    'kind': const.EventFeeType.external,
-                    'title': "Externenzusatzbeitrag",
-                    'notes': "Automatisch erstellt",
-                    'amount': nonmember_surcharge,
-                    'condition': "any_part and not is_member and not age.U12",
-                },
-            },
         })
+        fee_data = [
+            {
+                'kind': const.EventFeeType.common,
+                'title': data['title'],
+                'notes': "Automatisch erstellt.",
+                'amount': fee,
+                'condition': f"part.{data['shortname']}",
+            },
+            {
+                'kind': const.EventFeeType.external,
+                'title': "Externenzusatzbeitrag",
+                'notes': "Automatisch erstellt",
+                'amount': nonmember_surcharge,
+                'condition': "any_part and not is_member and not age.U12",
+            },
+        ]
         if (data and data['shortname']
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
@@ -1217,31 +1221,36 @@ class EventEventMixin(EventBaseFrontend):
             return self.create_event_form(rs)
         assert data is not None
 
-        new_id = self.eventproxy.create_event(rs, data)
-        data["id"] = new_id
-        event = self.eventproxy.get_event(rs, new_id)
+        with TransactionObserver(
+                rs, self, "create_event", recipients=[self.conf["EVENT_ADMIN_ADDRESS"]]
+        ):
+            new_id = self.eventproxy.create_event(rs, data)
+            data["id"] = new_id
+            event = self.eventproxy.get_event(rs, new_id)
+            for fee_ in fee_data:
+                self.eventproxy.create_event_fee(rs, new_id, fee_)
 
-        if create_orga_list:
-            orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
-            if self.mlproxy.verify_existence(rs, orga_ml_data.address):
-                rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': orga_ml_data.address})
-            else:
-                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
-                rs.notify_return_code(code, success=n_("Orga mailinglist created."))
-            code = self.eventproxy.set_event(
-                rs, new_id, {"orga_address": orga_ml_data.address},
-                change_note="Mailadresse der Orgas gesetzt.")
-            rs.notify_return_code(code)
-        if create_participant_list:
-            participant_ml_data = self._get_mailinglist_setter(rs, event)
-            if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
-                code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
-                rs.notify_return_code(code,
-                                      success=n_("Participant mailinglist created."))
-            else:
-                rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': participant_ml_data.address})
+            if create_orga_list:
+                orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
+                if self.mlproxy.verify_existence(rs, orga_ml_data.address):
+                    rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                              {'address': orga_ml_data.address})
+                else:
+                    code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
+                    rs.notify_return_code(code, success=n_("Orga mailinglist created."))
+                code = self.eventproxy.set_event(
+                    rs, new_id, {"orga_address": orga_ml_data.address},
+                    change_note="Mailadresse der Orgas gesetzt.")
+                rs.notify_return_code(code)
+            if create_participant_list:
+                participant_ml_data = self._get_mailinglist_setter(rs, event)
+                if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
+                    code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
+                    rs.notify_return_code(code,
+                                          success=n_("Participant mailinglist created."))
+                else:
+                    rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                              {'address': participant_ml_data.address})
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 

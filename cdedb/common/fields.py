@@ -95,9 +95,6 @@ FIELD_DEFINITION_FIELDS = (
     "checkin", "entries",
 )
 
-#: Fields of a conditional event fee.
-EVENT_FEE_FIELDS = ("id", "event_id", "kind", "title", "amount", "condition", "notes")
-
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 

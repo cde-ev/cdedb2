@@ -835,7 +835,7 @@ class TestEventFrontend(FrontendTest):
                 'change_note': f['title'].value,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': f['title'].value,
             },
         ])
@@ -932,7 +932,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.extend([
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': log_expectation[0]['change_note'],
             },
             {
@@ -1394,12 +1394,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Universale Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
         ]
@@ -1472,12 +1472,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Alternative Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
@@ -2340,7 +2340,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
@@ -2355,22 +2355,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child3",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
 
@@ -7869,7 +7869,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         log_expectation = [
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
             {
@@ -7878,7 +7878,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': self.user['id'],
             },
             {
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'change_note': "Teilnahmebeitrag Warmup",
             },
             {
@@ -7902,7 +7902,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': 100,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
         ]

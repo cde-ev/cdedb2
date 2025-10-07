@@ -42,7 +42,6 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
     CdEDBObjectMap,
-    CdEDBOptionalMap,
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
@@ -54,7 +53,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
-    EVENT_FEE_FIELDS,
     PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
@@ -836,8 +834,6 @@ class EventBaseBackend(EventLowLevelBackend):
             else:
                 lg_data = {"title": data['title']}
                 self.create_lodgement_group(rs, new_id, lg_data)
-            if fees := data.get('fees'):
-                self.set_event_fees(rs, new_id, fees)
             self.event_keeper_create(rs, new_id)
         return new_id
 
@@ -1091,129 +1087,157 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
-    def set_event_fees(
-        self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
-    ) -> DefaultReturnCode:
-        """Create, delete and/or update fees for one event."""
-        event_id = affirm(vtypes.ID, event_id)
+    def _event_fee_privilege_check(
+        self,
+        rs: RequestState,
+        *,
+        event_id: int | None = None,
+        fee_id: int | None = None,
+    ) -> models.Event:
+        """Uninlined code from the event fee methods."""
+        self.affirm_atomized_context(rs)
+
+        event_id = affirm_optional(vtypes.ID, event_id)
+        fee_id = affirm_optional(vtypes.ID, fee_id)
+
+        if event_id is None:
+            assert fee_id is not None
+            event_id = unwrap(
+                self.sql_select_one(
+                    rs, models.EventFee.database_table, ["event_id"], fee_id
+                )
+            )
+            if not event_id:
+                raise ValueError(n_("Event fee does not exist."))
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged to modify event fees."))
 
-        ret = 1
+        event = self.get_event(rs, event_id)
 
-        with Atomizer(rs):
-            event = self.get_event(rs, event_id)
-
-            if event.is_balanced:
-                raise EventIsBalancedError(
-                    n_("Event is balanced. May not change fee configuration.")
-                )
-            if not fees:
-                return ret
-
-            questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(
-                vtypes.EventFeeSetter,
-                fees,
-                event=event.as_dict(),
-                questionnaire=questionnaire,
+        if event.is_balanced:
+            raise EventIsBalancedError(
+                n_("Event is balanced. May not change fee configuration.")
             )
 
-            existing_fees = {
-                unwrap(e)
-                for e in self.sql_select(
-                    rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id"
-                )
-            }
-            new_fees = {x for x in fees if x < 0}
-            updated_fees = {x for x in fees if x > 0 and fees[x] is not None}
-            deleted_fees = {x for x in fees if x > 0 and fees[x] is None}
-            if not updated_fees | deleted_fees <= existing_fees:
-                raise ValueError(n_("Non-existing event fee specified."))
+        return event
 
-            if updated_fees or deleted_fees:
-                current_fee_data = {
-                    e['id']: e
-                    for e in self.sql_select(
-                        rs,
-                        "event.event_fees",
-                        EVENT_FEE_FIELDS,
-                        updated_fees | deleted_fees,
-                    )
-                }
+    @access("event")
+    def create_event_fee(
+        self, rs: RequestState, event_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
+        with Atomizer(rs):
+            event = self._event_fee_privilege_check(rs, event_id=event_id)
 
-                if deleted_fees:
-                    personalized_fees = models.PersonalizedFee.many_from_database(
-                        self.query_all(
-                            rs,
-                            *models.PersonalizedFee.get_select_query(
-                                deleted_fees,
-                                'fee_id',
-                            ),
-                        ),
-                    )
-                    regs_by_fee = collections.defaultdict(list)
-                    all_regs = set()
-                    for p_fee in personalized_fees.values():
-                        regs_by_fee[int(p_fee.fee_id)].append(p_fee.registration_id)
-                        all_regs.add(p_fee.registration_id)
-                    reg_persona_map = {
-                        e['id']: e['persona_id']
-                        for e in self.sql_select(
-                            rs,
-                            models.Registration.database_table,
-                            ('id', 'persona_id'),
-                            all_regs,
-                        )
-                    }
-                    ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
-                    for x in mixed_existence_sorter(deleted_fees):
-                        current = current_fee_data[x]
-                        for reg_id in mixed_existence_sorter(regs_by_fee[x]):
-                            self.event_log(
-                                rs,
-                                const.EventLogCodes.personalized_fee_amount_deleted,
-                                event_id,
-                                reg_persona_map[reg_id],
-                                change_note=current['title'],
-                            )
-                        self.event_log(
-                            rs,
-                            const.EventLogCodes.fee_modifier_deleted,
-                            event_id,
-                            change_note=current['title'],
-                        )
+            quest = self.get_questionnaire(rs, event_id)
+            data = affirm(
+                models.EventFee,
+                data,
+                event=event,
+                current=None,
+                questionnaire=quest,
+                creation=True,
+            )
 
-                for x in mixed_existence_sorter(updated_fees):
-                    updated_fee = copy.deepcopy(fees[x])
-                    assert updated_fee is not None
-                    updated_fee['id'] = x
-                    current = current_fee_data[x]
-                    if any(updated_fee[k] != current[k] for k in updated_fee):
-                        ret *= self.sql_update(rs, "event.event_fees", updated_fee)
-                        self.event_log(
-                            rs,
-                            const.EventLogCodes.fee_modifier_changed,
-                            event_id,
-                            change_note=current['title'],
-                        )
-
-            for x in mixed_existence_sorter(new_fees):
-                new_fee = copy.deepcopy(fees[x])
-                assert new_fee is not None
-                new_fee.pop('id', None)
-                new_fee['event_id'] = event_id
-                ret *= self.sql_insert(rs, "event.event_fees", new_fee)
-                self.event_log(
-                    rs,
-                    const.EventLogCodes.fee_modifier_created,
-                    event_id,
-                    change_note=new_fee['title'],
-                )
+            data["event_id"] = event_id
+            ret = self.sql_insert(rs, models.EventFee.database_table, data)
+            self.event_log(
+                rs,
+                const.EventLogCodes.event_fee_created,
+                event_id,
+                change_note=data["title"],
+            )
 
             self._update_registrations_amount_owed(rs, event_id)
+
+        return ret
+
+    @access("event")
+    def change_event_fee(
+        self, rs: RequestState, fee_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
+        fee_id = affirm(vtypes.ID, fee_id)
+
+        with Atomizer(rs):
+            event = self._event_fee_privilege_check(rs, fee_id=fee_id)
+            current_fee = event.fees[fee_id]
+
+            quest = self.get_questionnaire(rs, event.id)
+            data = affirm(
+                models.EventFee,
+                data,
+                event=event,
+                current=current_fee,
+                questionnaire=quest,
+            )
+
+            data["id"] = fee_id
+            current_fee_data = current_fee.to_database()
+            if any(data[k] != current_fee_data[k] for k in data):
+                ret = self.sql_update(rs, "event.event_fees", data)
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.event_fee_modified,
+                    event.id,
+                    change_note=data.get("title", current_fee.title),
+                )
+            else:
+                ret = -1
+
+            self._update_registrations_amount_owed(rs, event.id)
+
+        return ret
+
+    @access("event")
+    def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode:
+        fee_id = affirm(vtypes.ID, fee_id)
+
+        with Atomizer(rs):
+            event = self._event_fee_privilege_check(rs, fee_id=fee_id)
+
+            current_fee = event.fees[fee_id]
+            persona_ids = []
+            if current_fee.is_personalized():
+                registration_ids = [
+                    e["registration_id"]
+                    for e in self.sql_select(
+                        rs,
+                        models.PersonalizedFee.database_table,
+                        ["registration_id"],
+                        [fee_id],
+                        entity_key="fee_id",
+                    )
+                ]
+                persona_ids = [
+                    e["persona_id"]
+                    for e in self.sql_select(
+                        rs,
+                        models.Registration.database_table,
+                        ["persona_id"],
+                        registration_ids,
+                    )
+                ]
+                if len(persona_ids) != len(registration_ids):
+                    raise RuntimeError(
+                        "Mismatch between registration IDs and persona IDs."
+                    )
+            ret = self.sql_delete(rs, models.EventFee.database_table, [fee_id])
+            for persona_id in xsorted(persona_ids):
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.personalized_fee_amount_deleted,
+                    event.id,
+                    persona_id,
+                    change_note=current_fee.title,
+                )
+            self.event_log(
+                rs,
+                const.EventLogCodes.event_fee_deleted,
+                event.id,
+                change_note=current_fee.title,
+            )
+
+            self._update_registrations_amount_owed(rs, event.id)
 
         return ret
 
