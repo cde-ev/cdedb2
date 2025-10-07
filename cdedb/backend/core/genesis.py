@@ -124,9 +124,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         if "status" in blockers.keys():
             raise ValueError(
-                n_("Unable to remove genesis case with status {}.").format(
-                    blockers["status"]
-                )
+                n_("Unable to remove genesis case with status '%(status)s'."),
+                {"status": blockers["status"]},
             )
         if not cascade:
             cascade = set()
