@@ -384,7 +384,7 @@ msgstr "Subscribability"
 
 #: cdedb/.i18n_additional.py:94 cdedb/i18n_additional.py:375
 msgid "MailinglistRosterVisibility.viewers"
-msgstr "Viewability"
+msgstr "Everyone"
 
 #: cdedb/.i18n_additional.py:95 cdedb/i18n_additional.py:252
 msgid "ModerationPolicy.unmoderated"
