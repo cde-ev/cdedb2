@@ -1294,9 +1294,9 @@ class MlBackend(AbstractBackend):
             return False
         elif self.is_moderator(rs, ml.id):
             return True
-        if self.is_relevant_admin(rs, mailinglist_id=ml.id):
-            if respect_admin_view and not ml.has_moderator_view(rs.user):
-                return False
+        elif self.is_relevant_admin(rs, mailinglist_id=ml.id) and (
+            ml.has_moderator_view(rs.user) or not respect_admin_view
+        ):
             return True
         elif ml.roster_visibility == mrv.none:
             return False
