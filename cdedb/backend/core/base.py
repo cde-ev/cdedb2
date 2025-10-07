@@ -1372,12 +1372,10 @@ class CoreBaseBackend(AbstractBackend):
                 ):
                     raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
                 if case['submitted_by'] == rs.user.persona_id:
-                    raise PrivilegeError(
-                        n_(
-                            "Only a different admin than the submitter "
-                            "may approve a privilege change."
-                        )
+                    msg = n_(
+                        "Only a different admin than the submitter may approve a privilege change."
                     )
+                    raise PrivilegeError(msg)
 
                 ret = self.sql_update(rs, "core.privilege_changes", data)
 
@@ -3289,16 +3287,9 @@ class CoreBaseBackend(AbstractBackend):
         assert persona_id is not None
 
         columns_of_interest = [
-            *ADMIN_KEYS,
-            "username",
-            "given_names",
-            "family_name",
-            "nickname",
-            "title",
-            "name_supplement",
-            "birthday",
-            "legal_given_names",
-        ]
+            *ADMIN_KEYS, "username", "given_names", "family_name", "nickname", "title",
+            "name_supplement", "birthday", "legal_given_names",
+        ]  # fmt: skip
 
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
