@@ -387,7 +387,7 @@ msgstr "Abonnementberechtigte"
 
 #: cdedb/.i18n_additional.py:94 cdedb/i18n_additional.py:375
 msgid "MailinglistRosterVisibility.viewers"
-msgstr "Zielgruppe"
+msgstr "Alle"
 
 #: cdedb/.i18n_additional.py:95 cdedb/i18n_additional.py:252
 msgid "ModerationPolicy.unmoderated"
