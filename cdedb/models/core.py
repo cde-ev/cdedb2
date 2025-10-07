@@ -236,10 +236,7 @@ class Persona(PersonaName):
     is_archived: bool = False
     is_purged: bool = False
 
-    # admin notes
-    # TODO how to ensure this is only available for admins?
-    notes: str | None = dataclasses.field(
-        default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict)
+    # Do not include admin notes, get this via its own getter.
 
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
