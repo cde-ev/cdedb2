@@ -344,6 +344,8 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> None:
         """Validate whether persona_ids are valid for receiving event privileges."""
+        if not persona_ids:
+            raise ValueError(n_("Must not be empty."))
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_("Some of these personas do not exist or are archived."))
         if not self.core.verify_personas(rs, persona_ids, {"event"}):
