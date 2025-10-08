@@ -1217,12 +1217,13 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
-                 "fee", "nonmember_surcharge",
+    @REQUESTdata("part_begin", "part_end", "orga_ids", "caretaker_ids",
+                 "create_track", "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
     @REQUESTdatadict(*models.Event.requestdict_fields(creation=True), "description")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
+                     caretaker_ids: vtypes.CdedbIDList,
                      fee: vtypes.NonNegativeDecimal,
                      nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
@@ -1232,6 +1233,7 @@ class EventEventMixin(EventBaseFrontend):
         # multi part events will have to edit this later on
         data.update({
             'orgas': orga_ids,
+            'caretakers': caretaker_ids,
             'notify_on_registration': const.NotifyOnRegistration.never,
             'parts': {
                 -1: {
@@ -1281,18 +1283,15 @@ class EventEventMixin(EventBaseFrontend):
             )
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
-            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users do not exist or are archived."),
-                    )),
-                )
-            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users are not event users."),
-                    )),
-                )
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, orga_ids)
+            except ValueError as e:
+                rs.append_validation_error("orga_ids", e)
+        if caretaker_ids:
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, caretaker_ids)
+            except ValueError as e:
+                rs.append_validation_error("caretaker_ids", e)
         elif create_orga_list or create_participant_list:
             # mailinglists require moderators
             rs.append_validation_error(

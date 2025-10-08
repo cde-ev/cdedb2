@@ -929,6 +929,8 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             if 'orgas' in data:
                 self.add_event_orgas(rs, new_id, data['orgas'])
+            if 'caretakers' in data:
+                self.add_event_caretakers(rs, new_id, data['caretakers'])
             if 'fields' in data:
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:
