@@ -403,23 +403,25 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika")
     def test_show_event_admin(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertTitle("Große Testakademie 2222")
 
         self.assertNotIn('createorgalistform', self.response.forms)
+        self.traverse("Manage Orgas")
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
         self.submit(f, check_notification=False)
         self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
+        self.traverse("Übersicht")
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
-        f = self.response.forms['addorgaform']
-        f['persona_id'] = USER_DICT['garcia']['DB-ID']
+        self.traverse("Manage Orgas")
+        f = self.response.forms['addorgasform']
+        f['orga_ids'] = f"{USER_DICT['garcia']['DB-ID']},{USER_DICT['emilia']['DB-ID']}"
         self.submit(f)
 
     @as_users("annika", "garcia")
@@ -622,39 +624,40 @@ class TestEventFrontend(FrontendTest):
             div='static-notifications')
         self.traverse("Übersicht")
         if self.user_in('ferdinand', 'annika'):
-            f = self.response.forms['addorgaform']
+            self.traverse("Manage Orgas")
+            f = self.response.forms['addorgasform']
             # Try to add an invalid cdedbid.
-            f['persona_id'] = "DB-1-1"
+            f['orga_ids'] = "DB-1-1"
             self.submit(f, check_notification=False)
-            self.assertValidationError('persona_id', "Checksumme stimmt nicht.", index=-1)
+            self.assertValidationError('orga_ids', "Checksumme stimmt nicht.", index=-1)
             # Try to add a non event user.
-            f['persona_id'] = USER_DICT['janis']['DB-ID']
+            f['orga_ids'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'persona_id', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
+                'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
                 index=-1)
             # Try to add an archived user.
-            f['persona_id'] = USER_DICT['hades']['DB-ID']
+            f['orga_ids'] = USER_DICT['hades']['DB-ID']
             self.submit(f, check_notification=False)
             msg = "Einige dieser Accounts existieren nicht oder sind archiviert."
-            self.assertValidationError('persona_id', msg, index=-1)
+            self.assertValidationError('orga_ids', msg, index=-1)
             # Try to add a non-existent user.
-            f['persona_id'] = "DB-1000-6"
+            f['orga_ids'] = "DB-1000-6"
             self.submit(f, check_notification=False)
-            self.assertValidationError('persona_id', msg, index=-1)
-            f['persona_id'] = USER_DICT['berta']['DB-ID']
+            self.assertValidationError('orga_ids', msg, index=-1)
+            f['orga_ids'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
-            self.assertTitle("Universale Akademie")
-            self.assertPresence("Beispiel", div='manage-orgas')
+            self.assertTitle("Manage Orgas & Caretakers (Universale Akademie)")
+            self.assertPresence("Beispiel", div='orgas_list')
             text = self.fetch_mail_content()
-            self.assertIn("als Orga hinzugefügt.", text)
+            self.assertIn("als Orga hinzugefügt", text)
             f = self.response.forms['removeorgaform2']
             f['ack_delete'].checked = True
             self.submit(f)
-            self.assertTitle("Universale Akademie")
+            self.assertTitle("Manage Orgas & Caretakers (Universale Akademie)")
             self.assertNonPresence("Beispiel")
             text = self.fetch_mail_content()
-            self.assertIn("als Orga entfernt.", text)
+            self.assertIn("als Orga entfernt", text)
 
     @event_keeper
     @as_users("garcia")
@@ -1348,7 +1351,7 @@ etc;anything else""", f['entries_2'].value)
         f['nonmember_surcharge'] = "8"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'orga_ids', "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
+            'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsnutzer.")
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
         f['part_end'] = "2345-6-7"
