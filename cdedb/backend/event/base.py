@@ -436,7 +436,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(
                         rs, const.EventLogCodes.orga_added, event_id, persona_id=anid
                     )
-                ret *= r
+                    ret *= r
 
         # Update session orga status
         if rs.user.persona_id in persona_ids:
@@ -510,7 +510,7 @@ class EventBaseBackend(EventLowLevelBackend):
                         event_id,
                         persona_id=anid,
                     )
-                ret *= r
+                    ret *= r
 
         # Update session caretaker status
         if rs.user.persona_id in persona_ids:
