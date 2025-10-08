@@ -1337,13 +1337,13 @@ class EventEventMixin(EventBaseFrontend):
             try:
                 self.eventproxy.validate_event_persona_ids(rs, orga_ids)
             except ValueError as e:
-                rs.append_validation_error("orga_ids", e)
+                rs.append_validation_error(("orga_ids", e))
         if caretaker_ids:
             try:
                 self.eventproxy.validate_event_persona_ids(rs, caretaker_ids)
             except ValueError as e:
-                rs.append_validation_error("caretaker_ids", e)
-        elif create_orga_list or create_participant_list:
+                rs.append_validation_error(("caretaker_ids", e))
+        if not orga_ids and (create_orga_list or create_participant_list):
             # mailinglists require moderators
             rs.append_validation_error(
                 ("orga_ids", ValueError(
