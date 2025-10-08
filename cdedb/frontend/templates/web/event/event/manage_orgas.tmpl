@@ -46,15 +46,17 @@
             {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
                 <form action="{{ cdedblink('event/add_orgas') }}" method="POST" id="addorgasform" class="p">
                     {{ util.anti_csrf_token('event/add_orgas') }}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                        {{ util.input_text(name="orga_ids", placeholder="DB-XXXX-X", anid="input-add-orgas",
-                                           arialabel=gettext("IDs of the new orgas")) }}
-                        <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
+                    {% call util.output_errors('orga_ids', wrapper=True) %}
+                        <div class="input-group has-success">
+                            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                            {{ util.input_text(name="orga_ids", placeholder="DB-XXXX-X", anid="input-add-orgas",
+                                               arialabel=gettext("IDs of the new orgas")) }}
+                            <div class="input-group-btn">
+                                {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
+                            </div>
                         </div>
-                    </div>
-                    {{ util.output_errors('orga_ids', wrapper=True) }}
+                    {% endcall %}
+
                 </form>
                 <script nonce="{{ csp_nonce }}">
                     $("#input-add-orgas").cdedbSearchPerson(
