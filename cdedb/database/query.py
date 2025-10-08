@@ -29,7 +29,8 @@ DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.dat
 # used with an "ANY(%s)" like comparison.
 DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
 
-Params = Sequence[DatabaseValue_s] | Mapping[str, DatabaseValue_s]
+ParamDict = dict[str, DatabaseValue_s]
+Params = Sequence[DatabaseValue_s] | Mapping[str, DatabaseValue_s] | ParamDict
 
 # EntityKey is the value of an identifier, most often an id, given to retrieve or
 # delete the corresponding entity from the database.

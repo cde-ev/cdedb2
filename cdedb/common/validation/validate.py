@@ -67,6 +67,7 @@ import pathlib
 import re
 import string
 import typing
+import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
@@ -125,6 +126,7 @@ from cdedb.common.query import (
     NO_VALUE_OPERATORS,
     VALID_QUERY_OPERATORS,
     Query,
+    QueryConstraint,
     QueryOperators,
     QueryOrder,
     QueryScope,
@@ -135,7 +137,7 @@ from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
@@ -147,10 +149,12 @@ NoneType = type(None)
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
+K = TypeVar('K')
+V = TypeVar('V')
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -190,31 +194,44 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
-    def __setitem__(self, type_: type[T], validator: Callable[..., T]) -> None:
+class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
+    def __setitem__(self, type_: type[T] | UnionType, validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: type[T]) -> Callable[..., T]:
+    def __getitem__(self, type_: type[T] | UnionType) -> Callable[..., T]:
         origin = typing.get_origin(type_)
         if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
-            validator = self[inner_type]
-            return _allow_None(validator)  # type: ignore[return-value]
+            return cast(Callable[..., T], _allow_None(self[inner_type]))
         elif typing.get_origin(type_) is list:
             [inner_type] = typing.get_args(type_)
-            return make_list_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_list_validator(inner_type))
         elif typing.get_origin(type_) is set:
             [inner_type] = typing.get_args(type_)
-            return make_set_validator(inner_type)  # type: ignore[return-value]
+            return cast(Callable[..., T], make_set_validator(inner_type))
         elif typing.get_origin(type_) is tuple:
             args = typing.get_args(type_)
             if len(args) == 2:
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
-        # TODO more container types like tuple
+        elif typing.get_origin(type_) is dict:
+            return cast(Callable[..., T], make_dict_validator(cast(type[Any], type_)))
+        elif isinstance(type_, typing.ForwardRef):
+            model_namespaces = [  # type: ignore[unreachable]
+                models_core, models_event, models_ml, models_droid, models_complaint
+            ]
+            for model_namespace in model_namespaces:
+                try:
+                    return self[type_._evaluate(vars(model_namespace), {}, set())]
+                except NameError:
+                    pass
+            raise NameError(
+                f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
+            )
+
         return super().__getitem__(type_)
 
 
@@ -387,18 +404,7 @@ def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     return fun
 
 
-def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[T], *,
-                                       creation_only: bool = False) -> None:
-    def the_validator(val: Any, argname: str = return_type.__qualname__, **kwargs: Any,
-                      ) -> T:
-        val = _mapping(val, argname)
-        val = _optional_object_mapping_helper(
-            val, inner_type, argname, creation_only=creation_only, **kwargs)
-        return cast(T, val)
-    _add_typed_validator(the_validator, return_type)
-
-
-def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
+def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass.
 
     The new validator accepts a dict, checking that its keys conform to the
@@ -419,15 +425,18 @@ def _create_dataclass_validator(*types: type[DC]) -> Callable[[F], F]:
             ) -> CdEDBObject:
                 if isinstance(val, (CdEDataclass, GenericLogFilter)):
                     val = val._to_validation()
-                val = _mapping(val, argname, **kwargs)
+                new_kwargs = {**kwargs_, **kwargs}
+                val = _mapping(val, argname, **new_kwargs)
                 if issubclass(type_, GenericLogFilter):
                     mandatory, optional = type_.validation_fields()
                 elif issubclass(type_, CdEDataclass):
                     mandatory, optional = type_.validation_fields(creation=creation)
                 else:
                     raise RuntimeError("Impossible.")
-                val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
-                val = fun(val, argname, creation=creation, type_=type_, **kwargs)
+                val = _examine_dictionary_fields(
+                    val, mandatory, optional, **new_kwargs
+                )
+                val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
                 return val
 
             # note that we use functools.partial to ensure the enclosure variable type_
@@ -481,6 +490,9 @@ def _examine_dictionary_fields(
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
+            except KeyError as e:
+                e.args += (key,)
+                raise
         elif not allow_superfluous:
             errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
 
@@ -793,7 +805,8 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True,
+    unicode_normalize: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -811,6 +824,8 @@ def _str_type(
         val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    if unicode_normalize:
+        val = unicodedata.normalize('NFC', val)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
     if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
@@ -828,6 +843,10 @@ def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     return val
 
 
+def _whitespace_normalized_str(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
 @_add_typed_validator
 def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
@@ -841,42 +860,6 @@ def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     if not all([url.scheme, url.netloc, url.path]):
         raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
     return Url(urllib.parse.urlunparse(url))
-
-
-@_add_typed_validator
-def _shortname(val: Any, argname: Optional[str] = None, *,
-               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
-    """A string used as shortname with therefore limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
-    return Shortname(val)
-
-
-@_add_typed_validator
-def _shortname_restrictive_identifier(
-        val: Any, argname: Optional[str] = None, *,
-        ignore_warnings: bool = False,
-        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and as restrictive identifier"""
-    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                  **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameRestrictiveIdentifier(val)
-
-
-@_add_typed_validator
-def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
-                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
-    """A string used as shortname, but with increased but still limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
-    return LegacyShortname(val)
 
 
 @_add_typed_validator
@@ -1175,6 +1158,37 @@ def make_pair_validator(type_: type[T]) -> PairValidator[T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
+
+
+class DictValidator(Protocol[T_co]):
+    def __call__(self, val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        ...
+
+
+def make_dict_validator(type_: type[T]) -> DictValidator[T]:
+    """
+    Given a type `dict[K, V]` create a validator to validate the keys of a mapping as K and the values as V.
+    """
+
+    key_type, value_type = typing.get_args(type_)
+
+    def dict_validator(val: Any, argname: str | None = None, **kwargs: Any) -> dict[K, V]:
+        val = _mapping(val, argname, **kwargs)
+
+        errs = ValidationSummary()
+        new_val = {}
+        for key_val, val_val in val.items():
+            with errs:
+                key_val = _ALL_TYPED[key_type](key_val, f"{argname}.key", **kwargs)
+                val_val = _ALL_TYPED[value_type](val_val, f"{argname}.value", **kwargs)
+                new_val[key_val] = val_val
+
+        if errs:
+            raise errs
+
+        return new_val
+
+    return dict_validator
 
 
 def _set_of(
@@ -1594,16 +1608,20 @@ def _persona(
         if val["birth_name"] == val["family_name"] and not ignore_warnings:
             errs.append(ValidationWarning("birth_name", n_(
                 "Birth name is equal to family name and should be removed.")))
+    if supplement := val.get("name_supplement"):
+        name_keys = ["given_names", "family_name", "legal_given_names", "nickname"]
+        if any(val.get(key) and val[key] in supplement for key in name_keys):
+            msg = n_("Should not contain (parts of) your name.")
+            if not ignore_warnings:
+                errs.append(ValidationWarning("name_supplement", msg))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
-            try:
+            with errs:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
                     aux=val.get('country' + suffix, ""),
                     ignore_warnings=ignore_warnings, **kwargs)
                 val['postal_code' + suffix] = postal_code
-            except ValidationSummary as e:
-                errs.extend(e)
     if errs:
         raise errs
 
@@ -1681,6 +1699,9 @@ def _datetime(
     if not isinstance(val, datetime.datetime):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a datetime.datetime.")))
+    if val.tzinfo is None:
+        raise ValidationSummary(
+            TypeError(argname, n_("Must be timezone aware.")))
     return val
 
 
@@ -2263,28 +2284,6 @@ def _sepa_meta(
     return SepaMeta(val)
 
 
-@_add_typed_validator
-def _safe_str(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> SafeStr:
-    """This allows alpha-numeric, whitespace and known good others."""
-    allowed_chars = ".,-+()/"
-    val = _str(val, argname, **kwargs)
-    errs = ValidationSummary()
-
-    forbidden_chars = "".join(xsorted({
-        c for c in val
-        if not (c.isalnum() or c.isspace() or c in allowed_chars)
-    }))
-    if forbidden_chars:
-        errs.append(ValueError(argname, n_(
-            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
-    if errs:
-        raise errs
-
-    return SafeStr(val)
-
-
 @_create_dataclass_validator(models_core.MetaInfo)
 def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
@@ -2292,7 +2291,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2378,14 +2377,13 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'lodgement_groups': Mapping,
-    'fees': Mapping,
 }
 
 
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any], atype: type[T], argname: str,
     creation_only: bool, **kwargs: Any,
-) -> Mapping[int, Optional[T]]:
+) -> Mapping[int, T | None]:
     """Helper to validate a `CdEDBOptionalMap` of a given type.
 
     The map may contain positive or negative IDs. Positive IDs may be either None,
@@ -2395,8 +2393,12 @@ def _optional_object_mapping_helper(
 
     :param creation_only: If True, only allow negative IDs.
     """
-    ret = {}
+    ret: dict[int, T | None] = {}
     errs = ValidationSummary()
+    # remove id_ from kwargs to make nested calls to this helper possible
+    kwargs = dict(kwargs)
+    if "id_" in kwargs:
+        del kwargs["id_"]
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
@@ -2405,12 +2407,12 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](
+                new_val = _ALL_TYPED[atype](
                     val, argname, creation=creation, id_=anid, **kwargs)
             else:
-                val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
+                new_val = _ALL_TYPED[atype | None](
                     val, argname, creation=creation, id_=anid, **kwargs)
-            ret[anid] = val
+            ret[anid] = new_val
 
     if errs:
         raise errs
@@ -2427,6 +2429,8 @@ def _event(
       of a new entity.
     """
     val = _mapping(val, argname, **kwargs)
+    if creation:
+        kwargs['event'] = None
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
@@ -2441,8 +2445,6 @@ def _event(
 
     configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
     if configuration_fields:
-        if creation:
-            kwargs['current'] = None
         with errs:
             configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
                 configuration_fields, argname, creation=creation, **kwargs)
@@ -2469,14 +2471,8 @@ def _event(
     if 'lodgement_groups' in val:
         with errs:
             val['lodgement_groups'] = _optional_object_mapping_helper(
-                val['lodgement_groups'], LodgementGroup, 'lodgement_groups',
+                val['lodgement_groups'], models_event.LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
-
-    if 'fees' in val:
-        with errs:
-            val['fees'] = _optional_object_mapping_helper(
-                val['fees'], models_event.EventFee, 'fees', creation_only=creation,
-                event=val, questionnaire={}, **kwargs)
 
     if errs:
         raise errs
@@ -2535,26 +2531,10 @@ def _event_part(
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
-        newtracks = {}
-        for anid, track in val['tracks'].items():
-            try:
-                anid = _int(anid, 'tracks', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = anid < 0
-                try:
-                    if creation:
-                        track = _ALL_TYPED[EventTrack](
-                            track, 'tracks', creation=True, **kwargs)
-                    else:
-                        track = _ALL_TYPED[Optional[EventTrack]](  # type: ignore[index]
-                            track, 'tracks', **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newtracks[anid] = track
-        val['tracks'] = newtracks
+        with errs:
+            val['tracks'] = _optional_object_mapping_helper(
+                val['tracks'], models_event.CourseTrack, 'tracks',
+                creation_only=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2587,85 +2567,80 @@ def _event_part_group(
         errs.append(ValueError('shortname', n_(
             "A part group with this name already exists.")))
 
+    shortname = val.get("shortname") or event.part_groups[val["id"]].shortname
+    constraint_type = val.get("constraint_type") or event.part_groups[val["id"]].constraint_type
+    if constraint_type == const.EventPartGroupType.mailinglist_link:
+        with errs:
+            val["shortname"] = _ALL_TYPED[EmailLocalPart](shortname, "shortname", **kwargs)
+
     if errs:
         raise errs
     return val
 
 
-EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'num_choices': NonNegativeInt,
-    'min_choices': NonNegativeInt,
-    'sortkey': int,
-    'course_room_field_id': Optional[ID],  # type: ignore[dict-item]
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventTrack:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
+    event: models_event.Event, creation: bool = False, id_: int, **kwargs: Any,
+) -> CdEDBObject:
     if creation:
-        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
+        min_choices = val["min_choices"]
+        num_choices = val["num_choices"]
     else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
+        track = event.tracks[id_]
+        min_choices = val.get("min_choices", track.min_choices)
+        num_choices = val.get("num_choices", track.num_choices)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    if ('num_choices' in val and 'min_choices' in val
-            and val['min_choices'] > val['num_choices']):
+    if min_choices > num_choices:
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
-
-    return EventTrack(val)
-
-
-EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'constraint_type': const.CourseTrackGroupType,
-    'notes': Optional[str],  # type: ignore[dict-item]
-    'track_ids': list[ID],
-    'sortkey': int,
-}
+    return val
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.TrackGroup)
 def _event_track_group(
-    val: Any, argname: str = "track_group", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventTrackGroup:
-    val = _mapping(val, argname, **kwargs)
-
+    val: CdEDBObject, argname: str = "track_group", *,
+    event: models_event.Event, creation: bool = False, **kwargs: Any
+) -> CdEDBObject:
+    errs = ValidationSummary()
     if creation:
-        mandatory_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_GROUP_COMMON_FIELDS}
+        if "track_ids" not in val or not val["track_ids"]:
+            errs.append(ValueError('track_ids', n_("Must not be empty.")))
+        elif not val["track_ids"] <= event.tracks.keys():
+            errs.append(ValueError("track_ids", n_("Unknown track.")))
+        elif val["constraint_type"].is_sync():
+            if any(tg.constraint_type.is_sync() and set(tg.tracks) & val["track_ids"]
+                    for tg in event.track_groups.values()):
+                errs.append(ValueError("track_ids", n_(
+                    "Cannot have more than one course choice sync track group per track.")))
+            track_choice_configs = set(
+                (event.tracks[track_id].num_choices, event.tracks[track_id].min_choices)
+                for track_id in val["track_ids"]
+            )
+            if len(track_choice_configs) != 1:
+                errs.append(ValueError("track_ids", n_(
+                    "Tracks of a course choice sync track group must have the same"
+                    " number of choices.")))
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
+    old_title = set()
+    old_shortname = set()
+    if creation is False:
+        track_group = event.track_groups.get(val["id"])
+        if track_group:
+            old_title = {track_group.title}
+            old_shortname = {track_group.shortname}
 
-    if 'track_ids' in val:
-        if not val['track_ids']:
-            raise ValidationSummary(
-                ValueError('track_ids', n_("Must not be empty.")))
+    if val.get("title") in {tg.title for tg in event.track_groups.values()} - old_title:
+        errs.append(ValueError('title', n_(
+            "A track group with this name already exists.")))
+    existing = {tg.shortname for tg in event.track_groups.values()}
+    if val.get('shortname') in existing - old_shortname:
+        errs.append(ValueError('shortname', n_(
+            "A track group with this name already exists.")))
 
-    return EventTrackGroup(val)
-
-
-_create_optional_mapping_validator(EventTrackGroup, EventTrackGroupSetter)
+    if errs:
+        raise errs
+    return val
 
 
 @_add_typed_validator
@@ -2693,7 +2668,7 @@ def _event_field(
         creation=creation)
 
     if 'entries' in optional_fields:
-        optional_fields['entries'] = Any  # type: ignore[assignment]
+        optional_fields['entries'] = Any
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2746,21 +2721,17 @@ def _event_field(
     return EventField(val)
 
 
-_create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
-
-
 @_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        id_: ID,
-        event: CdEDBObject,
+        current: models_event.EventFee | None,
+        event: models_event.Event,
         personalized: Optional[bool] = None,
         **kwargs: Any,
 ) -> CdEDBObject:
     errs = ValidationSummary()
-    current = event['fees'].get(id_)
     if current is not None and personalized is None:
-        personalized = (current['amount'] is None or current['condition'] is None)
+        personalized = (current.amount is None or current.condition is None)
 
     if personalized is not None:
         if personalized:
@@ -2781,6 +2752,19 @@ def _event_fee(
         for k in ('amount', 'condition'):
             errs.append(ValueError(
                 k, n_("Cannot have amount without condition or vice versa.")))
+
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
+
+        titles = {fee.title: fee.id for fee in event.fees.values()}
+
+        err = ValueError("title", n_("Duplicate title."))
+        if current is None:
+            if val["title"] in titles:
+                errs.append(err)
+        elif titles.get(val["title"], current.id) != current.id:
+            errs.append(err)
+
     if errs:
         raise errs
 
@@ -2790,7 +2774,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject,
+    event: models_event.Event,
     questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any,
 ) -> EventFeeCondition:
@@ -2803,12 +2787,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for f in event.get('fields', {}).values()
-        if f['association'] == const.FieldAssociations.registration
-           and f['kind'] == const.FieldDatatypes.bool
-           and f.get('id') not in additional_questionnaire_fields
+        f.field_name for f in event.fields.values()
+        if f.association == const.FieldAssociations.registration
+           and f.kind == const.FieldDatatypes.bool
+           and f.id not in additional_questionnaire_fields
     }
-    part_names = {p['shortname'] for p in event['parts'].values()}
+    part_names = {p.shortname for p in event.parts.values()}
 
     try:
         parse_result = fcp_parsing.parse(val)
@@ -2852,84 +2836,26 @@ def _past_course(
     return PastCourse(val)
 
 
-COURSE_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'description': Optional[str],
-    'nr': str,
-    'shortname': LegacyShortname,
-    'instructors': Optional[str],
-    'max_size': Optional[NonNegativeInt],
-    'min_size': Optional[NonNegativeInt],
-    'is_visible': bool,
-    'notes': Optional[str],
-}
-
-COURSE_OPTIONAL_FIELDS: TypeMapping = {
-    'segments': Iterable,
-    'active_segments': Iterable,
-    'fields': Mapping,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.Course, association=const.FieldAssociations.course)
 def _course(
-    val: Any, argname: str = "course", *,
-    creation: bool = False, **kwargs: Any,
-) -> Course:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    # TODO where is creation actually set and can it be places inside kwargs?
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(COURSE_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**COURSE_OPTIONAL_FIELDS}
-        # TODO make dict(field, ...) vs {**fields, ...} consistent
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
-
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
+    val: CdEDBObject, argname: str = "course", *,
+    creation: bool = False, event: models_event.Event, **kwargs: Any,
+) -> CdEDBObject:
 
     errs = ValidationSummary()
-    if 'segments' in val:
-        # TODO why use intermediate set?
-        segments = set()
-        for anid in val['segments']:
-            # TODO replace these internal calls with calls to the public functions?
-            try:
-                v = _id(anid, 'segments', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                segments.add(v)
-        val['segments'] = segments
-    if 'active_segments' in val:
-        active_segments = set()
-        for anid in val['active_segments']:
-            try:
-                v = _id(anid, 'active_segments', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                active_segments.add(v)
-        val['active_segments'] = active_segments
-    if 'segments' in val and 'active_segments' in val:
-        if not val['active_segments'] <= val['segments']:
-            errs.append(ValueError('segments', n_(
-                "Must be a superset of active segments.")))
+
+    if not event.tracks:
+        errs.append(ValueError("event_id", n_("Event without tracks forbids courses.")))
 
     if errs:
         raise errs
 
-    return Course(val)
+    return val
+
+
+@_create_dataclass_validator(models_event.CourseSegment)
+def _course_segment(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
@@ -2976,24 +2902,22 @@ def _registration(
 
     errs = ValidationSummary()
     if 'parts' in val:
-        newparts = {}
+        newparts: dict[int, RegistrationPart | None] = {}
         for anid, part in val['parts'].items():
             try:
                 anid = _id(anid, 'parts', **kwargs)
-                part = _ALL_TYPED[Optional[RegistrationPart]](  # type: ignore[index]
-                    part, 'parts', **kwargs)
+                part = _ALL_TYPED[RegistrationPart | None](part, 'parts', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
                 newparts[anid] = part
         val['parts'] = newparts
     if 'tracks' in val:
-        newtracks = {}
+        newtracks: dict[int, RegistrationTrack | None] = {}
         for anid, track in val['tracks'].items():
             try:
                 anid = _id(anid, 'tracks', **kwargs)
-                track = _ALL_TYPED[Optional[RegistrationTrack]](  # type: ignore[index]
-                    track, 'tracks', **kwargs)
+                track = _ALL_TYPED[RegistrationTrack | None](track, 'tracks', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -3071,8 +2995,9 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: dict[int, models_event.EventField],
-    association: FieldAssociations, **kwargs: Any,
+    event: models_event.Event,
+    association: FieldAssociations,
+    **kwargs: Any,
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -3090,17 +3015,17 @@ def _event_associated_fields(
     raw = copy.deepcopy(val)
     optional_fields: TypeMapping = {
         str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
-        for field in fields.values() if field.association == association
+        for field in event.fields.values() if field.association == association
     }
 
     val = _examine_dictionary_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
+    lookup: dict[str, int] = {v.field_name: k for k, v in event.fields.items()}
     for field_name, value in val.items():
         field_id = lookup[field_name]
-        entries = fields[field_id].entries
+        entries = event.fields[field_id].entries
         if entries is not None and value is not None:
             if not any(str(raw[field_name]) == x for x, _ in entries.items()):
                 errs.append(ValueError(
@@ -3111,78 +3036,44 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-LODGEMENT_GROUP_FIELDS: TypeMapping = {
-    'title': str,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.LodgementGroup)
 def _lodgement_group(
-    val: Any, argname: str = "lodgement_group", *,
-    creation: bool = False, nested_creation: bool = False, **kwargs: Any,
-) -> LodgementGroup:
-    """
-    :param creation: If ``True`` test the data set for fitness for creation
-        of a new entity.
-    :param nested_creation: If ``True`` do not require an event_id for creation,
-        because the event is being created at the same time as the group.
-    """
-
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS)
-        if not nested_creation:
-            mandatory_fields['event_id'] = ID
-        optional_fields: TypeMapping = {}
-    else:
-        # no event_id, since the associated event should be fixed.
-        mandatory_fields = {'id': ID}
-        optional_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
-
-    return LodgementGroup(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
-LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'regular_capacity': NonNegativeInt,
-    'camping_mat_capacity': NonNegativeInt,
-    'notes': Optional[str],
-    'group_id': ID,
-}
-
-LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
-    'fields': Mapping,
-}
-
-
-@_add_typed_validator
-def _lodgement(
-    val: Any, argname: str = "lodgement", *,
+    val: CdEDBObject, argname: str = "lodgement_group", *,
     creation: bool = False, **kwargs: Any,
-) -> Lodgement:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
+) -> CdEDBObject:
 
-    val = _mapping(val, argname, **kwargs)
+    return val
 
-    if creation:
-        mandatory_fields = dict(LODGEMENT_COMMON_FIELDS, event_id=ID)
-        optional_fields = {**LODGEMENT_OPTIONAL_FIELDS}
-    else:
-        # no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
-    # The check of fields is performed later via EventAssociatedFields.
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs,
-    )
+@_create_dataclass_validator(models_event.Lodgement, association=const.FieldAssociations.lodgement)
+def _lodgement(
+    val: CdEDBObject, argname: str = "lodgement", *,
+    creation: bool = False, event: models_event.Event,
+    groups: models_event.CdEDataclassMap[models_event.LodgementGroup],
+    create_new_group: bool = False, **kwargs: Any
+) -> CdEDBObject:
 
-    return Lodgement(val)
+    errs = ValidationSummary()
+
+    if create_new_group:
+        if (
+            "group_id" not in val
+            or val["group_id"] != models_event.LODGEMENT_GROUP_PLACEHOLDER_ID
+        ):
+            errs.append(
+                ValueError(
+                    "group_id", n_("Invalid placeholder for new lodgement group.")
+                )
+            )
+    elif "group_id" in val and val["group_id"] not in groups:
+        errs.append(
+            ValueError("group_id", n_("Unknown lodgement group for this event."))
+        )
+
+    if errs:
+        raise errs
+
+    return val
 
 
 FIELD_DATATYPE_VALIDATORS = {
@@ -3469,7 +3360,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': LegacyShortname,
+    'shortname': str,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -3690,12 +3581,13 @@ def _partial_registration(
                 newtracks[anid] = track
         val['tracks'] = newtracks
     if 'personalized_fees' in val:
-        newfees = {}
+        newfees: dict[int, decimal.Decimal | None] = {}
         for fee_id, amount in val['personalized_fees'].items():
             try:
                 fee_id = _id(fee_id, 'personalized_fees', **kwargs)
-                amount = _ALL_TYPED[Optional[decimal.Decimal]](  # type: ignore[index]
-                    amount, 'personalized_fees', **kwargs)
+                amount = _ALL_TYPED[decimal.Decimal | None](
+                    amount, 'personalized_fees', **kwargs
+                )
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -3921,12 +3813,13 @@ def _serialized_event_questionnaire(
 def _serialized_event_configuration(
     val: Any, argname: str = "serialized_event_configuration", *,
     creation: bool = False,
-    current: Optional[models_event.Event],
+    event: models_event.Event | None,
     skip_field_validation: bool = False,
     **kwargs: Any,
 ) -> SerializedEventConfiguration:
 
     val = _mapping(val, argname, **kwargs)
+    current = event
 
     if creation:
         mandatory_fields = dict(**EVENT_COMMON_FIELDS)
@@ -4229,7 +4122,7 @@ def _ballot(
                         "Mustn’t be before end of voting period.")))
 
     if 'candidates' in val:
-        newcandidates = {}
+        newcandidates: dict[int, BallotCandidate | None] = {}
         for anid, candidate in val['candidates'].items():
             try:
                 anid = _int(anid, 'candidates', **kwargs)
@@ -4238,12 +4131,23 @@ def _ballot(
             else:
                 creation = anid < 0
                 try:
-                    candidate = _ALL_TYPED[Optional[BallotCandidate]](  # type: ignore[index]
-                        candidate, 'candidates', creation=creation, **kwargs)
+                    candidate = _ALL_TYPED[BallotCandidate | None](
+                        candidate, 'candidates', creation=creation, **kwargs
+                    )
                 except ValidationSummary as e:
                     errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
+        titles = [
+            candidate["title"] for candidate in newcandidates.values() if candidate
+        ]
+        shortnames = [
+            candidate["shortname"] for candidate in newcandidates.values() if candidate
+        ]
+        if len(titles) != len(set(titles)):
+            errs.append(ValueError("candidates.title", n_("Duplicate title.")))
+        if len(shortnames) != len(set(shortnames)):
+            errs.append(ValueError("candidates.shortname", n_("Duplicate shortname.")))
         val['candidates'] = newcandidates
 
     if val.get('abs_quorum') and val.get('rel_quorum'):
@@ -4291,7 +4195,7 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': ShortnameRestrictiveIdentifier,
+    'shortname': RestrictiveIdentifier,
 }
 
 
@@ -4319,6 +4223,8 @@ def _ballot_candidate(
     errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
 
     if errs:
         raise errs
@@ -4512,7 +4418,7 @@ def _query_input(
     if val.get("query_id"):
         query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
-    constraints = []
+    constraints: list[QueryConstraint] = []
     order: list[QueryOrder] = []
     errs = ValidationSummary()
 
@@ -4751,7 +4657,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment]
         except ValidationSummary as e:
             errs.extend(e)
             continue

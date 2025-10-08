@@ -14,11 +14,9 @@ import hmac
 import itertools
 import json
 import logging
-import logging.handlers
 import pathlib
 import re
 import string
-import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from types import UnionType
@@ -49,16 +47,16 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
-    from cdedb.models.event import CdEDataclassMap
+    from cdedb.models.common import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
@@ -430,50 +428,6 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: Optional[int] = None,
-                 console_log_level: Optional[int] = None) -> logging.Logger:
-    """Configure the :py:mod:`logging` module.
-
-    Since this works hierarchical, it should only be necessary to call this
-    once and then every child logger is routed through this configured logger.
-    """
-    logger = logging.getLogger(name)
-    if logger.handlers:
-        logger.debug(f"Logger {name} already initialized.")
-        return logger
-    logger.propagate = False
-    logger.setLevel(log_level)
-    formatter = logging.Formatter(
-        '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    if syslog_level:
-        syslog_handler = logging.handlers.SysLogHandler()
-        syslog_handler.setLevel(syslog_level)
-        syslog_handler.setFormatter(formatter)
-        logger.addHandler(syslog_handler)
-    if console_log_level:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(console_log_level)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-    return logger
-
-
-def glue(*args: str) -> str:
-    """Join overly long strings, adds boundary white space for convenience.
-
-    It would be possible to use auto string concatenation as in ``("a
-    string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we once preferred this
-    explicit function.
-    """
-    return " ".join(args)
-
-
 def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
     """Construct log message with appropriate punctuation"""
     if msg2:
@@ -837,7 +791,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def is_list_type(type_: type[Any]) -> bool:
+def is_list_type(type_: type[Any] | UnionType) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,
@@ -1454,7 +1408,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 3)
+EVENT_SCHEMA_VERSION = (19, 4)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

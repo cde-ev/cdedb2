@@ -37,13 +37,13 @@ import phonenumbers
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
 from cdedb.common.sorting import xsorted
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 
 if TYPE_CHECKING:
     from cdedb.models.common import CdEDataclass
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
 S = TypeVar("S")
 T = TypeVar("T")

@@ -291,8 +291,8 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
 def create_lodgement_wishes_graph(
         rs: RequestState,
         registrations: CdEDBObjectMap, wishes: list[LodgementWish],
-        lodgements: CdEDBObjectMap,
-        lodgement_groups: CdEDBObjectMap,
+        lodgements: models.CdEDataclassMap[models.Lodgement],
+        lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
         event: models.Event,
         personas: CdEDBObjectMap,
         camping_mat_field_names: Mapping[int, Optional[str]],
@@ -381,7 +381,7 @@ def create_lodgement_wishes_graph(
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_group_{lodgement_group_id}',
-                graph_attr={'label': lodgement_group['title']})
+                graph_attr={'label': lodgement_group.title})
 
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():
@@ -404,7 +404,7 @@ def create_lodgement_wishes_graph(
             if cluster_by_lodgement:
                 subgraph = lodgement_clusters[lodgement_id]
             elif cluster_by_lodgement_group:
-                if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
+                if lodgement_group_id := lodgements[lodgement_id].group_id:
                     subgraph = lodgement_group_clusters[lodgement_group_id]
         # Create node
         is_present = (
@@ -431,7 +431,7 @@ def create_lodgement_wishes_graph(
     if cluster_by_lodgement and cluster_by_lodgement_group:
         for lodgement_id, lodgement_cluster in lodgement_clusters.items():
             # some lodgements may be in no lodgement group
-            if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
+            if lodgement_group_id := lodgements[lodgement_id].group_id:
                 lodgement_group_clusters[lodgement_group_id].subgraph(lodgement_cluster)
             else:
                 graph.subgraph(lodgement_cluster)
@@ -462,9 +462,9 @@ def create_lodgement_wishes_graph(
     return graph
 
 
-def _make_lodgement_label(lodgement: CdEDBObject) -> str:
-    return (f"{lodgement['title']} ({lodgement['regular_capacity']}"
-            f" + {lodgement['camping_mat_capacity']})")
+def _make_lodgement_label(lodgement: models.Lodgement) -> str:
+    return (f"{lodgement.title} ({lodgement.regular_capacity}"
+            f" + {lodgement.camping_mat_capacity})")
 
 
 def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:

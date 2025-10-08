@@ -4,6 +4,7 @@ import functools
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
+from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, execsql
 from tests.other_tests.test_validation import INVAL, TestValidationBase
@@ -415,12 +416,14 @@ class TestComplaintBackend(BackendTest):
         original_case = self.complaint.get_case(self.key, case_id)
         expectation = self.complaint.get_case(self.key, case_id)
 
+        # Adding an empty list does nothing.
         self.assertEqual(
             0,
             self.complaint.add_involved(
                 self.key, case_id, const.ComplaintInvolvementType.target, []
             ),
         )
+        # Add a new involved as a target.
         self.assertLessEqual(
             1,
             self.complaint.add_involved(
@@ -428,9 +431,9 @@ class TestComplaintBackend(BackendTest):
                 case_id=case_id,
                 involved_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
-                is_informed=True,
             ),
         )
+        # Adding them again is a noop.
         self.assertEqual(
             -1,
             self.complaint.add_involved(
@@ -440,24 +443,21 @@ class TestComplaintBackend(BackendTest):
                 persona_ids=[new_involved],
             ),
         )
-        with self.assertRaisesRegex(ValueError, "Already involved otherwise."):
-            self.complaint.add_involved(
-                self.key, case_id, const.ComplaintInvolvementType.other, [new_involved]
-            )
 
+        # Check that new target shows up in the case.
         case = self.complaint.get_case(self.key, case_id)
         expectation.involved.setdefault(
             const.ComplaintInvolvementType.target, set()
         ).add(new_involved)
-        expectation.informed_involved.add(new_involved)
 
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
 
-        self.assertEqual(
-            -1,
+        self.assertLessEqual(
+            1,
             self.complaint.set_involved_informed(self.key, case_id, new_involved, True),
         )
+        # Set them as uninformed.
         self.assertLessEqual(
             1,
             self.complaint.set_involved_informed(
@@ -465,10 +465,13 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
+        # Removing noone does nothing.
         self.assertEqual(0, self.complaint.remove_involved(self.key, case_id, []))
+        # Removing the new involved works.
         self.assertLessEqual(
             1, self.complaint.remove_involved(self.key, case_id, [new_involved])
         )
+        # But doing it again is a noop.
         self.assertEqual(
             -1, self.complaint.remove_involved(self.key, case_id, [new_involved])
         )
@@ -477,6 +480,24 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
+        # Adding the original involved as a new type removes and readds their companions.
+        self.assertLessEqual(
+            1,
+            self.complaint.set_involved_informed(
+                self.key, case_id, original_involved, True
+            ),
+        )
+        self.assertLessEqual(
+            1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.other,
+                [original_involved],
+            ),
+        )
+
+        # Removing the original involved also removes their companions.
         self.assertLessEqual(
             1, self.complaint.remove_involved(self.key, case_id, [original_involved])
         )
@@ -511,8 +532,26 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": new_involved,
             },
             {
+                "code": const.ComplaintLogCodes.involved_informed,
+                "persona_id": original_involved,
+            },
+            {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
+                "persona_id": original_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_uninformed,
+                "persona_id": original_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "change_note": "Sonstige",
+                "persona_id": original_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_removed,
+                "change_note": "Sonstige",
                 "persona_id": original_involved,
             },
             *[
@@ -855,22 +894,40 @@ class TestComplaintBackend(BackendTest):
             ),
         )
 
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
                 self.key, case_id, target_id, [affected_companion_id]
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
                 self.key, case_id, target_id, [appellant_companion_id]
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
                 self.key, case_id, affected_id, [target_companion_id]
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
                 self.key, case_id, appellant_id, [target_companion_id]
             )
+
+        # Adding an involved persona as another type migrates their companions so it also doesn't work.
+        self.assertLessEqual(
+            1,
+            self.complaint.add_companions(
+                self.key, case_id, appellant_id, [affected_companion_id]
+            ),
+        )
+        with self.assertRaises(AdverseCompanionError):
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [affected_id]
+            )
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_companions(
+                self.key, case_id, appellant_id, [affected_companion_id]
+            ),
+        )
 
         with self.assertRaisesRegex(ValueError, "Involved companion."):
             self.complaint.add_companions(self.key, case_id, target_id, [target_id])
@@ -968,6 +1025,16 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.companion_reinstated,
                 "persona_id": target_id,
                 "companion_id": target_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_added,
+                "persona_id": appellant_id,
+                "companion_id": affected_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_removed,
+                "persona_id": appellant_id,
+                "companion_id": affected_companion_id,
             },
             {
                 "code": const.ComplaintLogCodes.companion_withdrawn,
@@ -1454,12 +1521,16 @@ class TestComplaintValidation(TestValidationBase):
                 ),
                 (
                     {
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                        ),
                         "authors": ["DB-1-9"],
                     },
                     {
                         "description": None,
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                        ),
                         "authors": [1],
                         "etime": None,
                     },

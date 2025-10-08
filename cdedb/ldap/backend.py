@@ -704,7 +704,7 @@ class LDAPsqlBackend:
         """Helper function to get basic data about users from core.personas."""
         query = """
             SELECT cp.id, cp.username, cp.given_names, cp.family_name, cp.password_hash,
-                GREATEST(clog.ctime, elog.ctime, alog.ctime, mlog.ctime) AS ctime
+                GREATEST(clog.ctime, elog.ctime, alog.ctime, mlog.ctime) AS ctime, cp.foto
             FROM core.personas AS cp
             LEFT JOIN (
                 SELECT MAX(ctime) AS ctime, persona_id
@@ -770,6 +770,7 @@ class LDAPsqlBackend:
         )
 
         ret = dict()
+        photo_url_prefix = f"https://{self.config['HTTP_HOSTS'][0]}/db/core/foto"
         for dn, persona_id in dn_to_persona_id.items():
             if persona_id not in users:
                 continue
@@ -786,6 +787,10 @@ class LDAPsqlBackend:
                 b"userPassword": [user['password_hash']],
                 b"memberOf": groups.get(persona_id, []),
                 b"ipaUniqueID": [f"personas/{persona_id}"],
+                # see https://docs.ldap.com/specs/rfc2079.txt
+                b"labeledURI": [
+                    f"{photo_url_prefix}/{user['foto']} Profile Picture"
+                ] if user['foto'] else [],
                 b"modifyTimestamp": [self.format_timestamp(user['ctime'])],
             }
             ret[dn] = self._to_bytes(ldap_user)

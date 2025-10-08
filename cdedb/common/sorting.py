@@ -145,10 +145,6 @@ class EntitySorter:
                 lodgement['id'])
 
     @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['shortname'], candidates['id'])
 
@@ -172,6 +168,14 @@ class EntitySorter:
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
         return (past_event['tempus'], past_event['id'])
+
+    @staticmethod
+    def past_event_select_entries(past_event: CdEDBObject) -> Sortkey:
+        """
+        This groups the events by year descending, and then orders them by title for
+        better UX in _very_ long select inputs.
+        """
+        return (-past_event['tempus'].year, past_event['title'], past_event['id'])
 
     @staticmethod
     def past_course(past_course: CdEDBObject) -> Sortkey:

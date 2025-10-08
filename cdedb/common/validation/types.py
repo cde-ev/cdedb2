@@ -3,6 +3,7 @@
 import datetime as _datetime
 import decimal as _decimal
 from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
+from types import UnionType as _UnionType
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
@@ -19,8 +20,8 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _Mapping[str, type[_Any]]
-MutableTypeMapping = _MutableMapping[_Any, type[_Any]]
+TypeMapping = _Mapping[str, type[_Any] | _UnionType]
+MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -46,10 +47,6 @@ EmptyList = _NewType("EmptyList", list[_Any])
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
 Url = _NewType("Url", str)
-Shortname = _NewType("Shortname", str)
-ShortnameRestrictiveIdentifier = _NewType(
-    "ShortnameRestrictiveIdentifier", Shortname)
-LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Identifier = _NewType("Identifier", str)
@@ -64,7 +61,6 @@ Phone = _NewType("Phone", str)
 GermanPostalCode = _NewType("GermanPostalCode", str)
 Country = _NewType("Country", str)
 IBAN = _NewType("IBAN", str)
-SafeStr = _NewType("SafeStr", str)
 Vote = _NewType("Vote", str)
 Regex = _NewType("Regex", str)
 NonRegex = _NewType("NonRegex", str)
@@ -104,22 +100,13 @@ Institution = _NewType("Institution", _CdEDBObject)
 PastEvent = _NewType("PastEvent", _CdEDBObject)
 Event = _NewType("Event", _CdEDBObject)
 EventPart = _NewType("EventPart", _CdEDBObject)
-EventTrack = _NewType("EventTrack", _CdEDBObject)
-EventTrackGroup = _NewType("EventTrackGroup", _CdEDBObject)
-EventTrackGroupSetter = _NewType("EventTrackGroupSetter", _CdEDBOptionalMap)
 EventField = _NewType("EventField", _CdEDBObject)
-EventFee = _NewType("EventFee", _CdEDBObject)
-EventFeeSetter = _NewType("EventFeeSetter", _CdEDBOptionalMap)
 EventFeeCondition = _NewType("EventFeeCondition", str)
-EventFeeModifier = _NewType("EventFeeModifier", _CdEDBObject)
 PastCourse = _NewType("PastCourse", _CdEDBObject)
-Course = _NewType("Course", _CdEDBObject)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", _CdEDBObject)
-LodgementGroup = _NewType("LodgementGroup", _CdEDBObject)
-Lodgement = _NewType("Lodgement", _CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", _CdEDBObject)
 # TODO maybe cast keys to str
 Questionnaire = _NewType("Questionnaire", dict[int, list[QuestionnaireRow]])

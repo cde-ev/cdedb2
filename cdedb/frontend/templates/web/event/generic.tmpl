@@ -230,7 +230,7 @@
 
 
 {% macro print_field_inputs(association) %}
-    {% if ambience['event']['fields']|length > 0 %}
+    {% if ambience['event'].grouped_fields[association]|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
         {% for title, fields in ambience['event'].grouped_fields[association].items() %}
             {% if ambience['event'].grouped_fields[association]|length > 1 %}
@@ -343,7 +343,7 @@
     </div>
 {% endmacro %}
 
-{% macro constraint_violations_panel(severity, title=gettext("Constraint Violations"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
+{% macro constraint_violations_panel(severity, title=gettext("Inconsistencies"), icon='exclamation-circle', anid="constraint-violations", link_title=False) %}
     {% set caller_content = caller() %}
     {% if link_title %}
         {% set title = util.href(cdedblink("event/constraint_violations"), title, icon=icon) %}
@@ -729,10 +729,10 @@
     {% call util.bootstrap_panel(gettext("Filter"), aclass="panel-primary", icon="filter") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="filterconstraintsform" class="form-horizontal">
             {% if filter_severity %}
-                {{ util.form_input_select(name="min_severity", label=gettext("Minimum Violation Severity:"),
+                {{ util.form_input_select(name="min_severity", label=gettext("Minimum Inconsistency Severity"),
                                           anid="filter-min-severity", defaultvalue=min_severity,
                                           entries=enums['ViolationSeverity']|enum_entries(gettext)) }}
-                {{ util.form_input_select(name="violation_kind", label=gettext("Violation Kind"),
+                {{ util.form_input_select(name="violation_kind", label=gettext("Type of Inconsistency"),
                                           anid="filter-violation-kind", defaultvalue=violation_kind,
                                           nulloption=gettext(gettext("All")),
                                           entries=enums['ViolationKind']|enum_entries(gettext)) }}

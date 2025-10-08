@@ -61,6 +61,8 @@ echo "--------------------------------------------"
 # we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
 
 # move the defaultconfig to the right place
+mkdir /etc/cdedb
+cp /media/cdrom0/localconfig.py /etc/cdedb/config.py
 install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
 chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
@@ -159,13 +161,6 @@ systemctl start pgbouncer
 sudo -u cdedb make sample-data
 
 echo ""
-echo "Create central directory for log files..."
-echo "--------------------------------------------"
-
-# Create the log directory. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data log create
-
-echo ""
 echo "Setting up ldap..."
 echo "--------------------------------------------"
 # copy the systemd service file to the right place
@@ -224,6 +219,8 @@ cp /media/cdrom0/fail2ban-filter-cdedb-sessionkey.conf \
    /etc/fail2ban/filter.d/cdedb-sessionkey.conf
 cp /media/cdrom0/fail2ban-filter-cdedb-apitoken.conf \
    /etc/fail2ban/filter.d/cdedb-apitoken.conf
+cp /media/cdrom0/fail2ban-filter-cdedb-contact.conf \
+   /etc/fail2ban/filter.d/cdedb-contact.conf
 cp /media/cdrom0/jail.local /etc/fail2ban/
 
 # dPROD VMWare adjustments not applicable

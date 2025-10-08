@@ -21,7 +21,6 @@ from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
-    create_log,
     create_storage,
     populate_event_keeper,
     populate_sample_event_keepers,
@@ -132,21 +131,6 @@ def populate_event_keeper_cmd(config: TestConfig, ownership: dict[str, str],
     with switch_user(**ownership):
         path.mkdir(parents=True, exist_ok=True)
         populate_event_keeper(config, [event_id])
-
-
-@filesystem.group(name="log")
-def log() -> None:
-    """Log stuff."""
-
-
-@log.command(name="create")
-@click.pass_obj
-@pass_config
-def create_log_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
-    """Create the log storage."""
-    click.echo(f"Create log directory at {config['LOG_DIR']}.")
-    with switch_user(**ownership):
-        create_log(config)
 
 
 @cli.group(name="db")
@@ -267,7 +251,6 @@ def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> N
     """Repopulates the application with sample data."""
     config, secrets = reset_config(config)
     with switch_user(owner, group):
-        create_log(config)
         create_storage(config)
         populate_storage(config)
         populate_sample_event_keepers(config)
@@ -306,7 +289,7 @@ def execute_sql_script_cmd(
         as_postgres: bool, outfile: pathlib.Path, outfile_append: bool,
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
-        execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
+        execute_sql_script(config, secrets, file.read_text('utf-8'), verbose=verbose,
                            as_postgres=as_postgres)
 
 
@@ -318,7 +301,7 @@ def describe_database(config: TestConfig, secrets: SecretsConfig,
                       outfile: pathlib.Path) -> None:
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
     with redirect_to_file(outfile, append=False):
-        execute_sql_script(config, secrets, description_file.read_text(), verbose=2)
+        execute_sql_script(config, secrets, description_file.read_text('utf-8'), verbose=2)
 
 
 @development.command(name="check-sample-data-consistency")

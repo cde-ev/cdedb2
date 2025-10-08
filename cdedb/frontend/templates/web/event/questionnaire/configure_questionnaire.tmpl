@@ -101,8 +101,8 @@
                     },
                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
                 });
-            $("#configurequestionnaireform").cdedbProtectChanges();
             $(".drow-row").cdedbQuestionnaireConfig(field_list, translations);
+            $("#configurequestionnaireform").cdedbProtectChanges();
         })()
     </script>
 {% endblock %}

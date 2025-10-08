@@ -55,6 +55,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
     periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
@@ -92,6 +93,73 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
         return cast(F, new_fun)
 
     return wrap
+
+
+def event_associated_fields_extractor(
+        rs: RequestState,
+        event: models.Event,
+        association: const.FieldAssociations,
+        field_id: int | None = None,
+        suffix: str = "",
+) -> CdEDBObject:
+    """Given an event, extract inputs for all event fields of the given association."""
+    fields = [
+        field for field in event.fields.values()
+        if field.association == association and (field_id is None or field.id == field_id)
+    ]
+    field_params: vtypes.TypeMapping = {
+        f"{field.request_name}{suffix}": FIELD_DATATYPE_VALIDATORS[field.kind] | None
+        for field in fields
+    }
+    raw_fields = request_extractor(rs, field_params)
+    return {
+        field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
+        for field in fields
+    }
+
+
+def event_associated_fields_multi_extractor(
+        rs: RequestState,
+        event: models.Event,
+        association: const.FieldAssociations,
+        entity_ids: Collection[int],
+        field_id: int | None = None,
+) -> CdEDBObjectMap:
+    return {
+        entity_id:
+            event_associated_fields_extractor(
+                rs, event, association, field_id, suffix=str(entity_id)
+            )
+        for entity_id in entity_ids
+    }
+
+
+def event_associated_fields_to_request(
+        event: models.Event, entity: models.Course | models.Lodgement | CdEDBObject
+) -> CdEDBObject:
+    """
+    Given an entity, prepare the associated field data to be put into a form.
+
+    This is the inverse of `event_associated_fields_extractor`.
+    """
+    fields = lambda e: e.fields if hasattr(e, 'fields') else e.get('fields', {})
+    return {
+        field.request_name: fields(entity)[field.field_name]
+        for field in event.fields.values() if field.field_name in fields(entity)
+    }
+
+
+def event_associated_fields_to_request_multi(
+        event: models.Event,
+        entities: CdEDBObjectMap | models.CdEDataclassMap[models.Course | models.Lodgement],
+) -> list[CdEDBObject]:
+    return [
+        {
+            f"{k}{entity_id}": v
+            for k, v in event_associated_fields_to_request(event, entity).items()
+        }
+        for entity_id, entity in entities.items()
+    ]
 
 
 class EventBaseFrontend(AbstractUserFrontend):
@@ -564,14 +632,14 @@ class EventBaseFrontend(AbstractUserFrontend):
         choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
 
         # Retrieve lodgements.
-        all_lodgements = self.eventproxy.get_lodgements(
+        all_lodgements = self.eventproxy.new_get_lodgements(
             rs, self.eventproxy.list_lodgements(rs, event.id))
         if lodgement_id is None:
             lodgements = all_lodgements
         elif lodgement_id < 0:
             lodgements = {}
         else:
-            lodgements = self.eventproxy.get_lodgements(rs, [lodgement_id])
+            lodgements = self.eventproxy.new_get_lodgements(rs, [lodgement_id])
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations,
@@ -671,7 +739,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event_admin", "auditor")
+    @access("event_admin", "finance_admin", "auditor")
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)

@@ -1,8 +1,10 @@
 {% set sidenav_active='cde_past_events_log' %}
+{% set jshint = "weak" %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}

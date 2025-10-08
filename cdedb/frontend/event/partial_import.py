@@ -115,12 +115,12 @@ class EventImportMixin(EventBaseFrontend):
         if partial_import_data:
             data = check(
                 rs, vtypes.SerializedPartialEvent, json.loads(partial_import_data),
-                fields=rs.ambience['event'].fields,
+                event=rs.ambience['event'],
             )
         else:
             data = check(
                 rs, vtypes.SerializedPartialEventUpload, json_file,
-                fields=rs.ambience['event'].fields,
+                event=rs.ambience['event'],
             )
         if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
@@ -134,11 +134,11 @@ class EventImportMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
-            rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
+        lodgements = {
+            lodgement_id: lodgement.as_dict()
+            for lodgement_id, lodgement in self.eventproxy.new_get_lodgements(rs, lodgement_ids).items()
+        }
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         # TODO use dataclasses here
         courses = {
@@ -175,8 +175,8 @@ class EventImportMixin(EventBaseFrontend):
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
             course['segments'] = {
-                id: id in course['active_segments']
-                for id in course['segments']
+                id: segment["is_active"]
+                for id, segment in course['segments'].items()
             }
 
         # Fifth prepare summary
@@ -240,7 +240,7 @@ class EventImportMixin(EventBaseFrontend):
                 if val is None and lodgements.get(anid))),
 
             'changed_lodgement_groups': {
-                anid: flatten_recursive_delta(val, lodgement_groups[anid])
+                anid: flatten_recursive_delta(val, lodgement_groups[anid].as_dict())
                 for anid, val in delta.get('lodgement_groups', {}).items()
                 if anid > 0 and val},
             'new_lodgement_group_ids': tuple(xsorted(

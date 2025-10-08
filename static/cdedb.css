@@ -84,6 +84,14 @@ body{
 .alert-info a:hover, .alert-info a:focus, .alert-info a.btn {
     text-decoration: none;
 }
+.form-group.alert {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    & label {
+        font-weight: bold;
+    }
+}
 .table-slim {
     width: auto;
 }
@@ -572,6 +580,9 @@ input[type=number].no-number-arrows {
     font-size: 85%;
     color: #777;
 }
+.selectize-dropdown .option.selected .meta {
+    color: #ddd;
+}
 .selectize-dropdown-content {
     max-height: max(50vh, 300px);
 }
@@ -900,7 +911,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
     white-space: nowrap;
 }
 .prefvote_stage {
-    padding: 10px;
+    padding: 6px;
     border: 1px solid #ddd;
     background: #e9e9e9;
     background: -webkit-linear-gradient(top, #eee, #e5e5e5);
@@ -943,28 +954,66 @@ tr.drow-delete>td, tr.drow-delete1>td {
     color: #888;
 }
 .prefvote_spacer {
-    height: 21px;
+    text-align: center;
+    padding-block: .8em;
     position: relative;
 }
 .prefvote_container.active .prefvote_spacer {
     cursor: pointer;
 }
-.prefvote_spacer:before {
-    height: 12px;
-    content: ' ';
-    display: block;
-    box-sizing: border-box;
-    border-bottom: dashed 3px rgba(0,0,0,0);
-    transition: border .3s;
+.prefvote_spacer_line {
+    /* Use block (top+bottom) border together
+    such that the plus icon looks visually centered */
+    border-block: dashed 2px rgba(0,0,0,0);
+    transition: border .3s, color .3s;
+    color: transparent;
+    /* Prevent this element from being a drag target
+    and thus triggering dragleave on the parent container. */
+    pointer-events: none;
 }
-.prefvote_spacer.dragover:before {
-    border-bottom-color: rgba(0,0,0,1);
+.prefvote_container.active .prefvote_spacer_line {
+    border-color: rgba(0,0,0,.2);
+    color: rgba(0,0,0,.2);
 }
-.prefvote_container.active .prefvote_spacer:before {
-    border-bottom-color: rgba(0,0,0,.2);
+.prefvote_spacer.dragover .prefvote_spacer_line {
+    border-color: rgba(0,0,0,1);
+    color: rgba(0,0,0,1);
 }
-.prefvote_container.active .prefvote_spacer:hover:before {
-    border-bottom-color: rgba(36,87,130,1);
+.prefvote_container.active .prefvote_spacer:hover .prefvote_spacer_line {
+    border-color: rgba(0,0,0,1);
+    color: rgba(0,0,0,1);
+}
+.prefvote_container.active .prefvote_spacer.positive .prefvote_spacer_line {
+    border-color: rgb(131, 192, 151);
+    color: rgb(131, 192, 151);
+}
+.prefvote_container .prefvote_spacer.positive.dragover .prefvote_spacer_line {
+    border-color: rgb(0, 240, 6);
+    color: rgb(0, 240, 6);
+}
+.prefvote_container.active .prefvote_spacer.positive:hover .prefvote_spacer_line {
+    border-color: rgb(0, 240, 6);
+    color: rgb(0, 240, 6);
+}
+.prefvote_container.active .prefvote_spacer.negative .prefvote_spacer_line {
+    border-color: rgb(189, 128, 128);
+    color: rgb(189, 128, 128);
+}
+.prefvote_container .prefvote_spacer.negative.dragover .prefvote_spacer_line {
+    border-color: rgb(255, 0, 0);
+    color: rgb(255, 0, 0);
+}
+.prefvote_container.active .prefvote_spacer.negative:hover .prefvote_spacer_line {
+    border-color: rgb(255, 0, 0);
+    color: rgb(255, 0, 0);
+}
+.prefvote_spacer_plus {
+    position: absolute;
+    translate: 0 -50%;
+    /* inline padding and bg white cause the dashed line to be hidden
+    which would otherwise look visually noisy */
+    background-color: white;
+    padding-inline: 2px;
 }
 .prefvote_spacer:focus, .prefvote_stage:focus {
     outline: none;
@@ -985,13 +1034,17 @@ tr.drow-delete>td, tr.drow-delete1>td {
     background: rgba(175,175,175,.5);
     border: 1px solid rgba(127,127,127,.2);
     border-radius: 3px;
-    padding: 2px 6px;
+    padding: 4px 8px;
     cursor: default;
     white-space: nowrap;
 }
 .prefvote_candidate.active {
     background: rgba(47,112,168,.7);
     color: #fff;
+}
+
+[draggable] {
+    cursor: move;
 }
 
 /* Fancy row sorting with JavaScript
@@ -1136,46 +1189,41 @@ td.b-right, th.b-right {
     color: rgba(255, 255, 255, .8);
     background-color: rgba(45, 129, 156, 0.5);
 }
-.course-primary {
+/* For the coloring of course cells to take precedence over the .ls-selected coloring,
+   some parent element (usually the <table>) needs to get the .course-colored class
+   s.t. this color has higher specificity */
+.course-colored .course-primary {
     background-color: #e6e6e6;
 }
-.course-primary.course-too-few, .lodgement-primary.lodge-too-few {
+.course-colored .course-primary.course-too-few, .lodgement-primary.lodge-too-few {
     background-color: #dfd181;
 }
-.course-too-few, .lodgement-too-few {
+.course-colored .course-too-few, .lodgement-too-few {
     background-color: #f2e8b3;
 }
-.course-primary.course-exactly-full, .lodgement-primary.lodge-exactly-full {
+.course-colored .course-primary.course-exactly-full, .lodgement-primary.lodge-exactly-full {
     background-color: #99cf99;
 }
-.course-exactly-full, .lodgement-exact-full {
+.course-colored .course-exactly-full, .lodgement-exact-full {
     background-color: #b3f2b3;
 }
-.course-primary.course-cancelled-ok, .lodgement-primary.lodgement-illegal-camping-mat {
+.course-colored .course-primary.course-cancelled-ok, .lodgement-primary.lodgement-illegal-camping-mat {
     background-color: #b8ceef;
 }
-.course-cancelled-ok, .lodgement-illegal-camping-mat {
+.course-colored .course-cancelled-ok, .lodgement-illegal-camping-mat {
     background-color: #ceefff;
 }
-.course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
+.course-colored .course-primary.course-too-many, .lodgement-primary.lodgement-too-many {
     background-color: #e08282;
 }
-.course-too-many, .lodgement-too-many {
+.course-colored .course-too-many, .lodgement-too-many {
     background-color: #f2b3b3;
 }
-.course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
+.course-colored .course-primary.course-cancelled, .lodgement-primary.lodgement-illegal-mixing {
     background-color: #cb86e6;
 }
-.course-cancelled, .lodgement-illegal-mixing {
+.course-colored .course-cancelled, .lodgement-illegal-mixing {
     background-color: #e6b3f2;
-}
-tr th.filtered_column {
-    background-color: #31708f;
-    color: #fff;
-}
-tr td.filtered_column {
-    border-left: solid 1px #31708f;
-    border-right: solid 1px #31708f;
 }
 span.color-legend {
     display: inline-block;

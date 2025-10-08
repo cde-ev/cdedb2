@@ -60,7 +60,7 @@ simon@example.cde       DB-19-1   secret     complaint admin
 vera@example.cde        DB-22-1   secret     former member, corresponding to Mitgliederverwaltung
 werner@example.cde      DB-23-X   secret     former member, corresponding to Versammlungsleitung (presider)
 annika@example.cde      DB-27-2   secret     former member, corresponding to Akademieteam
-farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
+farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand (but without event admin)
 katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 ludwig@example.cde      DB-38-8   secret     former member, corresponding to CdElokal-Koordination
 petra@example.cde       DB-42-6   secret     honorary member and event helper

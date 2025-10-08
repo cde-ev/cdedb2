@@ -261,7 +261,7 @@
                         <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                         <div class="input-group has-success queryform-add">
                             <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("add filter")) }}</span>
-                            <select class="form-control input-sm addfilter"
+                            <select id="addfilter" class="form-control input-sm addfilter"
                                     aria-label="{% trans %}field to filter on{% endtrans %}"></select>
                         </div>
                         <div class="row">
@@ -273,7 +273,7 @@
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
-                                    <select class="form-control input-sm addviewfield"
+                                    <select id="addviewfield" class="form-control input-sm addviewfield"
                                             aria-label="{% trans %}field to add{% endtrans %}"></select>
                                 </div>
                             </div>
@@ -285,7 +285,7 @@
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add sort key")) }}
                                     </span>
-                                    <select class="form-control input-sm addsortfield"
+                                    <select id="addsortfield" class="form-control input-sm addsortfield"
                                             aria-label="{% trans %}sort key to add{% endtrans %}"></select>
                                 </div>
                             </div>
@@ -683,4 +683,31 @@
         {{ util.h(alt_heading, aclass="tab-heading-alt") }}
         {{ caller() }}
     </div>
+{% endmacro %}
+
+{% macro past_course_select(small, select_class="", input_name_prefix="") %}
+    {{ util.form_input_select(name=input_name_prefix + "pevent_id", entries=pevent_entries, small=small, aclass="pcourse-pevent-input " + select_class,
+                              nulloption=nbsp, label=gettext("Past Event"), selectize=True) }}
+
+    {# Show pcourse input if event was selected and has courses. #}
+    <div class="pcourse-input {{ "softhide" if not (values.get(input_name_prefix + "pevent_id") and pcourse_entries) }}">
+        {{ util.form_input_select(name=input_name_prefix + "pcourse_id", entries=pcourse_entries, small=small, aclass=select_class,
+                                  nulloption=gettext("--- select course ---"), label=gettext("Course"), defaultvalue='') }}
+    </div>
+    {# Show info if event was selected but has no courses. #}
+    <div class="pcourse-nocourses-info {{ "softhide" if not (values.get(input_name_prefix + "pevent_id") and not pcourse_entries) }}"">
+        {{ util.form_input_static(aclass='text-info genesis-realm-specific pcourse-info', icon='info-circle', label=gettext("Course"),
+                                  value=gettext("No courses available for this event."), small=small) }}
+    </div>
+    {# Show info if no event was selected. #}
+    <div class="pcourse-noevent-info pcourse-nojs-info {{ "softhide" if values.get(input_name_prefix + "pevent_id") }}">
+        {{ util.form_input_static(aclass='text-info genesis-realm-specific pcourse-info', icon='info-circle', label=gettext("Course"),
+                                  value=gettext("Course choices will be displayed after selecting an event."), small=small) }}
+    </div>
+    {% if not jshint %}
+        {{ util.raise_for_test("jshint not set for 'generic.past_course_select'.") }}
+    {% endif %}
+    <script nonce={{ csp_nonce }}>
+        $(':input[name="{{ input_name_prefix }}pcourse_id"]').cdedbSelectPastCourse({{ (pcourse_entries_by_event or None)|tojson }});
+    </script>
 {% endmacro %}

@@ -1233,9 +1233,11 @@ class AssemblyBackend(AbstractBackend):
                     if x > 0 and data['candidates'][x] is None
                 }
 
-                # Defer check of shortname uniqueness until later.
+                # Defer uniqueness constraints until later.
                 self.sql_defer_constraints(
-                    rs, "assembly.candidate_shortname_constraint"
+                    rs,
+                    "assembly.candidate_shortname_constraint",
+                    "assembly.candidate_title_constraint",
                 )
 
                 # new

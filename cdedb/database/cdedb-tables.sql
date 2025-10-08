@@ -214,7 +214,7 @@ CREATE INDEX personas_is_ml_realm_idx ON core.personas(is_ml_realm);
 CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_complaint_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
+GRANT SELECT (id, username, password_hash, foto, is_active, is_meta_admin, is_core_admin, is_complaint_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
 GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
@@ -639,15 +639,6 @@ GRANT SELECT ON complaint.enforcers TO cdb_persona;
 GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.enforcers_id_seq TO cdb_admin;
 
--- like event helpers, may access limited information on involved parties
-CREATE TABLE complaint.monitors (
-    id                      serial PRIMARY KEY,
-    persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
-);
-GRANT SELECT ON complaint.monitors TO cdb_persona;
-GRANT INSERT, DELETE ON complaint.monitors TO cdb_admin;
-GRANT SELECT, UPDATE ON complaint.monitors_id_seq TO cdb_admin;
-
 -- logs changes and decryption
 CREATE TABLE complaint.log (
         id                      bigserial PRIMARY KEY,
@@ -960,6 +951,8 @@ CREATE TABLE event.event_fees (
         -- see cdedb.database.constants.EventFeeType
         kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
+        CONSTRAINT event_fee_title_constraint
+            UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         amount                       numeric(8, 2),
         condition                    varchar,
         CONSTRAINT event_fee_amount_condition
@@ -1478,8 +1471,11 @@ CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         title                   varchar NOT NULL,
+        CONSTRAINT candidate_title_constraint
+            UNIQUE (ballot_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         shortname               varchar NOT NULL,
-        CONSTRAINT candidate_shortname_constraint UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
+        CONSTRAINT candidate_shortname_constraint
+            UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
 );
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;

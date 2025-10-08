@@ -21,7 +21,6 @@ from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
-    CdEDBOptionalMap,
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
@@ -137,36 +136,6 @@ class TestEventBackend(BackendTest):
                     'camping_mat_field_id': None,
                 },
             },
-            'fees': {
-                -1: {
-                    "kind": const.EventFeeType.common,
-                    "title": "first",
-                    "notes": None,
-                    "amount": decimal.Decimal("234.56"),
-                    "condition": "part.first",
-                },
-                -2: {
-                    "kind": const.EventFeeType.common,
-                    "title": "second",
-                    "notes": None,
-                    "amount": decimal.Decimal("0.00"),
-                    "condition": "part.second",
-                },
-                -3: {
-                    "kind": const.EventFeeType.solidary_reduction,
-                    "title": "Is Child",
-                    "notes": None,
-                    "amount": decimal.Decimal("-7.00"),
-                    "condition": "part.second and field.is_child",
-                },
-                -4: {
-                    "kind": const.EventFeeType.external,
-                    "title": "Externenzusatzbeitrag",
-                    "notes": None,
-                    "amount": decimal.Decimal("6.66"),
-                    "condition": "any_part and not is_member",
-                },
-            },
             'fields': {
                 -1: {
                     'field_name': "instrument",
@@ -206,7 +175,39 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
+        fee_data = [
+            {
+                "kind": const.EventFeeType.common,
+                "title": "first",
+                "notes": None,
+                "amount": decimal.Decimal("234.56"),
+                "condition": "part.first",
+            },
+            {
+                "kind": const.EventFeeType.common,
+                "title": "second",
+                "notes": None,
+                "amount": decimal.Decimal("0.00"),
+                "condition": "part.second",
+            },
+            {
+                "kind": const.EventFeeType.solidary_reduction,
+                "title": "Is Child",
+                "notes": None,
+                "amount": decimal.Decimal("-7.00"),
+                "condition": "part.second and field.is_child",
+            },
+            {
+                "kind": const.EventFeeType.external,
+                "title": "Externenzusatzbeitrag",
+                "notes": None,
+                "amount": decimal.Decimal("6.66"),
+                "condition": "any_part and not is_member",
+            },
+        ]
         new_id = self.event.create_event(self.key, data)
+        for fee in fee_data:
+            self.event.create_event_fee(self.key, new_id, fee)
         # back to normal mode
         self.login(self.user)
         data['id'] = new_id
@@ -225,8 +226,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})
         data['parts'][-2].update({'id': 1002})
-        data['parts'][-1]['tracks'][-1].update({'id': 1001, 'part_id': 1001})
-        data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
@@ -263,15 +262,15 @@ class TestEventBackend(BackendTest):
                     data['fields'][field]['event_id'] = new_id
                     del data['fields'][oldfield]
                     break
+        data['fees'] = {}
         for fee_id in tmp.fees:
-            for old_fee_id in data['fees']:
-                if tmp.fees[fee_id].title == data['fees'][old_fee_id]['title']:
-                    data['fees'][fee_id] = data['fees'][old_fee_id]
+            for fee in fee_data:
+                if tmp.fees[fee_id].title == fee['title']:
+                    data['fees'][fee_id] = fee
                     data['fees'][fee_id]['id'] = fee_id
                     data['fees'][fee_id]['event_id'] = new_id
                     data['fees'][fee_id]['amount_min'] = None
                     data['fees'][fee_id]['amount_max'] = None
-                    del data['fees'][old_fee_id]
                     break
 
         self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
@@ -309,7 +308,7 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
-        updated_fees: CdEDBOptionalMap = {
+        updated_fees: CdEDBObjectMap = {
             -1: {
                 'kind': const.EventFeeType.common,
                 'title': "third",
@@ -357,7 +356,11 @@ class TestEventBackend(BackendTest):
                 -1: newfield,
             },
         })
-        self.event.set_event_fees(self.key, new_id, updated_fees)
+        for fee_id, fee in updated_fees.items():
+            if fee_id < 0:
+                self.event.create_event_fee(self.key, new_id, fee)
+            else:
+                self.event.change_event_fee(self.key, fee_id, fee)
         # fixup parts and fields
         tmp = self.event.get_event(self.key, new_id)
         for part in tmp.parts:
@@ -374,7 +377,6 @@ class TestEventBackend(BackendTest):
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
         changed_part['shortname'] = "second"
-        changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         data['parts'][part_map["Second coming"]] = changed_part
         for part in data['parts'].values():
             part['part_group_ids'] = set()
@@ -394,8 +396,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1002: {
-                'id': 1002,
-                'part_id': 1002,
                 'title': 'Second lecture v2',
                 'shortname': "Second v2",
                 'num_choices': 5,
@@ -405,8 +405,6 @@ class TestEventBackend(BackendTest):
                 'track_group_ids': set(),
             },
             1003: {
-                'id': 1003,
-                'part_id': 1003,
                 'title': 'Third lecture',
                 'shortname': 'Third',
                 'num_choices': 2,
@@ -432,7 +430,6 @@ class TestEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
         new_course = {
-            'event_id': new_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -443,46 +440,56 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {1002},
+            'segments': {
+                1002: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
-        new_course_id = self.event.create_course(self.key, new_course)
+        new_course_id = self.event.create_course(self.key, new_id, new_course)
         new_course['id'] = new_course_id
-        new_course['active_segments'] = new_course['segments']
+        new_course['event_id'] = new_id
         new_course['fields'] = {}
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id).as_dict())
 
-        new_group = {
-            'event_id': new_id,
-            'title': "Nebenan",
-        }
+        new_group_data: CdEDBObject = {'title': "Nebenan"}
         new_group_id = self.event.create_lodgement_group(
-            self.key, vtypes.LodgementGroup(new_group))
+            self.key, new_id, new_group_data
+        )
         self.assertLess(0, new_group_id)
-        new_group.update({
+        new_group_data.update({
             'id': new_group_id,
-            'lodgement_ids': [],
+            'event_id': new_id,
+            'lodgement_ids': set(),
             'regular_capacity': 0,
             'camping_mat_capacity': 0,
         })
+        new_group = models.LodgementGroup(**new_group_data)
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            new_group,
+            self.event.get_lodgement_groups(self.key, new_id)[new_group_id],
+        )
 
-        new_lodgement = {
-            'regular_capacity': 42,
-            'event_id': new_id,
-            'title': 'HY',
-            'notes': "Notizen",
-            'camping_mat_capacity': 11,
-            'group_id': new_group_id,
+        new_lodgement_data: CdEDBObject = {
+            "group_id": new_group_id,
+            "title": 'HY',
+            "notes": "Notizen",
+            "regular_capacity": 42,
+            "camping_mat_capacity": 11,
         }
-        new_lodge_id = self.event.create_lodgement(self.key, new_lodgement)
+        new_lodge_id = self.event.create_lodgement(self.key, new_id, new_lodgement_data)
         self.assertLess(0, new_lodge_id)
-        new_lodgement['id'] = new_lodge_id
-        new_lodgement['fields'] = {}
-        self.assertEqual(new_lodgement, self.event.get_lodgement(
-            self.key, new_lodge_id))
+        new_lodgement_data.update({
+            'id': new_lodge_id,
+            'event_id': new_id,
+            'fields': {},
+        })
+        self.assertEqual(
+            new_lodgement_data,
+            self.event.new_get_lodgement(self.key, new_lodge_id).as_dict(),
+        )
 
         new_reg = {
             'event_id': new_id,
@@ -563,8 +570,6 @@ class TestEventBackend(BackendTest):
             'camping_mat_field_id': None,
             'tracks': {
                 6: {
-                    'id': 6,
-                    'part_id': 6,
                     'title': "Oberwesel Kurs 1",
                     'shortname': "OK1",
                     'num_choices': 4,
@@ -585,75 +590,102 @@ class TestEventBackend(BackendTest):
     def test_track_groups(self) -> None:
         event_id = 4
         event = self.event.get_event(self.key, event_id)
-        track_group_ids = self.event.get_event(self.key, event_id).track_groups.keys()
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, {
-            tg_id: None
-            for tg_id in track_group_ids
-        }))
-        tg_data: CdEDBOptionalMap = {
-            -1: {
-                'title': "Test",
-                'shortname': "Test",
-                'constraint_type': const.CourseTrackGroupType.course_choice_sync,
-                'notes': None,
-                'track_ids': event.tracks.keys(),
-                'sortkey': 1,
-            },
+        # delete existent track groups to avoid interference
+        for tg_id in event.track_groups.keys():
+            self.assertTrue(self.event.delete_track_group(self.key, tg_id))
+
+        new_track_group = {
+            'title': "Test",
+            'shortname': "Test",
+            'constraint_type': const.CourseTrackGroupType.course_choice_sync,
+            'notes': None,
+            'track_ids': event.tracks.keys(),
+            'sortkey': 1,
         }
-        assert tg_data[-1] is not None
         # Test incompatible tracks.
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        with self.assertRaisesRegex(ValueError, "must have the same number of choices"):
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test empty tracks.
-        tg_data[-1]['track_ids'] = []
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        new_track_group['track_ids'] = []
+        with self.assertRaisesRegex(ValueError, "Must not be empty."):
+            self.event.add_track_group(self.key, event_id, new_track_group)
         # Test unknown tracks.
-        tg_data[-1]['track_ids'] = {1, 2}
-        with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
+        new_track_group['track_ids'] = {1, 2}
+        with self.assertRaisesRegex(ValueError, "Unknown track."):
+            self.event.add_track_group(self.key, event_id, new_track_group)
+
+        # Test correct tracks with incompatible choices:
+        reg_data = {
+            "event_id": event_id,
+            "parts": {
+                part_id: {
+                    "status": const.RegistrationPartStati.applied,
+                }
+                for part_id in event.parts
+            },
+            "tracks": {
+                track_id: {
+                    "choices": [11] if track_id == 6 else [],
+                }
+                for track_id in event.tracks
+            },
+            "persona_id": 1,
+            "notes": None,
+            "list_consent": True,
+            "mixed_lodging": True,
+        }
+        registration_id = self.event.create_registration(self.key, reg_data)
+
+        new_track_group['track_ids'] = {6, 7}
+        with self.assertRaisesRegex(ValueError, "incompatible existing course choices"):
+            self.event.add_track_group(self.key, event_id, new_track_group)
+
+        self.assertTrue(
+            self.event.delete_registration(
+                self.key,
+                registration_id,
+                {"registration_parts", "registration_tracks", "course_choices"},
+            )
+        )
 
         # Test correct tracks.
-        tg_data[-1]['track_ids'] = {6, 7}
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        self.assertTrue(self.event.add_track_group(self.key, event_id, new_track_group))
         event = self.event.get_event(self.key, event_id)
-        tg = tg_data[-1].copy()
-        tg['id'] = 1003
-        tg['event_id'] = event_id
-        tg['tracks'] = {
+        expectation: CdEDBObject = new_track_group.copy()
+        expectation['id'] = 1001
+        expectation['event_id'] = event_id
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
         # Test duplicate tracks.
         with self.assertRaises(ValueError):
-            self.event.set_track_groups(self.key, event_id, tg_data)
-        # Test dupliclate title.
-        with self.assertRaises(psycopg2.errors.UniqueViolation):
-            tmp = copy.deepcopy(tg_data)
-            assert tmp[-1] is not None
-            tmp[-1]['track_ids'] = [8]
-            self.event.set_track_groups(self.key, event_id, tmp)
+            self.event.add_track_group(self.key, event_id, new_track_group)
+        # Test duplicate title.
+        with self.assertRaises(ValueError):
+            tmp = copy.copy(new_track_group)
+            tmp['track_ids'] = [8]
+            self.event.add_track_group(self.key, event_id, tmp)
 
         # Test update
-        tg_update: CdEDBOptionalMap = {
-            1003: {
-                'title': "tEST",
-                'track_ids': {7, 8},
-            },
+        tg_update = {
+            'title': "tEST",
+            'track_ids': {7, 8},
         }
-        assert tg_update[1003] is not None
-        self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        # updating track_ids is forbidden
+        with self.assertRaises(KeyError):
+            self.event.change_track_group(self.key, 1001, tg_update)
+        del tg_update['track_ids']
+        self.assertTrue(self.event.change_track_group(self.key, 1001, tg_update))
         event = self.event.get_event(self.key, event_id)
-        tg.update(tg_update[1003])
-        tg['tracks'] = {
+        expectation.update(tg_update)
+        expectation['tracks'] = {
             track_id: event.tracks[track_id].as_dict()
-            for track_id in tg.pop('track_ids')
+            for track_id in expectation['track_ids']
         }
-        self.assertEqual(
-            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
+        self.assertEqual(expectation, event.track_groups[1001].as_dict())
 
     @as_users("emilia")
     def test_course_choice_sync(self) -> None:
@@ -894,10 +926,10 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_entity_course(self) -> None:
         event_id = 1
+        event = self.event.get_event(self.key, event_id)
         old_courses = self.event.list_courses(self.key, event_id)
-        data = {
-            'event_id': event_id,
-            'title': "Topos theory for the kindergarden",
+        data: CdEDBObject = {
+            'title': (original_title := "Topos theory for the kindergarden"),
             'description': """This is an interesting topic
 
             which will be treated.""",
@@ -905,30 +937,86 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": False,
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
+            'fields': {
+                'room': "outside",
+            },
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         data['id'] = new_id
-        data['fields'] = {}
+        data['event_id'] = event_id
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
-        data['active_segments'] = {1, 3}
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments'],
-            'active_segments': data['active_segments']})
+        data['segments'][2] = None
+        data['segments'][1] = {
+            "is_active": True,
+        }
+        self.event.set_course(self.key, new_id, {
+            'title': data['title'], 'segments': data['segments'],
+        })
+        del data["segments"][2]
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
-        data['active_segments'] = {1}
-        self.event.set_course(self.key, {
-            'id': new_id, 'active_segments': data['active_segments']})
+        data["segments"][3]["is_active"] = True
+        self.event.set_course(self.key, new_id, {'segments': data['segments']})
         self.assertEqual(data, self.event.get_course(self.key, new_id).as_dict())
+
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.course_created,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[3].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_changed,
+                "change_note": original_title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deleted,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": original_title + f" ({event.tracks[2].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": original_title + f" ({event.tracks[1].title})",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": data["title"] + f" ({event.tracks[3].title})",
+            },
+        ]
+        offset = len(self.get_sample_data("event.log"))
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=offset)
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
@@ -938,7 +1026,6 @@ class TestEventBackend(BackendTest):
     def test_course_delete(self) -> None:
         event_id = 1
         data = {
-            'event_id': event_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -947,13 +1034,19 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
-            'active_segments': {2},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": False,
+                },
+            },
             'max_size': 42,
             'min_size': 23,
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, event_id, data)
         self.assertEqual(
             self.event.delete_course_blockers(self.key, new_id).keys(),
             {"course_segments"})
@@ -965,11 +1058,13 @@ class TestEventBackend(BackendTest):
         # Set the status quo.
         for course_id in (1, 2, 3, 4):
             cdata = {
-                "id": course_id,
-                "segments": [1, 2, 3],
-                "active_segments": [1, 2, 3],
+                "segments": {
+                    1: {"is_active": True},
+                    2: {"is_active": True},
+                    3: {"is_active": True},
+                },
             }
-            self.event.set_course(self.key, cdata)
+            self.event.set_course(self.key, course_id, cdata)
         for reg_id in (1, 2, 3, 4):
             rdata = {
                 "id": reg_id,
@@ -1638,134 +1733,139 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1, position=InfiniteEnum(
                 CourseFilterPositions.assigned, 0)))
 
-    @as_users("annika", "garcia")
+    @storage
+    @as_users("garcia")
     def test_entity_lodgement_group(self) -> None:
-        event_id = 1
-        expectation_list = {
-            1: "Haupthaus",
-            2: "AußenWohnGruppe",
-            3: "Sonstige",
-        }
-        group_ids = self.event.list_lodgement_groups(self.key, event_id)
-        self.assertEqual(expectation_list, group_ids)
+        event_id = vtypes.ID(1)
 
         expectation_groups = {
-            1: {
-                'id': 1,
-                'event_id': 1,
-                'title': "Haupthaus",
-                'lodgement_ids': [2, 4],
-                'camping_mat_capacity': 2,
-                'regular_capacity': 11,
-            },
-            2: {
-                'id': 2,
-                'event_id': 1,
-                'title': "AußenWohnGruppe",
-                'lodgement_ids': [1],
-                'camping_mat_capacity': 1,
-                'regular_capacity': 5,
-            },
-            3: {
-                'id': 3,
-                'event_id': 1,
-                'title': "Sonstige",
-                'lodgement_ids': [3],
-                'camping_mat_capacity': 100,
-                'regular_capacity': 0,
-            },
+            1: models.LodgementGroup(
+                id=vtypes.ID(1),
+                event_id=event_id,
+                title="Haupthaus",
+                lodgement_ids={2, 4},
+                camping_mat_capacity=2,
+                regular_capacity=11,
+            ),
+            2: models.LodgementGroup(
+                id=vtypes.ID(2),
+                event_id=event_id,
+                title="AußenWohnGruppe",
+                lodgement_ids={1},
+                camping_mat_capacity=1,
+                regular_capacity=5,
+            ),
+            3: models.LodgementGroup(
+                id=vtypes.ID(3),
+                event_id=event_id,
+                title="Sonstige",
+                lodgement_ids={3},
+                camping_mat_capacity=100,
+                regular_capacity=0,
+            ),
         }
-        self.assertEqual(expectation_groups,
-                         self.event.get_lodgement_groups(self.key, group_ids))
+        self.assertEqual(
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
+        )
 
-        new_group: CdEDBObject = {
-            'event_id': event_id,
-            'title': "Nebenan",
-        }
-        new_group_id = self.event.create_lodgement_group(
-            self.key, vtypes.LodgementGroup(new_group))
+        new_group: CdEDBObject = {'title': "Nebenan"}
+        new_group_id = self.event.create_lodgement_group(self.key, event_id, new_group)
         self.assertLess(0, new_group_id)
         new_group.update({
             'id': new_group_id,
-            'lodgement_ids': [],
+            'event_id': event_id,
+            'lodgement_ids': set(),
             'camping_mat_capacity': 0,
             'regular_capacity': 0,
         })
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
-        update = {
-            'id': new_group_id,
-            'title': "Auf der anderen Rheinseite",
-        }
-        self.assertLess(0, self.event.set_lodgement_group(self.key, update))
+            models.LodgementGroup(**new_group),
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
+        update = {'title': "Auf der anderen Rheinseite"}
+        self.assertLess(
+            0, self.event.set_lodgement_group(self.key, new_group_id, update)
+        )
         new_group.update(update)
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
 
         new_lodgement: CdEDBObject = {
             'regular_capacity': 42,
-            'event_id': 1,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
         }
-        new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
+        new_lodgement_id = self.event.create_lodgement(self.key, event_id, new_lodgement)
         self.assertLess(0, new_lodgement_id)
-        new_lodgement.update({
-            'id': new_lodgement_id,
-            'fields': {},
-        })
+        new_lodgement['id'] = new_lodgement_id
+        new_lodgement['event_id'] = event_id
+        new_lodgement['fields'] = {}
         self.assertEqual(
-            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+            new_lodgement,
+            self.event.new_get_lodgement(self.key, new_lodgement_id).as_dict(),
+        )
 
         new_group.update({
             'camping_mat_capacity': new_lodgement['camping_mat_capacity'],
             'regular_capacity': new_lodgement['regular_capacity'],
-            'lodgement_ids': [new_lodgement_id],
+            'lodgement_ids': {new_lodgement_id},
         })
         self.assertEqual(
-            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+            models.LodgementGroup(**new_group),
+            self.event.get_lodgement_groups(self.key, event_id)[new_group_id],
+        )
 
-        expectation_list[new_group_id] = new_group['title']
-        self.assertEqual(expectation_list,
-                         self.event.list_lodgement_groups(self.key, event_id))
+        expectation_groups[new_group_id] = models.LodgementGroup(**new_group)
+        self.assertEqual(
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
+        )
         self.assertLess(
             0, self.event.delete_lodgement_group(
                 self.key, new_group_id, ("lodgements",)))
-        del expectation_list[new_group_id]
+        del expectation_groups[new_group_id]
         self.assertEqual(
-            expectation_list, self.event.list_lodgement_groups(self.key, event_id))
+            expectation_groups, self.event.get_lodgement_groups(self.key, event_id)
+        )
 
         self.assertNotIn(
-            new_lodgement_id, self.event.list_lodgements(self.key, event_id))
+            new_lodgement_id, self.event.list_lodgements(self.key, event_id)
+        )
 
-    @storage
-    @as_users("annika")
-    def test_implicit_lodgement_group(self) -> None:
         new_event_data = {
-            'title': "KreativAkademie",
-            'shortname': "KreAka",
+            'title': (new_event_title := "KreativAkademie"),
+            'shortname': "KrAka",
             'institution': 1,
             'parts': {
                 -1: {
                     'part_begin': "2222-02-02",
                     'part_end': "2222-02-22",
                     'title': "KreativAkademie",
-                    'shortname': "KreAka",
+                    'shortname': "KrAka",
                     'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
             },
         }
-        new_event_id = self.event.create_event(self.key, new_event_data)
-        groups = self.event.list_lodgement_groups(self.key, new_event_id)
-        groups_expectation = {1001: new_event_data['title']}
+        with self.switch_user("annika"):
+            new_event_id = self.event.create_event(self.key, new_event_data)
+
+        groups = self.event.get_lodgement_groups(self.key, new_event_id)
+        groups_expectation = {
+            1002: models.LodgementGroup(
+                id=vtypes.ID(1002),
+                event_id=vtypes.ID(new_event_id),
+                title=new_event_title,
+            ),
+        }
         self.assertEqual(groups_expectation, groups)
 
     @as_users("annika", "garcia")
     def test_entity_lodgement(self) -> None:
-        event_id = 1
+        event_id = vtypes.ID(1)
         expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
@@ -1775,49 +1875,66 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
         expectation_get = {
-            1: {
-                'regular_capacity': 5,
-                'event_id': 1,
-                'fields': {'contamination': 'high'},
-                'id': 1,
-                'title': 'Warme Stube',
-                'notes': None,
-                'camping_mat_capacity': 1,
-                'group_id': 2,
-            },
-            4: {
-                'regular_capacity': 1,
-                'event_id': 1,
-                'fields': {'contamination': 'high'},
-                'id': 4,
-                'title': 'Einzelzelle',
-                'notes': None,
-                'camping_mat_capacity': 0,
-                'group_id': 1,
-            },
+            1: models.Lodgement(
+                id=vtypes.ID(1),
+                event_id=event_id,
+                title='Warme Stube',
+                group_id=vtypes.ID(2),
+                group=models.LodgementGroup(
+                    id=vtypes.ID(2),
+                    event_id=event_id,
+                    title="AußenWohnGruppe",
+                    lodgement_ids={1},
+                    regular_capacity=5,
+                    camping_mat_capacity=1,
+                ),
+                regular_capacity=vtypes.NonNegativeInt(5),
+                camping_mat_capacity=vtypes.NonNegativeInt(1),
+                notes=None,
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
+            4: models.Lodgement(
+                id=vtypes.ID(4),
+                event_id=event_id,
+                title='Einzelzelle',
+                group_id=vtypes.ID(1),
+                group=models.LodgementGroup(
+                    id=vtypes.ID(1),
+                    event_id=event_id,
+                    title="Haupthaus",
+                    lodgement_ids={2, 4},
+                    regular_capacity=11,
+                    camping_mat_capacity=2,
+                ),
+                regular_capacity=vtypes.NonNegativeInt(1),
+                camping_mat_capacity=vtypes.NonNegativeInt(0),
+                notes=None,
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
         }
-        self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1, 4)))
+        self.assertEqual(
+            expectation_get, self.event.new_get_lodgements(self.key, (1, 4))
+        )
         new = {
             'regular_capacity': 42,
-            'event_id': 1,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': 3,
         }
-        new_id = self.event.create_lodgement(self.key, new)
+        new_id = self.event.create_lodgement(self.key, event_id, new)
         self.assertLess(0, new_id)
         new['id'] = new_id
+        new['event_id'] = event_id
         new['fields'] = {}
-        self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
+        self.assertEqual(new, self.event.new_get_lodgement(self.key, new_id).as_dict())
         update = {
             'regular_capacity': 21,
             'notes': None,
-            'id': new_id,
         }
-        self.assertLess(0, self.event.set_lodgement(self.key, update))
+        self.assertLess(0, self.event.set_lodgement(self.key, new_id, update))
         new.update(update)
-        self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
+        self.assertEqual(new, self.event.new_get_lodgement(self.key, new_id).as_dict())
         expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
@@ -2728,7 +2845,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.lodgement_changed,
             },
             {
-                'change_note': 'Kalte Kammer',
+                'change_note': 'Kalte Kammer -> Kühle Kammer',
                 'code': const.EventLogCodes.lodgement_changed,
             },
             {
@@ -2752,12 +2869,16 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_changed,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Planetenretten für Anfänger',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
             },
             {
                 'change_note': 'Lustigsein für Fortgeschrittene',
@@ -2768,24 +2889,36 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.course_deleted,
             },
             {
-                'change_note': 'Langer Kurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
             },
             {
-                'change_note': 'Backup-Kurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Langer Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+            },
+            {
+                'change_note': 'Backup-Kurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+            },
+            {
+                'change_note': 'Backup-Kurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Blitzkurs',
                 'code': const.EventLogCodes.course_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Blitzkurs (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
             },
             {
-                'change_note': 'Blitzkurs',
-                'code': const.EventLogCodes.course_segment_activity_changed,
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+            },
+            {
+                'change_note': 'Blitzkurs (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
             },
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
@@ -3587,7 +3720,6 @@ class TestEventBackend(BackendTest):
             },
         })
         data = {
-            'event_id': 1,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -3598,14 +3730,27 @@ class TestEventBackend(BackendTest):
             'max_size': 14,
             'min_size': 5,
             'notes': "Beware of dragons.",
-            'segments': {2, 3},
+            'segments': {
+                2: {
+                    "is_active": True,
+                },
+                3: {
+                    "is_active": True,
+                },
+            },
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, data)
+        new_id = self.event.create_course(self.key, 1, data)
         data['title'] = "Alternate Universes"
-        data['segments'] = {1, 3}
-        self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'segments': data['segments']})
+        data['segments'] = {
+            1: {
+                "is_active": True,
+            },
+            2: None,
+        }
+        self.event.set_course(
+            self.key, new_id, {'title': data['title'], 'segments': data['segments']}
+        )
         new_reg = {
             'event_id': 1,
             'list_consent': True,
@@ -3675,19 +3820,17 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, data, change_note="Boring change.")
         new = {
             'regular_capacity': 42,
-            'event_id': 1,
             'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': 1,
         }
-        new_id = self.event.create_lodgement(self.key, new)
+        new_id = self.event.create_lodgement(self.key, event_id=1, data=new)
         update = {
             'regular_capacity': 21,
             'notes': None,
-            'id': new_id,
         }
-        self.event.set_lodgement(self.key, update)
+        self.event.set_lodgement(self.key, new_id, update)
         self.event.delete_lodgement(self.key, new_id)
         data: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
             const.QuestionnaireUsages.additional:
@@ -3857,8 +4000,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Arbeitssitzung (Zweite Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {
@@ -3867,8 +4025,23 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
             },
             {
-                'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deleted,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Kaffeekränzchen (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_deactivated,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_created,
+                'event_id': 1,
+            },
+            {
+                'change_note': 'Topos theory for the kindergarden (Morgenkreis (Erste Hälfte))',
+                'code': const.EventLogCodes.course_segment_activated,
                 'event_id': 1,
             },
             {
@@ -4412,7 +4585,7 @@ class TestEventBackend(BackendTest):
         # }
         # self.event.set_part_groups(self.key, event_id, pg_data)
 
-        fee_data: CdEDBOptionalMap = {
+        fee_data: CdEDBObjectMap = {
             -1: {
                 "kind": const.EventFeeType.common,
                 "title": "A",
@@ -4484,7 +4657,8 @@ class TestEventBackend(BackendTest):
                 "condition": "part.A AND part.B AND part.C AND part.D",
             },
         }
-        self.event.set_event_fees(self.key, event_id, fee_data)
+        for fee in fee_data.values():
+            self.event.create_event_fee(self.key, event_id, fee)
 
         r_data = {
             "event_id": event_id,
@@ -4559,9 +4733,9 @@ class TestEventBackend(BackendTest):
             }
             self.event.set_registration(self.key, r_data)
             combination = ", ".join(str(int(x == p)) for x in stati)
-            fee = self.event.calculate_complex_fee(self.key, reg_id).amount
+            fee_amount = self.event.calculate_complex_fee(self.key, reg_id).amount
             with self.subTest(combination=combination):
-                self.assertEqual(fee, decimal.Decimal(expected_fee))
+                self.assertEqual(fee_amount, decimal.Decimal(expected_fee))
 
     @as_users("garcia")
     def test_part_shortname_change(self) -> None:
@@ -4573,7 +4747,7 @@ class TestEventBackend(BackendTest):
             'condition': "part.1.H. and not part.2.H.",
             'notes': None,
         }
-        self.event.set_event_fees(self.key, event_id, {-1: new_fee})
+        self.event.create_event_fee(self.key, event_id, new_fee)
         event_data = {
             'id': event_id,
             'parts': {
@@ -4589,51 +4763,6 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
             "part.2.H. and not part.1.H.", event.fees[1001].condition)
-
-    @as_users("garcia")
-    def test_rcw_mechanism(self) -> None:
-        # Cull readonly attributes
-        def _get_lodgement_group(rs: RequestState, group_id: int) -> CdEDBObject:
-            ret = self.event.get_lodgement_group(rs, group_id=group_id)
-            del ret['lodgement_ids']
-            del ret['camping_mat_capacity']
-            del ret['regular_capacity']
-            return ret
-
-        group_id = 1
-        data = _get_lodgement_group(self.key, group_id=group_id)
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-
-        # positional argument
-        data['title'] = "Stavromula Beta"
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        self.event.rcw_lodgement_group(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Gamma"
-        self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Delta"
-        self.event.rcw_lodgement_group(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-
-        # keyword argument
-        data['title'] = "Stavromula Epsilon"
-        self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        self.event.rcw_lodgement_group(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Zeta"
-        self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
-        data['title'] = "Stavromula Eta"
-        self.event.rcw_lodgement_group(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
     @as_users("garcia")
     def test_orga_apitokens(self) -> None:
@@ -4750,15 +4879,13 @@ class TestEventBackend(BackendTest):
                     'shortname': "TP",
                 },
             },
-            'fees': {
-                -1: {
-                    'title': "Externenzusatzbeitrag",
-                    'notes': None,
-                    'amount': external_fee_amount,
-                    'condition': "NOT is_member",
-                    'kind': const.EventFeeType.external,
-                },
-            },
+        })
+        self.event.create_event_fee(self.key, event_id, {
+            'title': "Externenzusatzbeitrag",
+            'notes': None,
+            'amount': external_fee_amount,
+            'condition': "NOT is_member",
+            'kind': const.EventFeeType.external,
         })
 
         # 2.1 Set test user to not be a member then register them.
@@ -5303,7 +5430,11 @@ class TestEventBackend(BackendTest):
         event_id = 1
 
         with self.assertRaises(EventIsBalancedError):
-            self.event.set_event_fees(self.key, event_id, {})
+            self.event.create_event_fee(self.key, event_id, {})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.change_event_fee(self.key, 1, {})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.delete_event_fee(self.key, 1)
 
         with self.assertRaises(EventIsBalancedError):
             self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})

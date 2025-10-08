@@ -373,8 +373,10 @@ class MailinglistDomain(CdEIntEnum):
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
         members without moderation."""
+        if self == MailinglistDomain.aka:
+            return {"tickets.cde-ev.de"}
         if self == MailinglistDomain.lists:
-            return {"cde-ev.de", "lists.schuelerakademie.de"}
+            return {"cde-ev.de", "lists.schuelerakademie.de", "tickets.cde-ev.de"}
         if self == MailinglistDomain.cdelokal:
             return {"cdelokal.schuelerakademie.de"}
         return set()
@@ -756,8 +758,6 @@ class ComplaintLogCodes(CdEIntEnum):
 
     enforcer_added = 101  #:
     enforcer_removed = 102  #:
-    monitor_added = 106  #:
-    monitor_removed = 107  #:
 
     case_unlocked = 201  #:
     concealed_case_detected = 202  #:
@@ -841,8 +841,10 @@ class EventLogCodes(CdEIntEnum):
     track_removed = 37  #:
     course_created = 40  #:
     course_changed = 41  #:
-    course_segments_changed = 42  #:
-    course_segment_activity_changed = 43  #:
+    course_segment_deleted = 420  #:
+    course_segment_created = 421  #:
+    course_segment_deactivated = 430  #:
+    course_segment_activated = 431  #:
     course_deleted = 44  #:
     registration_created = 50  #:
     registration_changed = 51  #:
@@ -857,9 +859,9 @@ class EventLogCodes(CdEIntEnum):
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
-    fee_modifier_created = 80  #:
-    fee_modifier_changed = 81  #:
-    fee_modifier_deleted = 82  #:
+    event_fee_created = 80  #:
+    event_fee_modified = 81  #:
+    event_fee_deleted = 82  #:
     minor_form_updated = 85  #:
     minor_form_removed = 86  #:
     query_stored = 90  #:

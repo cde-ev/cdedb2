@@ -20,16 +20,18 @@ class CdEEnumMeta:
 
         __format__ shall still produce the integer representation as before.
         """
-        return int.__format__(int(self), format_spec)  # type: ignore[call-overload]
+        if isinstance(self, int):
+            return int.__format__(int(self), format_spec)
+        return super().__format__(format_spec)
 
 
 class CdEIntEnum(CdEEnumMeta, enum.IntEnum):
     pass
 
 
-class CdEEnum(enum.Enum):
+class CdEEnum(CdEEnumMeta, enum.Enum):
     pass
 
 
-class CdEIntFlag(CdEEnumMeta, enum.IntFlag):  # type: ignore[misc]
+class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
     pass

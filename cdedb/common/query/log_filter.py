@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Optional, cast
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, diacritic_patterns
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.query import DatabaseValue_s
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import requestdict_field_spec
@@ -22,7 +22,7 @@ __all__ = [
     'PastEventLogFilter',
 ]
 
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 _DEFAULT_LOG_COLUMNS = (
     "id", "ctime", "code", "submitted_by", "persona_id", "change_note",
 )
@@ -31,7 +31,7 @@ _DEFAULT_PERSONA_COLUMNS = (
 )
 
 
-class IncludeEmpty(enum.Enum):
+class IncludeEmpty(CdEIntEnum):
     yes = enum.auto()
     no = enum.auto()
     only = enum.auto()

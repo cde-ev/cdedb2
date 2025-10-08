@@ -20,6 +20,10 @@ This file can then be further protected, for example by shrinking its access per
 the file system to a specific user which is running the application (conventionally named
 ``www-cde``).
 
+Note that both ``Config`` and ``SecretsConfig`` are recompiled with the new config values
+if the ``CDEDB_CONFIGPATH`` environment variable changed. This happens before the next
+access to the respective config object is performed.
+
 Both ``Config`` and ``SecretsConfig`` take config options from a custom file without a default
 value in :mod:`cdedb.config` not into account. However, there are cases where it would be
 desirable to add values to the config objects which are not used in the actual codebase, f.e.
@@ -31,14 +35,5 @@ All config objects can in principle be instantiated anywhere in the codebase. If
 available otherwise (f.e. as instance attribute), using them is preferred over instantiation.
 As a direct consequence of this design principle, the config is read-only and can not be
 changed at runtime.
-
-It should be avoided in general, but sometimes a Config object needs to live in the
-global namespace of a module. If this is the case, importing from this module would
-cause the Config object to be initialized, which is an unwanted side effect that
-must not happen during import (f.e. importing from this module and setting the
-config path environment variable later on will fail).
-To circumvent this, a ``LazyConfig`` object may be used – it behaves identical
-to a ``Config`` object, beside the initialization happens not on instantiation, but on
-first access.
 
 .. [#apacheconfig] For the subtleties of the Apache Configuration, see :doc:`Design_WSGI`.

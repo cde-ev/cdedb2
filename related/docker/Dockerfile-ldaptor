@@ -1,9 +1,16 @@
 FROM debian:bookworm-20240130
 
 # python and utilities to install packages via pip
+# dependencies:
+# - libsystemd-dev for systemd-python
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-pip \
+    python3-dev \
+    g++ \
+    pkg-config \
+    \
+    libsystemd-dev \
     \
     && rm -rf /var/lib/apt/lists/*
 

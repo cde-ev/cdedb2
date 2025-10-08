@@ -187,22 +187,46 @@ class TestCommon(BasicTest):
             shutil.copytree(i18n_path, tmppath)
             outpath = pathlib.Path(tempdir, "i18n-output")
             outpath.mkdir()
-            subprocess.run(["make", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
-                            f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
-                           check=True, capture_output=True)
             try:
                 result = subprocess.run(
-                    ["make", "-B", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
-                     f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
-                    check=True, capture_output=True, text=True,
+                    [
+                        "make",
+                        f"I18NDIR={tmppath}",
+                        f"I18NOUTDIR={outpath}",
+                        f"I18N_LANGUAGES={' '.join(langs)}",
+                        f"PYTHONPATH={self.conf['REPOSITORY_PATH']}",
+                        "i18n-extract",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                expected_outputs = ["pybabel extract", "extracting messages from"]
+                output = result.stdout + result.stderr
+                if any(s not in output for s in expected_outputs):
+                    self.fail("'make i18n-extract' didn't properly run.")
+                result = subprocess.run(
+                    [
+                        "make",
+                        "-B",
+                        f"I18NDIR={tmppath}",
+                        f"I18NOUTDIR={outpath}",
+                        f"I18N_LANGUAGES={' '.join(langs)}",
+                        "i18n-compile",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
                     env={"LC_MESSAGES": "en"},  # makes parsing easier
                 )
+                if "translated messages" not in result.stderr:
+                    self.fail("'make i18n-compile' didn't properly run.")
             except subprocess.CalledProcessError as e:  # pragma: no cover
                 self.fail(f"Translation check failed:\n{e.stderr}")
 
         matches = {
             lang: re.search(
-                fr".*/{lang}/LC_MESSAGES/cdedb.po: \d+ translated messages"
+                fr".*/{lang}/LC_MESSAGES/cdedb.po: (?P<translated>\d+) translated messages"
                 r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
                 r"(, (?P<untranslated>\d+) untranslated messages?)?"
                 r"\.",
@@ -212,6 +236,10 @@ class TestCommon(BasicTest):
 
         for lang, match in matches.items():
             assert match is not None
+            with self.subTest(f"translated-{lang}"):
+                self.assertLess(
+                    0, int(match["translated"]), f"There are no translated strings({lang})."
+                )
             if lang != "en":
                 with self.subTest(f"untranslated-{lang}"):
                     self.assertIsNone(match["untranslated"],

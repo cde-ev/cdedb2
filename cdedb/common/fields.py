@@ -89,28 +89,14 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
                      "part_end", "waitlist_field_id", "camping_mat_field_id")
 
-#: Fields of a track where courses can happen
-COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "min_choices", "sortkey", "course_room_field_id")
-
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
     "id", "event_id", "field_name", "title", "sortkey", "kind", "association",
     "checkin", "entries",
 )
 
-#: Fields of a conditional event fee.
-EVENT_FEE_FIELDS = ("id", "event_id", "kind", "title", "amount", "condition", "notes")
-
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
-
-#: Fields of a course associated to an event organized via the CdEDB
-COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "max_size", "min_size", "is_visible", "notes", "fields")
-
-#: Fields specifying in which part a course is available
-COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -125,13 +111,6 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
 #: Fields of a registration which are specific for each course track
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
-
-#: Fields of a lodgement group
-LODGEMENT_GROUP_FIELDS = ("id", "event_id", "title")
-
-#: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
-                    "camping_mat_capacity", "notes", "group_id", "fields")
 
 # Fields of a row in a questionnaire.
 # (This can be displayed in different places according to `kind`).

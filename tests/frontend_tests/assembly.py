@@ -1770,7 +1770,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("B 1", div='vote-2', exact=True)
         self.assertPresence("A 1", div='vote-3', exact=True)
         self.assertPresence("# 1", div='vote-4', exact=True)
-        self.assertNonPresence("", div='vote-5', check_div=False)
+        self.assertDivNotExists("#vote-5")
 
         # test the list of all voters
         self.assertPresence("Anton Administrator", div='voters-list')
@@ -1798,7 +1798,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("A 3", div='vote-1', exact=True)
         self.assertPresence("B 2", div='vote-2', exact=True)
         self.assertPresence("Enthalten 1", div='vote-3', exact=True)
-        self.assertNonPresence("", div='vote-4', check_div=False)
+        self.assertDivNotExists("#vote-4")
 
         # preferential vote without bar
         self.traverse({'description': 'Abstimmungen'},
@@ -1823,7 +1823,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("C > A > B 1", div='vote-2', exact=True)
         self.assertPresence("C > A = B 1", div='vote-3', exact=True)
         self.assertPresence("B = C > A 1", div='vote-4', exact=True)
-        self.assertNonPresence("", div='vote-5', check_div=False)
+        self.assertDivNotExists("#vote-5")
 
         # preferential vote with bar
         self.traverse({'description': 'Versammlung'},
@@ -1852,7 +1852,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("B > C > # > A = D 1", div="vote-2", exact=True)
         self.assertPresence("A > B = C = D > # 1", div="vote-3", exact=True)
         self.assertPresence("# > D > C > B > A 1", div="vote-4", exact=True)
-        self.assertNonPresence("", div='vote-5', check_div=False)
+        self.assertDivNotExists("#vote-5")
 
     @storage
     @as_users("werner")
@@ -1911,12 +1911,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['candidatessummaryform']
         self.assertEqual("aqua", f['shortname_1001'].value)
         f['shortname_7'] = "rot"
+        f['title_7'] = "Rot"
         self.submit(f, check_notification=False)
-        self.assertValidationError("shortname_7", "Option doppelt gefunden")
+        self.assertValidationError("shortname_7", "Kurzname doppelt vergeben.")
+        self.assertValidationError("title_7", "Titel doppelt vergeben.")
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         f = self.response.forms['candidatessummaryform']
         f['shortname_7'] = "gelb"
+        f['shortname_7'] = "Gelb"
         f['shortname_8'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f, check_notification=False)
         self.assertValidationError(

@@ -14,6 +14,19 @@
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"), ambience['genesis_case'].persona|persona_name,
                         active="True", icon="door-open") }}
 {% endblock %}
+
+{% macro print_doppelganger_genesis(doppelganger) %}
+    {{ util.print_doppelganger(doppelganger, link=True) }}
+    {% if doppelganger["id"] in doppelgangers_with_missing_realms %}
+        </br>
+        {% trans promote=util.href(cdedblink('core/promote_user_form', {"persona_id": doppelganger["id"],
+                                   "target_realm": ambience["genesis_case"].realm}), gettext("promote")),
+                 realm=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)%}
+            You need to {{ promote }} this account to {{ realm }} realm before merging.
+        {% endtrans %}
+    {% endif %}
+{% endmacro %}
+
 {% block content %}
     <h4 class="heading-underline">{% trans %}Case Meta-Information{% endtrans %}</h4>
     <dl class="dl-horizontal">
@@ -29,6 +42,14 @@
         </dt>
         <dd id="realm">
             {{ util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True) }}
+            {% if ambience["genesis_case"].realm != "ml" %}
+                {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
+                {% set label = gettext("Change Realm to Event") if ambience["genesis_case"].realm == "cde" else gettext("Change Realm to CdE")%}
+                <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" id="genesismodifyrealmform" style="display: inline-block">
+                    {{ util.anti_csrf_token('core/genesis_modify_realm') }}
+                    {{ util.input_submit(label=label, icon=icon, aclass="btn btn-primary btn-xs") }}
+                </form>
+            {% endif %}
         </dd>
         <dt title="{% trans %}Creation Time{% endtrans %}">
             {% trans %}Creation Time{% endtrans %}
@@ -192,9 +213,9 @@
                 <div role="radiogroup" aria-labelledby="doppelgangers-label" id="doppelgangers">
                     {% set entries = [("", "–")] %}
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
-                        {% do entries.append((key, util.print_doppelganger(value, link=True))) %}
+                        {% do entries.append((key, print_doppelganger_genesis(value))) %}
                     {% endfor %}
-                    {# This acutally becomes the persona_id to be saved into the genesis request! #}
+                    {# This actually becomes the persona_id to be saved into the genesis request! #}
                     {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}
                 </div>
             {% endif %}
@@ -212,26 +233,12 @@
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
-                {% if doppelgangers %}
-                    {{ util.input_submit(
-                        name="decision", value = enums['GenesisDecision'].update,
-                        label=gettext("Update_[[genesis case]]"), aclass="btn btn-success", icon="user-edit") }}
-                {% endif %}
-                {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit Account Request"),
+                {{ util.href(cdedblink('core/genesis_modify_form'), label=gettext("Edit Account Request"),
                     aclass="btn btn-warning", icon="pen") }}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}
             </div>
         </form>
-        {% if ambience["genesis_case"].realm != "ml" %}
-            {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
-            <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST"
-             id="genesismodifyrealmform" style="margin-top: 5px">
-                {{ util.anti_csrf_token('core/genesis_modify_realm') }}
-                {{ util.input_submit(label=gettext("Change Realm"), icon=icon,
-                    aclass="btn btn-warning") }}
-            </form>
-        {% endif %}
     {% endif %}
 {% endblock %}

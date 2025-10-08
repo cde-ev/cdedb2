@@ -34,13 +34,11 @@ from passlib.hash import sha512_crypt
 from cdedb.common import (
     CdEDBLog,
     CdEDBObject,
-    DefaultReturnCode,
     Error,
     RequestState,
     Role,
     diacritic_patterns,
     make_proxy,
-    setup_logger,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -49,7 +47,6 @@ from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, Que
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.validation import validate
 from cdedb.config import Config
-from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.models.common import CdEDataclass
@@ -109,45 +106,6 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
             return cast(Mapping[Any, T], data)[param]
 
     return singularized
-
-
-def read_conditional_write_composer(
-        reader: Callable[..., Any], writer: Callable[..., int],
-        id_param_name: str = "anid", datum_param_name: str = "data",
-        id_key_name: str = "id") -> Callable[..., int]:
-    """This takes two functions and returns a combined version.
-
-    The overall semantics are similar to the writer. However the write is
-    elided if the reader returns a value equal to the object to be written
-    (i.e. there is no change).
-
-    :param id_param_name: Name of the reader argument specifying the object
-        id.
-    :param datum_param_name: Name of the writer argument specifying the
-        object value.
-    :param id_key_name: Key associated to the id in the object value
-        dictionary.
-    """
-
-    @functools.wraps(writer)
-    def composed(self: "AbstractBackend", rs: RequestState, *args: Any,
-                 **kwargs: Any) -> DefaultReturnCode:
-        ret = 1
-        reader_kwargs = kwargs.copy()
-        reader_args = args[:]
-        if datum_param_name in reader_kwargs:
-            data = reader_kwargs.pop(datum_param_name)
-            reader_kwargs[id_param_name] = data[id_key_name]
-        else:
-            data = reader_args[0]
-            reader_args = (data[id_key_name],) + reader_args[1:]
-        with Atomizer(rs):
-            current = reader(self, rs, *reader_args, **reader_kwargs)
-            if {k: v for k, v in current.items() if k in data} != data:
-                ret = writer(self, rs, *args, **kwargs)
-        return ret
-
-    return composed
 
 
 def access(*roles: Role) -> Callable[[F], F]:
@@ -212,18 +170,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     def __init__(self) -> None:
         self.conf = Config()
         # initialize logging
-        setup_logger(
-            "cdedb.backend",
-            self.conf["LOG_DIR"] / "cdedb-backend.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        setup_logger(
-            f"cdedb.backend.{self.realm}",
-            self.conf["LOG_DIR"] / f"cdedb-backend-{self.realm}.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
         self.logger.debug(
@@ -656,6 +602,7 @@ def affirm_validation(
     assertion: type[CdEDataclass], value: Any, **kwargs: Any
 ) -> CdEDBObject: ...
 
+
 @overload
 def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
 
@@ -670,10 +617,7 @@ def affirm_validation(
     Therefore, the frontend has to handle ValidationWarnings properly, while the backend
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
-    return cast(
-        T | CdEDBObject,
-        validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
-    )
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
 @overload

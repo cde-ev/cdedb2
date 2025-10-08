@@ -152,7 +152,7 @@
             {% endif %}
             {% if is_privileged_for("constraint_violations") %}
                 {{ util.href(cdedblink("event/constraint_violations", {"event_id": event['id']}),
-                             gettext("Constraint Violations"), aclass="list-group-item",
+                             gettext("Inconsistencies"), aclass="list-group-item",
                              active=(sidenav_active == 'event_constraint_violations'), icon='exclamation-circle') }}
             {% endif %}
             {% if is_privileged_for("downloads") %}
@@ -255,7 +255,7 @@
             {% if 'event_list' in user.admin_views %}
                 {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
-                {{ util.href(cdedblink("event/constraint_violations_summary"), gettext("Constraint Violations"),
+                {{ util.href(cdedblink("event/constraint_violations_summary"), gettext("Inconsistencies"),
                              aclass="list-group-item", icon="exclamation-circle", active=(sidenav_active == 'violations_summary')) }}
             {% endif %}
             {% if "event" in user.roles %}

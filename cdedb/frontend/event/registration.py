@@ -251,7 +251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             course_id: {
                 tg_id: {
                     event.tracks[t_id].part_id for t_id in
-                    (set(tg.tracks) & course.segments)
+                    (set(tg.tracks) & course.segments.keys())
                 }
                 for tg_id, tg in event.track_groups.items()
                 if tg.constraint_type == ccs
@@ -1049,7 +1049,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         age = determine_age_class(
             persona['birthday'], rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
@@ -1108,13 +1108,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         data['amount'] = None
         fee_data = check(
-            rs, models.EventFee, data, creation=True, id_=-1,
-            event=rs.ambience['event'].as_dict(), questionnaire={}, personalized=True,
+            rs, models.EventFee, data, current=None,
+            event=rs.ambience['event'], questionnaire={}, personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:
             return self.add_new_personalized_fee_form(rs, event_id, registration_id)
 
-        new_fee_id = self.eventproxy.set_event_fees(rs, event_id, {-1: fee_data})
+        new_fee_id = self.eventproxy.create_event_fee(rs, event_id, fee_data)
         if new_fee_id:
             code = self.eventproxy.set_personalized_fee_amount(
                 rs, registration_id, new_fee_id, amount)
@@ -1315,7 +1315,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_event_user(
             rs, registration['persona_id'], event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         course_choice_params = self.get_course_choice_params(rs, event_id)
 
         values = self._prepare_registration_values(rs.ambience['event'], registration)
@@ -1365,7 +1365,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Render form."""
         registrations = self.eventproxy.list_registrations(rs, event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         defaults = {
             f"part{part_id}.status":
                 const.RegistrationPartStati.participant
@@ -1472,7 +1472,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         for reg in reg_vals:
             reg['gender'] = personas[reg['persona_id']]['gender']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         representative = next(iter(registrations.values()))
 
@@ -1618,7 +1618,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],

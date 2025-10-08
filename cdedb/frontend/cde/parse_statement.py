@@ -30,7 +30,6 @@ from cdedb.common.parse.util import (
     parse_amount,
     simplify_amount,
 )
-from cdedb.config import LazyConfig
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
 from cdedb.models.common import CdEDataclassMap
@@ -40,10 +39,6 @@ if TYPE_CHECKING:
     from cdedb.backend.event import EventBackend
 
 BackendGetter = Callable[[int], CdEDBObject]
-
-
-_CONF = LazyConfig()
-# _LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
 
 
 @dataclasses.dataclass
@@ -339,10 +334,10 @@ class Transaction:
             f"account{suffix}": Accounts,
             f"date{suffix}": datetime.date,
             f"amount{suffix}": decimal.Decimal,
-            f"reference{suffix}": str | None,  # type: ignore[dict-item]
-            f"account_holder{suffix}": str | None,  # type: ignore[dict-item]
-            f"iban{suffix}": vtypes.IBAN | None,  # type: ignore[dict-item]
-            f"bic{suffix}": str | None,  # type: ignore[dict-item]
+            f"reference{suffix}": str | None,
+            f"account_holder{suffix}": str | None,
+            f"iban{suffix}": vtypes.IBAN | None,
+            f"bic{suffix}": str | None,
             f"posting{suffix}": str,
             f"type_confidence{suffix}": ConfidenceLevel,
             f"persona_confidence{suffix}": ConfidenceLevel,
@@ -352,9 +347,9 @@ class Transaction:
             ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": vtypes.CdedbID | None,  # type: ignore[dict-item]
+                f"cdedbid{suffix}": vtypes.CdedbID | None,
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": vtypes.ID | None,  # type: ignore[dict-item]
+                f"event_id{suffix}": vtypes.ID | None,
                 f"event_confirm{suffix}": bool,
             })
         return ret

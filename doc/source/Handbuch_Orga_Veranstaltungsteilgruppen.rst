@@ -163,7 +163,7 @@ Für Teilnehmende, die an mehreren Veranstaltungsteilen anwesend sind, z.B.
 der Stufe "Warnung" angezeigt.
 
 Auf der Veranstaltungsübersichtsseite wird für Orgas die Gesamtanzahl der
-Meldungen angezeigt. Auf der Seite "Verstöße gegen Beschränkungen" werden die
+Meldungen angezeigt. Auf der Seite "Ungereimtheiten" werden die
 Meldungen für alle Anmeldungen angezeigt. Auf der Übersichtsseite einer
 einzelnen Anmeldung werden die Warnungen für diese Anmeldung angezeigt,
 sofern vorhanden.
@@ -195,7 +195,7 @@ Kurse die in mehreren dieser Kursschienen stattfinden erhalten eine Meldung
 der Stufe "Warnung".
 
 Auf der Veranstaltungsübersichtsseite wird für Orgas die Gesamtanzahl der
-Meldungen angezeigt. Auf der Seite "Verstöße gegen Beschränkungen" werden die
+Meldungen angezeigt. Auf der Seite "Ungereimtheiten" werden die
 Meldungen für alle Kurse angezeigt. Auf der Übersichtsseite eines einzelnen
 Kurses werden die Meldungen für diesen Kurs angezeigt, sofern vorhanden.
 

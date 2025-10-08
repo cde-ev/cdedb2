@@ -97,8 +97,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
-                    num_choices=4,
-                    min_choices=4,
+                    num_choices=vtypes.NonNegativeInt(4),
+                    min_choices=vtypes.NonNegativeInt(4),
                     sortkey=1,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),
@@ -107,8 +107,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
-                    num_choices=1,
-                    min_choices=1,
+                    num_choices=vtypes.NonNegativeInt(1),
+                    min_choices=vtypes.NonNegativeInt(1),
                     sortkey=2,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),
@@ -117,8 +117,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
-                    num_choices=3,
-                    min_choices=2,
+                    num_choices=vtypes.NonNegativeInt(3),
+                    min_choices=vtypes.NonNegativeInt(2),
                     sortkey=3,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),
@@ -628,7 +628,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=1,
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 2: models.SyncTrackGroup(
                     id=2,  # type: ignore[arg-type]
@@ -638,7 +638,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=4,
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 3: models.SyncTrackGroup(
                     id=3,  # type: ignore[arg-type]
@@ -648,7 +648,7 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=3,
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
                 4: models.TrackGroup(
                     id=4,  # type: ignore[arg-type]
@@ -660,7 +660,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                    track_ids={6, 7, 8},
                 ),
                 5: models.TrackGroup(
                     id=5,  # type: ignore[arg-type]
@@ -672,7 +672,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                    track_ids={10, 12, 14},
                 ),
                 6: models.TrackGroup(
                     id=6,  # type: ignore[arg-type]
@@ -684,7 +684,7 @@ class TestEventModels(BackendTest):
                     constraint_type=(
                         const.CourseTrackGroupType.mutually_exclusive_courses
                     ),
-                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                    track_ids={9, 11, 13},
                 ),
             },
         )
@@ -710,50 +710,79 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = 1
+        course_id = vtypes.ID(1)
+        event_id = vtypes.ID(vtypes.ID(1))
 
         expectation = models.Course(
-            id=course_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
-            segments={1, 3},  # type: ignore[arg-type]
-            active_segments={1, 3},  # type: ignore[arg-type]
+            id=course_id,
+            event_id=event_id,
+            segments={
+                1: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(1),
+                    is_active=True,
+                ),
+                3: models.CourseSegment(
+                    id=vtypes.ID(-1),
+                    course_id=course_id,
+                    track_id=vtypes.ID(3),
+                    is_active=True,
+                )
+            },
             nr='α',
             title='Planetenretten für Anfänger',
             shortname='Heldentum',
             description='Wir werden die Bäume drücken.',
             instructors='ToFi & Co',
-            min_size=2,
-            max_size=10,
+            min_size=vtypes.NonNegativeInt(2),
+            max_size=vtypes.NonNegativeInt(10),
             is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'},
+            fields=vtypes.EventAssociatedFields({'room': 'Wald'}),
         )
         reality = self.event.get_course(self.key, course_id)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
         course_ids = [1, 2]
 
         expectation = {
             1: expectation,
             2: models.Course(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
-                segments={1, 2, 3},  # type: ignore[arg-type]
-                active_segments={1, 3},  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
+                segments={
+                    1: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(1),
+                        is_active=True,
+                    ),
+                    2: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(2),
+                        is_active=False,
+                    ),
+                    3: models.CourseSegment(
+                        id=vtypes.ID(-1),
+                        course_id=vtypes.ID(2),
+                        track_id=vtypes.ID(3),
+                        is_active=True,
+                    )
+                },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',
                 shortname='Kabarett',
                 description='Inklusive Post, Backwaren und frühzeitigem Ableben.',
                 instructors='Bernd Lucke',
-                min_size=10,
-                max_size=20,
+                min_size=vtypes.NonNegativeInt(10),
+                max_size=vtypes.NonNegativeInt(20),
                 is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'},
+                fields=vtypes.EventAssociatedFields({'room': 'Theater'}),
             ),
         }
         reality = self.event.get_courses(self.key, course_ids)
@@ -765,121 +794,116 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_lodgements(self) -> None:
-        lodgement_id = 1
-        # print(self.event.new_get_lodgement(self.key, lodgement_id))
+        lodgement_id = vtypes.ID(1)
+        event_id = vtypes.ID(1)
 
         expectation = models.Lodgement(
-            id=lodgement_id,  # type: ignore[arg-type]
-            event_id=1,  # type: ignore[arg-type]
+            id=lodgement_id,
+            event_id=event_id,
             group=models.LodgementGroup(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
                 title='AußenWohnGruppe',
                 lodgement_ids={1},
                 regular_capacity=5,
                 camping_mat_capacity=1,
             ),
-            group_id=2,  # type: ignore[arg-type]
+            group_id=vtypes.ID(2),
             title='Warme Stube',
-            regular_capacity=5,
-            camping_mat_capacity=1,
+            regular_capacity=vtypes.NonNegativeInt(5),
+            camping_mat_capacity=vtypes.NonNegativeInt(1),
             notes=None,
-            fields={'contamination': 'high'},
+            fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
         )
 
         reality = self.event.new_get_lodgement(self.key, lodgement_id)
 
-        self.assertEqual(
-            vars(expectation),
-            vars(reality),
-        )
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
-        event_id = 1
         lodgement_ids = self.event.list_lodgements(self.key, event_id)
-        # print(self.event.new_get_lodgements(self.key, lodgement_ids))
 
         expectation = {
             1: models.Lodgement(
-                id=1,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(1),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=2,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(2),
+                    event_id=event_id,
                     title="AußenWohnGruppe",
                     lodgement_ids={1},
                     regular_capacity=5,
                     camping_mat_capacity=1,
                 ),
-                group_id=2,  # type: ignore[arg-type]
+                group_id=vtypes.ID(2),
                 title='Warme Stube',
-                regular_capacity=5,
-                camping_mat_capacity=1,
+                regular_capacity=vtypes.NonNegativeInt(5),
+                camping_mat_capacity=vtypes.NonNegativeInt(1),
                 notes=None,
-                fields={'contamination': 'high'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
             2: models.Lodgement(
-                id=2,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=1,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1),
+                    event_id=event_id,
                     title="Haupthaus",
                     lodgement_ids={2, 4},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=1,  # type: ignore[arg-type]
+                group_id=vtypes.ID(1),
                 title='Kalte Kammer',
-                regular_capacity=10,
-                camping_mat_capacity=2,
+                regular_capacity=vtypes.NonNegativeInt(10),
+                camping_mat_capacity=vtypes.NonNegativeInt(2),
                 notes='Dafür mit Frischluft.',
-                fields={'contamination': 'none'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'none'}),
+            ),
             3: models.Lodgement(
-                id=3,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(3),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=3,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(3),
+                    event_id=event_id,
                     title="Sonstige",
                     lodgement_ids={3},
                     regular_capacity=0,
                     camping_mat_capacity=100,
                 ),
-                group_id=3,  # type: ignore[arg-type]
+                group_id=vtypes.ID(3),
                 title='Kellerverlies',
-                regular_capacity=0,
-                camping_mat_capacity=100,
+                regular_capacity=vtypes.NonNegativeInt(0),
+                camping_mat_capacity=vtypes.NonNegativeInt(100),
                 notes='Nur für Notfälle.',
-                fields={'contamination': 'low'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'low'}),
+            ),
             4: models.Lodgement(
-                id=4,  # type: ignore[arg-type]
-                event_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(4),
+                event_id=event_id,
                 group=models.LodgementGroup(
-                    id=1,  # type: ignore[arg-type]
-                    event_id=event_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1),
+                    event_id=event_id,
                     title="Haupthaus",
                     lodgement_ids={2, 4},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=1,  # type: ignore[arg-type]
+                group_id=vtypes.ID(1),
                 title='Einzelzelle',
-                regular_capacity=1,
-                camping_mat_capacity=0,
+                regular_capacity=vtypes.NonNegativeInt(1),
+                camping_mat_capacity=vtypes.NonNegativeInt(0),
                 notes=None,
-                fields={'contamination': 'high'}),
+                fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
+            ),
         }
-
         reality = self.event.new_get_lodgements(self.key, lodgement_ids)
 
-        self.assertEqual(
-            expectation,
-            reality,
-        )
+        self.assertEqual(expectation, reality)
 
     @as_users("anton")
     def test_get_lodgement_groups(self) -> None:
         event_id = 1
-        # print(self.event.new_get_lodgement_groups(self.key, event_id))
 
         expectation = {
             1: models.LodgementGroup(
@@ -887,7 +911,7 @@ class TestEventModels(BackendTest):
                 event_id=event_id,  # type: ignore[arg-type]
                 title="Haupthaus",
                 lodgement_ids={2, 4},
-                regular_capacity=11,
+                regular_capacity=vtypes.NonNegativeInt(11),
                 camping_mat_capacity=2,
             ),
             2: models.LodgementGroup(
@@ -908,7 +932,7 @@ class TestEventModels(BackendTest):
             ),
         }
 
-        reality = self.event.new_get_lodgement_groups(self.key, event_id)
+        reality = self.event.get_lodgement_groups(self.key, event_id)
 
         self.assertEqual(
             expectation,

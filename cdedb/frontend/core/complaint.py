@@ -21,6 +21,7 @@ from cdedb.common import (
     make_persona_name,
     merge_dicts,
 )
+from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
@@ -355,17 +356,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     "persona_ids",
                     ValueError(n_("May not add own involvement.")),
                 ))
-            if any(
-                set(persona_ids) & involved
-                for inv_type, involved in rs.ambience['case'].involved.items()
-                if inv_type != involvement_type
-            ):
-                rs.append_validation_error((
-                    "persona_ids",
-                    ValueError(
-                        n_("Some of these users are already involved otherwise.")
-                    ),
-                ))
 
             if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
                 rs.append_validation_error((
@@ -394,9 +384,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     rs, case_id, persona_id, companion_id, is_withdrawn=True
                 )
 
-        ret = self.complaintproxy.add_involved(
-            rs, case_id, involvement_type, persona_ids
-        )
+        # Preventing companions from becoming adverse is hard, so just try-except.
+        try:
+            ret = self.complaintproxy.add_involved(
+                rs, case_id, involvement_type, persona_ids
+            )
+        except AdverseCompanionError:
+            # Cannot treat this as a validation error, because of suppressed exception protection.
+            rs.notify("error", n_("Some companions would become adverse."))
+            return self.redirect(rs, "core/show_case")
         rs.notify_return_code(
             ret, info=n_("Some of these users were already involved.")
         )
@@ -1043,16 +1039,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)
-        monitor_ids = self.complaintproxy.list_monitors(rs)
-        personas = self.coreproxy.get_personas(rs, enforcer_ids | monitor_ids)
-        enforcers = {enforcer_id: personas[enforcer_id] for enforcer_id in enforcer_ids}
-        monitors = {monitor_id: personas[monitor_id] for monitor_id in monitor_ids}
+        enforcers = self.coreproxy.get_personas(rs, enforcer_ids)
         return self.render(
             rs,
             "complaint/list_complaint_helpers",
             {
                 "enforcers": enforcers,
-                "monitors": monitors,
             },
         )
 

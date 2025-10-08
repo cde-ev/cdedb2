@@ -130,7 +130,7 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
-        admin = {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen", "Log"}
+        admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
@@ -146,7 +146,7 @@ class TestEventFrontend(FrontendTest):
             out = set()
         # event helpers
         elif self.user_in('petra'):
-            ins = everyone | {"Alle Veranstaltungen", "Verstöße gegen Beschränkungen"}
+            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"}
             out = {"Log"}
         # auditors
         elif self.user_in('katarina'):
@@ -430,8 +430,6 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
-    # remove event admin rights from farin
-    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
               "farin", "petra", maintain_data=True)
     def test_sidebar_one_event(self) -> None:
@@ -446,8 +444,7 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste", "Anmeldungen",
-            "Log", "Checkin", "Verstöße gegen Beschränkungen",
+            "Teilnehmerliste", "Anmeldungen", "Log", "Checkin", "Ungereimtheiten",
         }
 
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -494,8 +491,8 @@ class TestEventFrontend(FrontendTest):
             ins = (
                     everyone | not_registered | privileged
                     | registered_or_privileged
-            ) - registrations_stats | {"Teilnahmebeiträge"}
-            out = registered | orga | registrations_stats - {"Teilnahmebeiträge"}
+            ) - registrations_stats | {"Teilnahmebeiträge", "Log"}
+            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -838,7 +835,7 @@ class TestEventFrontend(FrontendTest):
                 'change_note': f['title'].value,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': f['title'].value,
             },
         ])
@@ -935,7 +932,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.extend([
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': log_expectation[0]['change_note'],
             },
             {
@@ -963,10 +960,6 @@ class TestEventFrontend(FrontendTest):
         )
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        # prevent warnings about too long shortname for this test
-        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
@@ -1281,9 +1274,9 @@ etc;anything else""", f['entries_2'].value)
         f['field_id'] = 1001
         self.submit(f)
         f = self.response.forms['fieldform']
-        f['input1'] = "Example Text"
-        f['input2'] = ""
-        f['input3'] = "Other Text"
+        f['fields.CapitalLetters1'] = "Example Text"
+        f['fields.CapitalLetters2'] = ""
+        f['fields.CapitalLetters3'] = "Other Text"
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Anton")
@@ -1371,7 +1364,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Universale Akademie", div="part1001")
         self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
         self.assertPresence('07.06.2345', div='part1001_end', exact=True)
-        self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
+        self.assertDivNotExists("#trackrow1001_1001")
 
         # Check log
         log_expectation: list[CdEDBObject] = [
@@ -1401,12 +1394,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Universale Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
         ]
@@ -1444,7 +1437,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Konfiguration", "Veranstaltungsteile")
         self.assertPresence("Alternative Akademie", div="part1002")
         self.assertPresence("Alternative Akademie", div="trackrow1002_1001")
-        self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
+        self.assertDivNotExists("#trackrow1002_1002")
 
         # Check event log
         log_expectation.extend([
@@ -1479,12 +1472,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Alternative Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
@@ -1556,69 +1549,92 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'},
-                      {'href': '/event/event/1/course/2/change'},
-                      {'href': '/event/event/1/course/2/show'},
-                      {'href': '/event/event/1/course/1/show'},
-                      {'href': '/event/event/1/course/1/change'})
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie", "Kursliste",
+            {'href': '/event/event/1/course/2/change'}, "Abbrechen", "Vorherige",
+            "Bearbeiten",
+        )
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual(None, f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.assertEqual("1", f.get('active_segments', index=0).value)
-        self.assertEqual(None, f.get('active_segments', index=1).value)
-        self.assertEqual("3", f.get('active_segments', index=2).value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("2", f['min_size'].value)
+        self.assertEqual(True, f['segment1'].checked)
+        self.assertEqual(False, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(True, f['segment1.is_active'].checked)
+        self.assertEqual(False, f['segment2.is_active'].checked)
+        self.assertEqual(True, f['segment3.is_active'].checked)
         self.assertEqual("Wald", f['fields.room'].value)
         self.assertEqual(True, f['is_visible'].checked)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
-        f['segments'] = ['2', '3']
-        f['active_segments'] = ['2']
+        f['segment1'] = False
+        f['segment2'] = True
+        f['segment2.is_active'] = True
+        f['segment3.is_active'] = False
         f['fields.room'] = "Canyon"
         f['is_visible'] = False
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
-        self.traverse({'href': '/event/event/1/course/1/change'})
+        self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
         self.assertEqual(f['nr'].value, "ω")
-        self.assertEqual(None, f.get('segments', index=0).value)
-        self.assertEqual("2", f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.assertEqual(None, f.get('active_segments', index=0).value)
-        self.assertEqual("2", f.get('active_segments', index=1).value)
-        self.assertEqual(None, f.get('active_segments', index=2).value)
         self.assertEqual("21", f['max_size'].value)
+        self.assertEqual(False, f['segment1'].checked)
+        self.assertEqual(True, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(False, f['segment1.is_active'].checked)
+        self.assertEqual(True, f['segment2.is_active'].checked)
+        self.assertEqual(False, f['segment3.is_active'].checked)
         self.assertEqual("Canyon", f['fields.room'].value)
         self.assertEqual(False, f['is_visible'].checked)
+
+        log_expecation = [
+            {
+                "code": const.EventLogCodes.course_changed,
+                "change_note": "Planetenretten für Anfänger",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deleted,
+                "change_note": "Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": "Planetenretten für Anfänger (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": "Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": "Planetenretten für Anfänger (Kaffeekränzchen (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_deactivated,
+                "change_note": "Planetenretten für Anfänger (Arbeitssitzung (Zweite Hälfte))",
+            },
+        ]
+        self.assertLogEqual(log_expecation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @event_keeper
     @as_users("annika", "garcia")
     def test_create_delete_course(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
+        self.traverse("Veranstaltungen", "Große Testakademie", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("Planetenretten für Anfänger")
         self.assertNonPresence("Abstract Nonsense")
-        self.traverse({'href': '/event/event/1/course/stats'},
-                      {'href': '/event/event/1/course/create'})
+        self.traverse("Kurse", "Kurs hinzufügen")
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual("2", f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        f['title'] = "Abstract Nonsense"
+        f['title'] = title = "Abstract Nonsense"
         f['nr'] = "ω"
         f['shortname'] = "math"
         f['instructors'] = "Alexander Grothendieck"
         f['notes'] = "transcendental appearence"
-        f['segments'] = ['1', '3']
+        f['segment2'] = False
+        f['segment3.is_active'] = False
         self.submit(f)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertNonPresence("Kursfelder gesetzt.", div="notifications")
@@ -1627,15 +1643,42 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("math bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['configurecourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual(None, f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
-        self.traverse({'href': '/event/event/1/course/1001/show'})
+        self.assertEqual(True, f['segment1'].checked)
+        self.assertEqual(False, f['segment2'].checked)
+        self.assertEqual(True, f['segment3'].checked)
+        self.assertEqual(True, f['segment1.is_active'].checked)
+        self.assertEqual(False, f['segment2.is_active'].checked)
+        self.assertEqual(False, f['segment3.is_active'].checked)
+        self.traverse("Abbrechen")
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
         self.assertNonPresence("Abstract Nonsense")
+
+        log_expecation = [
+            {
+                "code": const.EventLogCodes.course_created,
+                "change_note": title,
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": f"{title} (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_activated,
+                "change_note": f"{title} (Morgenkreis (Erste Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_segment_created,
+                "change_note": f"{title} (Arbeitssitzung (Zweite Hälfte))",
+            },
+            {
+                "code": const.EventLogCodes.course_deleted,
+                "change_note": title,
+            },
+        ]
+        self.assertLogEqual(log_expecation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika", "garcia")
     def test_create_course_with_fields(self) -> None:
@@ -2297,7 +2340,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
@@ -2312,22 +2355,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child3",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
 
@@ -2363,15 +2406,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
-        self.assertHasClass("eventfee-title-1", "alert-success")
-        self.assertHasClass("eventfee-title-2", "alert-success")
-        self.assertHasClass("eventfee-title-3", "alert-success")
-        self.assertHasClass("eventfee-title-4", "alert-danger")
-        self.assertHasClass("eventfee-title-5", "alert-danger")
-        self.assertHasClass("eventfee-title-6", "alert-danger")
-        self.assertHasClass("eventfee-title-7", "alert-danger")
-        self.assertHasClass("eventfee-title-8", "alert-success")
-        self.assertHasClass("eventfee-title-9", "alert-success")
+        self.assertHasClass("#eventfee-title-1", "alert-success")
+        self.assertHasClass("#eventfee-title-2", "alert-success")
+        self.assertHasClass("#eventfee-title-3", "alert-success")
+        self.assertHasClass("#eventfee-title-4", "alert-danger")
+        self.assertHasClass("#eventfee-title-5", "alert-danger")
+        self.assertHasClass("#eventfee-title-6", "alert-danger")
+        self.assertHasClass("#eventfee-title-7", "alert-danger")
+        self.assertHasClass("#eventfee-title-8", "alert-success")
+        self.assertHasClass("#eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
 
@@ -3908,8 +3951,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld transportation setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("pedes", f['input2'].value)
-        f['input2'] = "etc"
+        self.assertEqual("pedes", f['fields.transportation2'].value)
+        f['fields.transportation2'] = "etc"
         f['change_note'] = "We need to fill missing entries…"
         self.submit(f)
         self.traverse({'href': '/event/event/1/field/setselect'})
@@ -3919,9 +3962,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld transportation setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("etc", f['input2'].value)
+        self.assertEqual("etc", f['fields.transportation2'].value)
         # Value of Inga should not have changed
-        self.assertEqual("etc", f['input4'].value)
+        self.assertEqual("etc", f['fields.transportation4'].value)
 
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})
@@ -3931,8 +3974,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("", f['input4'].value)
-        f['input4'] = "Test\nmit\n\nLeerzeilen"
+        self.assertEqual("", f['fields.lodge4'].value)
+        f['fields.lodge4'] = "Test\nmit\n\nLeerzeilen"
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})
@@ -3942,7 +3985,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("Test\nmit\n\nLeerzeilen", f['input4'].value)
+        self.assertEqual("Test\nmit\n\nLeerzeilen", f['fields.lodge4'].value)
 
         # now, we perform some basic checks for course-associated fields
         self.traverse({'href': '/event/event/1/course/stats'},
@@ -3956,8 +3999,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld room setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("Nirwana", f['input5'].value)
-        f['input5'] = "Ganz wo anders!"
+        self.assertEqual("Nirwana", f['fields.room5'].value)
+        f['fields.room5'] = "Ganz wo anders!"
         self.submit(f)
         self.assertNonPresence("Nirwana")
         self.assertPresence("Ganz wo anders!")
@@ -3974,8 +4017,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Datenfeld contamination setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
-        self.assertEqual("high", f['input1'].value)
-        f['input1'] = "medium"
+        self.assertEqual("high", f['fields.contamination1'].value)
+        f['fields.contamination1'] = "medium"
         self.submit(f)
         self.assertPresence("elevated level of radiation ")
 
@@ -4416,13 +4459,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("garcia")
     def test_course_assignment_violations(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                      "Verstöße gegen Beschränkungen")
+                      "Ungereimtheiten")
         self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
         self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
         self.traverse("Kabarett")
         self.assertPresence(r"Findet nicht statt aber hat \d+ Teilnehmende.",
                             regex=True, div="track-violations-2")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Fehlende Kurseinteilungen")
         self.assertPresence("Anton", div='NoCourseAssignedCV-list')
         self.traverse("Anton")
@@ -4444,7 +4487,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['assign_action'] = 0
         self.submit(f)
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Fehlerhafte Kurseinteilungen")
         self.assertPresence("Garcia Generalis ist in Kaffee in einen nicht"
                             " gewählten Kurs (ε. Backup) eingeteilt.",
@@ -4459,11 +4502,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Change "Backup" to "never offered" in "Kaffeekränzchen".
         self.traverse("Kurse", "Backup", "Bearbeiten")
         f = self.response.forms['configurecourseform']
-        f['segments'] = f['active_segments'] = [1, 3]
+        f['segment2'] = False
         self.submit(f)
         self.assertPresence("Wird in Kaffee nicht angeboten aber hat",
                             div="constraint-violations-list")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
 
         # Reduce max size of "Heldentum".
         self.traverse("Kurse", "Heldentum", "Bearbeiten")
@@ -4471,13 +4514,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['max_size'] = 1
         self.submit(f)
         self.assertPresence("Zu viele Teilnehmende (3 > 1).")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Heldentum hat zu viele Teilnehmende (3 > 1) in Sitzung.",
                             div="IncorrectNumAttendeesCV-list")
         f['max_size'] = 3
         self.submit(f)
         self.traverse("Kurse")
-        self.assertHasClass("course-1-track-3", "course-exactly-full")
+        self.assertHasClass("#course-1-track-3", "course-exactly-full")
 
         # Remove all non instructors from "Heldentum" in "Sitzung".
         self.get('/event/event/1/registration/2/change')
@@ -4489,7 +4532,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['delete_3_5'] = f['delete_3_4'] = f['delete_3_1'] = True
         self.submit(f)
         self.assertPresence("1 Kursleitende aber keine Teilnehmenden.")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Heldentum hat 1 Kursleitende aber keine Teilnehmenden"
                             " in Sitzung.", div="LonelyAttendeesCV-list")
 
@@ -4679,6 +4722,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'zip': b"PK\x03\x04",
         }
 
+        def assertLatex(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertIn(phrase, self.response.text)
+
+        def assertLatexNotIn(*phrases: str) -> None:
+            self.assertEqual("text/x-tex", self.response.content_type)
+            self.assertIn("documentclass", self.response.text)
+            for phrase in phrases:
+                self.assertNotIn(phrase, self.response.text)
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -4713,16 +4768,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertLess(1000, len(self.response.body))
         # course puzzle
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Planetenretten für Anfänger')
+        assertLatex('Planetenretten für Anfänger')
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
         self.assertLess(1000, len(self.response.body))
         # lodgement puzzle
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.assertPresence('Kalte Kammer')
+        assertLatex('Kalte Kammer')
         self.response = save.click(
             href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4732,10 +4785,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # public list
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertNonPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia')  # we don't want nicknames here
+        assertLatexNotIn('Garcia')
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -4744,10 +4795,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
             index=0)
-        self.assertPresence('documentclass')
-        self.assertPresence('Heldentum')
-        self.assertPresence('Emilia')  # we don't want nicknames here
-        self.assertPresence('Garcia')
+        assertLatex('Heldentum', 'Emilia', 'Garcia')  # we don't want nicknames here
 
         # export
         # partial event export
@@ -4768,7 +4816,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
-        self.assertPresence('|cde')
+        self.assertIn('|cde', self.response.text)
         # dokuteam participant list
         self.response = save.click(href='event/event/1/download/dokuteam_participant')
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
@@ -4877,7 +4925,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             if link.endswith('lists'):  # downloads with multiple docs are zipped
                 self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
             else:
-                self.assertPresence('documentclass')
+                self.assertEqual("text/x-tex", self.response.content_type)
+                self.assertIn("documentclass", self.response.text)
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:
@@ -5705,12 +5754,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -5886,12 +5931,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -6125,10 +6166,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # set all choices in all tracks to 0
         self.get("/event/event/1/part/2/change")
         f = self.response.forms['changepartform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
-        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0
@@ -6532,14 +6569,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("emilia")
     def test_constraint_violations(self) -> None:
         self.traverse("TripelAkademie")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Es gibt 1 Verstöße gegen Teilnahmeausschließlichkeit",
                             div="constraint-violations")
         self.assertPresence("Es gibt 5 Verstöße gegen Kursausschließlichkeit",
                             div="constraint-violations")
-        self.traverse("Kurse", "Verstöße gegen Beschränkungen")
-        self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
+        self.traverse("Kurse", "Ungereimtheiten")
+        self.assertTitle("TripelAkademie – Ungereimtheiten")
         self.assertPresence("Teilnahmeausschließlichkeit")
         self.assertPresence("Emilia (Emmy) Eventis ist an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
@@ -6554,8 +6590,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Change Emilia's registration.
         self.traverse({"href": "/event/event/4/registration/10/show"})
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Ist an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
@@ -6576,15 +6611,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['part9.status'] = f['part11.status'] = const.RegistrationPartStati.participant
         self.submit(f)
 
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Ist an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen anwesend (K1, W1).",
                             div="constraint-violations-list")
         self.assertPresence("Nimmt an sich gegenseitig ausschließenden"
                             " Veranstaltungsteilen teil (K2, O2).",
                             div="constraint-violations-list")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertPresence("Emilia (Emmy) Eventis nimmt an sich gegenseitig"
                             " ausschließenden Veranstaltungsteilen teil (K2, O2).",
                             div="MutuallyExclusiveParticipationCV-list")
@@ -6593,13 +6627,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertNonPresence("sich gegenseitig ausschließenden")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertNonPresence("Teilnahmebeschränkungen")
 
         # Change the Akrobatik course's active segments.
         self.traverse("4. Akrobatik")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence("Findet in sich gegenseitig ausschließenden"
                             " Kursschienen statt (KK1, OK1).",
                             div="constraint-violations-list")
@@ -6607,73 +6640,54 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.traverse("Bearbeiten")
         f = self.response.forms['configurecourseform']
-        # Disabled checkboxes have a `value` of None, but have their `_value` set.
-        self.assertEqual(
-            f.get('active_segments', index=0).value, "8")
-        self.assertEqual(
-            f.get('active_segments', index=0).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=1)._value, "13")
-        self.assertEqual(
-            f.get('active_segments', index=1)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=2)._value, "14")
-        self.assertEqual(
-            f.get('active_segments', index=2)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=3).value, "6")
-        self.assertEqual(
-            f.get('active_segments', index=3).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=4)._value, "9")
-        self.assertEqual(
-            f.get('active_segments', index=4)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=5)._value, "10")
-        self.assertEqual(
-            f.get('active_segments', index=5)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=6)._value, "7")
-        self.assertEqual(
-            f.get('active_segments', index=6)._checked, False)
-        self.assertEqual(
-            f.get('active_segments', index=7).value, "11")
-        self.assertEqual(
-            f.get('active_segments', index=7).checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=8)._value, "12")
-        self.assertEqual(
-            f.get('active_segments', index=8)._checked, True)
-        self.assertEqual(
-            f.get('active_segments', index=9)._value, "15")
-        self.assertEqual(
-            f.get('active_segments', index=9)._checked, False)
+        self.assertEqual(f["segment6"].checked, True)
+        self.assertEqual(f["segment6.is_active"].checked, True)
+        self.assertEqual(f["segment7"].checked, False)
+        self.assertEqual(f["segment7.is_active"].checked, False)
+        self.assertEqual(f["segment8"].checked, True)
+        self.assertEqual(f["segment8.is_active"].checked, True)
+        self.assertEqual(f["segment9"].checked, False)
+        self.assertEqual(f["segment9.is_active"].checked, False)
+        self.assertEqual(f["segment10"].checked, False)
+        self.assertEqual(f["segment10.is_active"].checked, False)
+        self.assertEqual(f["segment11"].checked, True)
+        self.assertEqual(f["segment11.is_active"].checked, True)
+        self.assertEqual(f["segment12"].checked, True)
+        self.assertEqual(f["segment12.is_active"].checked, True)
+        self.assertEqual(f["segment13"].checked, False)
+        self.assertEqual(f["segment13.is_active"].checked, False)
+        self.assertEqual(f["segment14"].checked, False)
+        self.assertEqual(f["segment14.is_active"].checked, False)
+        self.assertEqual(f["segment15"].checked, False)
+        self.assertEqual(f["segment15.is_active"].checked, False)
 
-        f['active_segments'] = [6, 11, 12]
+        f['segment8.is_active'] = False
         self.submit(f)
-        self.assertNonPresence("Verstöße gegen Beschränkungen",
+        self.assertNonPresence("Ungereimtheiten",
                                div="constraint-violations", check_div=False)
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
-        course_ids = self.event.list_courses(self.key, 4)
+        event = self.event.get_event(self.key, 4)
+        course_ids = self.event.list_courses(self.key, event.id)
         for course_id, title in course_ids.items():
             if title == "Akrobatik für Anfangende":
                 continue
             data = {
-                'id': course_id,
-                'active_segments': [],
+                'segments': {
+                    track_id: None
+                    for track_id in event.tracks
+                }
             }
-            self.event.set_course(self.key, data)
+            self.event.set_course(self.key, course_id, data)
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.assertNonPresence("Kursausschließlichkeit")
 
     @as_users("anton")
     def test_financial_violations(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
-        self.assertPresence("Verstöße gegen Beschränkungen",
-                            div="constraint-violations")
+        self.assertPresence("Ungereimtheiten", div="constraint-violations")
         self.assertPresence(
             "Es gibt 1 Anmeldungen mit negativem übrigen zu zahlenden Beitrag",
             div="constraint-violations")
@@ -6684,7 +6698,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Es gibt 1 Anmeldungen mit übrigem zu zahlenden Beitrag",
             div="constraint-violations")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         f = self.response.forms['filterconstraintsform']
         f['violation_kind'] = models_cv.ViolationKind.financial
         self.submit(f, check_notification=False)
@@ -6714,7 +6728,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 3")
         execsql("UPDATE event.registrations SET amount_owed = 0 WHERE id = 5")
 
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         texts = [
             "Anton Administrator hat einen negativen Betrag bezahlt (-5,00 €).",
             "Anton Administrator muss insgesamt einen negativen Betrag bezahlen (-5,00 €).",
@@ -6752,10 +6766,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Anton Administrator")
         self.assertPresence("Hat einen negativen Betrag bezahlt (-5,00 €).")
         self.assertPresence("Muss insgesamt einen negativen Betrag bezahlen (-5,00 €).")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.traverse("Emilia")
         self.assertPresence("Hat bezahlt, aber kein Bezahlungsdatum.")
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         # Garcia is orga.
         f = self.response.forms['quickregistrationform']
         f['phrase'] = "Garcia"
@@ -6765,7 +6779,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Ist involviert, muss aber keinen Beitrag bezahlen.",
             div="constraint-violations", check_div=False,
         )
-        self.traverse("Verstöße gegen Beschränkungen")
+        self.traverse("Ungereimtheiten")
         self.traverse("Akira")
         self.assertPresence("Ist involviert, muss aber keinen Beitrag bezahlen.")
         self.traverse("Übersicht")
@@ -6778,37 +6792,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             texts: list[str], check_complete: bool = True, only_severity: bool = True,
     ) -> None:
 
-        def test_not_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertNotIn("softhide", node.classes)
+                self._assertNodeHasClass(node, "softhide")
 
-        def test_hidden(
-                nodes: list["lxml.etree._HTMLElement"],
-        ) -> None:
+        def assertNodesNotHidden(nodes: list["lxml.html.Element"]) -> None:
             for node in nodes:
-                self.assertIn("softhide", node.classes)
+                self._assertNodeNotHasClass(node, "softhide")
 
-        id_ = f"event_{event_id}"
-        parents = self.response.lxml.cssselect(f"#{id_}")
+        parents = self._get_nodes(f"#event_{event_id}", check_exists=False)
         if not parents:
             self.fail(f"Did not find event {event_id}.")
-        test_not_hidden(parents)
+        assertNodesNotHidden(parents)
         if texts:
-            select = lambda node, severity: node.cssselect(
+            selector = lambda severity: (
                 f"[data-severity='{severity.value}']"
-                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else ""),
+                + (f"[data-violation_kind='{filtered_kind.value}']" if filtered_kind else "")
             )
-            nodes = select(parents[0], filtered_severity)
+            nodes = self._get_nodes(
+                selector(filtered_severity), root_node=parents[0], check_exists=False
+            )
             if not only_severity:
                 for severity in models_cv.ViolationSeverity:
                     if severity > filtered_severity:
-                        nodes.extend(select(parents[0], severity))
+                        nodes.extend(
+                            self._get_nodes(
+                                selector(severity),
+                                root_node=parents[0],
+                                check_exists=False,
+                            )
+                        )
             if not nodes:
-                self.fail(f"Did not find violations for severity {filtered_severity.name}"
-                          f" for event {event_id}.")
-            test_not_hidden(nodes)
+                self.fail(
+                    f"Did not find violations for severity {filtered_severity.name} for event {event_id}."
+                )
+            assertNodesNotHidden(nodes)
             node_texts = [re.sub(r"\s+", " ", node.text_content().strip()) for node in nodes]
             for text in texts:
                 if not any(text in node_text for node_text in node_texts):
@@ -6824,27 +6842,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     f" I found these texts:\n" + "\n".join(node_texts),
                 )
         if not texts:
-            nodes = parents[0].xpath(".//*[starts-with(@class, 'violations ')]")
-            test_hidden(nodes)
+            nodes = self._get_nodes(
+                ".violations", root_node=parents[0], check_exists=False
+            )
+            assertNodesHidden(nodes)
 
     @event_keeper
     @as_users("annika", "petra")
     def test_constraint_violations_summary(self) -> None:
-        self.traverse("Veranstaltungen", "Verstöße gegen Beschränkungen")
-        self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+        self.traverse("Veranstaltungen", "Ungereimtheiten")
+        self.assertTitle("Übersicht über Ungereimtheiten")
 
         all_event_ids = set(self.event.list_events(self.key))
 
         def test_events_shown(*event_ids: int) -> None:
-            self.assertTitle("Übersicht über Verstöße gegen Beschränkungen")
+            self.assertTitle("Übersicht über Ungereimtheiten")
             for event_id in event_ids:
-                self.assertHasNotClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertNotHidden(f"#event_{event_id}")
             for event_id in all_event_ids - set(event_ids):
-                self.assertHasClass(
-                    div=f"event_{event_id}", html_class="softhide",
-                )
+                self.assertHidden(f"#event_{event_id}")
 
         test_events_shown(1, 2, 3, 4)
 
@@ -7074,15 +7090,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['title'] = f['shortname'] = "abc"
         f['track_ids'] = []
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'track_ids', "Darf nicht leer sein.", index=0)
+        self.assertValidationError('track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [1, 2]
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            'track_ids', "Inkompatible Kursschienen", index=0)
-        self.assertValidationError(
-            'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
-                         " inkompatible Kurswahlen existieren.", index=0)
+        course_choices_error_mgs = (
+            "Alle Kursschienen einer Kurswahlsynchronisierung müssen die gleiche"
+            " Kurswahl-Anzahl haben.")
+        self.assertValidationError('track_ids', course_choices_error_mgs, index=0)
 
         # Now a valid one. (TripelAkademie)
         self.get('/event/event/4/part/summary')
@@ -7097,8 +7111,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertValidationError('track_ids', "Darf nicht leer sein.", index=0)
         f['track_ids'] = [6, 15]
         self.submit(f, check_notification=False)
-        self.assertPresence("Maximal eine Kurswahlsynchronisierung pro Kursschiene.")
-        self.assertPresence("Inkompatible Kursschienen.")
+        self.assertValidationError(
+            'track_ids', "Maximal eine Kurswahlsynchronisierung pro Kursschiene.", index=0)
+        self.assertValidationError('track_ids', course_choices_error_mgs, index=0)
         f['track_ids'] = [15]
         self.submit(f)
 
@@ -7448,7 +7463,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                           'is_participant_list_visible': True,
                           'is_course_assignment_visible': True})
         course_id = 9
-        self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
+        course = self.event.get_course(self.key, course_id)
+        self.event.set_course(
+            self.key,
+            course_id,
+            {
+                'segments': {
+                    track_id: {"is_active": False}
+                    for track_id in course.segments
+                },
+            },
+        )
 
         self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung", "Ändern")
         f = self.response.forms['amendregistrationform']
@@ -7844,7 +7869,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         log_expectation = [
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
             {
@@ -7853,7 +7878,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': self.user['id'],
             },
             {
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'change_note': "Teilnahmebeitrag Warmup",
             },
             {
@@ -7877,7 +7902,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': 100,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
         ]

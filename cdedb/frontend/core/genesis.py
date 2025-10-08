@@ -29,6 +29,11 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
+from cdedb.models.past_event import (
+    past_course_by_past_event_selectize_options,
+    past_course_entries,
+    past_event_entries,
+)
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
@@ -66,6 +71,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This initiates the genesis process.
         """
+        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
+        if rs.has_validation_errors():
+            return self.genesis_request_form(rs)
+        assert realm is not None
+
         if attachment or attachment_hash:
             # We need to extract the hash before, and save it to rs.values after the
             #  call to extract_and_check, so we stash them in between.
@@ -74,10 +84,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                     attachment_hash, attachment_filename)
 
-        realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
-        if rs.has_validation_errors():
-            return self.genesis_request_form(rs)
-        assert realm is not None
         case_model = models.GenesisCase.get_model_by_realm(realm)
         mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
         data = extract_and_check_dataclass(
@@ -287,6 +293,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+
         persona = reviewer = pevent = pcourse = None
         if case.persona_id:
             persona = self.coreproxy.get_persona(rs, case.persona_id)
@@ -298,6 +305,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 pevent = self.pasteventproxy.get_past_event(rs, case.pevent_id)
             if case.pcourse_id:
                 pcourse = self.pasteventproxy.get_past_course(rs, case.pcourse_id)
+
         persona_data = case.persona.as_dict()
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
@@ -313,10 +321,16 @@ class CoreGenesisMixin(CoreBaseFrontend):
             for persona_id, not_relative_admin in non_editable_doppelgangers.items()
             if not_relative_admin
         }
+        # the user needs to promote them manually before updating them via genesis
+        doppelgangers_with_missing_realms = {
+            persona_id for persona_id in doppelgangers.keys()
+            if not self.coreproxy.verify_persona(rs, persona_id, [case.realm])
+        }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
             'persona': persona, 'doppelgangers': doppelgangers,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
+            'doppelgangers_with_missing_realms': doppelgangers_with_missing_realms,
         })
 
     @access("core_admin", *models.GenesisCase.all_admins)
@@ -332,27 +346,39 @@ class CoreGenesisMixin(CoreBaseFrontend):
         merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
 
-        courses: dict[int, str] = {}
+        pcourses = {}
         if case.pevent_id:
-            courses = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
-        choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
-                   "pcourse_id": courses}
+            pcourse_ids = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
+            pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
 
-        return self.render(rs, "genesis/genesis_modify_form", {
-            'choices': choices}, mandatory_fields)
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        params = {
+            "pevents": pevents,
+            "pevent_entries": past_event_entries(pevents),
+            "pcourses": pcourses,
+            "pcourse_entries": past_course_entries(pcourses),
+            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
+        }
+
+        return self.render(
+            rs, "genesis/genesis_modify_form", params, mandatory_fields
+        )
 
     @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
-        case_model = models.GenesisCase.get_model_by_realm(
-            rs.ambience['genesis_case'].realm)
+        case = rs.ambience['genesis_case']
+        case_model = models.GenesisCase.get_model_by_realm(case.realm)
         data = extract_and_check_dataclass(rs, case_model, creation=False,
                                            additional_data={"id": genesis_case_id})
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
 
-        if data['username'] != rs.ambience['genesis_case'].persona.username:
+        if data['username'] != case.persona.username:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
@@ -365,7 +391,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 
-        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs) and case.relative_admin not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.status != const.GenesisStati.to_review:
@@ -415,26 +440,26 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # Do privilege and sanity checks.
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if decision.is_create():
-            if self.coreproxy.verify_existence(
-                    rs, case.persona.username, include_genesis=False):
-                rs.notify("error", n_("Email address already taken."))
-                return self.redirect(rs, "core/genesis_show_case")
-            if persona_id:
-                rs.notify("error", n_("Persona selected, but genesis case approved."))
-                return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update():
-            if not persona_id:
-                rs.notify("error", n_("No persona selected."))
-                return self.redirect(rs, "core/genesis_show_case")
-            elif not self.coreproxy.verify_persona(
-                    rs, persona_id, (case.realm,)):
-                rs.notify("error", n_("Invalid persona for update."
-                                      " Add additional realm first: %(realm)s."),
-                          {'realm': case.realm})
-                return self.redirect(rs, "core/genesis_show_case")
         if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
+            return self.redirect(rs, "core/genesis_show_case")
+        # simplify the UI by displaying only one button
+        if persona_id and decision == GenesisDecision.approve:
+            decision = GenesisDecision.update
+        if decision.is_create() and self.coreproxy.verify_existence(
+                rs, case.persona.username, include_genesis=False):
+            rs.notify("error", n_("Email address already taken."))
+            return self.redirect(rs, "core/genesis_show_case")
+        if decision.is_update() and not self.coreproxy.verify_persona(
+                rs, persona_id, (case.realm,)):  # type: ignore[arg-type]
+            rs.notify("error", n_(
+                "Invalid persona for update. Add additional realm first: %(realm)s."),
+                {'realm': case.realm}
+            )
+            return self.redirect(rs, "core/genesis_show_case")
+        if case.realm == "cde" and case.pevent_id is None:
+            rs.notify("error", n_(
+                "You need to specify a past event for CdE genesis requests."))
             return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.

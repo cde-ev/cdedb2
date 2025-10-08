@@ -6,7 +6,7 @@ import json
 import os
 import pathlib
 import types
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import jinja2
 import psycopg2.extensions
@@ -30,7 +30,6 @@ from cdedb.common import (
     User,
     make_proxy,
     now,
-    setup_logger,
 )
 from cdedb.common.exceptions import (
     APITokenError,
@@ -63,12 +62,6 @@ from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken
 
-if TYPE_CHECKING:
-    # TODO replace once we raise requirements to Python 3.11
-    # where this is exposed as wsgiref.WSGIApplication.
-    # This is a pseudo-module supported by major type checkers.
-    from _typeshed.wsgi import WSGIApplication
-
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
@@ -89,16 +82,6 @@ class Application(BaseApp):
         self.event = EventFrontend()
         self.assembly = AssemblyFrontend()
         self.ml = MlFrontend()
-        logger_path = self.conf["LOG_DIR"] / "cdedb.log"
-        setup_logger("cdedb", logger_path, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-
-        # Set up a logger for all Worker instances.
-        setup_logger(
-            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
@@ -205,7 +188,7 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status)
 
     @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
-    def __call__(self, request: werkzeug.wrappers.Request) -> "WSGIApplication":
+    def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.wrappers.Response:  # type: ignore[misc]
         # note time for performance measurement
         begin = now()
         user = User()
@@ -319,8 +302,6 @@ class Application(BaseApp):
                 realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
                 if user.persona_id in self.complaintproxy.list_enforcers(rs):
                     realm_roles['complaint'].add('enforcer')
-                if user.persona_id in self.complaintproxy.list_monitors(rs):
-                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')

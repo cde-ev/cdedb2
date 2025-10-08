@@ -97,6 +97,7 @@ from cdedb.common import (
     CdEDBLog,
     CdEDBMultiDict,
     CdEDBObject,
+    CdEDBOptionalMap,
     CustomJSONEncoder,
     Error,
     Notification,
@@ -116,7 +117,6 @@ from cdedb.common import (
     make_proxy,
     merge_dicts,
     now,
-    setup_logger,
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
@@ -209,14 +209,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
             logger_name = f"cdedb.frontend.{self.realm}"
-            logger_file = self.conf["LOG_DIR"] / f"cdedb-frontend-{self.realm}.log"
         else:
             logger_name = "cdedb.frontend"
-            logger_file = self.conf["LOG_DIR"] / "cdedb-frontend.log"
-        setup_logger(
-            logger_name, logger_file, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.debug(
             f"Instantiated {self} with configpath {self.conf._configpath}.")
@@ -1613,12 +1607,7 @@ class CdEMailmanClient(mailmanclient.Client):
         self.template_password = mailman_basic_auth_password
 
         # Initialize logger. This needs the base class initialization to be done.
-        logger_name = "cdedb.frontend.mailmanclient"
-        setup_logger(
-            logger_name, self.conf["LOG_DIR"] / "cdedb-frontend-mailman.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-        self.logger = logging.getLogger(logger_name)
+        self.logger = logging.getLogger("cdedb.frontend.mailmanclient")
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[
@@ -1819,7 +1808,7 @@ class AmbienceDict(typing.TypedDict):
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
-    lodgement: NotRequired[CdEDBObject]
+    lodgement: NotRequired[models_event.Lodgement]
     part_group: NotRequired[models_event.PartGroup]
     track_group: NotRequired[models_event.TrackGroup]
     fee: NotRequired[models_event.EventFee]
@@ -1879,12 +1868,12 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
               ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
+        Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],  # type: ignore[has-type]
               'group_id', 'group',
-              ((lambda a: do_assert(a['group']['event_id'] == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
+              ((lambda a: do_assert(a['group'].event_id == a['event'].id)),)),
+        Scout(lambda anid: obj.eventproxy.new_get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['lodgement'].event_id == a['event'].id)),)),
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event'].fields)),)),
@@ -2217,7 +2206,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    type_ = hints[name]
+                    type_ = cast(type[Any], hints[name])
                     if optional := is_optional_type(type_):
                         type_ = typing.get_args(type_)[0]
 
@@ -2486,6 +2475,7 @@ def check_validation(
     name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
 
+
 @overload
 def check_validation(
     rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
@@ -2522,6 +2512,7 @@ def check_validation_optional(
     rs: RequestState, type_: type[CdEDataclass], value: Any,
     name: Optional[str] = None, **kwargs: Any
 ) -> Optional[CdEDBObject]: ...
+
 
 @overload
 def check_validation_optional(
@@ -2717,17 +2708,45 @@ def drow_last_index(prefix: str = "") -> str:
 C = TypeVar('C', bound=CdEDBObject)
 
 
-# TODO maybe retrieve the spec from the type_?
+@overload
+def process_dynamic_input(
+    rs: RequestState,
+    type_: type[DC],
+    existing: Collection[int],
+    spec: Mapping[str, Literal["str", "[str]"]],
+    *,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: Mapping[str, Literal["str", "[str]"]] | None = None,
+    prefix: str = "",
+) -> CdEDBOptionalMap: ...
+
+@overload
 def process_dynamic_input(
     rs: RequestState,
     type_: type[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
-    additional: Optional[CdEDBObject] = None,
-    creation_spec: Optional[vtypes.TypeMapping] = None,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: vtypes.TypeMapping | None = None,
     prefix: str = "",
-) -> dict[int, Optional[C]]:
+) -> CdEDBOptionalMap: ...
+
+
+# TODO maybe retrieve the spec from the type_?
+def process_dynamic_input(
+    rs: RequestState,
+    type_: type[C | DC],
+    existing: Collection[int],
+    spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
+    *,
+    additional: CdEDBObject | None = None,
+    additional_validation: CdEDBObject | None = None,
+    creation_spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]] | None = None,
+    prefix: str = "",
+) -> CdEDBOptionalMap:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2753,12 +2772,14 @@ def process_dynamic_input(
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param additional: additional keys added to each output object
+    :param additional_validation: additional keywords passed through to the validation
     :param creation_spec: alternative spec used for new entries. Defaults to spec.
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
-    creation_spec = creation_spec or spec
+    additional_validation = additional_validation or dict()
+    creation_spec: vtypes.TypeMapping = creation_spec or spec  # type: ignore[assignment]
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 
@@ -2768,7 +2789,7 @@ def process_dynamic_input(
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
     existing_data_spec: vtypes.TypeMapping = {
-        drow_name(key, anid, prefix): value
+        drow_name(key, anid, prefix): value  # type: ignore[misc]
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
@@ -2776,8 +2797,8 @@ def process_dynamic_input(
     data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
-    ret: dict[int, Optional[C]] = {
-        anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
+    ret: dict[int, CdEDBObject | None] = {
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2786,13 +2807,16 @@ def process_dynamic_input(
         else:
             entry = ret[anid]
             assert entry is not None
-            if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             models_event.PartGroup, vtypes.EventField}:
+            if type_ not in {
+                vtypes.BallotCandidate, models_event.PartGroup, vtypes.EventField,
+                models_event.CourseTrack, models_event.LodgementGroup,
+            }:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
-                                         field_postfix=f"_{anid}")
+            ret[anid] = check_validation(
+                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{anid}",
+                **additional_validation, id_=anid)
 
     # extract the new entries which shall be created
     marker = 1
@@ -2803,12 +2827,11 @@ def process_dynamic_input(
             params = {drow_name(key, -marker, prefix): value
                       for key, value in creation_spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = type_({
-                key: data[drow_name(key, -marker, prefix)] for key in creation_spec})
+            entry = {key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=field_prefix,
-                field_postfix=f"_{-marker}", creation=True)
+                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{-marker}",
+                creation=True, **additional_validation, id_=-marker)
         else:
             break
         marker += 1

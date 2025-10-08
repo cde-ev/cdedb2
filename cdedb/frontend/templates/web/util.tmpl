@@ -10,7 +10,7 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js', 'cdedb_searchregistration.js', 'cdedb_search_event.js') %}
+        {%- if script in ('cdedb_helper.js', 'cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js', 'cdedb_searchregistration.js', 'cdedb_search_event.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
@@ -291,9 +291,9 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info, link=none) %}
+{% macro output_info(info, link=none, aclass="help-block no-color") %}
     {%- if info %}
-        <p class="help-block no-color">
+        <p class="{{ aclass }}">
             {{ make_icon('info-circle') }} {{ info }}
             {{ link }}
         </p>
@@ -588,7 +588,7 @@
             disabled="disabled" if readonly or actualreadonly,
             form=formid,
             **{ 'aria-label': arialabel }
-        )|xmlattr }} {{ attributes }}/>
+        )|xmlattr }} {{ attributes }} />
         {{ label -}}
     </label>
     {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
@@ -711,7 +711,7 @@
     {% if selectize %}
         {% if not jshint %}{{ raise_for_test("jshint not set for selectize.") }}{% endif %}
         <script nonce="{{ csp_nonce }}">
-            $("#{{ anid }}").selectize();
+            $("#{{ anid }}").cdedbSelectize();
         </script>
     {% endif %}
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
@@ -830,7 +830,7 @@
         small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
-                               readonly=readonly, horizontal=horizontal, small=small) }}
+                               readonly=readonly, horizontal=horizontal, small=small, outerclass="alert alert-warning") }}
     {% endif %}
     <div class="form-group mosp {{ outerclass }}">
         <div{% if horizontal %} class="
