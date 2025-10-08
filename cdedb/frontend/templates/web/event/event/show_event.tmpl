@@ -118,13 +118,13 @@
                 {% trans %}Orgas{% endtrans %}
             </dt>
             <dd>
-                <div id="orgas">
+                <span id="orgas">
                     {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                         {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
                     {% else %}
                         {% trans %}None{% endtrans %}
                     {% endfor %}
-                </div>
+                </span>
                 {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-xs", icon="user-friends") }}
                 {% endif %}
@@ -133,13 +133,13 @@
                 {% trans %}Caretakers{% endtrans %}
             </dt>
             <dd>
-                <div id="caretakers">
+                <span id="caretakers">
                     {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
                         {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
                     {% else %}
                         {% trans %}None{% endtrans %}
                     {% endfor %}
-                </div>
+                </span>
                 {% if is_privileged_for("event/remove_caretaker", consider_admin_view="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-xs", icon="hands-holding-circle") }}
                 {% endif %}
