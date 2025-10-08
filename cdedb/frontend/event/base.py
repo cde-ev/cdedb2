@@ -65,30 +65,33 @@ if TYPE_CHECKING:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
-    """This decorator checks the access with respect to a specific event. The
-    event is specified by id which has either to be a keyword
-    parameter or the first positional parameter after the request state.
+def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
+    """
+    This decorator checks the users privilege regarding the contextual event,
+    taken from rs.ambience['event'].
 
-    The event has to be organized via the DB. Only orgas and privileged
-    users are admitted. Additionally this can check for the event
-    lock, so that no modifications happen to locked events.
+    Can take any number of privileges, any of which is sufficient.
+    Multiple privileges can be combined to instead require the user to have all
+    of these privileges.
+
+    This also blocks the use of write privileges if the event is locked.
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: "EventBaseFrontend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
+            is_priviled = obj.is_privileged(
+                rs, *required_privileges, event_id=rs.ambience['event'].id
+            )
+            if is_priviled is None:
+                raise werkzeug.exceptions.Forbidden(n_("This event is locked."))
+            elif not is_priviled:
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
-            if required_privilege & EventPrivileges.all_write:
-                if obj.is_locked(rs.ambience['event']):
-                    raise werkzeug.exceptions.Forbidden(
-                        n_("This event is locked."))
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
+        new_fun.event_required_privileges = required_privileges  # type: ignore[attr-defined]
 
         return cast(F, new_fun)
 
@@ -177,27 +180,29 @@ class EventBaseFrontend(AbstractUserFrontend):
             return self.is_privileged(rs, required_privilege, event_id=event_id)
 
         def is_privileged_for(
-                endpoint: str,
-                *,
-                event_id: int | None = None,
-                consider_admin_view: bool = True,
+            endpoint: str,
+            *,
+            event_id: int | None = None,
+            consider_admin_view: str | None = "event_orga",
         ) -> bool:
             endpoint = endpoint.removeprefix(f"{self.realm}/")
-            privilege = getattr(
-                getattr(self, endpoint), "event_required_privilege",
+            privileges = getattr(
+                getattr(self, endpoint), "event_required_privileges",
             )
 
             if event_id is None and 'event' in rs.ambience:
                 event_id = rs.ambience['event'].id
 
-            is_privileged = self.is_privileged(rs, privilege, event_id=event_id)
+            is_privileged = bool(
+                self.is_privileged(rs, *privileges, event_id=event_id)
+            )
             if (
                 event_id in rs.user.orga | rs.user.caretaker
-                or 'event_orga' not in rs.user.available_admin_views
-                or not consider_admin_view
+                or consider_admin_view is None
+                or consider_admin_view not in rs.user.available_admin_views
             ):
                 return is_privileged
-            return is_privileged and 'event_orga' in rs.user.admin_views
+            return is_privileged and consider_admin_view in rs.user.admin_views
 
         if 'event' in rs.ambience:
             orga_view = (
@@ -246,9 +251,23 @@ class EventBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_privileged(self, rs: RequestState,
-                      required_privilege: EventPrivileges,
-                      *, event_id: Optional[int] = None) -> bool:
+    def is_privileged(
+        self,
+        rs: RequestState,
+        *required_privileges: EventPrivileges,
+        event_id: Optional[int] = None,
+    ) -> bool | None:
+        """
+        Check the users privilege regarding the contextual event, given via event_id or
+        taken from rs.ambience['event'].
+
+        Can take any number of privileges, any of which is sufficient.
+        Multiple privileges can be combined to instead require the user to have all
+        of these privileges.
+
+        Returns None if the operation is blocked by the event being locked, regardless
+        of sufficient privileges.
+        """
         if not event_id:
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
@@ -257,9 +276,15 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_locked = event.is_locked
         else:
             is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
-        if is_locked and required_privilege & EventPrivileges.all_write:
-            return False
-        return is_privileged_event(rs, required_privilege, event_id)
+        if is_locked and any(
+                required_privilege & EventPrivileges.all_write
+                for required_privilege in required_privileges
+        ):
+            return None
+        return any(
+            is_privileged_event(rs, required_privilege, event_id)
+            for required_privilege in required_privileges
+        )
 
     def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""
