@@ -364,7 +364,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
-            self, rs: RequestState, event_id, orga_ids: vtypes.CdedbIDList
+            self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
     ) -> Response:
         return self._add_orgas_or_caretakers(
             rs, event_id, orga_ids, as_caretaker=False
@@ -374,7 +374,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
-            self, rs: RequestState, event_id, caretaker_ids: vtypes.CdedbIDList
+            self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
     ) -> Response:
         return self._add_orgas_or_caretakers(
             rs, event_id, caretaker_ids, as_caretaker=True

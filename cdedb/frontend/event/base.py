@@ -177,7 +177,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 required_privilege: EventPrivileges = EventPrivileges.basic_read,
                 *, event_id: int | None = None,
         ) -> bool:
-            return self.is_privileged(rs, required_privilege, event_id=event_id)
+            return bool(self.is_privileged(rs, required_privilege, event_id=event_id))
 
         def is_privileged_for(
             endpoint: str,
