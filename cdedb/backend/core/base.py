@@ -1986,11 +1986,10 @@ class CoreBaseBackend(AbstractBackend):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = """
                 UPDATE cde.lastschrift
-                SET (iban, account_owner, account_address) = (%(empty)s, %(empty)s, %(empty)s)
+                SET (iban, account_owner, account_address) = ('', NULL, NULL)
                 WHERE persona_id = %(persona_id)s AND revoked_at < now() - interval '14 month'
             """
             params: ParamDict = {
-                "empty": "",
                 "persona_id": persona_id,
             }
             if lastschrift:

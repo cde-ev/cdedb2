@@ -1226,8 +1226,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(ls, ls_data)
         old_ls = self.cde.get_lastschrift(self.key, old_ls_id)
         self.assertEqual(old_ls["iban"], "")
-        self.assertEqual(old_ls["account_owner"], "")
-        self.assertEqual(old_ls["account_address"], "")
+        self.assertEqual(old_ls["account_owner"], None)
+        self.assertEqual(old_ls["account_address"], None)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
         self.core.dearchive_persona(self.key, persona_id,
                                     new_username="charly@example.cde")
