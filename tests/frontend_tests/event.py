@@ -266,21 +266,19 @@ class TestEventFrontend(FrontendTest):
         self.assertNoLink('/event/event/log')
         self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
+        self.assertNoLink('/event/event/1/orga/manage')
         self.assertNotIn('deleteeventform', self.response.forms)
-        self.assertNotIn('addorgaform', self.response.forms)
         self.traverse({'href': '/event/event/1/registration/status'})
         self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=False)
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
-        self.assertIn('addorgaform', self.response.forms)
-        self.traverse({'href': '/event/'},
-                      {'href': '/event/list'},
-                      {'href': '/event/event/create'})
+        self.traverse("Manage Caretakers")
+        self.assertIn('addorgasform', self.response.forms)
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "Veranstaltung anlegen")
 
         # Test Orga Controls Admin View
-        self.traverse({'href': '/event/'},
-                      {'href': '/event/event/1/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertNoLink('/event/event/1/registration/list')
         self.assertNoLink('/event/event/1/registration/query')
         self.assertNoLink('/event/event/1/change')
