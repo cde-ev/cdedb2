@@ -158,36 +158,6 @@ def event(context: argparse.Namespace) -> int:
                 'camping_mat_field_id': None,
             },
         },
-        'fees': {
-            -1: {
-                "kind": const.EventFeeType.common,
-                "title": make_counter(context, 'Gebühr'),
-                "notes": None,
-                "amount": decimal.Decimal("234.56"),
-                "condition": "part.first",
-            },
-            -2: {
-                "kind": const.EventFeeType.common,
-                "title": make_counter(context, 'Gebühr'),
-                "notes": None,
-                "amount": decimal.Decimal("0.00"),
-                "condition": "part.second",
-            },
-            -3: {
-                "kind": const.EventFeeType.solidary_reduction,
-                "title": make_counter(context, 'Gebühr'),
-                "notes": None,
-                "amount": decimal.Decimal("-7.00"),
-                "condition": "part.second and field.is_child",
-            },
-            -4: {
-                "kind": const.EventFeeType.external,
-                "title": make_counter(context, 'Gebühr'),
-                "notes": None,
-                "amount": decimal.Decimal("6.66"),
-                "condition": "any_part and not is_member",
-            }
-        },
         'fields': {
             -1: {
                 'association': const.FieldAssociations.registration,
@@ -229,8 +199,40 @@ def event(context: argparse.Namespace) -> int:
             },
         },
     }
+    fee_data = [
+        {
+            "kind": const.EventFeeType.common,
+            "title": make_counter(context, 'Gebühr'),
+            "notes": None,
+            "amount": decimal.Decimal("234.56"),
+            "condition": "part.first",
+        },
+        {
+            "kind": const.EventFeeType.common,
+            "title": make_counter(context, 'Gebühr'),
+            "notes": None,
+            "amount": decimal.Decimal("0.00"),
+            "condition": "part.second",
+        },
+        {
+            "kind": const.EventFeeType.solidary_reduction,
+            "title": make_counter(context, 'Gebühr'),
+            "notes": None,
+            "amount": decimal.Decimal("-7.00"),
+            "condition": "part.second and field.is_child",
+        },
+        {
+            "kind": const.EventFeeType.external,
+            "title": make_counter(context, 'Gebühr'),
+            "notes": None,
+            "amount": decimal.Decimal("6.66"),
+            "condition": "any_part and not is_member",
+        }
+    ]
     event: EventBackend = context.script.make_backend('event', proxy=False)
     ret = event.create_event(rs, data)
+    for fee in fee_data:
+        event.create_event_fee(rs, ret, fee)
     lodgement_groups = event.get_lodgement_groups(rs, ret)
     alodgement = None
     for lg in lodgement_groups:

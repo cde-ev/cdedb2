@@ -67,6 +67,7 @@ import pathlib
 import re
 import string
 import typing
+import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
@@ -401,17 +402,6 @@ def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     _ALL_TYPED[return_type] = fun
 
     return fun
-
-
-def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[T], *,
-                                       creation_only: bool = False) -> None:
-    def the_validator(val: Any, argname: str = return_type.__qualname__, **kwargs: Any,
-                      ) -> T:
-        val = _mapping(val, argname)
-        val = _optional_object_mapping_helper(
-            val, inner_type, argname, creation_only=creation_only, **kwargs)
-        return cast(T, val)
-    _add_typed_validator(the_validator, return_type)
 
 
 def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
@@ -815,7 +805,8 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: Optional[str] = None, *,
-    zap: str = '', sieve: str = '', limit_size: bool = True, **kwargs: Any,
+    zap: str = '', sieve: str = '', limit_size: bool = True,
+    unicode_normalize: bool = True, **kwargs: Any,
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
@@ -833,6 +824,8 @@ def _str_type(
         val = ''.join(c for c in val if c not in zap)
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    if unicode_normalize:
+        val = unicodedata.normalize('NFC', val)
     val = val.replace("\r\n", "\n").replace("\r", "\n")
     if limit_size and len(val) > 256000:
         raise ValidationSummary(ValueError(argname, n_("Longer than 256 kB.")))
@@ -850,6 +843,10 @@ def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     return val
 
 
+def _whitespace_normalized_str(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
 @_add_typed_validator
 def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
@@ -863,42 +860,6 @@ def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     if not all([url.scheme, url.netloc, url.path]):
         raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
     return Url(urllib.parse.urlunparse(url))
-
-
-@_add_typed_validator
-def _shortname(val: Any, argname: Optional[str] = None, *,
-               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
-    """A string used as shortname with therefore limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["SHORTNAME_LENGTH"])}))
-    return Shortname(val)
-
-
-@_add_typed_validator
-def _shortname_restrictive_identifier(
-        val: Any, argname: Optional[str] = None, *,
-        ignore_warnings: bool = False,
-        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and as restrictive identifier"""
-    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
-                                  **kwargs)
-    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    return ShortnameRestrictiveIdentifier(val)
-
-
-@_add_typed_validator
-def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
-                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
-    """A string used as shortname, but with increased but still limited length."""
-    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
-    if len(val) > _CONFIG["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
-        raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
-                              {'len': str(_CONFIG["LEGACY_SHORTNAME_LENGTH"])}))
-    return LegacyShortname(val)
 
 
 @_add_typed_validator
@@ -1647,16 +1608,20 @@ def _persona(
         if val["birth_name"] == val["family_name"] and not ignore_warnings:
             errs.append(ValidationWarning("birth_name", n_(
                 "Birth name is equal to family name and should be removed.")))
+    if supplement := val.get("name_supplement"):
+        name_keys = ["given_names", "family_name", "legal_given_names", "nickname"]
+        if any(val.get(key) and val[key] in supplement for key in name_keys):
+            msg = n_("Should not contain (parts of) your name.")
+            if not ignore_warnings:
+                errs.append(ValidationWarning("name_supplement", msg))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
-            try:
+            with errs:
                 postal_code = _german_postal_code(
                     val['postal_code' + suffix], 'postal_code' + suffix,
                     aux=val.get('country' + suffix, ""),
                     ignore_warnings=ignore_warnings, **kwargs)
                 val['postal_code' + suffix] = postal_code
-            except ValidationSummary as e:
-                errs.extend(e)
     if errs:
         raise errs
 
@@ -2319,28 +2284,6 @@ def _sepa_meta(
     return SepaMeta(val)
 
 
-@_add_typed_validator
-def _safe_str(
-    val: Any, argname: Optional[str] = None, **kwargs: Any,
-) -> SafeStr:
-    """This allows alpha-numeric, whitespace and known good others."""
-    allowed_chars = ".,-+()/"
-    val = _str(val, argname, **kwargs)
-    errs = ValidationSummary()
-
-    forbidden_chars = "".join(xsorted({
-        c for c in val
-        if not (c.isalnum() or c.isspace() or c in allowed_chars)
-    }))
-    if forbidden_chars:
-        errs.append(ValueError(argname, n_(
-            "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
-    if errs:
-        raise errs
-
-    return SafeStr(val)
-
-
 @_create_dataclass_validator(models_core.MetaInfo)
 def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
@@ -2348,7 +2291,7 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Shortname,
+    'shortname': str,
     'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2434,7 +2377,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
 
 EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'lodgement_groups': Mapping,
-    'fees': Mapping,
 }
 
 
@@ -2453,6 +2395,10 @@ def _optional_object_mapping_helper(
     """
     ret: dict[int, T | None] = {}
     errs = ValidationSummary()
+    # remove id_ from kwargs to make nested calls to this helper possible
+    kwargs = dict(kwargs)
+    if "id_" in kwargs:
+        del kwargs["id_"]
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
@@ -2483,6 +2429,8 @@ def _event(
       of a new entity.
     """
     val = _mapping(val, argname, **kwargs)
+    if creation:
+        kwargs['event'] = None
 
     if creation:
         mandatory_fields = {**EVENT_COMMON_FIELDS}
@@ -2497,8 +2445,6 @@ def _event(
 
     configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
     if configuration_fields:
-        if creation:
-            kwargs['current'] = None
         with errs:
             configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
                 configuration_fields, argname, creation=creation, **kwargs)
@@ -2527,12 +2473,6 @@ def _event(
             val['lodgement_groups'] = _optional_object_mapping_helper(
                 val['lodgement_groups'], models_event.LodgementGroup, 'lodgement_groups',
                 creation_only=creation, nested_creation=creation, **kwargs)
-
-    if 'fees' in val:
-        with errs:
-            val['fees'] = _optional_object_mapping_helper(
-                val['fees'], models_event.EventFee, 'fees', creation_only=creation,
-                event=val, questionnaire={}, **kwargs)
 
     if errs:
         raise errs
@@ -2591,26 +2531,10 @@ def _event_part(
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
-        newtracks = {}
-        for anid, track in val['tracks'].items():
-            try:
-                anid = _int(anid, 'tracks', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = anid < 0
-                try:
-                    if creation:
-                        track = _ALL_TYPED[EventTrack](
-                            track, 'tracks', creation=True, **kwargs)
-                    else:
-                        track = _ALL_TYPED[Optional[EventTrack]](  # type: ignore[index]
-                            track, 'tracks', **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newtracks[anid] = track
-        val['tracks'] = newtracks
+        with errs:
+            val['tracks'] = _optional_object_mapping_helper(
+                val['tracks'], models_event.CourseTrack, 'tracks',
+                creation_only=creation, **kwargs)
 
     if errs:
         raise errs
@@ -2643,48 +2567,34 @@ def _event_part_group(
         errs.append(ValueError('shortname', n_(
             "A part group with this name already exists.")))
 
+    shortname = val.get("shortname") or event.part_groups[val["id"]].shortname
+    constraint_type = val.get("constraint_type") or event.part_groups[val["id"]].constraint_type
+    if constraint_type == const.EventPartGroupType.mailinglist_link:
+        with errs:
+            val["shortname"] = _ALL_TYPED[EmailLocalPart](shortname, "shortname", **kwargs)
+
     if errs:
         raise errs
     return val
 
 
-EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-    'num_choices': NonNegativeInt,
-    'min_choices': NonNegativeInt,
-    'sortkey': int,
-    'course_room_field_id': Optional[ID],  # type: ignore[dict-item]
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.CourseTrack)
 def _event_track(
     val: Any, argname: str = "tracks", *,
-    creation: bool = False, **kwargs: Any,
-) -> EventTrack:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
+    event: models_event.Event, creation: bool = False, id_: int, **kwargs: Any,
+) -> CdEDBObject:
     if creation:
-        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
+        min_choices = val["min_choices"]
+        num_choices = val["num_choices"]
     else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
+        track = event.tracks[id_]
+        min_choices = val.get("min_choices", track.min_choices)
+        num_choices = val.get("num_choices", track.num_choices)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    if ('num_choices' in val and 'min_choices' in val
-            and val['min_choices'] > val['num_choices']):
+    if min_choices > num_choices:
         raise ValidationSummary(ValueError("min_choices", n_(
             "Must be less or equal than total Course Choices.")))
-
-    return EventTrack(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.TrackGroup)
@@ -2811,21 +2721,17 @@ def _event_field(
     return EventField(val)
 
 
-_create_optional_mapping_validator(models_event.EventFee, EventFeeSetter)
-
-
 @_create_dataclass_validator(models_event.EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        id_: ID,
-        event: CdEDBObject,
+        current: models_event.EventFee | None,
+        event: models_event.Event,
         personalized: Optional[bool] = None,
         **kwargs: Any,
 ) -> CdEDBObject:
     errs = ValidationSummary()
-    current = event['fees'].get(id_)
     if current is not None and personalized is None:
-        personalized = (current['amount'] is None or current['condition'] is None)
+        personalized = (current.amount is None or current.condition is None)
 
     if personalized is not None:
         if personalized:
@@ -2846,6 +2752,19 @@ def _event_fee(
         for k in ('amount', 'condition'):
             errs.append(ValueError(
                 k, n_("Cannot have amount without condition or vice versa.")))
+
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
+
+        titles = {fee.title: fee.id for fee in event.fees.values()}
+
+        err = ValueError("title", n_("Duplicate title."))
+        if current is None:
+            if val["title"] in titles:
+                errs.append(err)
+        elif titles.get(val["title"], current.id) != current.id:
+            errs.append(err)
+
     if errs:
         raise errs
 
@@ -2855,7 +2774,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject,
+    event: models_event.Event,
     questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any,
 ) -> EventFeeCondition:
@@ -2868,12 +2787,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for f in event.get('fields', {}).values()
-        if f['association'] == const.FieldAssociations.registration
-           and f['kind'] == const.FieldDatatypes.bool
-           and f.get('id') not in additional_questionnaire_fields
+        f.field_name for f in event.fields.values()
+        if f.association == const.FieldAssociations.registration
+           and f.kind == const.FieldDatatypes.bool
+           and f.id not in additional_questionnaire_fields
     }
-    part_names = {p['shortname'] for p in event['parts'].values()}
+    part_names = {p.shortname for p in event.parts.values()}
 
     try:
         parse_result = fcp_parsing.parse(val)
@@ -3441,7 +3360,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': LegacyShortname,
+    'shortname': str,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -3894,12 +3813,13 @@ def _serialized_event_questionnaire(
 def _serialized_event_configuration(
     val: Any, argname: str = "serialized_event_configuration", *,
     creation: bool = False,
-    current: Optional[models_event.Event],
+    event: models_event.Event | None,
     skip_field_validation: bool = False,
     **kwargs: Any,
 ) -> SerializedEventConfiguration:
 
     val = _mapping(val, argname, **kwargs)
+    current = event
 
     if creation:
         mandatory_fields = dict(**EVENT_COMMON_FIELDS)
@@ -4218,6 +4138,16 @@ def _ballot(
                     errs.extend(e)
                 else:
                     newcandidates[anid] = candidate
+        titles = [
+            candidate["title"] for candidate in newcandidates.values() if candidate
+        ]
+        shortnames = [
+            candidate["shortname"] for candidate in newcandidates.values() if candidate
+        ]
+        if len(titles) != len(set(titles)):
+            errs.append(ValueError("candidates.title", n_("Duplicate title.")))
+        if len(shortnames) != len(set(shortnames)):
+            errs.append(ValueError("candidates.shortname", n_("Duplicate shortname.")))
         val['candidates'] = newcandidates
 
     if val.get('abs_quorum') and val.get('rel_quorum'):
@@ -4265,7 +4195,7 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': ShortnameRestrictiveIdentifier,
+    'shortname': RestrictiveIdentifier,
 }
 
 
@@ -4293,6 +4223,8 @@ def _ballot_candidate(
     errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+    if "title" in val:
+        val["title"] = _whitespace_normalized_str(val["title"])
 
     if errs:
         raise errs

@@ -21,7 +21,6 @@ from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
-    CdEDBOptionalMap,
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
@@ -137,36 +136,6 @@ class TestEventBackend(BackendTest):
                     'camping_mat_field_id': None,
                 },
             },
-            'fees': {
-                -1: {
-                    "kind": const.EventFeeType.common,
-                    "title": "first",
-                    "notes": None,
-                    "amount": decimal.Decimal("234.56"),
-                    "condition": "part.first",
-                },
-                -2: {
-                    "kind": const.EventFeeType.common,
-                    "title": "second",
-                    "notes": None,
-                    "amount": decimal.Decimal("0.00"),
-                    "condition": "part.second",
-                },
-                -3: {
-                    "kind": const.EventFeeType.solidary_reduction,
-                    "title": "Is Child",
-                    "notes": None,
-                    "amount": decimal.Decimal("-7.00"),
-                    "condition": "part.second and field.is_child",
-                },
-                -4: {
-                    "kind": const.EventFeeType.external,
-                    "title": "Externenzusatzbeitrag",
-                    "notes": None,
-                    "amount": decimal.Decimal("6.66"),
-                    "condition": "any_part and not is_member",
-                },
-            },
             'fields': {
                 -1: {
                     'field_name': "instrument",
@@ -206,7 +175,39 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
+        fee_data = [
+            {
+                "kind": const.EventFeeType.common,
+                "title": "first",
+                "notes": None,
+                "amount": decimal.Decimal("234.56"),
+                "condition": "part.first",
+            },
+            {
+                "kind": const.EventFeeType.common,
+                "title": "second",
+                "notes": None,
+                "amount": decimal.Decimal("0.00"),
+                "condition": "part.second",
+            },
+            {
+                "kind": const.EventFeeType.solidary_reduction,
+                "title": "Is Child",
+                "notes": None,
+                "amount": decimal.Decimal("-7.00"),
+                "condition": "part.second and field.is_child",
+            },
+            {
+                "kind": const.EventFeeType.external,
+                "title": "Externenzusatzbeitrag",
+                "notes": None,
+                "amount": decimal.Decimal("6.66"),
+                "condition": "any_part and not is_member",
+            },
+        ]
         new_id = self.event.create_event(self.key, data)
+        for fee in fee_data:
+            self.event.create_event_fee(self.key, new_id, fee)
         # back to normal mode
         self.login(self.user)
         data['id'] = new_id
@@ -225,8 +226,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})
         data['parts'][-2].update({'id': 1002})
-        data['parts'][-1]['tracks'][-1].update({'id': 1001, 'part_id': 1001})
-        data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
@@ -262,15 +261,15 @@ class TestEventBackend(BackendTest):
                     data['fields'][field]['event_id'] = new_id
                     del data['fields'][oldfield]
                     break
+        data['fees'] = {}
         for fee_id in tmp.fees:
-            for old_fee_id in data['fees']:
-                if tmp.fees[fee_id].title == data['fees'][old_fee_id]['title']:
-                    data['fees'][fee_id] = data['fees'][old_fee_id]
+            for fee in fee_data:
+                if tmp.fees[fee_id].title == fee['title']:
+                    data['fees'][fee_id] = fee
                     data['fees'][fee_id]['id'] = fee_id
                     data['fees'][fee_id]['event_id'] = new_id
                     data['fees'][fee_id]['amount_min'] = None
                     data['fees'][fee_id]['amount_max'] = None
-                    del data['fees'][old_fee_id]
                     break
 
         self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
@@ -308,7 +307,7 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
-        updated_fees: CdEDBOptionalMap = {
+        updated_fees: CdEDBObjectMap = {
             -1: {
                 'kind': const.EventFeeType.common,
                 'title': "third",
@@ -356,7 +355,11 @@ class TestEventBackend(BackendTest):
                 -1: newfield,
             },
         })
-        self.event.set_event_fees(self.key, new_id, updated_fees)
+        for fee_id, fee in updated_fees.items():
+            if fee_id < 0:
+                self.event.create_event_fee(self.key, new_id, fee)
+            else:
+                self.event.change_event_fee(self.key, fee_id, fee)
         # fixup parts and fields
         tmp = self.event.get_event(self.key, new_id)
         for part in tmp.parts:
@@ -373,7 +376,6 @@ class TestEventBackend(BackendTest):
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
         changed_part['shortname'] = "second"
-        changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         data['parts'][part_map["Second coming"]] = changed_part
         for part in data['parts'].values():
             part['part_group_ids'] = set()
@@ -393,8 +395,6 @@ class TestEventBackend(BackendTest):
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1002: {
-                'id': 1002,
-                'part_id': 1002,
                 'title': 'Second lecture v2',
                 'shortname': "Second v2",
                 'num_choices': 5,
@@ -404,8 +404,6 @@ class TestEventBackend(BackendTest):
                 'track_group_ids': set(),
             },
             1003: {
-                'id': 1003,
-                'part_id': 1003,
                 'title': 'Third lecture',
                 'shortname': 'Third',
                 'num_choices': 2,
@@ -571,8 +569,6 @@ class TestEventBackend(BackendTest):
             'camping_mat_field_id': None,
             'tracks': {
                 6: {
-                    'id': 6,
-                    'part_id': 6,
                     'title': "Oberwesel Kurs 1",
                     'shortname': "OK1",
                     'num_choices': 4,
@@ -4587,7 +4583,7 @@ class TestEventBackend(BackendTest):
         # }
         # self.event.set_part_groups(self.key, event_id, pg_data)
 
-        fee_data: CdEDBOptionalMap = {
+        fee_data: CdEDBObjectMap = {
             -1: {
                 "kind": const.EventFeeType.common,
                 "title": "A",
@@ -4659,7 +4655,8 @@ class TestEventBackend(BackendTest):
                 "condition": "part.A AND part.B AND part.C AND part.D",
             },
         }
-        self.event.set_event_fees(self.key, event_id, fee_data)
+        for fee in fee_data.values():
+            self.event.create_event_fee(self.key, event_id, fee)
 
         r_data = {
             "event_id": event_id,
@@ -4734,9 +4731,9 @@ class TestEventBackend(BackendTest):
             }
             self.event.set_registration(self.key, r_data)
             combination = ", ".join(str(int(x == p)) for x in stati)
-            fee = self.event.calculate_complex_fee(self.key, reg_id).amount
+            fee_amount = self.event.calculate_complex_fee(self.key, reg_id).amount
             with self.subTest(combination=combination):
-                self.assertEqual(fee, decimal.Decimal(expected_fee))
+                self.assertEqual(fee_amount, decimal.Decimal(expected_fee))
 
     @as_users("garcia")
     def test_part_shortname_change(self) -> None:
@@ -4748,7 +4745,7 @@ class TestEventBackend(BackendTest):
             'condition': "part.1.H. and not part.2.H.",
             'notes': None,
         }
-        self.event.set_event_fees(self.key, event_id, {-1: new_fee})
+        self.event.create_event_fee(self.key, event_id, new_fee)
         event_data = {
             'id': event_id,
             'parts': {
@@ -4880,15 +4877,13 @@ class TestEventBackend(BackendTest):
                     'shortname': "TP",
                 },
             },
-            'fees': {
-                -1: {
-                    'title': "Externenzusatzbeitrag",
-                    'notes': None,
-                    'amount': external_fee_amount,
-                    'condition': "NOT is_member",
-                    'kind': const.EventFeeType.external,
-                },
-            },
+        })
+        self.event.create_event_fee(self.key, event_id, {
+            'title': "Externenzusatzbeitrag",
+            'notes': None,
+            'amount': external_fee_amount,
+            'condition': "NOT is_member",
+            'kind': const.EventFeeType.external,
         })
 
         # 2.1 Set test user to not be a member then register them.
@@ -5433,7 +5428,11 @@ class TestEventBackend(BackendTest):
         event_id = 1
 
         with self.assertRaises(EventIsBalancedError):
-            self.event.set_event_fees(self.key, event_id, {})
+            self.event.create_event_fee(self.key, event_id, {})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.change_event_fee(self.key, 1, {})
+        with self.assertRaises(EventIsBalancedError):
+            self.event.delete_event_fee(self.key, 1)
 
         with self.assertRaises(EventIsBalancedError):
             self.event.set_registration(self.key, {'id': 1, 'parts': {1: {'status': const.RegistrationPartStati.participant}}})

@@ -45,7 +45,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS,
     EVENT_FIELD_SPEC,
     EVENT_PART_FIELDS,
     FIELD_DEFINITION_FIELDS,
@@ -296,14 +295,11 @@ class EventLowLevelBackend(AbstractBackend):
         current = self.sql_select(
             rs,
             "event.course_tracks",
-            COURSE_TRACK_FIELDS,
+            models.CourseTrack.database_fields(),
             (part_id,),
             entity_key="part_id",
         )
-        current = {
-            e['id']: {k: v for k, v in e.items() if k not in {'id', 'part_id'}}
-            for e in current
-        }
+        current = {e['id']: e for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -355,6 +351,7 @@ class EventLowLevelBackend(AbstractBackend):
             assert updated_track is not None
             if any(updated_track[k] != current[x][k] for k in updated_track):
                 updated_track['id'] = x
+                updated_track['part_id'] = part_id
                 ret *= self.sql_update(rs, "event.course_tracks", updated_track)
                 self.event_log(
                     rs,
@@ -520,9 +517,7 @@ class EventLowLevelBackend(AbstractBackend):
         )
 
     @abc.abstractmethod
-    def set_event_fees(
-        self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
-    ) -> DefaultReturnCode: ...
+    def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode: ...
 
     @internal
     def _delete_event_part_blockers(
@@ -626,10 +621,8 @@ class EventLowLevelBackend(AbstractBackend):
                     rs, "event.part_group_parts", blockers["part_group_parts"]
                 )
             if "event_fees" in cascade:
-                deletor: CdEDBOptionalMap = {
-                    anid: None for anid in blockers["event_fees"]
-                }
-                ret *= self.set_event_fees(rs, part['event_id'], deletor)
+                for fee_id in blockers["event_fees"]:
+                    ret *= self.delete_event_fee(rs, fee_id)
             blockers = self._delete_event_part_blockers(rs, part_id)
 
         if not blockers:
@@ -1249,10 +1242,8 @@ class EventLowLevelBackend(AbstractBackend):
                     }
                     ret *= self.sql_update(rs, "event.event_parts", deletor)
             if "event_fees" in cascade:
-                setter: CdEDBOptionalMap = {
-                    anid: None for anid in blockers["event_fees"]
-                }
-                ret *= self.set_event_fees(rs, current['event_id'], setter)
+                for fee_id in blockers["event_fees"]:
+                    ret *= self.delete_event_fee(rs, fee_id)
             blockers = self._delete_event_field_blockers(rs, field_id)
 
         if not blockers:

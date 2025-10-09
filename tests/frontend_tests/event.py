@@ -835,7 +835,7 @@ class TestEventFrontend(FrontendTest):
                 'change_note': f['title'].value,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': f['title'].value,
             },
         ])
@@ -932,7 +932,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.extend([
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': log_expectation[0]['change_note'],
             },
             {
@@ -960,10 +960,6 @@ class TestEventFrontend(FrontendTest):
         )
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        # prevent warnings about too long shortname for this test
-        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
@@ -1398,12 +1394,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Universale Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
         ]
@@ -1476,12 +1472,12 @@ etc;anything else""", f['entries_2'].value)
             },
             {
                 'change_note': "Alternative Akademie",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
                 'change_note': "Externenzusatzbeitrag",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1002,
             },
             {
@@ -2344,7 +2340,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
@@ -2359,22 +2355,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child1",
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child2",
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'event_id': 2,
             },
             {
                 'change_note': "modifier_is_child3",
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'event_id': 2,
             },
 
@@ -5758,12 +5754,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -5939,12 +5931,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
-        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -6178,10 +6166,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # set all choices in all tracks to 0
         self.get("/event/event/1/part/2/change")
         f = self.response.forms['changepartform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
-        f = self.response.forms["changepartform"]
-        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0
@@ -7885,7 +7869,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         log_expectation = [
             {
-                'code': const.EventLogCodes.fee_modifier_created,
+                'code': const.EventLogCodes.event_fee_created,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
             {
@@ -7894,7 +7878,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': self.user['id'],
             },
             {
-                'code': const.EventLogCodes.fee_modifier_changed,
+                'code': const.EventLogCodes.event_fee_modified,
                 'change_note': "Teilnahmebeitrag Warmup",
             },
             {
@@ -7918,7 +7902,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'persona_id': 100,
             },
             {
-                'code': const.EventLogCodes.fee_modifier_deleted,
+                'code': const.EventLogCodes.event_fee_deleted,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
             },
         ]

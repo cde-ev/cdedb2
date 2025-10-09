@@ -97,8 +97,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
-                    num_choices=4,
-                    min_choices=4,
+                    num_choices=vtypes.NonNegativeInt(4),
+                    min_choices=vtypes.NonNegativeInt(4),
                     sortkey=1,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),
@@ -107,8 +107,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
-                    num_choices=1,
-                    min_choices=1,
+                    num_choices=vtypes.NonNegativeInt(1),
+                    min_choices=vtypes.NonNegativeInt(1),
                     sortkey=2,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),
@@ -117,8 +117,8 @@ class TestEventModels(BackendTest):
                     part_id=vtypes.ID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
-                    num_choices=3,
-                    min_choices=2,
+                    num_choices=vtypes.NonNegativeInt(3),
+                    min_choices=vtypes.NonNegativeInt(2),
                     sortkey=3,
                     course_room_field_id=5,  # type: ignore[arg-type]
                 ),

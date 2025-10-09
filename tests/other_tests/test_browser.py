@@ -390,4 +390,4 @@ class TestBrowser(BrowserTest):
                         self.fail("Adjust cases for this test.")
 
                 page.get_by_role("button", name="Anfrage abschicken").click()
-                page.wait_for_url("http://localhost:5000")
+                page.wait_for_url("http://localhost:5000/")

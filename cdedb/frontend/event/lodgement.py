@@ -5,7 +5,7 @@ for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
 import dataclasses
 from collections.abc import Collection
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -17,7 +17,6 @@ from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
-    CdEDBOptionalMap,
     LodgementsSortkeys,
     RequestState,
     get_mandatory_form_fields,
@@ -185,10 +184,8 @@ class EventLodgementMixin(EventBaseFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
-        spec: vtypes.TypeMapping = {'title': str}
-        groups = cast(
-            CdEDBOptionalMap,
-            process_dynamic_input(rs, models.LodgementGroup, groups.keys(), spec)
+        groups = process_dynamic_input(
+            rs, models.LodgementGroup, groups.keys(), spec={"title": "str"}
         )
 
         if rs.has_validation_errors():

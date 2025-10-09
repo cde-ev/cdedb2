@@ -426,17 +426,6 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def glue(*args: str) -> str:
-    """Join overly long strings, adds boundary white space for convenience.
-
-    It would be possible to use auto string concatenation as in ``("a
-    string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we once preferred this
-    explicit function.
-    """
-    return " ".join(args)
-
-
 def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
     """Construct log message with appropriate punctuation"""
     if msg2:

@@ -1,6 +1,7 @@
 [project]
 name = "cdedb2"
 version = "2.1.0"
+requires-python = ">=3.11"
 dependencies = [
     "babel==2.10.3",
     "bleach==5.0.1",
@@ -39,7 +40,7 @@ dependencies = [
     "zxcvbn==4.4.28",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "mypy==1.18.2",
     "lxml-stubs",
@@ -57,7 +58,7 @@ dev = [
 # Excluded from dev to ensure better docker cache.
 # Make sure to bump the version in Dockerfile-cdedb!
 playwright = [
-    "playwright==1.43.0",
+    "playwright==1.53.0",
 ]
 # dependencies for the cdedb-ldap interface
 ldap = [
