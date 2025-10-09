@@ -1569,8 +1569,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.change_registrations_form(rs, event_id)  # type: ignore[call-arg]
 
-        self.logger.info(
-            f"Updating registrations {reg_ids} with data {registration}")
         msg1 = build_msg("Snapshot vor Bearbeitung mehrerer Anmeldungen", change_note)
         msg2 = build_msg("Bearbeite mehrere Anmeldungen", change_note)
         change_note = build_msg("Multi-Edit", change_note)
