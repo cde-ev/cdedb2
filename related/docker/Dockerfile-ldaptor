@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/*
 
-# copy project configuration for pip
+RUN pip install uv --break-system-packages
+
+# copy project configuration for uv
 COPY ./pyproject.toml /tmp/
 
 # install packages
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
-                      print(*f["project"]["optional-dependencies"]["ldap"])')
+RUN uv pip install --group /tmp/pyproject.toml:ldap --system --break-system-packages
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 

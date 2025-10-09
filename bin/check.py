@@ -226,7 +226,8 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
             descriptions=False,
         )
         ran_tests = test_runner.run(test_suite)
-        stop_services("cde-ldap-test")
+        if not is_docker():
+            stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1
 
 
