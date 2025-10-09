@@ -24,26 +24,11 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            {{ util.h(n_("Orgas"), 2) }}
-            <ul class="slim" id="orgas_list">
-                {% for persona_id, orga in orgas.items() %}
-                    <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(orga, include_nickname=True) }}
-                        {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
-                            <form action="{{ cdedblink("event/remove_orga") }}" method="POST"
-                                  id="removeorgaform{{ persona_id }}" class="hide-hover display-inline">
-                                {{ util.anti_csrf_token("event/remove_orga") }}
-                                {{ util.input_hidden(name="orga_id", value=persona_id) }}
-                                {{ util.input_submit(title=gettext("Remove Orga"), icon="minus", label="",
-                                                     aclass="btn btn-xs btn-danger list-button-float") }}
-                                {{ util.ack_delete("The orga will be removed from the event.") }}
-                            </form>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
+            {% call util.h(n_("Orgas"), 2) %}
+                [{{ orgas|length }}]
+            {% endcall %}
 
-            {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
+            {% if is_privileged_for("event/add_orgas", consider_admin_view="event_mgmt") %}
                 <form action="{{ cdedblink('event/add_orgas') }}" method="POST" id="addorgasform" class="p">
                     {{ util.anti_csrf_token('event/add_orgas') }}
                     {% call util.output_errors('orga_ids', wrapper=True) %}
@@ -69,18 +54,64 @@
                     );
                 </script>
                 {% if ambience['event'].id in user.orga %}
-                    <p class="help-block no-color text-warning" style="margin-bottom:0">
-                        {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
+                    <p class="help-block no-color text-warning">
+                        {{- util.make_icon('exclamation-triangle') }}{{ nbsp -}}
                         {% trans %}
                              You should not add/remove orgas for your own event.
                         {% endtrans %}
                     </p>
                 {% endif %}
             {% endif %}
+
+            <ul class="slim" id="orgas_list">
+                {% for persona_id, orga in orgas.items() %}
+                    <li class="hide-hover-container clearfix-after">
+                        {{ util.persona_anchor(orga, include_nickname=True) }}
+                        {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
+                            <form action="{{ cdedblink("event/remove_orga") }}" method="POST"
+                                  id="removeorgaform{{ persona_id }}" class="hide-hover display-inline">
+                                {{ util.anti_csrf_token("event/remove_orga") }}
+                                {{ util.input_hidden(name="orga_id", value=persona_id) }}
+                                {{ util.input_submit(title=gettext("Remove Orga"), icon="minus", label="",
+                                                     aclass="btn btn-xs btn-danger list-button-float") }}
+                                {{ util.ack_delete("The orga will be removed from the event.") }}
+                            </form>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
 
         <div class="col-md-6">
-            {{ util.h(n_("Caretakers"), 2) }}
+            {% call util.h(n_("Caretakers"), 2) %}
+                [{{ caretakers|length }}]
+            {% endcall %}
+
+            {% if is_privileged_for("event/add_caretakers", consider_admin_view="event_mgmt") %}
+                <form action="{{ cdedblink("event/add_caretakers") }}" method="POST" id="addcaretakersform" class="p">
+                    {{ util.anti_csrf_token("event/add_caretakers") }}
+                    <div class="input-group has-success">
+                        <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                        {{ util.input_text(name="caretaker_ids", placeholder="DB-XXXX-X", anid="input-add-caretakers",
+                                           arialabel=gettext("IDs of the new caretakers")) }}
+                        <div class="input-group-btn">
+                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
+                        </div>
+                    </div>
+                    {{ util.output_errors('caretaker_ids', wrapper=True) }}
+                </form>
+                <script nonce="{{ csp_nonce }}">
+                    $("#input-add-caretakers").cdedbSearchPerson(
+                        "{{ cdedblink("core/select_persona") }}",
+                        {kind: "event_user"},
+                        {{ caretakers|list|tojson }},
+                        false,  // freeform
+                        true,  // multi
+                        "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
+                    );
+                </script>
+            {% endif %}
+
             <p class="text-info">
                 {{ util.make_icon("info-circle") }}{{ nbsp -}}
                 {% trans %}
@@ -105,31 +136,6 @@
                     </li>
                 {% endfor %}
             </ul>
-
-            {% if is_privileged_for("event/remove_caretaker", consider_admin_view="event_mgmt") %}
-                <form action="{{ cdedblink("event/add_caretakers") }}" method="POST" id="addcaretakersform" class="p">
-                    {{ util.anti_csrf_token("event/add_caretakers") }}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                        {{ util.input_text(name="caretaker_ids", placeholder="DB-XXXX-X", anid="input-add-caretakers",
-                                           arialabel=gettext("IDs of the new caretakers")) }}
-                        <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
-                        </div>
-                    </div>
-                    {{ util.output_errors('caretaker_ids', wrapper=True) }}
-                </form>
-                <script nonce="{{ csp_nonce }}">
-                    $("#input-add-caretakers").cdedbSearchPerson(
-                        "{{ cdedblink("core/select_persona") }}",
-                        {kind: "event_user"},
-                        {{ caretakers|list|tojson }},
-                        false,  // freeform
-                        true,  // multi
-                        "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
-                    );
-                </script>
-            {% endif %}
         </div>
     </div>
 {% endblock %}
