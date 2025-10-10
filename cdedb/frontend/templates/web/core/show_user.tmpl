@@ -309,7 +309,7 @@
                         {% trans %}Admin Privileges{% endtrans %}
                     </dt>
                     <dd id="admin-realms">
-                        {% for key in ADMIN_KEYS if data[key] %}
+                        {% for key in data.get_admin_bits() if data[key] %}
                             {{ util.privilege_icon(key) }}
                         {% else %}
                             <i>{% trans %}None{% endtrans %}</i>
@@ -324,7 +324,7 @@
                         <dt title="{% trans %}Admin Notes{% endtrans %}">
                             {% trans %}Admin Notes{% endtrans %}
                         </dt>
-                        <dd id="admin-notes">{{ notes|md|linebreaks}}</dd>
+                        <dd id="admin-notes">{{ notes|md|linebreaks or "–" }}</dd>
                     {% endif %}
                 </dl>
             {% endif %}

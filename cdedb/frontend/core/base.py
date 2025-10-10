@@ -557,60 +557,48 @@ class CoreBaseFrontend(AbstractFrontend):
                                 and rs.ambience['persona']['is_member']
                                 and rs.ambience['persona']['is_searchable'])
 
-        if (rs.ambience['persona']['is_archived']
-                and not is_relative_admin):
+        if (rs.ambience['persona']['is_archived'] and not is_relative_admin):
             raise werkzeug.exceptions.Forbidden(
                 n_("Only admins may view archived datasets."))
 
         all_access_levels = {
-            # basic access, shows only name
-            "persona",
             # access based on special roles of the viewer
             "orga", "moderator",
-            # status bits
+            # access to status bits
             "meta",
             # access based on realm admin privileges of the viewer
             "ml", "assembly", "event", "cde",
             # full access, do not strip any data
             "full",
         }
+        access_levels = set()
         # kind of view with which the user is shown (f.e. relative_admin, orga)
         # relevant to determinate which admin view toggles will be shown
+        all_access_modes = {
+            "any_admin", "orga", "moderator"
+        }
         access_mode = set()
-        # The basic access level provides only the name (this should only
-        # happen in case of un-quoted searchable member access)
-        access_levels = {"persona"}
         # Let users see themselves
         if persona_id == rs.user.persona_id:
             access_levels.update(all_access_levels)
         # Core admins see everything
-        if ("core_admin" in rs.user.roles
-                and "core_user" in rs.user.admin_views):
+        if ("core_admin" in rs.user.roles and "core_user" in rs.user.admin_views):
             access_levels.update(all_access_levels)
-        # Meta admins are meta
-        if ("meta_admin" in rs.user.roles
-                and "meta_admin" in rs.user.admin_views):
+        # Meta admins see the status bits
+        if ("meta_admin" in rs.user.roles and "meta_admin" in rs.user.admin_views):
             access_levels.add("meta")
-        # There are administraive buttons on this page for all of these admins.
-        # All of these admins should see the Account Requests in the nav
-        # event_admins and ml_admins additionally always get links to the respective
-        # realm data.
-        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
-            access_mode.add("any_admin")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
             access_mode.add("any_admin")
             for realm in ("ml", "assembly", "event", "cde"):
                 if (f"{realm}_admin" in rs.user.roles
                         and f"{realm}_user" in rs.user.admin_views):
+                    access_levels.add(realm)
                     # Relative admins can see all data
                     access_levels.add("full")
-                    access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if (not (rs.ambience['persona']['is_member'] and
-                     rs.ambience['persona']['is_searchable'])
-                    and "cde_admin" not in access_levels):
+            if not is_searchable_to_you and "cde" not in access_levels:
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
             access_levels.add("cde")
@@ -618,8 +606,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if event_id:
             is_admin = "event_admin" in rs.user.roles
             is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
-            is_orga = event_id in self.eventproxy.orga_info(
-                rs, rs.user.persona_id)
+            is_orga = event_id in self.eventproxy.orga_info(rs, rs.user.persona_id)
             if is_orga or is_admin:
                 is_participant = self.eventproxy.list_registrations(
                     rs, event_id, persona_id)
@@ -652,31 +639,44 @@ class CoreBaseFrontend(AbstractFrontend):
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
                     access_levels.add("moderator")
+        # There are administraive buttons on this page for all of these admins.
+        # All of these admins should see the Account Requests in the nav
+        # event_admins and ml_admins additionally always get links to the respective
+        # realm data.
+        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
+            access_mode.add("any_admin")
+
+        # perform a sanity check against programming errors
+        if not access_levels.issubset(all_access_levels):
+            raise RuntimeError("Encountered unknown access level.")
+        if not access_mode.issubset(all_access_modes):
+            raise RuntimeError("Encountered unknown access mode.")
 
         # Retrieve data
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         persona: models.AnyPersona
-        if "cde" in access_levels and "cde" in roles:
+        if "cde" in access_levels and "cde" in target_roles:
             persona = self.coreproxy.new_get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
-        elif ("event" in access_levels and "event" in roles and "assembly" in access_levels and "assembly" in roles):
-            assembly_persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
-            event_persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
-            persona = models.EventAssemblyPersona(**{**assembly_persona.as_dict(), **event_persona.as_dict()})
-        elif "event" in access_levels and "event" in roles:
+        elif ("event" in access_levels and "event" in target_roles
+                and "assembly" in access_levels and "assembly" in target_roles):
+            persona = models.EventAssemblyPersona(**{
+                **self.coreproxy.new_get_assembly_user(rs, persona_id).as_dict(),
+                **self.coreproxy.new_get_event_user(rs, persona_id, event_id).as_dict(),
+            })
+        elif "event" in access_levels and "event" in target_roles:
             persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
-        elif "assembly" in access_levels and "assembly" in roles:
+        elif "assembly" in access_levels and "assembly" in target_roles:
             persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
-        elif "ml" in access_levels and "ml" in roles:
+        elif "ml" in access_levels and "ml" in target_roles:
             persona = self.coreproxy.new_get_ml_user(rs, persona_id)
         else:
             persona = self.coreproxy.new_get_core_user(rs, persona_id)
             # The base version of the data set should only contain the name,
-            # however the PERSONA_CORE_FIELDS also contain the email address
-            # which we must delete beforehand.
+            # so we take care to not expose the username.
             persona.username = None  # type: ignore[assignment]
 
         has_lastschrift = None
@@ -737,7 +737,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Add past event participation info
         past_events = None
-        if "cde" in access_levels and {"event", "cde"} & roles:
+        if "cde" in access_levels and {"event", "cde"} & target_roles:
             past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
@@ -771,7 +771,6 @@ class CoreBaseFrontend(AbstractFrontend):
             'quoteable': quoteable,
             'access_mode': access_mode,
             'active_session_count': active_session_count,
-            'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
             'has_lastschrift': has_lastschrift,
             'notes': notes,
