@@ -14,12 +14,15 @@ def serve_debugger(test: bool) -> None:
     conf = TestConfig() if test else Config()
 
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
-    subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL,
-                   cwd=repo_path)
+    subprocess.run(
+        ["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL, cwd=repo_path
+    )
 
     application = Application()
-    i18n_files = (conf["REPOSITORY_PATH"] / "i18n" / lang / "LC_MESSAGES" / "cdedb.po"
-                  for lang in application.conf["I18N_LANGUAGES"])
+    i18n_files = (
+        conf["REPOSITORY_PATH"] / "i18n" / lang / "LC_MESSAGES" / "cdedb.po"
+        for lang in application.conf["I18N_LANGUAGES"]
+    )
     run_simple(
         "0.0.0.0",
         5000,
