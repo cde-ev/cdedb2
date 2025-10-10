@@ -37,8 +37,7 @@ SingleDigitInt = _NewType("SingleDigitInt", int)
 NonNegativeFloat = _NewType("NonNegativeFloat", float)
 
 NonNegativeDecimal = _NewType("NonNegativeDecimal", _decimal.Decimal)
-NonNegativeLargeDecimal = _NewType(
-    "NonNegativeLargeDecimal", NonNegativeDecimal)
+NonNegativeLargeDecimal = _NewType("NonNegativeLargeDecimal", NonNegativeDecimal)
 PositiveDecimal = _NewType("PositiveDecimal", _decimal.Decimal)
 
 EmptyDict = _NewType("EmptyDict", dict[_Any, _Any])
@@ -115,10 +114,12 @@ SerializedEvent = _NewType("SerializedEvent", _CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = _NewType("SerializedPartialEvent", _CdEDBObject)
 SerializedPartialEventUpload = _NewType(
-    "SerializedPartialEventUpload", SerializedPartialEvent)
+    "SerializedPartialEventUpload", SerializedPartialEvent
+)
 SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", _CdEDBObject)
 SerializedEventQuestionnaireUpload = _NewType(
-    "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire)
+    "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire
+)
 SerializedEventConfiguration = _NewType("SerializedEventConfiguration", _CdEDBObject)
 SerializedEventFreetexts = _NewType("SerializedEventFreetexts", _CdEDBObject)
 
@@ -128,8 +129,9 @@ PartialLodgement = _NewType("PartialLodgement", _CdEDBObject)
 PartialRegistration = _NewType("PartialRegistration", _CdEDBObject)
 PartialRegistrationPart = _NewType("PartialRegistrationPart", _CdEDBObject)
 PartialRegistrationTrack = _NewType("PartialRegistrationTrack", _CdEDBObject)
-PartialRegistrationCheckinPeriod = _NewType("PartialRegistrationCheckinPeriod",
-                                            _CdEDBObject)
+PartialRegistrationCheckinPeriod = _NewType(
+    "PartialRegistrationCheckinPeriod", _CdEDBObject
+)
 
 DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", _SubscriptionState)
 SubscriptionIdentifier = _NewType("SubscriptionIdentifier", _CdEDBObject)

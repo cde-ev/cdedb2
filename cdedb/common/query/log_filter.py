@@ -17,17 +17,29 @@ from cdedb.models.common import requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
 __all__ = [
-    'GenericLogFilter', 'CoreLogFilter', 'CdELogFilter', 'ChangelogLogFilter',
-    'FinanceLogFilter', 'AssemblyLogFilter', 'EventLogFilter', 'MlLogFilter',
+    'GenericLogFilter',
+    'CoreLogFilter',
+    'CdELogFilter',
+    'ChangelogLogFilter',
+    'FinanceLogFilter',
+    'AssemblyLogFilter',
+    'EventLogFilter',
+    'MlLogFilter',
     'PastEventLogFilter',
 ]
 
 _CONFIG = Config()
 _DEFAULT_LOG_COLUMNS = (
-    "id", "ctime", "code", "submitted_by", "persona_id", "change_note",
+    "id",
+    "ctime",
+    "code",
+    "submitted_by",
+    "persona_id",
+    "change_note",
 )
 _DEFAULT_PERSONA_COLUMNS = (
-    "persona_id", "submitted_by",
+    "persona_id",
+    "submitted_by",
 )
 
 
@@ -46,6 +58,7 @@ class GenericLogFilter:
     This can be created from a dict of parameters by the validation, using the type
     annotations to validate the parameters.
     """
+
     log_table: ClassVar[str]
     log_code_class: ClassVar["type[CdEIntEnum]"]
     additional_columns: ClassVar[tuple[str, ...]] = ()
@@ -69,8 +82,8 @@ class GenericLogFilter:
     def __post_init__(self) -> None:
         """Do a little processing on the data.
 
-         Use setattr workaround because of frozen dataclass.
-         """
+        Use setattr workaround because of frozen dataclass.
+        """
         if not self.length:
             self.length = _CONFIG['DEFAULT_LOG_LENGTH']
         # Remember original length and offset for pagination.
@@ -151,7 +164,7 @@ class GenericLogFilter:
 
     @classmethod
     def validation_fields(
-            cls,
+        cls,
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Create a specification for validating the dataclass.
 
@@ -356,7 +369,12 @@ class FinanceLogFilter(GenericLogFilter):
     log_table = "cde.finance_log"
     log_code_class = const.FinanceLogCodes
     additional_columns = (
-        "delta", "new_balance", "transaction_date", "members", "total", "member_total",
+        "delta",
+        "new_balance",
+        "transaction_date",
+        "members",
+        "total",
+        "member_total",
     )
 
     delta_from: Optional[decimal.Decimal] = None
