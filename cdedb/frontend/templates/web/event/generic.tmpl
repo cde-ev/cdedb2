@@ -444,6 +444,20 @@
     {%- endif -%}
 {%- endmacro %}
 
+{% macro print_fee_type_icon(kind, print_name=False) -%}
+    {{- util.make_icon(kind.get_icon(), title=gettext(kind|string)) -}}
+    {%- if print_name -%}
+        {{- nbsp -}}
+        {{- gettext(kind|string) -}}
+    {%- endif -%}
+        {{- nbsp -}}
+    (
+        {{- util.make_icon(kind.category.get_icon(), title=gettext("Category_[[EventFee]]") + ": " + gettext(kind.category|string)) -}}
+            {{- nbsp -}}
+        {{- util.make_icon(kind.budget.get_icon(), title=gettext("Budget_[[EventFee]]") + ": " + gettext(kind.budget|string)) -}}
+    )
+{%- endmacro %}
+
 {#  Print a summary of all relevant fees.
     Has esssentially three different usage modes:
 
@@ -481,8 +495,8 @@
         <tbody>
         {% for fee in ambience['event'].fees.values()|sort %}
             <tr id="eventfee_{{ fee.id }}" data-fee_id="{{ fee.id }}" class="eventfee">
-                <td>
-                    {{ util.make_icon(fee.kind.get_icon(), title=gettext(fee.kind|string)) }}
+                <td class="nowrap">
+                    {{ print_fee_type_icon(fee.kind) }}
                 </td>
                 <td id="eventfee-title-{{ fee.id }}" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
                         class="active-fee-title {% if not js_preview and complex_fee %}
