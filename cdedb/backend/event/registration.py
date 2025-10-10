@@ -182,11 +182,25 @@ class ComplexRegistrationFee:
 
     @cached_property
     def by_kind(self) -> dict[const.EventFeeType, decimal.Decimal]:
-        ret = {}
+        ret: dict[const.EventFeeType, decimal.Decimal] = defaultdict(decimal.Decimal)
         for fee, amount in self.fees:
-            if fee.kind not in ret:
-                ret[fee.kind] = decimal.Decimal(0)
             ret[fee.kind] += amount
+        return ret
+
+    @cached_property
+    def by_category(self) -> dict[const.EventFeeCategory, decimal.Decimal]:
+        ret: dict[const.EventFeeCategory, decimal.Decimal] = defaultdict(
+            decimal.Decimal
+        )
+        for fee, amount in self.fees:
+            ret[fee.kind.category] += amount
+        return ret
+
+    @cached_property
+    def by_budget(self) -> dict[const.EventFeeBudget, decimal.Decimal]:
+        ret: dict[const.EventFeeBudget, decimal.Decimal] = defaultdict(decimal.Decimal)
+        for fee, amount in self.fees:
+            ret[fee.kind.budget] += amount
         return ret
 
     @cached_property
@@ -1687,15 +1701,25 @@ class EventRegistrationBackend(EventBaseBackend):
 
         query = f"""
             UPDATE {models.Registration.database_table} AS r
-            SET amount_owed = u.amount_owed, amount_owed_by_kind = u.by_kind::jsonb
+            SET
+                amount_owed = u.amount_owed,
+                amount_owed_by_kind = u.by_kind::jsonb,
+                amount_owed_by_category = u.by_category::jsonb,
+                amount_owed_by_budget = u.by_budget::jsonb
             FROM (
-                VALUES {",".join(["(%s, %s, %s)"] * len(fees))}
-            ) AS u (id, amount_owed, by_kind)
+                VALUES {",".join(["(%s, %s, %s, %s, %s)"] * len(fees))}
+            ) AS u (id, amount_owed, by_kind, by_category, by_budget)
             WHERE r.id = u.id
         """
         params: Params = list(
             itertools.chain.from_iterable(
-                (registration_id, fee.amount, PsycoJson(fee.by_kind))
+                (
+                    registration_id,
+                    fee.amount,
+                    PsycoJson(fee.by_kind),
+                    PsycoJson(fee.by_category),
+                    PsycoJson(fee.by_budget),
+                )
                 for registration_id, fee in fees.items()
             ),
         )
