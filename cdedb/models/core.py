@@ -222,6 +222,45 @@ class PersonaName(CdEDataclass):
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
+    def get_forename(self, *, use_legal_name: bool = False, include_nickname: bool = False) -> str:
+        """Construct the forename according to the display name specification.
+
+        The name specification can be found at the documentation page about
+        "User Experience Conventions".
+        """
+        if use_legal_name and include_nickname:
+            raise RuntimeError(n_("Invalid use of keyword parameters."))
+        if use_legal_name:
+            return self.legal_given_names or self.given_names
+        if include_nickname:
+            if not self.nickname:
+                return self.given_names
+            else:
+                return f"{self.given_names} ({self.nickname or ''})"
+        return self.given_names
+
+    def get_name(self, *,
+                 use_legal_name: bool = False,
+                 include_nickname: bool = False,
+                 with_family_name: bool = True,
+                 with_titles: bool = False) -> str:
+        """Format the name according to the display name specification
+
+        For a full specification, which name variant should be used in which context, see
+        the documentation page about "User Experience Conventions".
+        """
+        forename = self.get_forename(
+            use_legal_name=use_legal_name, include_nickname=include_nickname)
+        ret = []
+        if with_titles and self.title:
+            ret.append(self.title)
+        ret.append(forename)
+        if with_family_name:
+            ret.append(self.family_name)
+        if with_titles and self.name_supplement:
+            ret.append(self.name_supplement)
+        return " ".join(ret)
+
 
 @dataclasses.dataclass(kw_only=True)
 class Persona(PersonaName):
