@@ -553,14 +553,28 @@ class CoreBaseFrontend(AbstractFrontend):
         is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
             rs, persona_id, allow_meta_admin=True)
 
+        # Check whether profile is currently searchable to viewer
+        is_searchable_to_you = ("searchable" in rs.user.roles
+                                and rs.ambience['persona']['is_member']
+                                and rs.ambience['persona']['is_searchable'])
+
         if (rs.ambience['persona']['is_archived']
                 and not is_relative_admin):
             raise werkzeug.exceptions.Forbidden(
                 n_("Only admins may view archived datasets."))
 
         all_access_levels = {
-            "persona", "ml", "assembly", "event", "cde", "core", "meta",
-            "orga", "moderator"}
+            # basic access, shows only name
+            "persona",
+            # access based on special roles of the viewer
+            "orga", "moderator",
+            # status bits
+            "meta",
+            # access based on realm admin privileges of the viewer
+            "ml", "assembly", "event", "cde",
+            # full access, do not strip any data
+            "full",
+        }
         # kind of view with which the user is shown (f.e. relative_admin, orga)
         # relevant to determinate which admin view toggles will be shown
         access_mode = set()
@@ -590,8 +604,8 @@ class CoreBaseFrontend(AbstractFrontend):
             for realm in ("ml", "assembly", "event", "cde"):
                 if (f"{realm}_admin" in rs.user.roles
                         and f"{realm}_user" in rs.user.admin_views):
-                    # Relative admins can see core data
-                    access_levels.add("core")
+                    # Relative admins can see all data
+                    access_levels.add("full")
                     access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
@@ -645,68 +659,82 @@ class CoreBaseFrontend(AbstractFrontend):
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        data = self.coreproxy.get_persona(rs, persona_id)
-        # The base version of the data set should only contain the name,
-        # however the PERSONA_CORE_FIELDS also contain the email address
-        # which we must delete beforehand.
-        del data['username']
-        if "ml" in access_levels and "ml" in roles:
-            data.update(self.coreproxy.get_ml_user(rs, persona_id))
-        if "assembly" in access_levels and "assembly" in roles:
-            data.update(self.coreproxy.get_assembly_user(rs, persona_id))
-        if "event" in access_levels and "event" in roles:
-            data.update(self.coreproxy.get_event_user(rs, persona_id, event_id))
+        persona: models.AnyPersona
         if "cde" in access_levels and "cde" in roles:
-            data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if "core" in access_levels:
-                user_lastschrift = self.cdeproxy.list_lastschrift(
-                    rs, persona_ids=(persona_id,), active=True)
-                data['has_lastschrift'] = bool(user_lastschrift)
+            persona = self.coreproxy.new_get_cde_user(rs, persona_id)
+        # event and assembly are independent realms, users may have both at the same time
+        elif ("event" in access_levels and "event" in roles and "assembly" in access_levels and "assembly" in roles):
+            assembly_persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
+            event_persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
+            persona = models.EventAssemblyPersona(**{**assembly_persona.as_dict(), **event_persona.as_dict()})
+        elif "event" in access_levels and "event" in roles:
+            persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
+        elif "assembly" in access_levels and "assembly" in roles:
+            persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
+        elif "ml" in access_levels and "ml" in roles:
+            persona = self.coreproxy.new_get_ml_user(rs, persona_id)
+        else:
+            persona = self.coreproxy.new_get_core_user(rs, persona_id)
+            # The base version of the data set should only contain the name,
+            # however the PERSONA_CORE_FIELDS also contain the email address
+            # which we must delete beforehand.
+            persona.username = None  # type: ignore[assignment]
+
+        has_lastschrift = None
+        if isinstance(persona, models.CdEPersona):
+            if "full" in access_levels:
+                has_lastschrift = bool(self.cdeproxy.list_lastschrift(
+                    rs, persona_ids=(persona_id,), active=True))
+                # hide the donation property if no active lastschrift exists, to avoid confusion
+                if not has_lastschrift:
+                    persona.donation = None  # type: ignore[assignment]
+            else:
+                persona.balance = None  # type: ignore[assignment]
+                persona.decided_search = None  # type: ignore[assignment]
+                persona.trial_member = None  # type: ignore[assignment]
+                persona.bub_search = None  # type: ignore[assignment]
+                persona.paper_expuls = None  # type: ignore[assignment]
+                persona.donation = None  # type: ignore[assignment]
+                if not persona.show_address2:
+                    # TODO what about postal_code, location and country?
+                    persona.address2 = None
+                    persona.address_supplement2 = None
+
+        if access_levels.isdisjoint({"full", "meta"}):
+            status_bits = persona.get_status_bits()
+            # allow orgas to view member status
+            if "orga" in access_levels and "is_member" in status_bits:
+                status_bits.remove("is_member")
+            for field in status_bits:
+                setattr(persona, field, None)
+
+        if access_levels.isdisjoint({"full", "orga"}):
+            # May be hidden from member search, but not from orga view.
+            if not persona.show_legal_given_names:
+                persona.legal_given_names = None
+            if isinstance(persona, models.EventPersona):
+                persona.gender = None  # type: ignore[assignment]
+                persona.pronouns_nametag = None  # type: ignore[assignment]
+                persona.show_legal_given_names = None  # type: ignore[assignment]
+                # May be hidden from member search, but not from orga view.
+                # In addition, never show the address of non-cde users.
+                if (isinstance(persona, models.CdEPersona) and not persona.show_address
+                        or not isinstance(persona, models.CdEPersona)):
+                    # TODO what about postal_code, location and country?
+                    persona.address = None
+                    persona.address_supplement = None
+
+        notes = None
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
-            data['notes'] = total['notes']
-            data['username'] = total['username']
+            # to distinguish from the not-privileged case
+            notes = total['notes'] or ""
+            persona.username = total['username']
 
-        # Check whether profile is currently searchable to viewer
-        acutally_searchable_to_you = ("searchable" in rs.user.roles
-                                      and rs.ambience['persona']['is_member']
-                                      and rs.ambience['persona']['is_searchable'])
         # Determine if vcard should be visible
-        data['show_vcard'] = "cde" in access_levels and acutally_searchable_to_you
-
-        # Cull unwanted data
-        if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
-            del data['foto']
-        # hide the donation property if no active lastschrift exists, to avoid confusion
-        if "donation" in data and not data.get("has_lastschrift"):
-            del data["donation"]
-        # relative admins, core admins and the user himself got "core"
-        if "core" not in access_levels:
-            masks = ["balance", "decided_search", "trial_member", "bub_search",
-                     "is_searchable", "paper_expuls", "donation"]
-            if "meta" not in access_levels:
-                masks.extend([
-                    "is_active", "is_meta_admin", "is_core_admin",
-                    "is_cde_admin", "is_event_admin", "is_ml_admin",
-                    "is_assembly_admin", "is_cde_realm", "is_event_realm",
-                    "is_ml_realm", "is_assembly_realm", "is_archived",
-                    "notes"])
-            if "orga" not in access_levels:
-                masks.extend(["is_member", "gender", "pronouns_nametag",
-                              "show_legal_given_names"])
-                # Primary address and legal given names may be hidden from member search,
-                # but not from orga view.
-                if not data.get('show_address', True):
-                    masks.extend(["address", "address_supplement"])
-                if not data.get('show_legal_given_names', False):
-                    masks.append("legal_given_names")
-            if not data.get('show_address2', True):
-                masks.extend(["address2", "address_supplement2"])
-            for key in masks:
-                if key in data:
-                    del data[key]
+        show_vcard = "cde" in access_levels and is_searchable_to_you
 
         # Add past event participation info
         past_events = None
@@ -724,24 +752,37 @@ class CoreBaseFrontend(AbstractFrontend):
                 or ({"core_admin", "ml_admin"} & rs.user.roles)):
             # the username may be masked by admin views, but then we also
             # don't need the email report
-            if 'username' in data:
+            if persona.username:
                 tmp = self.coreproxy.get_email_reports(rs, [persona_id])
-                email_report = tmp.get(data['username'])
+                email_report = tmp.get(persona.username)
 
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me and "cde" not in access_levels
-                     and acutally_searchable_to_you)
+                     and is_searchable_to_you)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_membership_fee_reference(data)
+        reference = make_membership_fee_reference({
+            "id": persona.id,
+            "given_names": persona.given_names,
+            "family_name": persona.family_name
+        })
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
-            'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
-            'quoteable': quoteable, 'access_mode': access_mode,
-            'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
+            # TODO rename in template
+            'data': persona,
+            'past_events': past_events,
+            'meta_info': meta_info,
+            'is_relative_admin_view': is_relative_admin_view,
+            'reference': reference,
+            'quoteable': quoteable,
+            'access_mode': access_mode,
+            'active_session_count': active_session_count,
+            'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
+            'has_lastschrift': has_lastschrift,
+            'notes': notes,
+            'show_vcard': show_vcard,
         }, mandatory_fields)
 
     @access("member")

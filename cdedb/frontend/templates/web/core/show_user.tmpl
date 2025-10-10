@@ -125,12 +125,12 @@
         </div>
     {% endif %}
 
-    {% if 'foto' in data or data['show_vcard'] %}
+    {% if data|hasattr("foto") or show_vcard %}
         {# prevent floating of the above buttons beside the photo, which looks ugly (esp. on mobile) #}
         <div style="clear: both"></div>
         <div class="pull-right-responsive text-right-responsive">
             {# Profile photo/avatar #}
-            {% if 'foto' in data %}
+            {% if data|hasattr("foto") %}
                 <div id="profile-foto">
                     {% if data['foto'] %}
                         <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
@@ -147,7 +147,7 @@
                 </div>
             {% endif %}
 
-            {% if data['show_vcard'] %}
+            {% if show_vcard %}
                 <div id="vcard">
                     {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'],
                                                          persona_id=user.persona_id, timeout=None) %}
@@ -195,7 +195,7 @@
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
                 <dd>{{ data|persona_name(use_legal_name=True, with_titles=True) }}</dd>
-                {% if "show_legal_given_names" in data %}
+                {% if data|hasattr("show_legal_given_names") and data.show_legal_given_names is not none %}
                     <dt title="{% trans %}Show legal name in member search{% endtrans %}">
                         {% trans %}Show legal name in member search{% endtrans %}
                     </dt>
@@ -222,9 +222,8 @@
                 </dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
-
-            {% if "pronouns_nametag" in data %}
-                {% if "pronouns" in data %}
+            {% if data|hasattr("pronouns_nametag") and data.pronouns_nametag is not none %}
+                {% if data|hasattr("pronouns") %}
                     <dt title="{% trans %}Pronouns{% endtrans %}">
                     {% trans %}Pronouns{% endtrans %}
                     </dt>
@@ -250,7 +249,7 @@
                 <dd id="cdedb-id">
                     {{ data['id']|cdedbid }}
                 </dd>
-                {% if "is_active" in data %}
+                {% if data|hasattr("is_active") and data.is_active is not none %}
                     <dt title="{% trans %}Account active{% endtrans %}">
                         {% trans %}Account active{% endtrans %}
                     </dt>
@@ -259,7 +258,7 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}
                     </dd>
                 {% endif %}
-                {% if 'honorary_member' in data and data['honorary_member'] and "is_member" not in data %}
+                {% if data|hasattr("honorary_member") and data.honorary_member and (not data|hasattr("is_member") or data.is_member is none) %}
                     <div id="honorary-member">
                         <dt title="{% trans %}Honorary Member{% endtrans %}">
                             {% trans %}Honorary Member{% endtrans %}
@@ -273,7 +272,7 @@
             </dl>
 
             {# Only a check if the realm bits are contained in data #}
-            {% if "is_ml_realm" in data %}
+            {% if data.is_ml_realm is not none %}
                 <dl class="dl-horizontal">
                     <dt title="{% trans %}Realms{% endtrans %}">
                         {% trans %}Realms{% endtrans %}
@@ -321,11 +320,11 @@
                         {% endif %}
                     </dd>
 
-                    {% if "notes" in data %}
+                    {% if notes is not none %}
                         <dt title="{% trans %}Admin Notes{% endtrans %}">
                             {% trans %}Admin Notes{% endtrans %}
                         </dt>
-                        <dd id="admin-notes">{{ data['notes']|md|linebreaks }}</dd>
+                        <dd id="admin-notes">{{ notes|md|linebreaks}}</dd>
                     {% endif %}
                 </dl>
             {% endif %}
@@ -333,7 +332,7 @@
 
         {% if data['is_cde_realm'] %}
             <dl id="cde-membership" class="dl-horizontal">
-                {% if "is_member" in data %}
+                {% if data|hasattr("is_member") and data.is_member is not none %}
                     <dt title="{% trans %}Membership{% endtrans %}">
                         {% trans %}Membership{% endtrans %}
                     </dt>
@@ -392,7 +391,7 @@
                     </dd>
                 {% endif %}
 
-                {% if "balance" in data %}
+                {% if data|hasattr("balance") and data.balance is not none %}
                     <dt title="{% trans %}Balance{% endtrans %}">
                         {% trans %}Balance{% endtrans %}
                     </dt>
@@ -407,19 +406,19 @@
                     </dd>
                 {% endif %}
 
-                {% if "donation" in data %}
+                {% if data|hasattr("donation") and data.donation is not none %}
                     <dt title="{% trans %}Annual Donation{% endtrans %}">
                         {% trans %}Annual Donation{% endtrans %}
                     </dt>
                     <dd>{{ data['donation']|money(lang=lang) if data['donation'] else "–" }}</dd>
                 {% endif %}
 
-                {% if "has_lastschrift" in data %}
+                {% if has_lastschrift is not none %}
                     <dt title="{% trans %}Method of Payment{% endtrans %}">
                         {% trans %}Method of Payment{% endtrans %}
                     </dt>
                     <dd id="lastschrift">
-                        {% if data["has_lastschrift"] %}
+                        {% if has_lastschrift %}
                             {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
                                          else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                          gettext("Direct Debit Authorization"), icon="euro-sign",
@@ -441,7 +440,7 @@
             </dl>
         {% endif %}
 
-        {% if 'paper_expuls' in data %}
+        {% if data|hasattr("paper_expuls") and data.paper_expuls is not none %}
             <dl id="paper-expuls" class="dl-horizontal">
                 <dt title="{% trans %}Printed exPuls{% endtrans %}">
                     {% trans %}Printed exPuls{% endtrans %}

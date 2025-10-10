@@ -381,7 +381,14 @@ class EventPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
-class CdEPersona(AssemblyPersona, EventPersona):
+class EventAssemblyPersona(AssemblyPersona, EventPersona):
+    @property
+    def is_pure(self) -> bool:
+        return not self.is_cde_realm
+
+
+@dataclasses.dataclass(kw_only=True)
+class CdEPersona(EventAssemblyPersona):
     is_cde_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
@@ -421,6 +428,10 @@ class CdEPersona(AssemblyPersona, EventPersona):
     @property
     def is_pure(self) -> bool:
         return True
+
+
+# for easier type hinting, if its necessary
+AnyPersona = Persona | MlPersona | EventPersona | EventAssemblyPersona | CdEPersona
 
 
 @dataclasses.dataclass(kw_only=True)
