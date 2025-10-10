@@ -3205,7 +3205,12 @@ class TestEventBackend(BackendTest):
                 for reg_id in self.event.list_registrations(self.key, event_id=event_id):
                     data = self._raw_backend.sql_select_one(
                         self.key, models.Registration.database_table,
-                        ["amount_owed", "amount_owed_by_kind"],
+                        [
+                            "amount_owed",
+                            "amount_owed_by_kind",
+                            "amount_owed_by_category",
+                            "amount_owed_by_budget",
+                        ],
                         entity=reg_id,
                     )
                     assert data is not None
@@ -3214,9 +3219,19 @@ class TestEventBackend(BackendTest):
                         const.EventFeeType(int(key)): decimal.Decimal(val)
                         for key, val in data["amount_owed_by_kind"].items()
                     }
+                    expectation_by_category = {
+                        const.EventFeeCategory(int(key)): decimal.Decimal(val)
+                        for key, val in data["amount_owed_by_category"].items()
+                    }
+                    expectation_by_budget = {
+                        const.EventFeeBudget(int(key)): decimal.Decimal(val)
+                        for key, val in data["amount_owed_by_budget"].items()
+                    }
                     complex_reality = self.event.calculate_complex_fee(self.key, reg_id)
                     self.assertEqual(expectation_amount, complex_reality.amount)
                     self.assertEqual(expectation_by_kind, dict(complex_reality.by_kind))
+                    self.assertEqual(expectation_by_category, dict(complex_reality.by_category))
+                    self.assertEqual(expectation_by_budget, dict(complex_reality.by_budget))
 
         reg_id = 2
         reg = self.event.get_registration(self.key, reg_id)
