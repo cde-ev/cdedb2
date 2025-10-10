@@ -16,11 +16,12 @@ from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, asciificator, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import EntitySorter, Sortkey
+from cdedb.filter import cdedbid_filter
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
@@ -428,6 +429,18 @@ class CdEPersona(EventAssemblyPersona):
     @property
     def is_pure(self) -> bool:
         return True
+
+    @property
+    def membership_fee_reference(self) -> str:
+        """Generate the desired reference for membership fee payment.
+
+        This is the "Verwendungszweck".
+        """
+        return "Mitgliedsbeitrag {gn} {fn}, {cdedbid}".format(  # noqa: UP032
+            gn=asciificator(self.given_names),
+            fn=asciificator(self.family_name),
+            cdedbid=cdedbid_filter(self.id),
+        )
 
 
 # for easier type hinting, if its necessary

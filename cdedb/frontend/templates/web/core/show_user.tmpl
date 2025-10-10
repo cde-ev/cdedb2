@@ -653,7 +653,7 @@ Kontoinhaber:       {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:               {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:                {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck:   {{ reference }}
+Verwendungszweck:   {{ data.membership_fee_reference }}
 
 Bei Überweisungen aus dem Ausland achte bitte darauf, dass der Empfänger
 keine Gebühren bezahlen muss.

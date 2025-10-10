@@ -89,7 +89,6 @@ from cdedb.frontend.common import (
     check_validation as check,
     check_validation_optional as check_optional,
     inspect_validation as inspect,
-    make_membership_fee_reference,
     periodic,
     request_dict_extractor,
 )
@@ -761,11 +760,6 @@ class CoreBaseFrontend(AbstractFrontend):
                      and is_searchable_to_you)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_membership_fee_reference({
-            "id": persona.id,
-            "given_names": persona.given_names,
-            "family_name": persona.family_name
-        })
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
@@ -774,7 +768,6 @@ class CoreBaseFrontend(AbstractFrontend):
             'past_events': past_events,
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
-            'reference': reference,
             'quoteable': quoteable,
             'access_mode': access_mode,
             'active_session_count': active_session_count,
