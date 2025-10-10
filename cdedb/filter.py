@@ -705,6 +705,10 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
         group_label = value.optgroup_label() if hasattr(value, "optgroup_label") else ""
         if group_label:
             group_label = processing(group_label)
+        label_addon = value.label_addon() if hasattr(value, "label_addon") else ""
+        if label_addon:
+            label_addon = processing(label_addon)
+            label = f"{label} ({label_addon})"
         grouped[group_label].append((value, label))
     if len(grouped) == 1:
         return list(grouped.values())[0]
