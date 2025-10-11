@@ -18,8 +18,10 @@ class MockHeldMessage:
 # Sample messages for the case that no mailman instance is available.
 HELD_MESSAGE_SAMPLE = [
     MockHeldMessage(
-        request_id=1, sender='kassenwart@example.cde',
-        subject='Finanzbericht', reason='Nicht-Abonnent',
+        request_id=1,
+        sender='kassenwart@example.cde',
+        subject='Finanzbericht',
+        reason='Nicht-Abonnent',
         msg="""
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
@@ -75,10 +77,13 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),
+""".strip(),
+    ),
     MockHeldMessage(
-        request_id=2, sender='illuminati@example.cde',
-        subject='Verschwurbelung', reason='Zu riesig',
+        request_id=2,
+        sender='illuminati@example.cde',
+        subject='Verschwurbelung',
+        reason='Zu riesig',
         msg="""
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
@@ -140,7 +145,8 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),
+""".strip(),
+    ),
     MockHeldMessage(
         request_id=3,
         sender='nigerian_prince@example.cde',
@@ -208,5 +214,6 @@ Content-Type: text/html; charset="UTF-8"
 <div dir="ltr">Test-Mail</div>
 
 --00000000000095e6f305b6843107--
-""".strip()),
+""".strip(),
+    ),
 ]

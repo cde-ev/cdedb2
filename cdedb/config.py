@@ -375,7 +375,7 @@ _DEFAULTS = {
 
     # this can be found and overridden in cdedb2/query_defaults.py
 
-}
+}  # fmt: skip
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
@@ -422,7 +422,7 @@ _SECRECTS_DEFAULTS = {
         "keycloak": "secret",
         "test": "secret",
     },
-}
+}  # fmt: skip
 
 
 def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
@@ -449,7 +449,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
 
         if not pathlib.Path(configpath).is_file():
             raise RuntimeError(  # pragma: no cover
-                f"Config file {configpath} not found!")
+                f"Config file {configpath} not found!"
+            )
 
         self._process_config_overwrite()
 
@@ -470,7 +471,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
             old_configpath = self._configpath
             if not pathlib.Path(configpath).is_file():
                 raise RuntimeError(  # pragma: no cover
-                    f"Config file {configpath} not found!")
+                    f"Config file {configpath} not found!"
+                )
             self._configpath = configpath
             _LOGGER.info(f"Configpath changed: {old_configpath} -> {configpath}")
             self._process_config_overwrite()
@@ -560,7 +562,8 @@ class SecretsConfig(BaseConfig):
     def _process_config_overwrite(self) -> None:
         override = _import_from_file(self._configpath)
         override = {
-            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
+            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS
+        }
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production
         if pathlib.Path("/PRODUCTIONVM").is_file():

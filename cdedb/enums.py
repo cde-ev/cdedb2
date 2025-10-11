@@ -35,17 +35,23 @@ from cdedb.uncommon.intenum import CdEIntEnum
 from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 ALL_ENUMS: tuple[type[enum.Enum], ...] = tuple(
-    enum_ for enum_ in locals().values()
-    if isinstance(enum_, type)
-       and issubclass(enum_, enum.Enum)
-       and not getattr(enum_, "infinite_enum", False)
+    enum_
+    for enum_ in locals().values()
+    if (
+        isinstance(enum_, type)
+        and issubclass(enum_, enum.Enum)
+        and not getattr(enum_, "infinite_enum", False)
+    )
 )
 
 ALL_INFINITE_ENUMS: tuple[type[CdEIntEnum], ...] = tuple(
-    enum_ for enum_ in locals().values()
-    if isinstance(enum_, type)
-       and issubclass(enum_, CdEIntEnum)
-       and getattr(enum_, "infinite_enum", False)
+    enum_
+    for enum_ in locals().values()
+    if (
+        isinstance(enum_, type)
+        and issubclass(enum_, CdEIntEnum)
+        and getattr(enum_, "infinite_enum", False)
+    )
 )
 
 #: A dict for enum lookup in the templates.
