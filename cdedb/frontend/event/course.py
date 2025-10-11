@@ -319,6 +319,47 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
+    def show_instructed_courses(self, rs: RequestState, event_id: int) -> Response:
+        registration_id = self.eventproxy.get_registration_id(
+            rs, cast(int, rs.user.persona_id), event_id
+        )
+        if not registration_id:
+            rs.notify("warning", n_("Not registered for event."))
+            return self.redirect(rs, "event/show_event")
+
+        if not self.is_privileged(
+            rs,
+            EventPrivileges.registrations_stats | EventPrivileges.courses_read,
+            event_id=event_id
+        ):
+            if not rs.ambience['event'].is_course_assignment_visible:
+                rs.notify("warning", n_("Course assignment not visible."))
+                return self.redirect(rs, "event/registration_status")
+
+        registration = self.eventproxy.get_registration(rs, registration_id)
+        course_ids = {
+            rt["course_instructor"] for rt in registration["tracks"].values()
+        } - {None}
+        courses = self.eventproxy.get_courses(rs, course_ids)
+
+        attendees = models.Attendees({
+            course_id: self.eventproxy.get_attendee_stats(
+                rs, event_id=event_id, course_id=course_id
+            )
+            for course_id in courses
+        })
+
+        return self.render(
+            rs,
+            "course/show_instructed_courses",
+            {
+                "registration": registration,
+                "courses": courses,
+                "attendees": attendees,
+            },
+        )
+
+    @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active")
     def course_choices_form(
