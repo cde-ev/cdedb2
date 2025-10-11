@@ -1,3 +1,4 @@
+# fmt: off
 # TODO using doctest may be nice for the atomic validators
 # TODO split in multiple files?
 # TODO do not use underscore for protection but instead specify __all__
