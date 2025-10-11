@@ -428,10 +428,13 @@ class EventEventMixin(EventBaseFrontend):
                 subject = f"{len(persona_ids)} Betreuer hinzugefügt ({rs.ambience['event'].shortname})"
             else:
                 subject = f"{len(persona_ids)} Orgas hinzugefügt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orgas_added",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {'To': to, 'Subject': subject},
                 {
                     'personas': personas,
                     'event': rs.ambience['event'],
