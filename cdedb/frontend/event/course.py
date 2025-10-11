@@ -9,9 +9,7 @@ and courses' attendees.
 import collections
 from collections import OrderedDict
 from collections.abc import Collection
-from dataclasses import dataclass
-from functools import cached_property
-from typing import Optional, cast, overload
+from typing import Optional, cast
 
 from werkzeug import Response
 
@@ -73,120 +71,6 @@ _HIDDEN_COURSES_QUERY = Query(
         ),
     ],
 )
-
-
-@dataclass(frozen=True)
-class ChoiceCounts:
-    """
-    Wrapper around a mapping of course, track and rank to number of choices.
-
-    For convenience this can be indexed by either only the course id,
-    course id and track id or course id, track id and rank.
-    """
-    # dict mapping (course_id, track_id) to list of choice counts.
-    _choice_counts: dict[int, dict[int, list[int]]]
-
-    @overload
-    def get(self, course_id: int) -> dict[int, list[int]]: ...
-
-    @overload
-    def get(self, course_id: int, track_id: int) -> list[int]: ...
-
-    @overload
-    def get(self, course_id: int, track_id: int, rank: int) -> int: ...
-
-    def get(
-            self,
-            course_id: int,
-            track_id: int | None = None,
-            rank: int | None = None,
-    ) -> dict[int, list[int]] | list[int] | int:
-        by_track = self._choice_counts.get(course_id, {})
-        if track_id is None:
-            return by_track
-        counts = by_track.get(track_id, [])
-        if rank is None:
-            return counts
-        return counts[rank] if rank < len(counts) else 0
-
-    def __getitem__(
-            self, item: tuple[int] | tuple[int, int] | tuple[int, int, int],
-    ) -> dict[int, list[int]] | list[int] | int:
-        return self.get(*item)
-
-
-@dataclass(frozen=True)
-class ChoiceStats:
-    """
-    Collection helper class, holding two instances of `ChoiceCounts`.
-
-    `participant` only includes choices by participants, `involved`
-    includes the stati defined by `const.RegisrationPartStati.is_involved()`.
-    """
-    participant: ChoiceCounts
-    involved: ChoiceCounts
-
-
-@dataclass(frozen=True)
-class CourseAttendees:
-    """
-    Wrapper to store the assigned attendees of one course in one track.
-    """
-    learners: list[CdEDBObject]
-    instructors: list[CdEDBObject]
-
-    @cached_property
-    def all(self) -> list[CdEDBObject]:
-        return self.learners + self.instructors
-
-    @cached_property
-    def num_learners(self) -> int:
-        return len(self.learners)
-
-    @cached_property
-    def num_instructors(self) -> int:
-        return len(self.instructors)
-
-    @cached_property
-    def num(self) -> int:
-        return len(self.all)
-
-
-@dataclass(frozen=True)
-class Attendees:
-    """Wrapper around a mapping of course and track to lists of attendees."""
-    _course_attendee_counts: dict[int, dict[int, CourseAttendees]]
-
-    @overload
-    def get(self, course_id: int) -> dict[int, CourseAttendees]: ...
-
-    @overload
-    def get(self, course_id: int, track_id: int) -> CourseAttendees: ...
-
-    def get(
-            self, course_id: int, track_id: int | None = None,
-    ) -> dict[int, CourseAttendees] | CourseAttendees:
-        by_track = self._course_attendee_counts.get(course_id, {})
-        if track_id is None:
-            return by_track
-        return by_track.get(track_id, CourseAttendees([], []))
-
-    def __getitem__(
-            self, item: tuple[int] | tuple[int, int],
-    ) -> dict[int, CourseAttendees] | CourseAttendees:
-        return self.get(*item)
-
-
-@dataclass(frozen=True)
-class AttendeeStats:
-    """
-    Collection helper class, holding two instances of `Attendees`.
-
-    `involved` are the stati defined by `const.RegisrationPartStati.is_involved()`.
-    `uninvolved` is the rest.
-    """
-    involved: Attendees
-    uninvolved: Attendees
 
 
 class EventCourseMixin(EventBaseFrontend):
@@ -671,10 +555,17 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     def get_course_stats(
-            self, rs: RequestState, event: models.Event, registrations: CdEDBObjectMap,
-    ) -> tuple[ChoiceStats, AttendeeStats]:
+        self,
+        rs: RequestState,
+        *,
+        event: models.Event,
+        registrations: CdEDBObjectMap,
+        course_ids: Collection[int] | None = None,
+    ) -> tuple[models.ChoiceStats, models.AttendeeStats]:
         """Generate choice counts and attendee counts"""
-        course_ids = self.eventproxy.list_courses(rs, event.id)
+        if course_ids is None:
+            course_ids = self.eventproxy.list_courses(rs, event.id)
+        course_ids = set(course_ids)
 
         # Collection of number of choices in two categories: participant and involved.
         choice_counts_data = {
@@ -701,12 +592,16 @@ class EventCourseMixin(EventBaseFrontend):
                 ):
                     if rank >= track.num_choices:
                         break
+                    if course_id not in course_ids:
+                        continue
                     if status == const.RegistrationPartStati.participant:
                         choice_counts_data['participant'][course_id][track_id][rank] += 1
                     if status.is_involved():
                         choice_counts_data['involved'][course_id][track_id][rank] += 1
 
                 if (course_id := reg['tracks'][track_id]['course_id']) is not None:
+                    if course_id not in course_ids:
+                        continue
                     if reg['parts'][track.part_id]['status'].is_involved():
                         involved_attendees_lists[(course_id, track_id)].append(reg)
                     else:
@@ -720,8 +615,8 @@ class EventCourseMixin(EventBaseFrontend):
             ('uninvolved', uninvolved_attendees_lists),
         ]:
             attendees_data[k] = {
-                course_id: {
-                    track_id: CourseAttendees(
+                course_id: models.CourseAttendees({
+                    track_id: models.CourseSegmentAttendees(
                         [
                             reg for reg in lists[(course_id, track_id)]
                             if reg['tracks'][track_id]['course_instructor'] != course_id
@@ -732,18 +627,18 @@ class EventCourseMixin(EventBaseFrontend):
                         ],
                     )
                     for track_id, track in event.tracks.items()
-                }
+                })
                 for course_id in course_ids
             }
 
         return (
-            ChoiceStats(
-                participant=ChoiceCounts(choice_counts_data['participant']),
-                involved=ChoiceCounts(choice_counts_data['involved']),
+            models.ChoiceStats(
+                participant=models.ChoiceCounts(choice_counts_data['participant']),
+                involved=models.ChoiceCounts(choice_counts_data['involved']),
             ),
-            AttendeeStats(
-                involved=Attendees(attendees_data['involved']),
-                uninvolved=Attendees(attendees_data['uninvolved']),
+            models.AttendeeStats(
+                involved=models.Attendees(attendees_data['involved']),
+                uninvolved=models.Attendees(attendees_data['uninvolved']),
             ),
         )
 

@@ -14,12 +14,12 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
+import abc
 import functools
-import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, cast
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -58,9 +58,6 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-
-if TYPE_CHECKING:
-    from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -570,10 +567,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             for sub_id in sub_ids
         }
 
-    @staticmethod
-    def _get_track_ids(event: models.Event, part_group_id: int) -> set[int]:
-        parts = event.part_groups[part_group_id].parts.values()
-        return set(itertools.chain.from_iterable(part.tracks for part in parts))
+    @abc.abstractmethod
+    def get_course_stats(
+        self,
+        rs: RequestState,
+        *,
+        event: models.Event,
+        registrations: CdEDBObjectMap,
+        course_ids: Collection[int] | None = None,
+    ) -> tuple[models.ChoiceStats, models.AttendeeStats]:
+        ...
 
     def get_constraint_violations(
             self, rs: RequestState, event: models.Event, *,
@@ -618,9 +621,11 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
-        choice_stats: "ChoiceStats"  # noqa: UP037
-        attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
+        choice_stats: models.ChoiceStats
+        attendee_stats: models.AttendeeStats
+        choice_stats, attendee_stats = self.get_course_stats(
+            rs, event=event, registrations=all_registrations, course_ids=courses
+        )
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.new_get_lodgements(
