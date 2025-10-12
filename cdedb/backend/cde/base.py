@@ -160,11 +160,16 @@ class CdEBaseBackend(AbstractBackend):
             with Atomizer(rs):
                 result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
-                personas = self.core.get_total_personas(rs, persona_ids)
+                personas = self.core.get_event_users(rs, persona_ids)
+                cde_persona_ids = {
+                    p["id"] for p in personas.values() if p["is_cde_realm"]
+                }
+                cde_personas = self.core.get_cde_users(rs, cde_persona_ids)
                 for index, transfer in enumerate(transfers):
                     persona = personas[transfer['persona_id']]
                     amount, date = transfer['amount'], transfer['date']
                     if transfer['registration_id'] is None:
+                        persona = cde_personas[persona["id"]]
                         new_balance = persona['balance'] + amount
                         change_note = changelog_note_template.format(
                             amount=money_filter(amount),

@@ -402,18 +402,18 @@ class CoreBaseBackend(AbstractBackend):
         log_filter = affirm(ChangelogLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @staticmethod
     @internal
     def _get_changelog_inconsistencies(
-        persona: CdEDBObject, generation: CdEDBObject
+        self, rs: RequestState, generation: CdEDBObject
     ) -> list[str]:
         """Helper to get actual inconsistencies between changelog and core.personas.
 
-        This is outlined to avoid duplicated calls to changelog_get_history and
-        get_total_persona in changelog_submit_change.
+        This is outlined to avoid duplicated calls to changelog_get_history
+        in changelog_submit_change.
 
         :returns: A list of inconsistent field names.
         """
+        persona = self.get_total_persona(rs, generation["id"])
         if generation['code'] != const.PersonaChangeStati.committed:
             raise RuntimeError(n_("Given changelog generation must be committed."))
         return [key for key in persona if persona[key] != generation[key]]
@@ -442,8 +442,7 @@ class CoreBaseBackend(AbstractBackend):
             )
             if not committed_state:
                 return None
-            persona = self.get_total_persona(rs, persona_id)
-        return self._get_changelog_inconsistencies(persona, committed_state)
+        return self._get_changelog_inconsistencies(rs, committed_state)
 
     def changelog_submit_change(
         self,
@@ -519,13 +518,11 @@ class CoreBaseBackend(AbstractBackend):
                     rs, data['id'], generations=(committed_generation,)
                 )
             )
-            # state of the persona in core.personas
-            persona = self.get_total_persona(rs, data['id'])
 
             # Die when committed_state and core.personas are inconsistent.
             if not committed_state:
                 raise RuntimeError(n_("No committed state found."))
-            if self._get_changelog_inconsistencies(persona, committed_state):
+            if self._get_changelog_inconsistencies(rs, committed_state):
                 raise RuntimeError(n_("Persona and Changelog are inconsistent."))
 
             # handle pending changes
@@ -535,10 +532,10 @@ class CoreBaseBackend(AbstractBackend):
                 if not may_wait:
                     diff = {
                         key: current_state[key]
-                        for key in persona
-                        if persona[key] != current_state[key]
+                        for key in committed_state
+                        if committed_state[key] != current_state[key]
                     }
-                    current_state.update(persona)
+                    current_state.update(committed_state)
                     query = """
                         UPDATE core.changelog
                         SET code = %(new_code)s
@@ -719,11 +716,17 @@ class CoreBaseBackend(AbstractBackend):
             }
             return self.query_exec(rs, query, params)
         with Atomizer(rs):
+            # Get current committed generation. changelog_submit_change takes care
+            #  that this is in sync with core.personas.
+            committed_generation = self.changelog_get_generation(
+                rs, persona_id, committed_only=True
+            )
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(
-                rs, persona_id, generations=(generation,)
+                rs, persona_id, generations=(generation, committed_generation)
             )
             data = history[generation]
+            committed_state = history[committed_generation]
             if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
@@ -743,9 +746,8 @@ class CoreBaseBackend(AbstractBackend):
             self.query_exec(rs, query, params)
 
             # determine changed fields
-            old_state = unwrap(self.get_total_personas(rs, (persona_id,)))
             relevant_keys = tuple(
-                key for key in old_state if data[key] != old_state[key]
+                key for key in committed_state if data[key] != committed_state[key]
             )
             relevant_keys += ('id',)
 
@@ -1205,11 +1207,10 @@ class CoreBaseBackend(AbstractBackend):
             is_member = trial_member = honorary_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
-                tmp = self.get_total_persona(rs, data['id'])
-                if tmp['balance'] is None:
-                    data['balance'] = decimal.Decimal('0.0')
-                else:
-                    data['balance'] = tmp['balance']
+                tmp = self.get_persona(rs, data['id'])
+                if tmp['is_cde_realm']:
+                    raise RuntimeError("Already CdE realm")
+                data['balance'] = decimal.Decimal("0")
                 # We can not apply the desired state directly, since this would violate
                 #  our database integrity (but we also want to get the logs right), so
                 #  we stash the changes here and apply them later on.
@@ -1589,7 +1590,8 @@ class CoreBaseBackend(AbstractBackend):
         trial_member = affirm_optional(bool, trial_member)
         honorary_member = affirm_optional(bool, honorary_member)
         with Atomizer(rs):
-            current = self.get_total_persona(rs, persona_id)
+            # Already checks that the user has cde realm.
+            current = self.get_cde_user(rs, persona_id)
 
             # Determine target state.
             if is_member is None:
@@ -1600,8 +1602,6 @@ class CoreBaseBackend(AbstractBackend):
                 honorary_member = current['honorary_member']
 
             # Do some sanity checks
-            if not current['is_cde_realm']:
-                raise RuntimeError(n_("Not a CdE account."))
             if trial_member and not is_member:
                 raise ValueError(n_("Trial membership requires membership."))
             if honorary_member and not is_member:
@@ -1943,7 +1943,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         note = affirm(str, note)
         with Atomizer(rs):
-            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            persona = self.get_total_persona(rs, persona_id)
             #
             # 1. Do some sanity checks.
             #
@@ -2308,7 +2308,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
-            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            persona = self.get_total_persona(rs, persona_id)
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
             if self.sql_select(
