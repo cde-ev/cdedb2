@@ -429,9 +429,9 @@ class CdEDataclass:
         """
         return self._asdict_inner(self, dict)
 
-    def _asdict_inner(
+    def _asdict_inner(  # type: ignore[no-untyped-def]
         self,
-        obj: Any,  # type: ignore[no-untyped-def]
+        obj: Any,
         dict_factory: Any,
     ):
         if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
