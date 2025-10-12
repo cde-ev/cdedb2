@@ -1791,7 +1791,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             # check the source user is ml_only, no admin and not archived
             source = self.core.get_ml_user(rs, source_persona_id)
-            if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
+            source_status = self.core.get_persona(rs, source_persona_id)
+            if any(source_status[admin_bit] for admin_bit in ADMIN_KEYS):
                 raise ValueError(n_("Source User is admin and can not be merged."))
             if not self.core.verify_persona(
                 rs, source_persona_id, allowed_roles={'ml'}

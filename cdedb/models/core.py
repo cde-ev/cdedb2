@@ -6,6 +6,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import functools
 import re
 from enum import auto
 from secrets import token_urlsafe
@@ -203,47 +204,75 @@ class AnonymousMessageData(CdEDataclass):
 
 class PersonaFlag(AbstractFlag):
     """Flags to store special metadata of Persona dataclasses."""
-    # This field is exposed for external account creation.
-    genesis_exposed = auto()
+    # Raise an error if this flag is not true during instantiation
+    mandatory_true_flag = auto()
+    # This field is mandatory during external account creation.
+    genesis_validate_creation_mandatory = auto()
+    # This field is optional during external account creation.
+    genesis_validate_creation_optional = auto()
 
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(CdEDataclass):
+class PersonaName(CdEDataclass):
+    title: str | None = None
+    nickname: str | None = None
+    legal_given_names: str | None = None
+    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+    name_supplement: str | None = None
+    show_legal_given_names: bool = False
+
+
+@dataclasses.dataclass(kw_only=True)
+class Persona(PersonaName):
+    database_table: ClassVar[str] = "core.personas"
+
     username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     # This does not include the ``password_hash`` for security reasons.
 
     # status flags
     is_active: bool = True
-    is_meta_admin: bool = False
-    is_core_admin: bool = False
-    is_cde_admin: bool = False
-    is_finance_admin: bool = False
-    is_event_admin: bool = False
-    is_ml_admin: bool = False
-    is_assembly_admin: bool = False
-    is_complaint_admin: bool = False
-    is_cde_realm: bool = False
-    is_event_realm: bool = False
-    is_ml_realm: bool = False
-    is_assembly_realm: bool = False
-    is_cdelokal_admin: bool = False
-    is_auditor: bool = False
-    is_member: bool = False
-    is_searchable: bool = False
     is_archived: bool = False
     is_purged: bool = False
 
-    title: str | None = None
-    nickname: str | None = None
-    legal_given_names: str | None = None
-    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
-    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
-    name_supplement: str | None = None
-    show_legal_given_names: bool = False
+    # retrieve all realm bits to enable the dataclass to know if its pure
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_event_realm: bool = False
+    is_cde_realm: bool = False
 
-    # admin notes
-    notes: str | None = None
+    # Do not include admin notes, get this via its own getter.
+
+    def __post_init__(self) -> None:
+        for field in dataclasses.fields(self):
+            if PersonaFlag.mandatory_true_flag.in_field(field):
+                if not getattr(self, field.name):
+                    raise RuntimeError
+
+    @classmethod
+    @functools.cache
+    def get_status_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_"):
+                ret.add(field.name)
+        return ret
+
+    @classmethod
+    @functools.cache
+    def get_admin_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_") and field.name.endswith("_admin"):
+                ret.add(field.name)
+            elif field.name == "is_auditor":
+                ret.add(field.name)
+        return ret
+
+    @property
+    def is_pure(self) -> bool:
+        return False
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
@@ -252,41 +281,80 @@ class Persona(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class MlPersona(Persona):
-    ...
+    is_ml_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_ml_admin: bool = False
+    is_cdelokal_admin: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_event_realm or self.is_cde_realm)
+
+
+@dataclasses.dataclass(kw_only=True)
+class AssemblyPersona(MlPersona):
+    is_assembly_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_assembly_admin: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_event_realm or self.is_cde_realm)
 
 
 @dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
+    is_event_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+    # TODO this is currently exposed via partial export, should make a single effort to remove this
+    is_member: bool = False
+
     gender: const.Genders = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     birthday: vtypes.Birthday = dataclasses.field(
-        metadata=PersonaFlag.genesis_exposed.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     telephone: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     mobile: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     address_supplement: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
-    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
-    # its mandatory here.
-    address: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+    address: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     postal_code: vtypes.PrintableASCII | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
-    # mandatory during genesis cases, but not enforced otherwise. Since this is currenlty only used by genesis,
-    # its mandatory here.
-    location: str = dataclasses.field(metadata=PersonaFlag.genesis_exposed.as_dict)
-    # TODO make mandatory?
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+    location: str | None = dataclasses.field(
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
     country: vtypes.Country | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
 
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_cde_realm)
+
 
 @dataclasses.dataclass(kw_only=True)
-class CdEPersona(EventPersona):
+class CdEPersona(AssemblyPersona, EventPersona):
+    is_cde_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_member: bool = False
+    is_searchable: bool = False
+
+    is_cde_admin: bool = False
+    is_core_admin: bool = False
+    is_meta_admin: bool = False
+    is_finance_admin: bool = False
+    is_auditor: bool = False
+
     show_address: bool = True
     show_address2: bool = True
     address_supplement2: str | None = None
@@ -307,9 +375,13 @@ class CdEPersona(EventPersona):
     foto: str | None = None
     paper_expuls: bool = True
     birth_name: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_exposed.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
     donation: decimal.Decimal = decimal.Decimal()
     honorary_member: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return True
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -360,7 +432,8 @@ class GenesisCase(CdEDataclass):
         if cls == GenesisCase:
             persona_class = CdEPersona
         persona_fields = [field for field in dataclasses.fields(persona_class)
-                          if PersonaFlag.genesis_exposed.in_field(field)]
+                          if PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
+                             or PersonaFlag.genesis_validate_creation_optional.in_field(field)]
         if only_persona:
             return tuple(persona_fields)
 
@@ -380,6 +453,19 @@ class GenesisCase(CdEDataclass):
             persona_fields = {field.name for field in cls.dataclass_fields(only_persona=True)}
             ret = [field for field in ret if field in persona_fields]
         return ret
+
+    @classmethod
+    def _is_validation_field_mandatory(
+            cls,
+            field: dataclasses.Field[Any],
+            creation: bool
+        ) -> bool | None:
+        if creation:
+            if PersonaFlag.genesis_validate_creation_mandatory.in_field(field):
+                return True
+            if PersonaFlag.genesis_validate_creation_optional.in_field(field):
+                return False
+        return super()._is_validation_field_mandatory(field, creation)
 
     def get_sortkey(self) -> Sortkey:
         return (self.ctime, *self.persona.get_sortkey())
@@ -453,14 +539,13 @@ class GenesisCaseMl(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> MlPersona:
-        persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        return persona
+        return copy.deepcopy(self.persona)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -472,15 +557,13 @@ class GenesisCaseEvent(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
-        persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        persona.is_event_realm = True
-        return persona
+        return copy.deepcopy(self.persona)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -493,16 +576,14 @@ class GenesisCaseCdE(GenesisCase):
         meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
         persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
         persona_data["id"] = None
+        persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
+        persona_data["is_assembly_realm"] = persona_data["is_cde_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
     def get_persona_creation(self) -> EventPersona:
         persona = copy.deepcopy(self.persona)
-        persona.is_ml_realm = True
-        persona.is_event_realm = True
-        persona.is_assembly_realm = True
-        persona.is_cde_realm = True
         persona.is_member = True
         persona.trial_member = True
         return persona
