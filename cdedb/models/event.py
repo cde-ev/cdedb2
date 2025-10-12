@@ -85,8 +85,7 @@ class EventDataclass(CdEDataclass, abc.ABC):
 
     @classmethod
     def full_export_spec(
-        cls,
-        entity_key: Optional[str] = None,
+        cls, entity_key: Optional[str] = None
     ) -> tuple[str, str, tuple[str, ...]]:
         return (
             cls.database_table,
@@ -237,9 +236,7 @@ class Event(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
@@ -314,10 +311,7 @@ class Event(EventDataclass):
     @functools.cached_property
     def grouped_fields(
         self,
-    ) -> dict[
-        const.FieldAssociations,
-        dict[str, list["EventField"]],
-    ]:
+    ) -> dict[const.FieldAssociations, dict[str, list["EventField"]]]:
         ret: dict[const.FieldAssociations, dict[str, list[EventField]]]
         ret = collections.defaultdict(dict)
         for field in xsorted(self.fields.values()):
@@ -341,9 +335,7 @@ class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict,
-    )
+    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
@@ -367,9 +359,7 @@ class EventPart(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -531,9 +521,7 @@ class EventFee(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}, amount_min, amount_max
@@ -662,9 +650,7 @@ class CustomQueryFilter(EventDataclass):
             return
         type_ = spec[next(iter(self.fields))].type
         spec[self.get_field_string()] = QuerySpecEntry(
-            type_,
-            self.title,
-            group_base=n_("Custom Filters"),
+            type_, self.title, group_base=n_("Custom Filters")
         )
 
     def is_valid(self, spec: QuerySpec) -> bool:
@@ -675,9 +661,7 @@ class CustomQueryFilter(EventDataclass):
         )
 
     def get_field_titles(
-        self,
-        spec: QuerySpec,
-        g: Callable[[str], str],
+        self, spec: QuerySpec, g: Callable[[str], str]
     ) -> tuple[list[str], list[str]]:
         """
         Return a sorted list of titles of existing fields and potentially names
@@ -720,9 +704,7 @@ class PartGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -779,9 +761,7 @@ class TrackGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -943,9 +923,7 @@ class Course(EventDataclass):
 
     @classmethod
     def validation_fields(
-        cls,
-        *,
-        creation: bool,
+        cls, *, creation: bool
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
         for ret in (mandatory, optional):
@@ -1017,9 +995,7 @@ class LodgementGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT

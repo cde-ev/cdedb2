@@ -167,11 +167,7 @@ class AnonymousMessageData(CdEDataclass):
 
     @classmethod
     def encrypt(
-        cls,
-        recipient: str,
-        persona_id: vtypes.ID,
-        username: vtypes.Email,
-        subject: str,
+        cls, recipient: str, persona_id: vtypes.ID, username: vtypes.Email, subject: str
     ) -> tuple["Self", str]:
         data, key = cls._encrypt(cls.format_data(persona_id, username, subject))
         return (

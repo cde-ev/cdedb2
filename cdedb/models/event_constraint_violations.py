@@ -403,11 +403,7 @@ class ConstraintViolation(abc.ABC):
 
     # Display interface.
     @abc.abstractmethod
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         """
         Return a list of messages to be translated individually and then displayed with
         the translation params.
@@ -490,9 +486,7 @@ class ConstraintViolation(abc.ABC):
 
     @classmethod
     def get_contexts(
-        cls,
-        aux: ViolationAux,
-        context: ViolationContext,
+        cls, aux: ViolationAux, context: ViolationContext
     ) -> list[ViolationContext]:
         """
         Classmethod for adding additional context for subclasses.
@@ -748,11 +742,7 @@ class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation)
 
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         reg_parts = self.registration['parts']
         if self.severity >= ViolationSeverity.ERROR:
             if entity_page:
@@ -820,9 +810,7 @@ class CourseChoiceSyncCV(RegistrationTrackGroupConstraintViolation):
         return None
 
     def get_translation(
-        self,
-        *,
-        entity_page: str,
+        self, *, entity_page: str
     ) -> tuple[list[str], CdEDBObject]:  # pragma: no cover
         if entity_page:
             msg = n_(
@@ -875,11 +863,7 @@ class NoCourseAssignedCV(RegistrationTrackConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Not assigned to a course in %(track)s.")
         else:
@@ -948,11 +932,7 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if self.instructed_course:
             if entity_page == "registration":
                 msg = n_(
@@ -1038,9 +1018,7 @@ class InconsistentPaymentCV(RegistrationConstraintViolation):
         return None
 
     def get_translation(
-        self,
-        *,
-        entity_page: str = "registration",
+        self, *, entity_page: str = "registration"
     ) -> tuple[list[str], CdEDBObject]:
         if self.registration['amount_paid'] < 0:
             if entity_page:
@@ -1093,11 +1071,7 @@ class NotPaidCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msgs = [n_("Has not paid their fee (%(amount_owed)s).")]
         else:
@@ -1148,11 +1122,7 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Is involved but owes no fee.")
         else:
@@ -1185,11 +1155,7 @@ class NegativeAmountOwedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Owes a negative amount (%(amount_owed)s).")
         else:
@@ -1230,11 +1196,7 @@ class NegativeRemainingOwedCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Needs to be reimbursed (%(remaining_owed)s).")
         else:
@@ -1284,11 +1246,7 @@ class RemainingOwedCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Has not fully paid their fee (remaining: %(remaining_owed)s).")
         else:
@@ -1375,11 +1333,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if self.shall_be_present_at_all:
             if entity_page:
                 msg = n_("Is checked in, but should not be at these times.")
@@ -1440,11 +1394,7 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if now().date() > self.part.part_end:
             if entity_page:
                 msg = n_("Was present in %(part)s , but never checked in.")
@@ -1508,11 +1458,7 @@ class MissingMinorFormCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Is present, but parental consent is missing.")
         else:
@@ -1562,11 +1508,7 @@ class IllegalMixedLodgingCV(RegistrationConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Too young for mixed lodging.")
         else:
@@ -1611,11 +1553,7 @@ class IncorrectCampingMatAssignmentCV(RegistrationPartConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page == "registration":
             msgs = [
                 n_("Assigned to, but may not sleep on a camping mat in %(part)s."),
@@ -1701,11 +1639,7 @@ class NoLodgementCV(RegistrationPartConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Has no lodgement in %(part)s.")
         else:
@@ -1765,11 +1699,7 @@ class HiddenCourseCV(CourseConstraintViolation):
             course=course,
         )
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Is hidden and registration is open or about to start.")
         else:
@@ -1809,11 +1739,7 @@ class MutuallyExclusiveCoursesCV(CourseTrackGroupConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Taking place in mutually exclusive tracks (%(track_list)s).")
         else:
@@ -1875,11 +1801,7 @@ class CancelledWithAttendeesCV(CourseTrackConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if self.track.id not in self.course.segments:
             if entity_page:
                 msg = n_("Not offered in %(track)s but has %(num)s attendees.")
@@ -1968,11 +1890,7 @@ class IncorrectNumAttendeesCV(CourseTrackConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if self.course.min_size is not None and self.num < self.course.min_size:
             if entity_page:
                 msg = n_("Too few attendees (%(num)s < %(min_size)s).")
@@ -2047,11 +1965,7 @@ class LonelyAttendeesCV(CourseTrackConstraintViolation):
                 )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if self.num_learners:
             if entity_page:
                 msg = n_("%(num)s attendees but no instructors.")
@@ -2151,11 +2065,7 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
             num_camping_mat=len(inhabitants.camping_mat),
         )
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if (
             self.lodgement.regular_capacity is not None
             and self.num_regular > self.lodgement.regular_capacity
@@ -2261,11 +2171,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
             msg = n_("Mixed with non-mixing inhabitants.")
         else:
@@ -2300,11 +2206,7 @@ class IncorrectIBANCV(ConstraintViolation):
             )
         return None
 
-    def get_translation(
-        self,
-        *,
-        entity_page: str,
-    ) -> tuple[list[str], CdEDBObject]:
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         msg = n_("Event fees should be collected at the Skatbank account.")
 
         return [msg], {}

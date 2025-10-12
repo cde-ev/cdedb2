@@ -156,9 +156,7 @@ class Mailinglist(CdEDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: Optional[str] = None,
+        cls, entities: Collection[int], entity_key: Optional[str] = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         simple_fields = cls.database_fields()
         simple_fields.extend(
@@ -327,10 +325,7 @@ class Mailinglist(CdEDataclass):
         return self.get_subscription_policies(rs, bc, (persona_id,))[persona_id]
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -358,9 +353,7 @@ class Mailinglist(CdEDataclass):
         return ret
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
@@ -382,9 +375,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
     maxsize_default: ClassVar = vtypes.PositiveInt(64)
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Return a set of all personas.
 
@@ -399,9 +390,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
     maxsize_default = vtypes.PositiveInt(64)
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Return a set of all current members."""
         return bc.core.list_current_members(rs, is_active=False)
@@ -437,10 +426,7 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
     """
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Return subscribable for all given implicit subscribers, none otherwise.
 
@@ -578,10 +564,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -610,9 +593,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         }
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -659,10 +640,7 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
     """
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -695,10 +673,7 @@ class EventOrgaMailinglist(
     maxsize_default: ClassVar = vtypes.PositiveInt(8192)
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -713,9 +688,7 @@ class EventOrgaMailinglist(
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -752,10 +725,7 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -770,9 +740,7 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -790,10 +758,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = vtypes.PositiveInt(8192)
 
     def get_subscription_policies(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
-        persona_ids: Collection[int],
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -809,9 +774,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -872,9 +835,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     allow_unsub = False
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -889,9 +850,7 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
     def get_implicit_subscribers(
-        self,
-        rs: RequestState,
-        bc: BackendContainer,
+        self, rs: RequestState, bc: BackendContainer
     ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 

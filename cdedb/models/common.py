@@ -34,9 +34,7 @@ from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.database.query import (
-        DatabaseValue_s,
-    )
+    from cdedb.database.query import DatabaseValue_s
 
 T = TypeVar("T")
 # Should actually be a vtypes.ID instead of an int
@@ -261,18 +259,14 @@ class CdEDataclass:
 
     @classmethod
     def many_from_database(
-        cls,
-        list_of_data: Collection[CdEDBObject],
-        sort: bool = True,
+        cls, list_of_data: Collection[CdEDBObject], sort: bool = True
     ) -> CdEDataclassMap["Self"]:
         sort = xsorted if sort else list
         return {obj.id: obj for obj in sort(map(cls.from_database, list_of_data))}
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: str | None = None,
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}
@@ -297,9 +291,7 @@ class CdEDataclass:
 
     @classmethod
     def validation_fields(
-        cls,
-        *,
-        creation: bool,
+        cls, *, creation: bool
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Map the field names to the type of the fields to validate this entity.
 
@@ -385,9 +377,7 @@ class CdEDataclass:
 
     @classmethod
     def requestdict_fields(
-        cls,
-        *,
-        creation: bool | None,
+        cls, *, creation: bool | None
     ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
@@ -435,9 +425,7 @@ class CdEDataclass:
         return self._asdict_inner(self, dict)
 
     def _asdict_inner(  # type: ignore[no-untyped-def]
-        self,
-        obj: Any,
-        dict_factory: Any,
+        self, obj: Any, dict_factory: Any
     ):
         if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
