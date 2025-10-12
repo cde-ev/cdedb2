@@ -32,7 +32,9 @@ class MetaInfo(CdEDataclass):
     database_table = "core.meta_info"
 
     id: vtypes.ID = dataclasses.field(
-        init=False, default=vtypes.ID(1), metadata=Meta.exclude.as_dict,
+        init=False,
+        default=vtypes.ID(1),
+        metadata=Meta.exclude.as_dict,
     )
 
     Finanzvorstand_Name: str | None = None
@@ -99,9 +101,11 @@ class AnonymousMessageData(CdEDataclass):
 
     message_id: vtypes.Base64
     recipient: vtypes.Email = dataclasses.field(
-        metadata=Meta.input_update_exclude.as_dict)
+        metadata=Meta.input_update_exclude.as_dict
+    )
     ctime: datetime.datetime = dataclasses.field(
-        metadata=Meta.input_update_exclude.as_dict)
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     encrypted_data: str
     persona_id: Optional[vtypes.ID] = dataclasses.field(
@@ -163,8 +167,11 @@ class AnonymousMessageData(CdEDataclass):
 
     @classmethod
     def encrypt(
-            cls, recipient: str, persona_id: vtypes.ID, username: vtypes.Email,
-            subject: str,
+        cls,
+        recipient: str,
+        persona_id: vtypes.ID,
+        username: vtypes.Email,
+        subject: str,
     ) -> tuple["Self", str]:
         data, key = cls._encrypt(cls.format_data(persona_id, username, subject))
         return (
@@ -204,6 +211,7 @@ class AnonymousMessageData(CdEDataclass):
 
 class PersonaFlag(AbstractFlag):
     """Flags to store special metadata of Persona dataclasses."""
+
     # Raise an error if this flag is not true during instantiation
     mandatory_true_flag = auto()
     # This field is mandatory during external account creation.
@@ -217,8 +225,12 @@ class PersonaName(CdEDataclass):
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
-    given_names: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
-    family_name: str = dataclasses.field(metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+    given_names: str = dataclasses.field(
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
+    family_name: str = dataclasses.field(
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
@@ -228,7 +240,8 @@ class Persona(PersonaName):
     database_table: ClassVar[str] = "core.personas"
 
     username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     # This does not include the ``password_hash`` for security reasons.
 
     # status flags
@@ -315,23 +328,32 @@ class EventPersona(MlPersona):
     is_member: bool = False
 
     gender: const.Genders = dataclasses.field(
-        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     birthday: vtypes.Birthday = dataclasses.field(
-        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     telephone: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     mobile: vtypes.Phone | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     address_supplement: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     address: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     postal_code: vtypes.PrintableASCII | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     location: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
     country: vtypes.Country | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     pronouns: str | None = None
     pronouns_nametag: bool = False
     pronouns_profile: bool = False
@@ -375,7 +397,8 @@ class CdEPersona(AssemblyPersona, EventPersona):
     foto: str | None = None
     paper_expuls: bool = True
     birth_name: str | None = dataclasses.field(
-        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict)
+        default=None, metadata=PersonaFlag.genesis_validate_creation_optional.as_dict
+    )
     donation: decimal.Decimal = decimal.Decimal()
     honorary_member: bool = False
 
@@ -391,20 +414,21 @@ class GenesisCase(CdEDataclass):
     # only changable via separate frontend endpoint
     realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
-    status: const.GenesisStati = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict)
-    ctime: datetime.datetime = dataclasses.field(
-        metadata=Meta.input_exclude.as_dict)
+    status: const.GenesisStati = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     reviewer: vtypes.ID | None = dataclasses.field(
-        default=None, metadata=Meta.input_exclude.as_dict)
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
     persona_id: vtypes.ID | None = dataclasses.field(
-        default=None, metadata=Meta.input_exclude.as_dict)
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
 
     persona: Persona
 
     # further information tied to the genesis case but not to persona dataclass
     attachment_hash: str | None = dataclasses.field(
-        metadata=Meta.input_update_exclude.as_dict)
+        metadata=Meta.input_update_exclude.as_dict
+    )
     pevent_id: int | None
     pcourse_id: int | None
 
@@ -412,8 +436,9 @@ class GenesisCase(CdEDataclass):
     def get_persona_class(cls) -> type[Persona]:
         # extracts the persona class from its type annotation,
         # since this is static information
-        return {field.type for field in dataclasses.fields(cls)
-                if field.name == "persona"}.pop()  # type: ignore[return-value]
+        return {
+            field.type for field in dataclasses.fields(cls) if field.name == "persona"
+        }.pop()  # type: ignore[return-value]
 
     @classmethod
     def dataclass_fields(
@@ -431,9 +456,12 @@ class GenesisCase(CdEDataclass):
         # all data from the database and from requests
         if cls == GenesisCase:
             persona_class = CdEPersona
-        persona_fields = [field for field in dataclasses.fields(persona_class)
-                          if PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
-                             or PersonaFlag.genesis_validate_creation_optional.in_field(field)]
+        persona_fields = [
+            field
+            for field in dataclasses.fields(persona_class)
+            if PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
+            or PersonaFlag.genesis_validate_creation_optional.in_field(field)
+        ]
         if only_persona:
             return tuple(persona_fields)
 
@@ -447,19 +475,21 @@ class GenesisCase(CdEDataclass):
             raise RuntimeError
         ret = super().database_fields()
         if only_meta:
-            database_fields = {field.name for field in cls.dataclass_fields(only_meta=True)}
+            database_fields = {
+                field.name for field in cls.dataclass_fields(only_meta=True)
+            }
             ret = [field for field in ret if field in database_fields]
         if only_persona:
-            persona_fields = {field.name for field in cls.dataclass_fields(only_persona=True)}
+            persona_fields = {
+                field.name for field in cls.dataclass_fields(only_persona=True)
+            }
             ret = [field for field in ret if field in persona_fields]
         return ret
 
     @classmethod
     def _is_validation_field_mandatory(
-            cls,
-            field: dataclasses.Field[Any],
-            creation: bool
-        ) -> bool | None:
+        cls, field: dataclasses.Field[Any], creation: bool
+    ) -> bool | None:
         if creation:
             if PersonaFlag.genesis_validate_creation_mandatory.in_field(field):
                 return True
@@ -507,9 +537,7 @@ class GenesisCase(CdEDataclass):
     def model(self) -> type["GenesisCase"]:
         return self.get_model_by_realm(self.realm)
 
-    all_admins: ClassVar[set[str]] = {
-        f"{realm}_admin" for realm in available_realms
-    }
+    all_admins: ClassVar[set[str]] = {f"{realm}_admin" for realm in available_realms}
 
     @property
     def relative_admin(self) -> str:
@@ -536,8 +564,12 @@ class GenesisCaseMl(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
-        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
+        meta_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)
+        }
+        persona_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)
+        }
         persona_data["id"] = None
         persona_data["is_ml_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
@@ -554,8 +586,12 @@ class GenesisCaseEvent(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
-        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
+        meta_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)
+        }
+        persona_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)
+        }
         persona_data["id"] = None
         persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
         meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
@@ -573,8 +609,12 @@ class GenesisCaseCdE(GenesisCase):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        meta_data = {k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)}
-        persona_data = {k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)}
+        meta_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)
+        }
+        persona_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)
+        }
         persona_data["id"] = None
         persona_data["is_ml_realm"] = persona_data["is_event_realm"] = True
         persona_data["is_assembly_realm"] = persona_data["is_cde_realm"] = True

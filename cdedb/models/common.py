@@ -1,4 +1,5 @@
 """Base definition of CdEDB models using dataclasses."""
+
 import abc
 import copy
 import dataclasses
@@ -185,10 +186,15 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
+
     # for ephemeral instances, this is actually negative despite its annotation
     id: vtypes.ID = dataclasses.field(
-        metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
-                  | MetaFlag.validate_update_mandatory).as_dict)
+        metadata=(
+            MetaFlag.input_creation_exclude
+            | MetaFlag.request_exclude
+            | MetaFlag.validate_update_mandatory
+        ).as_dict
+    )
 
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
@@ -211,7 +217,7 @@ class CdEDataclass:
             field.name: values[field.name]
             for field in self.dataclass_fields()
             if field.name in database_fields
-                and not MetaFlag.to_database_exclude.in_field(field)
+            and not MetaFlag.to_database_exclude.in_field(field)
         }
 
         # Storing an ephemeral object to database corresponds to its creation. In this
@@ -245,26 +251,29 @@ class CdEDataclass:
                         continue
                     data[name] = array_type(data[name])
                     # Check if we can convert the elements of the array.
-                    if (len(set(get_args(type_)) - {Ellipsis}) == 1
-                            and isinstance((inner_type := get_args(type_)[0]), type)):
+                    if len(set(get_args(type_)) - {Ellipsis}) == 1 and isinstance(
+                        (inner_type := get_args(type_)[0]), type
+                    ):
                         # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            data[name] = array_type(
-                                inner_type(x) for x in data[name])
+                            data[name] = array_type(inner_type(x) for x in data[name])
         return cls(**data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject], sort: bool = True,
-                           ) -> CdEDataclassMap["Self"]:
+    def many_from_database(
+        cls,
+        list_of_data: Collection[CdEDBObject],
+        sort: bool = True,
+    ) -> CdEDataclassMap["Self"]:
         sort = xsorted if sort else list
-        return {
-            obj.id: obj for obj in sort(map(cls.from_database, list_of_data))
-        }
+        return {obj.id: obj for obj in sort(map(cls.from_database, list_of_data))}
 
     @classmethod
-    def get_select_query(cls, entities: Collection[int],
-                         entity_key: str | None = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+    def get_select_query(
+        cls,
+        entities: Collection[int],
+        entity_key: str | None = None,
+    ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}
             FROM {cls.database_table}
@@ -288,7 +297,9 @@ class CdEDataclass:
 
     @classmethod
     def validation_fields(
-            cls, *, creation: bool,
+        cls,
+        *,
+        creation: bool,
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Map the field names to the type of the fields to validate this entity.
 
@@ -299,7 +310,7 @@ class CdEDataclass:
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
             field.type = cast(type[Any], field.type)
-            if (state := cls._is_validation_field_mandatory(field, creation=creation)):
+            if state := cls._is_validation_field_mandatory(field, creation=creation):
                 mandatory[field.name] = get_mandatory_type(field.type)
             elif state is None:
                 continue
@@ -309,16 +320,14 @@ class CdEDataclass:
 
     @classmethod
     def _is_validation_field_mandatory(
-            cls,
-            field: dataclasses.Field[Any],
-            creation: bool
-        ) -> bool | None:
+        cls, field: dataclasses.Field[Any], creation: bool
+    ) -> bool | None:
         """Uninlined code to determine a fields validation status.
 
         Returns 'true' if the field is mandatory, 'false' if the field is optional,
         and 'None' if the field is excluded from validation.
         """
-        if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):
+        if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):  # fmt: skip
             return None
         if creation:
             if MetaFlag.validate_creation_exclude.in_field(field):
@@ -326,10 +335,10 @@ class CdEDataclass:
             elif MetaFlag.validate_creation_optional.in_field(field):
                 return False
             elif (
-                    is_optional_type(field.type)
-                    # Fields with a default are optional at creation.
-                    or field.default is not dataclasses.MISSING
-                    or field.default_factory is not dataclasses.MISSING
+                is_optional_type(field.type)
+                # Fields with a default are optional at creation.
+                or field.default is not dataclasses.MISSING
+                or field.default_factory is not dataclasses.MISSING
             ):
                 return False
             else:
@@ -352,7 +361,8 @@ class CdEDataclass:
             field.name: values[field.name]
             for field in self.dataclass_fields()
             if field.name in mandatory
-                or field.name in optional and field.name in values
+            or field.name in optional
+            and field.name in values
         }
 
         # during creation etc. the entity has no id, it is only a placeholder
@@ -374,7 +384,9 @@ class CdEDataclass:
 
     @classmethod
     def requestdict_fields(
-            cls, *, creation: bool | None,
+        cls,
+        *,
+        creation: bool | None,
     ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
@@ -400,9 +412,10 @@ class CdEDataclass:
     def database_fields(cls) -> list[str]:
         """List all fields of this entity which are saved to the database."""
         return [
-            field.name for field in cls.dataclass_fields()
+            field.name
+            for field in cls.dataclass_fields()
             if not MetaFlag.is_excluded(field.type)
-               and not MetaFlag.database_exclude.in_field(field)
+            and not MetaFlag.database_exclude.in_field(field)
             or MetaFlag.database_include.in_field(field)
         ]
 
@@ -416,8 +429,11 @@ class CdEDataclass:
         """
         return self._asdict_inner(self, dict)
 
-    def _asdict_inner(self, obj: Any,  # type: ignore[no-untyped-def]
-                      dict_factory: Any):
+    def _asdict_inner(
+        self,
+        obj: Any,  # type: ignore[no-untyped-def]
+        dict_factory: Any,
+    ):
         if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
             for f in dataclasses.fields(obj):
@@ -459,7 +475,7 @@ class CdEDataclass:
         elif isinstance(obj, dict):
             return type(obj)((self._asdict_inner(k, dict_factory),
                               self._asdict_inner(v, dict_factory))
-                             for k, v in obj.items())
+                             for k, v in obj.items())  # fmt: skip
         else:
             return copy.deepcopy(obj)
 
@@ -472,8 +488,7 @@ class CdEDataclass:
         ) and not MetaFlag.asdict_exclude.in_field(field)
 
     @abc.abstractmethod
-    def get_sortkey(self) -> Sortkey:
-        ...
+    def get_sortkey(self) -> Sortkey: ...
 
     def _lt_inner(self, other: "CdEDataclass") -> bool:
         # Ensure natural sort. See xsorted for details.

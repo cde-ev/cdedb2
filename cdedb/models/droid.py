@@ -86,6 +86,7 @@ dynamic droid
     A complex API for which users can create instances ("tokens"),
     each with an individual secret.
 """
+
 import abc
 import datetime
 import re
@@ -187,7 +188,8 @@ class APIToken(abc.ABC):
     #: Basic pattern for all api token. The droid name will be used to decide how
     #:  to validate the given secret.
     token_string_pattern = re.compile(
-        r"CdEDB-(?P<droid_name>\w+/\w+)/(?P<secret>[0-9a-zA-Z\-]+)/")
+        r"CdEDB-(?P<droid_name>\w+/\w+)/(?P<secret>[0-9a-zA-Z\-]+)/"
+    )
 
     @classmethod
     def parse_token_string(cls, token_str: str) -> tuple[str, str]:
@@ -212,6 +214,7 @@ class StaticAPIToken(APIToken):
     A static droid API can only be accessed if a secret is set in the `API_TOKENS`
     section of the `SecretsConfig`.
     """
+
     #: Name of the static droid.
     name: ClassVar[str]
 
@@ -250,6 +253,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     Subclasses need to define the class name and the database table the tokens are
     stored in, as well as fields for any additional database columns.
     """
+
     #: Name of the dynamic droid. Also serves as namespace for droid names.
     name: ClassVar[str]
 
@@ -264,19 +268,22 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime = field(
-        default_factory=now, kw_only=True,
+        default_factory=now,
+        kw_only=True,
         metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Revocation time. Automatically set by event backend on revocation.
     rtime: datetime.datetime | None = field(
-        default=None, kw_only=True,
+        default=None,
+        kw_only=True,
         metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
     )
     #: Last access time. Automatically updated by session backend on every request.
     atime: datetime.datetime | None = field(
-        default=None, kw_only=True,
+        default=None,
+        kw_only=True,
         metadata=(Meta.input_exclude | Meta.to_database_exclude).as_dict,
-)
+    )
 
     # Implementations of inherited methods.
 
@@ -313,6 +320,7 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
     )
 
     """
+
     name = "orga"
 
     #: ID of the event this token is linked to. May not change.
@@ -331,7 +339,11 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
         return f"{self.__class__.__name__}({self.id=}, {self.title=}, {self.event_id=})"
 
 
-ResolvedDroid = tuple[type[StaticAPIToken], None] | tuple[type[DynamicAPIToken], int] | tuple[None, None]
+ResolvedDroid = (
+    tuple[type[StaticAPIToken], None]
+    | tuple[type[DynamicAPIToken], int]
+    | tuple[None, None]
+)
 
 
 def resolve_droid_name(droid_name: str) -> ResolvedDroid:
