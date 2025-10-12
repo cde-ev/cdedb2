@@ -502,7 +502,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             del data["is_purged"]
             if "balance" in data:
                 del data["balance"]
-            data["notes"] = None
+            data["notes"] = case.notes
             data = affirm(vtypes.Persona, data, creation=True)
             if case.status != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))

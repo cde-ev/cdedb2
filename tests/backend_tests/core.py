@@ -837,6 +837,9 @@ class TestCoreBackend(BackendTest):
         persona_expectation = expectation.persona.as_dict()
         persona_expectation["id"] = new_id
         self.assertEqual(persona_expectation, value)
+        # make sure the notes attribute is carried over
+        notes = self.core.get_total_persona(self.key, new_id)["notes"]
+        self.assertEqual(expectation.notes, notes)
 
     @storage
     @as_users("vera")
