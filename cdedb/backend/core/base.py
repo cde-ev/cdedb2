@@ -532,7 +532,7 @@ class CoreBaseBackend(AbstractBackend):
                 if not may_wait:
                     diff = {
                         key: current_state[key]
-                        for key in committed_state
+                        for key in (set(PERSONA_ALL_FIELDS) - {"id"})
                         if committed_state[key] != current_state[key]
                     }
                     current_state.update(committed_state)
@@ -747,7 +747,9 @@ class CoreBaseBackend(AbstractBackend):
 
             # determine changed fields
             relevant_keys = tuple(
-                key for key in committed_state if data[key] != committed_state[key]
+                key
+                for key in (set(PERSONA_ALL_FIELDS) - {"id"})
+                if data[key] != committed_state[key]
             )
             relevant_keys += ('id',)
 

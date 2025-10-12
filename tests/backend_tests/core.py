@@ -524,7 +524,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError) as cm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=5, is_member=False, trial_member=False)
-        self.assertEqual(str(cm.exception), "Not a CdE account.")
+        self.assertEqual(str(cm.exception), "User misses a mandatory realm.")
 
         # Test membership changing is forbidden if user has an active lastschrift
         with self.assertRaises(RuntimeError) as cm:
