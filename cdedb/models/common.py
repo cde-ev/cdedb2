@@ -360,9 +360,10 @@ class CdEDataclass:
         data = {
             field.name: values[field.name]
             for field in self.dataclass_fields()
-            if field.name in mandatory
-            or field.name in optional
-            and field.name in values
+            if (
+                field.name in mandatory
+                or (field.name in optional and field.name in values)
+            )
         }
 
         # during creation etc. the entity has no id, it is only a placeholder
@@ -414,9 +415,13 @@ class CdEDataclass:
         return [
             field.name
             for field in cls.dataclass_fields()
-            if not MetaFlag.is_excluded(field.type)
-            and not MetaFlag.database_exclude.in_field(field)
-            or MetaFlag.database_include.in_field(field)
+            if (
+                (
+                    not MetaFlag.is_excluded(field.type)
+                    and not MetaFlag.database_exclude.in_field(field)
+                )
+                or MetaFlag.database_include.in_field(field)
+            )
         ]
 
     def as_dict(self) -> dict[str, Any]:

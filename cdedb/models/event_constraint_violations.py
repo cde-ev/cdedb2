@@ -981,17 +981,15 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
                 " (%(assigned_course)s) in %(track)s.",
             )
 
-        assigned_course_label = None
-        if self.assigned_course:
-            assigned_course_label = self.assigned_course.shortlabel
-        instructed_course_label = None
-        if self.instructed_course:
-            instructed_course_label = self.instructed_course.shortlabel
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "track": self.track.shortname,
-            "assigned_course": assigned_course_label,
-            "instructed_course": instructed_course_label,
+            "assigned_course": (
+                self.assigned_course.shortlabel if self.assigned_course else None
+            ),
+            "instructed_course": (
+                self.instructed_course.shortlabel if self.instructed_course else None
+            ),
         }
         return [msg], params
 

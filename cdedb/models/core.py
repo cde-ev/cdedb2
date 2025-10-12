@@ -459,8 +459,10 @@ class GenesisCase(CdEDataclass):
         persona_fields = [
             field
             for field in dataclasses.fields(persona_class)
-            if PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
-            or PersonaFlag.genesis_validate_creation_optional.in_field(field)
+            if (
+                PersonaFlag.genesis_validate_creation_mandatory.in_field(field)
+                or PersonaFlag.genesis_validate_creation_optional.in_field(field)
+            )
         ]
         if only_persona:
             return tuple(persona_fields)
