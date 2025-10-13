@@ -11,7 +11,7 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Protocol
 
 import phonenumbers
 
@@ -45,7 +45,6 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     EVENT_PART_FIELDS,
-    FIELD_DEFINITION_FIELDS,
     REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -55,7 +54,7 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s, ParamDict
-from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
+from cdedb.fee_condition_parser.evaluation import get_referenced_names
 
 
 @dataclasses.dataclass
@@ -132,6 +131,15 @@ class EventLowLevelBackend(AbstractBackend):
         if field_ids is not None:
             data = tuple(e for e in data if e["id"] in field_ids)
         return models.EventField.many_from_database(data)
+
+    @internal
+    def _get_event_field(
+        self, rs: RequestState, field_id: int, *, event_id: int
+    ) -> models.EventField:
+        fields = self._get_event_fields(rs, event_id, [field_id])
+        if field_id not in fields:
+            raise KeyError(n_("Unknown field for this event."))
+        return fields[field_id]
 
     @internal
     def _delete_course_track_blockers(
@@ -409,50 +417,31 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, field.association.database_table, new)
 
-    def _get_event_fee_references(
-        self, rs: RequestState, event_id: int
-    ) -> dict[int, ReferencedNames]:
-        """Retrieve a map of event fee id to collection of names referenced by it."""
-        return {
-            fd['id']: get_referenced_names(
-                fcp_parsing.parse(fd['condition']) if fd['condition'] else None,
-            )
-            for fd in self.sql_select(
-                rs,
-                "event.event_fees",
-                ("id", "condition"),
-                (event_id,),
-                entity_key="event_id",
-            )
-        }
+    class _NewGetEventProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
+
+    get_event: _NewGetEventProtocol
 
     @access("event")
     def get_event_fees_per_entity(
         self, rs: RequestState, event_id: int
     ) -> EventFeesPerEntity:
         """Retrieve maps of entites to all event fees, referencing that entity."""
-        field_names_to_id = {
-            e['field_name']: e['id']
-            for e in self.sql_select(
-                rs,
-                "event.field_definitions",
-                ("id", "field_name"),
-                (event_id,),
-                entity_key="event_id",
-            )
+        event = self.get_event(rs, event_id)
+        field_names_to_id: dict[str, int] = {
+            e.field_name: e.id for e in event.fields.values()
         }
-        part_names_to_id = {
-            e['shortname']: e['id']
-            for e in self.sql_select(
-                rs,
-                "event.event_parts",
-                ("id", "shortname"),
-                (event_id,),
-                entity_key="event_id",
-            )
+        part_names_to_id: dict[str, int] = {
+            e.shortname: e.id for e in event.parts.values()
         }
 
-        event_fee_references = self._get_event_fee_references(rs, event_id)
+        event_fee_references = {
+            e.id: get_referenced_names(
+                fcp_parsing.parse(e.condition) if e.condition else None
+            )
+            for e in event.fees.values()
+        }
+
         fields: dict[int, set[int]] = {
             field_id: set() for field_id in field_names_to_id.values()
         }
@@ -1028,7 +1017,7 @@ class EventLowLevelBackend(AbstractBackend):
         return True
 
     def _delete_event_field_blockers(
-        self, rs: RequestState, field_id: int
+        self, rs: RequestState, field_id: int, *, event_id: int
     ) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
 
@@ -1048,15 +1037,14 @@ class EventLowLevelBackend(AbstractBackend):
             are the ids of the blockers.
         """
         field_id = affirm(vtypes.ID, field_id)
+        event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
-        current = self.sql_select_one(
-            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id
-        )
-        assert current is not None
+        # This also ensures the field belongs to this event.
+        current = self._get_event_field(rs, field_id, event_id=event_id)
 
         event_fees_per_field = self.get_event_fees_per_entity(
-            rs, current['event_id']
+            rs, current.event_id
         ).fields
         if fee_ids := event_fees_per_field[field_id]:
             blockers["event_fees"] = list(fee_ids)
@@ -1125,7 +1113,7 @@ class EventLowLevelBackend(AbstractBackend):
         """
         field_id = affirm(vtypes.ID, field_id)
         event_id = affirm(vtypes.ID, event_id)
-        blockers = self._delete_event_field_blockers(rs, field_id)
+        blockers = self._delete_event_field_blockers(rs, field_id, event_id=event_id)
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
@@ -1139,10 +1127,7 @@ class EventLowLevelBackend(AbstractBackend):
                 },
             )
 
-        fields = self._get_event_fields(rs, event_id, [field_id])
-        if field_id not in fields:
-            raise KeyError(n_("Unknown field for this event."))
-        current = fields[field_id]
+        current = self._get_event_field(rs, field_id, event_id=event_id)
 
         ret = 1
         # implicit atomized context.
@@ -1183,10 +1168,12 @@ class EventLowLevelBackend(AbstractBackend):
             if "event_fees" in cascade:
                 for fee_id in blockers["event_fees"]:
                     ret *= self.delete_event_fee(rs, fee_id)
-            blockers = self._delete_event_field_blockers(rs, field_id)
+            blockers = self._delete_event_field_blockers(
+                rs, field_id, event_id=event_id
+            )
 
         if not blockers:
-            ret *= self.sql_delete_one(rs, "event.field_definitions", field_id)
+            ret *= self.sql_delete_one(rs, models.EventField.database_table, field_id)
             self._delete_field_values(rs, current)
             self.event_log(
                 rs,
@@ -1239,7 +1226,7 @@ class EventLowLevelBackend(AbstractBackend):
             # TODO: Special-case this in EventField.to_database()
             if new_field['entries']:
                 new_field['entries'] = list(new_field['entries'].items())
-            ret *= self.sql_insert(rs, "event.field_definitions", new_field)
+            ret *= self.sql_insert(rs, models.EventField.database_table, new_field)
             self.event_log(
                 rs,
                 const.EventLogCodes.field_added,
@@ -1275,7 +1262,9 @@ class EventLowLevelBackend(AbstractBackend):
                     if updated_field.get('kind', current.kind) != current.kind:
                         current.kind = updated_field['kind']
                         self._cast_field_values(rs, current)
-                    ret *= self.sql_update(rs, "event.field_definitions", updated_field)
+                    ret *= self.sql_update(
+                        rs, models.EventField.database_table, updated_field
+                    )
                     self.event_log(
                         rs,
                         const.EventLogCodes.field_updated,

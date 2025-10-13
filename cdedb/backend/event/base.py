@@ -254,10 +254,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return models.Event.many_from_database(event_data.values())
 
-    class _NewGetEventProtocol(Protocol):
-        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
-
-    get_event: _NewGetEventProtocol = singularize(get_events, "event_ids", "event_id")
+    get_event = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
