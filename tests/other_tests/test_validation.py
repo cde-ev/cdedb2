@@ -6,7 +6,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import now
@@ -140,6 +140,18 @@ class TestValidation(TestValidationBase):
             12, validate.validate_assert_optional(int, "12", ignore_warnings))
         with self.assertRaises(ValueError):
             validate.validate_assert_optional(int, "garbage", ignore_warnings)
+
+        for type_form in cast(list[type[Any]], [int | None, Optional[int]]):
+            self.do_validator_test(type_form, (
+                (0, 0, None),
+                (12, 12, None),
+                (None, None, None),
+                ("12", 12, None),
+                ("-12", -12, None),
+                ("", None, None),
+                ("-", None, ValueError),
+                ("garbage", None, ValueError),
+            ))
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
