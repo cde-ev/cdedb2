@@ -714,6 +714,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="course_choices"),
                     rule("/checks", methods=_GET,
                          endpoint="course_assignment_checks"),
+                    rule("/instructed", methods=_GET,
+                         endpoint="show_instructed_courses"),
                     sub('/<int:course_id>', (
                         rule("/show", methods=_GET,
                              endpoint="show_course"),
@@ -738,8 +740,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="registration_query"),
                     rule("/status", methods=_GET,
                          endpoint="registration_status"),
-                    rule("/status/courses", methods=_GET,
-                         endpoint="show_instructed_courses"),
                     rule("/qr", methods=_GET,
                          endpoint="registration_fee_qr"),
                     rule("/amend", methods=_GET,

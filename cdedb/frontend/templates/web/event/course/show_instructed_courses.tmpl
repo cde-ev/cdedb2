@@ -1,4 +1,4 @@
-{% set sidenav_active='event_register' %}
+{% set sidenav_active='event_instructed' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
@@ -14,8 +14,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_instructed_courses"), gettext("Instructed Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_instructed_courses"), gettext("My Instructed Courses")) }}
 {% endblock %}
 {% block heading %}
     {{ util.context_heading(gettext("Your Instructed Courses"), ambience['event']['title'],

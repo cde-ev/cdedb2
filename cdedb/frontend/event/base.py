@@ -211,6 +211,10 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+                    params["is_instructor"] = rs.ambience["event"].tracks and any(
+                        rt["course_instructor"] for rt in registration['tracks'].values()
+                    )
+
         else:
             all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
             event_options = [
