@@ -2956,7 +2956,7 @@ def _event_field(
                         errs.append(ValueError("entries", n_("Duplicate value.")))
                     else:
                         entries[value] = description
-            val["entries"] = entries
+            val["entries"] = list(map(list, entries.items()))
 
     if errs:
         raise errs

@@ -1223,9 +1223,6 @@ class EventLowLevelBackend(AbstractBackend):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
             new_field['event_id'] = event_id
-            # TODO: Special-case this in EventField.to_database()
-            if new_field['entries']:
-                new_field['entries'] = list(new_field['entries'].items())
             ret *= self.sql_insert(rs, models.EventField.database_table, new_field)
             self.event_log(
                 rs,
@@ -1241,10 +1238,8 @@ class EventLowLevelBackend(AbstractBackend):
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
                 current = current_field_data[x]
-                current_data = current.as_dict()
+                current_data = current.to_database()
                 if any(updated_field[k] != current_data[k] for k in updated_field):
-                    if entries := updated_field.get('entries'):
-                        updated_field['entries'] = list(map(list, entries.items()))
                     if event_fees_per_field[x]:
                         # Fields used in event fees may not have their kind
                         #  or association changed.

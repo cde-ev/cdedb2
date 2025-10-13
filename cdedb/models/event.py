@@ -599,6 +599,12 @@ class EventField(EventDataclass):
         data['entries'] = dict(data['entries'] or []) or None
         return super().from_database(data)
 
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        if ret["entries"]:
+            ret["entries"] = list(map(list, ret["entries"].items()))
+        return ret
+
     def get_sortkey(self) -> Sortkey:
         return (
             self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
