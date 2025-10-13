@@ -1044,7 +1044,7 @@ mailto:
                          subtitle=none, icon=none, icon_arialabel=none,
                          subtitle2=none, icon2=none, icon_arialabel2=none,
                          level=1, anchor=none) %}
-    {% call h(title, level=level) -%}
+    {% call h(title, level=level, anchor=anchor) -%}
         {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
             <small>
