@@ -748,36 +748,6 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             # Set top-level event fields.
             if len(edata) > 1:
-                # Do additional validation for these references to custom datafields.
-                indirect_fields = set(
-                    edata[f]
-                    for f in ("lodge_field_id", "reimbursement_iban_field_id")
-                    if f in edata
-                )
-                if indirect_fields:
-                    indirect_data = {
-                        e['id']: e
-                        for e in self.sql_select(
-                            rs,
-                            "event.field_definitions",
-                            ("id", "event_id", "kind", "association"),
-                            indirect_fields,
-                        )
-                    }
-                    if edata.get('lodge_field_id'):
-                        self._validate_special_event_field(
-                            rs,
-                            data['id'],
-                            "lodge_field",
-                            indirect_data[edata['lodge_field_id']],
-                        )
-                    if edata.get('reimbursement_iban_field_id'):
-                        self._validate_special_event_field(
-                            rs,
-                            data['id'],
-                            "reimbursement_field",
-                            indirect_data[edata['reimbursement_iban_field_id']],
-                        )
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(
                     rs,

@@ -2617,7 +2617,12 @@ EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {}
 
 @_add_typed_validator
 def _event_part(
-    val: Any, argname: str = "event_part", *, creation: bool = False, **kwargs: Any
+    val: Any,
+    argname: str = "event_part",
+    *,
+    event: models_event.Event | None,
+    creation: bool = False,
+    **kwargs: Any,
 ) -> EventPart:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -2652,8 +2657,52 @@ def _event_part(
                 models_event.CourseTrack,
                 'tracks',
                 creation_only=creation,
+                event=event,
                 **kwargs,
             )
+
+    if waitlist_field_id := val.get("waitlist_field_id"):
+        if not event or waitlist_field_id not in event.fields:
+            errs.append(KeyError("waitlist_field_id", n_("Unknown waitlist field.")))
+        else:
+            waitlist_field = event.fields[waitlist_field_id]
+            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["waitlist"]
+            if waitlist_field.association not in legal_associastions:
+                errs.append(
+                    ValueError(
+                        "waitlist_field_id",
+                        n_("Waitlist field must be a registration field."),
+                    )
+                )
+            if waitlist_field.kind not in legal_kinds:
+                errs.append(
+                    ValueError(
+                        "waitlist_field_id", n_("Waitlist field must have type 'int'.")
+                    )
+                )
+
+    if camping_mat_field_id := val.get("camping_mat_field_id"):
+        if not event or camping_mat_field_id not in event.fields:
+            errs.append(
+                KeyError("camping_mat_field_id", n_("Unknown camping mat field."))
+            )
+        else:
+            camping_mat_field = event.fields[camping_mat_field_id]
+            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["camping_mat"]
+            if camping_mat_field.association not in legal_associastions:
+                errs.append(
+                    ValueError(
+                        "camping_mat_field_id",
+                        n_("Camping mat field must be a registration field."),
+                    )
+                )
+            if camping_mat_field.kind not in legal_kinds:
+                errs.append(
+                    ValueError(
+                        "camping_mat_field_id",
+                        n_("Camping mat field mut have type 'bool'."),
+                    )
+                )
 
     if errs:
         raise errs
@@ -2725,12 +2774,38 @@ def _event_track(
         min_choices = val.get("min_choices", track.min_choices)
         num_choices = val.get("num_choices", track.num_choices)
 
+    errs = ValidationSummary()
+
     if min_choices > num_choices:
-        raise ValidationSummary(
+        errs.append(
             ValueError(
                 "min_choices", n_("Must be less or equal than total Course Choices.")
             )
         )
+
+    if course_room_field_id := val.get("course_room_field_id"):
+        if not event or course_room_field_id not in event.fields:
+            errs.append(
+                KeyError("course_room_field_id", n_("Unknown course room field."))
+            )
+        else:
+            course_room_field = event.fields[course_room_field_id]
+            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["course_room"]
+            if course_room_field.association not in legal_associastions:
+                errs.append(
+                    ValueError(
+                        "course_room_field_id",
+                        n_("Course room field must be a course field."),
+                    )
+                )
+            if course_room_field.kind not in legal_kinds:
+                errs.append(
+                    ValueError(
+                        "course_room_field_id",
+                        n_("Course room field mut have type 'string'."),
+                    )
+                )
+
     return val
 
 
@@ -4104,65 +4179,50 @@ def _serialized_event_configuration(
             )
 
     # Check field association
-    if not skip_field_validation and current:
-        if lodge_field := val.get('lodge_field_id'):
-            if lodge_field not in current.fields:
-                with errs:
-                    raise ValidationSummary(
-                        KeyError("lodge_field_id", n_("Unknown lodge field."))
+    if lodge_field := val.get('lodge_field_id'):
+        if not current or lodge_field not in current.fields:
+            errs.append(KeyError("lodge_field_id", n_("Unknown lodge field.")))
+        else:
+            field = current.fields[lodge_field]
+            legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge']
+            if field.association not in legal_associations:
+                errs.append(
+                    ValueError(
+                        "lodge_field_id",
+                        n_("Lodge field must be a registration field."),
                     )
-            else:
-                field = current.fields[lodge_field]
-                legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge_field']
-                if field.association not in legal_associations:
-                    with errs:
-                        raise ValidationSummary(
-                            ValueError(
-                                "lodge_field_id",
-                                n_("Lodge field must be a registration field."),
-                            )
-                        )
-                if field.kind not in legal_kinds:
-                    with errs:
-                        raise ValidationSummary(
-                            ValueError(
-                                "lodge_field_id",
-                                n_("Lodge field must have type 'string'."),
-                            )
-                        )
-        if reimbursement_field := val.get('reimbursement_iban_field_id'):
-            if reimbursement_field not in current.fields:
-                with errs:
-                    raise ValidationSummary(
-                        KeyError(
-                            "reimbursement_iban_field_id",
-                            n_("Unknown reimbursement IBAN field."),
-                        )
+                )
+            if field.kind not in legal_kinds:
+                errs.append(
+                    ValueError(
+                        "lodge_field_id", n_("Lodge field must have type 'string'.")
                     )
-            else:
-                field = current.fields[reimbursement_field]
-                legal_kinds, legal_associations = EVENT_FIELD_SPEC[
-                    'reimbursement_field'
-                ]
-                if field.association not in legal_associations:
-                    with errs:
-                        raise ValidationSummary(
-                            ValueError(
-                                "reimbursement_iban_field_id",
-                                n_(
-                                    "Reimbursement IBAN field must be a registration"
-                                    " field."
-                                ),
-                            )
-                        )
-                if field.kind not in legal_kinds:
-                    with errs:
-                        raise ValidationSummary(
-                            ValueError(
-                                "reimbursement_iban_field_id",
-                                n_("Reimbursement IBAN field must have type 'IBAN'."),
-                            )
-                        )
+                )
+    if reimbursement_field := val.get('reimbursement_iban_field_id'):
+        if not current or reimbursement_field not in current.fields:
+            errs.append(
+                KeyError(
+                    "reimbursement_iban_field_id",
+                    n_("Unknown reimbursement IBAN field."),
+                )
+            )
+        else:
+            field = current.fields[reimbursement_field]
+            legal_kinds, legal_associations = EVENT_FIELD_SPEC['reimbursement']
+            if field.association not in legal_associations:
+                errs.append(
+                    ValueError(
+                        "reimbursement_iban_field_id",
+                        n_("Reimbursement IBAN field must be a registration field."),
+                    )
+                )
+            if field.kind not in legal_kinds:
+                errs.append(
+                    ValueError(
+                        "reimbursement_iban_field_id",
+                        n_("Reimbursement IBAN field must have type 'IBAN'."),
+                    )
+                )
 
     if errs:
         raise errs

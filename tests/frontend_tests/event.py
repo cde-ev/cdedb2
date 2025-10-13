@@ -2467,25 +2467,35 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             [x[0] for x in f['waitlist_field_id'].options], ['', '8', '1001'])
         f['waitlist_field_id'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
+        self.assertValidationError('waitlist_field_id', "Waitlist field must have type 'int'.")
         f['waitlist_field_id'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
+        self.assertValidationError('waitlist_field_id', "Waitlist field must be a registration field.")
 
         # Set the correct waitlist field.
         f['waitlist_field_id'] = '1001'
         self.submit(f)
 
         # Check log
-        self.traverse("Log")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Veranstaltungsteil geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "waitlist_position",
+            },
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "wrong1",
+            },
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "wrong2",
+            },
+            {
+                "code": const.EventLogCodes.part_changed,
+                "change_note": "Warmup",
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
         # Check that the linked stat query applies the correct ordering.
         self.traverse('Statistik', {'linkid': 'part_waitlist_1'})

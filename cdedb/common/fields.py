@@ -373,11 +373,11 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 EVENT_FIELD_SPEC: dict[
     str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]
 ] = {
-    'lodge_field': (
+    'lodge': (
         {const.FieldDatatypes.str},
         {const.FieldAssociations.registration},
     ),
-    'reimbursement_field': (
+    'reimbursement': (
         {const.FieldDatatypes.iban},
         {const.FieldAssociations.registration},
     ),

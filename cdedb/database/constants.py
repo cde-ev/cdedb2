@@ -120,6 +120,16 @@ class FieldAssociations(CdEIntEnum):
     course = 2  #:
     lodgement = 3  #:
 
+    @property
+    def database_table(self) -> str:
+        import cdedb.models.event as models_event  # noqa: PLC0415
+
+        return {
+            FieldAssociations.registration: models_event.Registration.database_table,
+            FieldAssociations.course: models_event.Course.database_table,
+            FieldAssociations.lodgement: models_event.Lodgement.database_table,
+        }[self]
+
     def get_icon(self) -> str:
         icons = {
             FieldAssociations.registration: "user",
