@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
+import dataclasses
 import datetime
 import decimal
 import unittest
@@ -8,6 +9,7 @@ import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, TypeVar, Union, cast
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
@@ -35,6 +37,7 @@ from cdedb.common.validation.types import (
     Vote,
 )
 from cdedb.config import Config
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 from cdedb.models.event import PartGroup
 
@@ -152,6 +155,21 @@ class TestValidation(TestValidationBase):
                 ("-", None, ValueError),
                 ("garbage", None, ValueError),
             ))
+
+        @dataclasses.dataclass
+        class Foo(CdEDataclass):
+            bar: int | None
+            baz: Optional[int]
+
+        self.assertIsNot(int | None, Optional[int])
+
+        # int | None == Optional[int], but we only really care about the keys here anyway.
+        optional = {"bar": int | None, "baz": Optional[int]}
+        self.assertEqual(({}, optional), Foo.validation_fields(creation=True))
+        self.assertEqual(({"id": vtypes.ID}, optional), Foo.validation_fields(creation=False))
+
+        self.assertEqual(set(), Foo.mandatory_form_fields(creation=True))
+        self.assertEqual({"id"}, Foo.mandatory_form_fields(creation=False))
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
