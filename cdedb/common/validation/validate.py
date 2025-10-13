@@ -113,6 +113,8 @@ from cdedb.common import (
     LineResolutions,
     asciificator,
     compute_checkdigit,
+    get_mandatory_type,
+    is_optional_type,
     now,
     parse_date,
     parse_datetime,
@@ -206,24 +208,24 @@ class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
 
     def __getitem__(self, type_: type[T] | UnionType) -> Callable[..., T]:
         origin = typing.get_origin(type_)
-        if origin is Union or origin is UnionType:
-            inner_type, none_type = typing.get_args(type_)
-            if none_type is not NoneType:
-                raise KeyError("Complex unions not supported")
-            return cast(Callable[..., T], _allow_None(self[inner_type]))
-        elif typing.get_origin(type_) is list:
+        if is_optional_type(type_):
+            return cast(
+                Callable[..., T],
+                _allow_None(self[get_mandatory_type(type_)]),
+            )
+        elif origin is list:
             [inner_type] = typing.get_args(type_)
             return cast(Callable[..., T], make_list_validator(inner_type))
-        elif typing.get_origin(type_) is set:
+        elif origin is set:
             [inner_type] = typing.get_args(type_)
             return cast(Callable[..., T], make_set_validator(inner_type))
-        elif typing.get_origin(type_) is tuple:
+        elif origin is tuple:
             args = typing.get_args(type_)
             if len(args) == 2:
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
-        elif typing.get_origin(type_) is dict:
+        elif origin is dict:
             return cast(Callable[..., T], make_dict_validator(cast(type[Any], type_)))
         elif isinstance(type_, typing.ForwardRef):
             model_namespaces = [  # type: ignore[unreachable]
