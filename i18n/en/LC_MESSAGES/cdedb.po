@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-15 01:28+0200\n"
+"POT-Creation-Date: 2025-10-15 01:31+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -18105,6 +18105,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:396
 msgid "Assigned to, but may not sleep on a camping mat."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/generic.tmpl:499
+#, python-format
+msgid "%(fee_kind)s (Category: %(category)s, Budget: %(budget)s)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:507

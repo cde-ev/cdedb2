@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-15 01:28+0200\n"
+"POT-Creation-Date: 2025-10-15 01:31+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -18981,6 +18981,11 @@ msgstr "Kann auf einer Isomatte schlafen."
 #: cdedb/frontend/templates/web/event/generic.tmpl:396
 msgid "Assigned to, but may not sleep on a camping mat."
 msgstr "Auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
+
+#: cdedb/frontend/templates/web/event/generic.tmpl:499
+#, python-format
+msgid "%(fee_kind)s (Category: %(category)s, Budget: %(budget)s)"
+msgstr "%(fee_kind)s (Kategorie: %(category)s, Mittelverwendung: %(budget)s)"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:507
 #: cdedb/frontend/templates/web/event/generic.tmpl:509
