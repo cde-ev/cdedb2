@@ -216,7 +216,7 @@
             <tr>
                 <th></th>
                 {% for category in enums["EventFeeCategory"] %}
-                <th>
+                <th class="b-left">
                     {{ util.make_icon(category.get_icon(), title=gettext("Category_[[EventFee]]") + ": " + gettext(category|string)) }}
                     {{- nbsp -}}
                     {{ gettext(category|string) }}
@@ -233,7 +233,7 @@
                     {{ gettext(budget|string) }}
                 </th>
                 {% for category in enums["EventFeeCategory"] %}
-                <td>
+                <td class="b-left">
                     {% for kind in enums["EventFeeType"] if kind.category == category and kind.budget == budget %}
                         {{ util.make_icon(kind.get_icon(), title=gettext(kind|string)) }}
                         {{- nbsp -}}
