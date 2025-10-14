@@ -208,4 +208,42 @@
         </p>
         {% endif %}
     {% endif %}
+
+    {{ util.h(n_("Fee Type Reference"), level=4) }}
+
+    <table class="table table">
+        <thead>
+            <tr>
+                <th></th>
+                {% for category in enums["EventFeeCategory"] %}
+                <th>
+                    {{ util.make_icon(category.get_icon(), title=gettext("Category_[[EventFee]]") + ": " + gettext(category|string)) }}
+                    {{- nbsp -}}
+                    {{ gettext(category|string) }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for budget in enums["EventFeeBudget"] %}
+            <tr>
+                <th>
+                    {{ util.make_icon(budget.get_icon(), title=gettext("Budget_[[EventFee]]") + ": " + gettext(budget|string)) }}
+                    {{- nbsp -}}
+                    {{ gettext(budget|string) }}
+                </th>
+                {% for category in enums["EventFeeCategory"] %}
+                <td>
+                    {% for kind in enums["EventFeeType"] if kind.category == category and kind.budget == budget %}
+                        {{ util.make_icon(kind.get_icon(), title=gettext(kind|string)) }}
+                        {{- nbsp -}}
+                        {{ gettext(kind|string) }}
+                        <br />
+                    {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
