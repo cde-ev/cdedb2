@@ -40,9 +40,14 @@ CdEDBObject = dict[str, Any]
 
 class BackendContainer:
     """Helper class to pass multiple backends into the ml_type methods at once."""
-    def __init__(self, *, core: Optional["CoreBackend"] = None,
-                 event: Optional["EventBackend"] = None,
-                 assembly: Optional["AssemblyBackend"] = None):
+
+    def __init__(
+        self,
+        *,
+        core: Optional["CoreBackend"] = None,
+        event: Optional["EventBackend"] = None,
+        assembly: Optional["AssemblyBackend"] = None,
+    ):
         self.core = cast("CoreBackend", core)
         self.event = cast("EventBackend", event)
         self.assembly = cast("AssemblyBackend", assembly)
@@ -50,6 +55,7 @@ class BackendContainer:
 
 class MailinglistGroup(CdEIntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
+
     public = 1
     cde = 2
     team = 3
@@ -62,25 +68,26 @@ class MailinglistGroup(CdEIntEnum):
 class Mailinglist(CdEDataclass):
     """Base class for all mailinglist types.
 
-        In addition ot the instance variables representing the individual mailinglist,
-        this has class attributes which are determined by the mailinglist type.
+    In addition ot the instance variables representing the individual mailinglist,
+    this has class attributes which are determined by the mailinglist type.
 
-        Class attributes:
+    Class attributes:
 
-        * `sortkey`: Determines where mailinglists of this type are grouped.
-        * `domains`: Determines the available domains for mailinglists of this type.
-        * `max_size_default`: A default value for `max_size` when creating a new
-            mailinglist of this type.
-        * `allow_unsub`: Whether or not to allow unsubscribing from a mailinglist
-            of this type.
-        * `viewer_roles`: Determines who may view the mailinglist.
-            See `may_view()` for details.
-        * `relevant_admins`: Determines who may administrate the mailinglist. See
-            `is_relevant_admin()` for details.
-        * `role_map`: An ordered Dict to determine mailinglist interactions in a
-            hierarchical way for trivial mailinglist types.
+    * `sortkey`: Determines where mailinglists of this type are grouped.
+    * `domains`: Determines the available domains for mailinglists of this type.
+    * `max_size_default`: A default value for `max_size` when creating a new
+        mailinglist of this type.
+    * `allow_unsub`: Whether or not to allow unsubscribing from a mailinglist
+        of this type.
+    * `viewer_roles`: Determines who may view the mailinglist.
+        See `may_view()` for details.
+    * `relevant_admins`: Determines who may administrate the mailinglist. See
+        `is_relevant_admin()` for details.
+    * `role_map`: An ordered Dict to determine mailinglist interactions in a
+        hierarchical way for trivial mailinglist types.
 
-        """
+    """
+
     title: str
     local_part: vtypes.EmailLocalPart
     domain: const.MailinglistDomain
@@ -90,11 +97,10 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: set[vtypes.ID] = dataclasses.field(
-        metadata=Meta.io_exclude.as_dict)
+    moderators: set[vtypes.ID] = dataclasses.field(metadata=Meta.io_exclude.as_dict)
     whitelist: set[vtypes.Email] = dataclasses.field(
-        metadata=(Meta.io_exclude
-                  | Meta.validate_creation_optional).as_dict)
+        metadata=(Meta.io_exclude | Meta.validate_creation_optional).as_dict
+    )
 
     description: Optional[str]
     additional_footer: Optional[str]
@@ -118,7 +124,7 @@ class Mailinglist(CdEDataclass):
             raise TypeError("Cannot instantiate abstract class.")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.title, )
+        return (self.title,)
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -149,15 +155,15 @@ class Mailinglist(CdEDataclass):
         return self.domain.get_domain()
 
     @classmethod
-    def get_select_query(cls, entities: Collection[int],
-                         entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+    def get_select_query(
+        cls, entities: Collection[int], entity_key: Optional[str] = None
+    ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         simple_fields = cls.database_fields()
         simple_fields.extend(
-            field_name for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
+            field_name
+            for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
             if not (
-                    isinstance(field.type, type)
-                    and issubclass(field.type, CdEDataclass)
+                isinstance(field.type, type) and issubclass(field.type, CdEDataclass)
             )
         )
         query = f"""
@@ -208,13 +214,21 @@ class Mailinglist(CdEDataclass):
         - `viewer_roles`: A set of roles other than `ml_admin` which allows
           a user to view a mailinglist. The semantics are similar to `@access`.
         """
-        return (bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
-                or cls.is_relevant_admin(rs.user))
+        return bool(
+            (cls.viewer_roles | {"ml_admin"}) & rs.user.roles
+        ) or cls.is_relevant_admin(rs.user)
 
     # This fields may be changed by all moderators, even restricted ones.
     restricted_moderator_fields: ClassVar[set[str]] = {
-        "description", "mod_policy", "notes", "attachment_policy", "convert_html",
-        "subject_prefix", "maxsize", "additional_footer"}
+        "description",
+        "mod_policy",
+        "notes",
+        "attachment_policy",
+        "convert_html",
+        "subject_prefix",
+        "maxsize",
+        "additional_footer",
+    }
 
     # This fields require non-restricted moderator access to be changed.
     full_moderator_fields: ClassVar[set[str]] = set()
@@ -267,8 +281,9 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {"ml_mod_" + admin.replace("_admin", "")
-                for admin in cls.relevant_admins} | {"ml_mod"}
+        return {
+            "ml_mod_" + admin.replace("_admin", "") for admin in cls.relevant_admins
+        } | {"ml_mod"}
 
     @classmethod
     def management_admin_views(cls) -> set[str]:
@@ -277,8 +292,9 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {"ml_mgmt_" + admin.replace("_admin", "")
-                for admin in cls.relevant_admins} | {"ml_mgmt"}
+        return {
+            "ml_mgmt_" + admin.replace("_admin", "") for admin in cls.relevant_admins
+        } | {"ml_mgmt"}
 
     @classmethod
     def has_moderator_view(cls, user: User) -> bool:
@@ -287,8 +303,9 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return (cls.is_relevant_admin(user)
-                and bool(cls.moderator_admin_views() & user.admin_views))
+        return cls.is_relevant_admin(user) and bool(
+            cls.moderator_admin_views() & user.admin_views
+        )
 
     @classmethod
     def has_management_view(cls, user: User) -> bool:
@@ -297,18 +314,19 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return (cls.is_relevant_admin(user)
-                and bool(cls.management_admin_views() & user.admin_views))
+        return cls.is_relevant_admin(user) and bool(
+            cls.management_admin_views() & user.admin_views
+        )
 
-    def get_subscription_policy(self, rs: RequestState, bc: BackendContainer,
-                                persona_id: int) -> SubscriptionPolicy:
+    def get_subscription_policy(
+        self, rs: RequestState, bc: BackendContainer, persona_id: int
+    ) -> SubscriptionPolicy:
         """Singularized wrapper for `get_subscription_policies`."""
-        return self.get_subscription_policies(
-            rs, bc, (persona_id,))[persona_id]
+        return self.get_subscription_policies(rs, bc, (persona_id,))[persona_id]
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -334,8 +352,9 @@ class Mailinglist(CdEDataclass):
                 ret[persona_id] = SubscriptionPolicy.none
         return ret
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
 
@@ -352,10 +371,12 @@ class GeneralMailinglist(Mailinglist):
 @dataclass
 class AllUsersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with all users as implicit subscribers."""
+
     maxsize_default: ClassVar = vtypes.PositiveInt(64)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Return a set of all personas.
 
         Leave out personas which are archived or have no valid email set.."""
@@ -365,10 +386,12 @@ class AllUsersImplicitMeta(GeneralMailinglist):
 @dataclass
 class AllMembersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with members as implicit subscribers."""
+
     maxsize_default = vtypes.PositiveInt(64)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Return a set of all current members."""
         return bc.core.list_current_members(rs, is_active=False)
 
@@ -376,6 +399,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 @dataclass
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
+
     # Allow empty event_id to mark legacy event-lists.
     event_id: Optional[vtypes.ID] = None
 
@@ -387,6 +411,7 @@ class EventAssociatedMeta(GeneralMailinglist):
 @dataclass
 class TeamMeta(GeneralMailinglist):
     """Metaclass for all team lists."""
+
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
@@ -400,9 +425,9 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
     Metaclass for all mailinglists where exactly implicit subscribers may subscribe,
     """
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Return subscribable for all given implicit subscribers, none otherwise.
 
         To avoid unneeded privilege escalation while avoiding backend errors, this
@@ -417,8 +442,10 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
                 return ret
             else:
                 raise
-        ret.update({pid: SubscriptionPolicy.subscribable
-                    for pid in implicits.intersection(persona_ids)})
+        ret.update({
+            pid: SubscriptionPolicy.subscribable
+            for pid in implicits.intersection(persona_ids)
+        })
         return ret
 
 
@@ -513,11 +540,13 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     event_part_group_id: Optional[vtypes.ID] = None
 
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
-        default_factory=list)
+        default_factory=list
+    )
 
     # This fields require non-restricted moderator access to be changed.
     full_moderator_fields: ClassVar[set[str]] = {
-        "registration_stati", "event_part_group_id",
+        "registration_stati",
+        "event_part_group_id",
     }
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
@@ -530,12 +559,13 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if self.event_id is None:
             return basic_restriction
         additional_restriction = not is_privileged_event(
-            rs, EventPrivileges.registrations_read_internal, event_id=self.event_id)
+            rs, EventPrivileges.registrations_read_internal, event_id=self.event_id
+        )
         return basic_restriction or additional_restriction
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         For the `EventAssociatedMailinglist` this means invitation-only for legacy
@@ -552,15 +582,19 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         # Do not restrict based on part ids on purpose.
         #  This allows matching registrations of other parts to opt in.
         data = bc.event.check_registrations_status(
-            rs, persona_ids, self.event_id, self.registration_stati,
+            rs,
+            persona_ids,
+            self.event_id,
+            self.registration_stati,
         )
         return {
             k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
             for k, v in data.items()
         }
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventAssociatedMailinglist` this means registrations with
@@ -592,7 +626,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             constraints=[
                 (status_column, QueryOperators.oneof, self.registration_stati),
             ],
-            order=tuple())
+            order=tuple(),
+        )
         data = bc.event.submit_general_query(rs, query, event_id=event.id)
 
         return {e["persona.id"] for e in data}
@@ -604,9 +639,9 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
     Same as `EventAssociatedMailinglist` but stricly limited by event_part_group_id.
     """
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         In contrast to `EventAssociatedMailinglist` this list is only subscribable for
@@ -619,7 +654,10 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
         event = bc.event.get_event(rs, self.event_id)
         part_ids = list(event.part_groups[self.event_part_group_id].parts)
         data = bc.event.check_registrations_status(
-            rs, persona_ids, self.event_id, self.registration_stati,
+            rs,
+            persona_ids,
+            self.event_id,
+            self.registration_stati,
             part_ids=part_ids,
         )
         return {
@@ -629,13 +667,14 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
 
 
 @dataclass
-class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
-                           EventMailinglist):
+class EventOrgaMailinglist(
+    EventAssociatedMeta, ImplicitsSubscribableMeta, EventMailinglist
+):
     maxsize_default: ClassVar = vtypes.PositiveInt(8192)
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         For the `EventOrgaMailinglist` this means subscribable for orgas only.
@@ -648,8 +687,9 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 
         return super().get_subscription_policies(rs, bc, persona_ids)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
@@ -680,12 +720,13 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         if self.assembly_id is None:
             return basic_restriction
         additional_restriction = not bc.assembly.may_assemble(
-            rs, assembly_id=self.assembly_id)
+            rs, assembly_id=self.assembly_id
+        )
         return basic_restriction or additional_restriction
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means subscribable for attendees.
@@ -698,8 +739,9 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
 
         return super().get_subscription_policies(rs, bc, persona_ids)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
@@ -715,9 +757,9 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
 class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = vtypes.PositiveInt(8192)
 
-    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int],
-                                  ) -> SubscriptionPolicyMap:
+    def get_subscription_policies(
+        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+    ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
         For the `AssemblyPresiderMailinglist` this means subscribable for presiders.
@@ -731,8 +773,9 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
         return super().get_subscription_policies(rs, bc, persona_ids)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyPresiderMailignlist` this means the presiders of the
@@ -791,8 +834,9 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `GeneralModeratorMailinglist` this means mandatory for all users who
@@ -805,15 +849,18 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
 class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `CdELokalModeratorMailinglist` this means mandatory for all users who
         are moderators of any active cdelokal mailinglist.
         """
         return bc.core.list_all_moderators(
-            rs, ml_types={MailinglistTypes.cdelokal}, active=True,
+            rs,
+            ml_types={MailinglistTypes.cdelokal},
+            active=True,
         )
 
 
@@ -841,8 +888,9 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
 class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailinglist):
     allow_unsub = False
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> set[int]:
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
         """Return a set of all complaint admins."""
         return set(bc.core.list_admins(rs, realm="complaint"))
 

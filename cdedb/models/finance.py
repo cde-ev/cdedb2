@@ -27,9 +27,11 @@ class MoneyTransfersResult:
 
     membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
     event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
-        default_factory=lambda: collections.defaultdict(list))
+        default_factory=lambda: collections.defaultdict(list)
+    )
     event_reimbursements: dict[int, list[MoneyTransfer]] = dataclasses.field(
-        default_factory=lambda: collections.defaultdict(list))
+        default_factory=lambda: collections.defaultdict(list)
+    )
 
     new_members: int = 0
 
@@ -37,13 +39,14 @@ class MoneyTransfersResult:
         return self.success
 
     def send_notifications(
-            self, rs: RequestState, *,
-            send_individual_notifications: bool,
-            by_orga: bool,
-            do_mail: Callable[..., Optional[str]],
-            events: models_event.CdEDataclassMap[models_event.Event],
+        self,
+        rs: RequestState,
+        *,
+        send_individual_notifications: bool,
+        by_orga: bool,
+        do_mail: Callable[..., Optional[str]],
+        events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
-
         # Import here to avoid cyclic imports.
         from cdedb.frontend.common import Headers, make_postal_address  # noqa: PLC0415
 
@@ -51,14 +54,15 @@ class MoneyTransfersResult:
             for transfer in self.membership_fees:
                 p = transfer.persona
                 headers: Headers = {
-                    'Subject':
-                        "Überweisung eingegangen – Guthaben zu gering!"
-                        if p['balance'] < _CONF["MEMBERSHIP_FEE"] else
-                        "Mitgliedsbeitrag eingegangen",
+                    'Subject': "Überweisung eingegangen – Guthaben zu gering!"
+                    if p['balance'] < _CONF["MEMBERSHIP_FEE"]
+                    else "Mitgliedsbeitrag eingegangen",
                     'To': [transfer.persona['username']],
                 }
                 do_mail(
-                    rs, 'parse/transfer_received', headers,
+                    rs,
+                    'parse/transfer_received',
+                    headers,
                     {
                         'persona': transfer.persona,
                         'address': make_postal_address(rs, transfer.persona),
@@ -69,8 +73,10 @@ class MoneyTransfersResult:
         if self.membership_fees:
             rs.notify(
                 "success",
-                n_("Booked %(num)s membership fees."
-                   " There were %(new_members)s new members."),
+                n_(
+                    "Booked %(num)s membership fees."
+                    " There were %(new_members)s new members."
+                ),
                 {
                     'num': len(self.membership_fees),
                     'new_members': self.new_members,
@@ -100,7 +106,9 @@ class MoneyTransfersResult:
                 for transfer in booked_transfers:
                     headers['To'] = [transfer.persona['username']]
                     do_mail(
-                        rs, 'parse/event_transfer_received', headers,
+                        rs,
+                        'parse/event_transfer_received',
+                        headers,
                         {'transfer': transfer, 'event': event},
                     )
             if any(to):
@@ -111,7 +119,9 @@ class MoneyTransfersResult:
                     'Prefix': "",
                 }
                 do_mail(
-                    rs, "parse/event_transfers_booked", headers,
+                    rs,
+                    "parse/event_transfers_booked",
+                    headers,
                     {'num': len(booked_transfers), 'event': event},
                 )
 
@@ -138,6 +148,8 @@ class MoneyTransfersResult:
                     'Prefix': "",
                 }
                 do_mail(
-                    rs, "parse/event_reimbursements_booked", headers,
+                    rs,
+                    "parse/event_reimbursements_booked",
+                    headers,
                     {'num': len(reimbursements)},
                 )
