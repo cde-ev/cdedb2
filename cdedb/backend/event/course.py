@@ -459,9 +459,8 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def get_attendee_stats(
-        self, rs: RequestState, event_id: int, course_id: int
+        self, rs: RequestState, course_id: int
     ) -> models.CourseAttendees:
-        event_id = affirm(vtypes.ID, event_id)
         course_id = affirm(vtypes.ID, course_id)
 
         with Atomizer(rs):
@@ -485,25 +484,31 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 "stati": const.RegistrationPartStati.involved_states(),
             }
             persona_ids = set()
-            attendees_by_track: dict[int, tuple[list[int], list[int]]] = (
-                collections.defaultdict(lambda: ([], []))
-            )
+            attendees_by_track = collections.defaultdict(list)
+            instructors_by_track = collections.defaultdict(list)
             for e in self.query_all(rs, query, params):
                 persona_ids.add(e["persona_id"])
-                attendees_by_track[e["track_id"]][e["is_instructor"]].append(
-                    e["persona_id"]
-                )
+                if e["is_instructor"]:
+                    instructors_by_track[e["track_id"]].append(e["persona_id"])
+                else:
+                    attendees_by_track[e["track_id"]].append(e["persona_id"])
             personas = self.core.get_personas(rs, persona_ids)
             return models.CourseAttendees({
                 track_id: models.CourseSegmentAttendees(
-                    xsorted(
-                        (personas[persona_id] for persona_id in attendees[0]),
+                    learners=xsorted(
+                        (
+                            personas[persona_id]
+                            for persona_id in attendees_by_track[track_id]
+                        ),
                         key=EntitySorter.persona,
                     ),
-                    xsorted(
-                        (personas[persona_id] for persona_id in attendees[1]),
+                    instructors=xsorted(
+                        (
+                            personas[persona_id]
+                            for persona_id in instructors_by_track[track_id]
+                        ),
                         key=EntitySorter.persona,
                     ),
                 )
-                for track_id, attendees in attendees_by_track.items()
+                for track_id in attendees_by_track.keys() | instructors_by_track.keys()
             })

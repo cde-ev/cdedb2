@@ -343,9 +343,7 @@ class EventCourseMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
 
         attendees = models.Attendees({
-            course_id: self.eventproxy.get_attendee_stats(
-                rs, event_id=event_id, course_id=course_id
-            )
+            course_id: self.eventproxy.get_attendee_stats(rs, course_id=course_id)
             for course_id in courses
         })
 
