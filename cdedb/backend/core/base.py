@@ -2463,7 +2463,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @access("ml")
-    def new_get_core_users(
+    def new_get_personas(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.Persona]:
         """Get a core view on some data sets."""
@@ -2471,14 +2471,14 @@ class CoreBaseBackend(AbstractBackend):
         persona_data = self.query_all(rs, *models.Persona.get_select_query(persona_ids))
         return models.Persona.many_from_database(persona_data)
 
-    class _GetCoreUserProtocol(Protocol):
+    class _NewGetPersonaProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.Persona: ...
 
-    new_get_core_user: _GetCoreUserProtocol = singularize(
-        new_get_core_users, "persona_ids", "persona_id"
+    new_get_persona: _NewGetPersonaProtocol = singularize(
+        new_get_personas, "persona_ids", "persona_id"
     )
 
     @access("event", "droid_quick_partial_export", "droid_orga")

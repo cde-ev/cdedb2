@@ -683,7 +683,7 @@ class CoreBaseFrontend(AbstractFrontend):
         elif "ml" in access_realms and "ml" in target_roles:
             persona = self.coreproxy.new_get_ml_user(rs, persona_id)
         else:
-            persona = self.coreproxy.new_get_core_user(rs, persona_id)
+            persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
             persona.username = None  # type: ignore[assignment]
