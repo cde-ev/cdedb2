@@ -250,13 +250,13 @@ class EventFeeType(CdEIntEnum):
         return {
             EventFeeType.common: EventFeeBudget.expenses,
             EventFeeType.storno: EventFeeBudget.expenses,
-            EventFeeType.external: EventFeeBudget.club,
+            EventFeeType.external: EventFeeBudget.cde,
             EventFeeType.instructor_refund: EventFeeBudget.expenses,
             EventFeeType.instructor_donation: EventFeeBudget.followup,
             EventFeeType.solidary_reduction: EventFeeBudget.solidarity,
             EventFeeType.solidary_donation: EventFeeBudget.solidarity,
             EventFeeType.solidary_increase: EventFeeBudget.solidarity,
-            EventFeeType.other_donation: EventFeeBudget.club,
+            EventFeeType.other_donation: EventFeeBudget.cde,
             EventFeeType.crisis_refund: EventFeeBudget.expenses,
             EventFeeType.other_refund: EventFeeBudget.expenses,
         }[self]
@@ -297,15 +297,15 @@ class EventFeeBudget(CdEIntEnum):
     expenses = 1
     solidarity = 2
     followup = 3
-    club = 10
+    cde = 10
     # other = 20
 
     def get_icon(self) -> str:
         return {
             EventFeeBudget.expenses: "file-invoice-dollar",
             EventFeeBudget.solidarity: "hands-helping",
-            EventFeeBudget.followup: "fast-forwad",
-            EventFeeBudget.club: "funnel-dollar",
+            EventFeeBudget.followup: "fast-forward",
+            EventFeeBudget.cde: "building-columns",
             # EventFeeBudget.other: "random",
         }[self]
 
