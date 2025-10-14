@@ -61,7 +61,8 @@
 
                 {% call util.h(n_("Attendees"), 5, translate=False) -%}
                     {{- nbsp }}[{{ course_attendees.num_learners }} + {{ course_attendees.num_instructors }}]
-                    {{- nbsp }}{{ util.href(util.mailto(";".join(usernames)), gettext("Mail to All"), icon="envelope", aclass="btn btn-sm btn-default") }}
+                    {{- nbsp }}{{ util.href(util.mailto(";".join(usernames)), gettext("Mail to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not usernames) }}
+                    {{- nbsp }}{{ util.href(util.mailto("", bcc=";".join(usernames)), gettext("BCC to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not username) }}
                 {% endcall %}
 
                 <ul class>
