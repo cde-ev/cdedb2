@@ -563,9 +563,10 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # all realms the viewer may access of the users
         # this is independent of the actual realms the user possesses
-        access_realms = set()
+        # in addition, each viewer is eligible to view some basic infos
+        access_realms = {"persona"}
         all_access_realms = {
-            "ml", "assembly", "event", "cde",
+            "persona", "ml", "assembly", "event", "cde",
         }
         # level of access to the data, determines if some data is stripped
         access_levels = set()
@@ -682,11 +683,13 @@ class CoreBaseFrontend(AbstractFrontend):
             persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
         elif "ml" in access_realms and "ml" in target_roles:
             persona = self.coreproxy.new_get_ml_user(rs, persona_id)
-        else:
+        elif "persona" in access_realms:
             persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
             persona.username = None  # type: ignore[assignment]
+        else:
+            raise RuntimeError("Impossible")
 
         has_lastschrift = None
         if isinstance(persona, models.CdEPersona):
