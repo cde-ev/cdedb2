@@ -450,12 +450,12 @@
         {{- nbsp -}}
         {{- gettext(kind|string) -}}
     {%- endif -%}
-        {{- nbsp -}}
-    (
+    <br />
+    <small class="nowrap text-muted">
         {{- util.make_icon(kind.category.get_icon(), title=gettext("Category_[[EventFee]]") + ": " + gettext(kind.category|string)) -}}
             {{- nbsp -}}
         {{- util.make_icon(kind.budget.get_icon(), title=gettext("Budget_[[EventFee]]") + ": " + gettext(kind.budget|string)) -}}
-    )
+    </small>
 {%- endmacro %}
 
 {#  Print a summary of all relevant fees.
