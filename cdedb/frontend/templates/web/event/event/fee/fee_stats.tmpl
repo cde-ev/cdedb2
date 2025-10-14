@@ -246,4 +246,11 @@
             {% endfor %}
         </tbody>
     </table>
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}{{ nbsp -}}
+        {% trans %}
+            Each fee types belongs to one category and one budget.
+            This table lists the available fee types according to their category and budget.
+        {% endtrans %}
+    </p>
 {% endblock %}

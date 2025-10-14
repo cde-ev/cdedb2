@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-15 00:16+0200\n"
+"POT-Creation-Date: 2025-10-15 01:28+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -18194,6 +18194,22 @@ msgstr ""
 msgid "Fee Type Reference"
 msgstr "finis solutionis"
 
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:220
+#: cdedb/frontend/templates/web/event/generic.tmpl:455
+msgid "Category_[[EventFee]]"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:231
+#: cdedb/frontend/templates/web/event/generic.tmpl:457
+msgid "Budget_[[EventFee]]"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:251
+msgid ""
+"Each fee types belongs to one category and one budget. This table lists the "
+"available fee types according to their category and budget."
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:6
 #, python-format
 msgid "Fees (%(title)s)"
@@ -19038,14 +19054,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:396
 msgid "Assigned to, but may not sleep on a camping mat."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/generic.tmpl:455
-msgid "Category_[[EventFee]]"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/generic.tmpl:457
-msgid "Budget_[[EventFee]]"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:507

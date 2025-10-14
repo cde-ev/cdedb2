@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-15 00:16+0200\n"
+"POT-Creation-Date: 2025-10-15 01:28+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -18080,6 +18080,25 @@ msgstr ""
 msgid "Fee Type Reference"
 msgstr "Teilnahmebeitrags-Typen"
 
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:220
+#: cdedb/frontend/templates/web/event/generic.tmpl:455
+msgid "Category_[[EventFee]]"
+msgstr "Kategorie"
+
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:231
+#: cdedb/frontend/templates/web/event/generic.tmpl:457
+msgid "Budget_[[EventFee]]"
+msgstr "Mittelverwendung"
+
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:251
+msgid ""
+"Each fee types belongs to one category and one budget. This table lists the "
+"available fee types according to their category and budget."
+msgstr ""
+"Jeder Teilnahmebeitragstyp gehört zu einer Kategorie und einer "
+"Mittelverwendung. Diese Tabelle führt alle verfügbaren Typen anhand ihrer "
+"Kategorie und Mittelverwendung auf."
+
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:6
 #, python-format
 msgid "Fees (%(title)s)"
@@ -18962,14 +18981,6 @@ msgstr "Kann auf einer Isomatte schlafen."
 #: cdedb/frontend/templates/web/event/generic.tmpl:396
 msgid "Assigned to, but may not sleep on a camping mat."
 msgstr "Auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
-
-#: cdedb/frontend/templates/web/event/generic.tmpl:455
-msgid "Category_[[EventFee]]"
-msgstr "Kategorie"
-
-#: cdedb/frontend/templates/web/event/generic.tmpl:457
-msgid "Budget_[[EventFee]]"
-msgstr "Mittelverwendung"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:507
 #: cdedb/frontend/templates/web/event/generic.tmpl:509
