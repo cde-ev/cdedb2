@@ -477,10 +477,23 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                         ON rt.registration_id = rp.registration_id AND ct.part_id = rp.part_id
                     JOIN {models.Registration.database_table} AS reg
                         ON rt.registration_id = reg.id
-                WHERE rt.course_id = %(course_id)s AND rp.status = ANY(%(stati)s)
+                WHERE
+                    rt.course_id = %(course_id)s
+                    AND rp.status = ANY(%(stati)s)
+                    AND EXISTS (
+                        SELECT reg.id
+                        FROM
+                            {models.Registration.database_table} AS reg
+                            JOIN {models.RegistrationTrack.database_table} AS rt_inner
+                                ON rt_inner.registration_id = reg.id
+                        WHERE
+                            reg.persona_id = %(persona_id)s
+                            AND rt_inner.course_instructor = %(course_id)s
+                    )
             """
             params: ParamDict = {
                 "course_id": course_id,
+                "persona_id": rs.user.persona_id,
                 "stati": const.RegistrationPartStati.involved_states(),
             }
             persona_ids = set()
