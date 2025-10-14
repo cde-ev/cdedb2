@@ -1192,6 +1192,7 @@ class ChoiceCounts:
     For convenience this can be indexed by either only the course id,
     course id and track id or course id, track id and rank.
     """
+
     # dict mapping (course_id, track_id) to list of choice counts.
     _choice_counts: dict[int, dict[int, list[int]]]
 
@@ -1205,10 +1206,10 @@ class ChoiceCounts:
     def get(self, course_id: int, track_id: int, rank: int) -> int: ...
 
     def get(
-            self,
-            course_id: int,
-            track_id: int | None = None,
-            rank: int | None = None,
+        self,
+        course_id: int,
+        track_id: int | None = None,
+        rank: int | None = None,
     ) -> dict[int, list[int]] | list[int] | int:
         by_track = self._choice_counts.get(course_id, {})
         if track_id is None:
@@ -1219,7 +1220,8 @@ class ChoiceCounts:
         return counts[rank] if rank < len(counts) else 0
 
     def __getitem__(
-            self, item: tuple[int] | tuple[int, int] | tuple[int, int, int],
+        self,
+        item: tuple[int] | tuple[int, int] | tuple[int, int, int],
     ) -> dict[int, list[int]] | list[int] | int:
         return self.get(*item)
 
@@ -1232,6 +1234,7 @@ class ChoiceStats:
     `participant` only includes choices by participants, `involved`
     includes the stati defined by `const.RegisrationPartStati.is_involved()`.
     """
+
     participant: ChoiceCounts
     involved: ChoiceCounts
 
@@ -1241,6 +1244,7 @@ class CourseSegmentAttendees:
     """
     Wrapper to store the assigned attendees of one course in one track.
     """
+
     learners: list[CdEDBObject]
     instructors: list[CdEDBObject]
 
@@ -1268,6 +1272,7 @@ class CourseAttendees(dict[int, CourseSegmentAttendees]):
 @dataclasses.dataclass(frozen=True)
 class Attendees:
     """Wrapper around a mapping of course and track to lists of attendees."""
+
     _course_attendee_counts: dict[int, CourseAttendees]
 
     @overload
@@ -1277,7 +1282,9 @@ class Attendees:
     def get(self, course_id: int, track_id: int) -> CourseSegmentAttendees: ...
 
     def get(
-            self, course_id: int, track_id: int | None = None,
+        self,
+        course_id: int,
+        track_id: int | None = None,
     ) -> CourseAttendees | CourseSegmentAttendees:
         by_track = self._course_attendee_counts.get(course_id, CourseAttendees({}))
         if track_id is None:
@@ -1285,7 +1292,8 @@ class Attendees:
         return by_track.get(track_id, CourseSegmentAttendees([], []))
 
     def __getitem__(
-            self, item: tuple[int] | tuple[int, int],
+        self,
+        item: tuple[int] | tuple[int, int],
     ) -> CourseAttendees | CourseSegmentAttendees:
         return self.get(*item)
 
@@ -1298,5 +1306,6 @@ class AttendeeStats:
     `involved` are the stati defined by `const.RegisrationPartStati.is_involved()`.
     `uninvolved` is the rest.
     """
+
     involved: Attendees
     uninvolved: Attendees
