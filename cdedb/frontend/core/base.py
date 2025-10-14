@@ -547,6 +547,10 @@ class CoreBaseFrontend(AbstractFrontend):
         is_relative_or_meta_admin = self.coreproxy.is_relative_admin(
             rs, persona_id, allow_meta_admin=True)
 
+        if (rs.ambience['persona']['is_archived'] and not is_relative_admin):
+            raise werkzeug.exceptions.Forbidden(
+                n_("Only admins may view archived datasets."))
+
         is_relative_admin_view = self.coreproxy.is_relative_admin_view(
             rs, persona_id)
         is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
@@ -556,10 +560,6 @@ class CoreBaseFrontend(AbstractFrontend):
         is_searchable_to_you = ("searchable" in rs.user.roles
                                 and rs.ambience['persona']['is_member']
                                 and rs.ambience['persona']['is_searchable'])
-
-        if (rs.ambience['persona']['is_archived'] and not is_relative_admin):
-            raise werkzeug.exceptions.Forbidden(
-                n_("Only admins may view archived datasets."))
 
         # all realms the viewer may access of the users
         # this is independent of the actual realms the user possesses
@@ -605,6 +605,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     access_realms.add(realm)
                     # Relative admins can see all data
                     access_levels.add("full")
+        # Admins with special buttons (like viewing account requests in the nav, or
+        #  links to realm-related info pages) which shall change their admin view.
+        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
+            access_mode.add("any_admin")
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
             if not is_searchable_to_you and "cde" not in access_levels:
@@ -648,12 +652,6 @@ class CoreBaseFrontend(AbstractFrontend):
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
                     access_levels.add("moderator")
-        # There are administraive buttons on this page for all of these admins.
-        # All of these admins should see the Account Requests in the nav
-        # event_admins and ml_admins additionally always get links to the respective
-        # realm data.
-        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
-            access_mode.add("any_admin")
 
         # perform a sanity check against programming errors
         if not access_realms.issubset(all_access_realms):
@@ -706,7 +704,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona.paper_expuls = None  # type: ignore[assignment]
                 persona.donation = None  # type: ignore[assignment]
                 if not persona.show_address2:
-                    # TODO what about postal_code, location and country?
+                    # keep showing the rough location, postal code and country
                     persona.address2 = None
                     persona.address_supplement2 = None
 
@@ -730,7 +728,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 # In addition, never show the address of non-cde users.
                 if (isinstance(persona, models.CdEPersona) and not persona.show_address
                         or not isinstance(persona, models.CdEPersona)):
-                    # TODO what about postal_code, location and country?
+                    # keep showing the rough location, postal code and country
                     persona.address = None
                     persona.address_supplement = None
 
