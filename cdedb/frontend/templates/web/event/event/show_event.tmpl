@@ -29,15 +29,15 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {% if orga_view or is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") or is_privileged_for("event/remove_caretaker", consider_admin_view="event_mgmt") %}
+        {% if orga_view or is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") or is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
             <div class="p button-par">
                 {% if orga_view %}
                     {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
                 {% endif %}
-                {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
                 {% endif %}
-                {% if is_privileged_for("event/remove_caretaker", consider_admin_view="event_mgmt") %}
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-sm", icon="hands-holding-circle") }}
                 {% endif %}
             </div>
@@ -125,7 +125,7 @@
                         {% trans %}None{% endtrans %}
                     {% endfor %}
                 </span>
-                {% if is_privileged_for("event/remove_orga", consider_admin_view="event_mgmt") %}
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-xs", icon="user-friends") }}
                 {% endif %}
             </dd>
@@ -140,7 +140,7 @@
                         {% trans %}None{% endtrans %}
                     {% endfor %}
                 </span>
-                {% if is_privileged_for("event/remove_caretaker", consider_admin_view="event_mgmt") %}
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-xs", icon="hands-holding-circle") }}
                 {% endif %}
             </dd>

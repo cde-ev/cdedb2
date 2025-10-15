@@ -183,7 +183,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             endpoint: str,
             *,
             event_id: int | None = None,
-            consider_admin_view: str | None = "event_orga",
+            admin_view_to_consider: str | None = "event_orga",
         ) -> bool:
             endpoint = endpoint.removeprefix(f"{self.realm}/")
             privileges = getattr(
@@ -196,11 +196,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_privileged = self.is_privileged(rs, *privileges, event_id=event_id)
             if (
                 event_id in rs.user.orga | rs.user.caretaker
-                or consider_admin_view is None
-                or consider_admin_view not in rs.user.available_admin_views
+                or admin_view_to_consider is None
+                or admin_view_to_consider not in rs.user.available_admin_views
             ):
                 return is_privileged
-            return is_privileged and consider_admin_view in rs.user.admin_views
+            return is_privileged and admin_view_to_consider in rs.user.admin_views
 
         if 'event' in rs.ambience:
             orga_view = (
