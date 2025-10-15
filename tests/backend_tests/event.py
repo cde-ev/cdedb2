@@ -5536,5 +5536,5 @@ class TestEventBackend(BackendTest):
                 ),
             )
 
-        other_course_attendees = self.event.get_attendee_stats(self.key, other_course_id)
-        self.assertEqual(0, len(other_course_attendees))
+        with self.assertRaises(PrivilegeError):
+            self.event.get_attendee_stats(self.key, other_course_id)

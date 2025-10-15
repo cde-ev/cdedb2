@@ -461,9 +461,31 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
     def get_attendee_stats(
         self, rs: RequestState, course_id: int
     ) -> models.CourseAttendees:
+        """Retrieve a list of personas assigned to the given course in each track.
+
+        This is only available for instrcutors of the given course.
+        """
         course_id = affirm(vtypes.ID, course_id)
 
         with Atomizer(rs):
+            query = f"""
+                SELECT reg.id
+                FROM
+                    {models.Registration.database_table} AS reg
+                    JOIN {models.RegistrationTrack.database_table} AS rt
+                        ON rt.registration_id = reg.id
+                WHERE
+                    reg.persona_id = %(persona_id)s
+                    AND rt.course_instructor = %(course_id)s
+            """
+            params: ParamDict = {
+                "persona_id": rs.user.persona_id,
+                "course_id": course_id,
+            }
+            if not self.query_one(rs, query, params):
+                raise PrivilegeError(
+                    n_("Only available for instructors of this course.")
+                )
             query = f"""
                 SELECT
                     reg.persona_id,
@@ -480,20 +502,9 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 WHERE
                     rt.course_id = %(course_id)s
                     AND rp.status = ANY(%(stati)s)
-                    AND EXISTS (
-                        SELECT reg.id
-                        FROM
-                            {models.Registration.database_table} AS reg
-                            JOIN {models.RegistrationTrack.database_table} AS rt_inner
-                                ON rt_inner.registration_id = reg.id
-                        WHERE
-                            reg.persona_id = %(persona_id)s
-                            AND rt_inner.course_instructor = %(course_id)s
-                    )
             """
             params: ParamDict = {
                 "course_id": course_id,
-                "persona_id": rs.user.persona_id,
                 "stati": const.RegistrationPartStati.involved_states(),
             }
             persona_ids = set()
