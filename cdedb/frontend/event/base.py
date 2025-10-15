@@ -81,14 +81,14 @@ def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
         @functools.wraps(fun)
         def new_fun(obj: "EventBaseFrontend", rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            is_priviled = obj.is_privileged(
+            if not obj.is_privileged(
                 rs, *required_privileges, event_id=rs.ambience['event'].id
-            )
-            if is_priviled is None:
-                raise werkzeug.exceptions.Forbidden(n_("This event is locked."))
-            elif not is_priviled:
+            ):
+                if obj.is_locked(rs.ambience['event']):
+                    raise werkzeug.exceptions.Forbidden(n_("This event is locked."))
                 raise werkzeug.exceptions.Forbidden(
-                    n_("This page can only be accessed by orgas."))
+                    n_("This page can only be accessed by orgas.")
+                )
             return fun(obj, rs, *args, **kwargs)
 
         new_fun.event_required_privileges = required_privileges  # type: ignore[attr-defined]
@@ -177,7 +177,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 required_privilege: EventPrivileges = EventPrivileges.basic_read,
                 *, event_id: int | None = None,
         ) -> bool:
-            return bool(self.is_privileged(rs, required_privilege, event_id=event_id))
+            return self.is_privileged(rs, required_privilege, event_id=event_id)
 
         def is_privileged_for(
             endpoint: str,
@@ -193,9 +193,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             if event_id is None and 'event' in rs.ambience:
                 event_id = rs.ambience['event'].id
 
-            is_privileged = bool(
-                self.is_privileged(rs, *privileges, event_id=event_id)
-            )
+            is_privileged = self.is_privileged(rs, *privileges, event_id=event_id)
             if (
                 event_id in rs.user.orga | rs.user.caretaker
                 or consider_admin_view is None
@@ -256,7 +254,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         *required_privileges: EventPrivileges,
         event_id: Optional[int] = None,
-    ) -> bool | None:
+    ) -> bool:
         """
         Check the users privilege regarding the contextual event, given via event_id or
         taken from rs.ambience['event'].
@@ -265,8 +263,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         Multiple privileges can be combined to instead require the user to have all
         of these privileges.
 
-        Returns None if the operation is blocked by the event being locked, regardless
-        of sufficient privileges.
+        Returns False if the operation is blocked by the event being locked, regardless
+        of whether the user has sufficient privileges.
         """
         if not event_id:
             if not rs.ambience.get('event'):
@@ -276,11 +274,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             is_locked = event.is_locked
         else:
             is_locked = self.eventproxy.is_locked(rs, event_id=event_id)
-        if is_locked and any(
+
+        # Only block access if all given privileges are writing.
+        if is_locked and all(
                 required_privilege & EventPrivileges.all_write
                 for required_privilege in required_privileges
         ):
-            return None
+            return False
         return any(
             is_privileged_event(rs, required_privilege, event_id)
             for required_privilege in required_privileges
