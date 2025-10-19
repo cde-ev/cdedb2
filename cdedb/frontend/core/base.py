@@ -586,6 +586,10 @@ class CoreBaseFrontend(AbstractFrontend):
             "any_admin", "orga", "moderator"
         }
 
+        # use a special sentinel object to mark redacted properties
+        # we can't use None, since some of them are Nonable
+        REDACTED = object()
+
         # Let users see themselves
         if persona_id == rs.user.persona_id:
             access_realms.update(all_access_realms)
@@ -687,29 +691,29 @@ class CoreBaseFrontend(AbstractFrontend):
             persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
-            persona.username = None  # type: ignore[assignment]
+            persona.username = REDACTED  # type: ignore[assignment]
         else:
             raise RuntimeError("Impossible")
 
-        has_lastschrift = None
+        has_lastschrift = REDACTED
         if isinstance(persona, models.CdEPersona):
             if "full" in access_levels:
                 has_lastschrift = bool(self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True))
                 # hide the donation property if no active lastschrift exists, to avoid confusion
                 if not has_lastschrift:
-                    persona.donation = None  # type: ignore[assignment]
+                    persona.donation = REDACTED  # type: ignore[assignment]
             else:
-                persona.balance = None  # type: ignore[assignment]
-                persona.decided_search = None  # type: ignore[assignment]
-                persona.trial_member = None  # type: ignore[assignment]
-                persona.bub_search = None  # type: ignore[assignment]
-                persona.paper_expuls = None  # type: ignore[assignment]
-                persona.donation = None  # type: ignore[assignment]
+                persona.balance = REDACTED  # type: ignore[assignment]
+                persona.decided_search = REDACTED  # type: ignore[assignment]
+                persona.trial_member = REDACTED  # type: ignore[assignment]
+                persona.bub_search = REDACTED  # type: ignore[assignment]
+                persona.paper_expuls = REDACTED  # type: ignore[assignment]
+                persona.donation = REDACTED  # type: ignore[assignment]
                 if not persona.show_address2:
                     # keep showing the rough location, postal code and country
-                    persona.address2 = None
-                    persona.address_supplement2 = None
+                    persona.address2 = REDACTED  # type: ignore[assignment]
+                    persona.address_supplement2 = REDACTED  # type: ignore[assignment]
 
         if access_levels.isdisjoint({"full", "meta"}):
             status_bits = persona.get_status_bits()
@@ -717,31 +721,30 @@ class CoreBaseFrontend(AbstractFrontend):
             if "orga" in access_levels and "is_member" in status_bits:
                 status_bits.remove("is_member")
             for field in status_bits:
-                setattr(persona, field, None)
+                setattr(persona, field, REDACTED)
 
         if access_levels.isdisjoint({"full", "orga"}):
             # May be hidden from member search, but not from orga view.
             if not persona.show_legal_given_names:
-                persona.legal_given_names = None
+                persona.legal_given_names = REDACTED  # type: ignore[assignment]
             if isinstance(persona, models.EventPersona):
-                persona.gender = None  # type: ignore[assignment]
-                persona.pronouns_nametag = None  # type: ignore[assignment]
-                persona.show_legal_given_names = None  # type: ignore[assignment]
+                persona.gender = REDACTED  # type: ignore[assignment]
+                persona.pronouns_nametag = REDACTED  # type: ignore[assignment]
+                persona.show_legal_given_names = REDACTED  # type: ignore[assignment]
                 # May be hidden from member search, but not from orga view.
                 # In addition, never show the address of non-cde users.
                 if (isinstance(persona, models.CdEPersona) and not persona.show_address
                         or not isinstance(persona, models.CdEPersona)):
                     # keep showing the rough location, postal code and country
-                    persona.address = None
-                    persona.address_supplement = None
+                    persona.address = REDACTED  # type: ignore[assignment]
+                    persona.address_supplement = REDACTED  # type: ignore[assignment]
 
-        notes = None
+        notes = REDACTED
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
-            # to distinguish from the not-privileged case
-            notes = total['notes'] or ""
+            notes = total['notes']
             persona.username = total['username']
 
         # Determine if vcard should be visible
@@ -763,7 +766,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 or ({"core_admin", "ml_admin"} & rs.user.roles)):
             # the username may be masked by admin views, but then we also
             # don't need the email report
-            if persona.username:
+            if persona.username != REDACTED:
                 tmp = self.coreproxy.get_email_reports(rs, [persona_id])
                 email_report = tmp.get(persona.username)
 
@@ -774,9 +777,30 @@ class CoreBaseFrontend(AbstractFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
+
+        def _hasattr(persona: models.Persona, attr: str) -> bool:
+            return hasattr(persona, attr) and getattr(persona, attr) != REDACTED
+
+        def _has(persona: models.Persona, attr: str) -> bool:
+            return _hasattr(persona, attr) and getattr(persona, attr) is not None
+
+        def _is(persona: models.Persona, attr: str) -> bool:
+            return _hasattr(persona, attr) and getattr(persona, attr) is True
+
+        def _is_not(persona: models.Persona, attr: str) -> bool:
+            return _hasattr(persona, attr) and getattr(persona, attr) is False
+
+        self.jinja_env.filters.update({
+            'hasattr': _hasattr,
+            'has': _has,
+            'is': _is,
+            'is_not': _is_not,
+        })
+
         return self.render(rs, "show_user", {
             # TODO rename in template
             'data': persona,
+            'REDACTED': REDACTED,
             'past_events': past_events,
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
