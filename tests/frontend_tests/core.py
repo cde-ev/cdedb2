@@ -1713,6 +1713,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
         self.assertPresence("Name N. N."
+                            " Bürgerlicher Name N. N."
+                            " Bürgerlichen Vornamen für Mitgliedersuche anzeigen Nein"
                             " Geburtsdatum N/A Geschlecht keine Angabe"
                             " Pronomen – Pronomen auf Namensschild Nein",
                             div='personal-information', exact=True)

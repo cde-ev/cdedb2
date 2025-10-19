@@ -231,7 +231,9 @@ class PersonaName(CdEDataclass):
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
-    def get_forename(self, *, use_legal_name: bool = False, include_nickname: bool = False) -> str:
+    def get_forename(
+        self, *, use_legal_name: bool = False, include_nickname: bool = False
+    ) -> str:
         """Construct the forename according to the display name specification.
 
         The name specification can be found at the documentation page about
@@ -248,18 +250,22 @@ class PersonaName(CdEDataclass):
                 return f"{self.given_names} ({self.nickname or ''})"
         return self.given_names
 
-    def get_name(self, *,
-                 use_legal_name: bool = False,
-                 include_nickname: bool = False,
-                 with_family_name: bool = True,
-                 with_titles: bool = False) -> str:
+    def get_name(
+        self,
+        *,
+        use_legal_name: bool = False,
+        include_nickname: bool = False,
+        with_family_name: bool = True,
+        with_titles: bool = False,
+    ) -> str:
         """Format the name according to the display name specification
 
         For a full specification, which name variant should be used in which context, see
         the documentation page about "User Experience Conventions".
         """
         forename = self.get_forename(
-            use_legal_name=use_legal_name, include_nickname=include_nickname)
+            use_legal_name=use_legal_name, include_nickname=include_nickname
+        )
         ret = []
         if with_titles and self.title:
             ret.append(self.title)
