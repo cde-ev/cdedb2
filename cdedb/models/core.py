@@ -301,6 +301,15 @@ class Persona(PersonaName):
 
     @classmethod
     @functools.cache
+    def get_realm_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_") and field.name.endswith("_realm"):
+                ret.add(field.name)
+        return ret
+
+    @classmethod
+    @functools.cache
     def get_admin_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
