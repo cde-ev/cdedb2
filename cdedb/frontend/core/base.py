@@ -692,6 +692,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
             persona.username = REDACTED  # type: ignore[assignment]
+            persona.legal_given_names = REDACTED  # type: ignore[assignment]
         else:
             raise RuntimeError("Impossible")
 
