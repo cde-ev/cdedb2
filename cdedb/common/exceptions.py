@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """Custom exceptions for the CdEDB."""
+
 from collections.abc import Collection
 from typing import Any
 
@@ -27,6 +28,7 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
+
     def __init__(self, msg: str = n_("Not privileged."), /, *args: Any):
         super().__init__(msg, *args)
 
@@ -36,6 +38,7 @@ class APITokenError(PrivilegeError):
     Special type of privilege error only raised by trying to access an API with an
     invalid or unknown key.
     """
+
     def __init__(self, msg: str = n_("Invalid API token."), /, *args: Any):
         super().__init__(msg, *args)
 
@@ -89,6 +92,7 @@ class CryptographyError(Exception):
 
 class AdverseCompanionError(Exception):
     """Exception signalling that adding an adverse companion was blocked."""
+
     def __init__(self, msg: str = n_("Adverse companion."), /, *args: Any):
         super().__init__(msg, *args)
 

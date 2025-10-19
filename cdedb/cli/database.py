@@ -1,4 +1,5 @@
 """Set up the database, including users, tables and population with sample data."""
+
 import json
 import os
 import pathlib
@@ -40,7 +41,8 @@ def psql(*args: str) -> subprocess.CompletedProcess[bytes]:
     """
     if is_docker():
         return subprocess.run(
-            ["psql", "postgresql://postgres:passwd@cdb", *args], check=True)
+            ["psql", "postgresql://postgres:passwd@cdb", *args], check=True
+        )
     else:
         # TODO can we use the user kwarg instead of doing the sudo dance?
         # mypy does not know that run passes unknown arguments to Popen
@@ -80,8 +82,9 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
 
 @sanity_check
-def populate_database(conf: TestConfig, secrets: SecretsConfig,
-                      xss: bool = False) -> None:
+def populate_database(
+    conf: TestConfig, secrets: SecretsConfig, xss: bool = False
+) -> None:
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 
