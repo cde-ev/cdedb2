@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-14 19:39+0200\n"
+"POT-Creation-Date: 2025-10-20 23:41+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4332,6 +4332,10 @@ msgstr "Alle Kurse müssen zur gleichen Veranstaltung gehören."
 msgid "Invalid tracks specified."
 msgstr "Nicht-existente Kursschiene angegeben."
 
+#: cdedb/backend/event/course.py:487
+msgid "Only available for instructors of this course."
+msgstr "Nur für Kursleiter dieses Kurses verfügbar."
+
 #: cdedb/backend/event/lodgement.py:223 cdedb/frontend/event/lodgement.py:699
 msgid "Invalid lodgement group."
 msgstr "Ungültige Unterkunftsgruppe"
@@ -6858,7 +6862,7 @@ msgid "Duplicate title."
 msgstr "Titel doppelt vergeben."
 
 #: cdedb/common/validation/validate.py:3033 cdedb/frontend/event/course.py:268
-#: cdedb/frontend/event/course.py:378
+#: cdedb/frontend/event/course.py:376
 msgid "Event without tracks forbids courses."
 msgstr "Kurse sind nur in Veranstaltungen mit Kursschienen möglich."
 
@@ -8526,64 +8530,64 @@ msgstr "Nicht für Veranstaltung angemeldet."
 msgid "Course assignment not visible."
 msgstr "Kurseinteilung nicht sichtbar"
 
-#: cdedb/frontend/event/course.py:438
+#: cdedb/frontend/event/course.py:436
 msgid "somehow know"
 msgstr "irgendwie kennen"
 
-#: cdedb/frontend/event/course.py:440
+#: cdedb/frontend/event/course.py:438
 msgid "participate in"
 msgstr "besuchen"
 
-#: cdedb/frontend/event/course.py:442
+#: cdedb/frontend/event/course.py:440
 msgid "offer"
 msgstr "anbieten"
 
-#: cdedb/frontend/event/course.py:444
+#: cdedb/frontend/event/course.py:442
 msgid "chose"
 msgstr "gewählt haben"
 
-#: cdedb/frontend/event/course.py:447
+#: cdedb/frontend/event/course.py:445
 msgid "have as {}. choice"
 msgstr "als {}. Wahl haben"
 
-#: cdedb/frontend/event/course.py:450
+#: cdedb/frontend/event/course.py:448
 msgid "into their {}. choice"
 msgstr "in ihre {}. Wahl"
 
-#: cdedb/frontend/event/course.py:454
+#: cdedb/frontend/event/course.py:452
 msgid "in the course …"
 msgstr "in den Kurs …"
 
-#: cdedb/frontend/event/course.py:456
+#: cdedb/frontend/event/course.py:454
 msgid "automatically"
 msgstr "automatisch"
 
-#: cdedb/frontend/event/course.py:538
+#: cdedb/frontend/event/course.py:536
 #, python-format
 msgid "%(name)s has no %(rank)i. choice in %(track_name)s."
 msgstr "%(name)s hat keine %(rank)i. Kurswahl in %(track_name)s."
 
-#: cdedb/frontend/event/course.py:541
+#: cdedb/frontend/event/course.py:539
 #, python-format
 msgid "%(name)s has no %(rank)i. choice."
 msgstr "%(name)s hat keine %(rank)i. Kurswahl."
 
-#: cdedb/frontend/event/course.py:571
+#: cdedb/frontend/event/course.py:569
 #, python-format
 msgid "No choice available for %(name)s in %(track_name)s."
 msgstr "Keine Kurswahlen für %(name)s in %(track_name)sverfügbar."
 
-#: cdedb/frontend/event/course.py:574
+#: cdedb/frontend/event/course.py:572
 #, python-format
 msgid "No choice available for %(name)s."
 msgstr "Keine Kurswahlen für %(name)s verfügbar."
 
-#: cdedb/frontend/event/course.py:584
+#: cdedb/frontend/event/course.py:582
 #, python-format
 msgid "Error committing changes for %(name)s."
 msgstr "Fehler beim Speichern der Änderungen für %(name)s."
 
-#: cdedb/frontend/event/course.py:587
+#: cdedb/frontend/event/course.py:585
 #, python-format
 msgid ""
 "Course assignment for %(num_committed)s of %(num_total)s registrations "
@@ -17114,10 +17118,14 @@ msgid "Course Track"
 msgstr "Kursschiene"
 
 #: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:64
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:53
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:60
 msgid "Mail to All"
 msgstr "E-Mail an alle"
 
 #: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:65
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:50
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:57
 msgid "BCC to All"
 msgstr "BCC-Mail an alle"
 
@@ -17550,7 +17558,8 @@ msgid ""
 msgstr ""
 "Wenn dies ausgewählt ist, wird die Kurseinteilung den Teilnehmern angezeigt. "
 "Konkret wird der Kurs jedem Teilnehmer im Anmeldestatus und auf der "
-"Teilnehmerliste angezeigt. Außerdem können Kursleiter ihre Kursteilnehmer sehen, selbst, wenn die Teilnehmerliste nicht sichtbar ist."
+"Teilnehmerliste angezeigt. Außerdem können Kursleiter ihre Kursteilnehmer "
+"sehen, selbst, wenn die Teilnehmerliste nicht sichtbar ist."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:84
 msgid "Cancellation of the event"
@@ -19700,19 +19709,9 @@ msgstr "Anmeldungen (%(title)s)"
 msgid "Add Registration"
 msgstr "Anmeldung hinzufügen"
 
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:50
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:57
-msgid "bcc email to all"
-msgstr "BCC-E-Mail an alle"
-
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:52
 msgid "Send Mail to all registrations listed below as BCC."
 msgstr "E-Mail an alle unten aufgeführten Anmeldungen als BCC senden."
-
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:53
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:60
-msgid "email to all"
-msgstr "E-Mail an alle"
 
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:55
 msgid "Send Mail to all registrations listed below."

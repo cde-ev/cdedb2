@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-14 19:39+0200\n"
+"POT-Creation-Date: 2025-10-20 23:41+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4291,6 +4291,10 @@ msgstr ""
 msgid "Invalid tracks specified."
 msgstr ""
 
+#: cdedb/backend/event/course.py:487
+msgid "Only available for instructors of this course."
+msgstr ""
+
 #: cdedb/backend/event/lodgement.py:223 cdedb/frontend/event/lodgement.py:699
 msgid "Invalid lodgement group."
 msgstr ""
@@ -6779,7 +6783,7 @@ msgid "Duplicate title."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3033 cdedb/frontend/event/course.py:268
-#: cdedb/frontend/event/course.py:378
+#: cdedb/frontend/event/course.py:376
 msgid "Event without tracks forbids courses."
 msgstr ""
 
@@ -8387,64 +8391,64 @@ msgstr ""
 msgid "Course assignment not visible."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:438
+#: cdedb/frontend/event/course.py:436
 msgid "somehow know"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:440
+#: cdedb/frontend/event/course.py:438
 msgid "participate in"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:442
+#: cdedb/frontend/event/course.py:440
 msgid "offer"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:444
+#: cdedb/frontend/event/course.py:442
 msgid "chose"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:447
+#: cdedb/frontend/event/course.py:445
 msgid "have as {}. choice"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:450
+#: cdedb/frontend/event/course.py:448
 msgid "into their {}. choice"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:454
+#: cdedb/frontend/event/course.py:452
 msgid "in the course …"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:456
+#: cdedb/frontend/event/course.py:454
 msgid "automatically"
 msgstr ""
 
-#: cdedb/frontend/event/course.py:538
+#: cdedb/frontend/event/course.py:536
 #, python-format
 msgid "%(name)s has no %(rank)i. choice in %(track_name)s."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:541
+#: cdedb/frontend/event/course.py:539
 #, python-format
 msgid "%(name)s has no %(rank)i. choice."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:571
+#: cdedb/frontend/event/course.py:569
 #, python-format
 msgid "No choice available for %(name)s in %(track_name)s."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:574
+#: cdedb/frontend/event/course.py:572
 #, python-format
 msgid "No choice available for %(name)s."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:584
+#: cdedb/frontend/event/course.py:582
 #, python-format
 msgid "Error committing changes for %(name)s."
 msgstr ""
 
-#: cdedb/frontend/event/course.py:587
+#: cdedb/frontend/event/course.py:585
 #, python-format
 msgid ""
 "Course assignment for %(num_committed)s of %(num_total)s registrations "
@@ -16407,10 +16411,14 @@ msgid "Course Track"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:64
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:53
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:60
 msgid "Mail to All"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:65
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:50
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:57
 msgid "BCC to All"
 msgstr ""
 
@@ -18763,18 +18771,8 @@ msgstr ""
 msgid "Add Registration"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:50
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:57
-msgid "bcc email to all"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:52
 msgid "Send Mail to all registrations listed below as BCC."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:53
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:60
-msgid "email to all"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:55
