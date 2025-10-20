@@ -5491,3 +5491,50 @@ class TestEventBackend(BackendTest):
 
         new_reg['parts'][1]['status'] = const.RegistrationPartStati.cancelled
         self.event.create_registration(self.key, new_reg)
+
+    @as_users("emilia")
+    def test_course_attendees(self) -> None:
+        event_id = 1
+        course_id = 1
+        other_course_id = 2
+
+        registration_id = self.event.get_registration_id(
+            self.key, self.user["id"], event_id
+        )
+        assert registration_id is not None
+
+        self.event.set_registration(
+            self.key,
+            {"id": registration_id, "tracks": {1: {"course_instructor": course_id, "course_id": course_id}}},
+        )
+
+        registration = self.event.get_registration(self.key, registration_id)
+
+        self.assertEqual(
+            course_id, registration["tracks"][1]["course_instructor"]
+        )
+        self.assertEqual(
+            course_id, registration["tracks"][3]["course_instructor"]
+        )
+
+        expectation = {
+            1: (set(), {self.user["id"]}),
+            3: ({9, 100}, {self.user["id"]}),
+        }
+        course_attendees = self.event.get_attendee_stats(self.key, course_id)
+
+        self.assertEqual(len(expectation), len(course_attendees))
+        for track_id, (learners, instructors) in expectation.items():
+            self.assertEqual(
+                learners,
+                set(persona["id"] for persona in course_attendees[track_id].learners),
+            )
+            self.assertEqual(
+                instructors,
+                set(
+                    persona["id"] for persona in course_attendees[track_id].instructors
+                ),
+            )
+
+        with self.assertRaises(PrivilegeError):
+            self.event.get_attendee_stats(self.key, other_course_id)

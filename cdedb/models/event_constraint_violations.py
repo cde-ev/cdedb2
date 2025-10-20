@@ -50,7 +50,6 @@ from cdedb.models.common import CdEDataclassMap
 from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
-    from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
     from cdedb.frontend.event.lodgement import LodgementInhabitants
 
 
@@ -305,8 +304,8 @@ class ViolationAux:
     # Violations are only checked for these lodgements.
     lodgements: CdEDataclassMap[models.Lodgement]
 
-    attendee_data: "AttendeeStats"
-    choices_data: "ChoiceStats"
+    attendee_data: models.AttendeeStats
+    choices_data: models.ChoiceStats
     inhabitants_data: "dict[int, dict[int, LodgementInhabitants]]"
 
     def evaluate_all(self) -> ViolationList:

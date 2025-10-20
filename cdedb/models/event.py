@@ -44,6 +44,7 @@ from typing import (
     cast,
     get_args,
     get_origin,
+    overload,
 )
 
 import cdedb.common.validation.types as vtypes
@@ -1181,3 +1182,130 @@ class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
         if self.checkout_time is not None:
             return self.checkout_time - self.checkin_time
         return now() - self.checkin_time
+
+
+@dataclasses.dataclass(frozen=True)
+class ChoiceCounts:
+    """
+    Wrapper around a mapping of course, track and rank to number of choices.
+
+    For convenience this can be indexed by either only the course id,
+    course id and track id or course id, track id and rank.
+    """
+
+    # dict mapping (course_id, track_id) to list of choice counts.
+    _choice_counts: dict[int, dict[int, list[int]]]
+
+    @overload
+    def get(self, course_id: int) -> dict[int, list[int]]: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int) -> list[int]: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int, rank: int) -> int: ...
+
+    def get(
+        self,
+        course_id: int,
+        track_id: int | None = None,
+        rank: int | None = None,
+    ) -> dict[int, list[int]] | list[int] | int:
+        by_track = self._choice_counts.get(course_id, {})
+        if track_id is None:
+            return by_track
+        counts = by_track.get(track_id, [])
+        if rank is None:
+            return counts
+        return counts[rank] if rank < len(counts) else 0
+
+    def __getitem__(
+        self,
+        item: tuple[int] | tuple[int, int] | tuple[int, int, int],
+    ) -> dict[int, list[int]] | list[int] | int:
+        return self.get(*item)
+
+
+@dataclasses.dataclass(frozen=True)
+class ChoiceStats:
+    """
+    Collection helper class, holding two instances of `ChoiceCounts`.
+
+    `participant` only includes choices by participants, `involved`
+    includes the stati defined by `const.RegisrationPartStati.is_involved()`.
+    """
+
+    participant: ChoiceCounts
+    involved: ChoiceCounts
+
+
+@dataclasses.dataclass(frozen=True)
+class CourseSegmentAttendees:
+    """
+    Wrapper to store the assigned attendees of one course in one track.
+    """
+
+    learners: list[CdEDBObject]
+    instructors: list[CdEDBObject]
+
+    @functools.cached_property
+    def all(self) -> list[CdEDBObject]:
+        return self.learners + self.instructors
+
+    @functools.cached_property
+    def num_learners(self) -> int:
+        return len(self.learners)
+
+    @functools.cached_property
+    def num_instructors(self) -> int:
+        return len(self.instructors)
+
+    @functools.cached_property
+    def num(self) -> int:
+        return len(self.all)
+
+
+class CourseAttendees(dict[int, CourseSegmentAttendees]):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class Attendees:
+    """Wrapper around a mapping of course and track to lists of attendees."""
+
+    _course_attendee_counts: dict[int, CourseAttendees]
+
+    @overload
+    def get(self, course_id: int) -> CourseAttendees: ...
+
+    @overload
+    def get(self, course_id: int, track_id: int) -> CourseSegmentAttendees: ...
+
+    def get(
+        self,
+        course_id: int,
+        track_id: int | None = None,
+    ) -> CourseAttendees | CourseSegmentAttendees:
+        by_track = self._course_attendee_counts.get(course_id, CourseAttendees({}))
+        if track_id is None:
+            return by_track
+        return by_track.get(track_id, CourseSegmentAttendees([], []))
+
+    def __getitem__(
+        self,
+        item: tuple[int] | tuple[int, int],
+    ) -> CourseAttendees | CourseSegmentAttendees:
+        return self.get(*item)
+
+
+@dataclasses.dataclass(frozen=True)
+class AttendeeStats:
+    """
+    Collection helper class, holding two instances of `Attendees`.
+
+    `involved` are the stati defined by `const.RegisrationPartStati.is_involved()`.
+    `uninvolved` is the rest.
+    """
+
+    involved: Attendees
+    uninvolved: Attendees

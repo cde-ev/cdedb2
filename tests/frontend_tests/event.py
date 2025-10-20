@@ -8259,3 +8259,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.get("/event/event/2/part/add")
             self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
             self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
+
+    @as_users("emilia")
+    @prepsql(f"UPDATE {models.Event.database_table} SET is_course_assignment_visible = True WHERE id = 1")
+    def test_course_instructor_attendees(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Meine geleiteten Kurse")
+        self.assertTitle("Deine geleiteten Kurse (Große Testakademie 2222)")
+        self.assertPresence("Planetenretten für Anfänger", div="track3")
+        self.assertPresence("Arbeitssitzung (Zweite Hälfte)", div="track3")
+
+        self.assertPresence("Kursteilnehmende [2 + 1]", div="attendees3")
+        self.assertPresence("Emilia (Emmy) Eventis (KL) emilia@example.cde", div="attendee-list3")
+        self.assertPresence("Akira Abukara akira@example.cde", div="attendee-list3")
+        self.assertPresence("Inga Iota inga@example.cde", div="attendee-list3")
