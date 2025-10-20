@@ -339,56 +339,109 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/list_event_helpers")
 
+    @access("event")
+    @event_guard(EventPrivileges.orgas_change, EventPrivileges.caretakers_change)
+    def manage_orgas(self, rs: RequestState, event_id: int) -> Response:
+        orgas = {
+            e['id']: e
+            for e in xsorted(
+                self.coreproxy.get_personas(rs, rs.ambience['event'].orgas).values(),
+                key=EntitySorter.persona
+            )
+        }
+        caretakers = {
+            e['id']: e
+            for e in xsorted(
+                self.coreproxy.get_personas(rs, rs.ambience['event'].caretakers).values(),
+                key=EntitySorter.persona
+            )
+        }
+        return self.render(
+            rs, 'event/manage_orgas', {"orgas": orgas, "caretakers": caretakers}
+        )
+
     @access("event", modi={"POST"})
-    @REQUESTdata("persona_id", "as_caretaker")
-    def add_orga_or_caretaker(
+    @event_guard(EventPrivileges.orgas_change)
+    @REQUESTdata("orga_ids")
+    def add_orgas(
+            self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+    ) -> Response:
+        return self._add_orgas_or_caretakers(
+            rs, event_id, orga_ids, as_caretaker=False
+        )
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.caretakers_change)
+    @REQUESTdata("caretaker_ids")
+    def add_caretakers(
+            self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+    ) -> Response:
+        return self._add_orgas_or_caretakers(
+            rs, event_id, caretaker_ids, as_caretaker=True
+        )
+
+    def _add_orgas_or_caretakers(
         self,
         rs: RequestState,
         event_id: int,
-        persona_id: vtypes.CdedbID,
+        persona_ids: vtypes.CdedbIDList,
         as_caretaker: bool = False,
     ) -> Response:
-        """Make an additional persona become orga or caretaker."""
 
         # Check privileges
         if as_caretaker:
-            if not self.is_admin(rs):
+            if not self.is_privileged(rs, EventPrivileges.caretakers_change):
                 raise werkzeug.exceptions.Forbidden()
         elif not self.is_privileged(rs, EventPrivileges.orgas_change):
             raise werkzeug.exceptions.Forbidden()
 
         if rs.has_validation_errors():
-            # Shortcircuit if we have got no workable cdedbid / caretaker bit
-            return self.show_event(rs, event_id)
+            # Shortcircuit if we have got no workable ids.
+            return self.manage_orgas(rs, event_id)
         try:
-            self.eventproxy.validate_event_persona_ids(rs, {persona_id})
+            self.eventproxy.validate_event_persona_ids(rs, persona_ids)
         except ValueError as e:
-            rs.append_validation_error(('persona_id', e))
+            rs.append_validation_error(
+                ("caretaker_ids" if as_caretaker else "orga_ids", e)
+            )
         if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
+            return self.manage_orgas(rs, event_id)
 
         if as_caretaker:
-            code = self.eventproxy.add_event_caretakers(rs, event_id, {persona_id})
+            persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment, operator]
+            code = self.eventproxy.add_event_caretakers(rs, event_id, persona_ids)
         else:
-            code = self.eventproxy.add_event_orgas(rs, event_id, {persona_id})
-        rs.notify_return_code(code, info=n_("Action had no effect."))
-        if code:
-            orga = self.coreproxy.get_persona(rs, persona_id)
+            persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment, operator]
+            code = self.eventproxy.add_event_orgas(rs, event_id, persona_ids)
+
+        if not persona_ids:
+            rs.notify("info", n_("Action had no effect."))
+        else:
+            rs.notify_return_code(code)
+
+        if code and persona_ids:
+            personas = xsorted(
+                self.coreproxy.get_personas(rs, persona_ids).values(),
+                key=EntitySorter.persona
+            )
             if as_caretaker:
-                subject = f"Betreuer hinzugefügt ({rs.ambience['event'].shortname})"
+                subject = f"{len(persona_ids)} Betreuer hinzugefügt ({rs.ambience['event'].shortname})"
             else:
-                subject = f"Orga hinzugefügt ({rs.ambience['event'].shortname})"
+                subject = f"{len(persona_ids)} Orgas hinzugefügt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
-                "orga_added",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                "orgas_added",
+                {'To': to, 'Subject': subject},
                 {
-                    'orga': orga,
+                    'personas': personas,
                     'event': rs.ambience['event'],
                     'as_caretaker': as_caretaker
                 },
             )
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/manage_orgas")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
@@ -405,7 +458,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
+            return self.manage_orgas(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
@@ -421,9 +474,10 @@ class EventEventMixin(EventBaseFrontend):
                     'as_caretaker': False,
                 },
             )
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/manage_orgas")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_id", "ack_delete")
     def remove_caretaker(
         self,
@@ -441,7 +495,7 @@ class EventEventMixin(EventBaseFrontend):
                 ("ack_delete", ValueError(n_("Must be checked.")))
             )
         if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
+            return self.manage_orgas(rs, event_id)
         code = self.eventproxy.remove_event_caretaker(rs, event_id, caretaker_id)
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
@@ -457,7 +511,7 @@ class EventEventMixin(EventBaseFrontend):
                     'as_caretaker': True,
                 },
             )
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/manage_orgas")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1217,12 +1271,13 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
-                 "fee", "nonmember_surcharge",
+    @REQUESTdata("part_begin", "part_end", "orga_ids", "caretaker_ids",
+                 "create_track", "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
     @REQUESTdatadict(*models.Event.requestdict_fields(creation=True), "description")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
+                     caretaker_ids: vtypes.CdedbIDList,
                      fee: vtypes.NonNegativeDecimal,
                      nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
@@ -1232,6 +1287,7 @@ class EventEventMixin(EventBaseFrontend):
         # multi part events will have to edit this later on
         data.update({
             'orgas': orga_ids,
+            'caretakers': caretaker_ids,
             'notify_on_registration': const.NotifyOnRegistration.never,
             'parts': {
                 -1: {
@@ -1281,19 +1337,16 @@ class EventEventMixin(EventBaseFrontend):
             )
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
-            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users do not exist or are archived."),
-                    )),
-                )
-            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users are not event users."),
-                    )),
-                )
-        elif create_orga_list or create_participant_list:
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, orga_ids)
+            except ValueError as e:
+                rs.append_validation_error(("orga_ids", e))
+        if caretaker_ids:
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, caretaker_ids)
+            except ValueError as e:
+                rs.append_validation_error(("caretaker_ids", e))
+        if not orga_ids and (create_orga_list or create_participant_list):
             # mailinglists require moderators
             rs.append_validation_error(
                 ("orga_ids", ValueError(

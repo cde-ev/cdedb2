@@ -537,13 +537,19 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="change_minor_form"),
                 )),
                 sub('/orga', (
+                    rule("/manage", methods=_GET,
+                         endpoint="manage_orgas"),
                     rule("/add", methods=_POST,
-                         endpoint="add_orga_or_caretaker"),
+                         endpoint="add_orgas"),
                     rule("/remove", methods=_POST,
                          endpoint="remove_orga"),
                 )),
-                rule('/caretaker/remove', methods=_POST,
-                     endpoint="remove_caretaker"),
+                sub("/caretaker", (
+                    rule("/add", methods=_POST,
+                         endpoint="add_caretakers"),
+                    rule("/remove", methods=_POST,
+                         endpoint="remove_caretaker"),
+                )),
                 sub('/query', (
                     sub('/filter', (
                         rule("/", methods=_GET,

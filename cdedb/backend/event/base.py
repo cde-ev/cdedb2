@@ -344,6 +344,8 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> None:
         """Validate whether persona_ids are valid for receiving event privileges."""
+        if not persona_ids:
+            raise ValueError(n_("Must not be empty."))
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_("Some of these personas do not exist or are archived."))
         if not self.core.verify_personas(rs, persona_ids, {"event"}):
@@ -434,7 +436,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(
                         rs, const.EventLogCodes.orga_added, event_id, persona_id=anid
                     )
-                ret *= r
+                    ret *= r
 
         # Update session orga status
         if rs.user.persona_id in persona_ids:
@@ -508,7 +510,7 @@ class EventBaseBackend(EventLowLevelBackend):
                         event_id,
                         persona_id=anid,
                     )
-                ret *= r
+                    ret *= r
 
         # Update session caretaker status
         if rs.user.persona_id in persona_ids:
@@ -927,8 +929,10 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
-            if 'orgas' in data:
+            if data.get('orgas'):
                 self.add_event_orgas(rs, new_id, data['orgas'])
+            if data.get('caretakers'):
+                self.add_event_caretakers(rs, new_id, data['caretakers'])
             if 'fields' in data:
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:

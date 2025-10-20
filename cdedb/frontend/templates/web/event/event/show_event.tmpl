@@ -29,9 +29,17 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {% if orga_view %}
+        {% if orga_view or is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") or is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
             <div class="p button-par">
-                {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
+                {% if orga_view %}
+                    {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
+                {% endif %}
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
+                {% endif %}
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-sm", icon="hands-holding-circle") }}
+                {% endif %}
             </div>
         {% endif %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
@@ -109,22 +117,32 @@
             <dt title="{% trans %}Orgas{% endtrans %}">
                 {% trans %}Orgas{% endtrans %}
             </dt>
-            <dd id="orgas">
-                {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
-                {% else %}
-                    {% trans %}None{% endtrans %}
-                {% endfor %}
+            <dd>
+                <span id="orgas">
+                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
+                        {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
+                    {% else %}
+                        {% trans %}None{% endtrans %}
+                    {% endfor %}
+                </span>
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-xs", icon="user-friends") }}
+                {% endif %}
             </dd>
             <dt title="{% trans %}Caretakers{% endtrans %}">
                 {% trans %}Caretakers{% endtrans %}
             </dt>
-            <dd id="caretakers">
-                {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
-                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
-                {% else %}
-                    {% trans %}None{% endtrans %}
-                {% endfor %}
+            <dd>
+                <span id="caretakers">
+                    {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
+                        {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
+                    {% else %}
+                        {% trans %}None{% endtrans %}
+                    {% endfor %}
+                </span>
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-xs", icon="hands-holding-circle") }}
+                {% endif %}
             </dd>
         {% endif %}
     </dl>
@@ -250,77 +268,6 @@
                             </form>
                         </div>
                     {% endif %}
-                {% endcall %}
-            </div>
-        {% endif %}
-        {% if "event_mgmt" in user.admin_views or ambience['event'].id in user.caretaker %}
-            <div class="col-md-6" id="manage-orgas">
-                {% call util.bootstrap_panel(title=gettext("Orgas and Caretakers"), icon='user-friends') %}
-                <ul class="slim">
-                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                        <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
-                            <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
-                                    id="removeorgaform{{ anid }}" class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('event/remove_orga') }}
-                                {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(title=gettext("Remove Orga"), icon='minus', label="",
-                                                     aclass='btn btn-xs btn-danger list-button-float') }}
-                                {{ util.ack_delete(gettext("The orga will be removed from the event.")) }}
-                            </form>
-                        </li>
-                    {% endfor %}
-                    {% if orgas and caretakers %}<hr class="nosp" />{% endif %}
-                    {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
-                        <li class="hide-hover-container clearfix-after">
-                            {{ util.make_icon("hands-holding-circle", title=gettext("Caretaker"), aclass="text-muted") }}
-                            {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
-                            {% if "event_mgmt" in user.admin_views %}
-                                <form action="{{ cdedblink('event/remove_caretaker') }}" method="POST"
-                                        id="removeorgaform{{ anid }}" class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('event/remove_caretaker') }}
-                                    {{ util.input_hidden(name="caretaker_id", value=anid) }}
-                                    {{ util.input_submit(title=gettext("Remove Cartaker"), icon='minus', label="",
-                                                         aclass='btn btn-xs btn-danger list-button-float') }}
-                                    {{ util.ack_delete(gettext("The caretaker will be removed from the event.")) }}
-                                </form>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-                <form action="{{ cdedblink('event/add_orga_or_caretaker') }}" method="POST" id="addorgaform" class="p">
-                    {{ util.anti_csrf_token('event/add_orga_or_caretaker') }}
-                    {% call util.output_errors('persona_id', wrapper=True) %}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
-                        {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid='input-add-orga',
-                                           arialabel=gettext("ID of the new Orga")) }}
-                        <script nonce="{{ csp_nonce }}">
-                            $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') }}',
-                                {{ {'kind': 'event_user', 'aux': ambience['event']['id'] }|tojson }},
-                                [], false, false, "{{ gettext("ID, name, email") }}"
-                            );
-                        </script>
-                        <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), aclass='btn btn-success') }}
-                        </div>
-                    </div>
-                    {% endcall %}
-                    {% if "event_mgmt" in user.admin_views %}
-                        <div class="checkbox" style="margin-bottom:0">
-                            {{ util.input_checkbox('as_caretaker', gettext("as Caretaker")) }}
-                        </div>
-                    {% endif %}
-                    {% if ambience['event'].id in user.orga %}
-                        <p class="help-block no-color text-warning" style="margin-bottom:0">
-                            {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
-                            {% trans %}
-                                 You should not add/remove orgas for your own event.
-                            {% endtrans %}
-                        </p>
-                    {% endif %}
-                </form>
                 {% endcall %}
             </div>
         {% endif %}

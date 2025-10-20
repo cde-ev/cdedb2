@@ -44,8 +44,11 @@
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
+        <h4 class="heading-underline">{% trans %}Caretakers{% endtrans %}</h4>
+        {{ util.form_input_text(name="caretaker_ids", label=gettext("Caretakers"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
+            anid="input-caretakers") }}
         <script nonce="{{ csp_nonce }}">
-            $('#input-orgas').cdedbSearchPerson(
+            $('#input-orgas,#input-caretakers').cdedbSearchPerson(
                 '{{ cdedblink('core/select_persona') }}', {'kind': 'event_user'},
                 [],
                 false,
