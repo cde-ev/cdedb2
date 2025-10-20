@@ -1192,11 +1192,25 @@ def make_registration_query_spec(event: "models.Event",
             for fee in event.fees.values() if fee.is_personalized()
         },
         **{
-            f"amount_owed.{kind.name}": QuerySpecEntry(
+            f"amount_owed.kind_{kind.name}": QuerySpecEntry(
                 "money", title_base=str(kind), title_prefix=n_("Amount Owed"),
                 translate_prefix=True, group_base=n_("Fee"),
             )
             for kind in const.EventFeeType
+        },
+        **{
+            f"amount_owed.category_{category.name}": QuerySpecEntry(
+                "money", title_base=str(category), title_prefix=n_("Amount Owed By Category"),
+                translate_prefix=True, group_base=n_("Fee"),
+            )
+            for category in const.EventFeeCategory
+        },
+        **{
+            f"amount_owed.budget_{budget.name}": QuerySpecEntry(
+                "money", title_base=str(budget), title_prefix=n_("Amount Owed By Budget"),
+                translate_prefix=True, group_base=n_("Fee"),
+            )
+            for budget in const.EventFeeBudget
         },
     }
 
