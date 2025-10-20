@@ -54,7 +54,6 @@ from cdedb.common import (
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
@@ -74,6 +73,7 @@ from cdedb.common.validation.validate import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
+from cdedb.models.core import EventPersona
 from cdedb.models.droid import OrgaToken
 
 if TYPE_CHECKING:
@@ -1866,7 +1866,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona = personas[registration['persona_id']]
             del registration['persona_id']
             persona['is_orga'] = persona['id'] in ret['event']['orgas']
-            for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
+            for attr in EventPersona.get_status_bits() - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
         del ret['event']['orgas']

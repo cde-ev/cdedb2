@@ -73,8 +73,9 @@ implicit_columns = {
 }
 
 
-def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
-             ) -> dict[str, list[dict[str, Any]]]:
+def sql2json(
+    config: Config, secrets: SecretsConfig, silent: bool = False
+) -> dict[str, list[dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
     conn = connect(config, secrets)
     rs = fake_rs(conn)
@@ -88,7 +89,8 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", encoding="utf-8") as f:
         tables = [
             table.group('name')
-            for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
+            for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())
+        ]
 
     # take care that the order is preserved
     full_sample_data = dict()
@@ -96,8 +98,11 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
 
     def datetime_from_date(date: datetime.date) -> datetime.datetime:
         return datetime.datetime(
-            year=date.year, month=date.month, day=date.day,
-            tzinfo=reference_frame.tzinfo)
+            year=date.year,
+            month=date.month,
+            day=date.day,
+            tzinfo=reference_frame.tzinfo,
+        )
 
     for table in tables:
         if table in ignored_tables:
@@ -119,8 +124,10 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
                     sorted_entity[field] = None
                 elif isinstance(value, datetime.datetime) and value == reference_frame:
                     sorted_entity[field] = "---now---"
-                elif isinstance(value, datetime.date) and datetime_from_date(
-                        value) == reference_frame:
+                elif (
+                    isinstance(value, datetime.date)
+                    and datetime_from_date(value) == reference_frame
+                ):
                     sorted_entity[field] = "---now---"
                 elif isinstance(value, dict):
                     sorted_entity[field] = {k: value[k] for k in xsorted(value)}
@@ -128,8 +135,10 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
                     sorted_entity[field] = value
                 if table == models_complaint.ComplaintEntryVersion.database_table:
                     if field == "description" and value:
-                        sorted_entity[field] = models_complaint.ComplaintEntryVersion.decrypt(
-                            bytes(value), secrets["COMPLAINT_SECRET"]
+                        sorted_entity[field] = (
+                            models_complaint.ComplaintEntryVersion.decrypt(
+                                bytes(value), secrets["COMPLAINT_SECRET"]
+                            )
                         )
             sorted_entities.append(sorted_entity)
 

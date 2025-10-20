@@ -18,8 +18,7 @@ CdEDBObject = dict[str, Any]
 AdminView = str
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False,
-                  ) -> set[Role]:
+def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> set[Role]:
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -137,12 +136,10 @@ def implying_realms(realm: Realm) -> set[Realm]:
     :param realm: The realm to search implying realms for
     :return: A set of all realms implying
     """
-    return set(r for r, implied in REALM_INHERITANCE.items()
-               if realm in implied)
+    return set(r for r, implied in REALM_INHERITANCE.items() if realm in implied)
 
 
-def privilege_tier(roles: set[Role], conjunctive: bool = False,
-                   ) -> list[set[Role]]:
+def privilege_tier(roles: set[Role], conjunctive: bool = False) -> list[set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
     Basically this answers the question: If a user has access to the passed
@@ -166,12 +163,10 @@ def privilege_tier(roles: set[Role], conjunctive: bool = False,
     # Get primary user realms (those, that don't imply other realms)
     relevant = roles & REALM_INHERITANCE.keys()
     if relevant:
-        implied_roles = set.union(*(
-            REALM_INHERITANCE.get(k, set()) for k in relevant))
+        implied_roles = set.union(*(REALM_INHERITANCE.get(k, set()) for k in relevant))
         relevant -= implied_roles
     if conjunctive:
-        ret = [{realm + "_admin" for realm in relevant},
-               {"core_admin"}]
+        ret = [{realm + "_admin" for realm in relevant}, {"core_admin"}]
     else:
         ret = list({realm + "_admin"} for realm in relevant)
         ret += [{"core_admin"}]
@@ -260,10 +255,17 @@ ADMIN_KEYS = {
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
 
 #: All admin roles. Have privileged access to user data.
-ALL_ADMINS = {*REALM_ADMINS, "meta_admin", "finance_admin", "cdelokal_admin",
-              "complaint_admin", "auditor"}
+ALL_ADMINS = {
+    *REALM_ADMINS,
+    "meta_admin",
+    "finance_admin",
+    "cdelokal_admin",
+    "complaint_admin",
+    "auditor",
+}
 
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
+    # admin
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
     ("cde_admin", "cdb_admin"),
@@ -273,18 +275,18 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
     ("complaint_admin", "cdb_admin"),
-
+    # member
     ("searchable", "cdb_member"),
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
     ("auditor", "cdb_member"),
-
+    # persona
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
     ("droid", "cdb_persona"),
-
+    # anonymous
     ("anonymous", "cdb_anonymous"),
 ))
 
@@ -320,28 +322,43 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
     "ml_mgmt_assembly", "ml_mod_assembly",
     "auditor",
     "genesis",
-}
+}  # fmt: skip
 
 ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mod", "ml_mod_core", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod",
+    "ml_mod_core",
+    "ml_mod_cde",
+    "ml_mod_event",
+    "ml_mod_cdelokal",
     "ml_mod_assembly",
 }
 
 ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mgmt", "ml_mgmt_core", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt",
+    "ml_mgmt_core",
+    "ml_mgmt_cde",
+    "ml_mgmt_event",
+    "ml_mgmt_cdelokal",
     "ml_mgmt_assembly",
 }
 
 
 def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
-    """ Get the set of available admin views for a user with given roles."""
+    """Get the set of available admin views for a user with given roles."""
     result: set[Role] = set()
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
         result |= {
-            "core", "core_user", "cde_user", "event_user", "assembly_user",
-            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
+            "core",
+            "core_user",
+            "cde_user",
+            "event_user",
+            "assembly_user",
+            "ml_user",
+            "user_review",
+            "ml_mgmt_core",
+            "ml_mod_core",
         }
     if {"complaint_admin", "complaint.enforcer"} & roles:
         result |= {"complaint"}
@@ -350,8 +367,15 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "finance_admin" in roles:
         result |= {"finance", "event_orga"}
     if "event_admin" in roles:
-        result |= {"event_user", "user_review", "event_mgmt", "event_list",
-                   "event_orga", "ml_mgmt_event", "ml_mod_event"}
+        result |= {
+            "event_user",
+            "user_review",
+            "event_mgmt",
+            "event_list",
+            "event_orga",
+            "ml_mgmt_event",
+            "ml_mod_event",
+        }
     if "event.event_helper" in roles:
         result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
@@ -359,12 +383,18 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "cdelokal_admin" in roles:
         result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
-                   "ml_mgmt_assembly", "ml_mod_assembly"}
+        result |= {
+            "assembly_user",
+            "assembly_mgmt",
+            "assembly_presider",
+            "ml_mgmt_assembly",
+            "ml_mod_assembly",
+        }
     if "auditor" in roles:
         result |= {"auditor", "event_orga"}
-    if roles & ({'core_admin'} | set(
-            f"{realm}_admin"
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
+    if roles & (
+        {'core_admin'}
+        | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
+    ):
         result |= {"genesis"}
     return result

@@ -1,4 +1,5 @@
 """Some utilities for the setup functions."""
+
 import contextlib
 import functools
 import getpass
@@ -102,7 +103,9 @@ def get_user() -> str:
 
 # TODO is the nobody hack really necessary?
 def connect(
-    config: Config, secrets: SecretsConfig, as_nobody: bool = False,
+    config: Config,
+    secrets: SecretsConfig,
+    as_nobody: bool = False,
     as_postgres: bool = False,
 ) -> IrradiatedConnection:
     """Create a very basic database connection.
@@ -122,9 +125,12 @@ def connect(
             # In container mode a password is set for the postgres user.
             conn = psycopg2.connect(
                 database=config["CDB_DATABASE_NAME"],
-                user="postgres", password=os.environ.get('POSTGRES_PASSWORD'),
-                host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
-                connection_factory=conn_factory, cursor_factory=curser_factory,
+                user="postgres",
+                password=os.environ.get('POSTGRES_PASSWORD'),
+                host=config["DB_HOST"],
+                port=config["DIRECT_DB_PORT"],
+                connection_factory=conn_factory,
+                cursor_factory=curser_factory,
             )
         else:
             # In non-container mode, we have to omit the host to connect to the
@@ -133,15 +139,19 @@ def connect(
                 conn = psycopg2.connect(
                     database=config["CDB_DATABASE_NAME"],
                     user="postgres",
-                    connection_factory=conn_factory, cursor_factory=curser_factory,
+                    connection_factory=conn_factory,
+                    cursor_factory=curser_factory,
                 )
     else:
         user = "nobody" if as_nobody else "cdb"
         conn = psycopg2.connect(
             database="nobody" if as_nobody else config["CDB_DATABASE_NAME"],
-            user=user, password=secrets["CDB_DATABASE_ROLES"][user],
-            host=config["DB_HOST"], port=config["DIRECT_DB_PORT"],
-            connection_factory=conn_factory, cursor_factory=curser_factory,
+            user=user,
+            password=secrets["CDB_DATABASE_ROLES"][user],
+            host=config["DB_HOST"],
+            port=config["DIRECT_DB_PORT"],
+            connection_factory=conn_factory,
+            cursor_factory=curser_factory,
         )
     conn.set_client_encoding("UTF8")
     conn.set_session(autocommit=True)
@@ -149,8 +159,11 @@ def connect(
     return conn
 
 
-def fake_rs(conn: IrradiatedConnection, persona_id: int = 0,
-            urls: Optional[werkzeug.routing.MapAdapter] = None) -> RequestState:
+def fake_rs(
+    conn: IrradiatedConnection,
+    persona_id: int = 0,
+    urls: Optional[werkzeug.routing.MapAdapter] = None,
+) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
     This is needed when we want to interact with the CdEDB on a higher level of
@@ -180,8 +193,9 @@ def fake_rs(conn: IrradiatedConnection, persona_id: int = 0,
 
 
 @contextlib.contextmanager
-def redirect_to_file(outfile: Union[pathlib.Path, io.StringIO, None],
-                     append: bool = False) -> Iterator[None]:
+def redirect_to_file(
+    outfile: Union[pathlib.Path, io.StringIO, None], append: bool = False
+) -> Iterator[None]:
     """Context manager to open a file in either append or write mode and redirect both
     stdout and std err into the file.
 
@@ -203,7 +217,10 @@ def redirect_to_file(outfile: Union[pathlib.Path, io.StringIO, None],
 
 
 def execute_sql_script(
-    config: TestConfig, secrets: SecretsConfig, sql_text: str, verbose: int = 0,
+    config: TestConfig,
+    secrets: SecretsConfig,
+    sql_text: str,
+    verbose: int = 0,
     as_postgres: bool = False,
 ) -> None:
     """Execute any number of SQL statements one at a time.

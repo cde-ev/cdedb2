@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 @enum.unique
 class Accounts(CdEEnum):
     """Store the existing CdE Accounts."""
+
     Sozialbank = "DE26370205000008068900"
     Sozialbank_Spenden = "DE96370205000008068901"
     Festgeld = "DE45370205000010042605"
@@ -59,6 +60,7 @@ class Accounts(CdEEnum):
 @enum.unique
 class ConfidenceLevel(CdEIntEnum):
     """Store the different Levels of Confidence about the prediction."""
+
     Null = 0
     Low = 1
     Medium = 2
@@ -88,6 +90,7 @@ class ConfidenceLevel(CdEIntEnum):
 @enum.unique
 class TransactionType(CdEIntEnum):
     """Store the type of a Transactions."""
+
     MembershipFee = 1
     EventFee = 2
     Donation = 3
@@ -130,8 +133,7 @@ class TransactionType(CdEIntEnum):
         }
 
     def category(self) -> str:
-        """Return a string representation for excel and import
-        """
+        """Return a string representation for excel and import"""
         if self.has_member or self.has_event:
             return self.display_str()
         return "Sonstiges"

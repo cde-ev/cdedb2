@@ -1,4 +1,5 @@
 """Parse a given json dict into sql statements."""
+
 import csv
 import pathlib
 from collections.abc import Sized
@@ -66,10 +67,9 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # dynamically generates data to insert.
     # The function will get the entire row as a argument.
     entry_replacements = {
-        "core.personas":
-            {
-                "fulltext": core.create_fulltext,
-            },
+        "core.personas": {
+            "fulltext": core.create_fulltext,
+        },
     }
 
     # For xss checking insert a payload into all string fields except excluded ones.
@@ -85,9 +85,10 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
         "modifier_name", "transaction_date", "condition", "donation", "payment_date",
         'etime', 'rtime', 'secret_hash', 'member_total', "start_date", "end_date",
         "timestamp",
-    }
+    }  # fmt: skip
     xss_table_excludes = {
-        "cde.org_period", "cde.expuls_period",
+        "cde.org_period",
+        "cde.expuls_period",
     }
 
     return AuxData(
@@ -102,8 +103,13 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     )
 
 
-def format_inserts(table_name: str, table_data: Sized, keys: tuple[str, ...],
-                   params: list[DatabaseValue_s], aux: AuxData) -> SQLCommand:
+def format_inserts(
+    table_name: str,
+    table_data: Sized,
+    keys: tuple[str, ...],
+    params: list[DatabaseValue_s],
+    aux: AuxData,
+) -> SQLCommand:
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
     query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list}"
@@ -156,8 +162,10 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                 if isinstance(entry[k], dict):
                     entry[k] = PsycoJson(entry[k])
                 elif isinstance(entry[k], str) and xss_payload is not None:
-                    if (table not in aux["xss_table_excludes"]
-                            and k not in aux['xss_field_excludes']):
+                    if (
+                        table not in aux["xss_table_excludes"]
+                        and k not in aux['xss_field_excludes']
+                    ):
                         entry[k] += xss_payload
                 if table == models_complaint.ComplaintEntryVersion.database_table:
                     if k == "description" and entry[k]:
@@ -184,8 +192,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
     commands.extend(
-        (f"SELECT setval('{table}_id_seq', 1000)", [])
-        for table in aux["seq_id_tables"]
+        (f"SELECT setval('{table}_id_seq', 1000)", []) for table in aux["seq_id_tables"]
     )
 
     return commands
@@ -200,7 +207,7 @@ def insert_postal_code_locations() -> SQLCommand:
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
     with pathlib.Path(
-            "/cdedb2/tests/ancillary_files/plz.csv",
+        "/cdedb2/tests/ancillary_files/plz.csv",
     ).open(encoding="utf-8") as f:
         entries = list(csv.DictReader(f, delimiter=',', quotechar='"'))
     command = f"""
@@ -209,12 +216,18 @@ def insert_postal_code_locations() -> SQLCommand:
         VALUES
             {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(entries))}
     """
-    params = list(chain.from_iterable(
-        [
-            e['plz'], e['note'].removeprefix(e['plz']).replace('\n', ' ').strip(),
-            e['lat'], e['lon'], e['lat'], e['lon'],
-        ]
-        for e in entries
-    ))
+    params = list(
+        chain.from_iterable(
+            [
+                e['plz'],
+                e['note'].removeprefix(e['plz']).replace('\n', ' ').strip(),
+                e['lat'],
+                e['lon'],
+                e['lat'],
+                e['lon'],
+            ]
+            for e in entries
+        )
+    )
 
     return command, params

@@ -1,4 +1,4 @@
 # lists of files to be considered by our linters
-FORMAT_TARGETS=cdedb/common/query/__init__.py cdedb/models/complaint.py cdedb/backend/complaint.py tests/backend_tests/complaint.py cdedb/frontend/core/complaint.py tests/frontend_tests/complaint.py cdedb/backend/past_event.py cdedb/backend/session.py cdedb/backend/entity_keeper.py cdedb/backend/ml.py cdedb/backend/assembly.py cdedb/backend/event/ cdedb/i18n_additional.py cdedb/backend/cde/ cdedb/backend/core/
+FORMAT_TARGETS=cdedb/backend/ cdedb/cli/ cdedb/common/ cdedb/models/ tests/backend_tests/complaint.py cdedb/frontend/core/complaint.py tests/frontend_tests/complaint.py cdedb/i18n_additional.py
 LINT_TARGETS=cdedb tests
 ISORT_TARGETS=bin/*.py cdedb tests

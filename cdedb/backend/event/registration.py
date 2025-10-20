@@ -1645,7 +1645,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return unwrap(self.query_one(rs, query, params))
 
-    @access("finance_admin")
+    @access("event")
     def get_registration_id(
         self, rs: RequestState, persona_id: int, event_id: int
     ) -> Optional[int]:
