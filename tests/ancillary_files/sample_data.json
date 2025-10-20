@@ -7046,8 +7046,12 @@
             "amount_owed_by_kind": {
                 "1": "4.20"
             },
-            "amount_owed_by_category": {},
-            "amount_owed_by_budget": {},
+            "amount_owed_by_category": {
+                "1": "4.20"
+            },
+            "amount_owed_by_budget": {
+                "1": "4.20"
+            },
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
