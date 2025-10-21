@@ -540,6 +540,9 @@ class TestConfig(Config):
         """
         override = _import_from_file(self._configpath)
         self._configchain = collections.ChainMap(override, _DEFAULTS)
+        # This is a bit hacky, but the only opportunity to ensure the used log
+        #  level is the one specified in the config.
+        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
 
 
 class SecretsConfig(BaseConfig):
