@@ -292,7 +292,7 @@ class LDAPsqlBackend:
         if timestamp is None:
             # this happens in the test suite due to insufficient sample data
             if not self.config["CDEDB_TEST"]:
-                logger.error("Timestamp must not be None.")
+                logger.error("Timestamp must not be None.", stack_info=True)
             timestamp = now()
         # our timestamps are always in UTC
         return timestamp.strftime("%Y%m%d%H%M%SZ")
