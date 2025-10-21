@@ -14,12 +14,12 @@ multiple of its subclasses.
 The base aswell as all its subclasses (the event frontend mixins) combine together to
 become the full `EventFrontend` in this modules `__init__.py`.
 """
+import abc
 import functools
-import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, cast
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -58,9 +58,6 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-
-if TYPE_CHECKING:
-    from cdedb.frontend.event.course import AttendeeStats, ChoiceStats
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -225,6 +222,10 @@ class EventBaseFrontend(AbstractUserFrontend):
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
+                    params["is_instructor"] = rs.ambience["event"].tracks and any(
+                        rt["course_instructor"] for rt in registration['tracks'].values()
+                    )
+
         else:
             all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
             event_options = [
@@ -412,8 +413,9 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         registrations = {
             reg_id: reg for reg_id, reg in registrations.items() if check(reg)}
-        personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
+        persona_ids = tuple(e['persona_id'] for e in registrations.values())
+        personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
+        personas_stati = self.coreproxy.get_personas(rs, persona_ids)
 
         all_sortkeys = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
@@ -464,7 +466,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
-            'reg_counts': reg_counts,
+            'reg_counts': reg_counts, 'personas_stati': personas_stati,
         }
 
     def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int,
@@ -604,10 +606,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             for sub_id in sub_ids
         }
 
-    @staticmethod
-    def _get_track_ids(event: models.Event, part_group_id: int) -> set[int]:
-        parts = event.part_groups[part_group_id].parts.values()
-        return set(itertools.chain.from_iterable(part.tracks for part in parts))
+    @abc.abstractmethod
+    def get_course_stats(
+        self,
+        rs: RequestState,
+        *,
+        event: models.Event,
+        registrations: CdEDBObjectMap,
+        course_ids: Collection[int] | None = None,
+    ) -> tuple[models.ChoiceStats, models.AttendeeStats]:
+        ...
 
     def get_constraint_violations(
             self, rs: RequestState, event: models.Event, *,
@@ -652,9 +660,11 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
 
-        choice_stats: "ChoiceStats"  # noqa: UP037
-        attendee_stats: "AttendeeStats"  # noqa: UP037
-        choice_stats, attendee_stats = self.get_course_stats(rs, event, all_registrations)  # type: ignore[attr-defined]
+        choice_stats: models.ChoiceStats
+        attendee_stats: models.AttendeeStats
+        choice_stats, attendee_stats = self.get_course_stats(
+            rs, event=event, registrations=all_registrations, course_ids=courses
+        )
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.new_get_lodgements(

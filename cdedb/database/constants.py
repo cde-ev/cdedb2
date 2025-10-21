@@ -229,12 +229,85 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
-    def is_donation(self) -> bool:
-        return self in {
-            EventFeeType.solidary_donation,
-            EventFeeType.instructor_donation,
-            EventFeeType.other_donation,
-        }
+    @property
+    def category(self) -> "EventFeeCategory":
+        return {
+            EventFeeType.common: EventFeeCategory.participation_fee,
+            EventFeeType.storno: EventFeeCategory.storno,
+            EventFeeType.external: EventFeeCategory.participation_fee,
+            EventFeeType.instructor_refund: EventFeeCategory.reimbursement,
+            EventFeeType.instructor_donation: EventFeeCategory.donation,
+            EventFeeType.solidary_reduction: EventFeeCategory.participation_fee,
+            EventFeeType.solidary_donation: EventFeeCategory.donation,
+            EventFeeType.solidary_increase: EventFeeCategory.participation_fee,
+            EventFeeType.other_donation: EventFeeCategory.donation,
+            EventFeeType.crisis_refund: EventFeeCategory.reimbursement,
+            EventFeeType.other_refund: EventFeeCategory.reimbursement,
+        }[self]
+
+    @property
+    def budget(self) -> "EventFeeBudget":
+        return {
+            EventFeeType.common: EventFeeBudget.expenses,
+            EventFeeType.storno: EventFeeBudget.expenses,
+            EventFeeType.external: EventFeeBudget.cde,
+            EventFeeType.instructor_refund: EventFeeBudget.expenses,
+            EventFeeType.instructor_donation: EventFeeBudget.followup,
+            EventFeeType.solidary_reduction: EventFeeBudget.solidarity,
+            EventFeeType.solidary_donation: EventFeeBudget.solidarity,
+            EventFeeType.solidary_increase: EventFeeBudget.solidarity,
+            EventFeeType.other_donation: EventFeeBudget.cde,
+            EventFeeType.crisis_refund: EventFeeBudget.expenses,
+            EventFeeType.other_refund: EventFeeBudget.expenses,
+        }[self]
+
+    def optgroup_label(self) -> str:
+        return str(self.category)
+
+    def label_addon(self) -> str:
+        return str(self.budget)
+
+    def __lt__(self, other: int) -> bool:
+        if isinstance(other, self.__class__):
+            return self._get_sortkey() < other._get_sortkey()
+        return super().__lt__(other)
+
+    def _get_sortkey(self) -> tuple[int, ...]:
+        return (self.category, self.budget, self.value)
+
+
+@enum.unique
+class EventFeeCategory(CdEIntEnum):
+    participation_fee = 1
+    donation = 2
+    reimbursement = 3
+    storno = 10
+
+    def get_icon(self) -> str:
+        return {
+            EventFeeCategory.participation_fee: "coins",
+            EventFeeCategory.storno: "ban",
+            EventFeeCategory.donation: "donate",
+            EventFeeCategory.reimbursement: "undo-alt",
+        }[self]
+
+
+@enum.unique
+class EventFeeBudget(CdEIntEnum):
+    expenses = 1
+    solidarity = 2
+    followup = 3
+    cde = 10
+    # other = 20
+
+    def get_icon(self) -> str:
+        return {
+            EventFeeBudget.expenses: "file-invoice-dollar",
+            EventFeeBudget.solidarity: "hands-helping",
+            EventFeeBudget.followup: "fast-forward",
+            EventFeeBudget.cde: "building-columns",
+            # EventFeeBudget.other: "random",
+        }[self]
 
 
 @enum.unique

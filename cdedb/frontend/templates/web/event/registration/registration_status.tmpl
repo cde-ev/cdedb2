@@ -262,7 +262,7 @@
                           anchor="cco-" + cco['id']|string, translate=False, level=4) }}
             {% endif %}
 
-            {% if ambience['event']['is_course_assignment_visible'] %}
+            {% if ambience['event'].is_course_assignment_visible %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
                     {% if cco.is_complex() %}
                         {% for track in sorted_tracks if track.id in cco['tracks'] %}
@@ -282,13 +282,6 @@
                 </dl>
             {% endif %}
             <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
-                {% if reg_track['course_instructor'] %}
-                    <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
-                    <dd><em>
-                        {{ courses[reg_track['course_instructor']]['nr'] }}.
-                        {{ courses[reg_track['course_instructor']]['title'] }}
-                    </em></dd>
-                {% endif %}
                 {% for i in range(track['num_choices']) %}
                     <dt title="{{ gettext("{}. choice").format(i + 1) }}">
                         {{ gettext("{}. choice").format(i + 1) }}
@@ -303,6 +296,22 @@
                         {% endif %}
                     </dd>
                 {% endfor %}
+                {% if reg_track['course_instructor'] %}
+                    <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
+                    <dd>
+                        <i>
+                            {{ courses[reg_track['course_instructor']]['nr'] }}.
+                            {{ courses[reg_track['course_instructor']]['title'] -}}
+                        </i>
+                    </dd>
+                    {%- if ambience['event'].is_course_assignment_visible -%}
+                        <dt></dt>
+                        <dd style="margin-top: 2px;">
+                            {{ util.href(cdedblink("event/show_instructed_courses") + "#track" + track.id|string,
+                                         label=gettext("Show Course Assignments"), aclass="btn btn-xs btn-info", icon="user-friends") }}
+                        </dd>
+                    {% endif %}
+                {% endif %}
             </dl>
         </div>
         {% endfor %}

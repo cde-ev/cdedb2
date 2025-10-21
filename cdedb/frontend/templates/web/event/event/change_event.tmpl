@@ -82,9 +82,10 @@
                                 "Questionnaire, people will be shown a list of successfully detected lodgement wishes.")) }}
         {% if ambience['event']['tracks'] %}
             {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
-                                    info=gettext("If checked, the course assignment is shown to the participants. "
-                                    "In particular, it is shown to each participant on the registration status and on the "
-                                    "Participant List.")) }}
+                                    info=gettext(
+                                        "If checked, the course assignment is shown to the participants."
+                                        " In particular, it is shown to each participant on the registration status and on the Participant List."
+                                        " Additionally, instructors will be able to see their assigned attendees, even if the participant list isn't visible.")) }}
         {% endif %}
         {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
                                 info=gettext("If checked, the event is shown as cancelled. This can be undone and "

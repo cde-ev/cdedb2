@@ -38,10 +38,11 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-RUFF ?= $(PYTHONBIN) -m ruff --config pyproject.toml
+UV ?= uv
+RUFF ?= $(UV) run ruff --config pyproject.toml
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
-MYPY ?= $(PYTHONBIN) -m mypy
+MYPY ?= $(UV) run --all-groups mypy
 
 include .ruff_targets
 
@@ -63,6 +64,8 @@ I18NDIR = ./i18n
 I18NOUTDIR = ./i18n-output
 # Available languages, by default detected as subdirectories of the translation targets.
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
+
+UV_PROJECT_ENVIRONMENT ?= .venv
 
 ###########
 # General #
@@ -95,12 +98,12 @@ endif
 
 .PHONY: i18n-output-dirs
 i18n-output-dirs:
-	for lang in $(I18N_LANGUAGES) ; do \
-		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
-	done
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo chown -R cdedb:cdedb $(I18NOUTDIR)
 endif
+	for lang in $(I18N_LANGUAGES) ; do \
+		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
+	done
 
 .PHONY: i18n-refresh
 i18n-refresh: i18n-extract i18n-update
@@ -129,8 +132,14 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
+$(UV_PROJECT_ENVIRONMENT)/bin/python:
+	$(UV) venv
+
+.PHONY: venv
+venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
+
 .PHONY: format
-format:
+format: venv
 	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
 	$(RUFF) format $(MAKE_FORMAT_TARGETS)
 
@@ -139,18 +148,18 @@ autoformat: format
 	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
 
 .PHONY: format-diff
-format-diff:
+format-diff: venv
 	$(ISORT) $(MAKE_ISORT_TARGETS) --diff
 	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
 
 .PHONY: mypy
-mypy:
+mypy: venv
 	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 
 .PHONY: isort
-isort:
+isort: venv
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
@@ -158,12 +167,10 @@ isort:
 	@echo ""
 
 .PHONY: ruff
-ruff:
+ruff: venv
 	@echo $(BANNERLINE)
 	@echo "All of ruff"
 	@echo $(BANNERLINE)
-	sudo mkdir .ruff_cache -p
-	sudo chown cdedb -R .ruff_cache
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
 	$(RUFF) check $(MAKE_LINT_TARGETS) --output-format=grouped
@@ -175,7 +182,7 @@ endif
 	@echo ""
 
 .PHONY: ruff-fix
-ruff-fix:
+ruff-fix: venv
 	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
 
 .PHONY: template-line-length

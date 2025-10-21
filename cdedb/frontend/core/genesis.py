@@ -457,7 +457,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 {'realm': case.realm}
             )
             return self.redirect(rs, "core/genesis_show_case")
-        if case.realm == "cde" and case.pevent_id is None:
+        if case.realm == "cde" and decision.is_create() and case.pevent_id is None:
             rs.notify("error", n_(
                 "You need to specify a past event for CdE genesis requests."))
             return self.redirect(rs, "core/genesis_show_case")

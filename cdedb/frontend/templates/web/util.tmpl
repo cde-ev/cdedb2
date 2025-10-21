@@ -1055,8 +1055,9 @@ mailto:
 {# Macro to unify the style of primary headings with context (events, personas, assemblies, ...) #}
 {% macro context_heading(title,
                          subtitle=none, icon=none, icon_arialabel=none,
-                         subtitle2=none, icon2=none, icon_arialabel2=none) %}
-    {% call h(title, level=1) -%}
+                         subtitle2=none, icon2=none, icon_arialabel2=none,
+                         level=1, anchor=none) %}
+    {% call h(title, level=level, anchor=anchor) -%}
         {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
             <small>

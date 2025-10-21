@@ -223,9 +223,7 @@ class Case(CdEDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: str | None = None,
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
@@ -386,9 +384,7 @@ class ComplaintEntryVersion(CdEDataclass):
 
     @classmethod
     def get_select_query(
-        cls,
-        entities: Collection[int],
-        entity_key: str | None = None,
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT

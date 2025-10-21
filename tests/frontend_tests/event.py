@@ -7770,26 +7770,74 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                       "Beitrags-Statistik")
         self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
         self.assertPresence(
-            "Regulärer Beitrag 40,00 € 4 Anmeldungen 20,00 € 2 Anmeldungen")
-        self.assertPresence("Stornokosten 0,00 € 0 Anmeldungen 0,00 € 0 Anmeldungen")
-        self.assertPresence("Externenbeitrag 2,00 € 1 Anmeldungen 2,00 € 1 Anmeldungen")
+            "Regulärer Beitrag .* 40,00 € 4 Anmeldungen 20,00 € 2 Anmeldungen", regex=True, div="event-fee-stats")
         self.assertPresence(
-            "Solidarische Reduktion -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen")
-        self.assertNonPresence("Solidarische Erhöhung")
+            "Stornokosten .* 0,00 € 0 Anmeldungen 0,00 € 0 Anmeldungen", regex=True, div="event-fee-stats")
         self.assertPresence(
-            "Solidarische Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
-        self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen")
+            "Externenbeitrag .* 2,00 € 1 Anmeldungen 2,00 € 1 Anmeldungen", regex=True, div="event-fee-stats")
+        self.assertPresence(
+            "Solidarische Reduktion .* -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen", regex=True, div="event-fee-stats")
+        self.assertNonPresence("Solidarische Erhöhung", div="event-fee-stats")
+        self.assertPresence(
+            "Solidarische Spende .* 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen", regex=True, div="event-fee-stats")
+        self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen", div="event-fee-stats")
+
+        self.assertPresence(
+            "Teilnahmebeitrag 37,01 € 4 Anmeldungen", div="event-fee-stats-by-category",
+        )
+        self.assertPresence(
+            "Spende 1.260,00 € 3 Anmeldungen", div="event-fee-stats-by-category",
+        )
+        self.assertPresence(
+            "Stornokosten 0,00 € 0 Anmeldungen", div="event-fee-stats-by-category",
+        )
+        self.assertPresence(
+            "Ausgaben 40,00 € 4 Anmeldungen", div="event-fee-stats-by-budget",
+        )
+        self.assertPresence(
+            "Solitopf 1.255,01 € 4 Anmeldungen", div="event-fee-stats-by-budget",
+        )
+        self.assertPresence(
+            "Vereinsvermögen 2,00 € 1 Anmeldungen", div="event-fee-stats-by-budget",
+        )
 
         save = self.response
-        self.traverse({'linkid': '^solidary_donation_owed_query$'})
+        self.traverse({'linkid': '^kind_solidary_donation_owed_query$'})
         self.assertPresence("Ergebnis [3]", div="query-results")
         f = self.response.forms['queryform']
         self.submit(f, button="download", value="json")
         result = json.loads(self.response.text)
-        key = "amount_owed.solidary_donation"
+        key = "amount_owed.kind_solidary_donation"
         for entry in result:
             self.assertIn(key, entry.keys())
             self.assertEqual("420.00", entry[key])
+        self.response = save
+
+        save = self.response
+        self.traverse({'linkid': '^category_donation_owed_query$'})
+        self.assertPresence("Ergebnis [3]", div="query-results")
+        f = self.response.forms['queryform']
+        self.submit(f, button="download", value="json")
+        result = json.loads(self.response.text)
+        key = "amount_owed.category_donation"
+        for entry in result:
+            self.assertIn(key, entry.keys())
+            self.assertEqual("420.00", entry[key])
+        self.response = save
+
+        save = self.response
+        self.traverse({'linkid': '^budget_solidarity_owed_query$'})
+        self.assertPresence("Ergebnis [4]", div="query-results")
+        f = self.response.forms['queryform']
+        self.submit(f, button="download", value="json")
+        result = json.loads(self.response.text)
+        key = "amount_owed.budget_solidarity"
+        for entry in result:
+            self.assertIn(key, entry.keys())
+            if entry["persona.id"] == 1:
+                self.assertEqual("-4.99", entry[key])
+            else:
+                self.assertEqual("420.00", entry[key])
         self.response = save
 
         self.traverse({'linkid': 'surplus_query'})
@@ -8260,3 +8308,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.get("/event/event/2/part/add")
             self.assertNotification("Veranstaltung ist finanziell abgeschlossen.", "error")
             self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
+
+    @as_users("emilia")
+    @prepsql(f"UPDATE {models.Event.database_table} SET is_course_assignment_visible = True WHERE id = 1")
+    def test_course_instructor_attendees(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Meine geleiteten Kurse")
+        self.assertTitle("Deine geleiteten Kurse (Große Testakademie 2222)")
+        self.assertPresence("Planetenretten für Anfänger", div="track3")
+        self.assertPresence("Arbeitssitzung (Zweite Hälfte)", div="track3")
+
+        self.assertPresence("Kursteilnehmende [2 + 1]", div="attendees3")
+        self.assertPresence("Emilia (Emmy) Eventis (KL) emilia@example.cde", div="attendee-list3")
+        self.assertPresence("Akira Abukara akira@example.cde", div="attendee-list3")
+        self.assertPresence("Inga Iota inga@example.cde", div="attendee-list3")

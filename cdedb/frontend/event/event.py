@@ -833,8 +833,16 @@ class EventEventMixin(EventBaseFrontend):
     def _get_payment_query_base(
             event: models.Event, constraints: Collection[QueryConstraint],
             fee: models.EventFee | None = None,
-            kind: const.EventFeeType | None = None,
+            kind: const.EventFeeType | const.EventFeeCategory | const.EventFeeBudget | None = None,
     ) -> Query:
+        if isinstance(kind, const.EventFeeType):
+            kind_field = f"amount_owed.kind_{kind.name}"
+        elif isinstance(kind, const.EventFeeCategory):
+            kind_field = f"amount_owed.category_{kind.name}"
+        elif isinstance(kind, const.EventFeeBudget):
+            kind_field = f"amount_owed.budget_{kind.name}"
+        else:
+            kind_field = None
         return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -846,7 +854,7 @@ class EventEventMixin(EventBaseFrontend):
             ] + (
                 [f"fee{fee.id}.amount"] if fee else []
             ) + (
-                [f"amount_owed.{kind.name}"] if kind else []
+                [kind_field] if kind_field else []
             ) + (
                 [f"reg_fields.xfield_{event.reimbursement_iban_field.field_name}"]
                 if event.reimbursement_iban_field else []
@@ -860,7 +868,7 @@ class EventEventMixin(EventBaseFrontend):
 
     def _get_payment_query(
             self, event: models.Event, ids: Collection[int], fee_id: int | None,
-            kind: const.EventFeeType | None,
+            kind: const.EventFeeType | const.EventFeeCategory | const.EventFeeBudget | None,
     ) -> Query:
         fee = event.fees.get(fee_id or 0)
         if fee and fee.is_personalized():

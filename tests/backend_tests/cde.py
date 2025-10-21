@@ -4,13 +4,12 @@ import datetime
 import decimal
 
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common import now
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
-    PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import (
@@ -106,13 +105,13 @@ class TestCdEBackend(BackendTest):
     def test_get_cde_users(self) -> None:
         data = self.core.get_cde_users(self.key, (1, 2))
         expectation = self.get_sample_data(
-            'core.personas', (1, 2), PERSONA_CDE_FIELDS)
+            'core.personas', (1, 2), models_core.CdEPersona.database_fields())
 
         self.assertEqual(expectation, data)
         if self.user_in(22):
             data = self.core.get_event_users(self.key, (1, 2))
             expectation = self.get_sample_data(
-                'core.personas', (1, 2), PERSONA_EVENT_FIELDS)
+                'core.personas', (1, 2), models_core.EventPersona.database_fields())
             self.assertEqual(expectation, data)
         data = self.core.get_personas(self.key, (1, 2))
         expectation = self.get_sample_data(

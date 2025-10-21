@@ -102,6 +102,10 @@
                 {{ util.href(cdedblink("event/additional_questionnaire_form", {"event_id": event['id']}), gettext("Questionnaire"),
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
+            {% if event.is_course_assignment_visible and not event.is_archived and is_instructor %}
+                {{ util.href(cdedblink("event/show_instructed_courses"), gettext("My Instructed Courses"),
+                             aclass="list-group-item", icon="book", active=(sidenav_active == "event_instructed")) }}
+            {% endif %}
         {% elif event['is_open'] and "event" in user.roles and not event['is_archived'] %}
             {{ util.href(cdedblink("event/register_form", {"event_id": event['id']}), gettext("Register"),
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",

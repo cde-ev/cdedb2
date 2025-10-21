@@ -1,5 +1,3 @@
-
-
 import builtins
 import pathlib
 from typing import Any, Callable, Optional
@@ -28,6 +26,7 @@ class AttachmentStore:
     The backend generally presumes the frontend has deposited the attachment and only
     affirms that it `is_available`.
     """
+
     def __init__(self, dir_: pathlib.Path, type_: builtins.type[Any] = vtypes.PDFFile):
         self._dir = dir_
         self.type = type_
@@ -74,9 +73,10 @@ class AttachmentStore:
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         return self._dir / attachment_hash
 
-    def forget_one(self, rs: RequestState, usage: UsageFunction, attachment_hash: str,
-                   ) -> bool:
-        "Delete a single attachment, if it is no longer in use."
+    def forget_one(
+        self, rs: RequestState, usage: UsageFunction, attachment_hash: str
+    ) -> bool:
+        """Delete a single attachment, if it is no longer in use."""
         path = self.get_path(attachment_hash)
         if path.is_file() and not usage(rs, attachment_hash):
             path.unlink()
