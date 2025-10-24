@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-21 02:02+0200\n"
+"POT-Creation-Date: 2025-10-24 20:08+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -10535,7 +10535,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:113
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:138
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:42
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:43
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:40
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:98
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:127
@@ -11338,7 +11338,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:37
 #: cdedb/frontend/templates/web/core/index.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:56
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:38
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:39
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:53
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:110
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
@@ -18522,7 +18522,8 @@ msgid ""
 "is not privacy-sensitive. Specifically, they have only aggregated access to "
 "registration data. Furthermore, they may see any information available to "
 "all participants of an event. By contrast, like orgas, %(event_admins)s have "
-"full access to all event data."
+"full access to all event data. Caretakers have the same access as orgas, for "
+"specific events."
 msgstr ""
 "adiutores eventuum notitiae eventuum legere possunt, quae non personis "
 "sensibiles sunt. distinctius dicto annuntiationes modo aggregatos videre "
@@ -18533,11 +18534,11 @@ msgstr ""
 msgid "event admins"
 msgstr "administratores eventuum"
 
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:32
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:33
 msgid "ID of the new event helper"
 msgstr "ID novi adiutoris eventuum"
 
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:64
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:65
 #, python-format
 msgid "Remove %(name)s as event helper"
 msgstr "removere %(name)s adiutorem eventuum"
@@ -18570,11 +18571,8 @@ msgid "Manage Orgas & Caretakers (%(title)s)"
 msgstr "signum arcanum muta"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:16
-msgid "Manage Orgas & Caretakers"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:22
-msgid "Manage Orgas/Caretakers"
+msgid "Manage Orgas & Caretakers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:38
@@ -18597,9 +18595,9 @@ msgstr "ID novi adiutoris eventuum"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:117
 msgid ""
-"Caretakers have the same access to a specific event, allowing them to do "
-"anything an orga can do. Additionally they are able to manage orgas, i.e. "
-"remove or add orgas."
+"Caretakers have the same access to a specific event as orgas, allowing them "
+"to do anything an orga can do. Additionally they are able to manage orgas, i."
+"e. remove or add orgas."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:131

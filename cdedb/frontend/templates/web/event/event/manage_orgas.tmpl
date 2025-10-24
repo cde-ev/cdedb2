@@ -19,7 +19,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/manage_orgas"), gettext("Manage Orgas/Caretakers"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/manage_orgas"), gettext("Manage Orgas & Caretakers"), active=True) }}
 {% endblock %}
 {% block content %}
     <div class="row">
@@ -115,7 +115,7 @@
             <p class="text-info">
                 {{ util.make_icon("info-circle") }}{{ nbsp -}}
                 {% trans %}
-                    Caretakers have the same access to a specific event, allowing them to do anything an orga can do.
+                    Caretakers have the same access to a specific event as orgas, allowing them to do anything an orga can do.
                     Additionally they are able to manage orgas, i.e. remove or add orgas.
                 {% endtrans %}
             </p>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-21 02:02+0200\n"
+"POT-Creation-Date: 2025-10-24 20:08+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -956,11 +956,11 @@ msgstr "Veranstaltung archiviert"
 
 #: cdedb/.i18n_additional.py:237
 msgid "EventLogCodes.helper_added"
-msgstr "Veranstaltungs-Betreuer hinzugefügt"
+msgstr "Veranstaltungshelfer hinzugefügt"
 
 #: cdedb/.i18n_additional.py:238
 msgid "EventLogCodes.helper_removed"
-msgstr "Veranstaltungs-Betreuer entfernt"
+msgstr "Veranstaltungshelfer entfernt"
 
 #: cdedb/.i18n_additional.py:239
 msgid "EventLogCodes.orga_added"
@@ -4047,7 +4047,7 @@ msgstr "Admins können nicht archiviert werden."
 #: cdedb/backend/core/base.py:1970
 msgid "Cannot archive complaint and event helpers."
 msgstr ""
-"Fall-Unterstützer und Veranstaltungs-Betreuer können nicht archiviert werden."
+"Fall-Unterstützer und Veranstaltungshelfer können nicht archiviert werden."
 
 #: cdedb/backend/core/base.py:1983
 msgid "Active lastschrift exists."
@@ -10242,7 +10242,7 @@ msgstr "Name"
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:113
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:138
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:42
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:43
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:40
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:98
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:127
@@ -11073,7 +11073,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:37
 #: cdedb/frontend/templates/web/core/index.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:56
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:38
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:39
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:53
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:110
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
@@ -16494,7 +16494,7 @@ msgstr "Alle Veranstaltungen"
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:9
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:14
 msgid "Event Helpers"
-msgstr "Veranstaltungs-Betreuer"
+msgstr "Veranstaltungshelfer"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:296
 #: cdedb/frontend/templates/web/event/base.tmpl:300
@@ -17492,16 +17492,14 @@ msgstr "Freitexte"
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:29
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:38
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:129
-#, fuzzy
 msgid "Manage Orgas"
-msgstr "Nutzer verwalten"
+msgstr "Orgas verwalten"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:32
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:41
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:144
-#, fuzzy
 msgid "Manage Caretakers"
-msgstr "als Betreuer"
+msgstr "Betreuer verwalten"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:39
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:20
@@ -18421,27 +18419,28 @@ msgid ""
 "is not privacy-sensitive. Specifically, they have only aggregated access to "
 "registration data. Furthermore, they may see any information available to "
 "all participants of an event. By contrast, like orgas, %(event_admins)s have "
-"full access to all event data."
+"full access to all event data. Caretakers have the same access as orgas, for "
+"specific events."
 msgstr ""
-"Veranstaltungs-Betreuer haben umfangreichen Lesezugriff auf solche "
+"Veranstaltungshelfer haben umfangreichen Lesezugriff auf solche "
 "Veranstaltungsinformationen, die nicht datenschutzkritisch sind. "
 "Insbesondere haben sie nur statistischen Zugriff auf Anmeldedaten. Darüber "
 "hinaus dürfen sie Informationen sehen, die die Datenbank auch allen "
 "Teilnehmern einer Veranstaltung anzeigt, %(event_admins)s haben hingegen wie "
-"Orgas Vollzugriff auf die Veranstaltungsdaten."
+"Orgas Vollzugriff auf die Veranstaltungsdaten. Betreuer haben den gleichen Zugriff wie Orgas, aber nur für spezifische Veranstaltungen."
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
 msgid "event admins"
 msgstr "Veranstaltungs-Admininstratoren"
 
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:32
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:33
 msgid "ID of the new event helper"
-msgstr "ID des neuen Veranstaltungs-Betreuers"
+msgstr "ID des neuen Veranstaltungshelfer"
 
-#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:64
+#: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:65
 #, python-format
 msgid "Remove %(name)s as event helper"
-msgstr "%(name)s als Veranstaltungs-Betreuer entfernen"
+msgstr "%(name)s als Veranstaltungshelfer entfernen"
 
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:23
 #, python-format
@@ -18465,24 +18464,18 @@ msgid "Archived Events"
 msgstr "Archivierte Veranstaltungen"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:11
-#, fuzzy, python-format
+#, python-format
 msgid "Manage Orgas & Caretakers (%(title)s)"
-msgstr "Kurse verwalten (%(title)s)"
+msgstr "Orgas & Betreuer verwalten (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:16
-#, fuzzy
-msgid "Manage Orgas & Caretakers"
-msgstr "Orgas und Betreuer"
-
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:22
-#, fuzzy
-msgid "Manage Orgas/Caretakers"
-msgstr "Orgas und Betreuer"
+msgid "Manage Orgas & Caretakers"
+msgstr "Orgas & Betreuer verwalten"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:38
-#, fuzzy
 msgid "IDs of the new orgas"
-msgstr "ID des neuen Orgas"
+msgstr "IDs der neuen Orgas"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:59
 msgid "You should not add/remove orgas for your own event."
@@ -18495,19 +18488,19 @@ msgid "Remove Orga"
 msgstr "Orga entfernen"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:96
-#, fuzzy
 msgid "IDs of the new caretakers"
-msgstr "IDs der neuen Versammlungsleiter"
+msgstr "IDs der neuen Betreuer"
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:117
 msgid ""
-"Caretakers have the same access to a specific event, allowing them to do "
-"anything an orga can do. Additionally they are able to manage orgas, i.e. "
-"remove or add orgas."
+"Caretakers have the same access to a specific event as orgas, allowing them "
+"to do anything an orga can do. Additionally they are able to manage orgas, i."
+"e. remove or add orgas."
 msgstr ""
+"Betreuer haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
+"was Orgas tun können. Sie können außerdem Orgas hinzufügen oder entfernen."
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:131
-#, fuzzy
 msgid "Remove Caretaker"
 msgstr "Betreuer entfernen"
 
