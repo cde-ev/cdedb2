@@ -2515,15 +2515,9 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(
                     ValueError(argname, n_("Only creation allowed."))
                 )
-            if creation:
-                new_val = _ALL_TYPED[atype](
-                    val, argname, creation=creation, id_=anid, **kwargs
-                )
-            else:
-                new_val = _ALL_TYPED[atype | None](
-                    val, argname, creation=creation, id_=anid, **kwargs
-                )
-            ret[anid] = new_val
+            ret[anid] = _ALL_TYPED[atype if creation else atype | None](
+                val, argname, creation=creation, id_=anid, **kwargs
+            )
 
     if errs:
         raise errs
