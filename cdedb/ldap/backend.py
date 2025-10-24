@@ -6,7 +6,7 @@ import logging
 import pkgutil
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Collection, Sequence
+from collections.abc import AsyncIterator, Collection, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -150,7 +150,7 @@ class LDAPsqlBackend:
     async def execute_db_query(
         cur: AsyncCursor[DictRow],
         query: psycopg.abc.Query,
-        params: Sequence["DatabaseValue_s"],
+        params: psycopg.abc.Params,
     ) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
@@ -162,7 +162,11 @@ class LDAPsqlBackend:
 
         This doesn't return anything, but has a side-effect on ``cur``.
         """
-        sanitized_params = tuple(to_db_input(p) for p in params)
+        sanitized_params: psycopg.abc.Params
+        if isinstance(params, Mapping):
+            sanitized_params = {k: to_db_input(v) for k, v in params.items()}
+        else:
+            sanitized_params = tuple(to_db_input(p) for p in params)
         # psycopg3 does server-side parameter substitution. Sadly, cur.mogrify is
         # therefore no longer available ...
         if isinstance(query, psycopg.sql.Composable):
@@ -175,10 +179,10 @@ class LDAPsqlBackend:
         try:
             await cur.execute(query, sanitized_params)
         except Exception as e:
-            raise RuntimeError((query, sanitized_params)) from e
+            raise RuntimeError(query, sanitized_params) from e
 
     async def query_exec(
-        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"]
+        self, query: psycopg.abc.Query, params: psycopg.abc.Params
     ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         async with self.pool.connection() as conn:
@@ -187,7 +191,7 @@ class LDAPsqlBackend:
                 return cur.rowcount
 
     async def query_one(
-        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"]
+        self, query: psycopg.abc.Query, params: psycopg.abc.Params
     ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -199,7 +203,7 @@ class LDAPsqlBackend:
                 return from_db_output(await cur.fetchone())
 
     async def query_all(
-        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"]
+        self, query: psycopg.abc.Query, params: psycopg.abc.Params
     ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -615,7 +619,7 @@ class LDAPsqlBackend:
                     is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
                     is_core_admin, is_finance_admin, is_cdelokal_admin,
                     is_complaint_admin
-                FROM core.personas WHERE personas.id = ANY(%s)
+                FROM core.personas WHERE personas.id = ANY(%(persona_ids)s)
             """
             return {
                 e['id']: [
@@ -623,7 +627,7 @@ class LDAPsqlBackend:
                     for flag in e.keys()
                     if e[flag] and flag != "id"
                 ]
-                async for e in self.query_all(query, (persona_ids,))
+                async for e in self.query_all(query, {"persona_ids": persona_ids})
             }
 
         # Presider groups
@@ -631,7 +635,7 @@ class LDAPsqlBackend:
             query = """
                 SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
                 FROM assembly.presiders
-                WHERE persona_id = ANY(%s)
+                WHERE persona_id = ANY(%(persona_ids)s)
                 GROUP BY persona_id
             """
             return {
@@ -639,7 +643,7 @@ class LDAPsqlBackend:
                     self.presider_group_dn(assembly_id)
                     for assembly_id in e['assembly_ids']
                 ]
-                async for e in self.query_all(query, (persona_ids,))
+                async for e in self.query_all(query, {"persona_ids": persona_ids})
             }
 
         # Orga groups
@@ -647,14 +651,14 @@ class LDAPsqlBackend:
             query = """
                 SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
                 FROM event.orgas
-                WHERE persona_id = ANY(%s)
+                WHERE persona_id = ANY(%(persona_ids)s)
                 GROUP BY persona_id
             """
             return {
                 e['persona_id']: [
                     self.orga_group_dn(event_id) for event_id in e['event_ids']
                 ]
-                async for e in self.query_all(query, (persona_ids,))
+                async for e in self.query_all(query, {"persona_ids": persona_ids})
             }
 
         # Subscriber groups
@@ -665,15 +669,18 @@ class LDAPsqlBackend:
                     ml.subscription_states
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
                 WHERE
-                    subscription_state = ANY(%s) AND persona_id = ANY(%s)
+                    subscription_state = ANY(%(states)s) AND persona_id = ANY(%(persona_ids)s)
                 GROUP BY persona_id
             """
-            states = SubscriptionState.subscribing_states()
+            params = {
+                "states": SubscriptionState.subscribing_states(),
+                "persona_ids": persona_ids,
+            }
             return {
                 e['persona_id']: [
                     self.subscriber_group_dn(address) for address in e['addresses']
                 ]
-                async for e in self.query_all(query, (states, persona_ids))
+                async for e in self.query_all(query, params)
             }
 
         # Moderator groups
@@ -683,14 +690,14 @@ class LDAPsqlBackend:
                 FROM
                     ml.moderators
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-                WHERE persona_id = ANY(%s)
+                WHERE persona_id = ANY(%(persona_ids)s)
                 GROUP BY persona_id
             """
             return {
                 e['persona_id']: [
                     self.moderator_group_dn(address) for address in e['addresses']
                 ]
-                async for e in self.query_all(query, (persona_ids,))
+                async for e in self.query_all(query, {"persona_ids": persona_ids})
             }
 
         ret: dict[int, list[str]] = defaultdict(list)
@@ -764,29 +771,29 @@ class LDAPsqlBackend:
                 LEFT JOIN (
                     SELECT MAX(ctime) AS ctime, persona_id
                     FROM event.log
-                    WHERE code = ANY(%s)
+                    WHERE code = ANY(%(event_log_codes)s)
                     GROUP BY persona_id
                 ) AS elog ON cp.id = elog.persona_id
                 LEFT JOIN (
                     SELECT MAX(ctime) AS ctime, persona_id
                     FROM assembly.log
-                    WHERE code = ANY(%s)
+                    WHERE code = ANY(%(assembly_log_codes)s)
                     GROUP BY persona_id
                 ) AS alog ON cp.id = alog.persona_id
                 LEFT JOIN (
                     SELECT MAX(ctime) AS ctime, persona_id
                     FROM ml.log
-                    WHERE code = ANY(%s)
+                    WHERE code = ANY(%(ml_log_codes)s)
                     GROUP BY persona_id
                 ) AS mlog ON cp.id = mlog.persona_id
-            WHERE cp.id = ANY(%s) AND NOT cp.is_archived
+            WHERE cp.id = ANY(%(persona_ids)s) AND NOT cp.is_archived
         """
-        params = (
-            self._event_log_codes,
-            self._assembly_log_codes,
-            self._ml_log_codes,
-            user_ids,
-        )
+        params = {
+            "event_log_codes": self._event_log_codes,
+            "assembly_log_codes": self._assembly_log_codes,
+            "ml_log_codes": self._ml_log_codes,
+            "persona_ids": user_ids,
+        }
         return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_users(
@@ -1010,10 +1017,10 @@ class LDAPsqlBackend:
         query = """
             SELECT persona_id, assembly_id
             FROM assembly.presiders
-            WHERE assembly_id = ANY(%s)
+            WHERE assembly_id = ANY(%(assembly_ids)s)
         """
         presiders = defaultdict(list)
-        async for e in self.query_all(query, (assembly_ids,)):
+        async for e in self.query_all(query, {"assembly_ids": assembly_ids}):
             presiders[e["assembly_id"]].append(e["persona_id"])
         return presiders
 
@@ -1024,11 +1031,14 @@ class LDAPsqlBackend:
             FROM
                 assembly.assemblies AS assembly
                 LEFT JOIN assembly.log AS log
-                    ON assembly.id = log.assembly_id AND log.code = ANY(%s)
-            WHERE assembly.id = ANY(%s)
+                    ON assembly.id = log.assembly_id AND log.code = ANY(%(assembly_log_codes)s)
+            WHERE assembly.id = ANY(%(assembly_ids)s)
             GROUP BY assembly.id
         """
-        params = (self._assembly_log_codes, assembly_ids)
+        params = {
+            "assembly_log_codes": self._assembly_log_codes,
+            "assembly_ids": assembly_ids,
+        }
         return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_assembly_presider_groups(self, dns: list[DN]) -> LDAPObjectMap:
@@ -1104,9 +1114,9 @@ class LDAPsqlBackend:
 
     async def get_orgas(self, event_ids: Collection[int]) -> dict[int, list[int]]:
         """Helper functions to get the orgas of the given events."""
-        query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%s)"
+        query = "SELECT persona_id, event_id FROM event.orgas WHERE event_id = ANY(%(event_ids)s)"
         orgas = defaultdict(list)
-        async for e in self.query_all(query, (event_ids,)):
+        async for e in self.query_all(query, {"event_ids": event_ids}):
             orgas[e["event_id"]].append(e["persona_id"])
         return orgas
 
@@ -1117,11 +1127,14 @@ class LDAPsqlBackend:
             FROM
                 event.events AS event
                 LEFT JOIN event.log AS log
-                    ON event.id = log.event_id AND log.code = ANY(%s)
-            WHERE event.id = ANY(%s)
+                    ON event.id = log.event_id AND log.code = ANY(%(event_log_codes)s)
+            WHERE event.id = ANY(%(event_ids)s)
             GROUP BY event.id
         """
-        params = (self._event_log_codes, event_ids)
+        params = {
+            "event_log_codes": self._event_log_codes,
+            "event_ids": event_ids,
+        }
         return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_event_orga_groups(self, dns: list[DN]) -> LDAPObjectMap:
@@ -1212,10 +1225,10 @@ class LDAPsqlBackend:
             FROM
                 ml.moderators
                 JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-            WHERE address = ANY(%s)
+            WHERE address = ANY(%(addresses)s)
         """
         moderators = defaultdict(list)
-        async for e in self.query_all(query, (addresses,)):
+        async for e in self.query_all(query, {"addresses": addresses}):
             moderators[e["address"]].append(e["persona_id"])
         return moderators
 
@@ -1227,11 +1240,14 @@ class LDAPsqlBackend:
             SELECT ml.address, ml.title, MAX(log.ctime) AS ctime
             FROM ml.mailinglists AS ml
             LEFT JOIN ml.log AS log
-                ON ml.id = log.mailinglist_id AND log.code = ANY(%s)
-            WHERE ml.address = ANY(%s)
+                ON ml.id = log.mailinglist_id AND log.code = ANY(%(ml_log_codes)s)
+            WHERE ml.address = ANY(%(addresses)s)
             GROUP BY ml.id
         """
-        params = (self._ml_log_codes, addresses)
+        params = {
+            "ml_log_codes": self._ml_log_codes,
+            "addresses": addresses,
+        }
         return {e["address"]: e async for e in self.query_all(query, params)}
 
     async def get_ml_moderator_groups(self, dns: list[DN]) -> LDAPObjectMap:
@@ -1317,11 +1333,14 @@ class LDAPsqlBackend:
             FROM
                 ml.subscription_states
                 JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-            WHERE subscription_state = ANY(%s) AND address = ANY(%s)
+            WHERE subscription_state = ANY(%(states)s) AND address = ANY(%(addresses)s)
         """
-        states = SubscriptionState.subscribing_states()
+        params = {
+            "states": SubscriptionState.subscribing_states(),
+            "addresses": adresses,
+        }
         subscribers = defaultdict(list)
-        async for e in self.query_all(query, (states, adresses)):
+        async for e in self.query_all(query, params):
             subscribers[e["address"]].append(e["persona_id"])
         return subscribers
 
