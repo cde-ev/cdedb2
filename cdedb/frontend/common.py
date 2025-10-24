@@ -2815,7 +2815,7 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {
-                vtypes.BallotCandidate, models_event.PartGroup, vtypes.EventField,
+                vtypes.BallotCandidate, models_event.PartGroup, models_event.EventField,
                 models_event.CourseTrack, models_event.LodgementGroup,
             }:
                 entry["id"] = anid

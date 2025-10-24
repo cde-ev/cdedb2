@@ -2572,7 +2572,11 @@ def _event(
     if 'fields' in val:
         with errs:
             val['fields'] = _optional_object_mapping_helper(
-                val['fields'], EventField, 'fields', creation_only=creation, **kwargs
+                val['fields'],
+                models_event.EventField,
+                'fields',
+                creation_only=creation,
+                **kwargs,
             )
 
     if 'lodgement_groups' in val:
@@ -2874,6 +2878,79 @@ def _event_track_group(
 
     if errs:
         raise errs
+    return val
+
+
+def _prepare_event_field(
+    val: CdEDBObject,
+    *,
+    field_name: str | None = None,
+    creation: bool = False,
+    **kwargs: Any,
+) -> CdEDBObject:
+    val = dict(val)
+
+    if field_name is not None:
+        val["field_name"] = field_name
+    if creation:
+        if not val.get("title"):
+            val["title"] = val.get("field_name")
+
+    return val
+
+
+@_create_dataclass_validator(models_event.EventField, _prepare=_prepare_event_field)
+def _event_field_dataclass(
+    val: CdEDBObject,
+    argname: str,
+    *,
+    event: models_event.Event,
+    creation: bool = False,
+    id_: int,
+    **kwargs: Any,
+) -> CdEDBObject:
+    errs = ValidationSummary()
+
+    if creation:
+        kind = val.get("kind")
+    else:
+        kind = val.get("kind", event.fields[id_].kind)
+    assert kind is not None
+
+    if not val.get("entries", True):
+        val["entries"] = None
+    elif entries := val.get("entries"):
+        if isinstance(entries, str):
+            try:
+                entries = dict(
+                    cast(tuple[Any, Any], tuple(map(str.strip, line.split(";", 1))))
+                    for line in entries.splitlines()
+                )
+            except ValueError as e:
+                raise ValidationSummary(
+                    ValueError("entries", n_("Value not well-formed."))
+                ) from e
+        elif isinstance(entries, Sequence):
+            try:
+                entries = dict(entries)
+            except ValueError as e:
+                raise ValidationSummary(
+                    ValueError("entries", n_("Could not convert sequence to dict."))
+                ) from e
+
+        with errs:
+            new_entries = _ALL_TYPED[dict[FIELD_DATATYPE_VALIDATORS[kind] | None, str]](  # type: ignore[valid-type]
+                entries, "entries", **kwargs
+            )
+
+            if len(new_entries) != len(entries):
+                errs.append(ValueError("entries", n_("Duplicate value(s).")))
+
+            val["entries"] = list(map(list, entries.items()))
+
+    if errs:
+        raise errs
+
     return val
 
 
@@ -4073,10 +4150,12 @@ def _serialized_event_questionnaire(
                         )
                     continue
                 try:
-                    field = _ALL_TYPED[EventField](
+                    field = _ALL_TYPED[models_event.EventField](
                         field,
                         field_argname,
                         creation=True,
+                        event=None,
+                        id_=-(i + 1),
                         field_name=field_name,
                         **kwargs,
                     )

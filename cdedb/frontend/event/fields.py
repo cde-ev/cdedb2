@@ -100,7 +100,8 @@ class EventFieldMixin(EventBaseFrontend):
         creation_spec = dict(creation_mandatory) | dict(creation_optional)
         existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
-            rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
+            rs, models.EventField, existing_fields, spec, creation_spec=creation_spec,
+            additional_validation={"event": rs.ambience['event']})
 
         def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
             """Helper to get the name of a (new or existing) field."""

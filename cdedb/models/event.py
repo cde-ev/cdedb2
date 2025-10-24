@@ -581,14 +581,14 @@ class EventField(EventDataclass):
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
-    sort_group: Optional[str] = None  # Used to group multiple fields together.
+    sort_group: str | None = None  # Used to group multiple fields together.
     sortkey: int = 0  # Sortkey of the field (within it's group).
-    description: Optional[str] = None  # Shown as hovertext of the label.
+    description: str | None = None  # Shown as hovertext of the label.
 
     # Usage configuration, i.e. where is this field used.
     checkin: bool = False
 
-    entries: Optional[dict[str, str]] = None
+    entries: dict[str, str] | None = None
 
     @property
     def request_name(self) -> str:
@@ -604,6 +604,17 @@ class EventField(EventDataclass):
         if ret["entries"]:
             ret["entries"] = list(map(list, ret["entries"].items()))
         return ret
+
+    @classmethod
+    def validation_fields(
+        cls, *, creation: bool
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        if "entries" in optional:
+            # Need to postpone validation of entries until kind is known.
+            # Also need to account for this accepting string and sequence input.
+            optional["entries"] = Any
+        return mandatory, optional
 
     def get_sortkey(self) -> Sortkey:
         return (
