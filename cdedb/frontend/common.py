@@ -30,6 +30,7 @@ import io
 import json
 import logging
 import pathlib
+import pprint
 import re
 import shutil
 import smtplib
@@ -780,18 +781,24 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
-        if 'debugstring' not in params and self.conf["CDEDB_DEV"]:
-            debugstring = (
-                f"We have is_multithreaded={rs.request.is_multithread};"
-                f" is_multiprocess={rs.request.is_multiprocess};"
-                f" base_url={rs.request.base_url}; cookies={rs.request.cookies};"
-                f" url={rs.request.url}; is_secure={rs.request.is_secure};"
-                f" method={rs.request.method}; remote_addr={rs.request.remote_addr};"
-                f" values={rs.values}; ambience={rs.ambience};"
-                f" errors={rs.retrieve_validation_errors()}; time={now()}")
+        if 'debug_data' not in params and self.conf["CDEDB_DEV"]:
+            debug_data = {
+                "is_multithreaded": rs.request.is_multithread,
+                "is_multiprocess": rs.request.is_multiprocess,
+                "base_url": rs.request.base_url,
+                "cookies": rs.request.cookies,
+                "url": rs.request.url,
+                "is_secure": rs.request.is_secure,
+                "method": rs.request.method,
+                "remote_addr": rs.request.remote_addr,
+                "values": rs.values,
+                "ambience": rs.ambience,
+                "errors": rs.retrieve_validation_errors(),
+                "time": now(),
+            }
 
-            _LOGGER.debug(debugstring)
-            params['debugstring'] = debugstring
+            _LOGGER.debug(pprint.pformat(debug_data))
+            params['debug_data'] = debug_data
         if not rs.notifications:
             rs.notify_validation()
         if self.coreproxy.is_locked_down(rs):
