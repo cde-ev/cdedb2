@@ -608,14 +608,15 @@ class LDAPsqlBackend:
         # Status groups
         async def get_stati() -> dict[int, list[str]]:
             query = """
-                    SELECT id,
-                        is_active, is_member, is_searchable AND is_member AS is_searchable,
-                        is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
-                        is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
-                        is_core_admin, is_finance_admin, is_cdelokal_admin,
-                        is_complaint_admin
-                    FROM core.personas WHERE personas.id = ANY(%s)
-                    """
+                SELECT
+                    id,
+                    is_active, is_member, is_searchable AND is_member AS is_searchable,
+                    is_ml_realm, is_event_realm, is_assembly_realm, is_cde_realm,
+                    is_ml_admin, is_event_admin, is_assembly_admin, is_cde_admin,
+                    is_core_admin, is_finance_admin, is_cdelokal_admin,
+                    is_complaint_admin
+                FROM core.personas WHERE personas.id = ANY(%s)
+            """
             return {
                 e['id']: [
                     self.status_group_dn(flag)
@@ -628,11 +629,11 @@ class LDAPsqlBackend:
         # Presider groups
         async def get_presiders() -> dict[int, list[str]]:
             query = """
-                    SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
-                    FROM assembly.presiders
-                    WHERE persona_id = ANY(%s)
-                    GROUP BY persona_id
-                    """
+                SELECT persona_id, ARRAY_AGG(assembly_id) AS assembly_ids
+                FROM assembly.presiders
+                WHERE persona_id = ANY(%s)
+                GROUP BY persona_id
+            """
             return {
                 e['persona_id']: [
                     self.presider_group_dn(assembly_id)
@@ -644,10 +645,11 @@ class LDAPsqlBackend:
         # Orga groups
         async def get_orgas() -> dict[int, list[str]]:
             query = """
-                    SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
-                    FROM event.orgas
-                    WHERE persona_id = ANY(%s)
-                    GROUP BY persona_id"""
+                SELECT persona_id, ARRAY_AGG(event_id) AS event_ids
+                FROM event.orgas
+                WHERE persona_id = ANY(%s)
+                GROUP BY persona_id
+            """
             return {
                 e['persona_id']: [
                     self.orga_group_dn(event_id) for event_id in e['event_ids']
@@ -658,13 +660,14 @@ class LDAPsqlBackend:
         # Subscriber groups
         async def get_subscribers() -> dict[int, list[str]]:
             query = """
-                    SELECT persona_id, ARRAY_AGG(address) AS addresses
-                    FROM ml.subscription_states, ml.mailinglists
-                    WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id
-                        AND subscription_state = ANY(%s)
-                        AND persona_id = ANY(%s)
-                    GROUP BY persona_id
-                    """
+                SELECT persona_id, ARRAY_AGG(address) AS addresses
+                FROM
+                    ml.subscription_states
+                    JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
+                WHERE
+                    subscription_state = ANY(%s) AND persona_id = ANY(%s)
+                GROUP BY persona_id
+            """
             states = SubscriptionState.subscribing_states()
             return {
                 e['persona_id']: [
@@ -676,12 +679,13 @@ class LDAPsqlBackend:
         # Moderator groups
         async def get_moderators() -> dict[int, list[str]]:
             query = """
-                    SELECT persona_id, ARRAY_AGG(address) AS addresses
-                    FROM ml.moderators, ml.mailinglists
-                    WHERE ml.mailinglists.id = ml.moderators.mailinglist_id
-                        AND persona_id = ANY(%s)
-                    GROUP BY persona_id
-                    """
+                SELECT persona_id, ARRAY_AGG(address) AS addresses
+                FROM
+                    ml.moderators
+                    JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
+                WHERE persona_id = ANY(%s)
+                GROUP BY persona_id
+            """
             return {
                 e['persona_id']: [
                     self.moderator_group_dn(address) for address in e['addresses']
@@ -747,32 +751,34 @@ class LDAPsqlBackend:
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = """
-            SELECT cp.id, cp.username, cp.given_names, cp.family_name, cp.password_hash,
+            SELECT
+                cp.id, cp.username, cp.given_names, cp.family_name, cp.password_hash,
                 GREATEST(clog.ctime, elog.ctime, alog.ctime, mlog.ctime) AS ctime, cp.foto
-            FROM core.personas AS cp
-            LEFT JOIN (
-                SELECT MAX(ctime) AS ctime, persona_id
-                FROM core.changelog
-                GROUP BY persona_id
-            ) AS clog ON cp.id = clog.persona_id
-            LEFT JOIN (
-                SELECT MAX(ctime) AS ctime, persona_id
-                FROM event.log
-                WHERE code = ANY(%s)
-                GROUP BY persona_id
-            ) AS elog ON cp.id = elog.persona_id
-            LEFT JOIN (
-                SELECT MAX(ctime) AS ctime, persona_id
-                FROM assembly.log
-                WHERE code = ANY(%s)
-                GROUP BY persona_id
-            ) AS alog ON cp.id = alog.persona_id
-            LEFT JOIN (
-                SELECT MAX(ctime) AS ctime, persona_id
-                FROM ml.log
-                WHERE code = ANY(%s)
-                GROUP BY persona_id
-            ) AS mlog ON cp.id = mlog.persona_id
+            FROM
+                core.personas AS cp
+                LEFT JOIN (
+                    SELECT MAX(ctime) AS ctime, persona_id
+                    FROM core.changelog
+                    GROUP BY persona_id
+                ) AS clog ON cp.id = clog.persona_id
+                LEFT JOIN (
+                    SELECT MAX(ctime) AS ctime, persona_id
+                    FROM event.log
+                    WHERE code = ANY(%s)
+                    GROUP BY persona_id
+                ) AS elog ON cp.id = elog.persona_id
+                LEFT JOIN (
+                    SELECT MAX(ctime) AS ctime, persona_id
+                    FROM assembly.log
+                    WHERE code = ANY(%s)
+                    GROUP BY persona_id
+                ) AS alog ON cp.id = alog.persona_id
+                LEFT JOIN (
+                    SELECT MAX(ctime) AS ctime, persona_id
+                    FROM ml.log
+                    WHERE code = ANY(%s)
+                    GROUP BY persona_id
+                ) AS mlog ON cp.id = mlog.persona_id
             WHERE cp.id = ANY(%s) AND NOT cp.is_archived
         """
         params = (
@@ -1001,10 +1007,11 @@ class LDAPsqlBackend:
         self, assembly_ids: Collection[int]
     ) -> dict[int, list[int]]:
         """Helper function to get the presiders of the given assemblies."""
-        query = (
-            "SELECT persona_id, assembly_id FROM assembly.presiders"
-            " WHERE assembly_id = ANY(%s)"
-        )
+        query = """
+            SELECT persona_id, assembly_id
+            FROM assembly.presiders
+            WHERE assembly_id = ANY(%s)
+        """
         presiders = defaultdict(list)
         async for e in self.query_all(query, (assembly_ids,)):
             presiders[e["assembly_id"]].append(e["persona_id"])
@@ -1014,9 +1021,10 @@ class LDAPsqlBackend:
         """Helper function to get some information about the given assemblies."""
         query = """
             SELECT assembly.id, assembly.title, assembly.shortname, MAX(log.ctime) AS ctime
-            FROM assembly.assemblies AS assembly
-            LEFT JOIN assembly.log AS log
-                ON assembly.id = log.assembly_id AND log.code = ANY(%s)
+            FROM
+                assembly.assemblies AS assembly
+                LEFT JOIN assembly.log AS log
+                    ON assembly.id = log.assembly_id AND log.code = ANY(%s)
             WHERE assembly.id = ANY(%s)
             GROUP BY assembly.id
         """
@@ -1106,9 +1114,10 @@ class LDAPsqlBackend:
         """Helper function to get some information about the given events."""
         query = """
             SELECT event.id, event.title, event.shortname, MAX(log.ctime) AS ctime
-            FROM event.events AS event
-            LEFT JOIN event.log AS log
-                ON event.id = log.event_id AND log.code = ANY(%s)
+            FROM
+                event.events AS event
+                LEFT JOIN event.log AS log
+                    ON event.id = log.event_id AND log.code = ANY(%s)
             WHERE event.id = ANY(%s)
             GROUP BY event.id
         """
@@ -1198,11 +1207,13 @@ class LDAPsqlBackend:
 
     async def get_moderators(self, ml_ids: Collection[str]) -> dict[str, list[int]]:
         """Helper function to get the moderators of the given mailinglists."""
-        query = (
-            "SELECT persona_id, address FROM ml.moderators, ml.mailinglists"
-            " WHERE ml.mailinglists.id = ml.moderators.mailinglist_id"
-            " AND address = ANY(%s)"
-        )
+        query = """
+            SELECT persona_id, address
+            FROM
+                ml.moderators
+                JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
+            WHERE address = ANY(%s)
+        """
         moderators = defaultdict(list)
         async for e in self.query_all(query, (ml_ids,)):
             moderators[e["address"]].append(e["persona_id"])
@@ -1301,12 +1312,13 @@ class LDAPsqlBackend:
 
     async def get_subscribers(self, ml_ids: Collection[str]) -> dict[str, list[int]]:
         """Helper function to get the subscribers of the given mailinglists."""
-        query = (
-            "SELECT persona_id, address"
-            " FROM ml.subscription_states, ml.mailinglists"
-            " WHERE ml.mailinglists.id = ml.subscription_states.mailinglist_id"
-            " AND subscription_state = ANY(%s) AND address = ANY(%s)"
-        )
+        query = """
+            SELECT persona_id, address
+            FROM
+                ml.subscription_states
+                JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
+            WHERE subscription_state = ANY(%s) AND address = ANY(%s)
+        """
         states = SubscriptionState.subscribing_states()
         subscribers = defaultdict(list)
         async for e in self.query_all(query, (states, ml_ids)):
