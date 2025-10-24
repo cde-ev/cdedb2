@@ -43,7 +43,7 @@
         id="event_{{ event.id }}_violations_{{ class_name }}">
         {% set link = cdedblink("event/constraint_violations", {'event_id': event.id, 'min_severity': min_severity}) + "#" + class_name %}
         {% call util.href(link, label=none, aclass=violations.max_severity.html_class(),
-                          readonly=not is_privileged_for("event/constraint_violations", event_id=event.id, consider_admin_view=None)) %}
+                          readonly=not is_privileged_for("event/constraint_violations", event_id=event.id, admin_view_to_consider=None)) %}
             {% for severity in enums['ViolationSeverity'] %}
                 {% set filtered_violations = violations|selectattr("severity", "ge", severity)|list %}
                 {% if filtered_violations %}
