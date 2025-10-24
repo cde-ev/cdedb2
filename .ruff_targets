@@ -5,6 +5,7 @@ FORMAT_TARGETS= \
     cdedb/common/ \
     cdedb/database/ \
     cdedb/fee_condition_parser/ \
+    cdedb/ldap/ \
     cdedb/models/ \
     cdedb/uncommon/ \
     cdedb/*.py \
