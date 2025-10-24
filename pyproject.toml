@@ -80,6 +80,9 @@ output-format = "concise"
 src = ["cdedb", "tests"]
 
 [tool.ruff.format]
+exclude = [
+    "cdedb/database/evolutions/archive/**/*.py",
+]
 quote-style = "preserve"
 
 [tool.ruff.lint]

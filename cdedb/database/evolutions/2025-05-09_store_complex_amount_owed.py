@@ -10,7 +10,6 @@ event_backend: EventBackend = s.make_backend("event", proxy=False)
 
 
 with s:
-
     print("Adding new column to 'event.registrations' with default...")
 
     query = """
@@ -28,7 +27,11 @@ with s:
     for event in event_backend.get_events(rs, event_backend.list_events(rs)).values():
         fee_stats_pre = fee_stats_post = None
         print()
-        print(f"{event.title}{' (already balanced)' if event.is_balanced else ''}...", end="", flush=True)
+        print(
+            f"{event.title}{' (already balanced)' if event.is_balanced else ''}...",
+            end="",
+            flush=True,
+        )
         print("getting fee stats...", end="", flush=True)
         fee_stats_pre = event_backend.get_fee_stats(rs, event.id)
         print("done. Proceeding...", end="", flush=True)

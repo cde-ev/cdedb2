@@ -45,9 +45,14 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
 _LOGGER = logging.getLogger(__name__)
 
 
-def _create_connection(dbname: str, dbuser: str, password: str, host: str,
-                       port: int, isolation_level: Optional[int] = SERIALIZABLE,
-                       ) -> "IrradiatedConnection":
+def _create_connection(
+    dbname: str,
+    dbuser: str,
+    password: str,
+    host: str,
+    port: int,
+    isolation_level: Optional[int] = SERIALIZABLE,
+) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
 
@@ -71,10 +76,14 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
     return conn
 
 
-def connection_pool_factory(dbname: str, roles: Collection[Role],
-                            secrets: SecretsConfig, host: str, port: int,
-                            isolation_level: Optional[int] = SERIALIZABLE,
-                            ) -> Mapping[str, "IrradiatedConnection"]:
+def connection_pool_factory(
+    dbname: str,
+    roles: Collection[Role],
+    secrets: SecretsConfig,
+    host: str,
+    port: int,
+    isolation_level: Optional[int] = SERIALIZABLE,
+) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
 
@@ -106,10 +115,10 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
 
         def __getitem__(self, role: Role) -> "IrradiatedConnection":
             if role not in self.roles:
-                raise ValueError(n_("role %(role)s not available"),
-                                 {'role': role})
+                raise ValueError(n_("role %(role)s not available"), {'role': role})
             return _create_connection(
-                dbname, role, db_passwords[role], host, port, isolation_level)
+                dbname, role, db_passwords[role], host, port, isolation_level
+            )
 
         def __delitem__(self, key: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))
@@ -168,9 +177,12 @@ class Atomizer:
         self.rs._conn.contaminate()
         return self.rs._conn.__enter__()
 
-    def __exit__(self, atype: Optional[type[Exception]],
-                 value: Optional[Exception],
-                 tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        atype: Optional[type[Exception]],
+        value: Optional[Exception],
+        tb: Optional[TracebackType],
+    ) -> None:
         self.rs._conn.decontaminate()
         return self.rs._conn.__exit__(atype, value, tb)
 
@@ -206,9 +218,12 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             self._saved_tb = None
             return super().__enter__()
 
-    def __exit__(self, etype: Optional[type[BaseException]],
-                 evalue: Optional[BaseException],
-                 tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        etype: Optional[type[BaseException]],
+        evalue: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> None:
         if self._radiation_level:
             # grab any exception
             self._saved_etype = etype or self._saved_etype
@@ -222,8 +237,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 # with-contexts.
 
                 # first we rollback the transaction
-                super().__exit__(self._saved_etype, self._saved_evalue,
-                                 self._saved_tb)
+                super().__exit__(self._saved_etype, self._saved_evalue, self._saved_tb)
                 # second we raise an exception to complain
                 raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
