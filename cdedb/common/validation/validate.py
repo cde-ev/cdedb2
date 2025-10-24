@@ -437,7 +437,9 @@ def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     return fun
 
 
-def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F], F]:
+def _create_dataclass_validator(
+    *types: type[DC], _prepare: Callable[..., CdEDBObject] | None = None, **kwargs_: Any
+) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass.
 
     The new validator accepts a dict, checking that its keys conform to the
@@ -469,6 +471,8 @@ def _create_dataclass_validator(*types: type[DC], **kwargs_: Any) -> Callable[[F
                     mandatory, optional = type_.validation_fields(creation=creation)
                 else:
                     raise RuntimeError("Impossible.")
+                if _prepare is not None:
+                    val = _prepare(val, creation=creation, type_=type_, **new_kwargs)
                 val = _examine_dictionary_fields(val, mandatory, optional, **new_kwargs)
                 val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
                 return val
