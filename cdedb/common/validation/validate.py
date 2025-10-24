@@ -2806,6 +2806,9 @@ def _event_track(
                     )
                 )
 
+    if errs:
+        raise errs
+
     return val
 
 
