@@ -904,7 +904,7 @@ class LDAPsqlBackend:
     STATUS_GROUPS = {
         "is_active": "Aktive Nutzer.",
         "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
-        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.",
+        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und in der Datenbank suchbar sind.",
         "is_ml_realm": "Nutzer, die auf Mailinglisten stehen dürfen.",
         "is_event_realm": "Nutzer, die an Veranstaltungen teilnehmen dürfen.",
         "is_assembly_realm": "Nutzer, die an Versammlungen teilnehmen dürfen.",
