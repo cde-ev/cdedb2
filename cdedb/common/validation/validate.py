@@ -2666,8 +2666,8 @@ def _event_part(
             errs.append(KeyError("waitlist_field_id", n_("Unknown waitlist field.")))
         else:
             waitlist_field = event.fields[waitlist_field_id]
-            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["waitlist"]
-            if waitlist_field.association not in legal_associastions:
+            legal_kinds, legal_associations = EVENT_FIELD_SPEC["waitlist"]
+            if waitlist_field.association not in legal_associations:
                 errs.append(
                     ValueError(
                         "waitlist_field_id",
@@ -2688,8 +2688,8 @@ def _event_part(
             )
         else:
             camping_mat_field = event.fields[camping_mat_field_id]
-            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["camping_mat"]
-            if camping_mat_field.association not in legal_associastions:
+            legal_kinds, legal_associations = EVENT_FIELD_SPEC["camping_mat"]
+            if camping_mat_field.association not in legal_associations:
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
@@ -2700,7 +2700,7 @@ def _event_part(
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
-                        n_("Camping mat field mut have type 'bool'."),
+                        n_("Camping mat field must have type 'bool'."),
                     )
                 )
 
@@ -2790,8 +2790,8 @@ def _event_track(
             )
         else:
             course_room_field = event.fields[course_room_field_id]
-            legal_kinds, legal_associastions = EVENT_FIELD_SPEC["course_room"]
-            if course_room_field.association not in legal_associastions:
+            legal_kinds, legal_associations = EVENT_FIELD_SPEC["course_room"]
+            if course_room_field.association not in legal_associations:
                 errs.append(
                     ValueError(
                         "course_room_field_id",
@@ -4133,7 +4133,6 @@ def _serialized_event_configuration(
     *,
     creation: bool = False,
     event: models_event.Event | None,
-    skip_field_validation: bool = False,
     **kwargs: Any,
 ) -> SerializedEventConfiguration:
     val = _mapping(val, argname, **kwargs)

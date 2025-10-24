@@ -254,6 +254,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return models.Event.many_from_database(event_data.values())
 
+    # The annonation for this lives in the lowlevel backend.
     get_event = singularize(get_events, "event_ids", "event_id")
 
     @access("event")

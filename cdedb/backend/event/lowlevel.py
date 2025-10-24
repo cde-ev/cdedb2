@@ -125,7 +125,9 @@ class EventLowLevelBackend(AbstractBackend):
         This is used by multiple backend functions.
 
         :param field_ids: If given, only include fields with these ids.
-        :return: A dict mapping each event id to the dict of its fields
+        :return: A dict of (all or some) of one events fields.
+            Note that these dataclass instances **do not** have their event field set
+            and are thus not save to use in all circumstances.
         """
         data = self.query_all(rs, *models.EventField.get_select_query([event_id]))
         if field_ids is not None:
