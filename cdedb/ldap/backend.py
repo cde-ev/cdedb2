@@ -292,7 +292,7 @@ class LDAPsqlBackend:
         if timestamp is None:
             # this happens in the test suite due to insufficient sample data
             if not self.config["CDEDB_TEST"]:
-                logger.error("Timestamp must not be None.")
+                logger.error("Timestamp must not be None.", stack_info=True)
             timestamp = now()
         # our timestamps are always in UTC
         return timestamp.strftime("%Y%m%d%H%M%SZ")
@@ -675,6 +675,7 @@ class LDAPsqlBackend:
     def _event_log_codes(self) -> list[int]:
         """EventLogCodes affecting the modifyTimestamp LDAP property."""
         return [
+            EventLogCodes.event_created,
             EventLogCodes.orga_added,
             EventLogCodes.orga_removed,
         ]
@@ -683,6 +684,7 @@ class LDAPsqlBackend:
     def _assembly_log_codes(self) -> list[int]:
         """AssemblyLogCodes affecting the modifyTimestamp LDAP property."""
         return [
+            AssemblyLogCodes.assembly_created,
             AssemblyLogCodes.assembly_presider_added,
             AssemblyLogCodes.assembly_presider_removed,
         ]
@@ -691,6 +693,7 @@ class LDAPsqlBackend:
     def _ml_log_codes(self) -> list[int]:
         """MlLogCodes affecting the modifyTimestamp LDAP property."""
         return [
+            MlLogCodes.list_created,
             MlLogCodes.moderator_added,
             MlLogCodes.moderator_removed,
             MlLogCodes.subscribed,

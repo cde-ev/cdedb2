@@ -6800,6 +6800,13 @@
                 "1": "573.99",
                 "5": "-20.00"
             },
+            "amount_owed_by_category": {
+                "1": "573.99",
+                "3": "-20.00"
+            },
+            "amount_owed_by_budget": {
+                "1": "553.99"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6824,6 +6831,13 @@
             "amount_owed_by_kind": {
                 "1": "461.49",
                 "3": "5.00"
+            },
+            "amount_owed_by_category": {
+                "1": "466.49"
+            },
+            "amount_owed_by_budget": {
+                "1": "461.49",
+                "10": "5.00"
             },
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -6852,6 +6866,14 @@
                 "5": "-30.00",
                 "10": "-0.01"
             },
+            "amount_owed_by_category": {
+                "1": "534.48",
+                "3": "-30.00"
+            },
+            "amount_owed_by_budget": {
+                "1": "504.49",
+                "2": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": false,
@@ -6873,6 +6895,12 @@
             "amount_paid": "548.48",
             "amount_owed": "431.99",
             "amount_owed_by_kind": {
+                "1": "431.99"
+            },
+            "amount_owed_by_category": {
+                "1": "431.99"
+            },
+            "amount_owed_by_budget": {
                 "1": "431.99"
             },
             "parental_agreement": false,
@@ -6901,6 +6929,13 @@
                 "1": "584.49",
                 "10": "-0.01"
             },
+            "amount_owed_by_category": {
+                "1": "584.48"
+            },
+            "amount_owed_by_budget": {
+                "1": "584.49",
+                "2": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": false,
             "list_consent": true,
@@ -6922,6 +6957,12 @@
             "amount_paid": "10.50",
             "amount_owed": "10.50",
             "amount_owed_by_kind": {
+                "1": "10.50"
+            },
+            "amount_owed_by_category": {
+                "1": "10.50"
+            },
+            "amount_owed_by_budget": {
                 "1": "10.50"
             },
             "parental_agreement": true,
@@ -6946,6 +6987,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6963,6 +7006,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6980,6 +7025,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6997,6 +7044,12 @@
             "amount_paid": "0.00",
             "amount_owed": "4.20",
             "amount_owed_by_kind": {
+                "1": "4.20"
+            },
+            "amount_owed_by_category": {
+                "1": "4.20"
+            },
+            "amount_owed_by_budget": {
                 "1": "4.20"
             },
             "parental_agreement": false,

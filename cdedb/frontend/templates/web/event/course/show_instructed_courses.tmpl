@@ -1,0 +1,85 @@
+{% set sidenav_active='event_instructed' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Your Instructed Courses ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_instructed_courses"), gettext("My Instructed Courses")) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Your Instructed Courses"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event'].is_course_assignment_visible %}
+        {% call util.notification('info') %}
+            {% trans visibility=gettext("Visibility of Course Assignment"), configuration=gettext("Configuration") %}
+                This page is currently not visible to participants.
+                To change that, activate the "{{ visibility }}" option on the "{{ configuration }}" page.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if not courses %}
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}{{ nbsp -}}
+            {% trans %}
+                You are not instructing any courses.
+            {% endtrans %}
+        </p>
+    {% else %}
+        {% for track in ambience["event"].tracks.values() %}
+            {% set course_id = registration["tracks"][track.id]["course_instructor"] %}
+            {% if course_id %}
+                {% set course = courses[course_id] %}
+                {% set course_attendees = attendees[(course_id, track.id)] %}
+                {{ util.context_heading(course.label, track.title, "book", gettext("Course Track"), level=4, anchor="track" + track.id|string) }}
+
+                {% if course.segments[track.id].is_active %}
+                    <i>Findet statt.</i>
+                {% else %}
+                    <i>Findet nicht statt.</i>
+                {% endif %}
+
+                {% set usernames = [] %}
+                {% for persona in course_attendees.instructors + course_attendees.learners %}
+                    {% do usernames.append(persona["username"]) %}
+                {% endfor %}
+
+                {% call util.h(n_("Attendees"), 5, anchor="attendees" + track.id|string) -%}
+                    {{- nbsp }}[{{ course_attendees.num_learners }} + {{ course_attendees.num_instructors }}]
+                    {{- nbsp }}{{ util.href(util.mailto(";".join(usernames)), gettext("Mail to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not usernames) }}
+                    {{- nbsp }}{{ util.href(util.mailto("", bcc=";".join(usernames)), gettext("BCC to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not username) }}
+                {% endcall %}
+
+                <ul class id="attendee-list{{ track.id }}">
+                    {% for persona in course_attendees.instructors %}
+                        <li>
+                            {{ util.persona_anchor(persona, include_nickname=True, event_id=ambience['event'].id) }}{{ nbsp }}({{ gettext("Instr.") }})
+                            {{ util.href(util.mailto(persona["username"]), persona["username"], icon="envelope", aclass="btn btn-xs btn-default") }}
+                        </li>
+                    {% endfor %}
+                    {% for persona in course_attendees.learners %}
+                        <li>
+                            {{ util.persona_anchor(persona, include_nickname=True, event_id=ambience['event'].id) }}
+                            {{ util.href(util.mailto(persona["username"]), persona["username"], icon="envelope", aclass="btn btn-xs btn-default") }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}

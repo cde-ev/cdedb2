@@ -838,7 +838,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def get_mandatory_type(type_: T | None) -> T:
+def get_mandatory_type(type_: type[T] | UnionType) -> type[T]:
     """Transform a given type into a non-None one.
 
     Basically the inverse operation of T | None.
@@ -851,8 +851,7 @@ def get_mandatory_type(type_: T | None) -> T:
             return arg2
         else:
             raise RuntimeError("No mandatory type found.")
-    assert type_ is not None
-    return type_
+    return cast(type[T], type_)
 
 
 def is_list_type(type_: type[Any] | UnionType) -> bool:
