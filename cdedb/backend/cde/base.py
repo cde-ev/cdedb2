@@ -197,6 +197,7 @@ class CdEBaseBackend(AbstractBackend):
                             )
                             result.new_members += bool(code)
                             cde_persona['is_member'] = bool(code)
+                            event_personas[cde_persona["id"]]["is_member"] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(
