@@ -1205,7 +1205,7 @@ class LDAPsqlBackend:
             async for e in self.query_all(query, [])
         ]
 
-    async def get_moderators(self, ml_ids: Collection[str]) -> dict[str, list[int]]:
+    async def get_moderators(self, addresses: Collection[str]) -> dict[str, list[int]]:
         """Helper function to get the moderators of the given mailinglists."""
         query = """
             SELECT persona_id, address
@@ -1215,12 +1215,12 @@ class LDAPsqlBackend:
             WHERE address = ANY(%s)
         """
         moderators = defaultdict(list)
-        async for e in self.query_all(query, (ml_ids,)):
+        async for e in self.query_all(query, (addresses,)):
             moderators[e["address"]].append(e["persona_id"])
         return moderators
 
     async def get_mailinglists(
-        self, ml_ids: Collection[str]
+        self, addresses: Collection[str]
     ) -> dict[str, "CdEDBObject"]:
         """Helper function to get some information about the given mailinglists."""
         query = """
@@ -1231,7 +1231,7 @@ class LDAPsqlBackend:
             WHERE ml.address = ANY(%s)
             GROUP BY ml.id
         """
-        params = (self._ml_log_codes, ml_ids)
+        params = (self._ml_log_codes, addresses)
         return {e["address"]: e async for e in self.query_all(query, params)}
 
     async def get_ml_moderator_groups(self, dns: list[DN]) -> LDAPObjectMap:
@@ -1310,7 +1310,7 @@ class LDAPsqlBackend:
             async for e in self.query_all(query, [])
         ]
 
-    async def get_subscribers(self, ml_ids: Collection[str]) -> dict[str, list[int]]:
+    async def get_subscribers(self, adresses: Collection[str]) -> dict[str, list[int]]:
         """Helper function to get the subscribers of the given mailinglists."""
         query = """
             SELECT persona_id, address
@@ -1321,7 +1321,7 @@ class LDAPsqlBackend:
         """
         states = SubscriptionState.subscribing_states()
         subscribers = defaultdict(list)
-        async for e in self.query_all(query, (states, ml_ids)):
+        async for e in self.query_all(query, (states, adresses)):
             subscribers[e["address"]].append(e["persona_id"])
         return subscribers
 
