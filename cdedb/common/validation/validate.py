@@ -2677,7 +2677,8 @@ def _event_part(
             if waitlist_field.kind not in legal_kinds:
                 errs.append(
                     ValueError(
-                        "waitlist_field_id", n_("Waitlist field must have type 'int'.")
+                        "waitlist_field_id",
+                        n_("Waitlist field must have type 'Integer'."),
                     )
                 )
 
@@ -2700,7 +2701,7 @@ def _event_part(
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
-                        n_("Camping mat field must have type 'bool'."),
+                        n_("Camping mat field must have type 'Yes/No'."),
                     )
                 )
 
@@ -2802,7 +2803,7 @@ def _event_track(
                 errs.append(
                     ValueError(
                         "course_room_field_id",
-                        n_("Course room field mut have type 'string'."),
+                        n_("Course room field mut have type 'Text'."),
                     )
                 )
 
@@ -4197,7 +4198,7 @@ def _serialized_event_configuration(
             if field.kind not in legal_kinds:
                 errs.append(
                     ValueError(
-                        "lodge_field_id", n_("Lodge field must have type 'string'.")
+                        "lodge_field_id", n_("Lodge field must have type 'Text'.")
                     )
                 )
     if reimbursement_field := val.get('reimbursement_iban_field_id'):

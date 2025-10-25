@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-10-25 01:50+0200\n"
+"POT-Creation-Date: 2025-10-25 20:04+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -4820,8 +4820,8 @@ msgstr ""
 
 #: cdedb/backend/event/registration.py:2408
 #: cdedb/backend/event/registration.py:2489
-#: cdedb/common/validation/validate.py:4005
-#: cdedb/common/validation/validate.py:4018
+#: cdedb/common/validation/validate.py:4006
+#: cdedb/common/validation/validate.py:4019
 #: cdedb/frontend/event/registration.py:1717
 #: cdedb/frontend/event/registration.py:1786
 msgid "Checkout must be after checkin."
@@ -6786,10 +6786,10 @@ msgstr ""
 #: cdedb/common/validation/validate.py:877
 #: cdedb/common/validation/validate.py:1046
 #: cdedb/common/validation/validate.py:1166
-#: cdedb/common/validation/validate.py:2827
-#: cdedb/common/validation/validate.py:4253
-#: cdedb/common/validation/validate.py:4961
-#: cdedb/common/validation/validate.py:5134 cdedb/frontend/cde/base.py:276
+#: cdedb/common/validation/validate.py:2828
+#: cdedb/common/validation/validate.py:4254
+#: cdedb/common/validation/validate.py:4962
+#: cdedb/common/validation/validate.py:5135 cdedb/frontend/cde/base.py:276
 #: cdedb/frontend/cde/base.py:280 cdedb/frontend/common.py:648
 #: cdedb/frontend/core/base.py:1278 cdedb/frontend/core/complaint.py:368
 #: cdedb/frontend/core/complaint.py:498 cdedb/frontend/core/genesis.py:116
@@ -7080,7 +7080,7 @@ msgid "Only pdf allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/common/validation/validate.py:2097
-#: cdedb/common/validation/validate.py:5051
+#: cdedb/common/validation/validate.py:5052
 msgid "Must contain exactly two elements."
 msgstr ""
 
@@ -7155,371 +7155,375 @@ msgstr "inscriptio electronica nova"
 msgid "Waitlist field must be a registration field."
 msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2680
-msgid "Waitlist field must have type 'int'."
-msgstr ""
+#: cdedb/common/validation/validate.py:2681
+#, fuzzy
+msgid "Waitlist field must have type 'Integer'."
+msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2687
+#: cdedb/common/validation/validate.py:2688
 #, fuzzy
 msgid "Unknown camping mat field."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:2696
+#: cdedb/common/validation/validate.py:2697
 #, fuzzy
 msgid "Camping mat field must be a registration field."
 msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2703
-msgid "Camping mat field must have type 'bool'."
-msgstr ""
+#: cdedb/common/validation/validate.py:2704
+#, fuzzy
+msgid "Camping mat field must have type 'Yes/No'."
+msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2724
+#: cdedb/common/validation/validate.py:2725
 #, fuzzy
 msgid "Unknown part."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:2736
-#: cdedb/common/validation/validate.py:2741
+#: cdedb/common/validation/validate.py:2737
+#: cdedb/common/validation/validate.py:2742
 msgid "A part group with this name already exists."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2782
+#: cdedb/common/validation/validate.py:2783
 msgid "Must be less or equal than total Course Choices."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2789
+#: cdedb/common/validation/validate.py:2790
 #, fuzzy
 msgid "Unknown course room field."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:2798
+#: cdedb/common/validation/validate.py:2799
 #, fuzzy
 msgid "Course room field must be a course field."
 msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2805
-msgid "Course room field mut have type 'string'."
-msgstr ""
+#: cdedb/common/validation/validate.py:2806
+#, fuzzy
+msgid "Course room field mut have type 'Text'."
+msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:2829
+#: cdedb/common/validation/validate.py:2830
 #, fuzzy
 msgid "Unknown track."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:2838
+#: cdedb/common/validation/validate.py:2839
 msgid "Cannot have more than one course choice sync track group per track."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2851
+#: cdedb/common/validation/validate.py:2852
 msgid ""
 "Tracks of a course choice sync track group must have the same number of "
 "choices."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2868
-#: cdedb/common/validation/validate.py:2873
+#: cdedb/common/validation/validate.py:2869
+#: cdedb/common/validation/validate.py:2874
 msgid "A track group with this name already exists."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2927
+#: cdedb/common/validation/validate.py:2928
 msgid "Value not well-formed."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2935
+#: cdedb/common/validation/validate.py:2936
 msgid "Could not convert to mapping."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2959
+#: cdedb/common/validation/validate.py:2960
 msgid "Duplicate value."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2988
+#: cdedb/common/validation/validate.py:2989
 #, fuzzy
 msgid "Cannot set amount for personalized fee."
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/common/validation/validate.py:2993
+#: cdedb/common/validation/validate.py:2994
 msgid "Cannot set condition for personalized fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:2999
+#: cdedb/common/validation/validate.py:3000
 msgid "Cannot unset amount for conditional fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3004
+#: cdedb/common/validation/validate.py:3005
 msgid "Cannot unset condition for conditional fee."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3010
+#: cdedb/common/validation/validate.py:3011
 msgid "Cannot have amount without condition or vice versa."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3018
-#: cdedb/common/validation/validate.py:4482
+#: cdedb/common/validation/validate.py:3019
+#: cdedb/common/validation/validate.py:4483
 msgid "Duplicate title."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3111 cdedb/frontend/event/course.py:268
+#: cdedb/common/validation/validate.py:3112 cdedb/frontend/event/course.py:268
 #: cdedb/frontend/event/course.py:376
 msgid "Event without tracks forbids courses."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3293
+#: cdedb/common/validation/validate.py:3294
 msgid "Entry not in definition list."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3333
+#: cdedb/common/validation/validate.py:3334
 #, fuzzy
 msgid "Invalid placeholder for new lodgement group."
 msgstr "signum arcanum muta"
 
-#: cdedb/common/validation/validate.py:3338
+#: cdedb/common/validation/validate.py:3339
 #, fuzzy
 msgid "Unknown lodgement group for this event."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:3419
+#: cdedb/common/validation/validate.py:3420
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3426
+#: cdedb/common/validation/validate.py:3427
 #, fuzzy
 msgid "No kind specified."
 msgstr "non dictum"
 
-#: cdedb/common/validation/validate.py:3441
+#: cdedb/common/validation/validate.py:3442
 msgid "Cannot specify both field id and field name."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3448
+#: cdedb/common/validation/validate.py:3449
 #, python-format
 msgid "No field with name '%(name)s' exists."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3463
-#: cdedb/common/validation/validate.py:4976
-#: cdedb/common/validation/validate.py:5031
+#: cdedb/common/validation/validate.py:3464
+#: cdedb/common/validation/validate.py:4977
+#: cdedb/common/validation/validate.py:5032
 #: cdedb/frontend/event/questionnaire.py:286
 #, fuzzy
 msgid "Invalid field."
 msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:3476
+#: cdedb/common/validation/validate.py:3477
 #: cdedb/frontend/event/questionnaire.py:290
 msgid "Registration questionnaire rows may not be readonly."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3529
+#: cdedb/common/validation/validate.py:3530
 #, python-format
 msgid "Must not duplicate field ('%(field_name)s')."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3553
+#: cdedb/common/validation/validate.py:3554
 #, fuzzy
 msgid "Invalid UTF-8 sequence."
 msgstr "Series vites."
 
-#: cdedb/common/validation/validate.py:3559
+#: cdedb/common/validation/validate.py:3560
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3589
+#: cdedb/common/validation/validate.py:3590
 msgid "Only partial exports are supported."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3613
+#: cdedb/common/validation/validate.py:3614
 msgid "Schema version mismatch."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3915
+#: cdedb/common/validation/validate.py:3916
 msgid "Checkout time may only be empty for latest checkin period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3920
+#: cdedb/common/validation/validate.py:3921
 #, fuzzy
 msgid "Inconsistent sequence of checkin periods."
 msgstr "vestigium novum crea"
 
-#: cdedb/common/validation/validate.py:4068
+#: cdedb/common/validation/validate.py:4069
 #, python-format
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4157
+#: cdedb/common/validation/validate.py:4158
 msgid "Must be a registered event IBAN."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4172
+#: cdedb/common/validation/validate.py:4173
 msgid "Must be before hard and soft limit."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4186
+#: cdedb/common/validation/validate.py:4187
 #, fuzzy
 msgid "Unknown lodge field."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:4194
+#: cdedb/common/validation/validate.py:4195
 #, fuzzy
 msgid "Lodge field must be a registration field."
 msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:4200
-msgid "Lodge field must have type 'string'."
-msgstr ""
+#: cdedb/common/validation/validate.py:4201
+#, fuzzy
+msgid "Lodge field must have type 'Text'."
+msgstr "Annuntiationes"
 
-#: cdedb/common/validation/validate.py:4208
+#: cdedb/common/validation/validate.py:4209
 #, fuzzy
 msgid "Unknown reimbursement IBAN field."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:4218
+#: cdedb/common/validation/validate.py:4219
 msgid "Reimbursement IBAN field must be a registration field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4225
+#: cdedb/common/validation/validate.py:4226
 msgid "Reimbursement IBAN field must have type 'IBAN'."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4261
+#: cdedb/common/validation/validate.py:4262
 msgid "Invalid domain for this mailinglist type."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4268
+#: cdedb/common/validation/validate.py:4269
 msgid "Cannot have event part group without event."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4441
+#: cdedb/common/validation/validate.py:4442
 msgid "Mustn’t be in the past."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4446
+#: cdedb/common/validation/validate.py:4447
 msgid "Mustn’t be before start of voting period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4454
+#: cdedb/common/validation/validate.py:4455
 msgid "Mustn’t be before end of voting period."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4484
+#: cdedb/common/validation/validate.py:4485
 msgid "Duplicate shortname."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4488
+#: cdedb/common/validation/validate.py:4489
 msgid "Must not specify both absolute and relative quorum."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4497
+#: cdedb/common/validation/validate.py:4498
 msgid "Relative quorum must be between 0 and 100."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4502
+#: cdedb/common/validation/validate.py:4503
 msgid "Must be specified if quorum is given."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4505
+#: cdedb/common/validation/validate.py:4506
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4573
+#: cdedb/common/validation/validate.py:4574
 msgid "Mustn’t be the bar shortname."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4644
+#: cdedb/common/validation/validate.py:4645
 msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4662
+#: cdedb/common/validation/validate.py:4663
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4665
+#: cdedb/common/validation/validate.py:4666
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4667
+#: cdedb/common/validation/validate.py:4668
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4685
+#: cdedb/common/validation/validate.py:4686
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4697
+#: cdedb/common/validation/validate.py:4698
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
 "while .^$ are allowed)."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4722
+#: cdedb/common/validation/validate.py:4723
 msgid "Combine a minimum of two fields."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4729
+#: cdedb/common/validation/validate.py:4730
 #, fuzzy, python-format
 msgid "Unknown field(s): %(fields)s."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:4735
+#: cdedb/common/validation/validate.py:4736
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:103
 msgid "Incompatible field types."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4812
+#: cdedb/common/validation/validate.py:4813
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4863
+#: cdedb/common/validation/validate.py:4864
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4894
+#: cdedb/common/validation/validate.py:4895
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4940
+#: cdedb/common/validation/validate.py:4941
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4968
+#: cdedb/common/validation/validate.py:4969
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:4988
+#: cdedb/common/validation/validate.py:4989
 #, fuzzy
 msgid "Invalid operator."
 msgstr "signum arcanum muta"
 
-#: cdedb/common/validation/validate.py:5020
+#: cdedb/common/validation/validate.py:5021
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5105
+#: cdedb/common/validation/validate.py:5106
 #, fuzzy
 msgid "Unknown parent entry."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/common/validation/validate.py:5107
+#: cdedb/common/validation/validate.py:5108
 #, fuzzy
 msgid "Invalid parent type."
 msgstr "signum arcanum muta"
 
-#: cdedb/common/validation/validate.py:5141
+#: cdedb/common/validation/validate.py:5142
 #, fuzzy
 msgid "Must be after timestamp."
 msgstr "administrator coetuum"
 
-#: cdedb/common/validation/validate.py:5163
-#: cdedb/common/validation/validate.py:5237
+#: cdedb/common/validation/validate.py:5164
+#: cdedb/common/validation/validate.py:5238
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
-#: cdedb/common/validation/validate.py:5214
+#: cdedb/common/validation/validate.py:5215
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
 

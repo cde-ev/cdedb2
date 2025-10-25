@@ -2467,10 +2467,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             [x[0] for x in f['waitlist_field_id'].options], ['', '8', '1001'])
         f['waitlist_field_id'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Waitlist field must have type 'int'.")
+        self.assertValidationError('waitlist_field_id', "Wartelistenfeld muss vom Typ 'Zahl' sein.")
         f['waitlist_field_id'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Waitlist field must be a registration field.")
+        self.assertValidationError('waitlist_field_id', "Wartelistenfeld muss ein Anmeldungsfeld sein.")
 
         # Set the correct waitlist field.
         f['waitlist_field_id'] = '1001'
