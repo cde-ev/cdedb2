@@ -1696,6 +1696,8 @@ class FrontendTest(BackendTest):
                     f" {self._normalize_whitespace(node.text_content())}"
                     for node in other_notifications
                 )
+                if errors := self.get_content("debug-data-errors", check_exists=False):
+                    msg += " I found these errors in the debug data: " + errors
             else:
                 msg += " (There were no notifications)."
             self.fail(msg)
