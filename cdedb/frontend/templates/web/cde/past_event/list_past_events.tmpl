@@ -4,10 +4,10 @@
 {% block title %}{% trans %}Past Events_[[long form]]{% endtrans %}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active=not values.get('institution')) }}
-    {% if values.get('institution') %}
+    {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active=not institution) }}
+    {% if institution %}
         {{ util.breadcrumb_link(cdedblink("cde/list_past_events", {'institution': values['institution']}),
-                                gettext(enums['PastInstitutions'][values['institution'].split('.')[1]].shortname), active=True) }}
+                                gettext(institution.shortname), active=True) }}
     {% endif %}
 {% endblock %}
 {% block content %}
