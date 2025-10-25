@@ -93,11 +93,8 @@ class EventFieldMixin(EventBaseFrontend):
             self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
     ) -> Response:
         """Manipulate the fields of an event."""
-        mandatory, optional = models.EventField.validation_fields(creation=False)
-        spec = dict(mandatory) | dict(optional)
-        creation_mandatory, creation_optional = models.EventField.validation_fields(
-            creation=True)
-        creation_spec = dict(creation_mandatory) | dict(creation_optional)
+        spec = dict(models.EventField.requestdict_fields(creation=False))
+        creation_spec = dict(models.EventField.requestdict_fields(creation=True))
         existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
             rs, models.EventField, existing_fields, spec, creation_spec=creation_spec,
