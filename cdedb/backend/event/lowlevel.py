@@ -13,8 +13,6 @@ from collections.abc import Collection
 from pathlib import Path
 from typing import Optional, Protocol
 
-import phonenumbers
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
@@ -387,15 +385,11 @@ class EventLowLevelBackend(AbstractBackend):
             value = fdata.get(field.field_name, None)
             if value is None:
                 continue
-            try:
-                new_value = cast_field_value(
-                    value,
-                    field.kind,
-                    argname=f"{field.association.name}.{field.field_name}",
-                )
-            except (ValueError, TypeError, phonenumbers.NumberParseException):
-                new_value = None
-            fdata[field.field_name] = new_value
+            fdata[field.field_name] = cast_field_value(
+                value,
+                field.kind,
+                argname=f"{field.association.name}.{field.field_name}",
+            )
             new = {
                 'id': entry['id'],
                 'fields': PsycoJson(fdata),

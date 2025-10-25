@@ -1456,11 +1456,12 @@ def cast_field_value(
     value: str | None, kind: const.FieldDatatypes, *, argname: str = ""
 ) -> Any:
     from cdedb.common.validation.types import ByFieldDatatype  # noqa: PLC0415
-    from cdedb.common.validation.validate import validate_assert  # noqa: PLC0415
+    from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
 
-    return validate_assert(
+    val, _errs = validate_check(
         ByFieldDatatype, value, argname=argname, ignore_warnings=True, kind=kind
     )
+    return val
 
 
 def normalize_field_value(value: Any | None, kind: const.FieldDatatypes) -> str:
