@@ -2610,6 +2610,7 @@ class TestCdEFrontend(FrontendTest):
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("PfingstAkademie 2014", div='events-2014')
         self.assertNonPresence("Geburtstagsfete")
         self.assertNonPresence("2019")
@@ -2658,6 +2659,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("Club der Ehemaligen", div='institution',
                             exact=True)
         self.assertPresence("Great event!", div='description', exact=True)
@@ -2665,6 +2667,7 @@ class TestCdEFrontend(FrontendTest):
                             div='list-courses')
         self.traverse({'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("Ringelpiez mit anfassen.", div='description',
                             exact=True)
         self.traverse({'description': 'PfingstAkademie 2014'})
