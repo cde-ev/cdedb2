@@ -1220,16 +1220,21 @@ def make_dict_validator(type_: type[T]) -> DictValidator[T]:
     key_type, value_type = typing.get_args(type_)
 
     def dict_validator(
-        val: Any, argname: str | None = None, **kwargs: Any
+        val: Any, argname: str | None = None, *, enumerate_: bool = False, **kwargs: Any
     ) -> dict[K, V]:
         val = _mapping(val, argname, **kwargs)
 
         errs = ValidationSummary()
         new_val = {}
-        for key_val, val_val in val.items():
+        for i, (key_val, val_val) in enumerate(val.items()):
             with errs:
-                key_val = _ALL_TYPED[key_type](key_val, f"{argname}.key", **kwargs)
-                val_val = _ALL_TYPED[value_type](val_val, f"{argname}.value", **kwargs)
+                key_argname = f"{argname or ''}.key"
+                val_argname = f"{argname or ''}.value"
+                if enumerate_:
+                    key_argname += str(i)
+                    val_argname += str(i)
+                key_val = _ALL_TYPED[key_type](key_val, key_argname, **kwargs)
+                val_val = _ALL_TYPED[value_type](val_val, val_argname, **kwargs)
                 new_val[key_val] = val_val
 
         if errs:
