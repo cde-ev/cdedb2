@@ -129,17 +129,7 @@
 #}
 {% macro display_field(field, entry, otherwise='—') %}
     {% if field['entries'] %}
-        {% set hit = [] %}
-        {% for value, description in field['entries'].items() %}
-            {% if value == entry|string %}
-                {% do hit.append(description) %}
-            {% endif %}
-        {% endfor %}
-        {% if hit %}
-            {{ hit[0] }}
-        {% else %}
-            {{ otherwise }}
-        {% endif %}
+        {{ field.entries.get(entry, otherwise) }}
     {% else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {% if field['kind'] == datatypes.bool %}
@@ -174,7 +164,7 @@
     {# Wrapping is necessary to identify the data field for the fee preview. #}
     <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
-        {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp,
+        {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp if None not in field.entries else None,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}

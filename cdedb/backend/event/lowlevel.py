@@ -11,7 +11,7 @@ import copy
 import dataclasses
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Callable, Optional, Protocol
+from typing import Optional, Protocol
 
 import phonenumbers
 
@@ -36,10 +36,8 @@ from cdedb.common import (
     DeletionBlockers,
     PsycoJson,
     RequestState,
+    cast_field_value,
     now,
-    parse_date,
-    parse_datetime,
-    parse_phone,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -376,25 +374,6 @@ class EventLowLevelBackend(AbstractBackend):
 
         :param field: The field whose values are to be updated
         """
-
-        casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
-            const.FieldDatatypes.int: int,
-            const.FieldDatatypes.str: str,
-            const.FieldDatatypes.float: float,
-            const.FieldDatatypes.date: parse_date,
-            const.FieldDatatypes.datetime: parse_datetime,
-            const.FieldDatatypes.bool: bool,
-            const.FieldDatatypes.non_negative_int: (
-                lambda x: affirm(vtypes.NonNegativeInt, x)
-            ),
-            const.FieldDatatypes.non_negative_float: (
-                lambda x: affirm(vtypes.NonNegativeFloat, x)
-            ),
-            # normalized string: normalize on write
-            const.FieldDatatypes.phone: parse_phone,
-            const.FieldDatatypes.iban: lambda x: affirm(vtypes.IBAN, x),
-        }
-
         self.affirm_atomized_context(rs)
         data = self.sql_select(
             rs,
@@ -409,7 +388,11 @@ class EventLowLevelBackend(AbstractBackend):
             if value is None:
                 continue
             try:
-                new_value = casters[field.kind](value)
+                new_value = cast_field_value(
+                    value,
+                    field.kind,
+                    argname=f"{field.association.name}.{field.field_name}",
+                )
             except (ValueError, TypeError, phonenumbers.NumberParseException):
                 new_value = None
             fdata[field.field_name] = new_value

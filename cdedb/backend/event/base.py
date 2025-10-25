@@ -48,6 +48,7 @@ from cdedb.common import (
     cast_fields,
     json_serialize,
     make_persona_name,
+    normalize_field_entries,
     now,
     unwrap,
 )
@@ -1829,6 +1830,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del field['field_name']
             del field['event_id']
             del field['id']
+            field["entries"] = normalize_field_entries(field["entries"], field["kind"])
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]

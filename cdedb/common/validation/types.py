@@ -80,8 +80,7 @@ PDFFile = _NewType("PDFFile", bytes)
 # While not technically correct, this should always be true.
 JSON = _NewType("JSON", _CdEDBObject)
 
-# TODO this probably requires custom logic...
-ByFieldDatatype = _NewType("ByFieldDatatype", str)
+ByFieldDatatype = _NewType("ByFieldDatatype", object)
 
 # COMPLEX/DICTIONARY TYPES
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)

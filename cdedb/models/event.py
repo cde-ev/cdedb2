@@ -51,7 +51,15 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import CdEDBObject, User, cast_fields, n_, now
+from cdedb.common import (
+    CdEDBObject,
+    User,
+    cast_field_entries,
+    cast_fields,
+    n_,
+    normalize_field_entries,
+    now,
+)
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
@@ -596,13 +604,12 @@ class EventField(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['entries'] = dict(data['entries'] or []) or None
+        data['entries'] = cast_field_entries(data['entries'], data['kind'])
         return super().from_database(data)
 
-    def to_database(self) -> CdEDBObject:
-        ret = super().to_database()
-        if ret["entries"]:
-            ret["entries"] = list(map(list, ret["entries"].items()))
+    def as_dict(self) -> dict[str, Any]:
+        ret = super().as_dict()
+        ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
         return ret
 
     @classmethod

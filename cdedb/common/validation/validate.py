@@ -115,6 +115,8 @@ from cdedb.common import (
     compute_checkdigit,
     get_mandatory_type,
     is_optional_type,
+    normalize_field_entries,
+    normalize_phone,
     now,
     parse_date,
     parse_datetime,
@@ -1849,7 +1851,7 @@ def _phone(
         raise ValidationSummary(ValidationWarning(argname, msg))
 
     # handle the phone number as normalized string internally
-    phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
+    phone_str = normalize_phone(phone)
 
     return Phone(phone_str)
 
@@ -2939,14 +2941,15 @@ def _event_field_dataclass(
                 ) from e
 
         with errs:
-            new_entries = _ALL_TYPED[dict[FIELD_DATATYPE_VALIDATORS[kind] | None, str]](  # type: ignore[valid-type]
-                entries, "entries", **kwargs
+            new_entries = _ALL_TYPED[dict[ByFieldDatatype, str]](
+                entries, "entries", kind=kind, enumerate_=True, **kwargs
             )
+            new_entries = normalize_field_entries(new_entries, kind)
 
-            if len(new_entries) != len(entries):
+            if new_entries is None or len(new_entries) != len(entries):
                 errs.append(ValueError("entries", n_("Duplicate value(s).")))
 
-            val["entries"] = list(map(list, entries.items()))
+            val["entries"] = new_entries
 
     if errs:
         raise errs
@@ -3256,12 +3259,9 @@ def _event_associated_fields(
 
     :param fields: definition of the event specific fields which are available
     """
-    # TODO document association parameter?
 
     val = _mapping(val, argname, **kwargs)
 
-    # TODO why is deepcopy used here
-    raw = copy.deepcopy(val)
     optional_fields: TypeMapping = {
         str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
         for field in event.fields.values()
@@ -3276,7 +3276,7 @@ def _event_associated_fields(
         field_id = lookup[field_name]
         entries = event.fields[field_id].entries
         if entries is not None and value is not None:
-            if not any(str(raw[field_name]) == x for x, _ in entries.items()):
+            if value not in entries:
                 errs.append(ValueError(field_name, n_("Entry not in definition list.")))
     if errs:
         raise errs
@@ -3347,18 +3347,21 @@ FIELD_DATATYPE_VALIDATORS = {
 
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: str, *, kind: FieldDatatypes, **kwargs: Any
+    val: Any,
+    argname: str,
+    *,
+    kind: FieldDatatypes,
+    **kwargs: Any,
 ) -> ByFieldDatatype:
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
+    val: Any = _ALL_TYPED[StringType | None](val, argname, **kwargs)
+    if not val:
+        return ByFieldDatatype(None)
+
     val: Any = _ALL_TYPED[FIELD_DATATYPE_VALIDATORS[kind] | None](
         val, argname, **kwargs
     )
-
-    if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
-        val = val.isoformat()
-    else:
-        val = str(val)
 
     return ByFieldDatatype(val)
 
@@ -4039,7 +4042,7 @@ def _serialized_event_questionnaire(
     field_definitions = copy.deepcopy(field_definitions)
     fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'fields' in val:
-        newfields = {}
+        newfields: CdEDBObjectMap = {}
         for i, (field_name, field) in enumerate(val['fields'].items()):
             field_argname = f"fields[{i + 1}]"
             try:
@@ -4061,14 +4064,17 @@ def _serialized_event_questionnaire(
                         )
                     continue
                 try:
-                    field = _ALL_TYPED[models_event.EventField](
-                        field,
-                        field_argname,
-                        creation=True,
-                        event=None,
-                        id_=-(i + 1),
-                        field_name=field_name,
-                        **kwargs,
+                    field = cast(
+                        CdEDBObject,
+                        _ALL_TYPED[models_event.EventField](
+                            field,
+                            field_argname,
+                            creation=True,
+                            event=None,
+                            id_=-(i + 1),
+                            field_name=field_name,
+                            **kwargs,
+                        ),
                     )
                 except ValidationSummary as e:
                     errs.extend(e)
