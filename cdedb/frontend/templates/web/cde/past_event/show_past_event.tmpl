@@ -153,10 +153,10 @@
                     {% else %}
                         {{ personas[anid]|persona_name(include_nickname=true) -}}
                     {% endif %}
-                    {% if participant['pcourses'] %}
+                    {% if participant['pcourse_ids'] %}
                         (
-                        {%- for pcourse in participant['pcourses'].values()|sort %}
-                            {%- if pcourse -%}
+                        {%- for pcourse_id in participant['pcourse_ids'] %}
+                            {%- with pcourse = courses[pcourse_id] -%}
                                 {{ pcourse['nr'] }}.
                                 {% if pcourse.id in participant['instructor'] -%}
                                     <strong title="{% trans %}Instructor{% endtrans %}">
@@ -167,7 +167,7 @@
                                     <span class="sr-only"> ({% trans %}Instructor{% endtrans %})</span></strong>
                                 {%- endif -%}
                                 {%- if not loop.last %}, {% endif -%}
-                            {% endif -%}
+                            {% endwith -%}
                         {% endfor -%}
                         )
                     {% endif %}

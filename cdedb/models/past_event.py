@@ -65,7 +65,7 @@ class PastCourse(CdEDataclass):
     description: str | None
 
     @classmethod
-    def from_event(
+    def from_course(
         cls, course: cdedb.models.event.Course, pevent_id: int
     ) -> "PastCourse":
         return cls(

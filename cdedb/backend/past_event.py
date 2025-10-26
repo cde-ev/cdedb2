@@ -749,7 +749,7 @@ class PastEventBackend(AbstractBackend):
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map: dict[int, int] = {}
         for course in courses.values():
-            pcourse = models.PastCourse.from_event(course, pevent_id=new_id)
+            pcourse = models.PastCourse.from_course(course, pevent_id=new_id)
             pcourse_id = self.create_past_course(rs, pcourse.to_database())
             course_map[course.id] = pcourse_id
 
