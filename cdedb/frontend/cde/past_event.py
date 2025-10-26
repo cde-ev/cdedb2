@@ -17,6 +17,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.past_event as models
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -30,7 +31,6 @@ from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PAST_COURSE_COMMON_FIELDS,
-    PAST_EVENT_FIELDS,
 )
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -268,9 +268,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs.notify('warning', n_("Institution parameter got lost."))
         events = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, events)
-        shortnames = {
-            pevent_id: value['shortname'] for pevent_id, value in pevents.items()
-        }
+        shortnames = {pevent.id: pevent.shortname for pevent in pevents.values()}
         stats = self.pasteventproxy.past_event_stats(rs)
 
         # Generate (reverse) chronologically sorted list of past event ids
@@ -299,22 +297,21 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def change_past_event_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
-        merge_dicts(rs.values, rs.ambience['pevent'])
+        merge_dicts(rs.values, rs.ambience['pevent'].as_dict())
         return self.render(
             rs,
             "past_event/change_past_event",
-            {},
-            get_mandatory_form_fields(PAST_EVENT_FIELDS),
+            mandatory_fields=models.PastEvent.mandatory_form_fields(creation=False),
         )
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=False))
     def change_past_event(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
     ) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
-        data = check(rs, vtypes.PastEvent, data)
+        data = check(rs, models.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
@@ -328,18 +325,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.render(
             rs,
             "past_event/create_past_event",
-            {},
-            get_mandatory_form_fields(PAST_EVENT_FIELDS, self.create_past_event),
+            mandatory_fields=models.PastEvent.mandatory_form_fields(creation=True),
         )
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=True))
     @REQUESTdata("courses")
     def create_past_event(
         self, rs: RequestState, courses: Optional[str], data: CdEDBObject
     ) -> Response:
         """Add new concluded event."""
-        data = check(rs, vtypes.PastEvent, data, creation=True)
+        data = check(rs, models.PastEvent, data, creation=True)
         thecourses: list[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
