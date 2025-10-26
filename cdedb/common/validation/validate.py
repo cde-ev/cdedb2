@@ -311,7 +311,9 @@ def validate_assert(
         return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
-        _LOGGER.debug(f"{old_format} for '{str(type_)}' with input {value}, {kwargs}.")
+        _LOGGER.debug(
+            f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
+        )
         e = errs[0]
         e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
         raise e from errs
@@ -389,7 +391,9 @@ def validate_check(
             )
             for e in errs
         ]
-        _LOGGER.debug(f"{old_format} for '{str(type_)}' with input {value}, {kwargs}.")
+        _LOGGER.debug(
+            f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
+        )
         return None, old_format
 
 
