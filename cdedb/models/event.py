@@ -71,7 +71,12 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import datetime_filter
-from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
+from cdedb.models.common import (
+    AbstractMetaData,
+    CdEDataclass,
+    CdEDataclassMap,
+    MetaFlag as Meta,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -101,6 +106,55 @@ class EventDataclass(CdEDataclass, abc.ABC):
             entity_key or cls.entity_key,
             tuple(cls.database_fields()),
         )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventFieldSpec(AbstractMetaData):
+    """Stores the accepted associations and kinds for a special purpose event field."""
+
+    legal_associations: set[const.FieldAssociations]
+    legal_kinds: set[const.FieldDatatypes]
+
+    @classmethod
+    def get_specs(cls, entity: type[EventDataclass]) -> dict[str, Self]:
+        return {
+            field.name: spec
+            for field in entity.dataclass_fields()
+            if (spec := field.metadata.get(cls.get_metadata_name()))
+        }
+
+    @classmethod
+    def _get_spec(cls, entity: type[EventDataclass], field_name: str) -> Self:
+        field_name = f"{field_name}_field_id"
+        if spec := cls.get_specs(entity).get(field_name):
+            return spec
+        raise TypeError(
+            f"Field '{entity.__qualname__}.{field_name}' has no metadata '{cls.get_metadata_name()}'."
+        )
+
+    def _accepts_association(self, association: const.FieldAssociations) -> bool:
+        return association in self.legal_associations
+
+    @classmethod
+    def field_accepts_association(
+        cls, entity: type[EventDataclass], fn: str, association: const.FieldAssociations
+    ) -> bool:
+        return cls._get_spec(entity, fn)._accepts_association(association)
+
+    def _accepts_kind(self, kind: const.FieldDatatypes) -> bool:
+        return kind in self.legal_kinds
+
+    @classmethod
+    def field_accepts_kind(
+        cls, entity: type[EventDataclass], fn: str, kind: const.FieldDatatypes
+    ) -> bool:
+        return cls._get_spec(entity, fn)._accepts_kind(kind)
+
+    def accepts(self, event_field: "EventField") -> bool:
+        return (
+            self._accepts_association(event_field.association)
+            and self._accepts_kind(event_field.kind)
+        )  # fmt: skip
 
 
 #
@@ -160,8 +214,18 @@ class Event(EventDataclass):
     use_additional_questionnaire: bool
     notify_on_registration: const.NotifyOnRegistration
 
-    lodge_field_id: Optional[vtypes.ID]
-    reimbursement_iban_field_id: Optional[vtypes.ID]
+    lodge_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.str},
+        ).as_dict
+    )
+    reimbursement_iban_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.iban},
+        ).as_dict
+    )
 
     parts: CdEDataclassMap["EventPart"] = dataclasses.field(
         metadata=Meta.asdict_include.as_dict
@@ -352,8 +416,18 @@ class EventPart(EventDataclass):
     part_begin: datetime.date
     part_end: datetime.date
 
-    waitlist_field_id: Optional[vtypes.ID]
-    camping_mat_field_id: Optional[vtypes.ID]
+    waitlist_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.int},
+        ).as_dict
+    )
+    camping_mat_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.bool},
+        ).as_dict
+    )
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
         default_factory=dict, metadata=Meta.asdict_include.as_dict
@@ -460,7 +534,12 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
     )
 
-    course_room_field_id: Optional[vtypes.ID]
+    course_room_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.course},
+            legal_kinds={const.FieldDatatypes.str},
+        ).as_dict
+    )
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
         default_factory=dict, compare=False, repr=False

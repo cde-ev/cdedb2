@@ -122,7 +122,6 @@ from cdedb.common import (
     parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
@@ -2675,15 +2674,18 @@ def _event_part(
             errs.append(KeyError("waitlist_field_id", n_("Unknown waitlist field.")))
         else:
             waitlist_field = event.fields[waitlist_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["waitlist"]
-            if waitlist_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.EventPart, "waitlist", waitlist_field.association
+            ):
                 errs.append(
                     ValueError(
                         "waitlist_field_id",
                         n_("Waitlist field must be a registration field."),
                     )
                 )
-            if waitlist_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.EventPart, "waitlist", waitlist_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "waitlist_field_id",
@@ -2698,15 +2700,18 @@ def _event_part(
             )
         else:
             camping_mat_field = event.fields[camping_mat_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["camping_mat"]
-            if camping_mat_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.EventPart, "camping_mat", camping_mat_field.association
+            ):
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
                         n_("Camping mat field must be a registration field."),
                     )
                 )
-            if camping_mat_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.EventPart, "camping_mat", camping_mat_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
@@ -2800,15 +2805,18 @@ def _event_track(
             )
         else:
             course_room_field = event.fields[course_room_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["course_room"]
-            if course_room_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.CourseTrack, "course_room", course_room_field.association
+            ):
                 errs.append(
                     ValueError(
                         "course_room_field_id",
                         n_("Course room field must be a course field."),
                     )
                 )
-            if course_room_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.CourseTrack, "course_room", course_room_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "course_room_field_id",
@@ -4186,15 +4194,18 @@ def _serialized_event_configuration(
             errs.append(KeyError("lodge_field_id", n_("Unknown lodge field.")))
         else:
             field = current.fields[lodge_field]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge']
-            if field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.Event, "lodge", field.association
+            ):
                 errs.append(
                     ValueError(
                         "lodge_field_id",
                         n_("Lodge field must be a registration field."),
                     )
                 )
-            if field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.Event, "lodge", field.kind
+            ):
                 errs.append(
                     ValueError(
                         "lodge_field_id", n_("Lodge field must have type 'Text'.")
@@ -4210,15 +4221,18 @@ def _serialized_event_configuration(
             )
         else:
             field = current.fields[reimbursement_field]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC['reimbursement']
-            if field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.Event, "reimbursement", field.association
+            ):
                 errs.append(
                     ValueError(
                         "reimbursement_iban_field_id",
                         n_("Reimbursement IBAN field must be a registration field."),
                     )
                 )
-            if field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.Event, "reimbursement", field.kind
+            ):
                 errs.append(
                     ValueError(
                         "reimbursement_iban_field_id",
