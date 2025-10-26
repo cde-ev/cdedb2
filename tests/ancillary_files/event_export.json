@@ -1036,6 +1036,32 @@
             "sort_group": null,
             "sortkey": 0,
             "title": "Anreise um"
+        },
+        "10": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": [
+                [
+                    "",
+                    "gar nicht"
+                ],
+                [
+                    "2025-12-31",
+                    "Sylvester"
+                ],
+                [
+                    "2026-01-01",
+                    "Neujahr"
+                ]
+            ],
+            "event_id": 1,
+            "field_name": "arrival_date",
+            "id": 10,
+            "kind": 5,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "Anreisetag"
         }
     },
     "event.lodgement_groups": {
