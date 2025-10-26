@@ -607,6 +607,11 @@ class EventField(EventDataclass):
         data['entries'] = cast_field_entries(data['entries'], data['kind'])
         return super().from_database(data)
 
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
+        return ret
+
     def as_dict(self) -> dict[str, Any]:
         ret = super().as_dict()
         ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
