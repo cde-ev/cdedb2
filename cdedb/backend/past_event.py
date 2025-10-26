@@ -158,17 +158,10 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde")
     def past_event_stats(self, rs: RequestState) -> CdEDBObjectMap:
-        """Additional information about concluded events.
-
-        This is mostly an extended version of the listing function which
-        provides aggregate data without the need to shuttle the complete
-        table to the frontend.
-
-        :returns: Mapping of event ids to stats.
-        """
+        """Returns the number of courses and participants for each past event."""
         query = """
             SELECT
-                events.id AS pevent_id, tempus, events.institution AS institution,
+                events.id AS pevent_id,
                 COALESCE(course_count, 0) AS courses,
                 COALESCE(participant_count, 0) AS participants
             FROM (
@@ -196,12 +189,7 @@ class PastEventBackend(AbstractBackend):
                 ) AS participant_counts ON participant_counts.pevent_id = events.id
             )
         """
-        data = self.query_all(rs, query, tuple())
-        ret = {}
-        for e in data:
-            e['institution'] = const.PastInstitutions(e['institution'])
-            ret[e['pevent_id']] = e
-        return ret
+        return {e['pevent_id']: e for e in self.query_all(rs, query, [])}
 
     @access("cde", "event")
     def get_past_events(
