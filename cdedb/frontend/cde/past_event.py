@@ -67,9 +67,15 @@ class CdEPastEventMixin(CdEBaseFrontend):
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         scope = QueryScope.past_event_course
         spec = scope.get_spec()
-        query = check(rs, vtypes.QueryInput,
-                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
-                      allow_empty=not is_search, separator=" ")
+        query = check(
+            rs,
+            vtypes.QueryInput,
+            scope.mangle_query_input(rs, defaults),
+            "query",
+            spec=spec,
+            allow_empty=not is_search,
+            separator=" ",
+        )
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
 
@@ -84,17 +90,28 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 result = self.pasteventproxy.submit_general_query(rs, query)
                 count = len(result)
                 if count == 1:
-                    return self.redirect(rs, "cde/show_past_course", {
-                        'pevent_id': result[0]['courses.pevent_id'],
-                        'pcourse_id': result[0]['courses.id']})
+                    return self.redirect(
+                        rs,
+                        "cde/show_past_course",
+                        {
+                            'pevent_id': result[0]['courses.pevent_id'],
+                            'pcourse_id': result[0]['courses.id'],
+                        },
+                    )
 
-        return self.render(rs, "past_event/past_course_search", {
-            'spec': spec, 'result': result, 'count': count})
+        return self.render(
+            rs,
+            "past_event/past_course_search",
+            {'spec': spec, 'result': result, 'count': count},
+        )
 
-    def _process_participants(self, rs: RequestState, pevent_id: int,
-                              pcourse_id: Optional[int] = None,
-                              orgas_only: bool = False,
-                              ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
+    def _process_participants(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        pcourse_id: Optional[int] = None,
+        orgas_only: bool = False,
+    ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -114,9 +131,11 @@ class CdEPastEventMixin(CdEBaseFrontend):
           redacted participants.
         """
         participant_infos = self.pasteventproxy.list_participants(
-            rs, pevent_id=pevent_id)
-        is_participant = any(anid == rs.user.persona_id
-                             for anid, _ in participant_infos.keys())
+            rs, pevent_id=pevent_id
+        )
+        is_participant = any(
+            anid == rs.user.persona_id for anid, _ in participant_infos.keys()
+        )
         # We are privileged to see other participants if we are admin (and have
         # the relevant admin view enabled) or participant by ourselves
         privileged = is_participant or "past_event" in rs.user.admin_views
@@ -125,20 +144,24 @@ class CdEPastEventMixin(CdEBaseFrontend):
         personas: CdEDBObjectMap = {}
         extra_participants = 0
 
-        persona_ids = {persona_id
-                       for persona_id, _ in participant_infos.keys()}
+        persona_ids = {persona_id for persona_id, _ in participant_infos.keys()}
         for persona_id in persona_ids:
-            base_set = tuple(x for x in participant_infos.values()
-                             if x['persona_id'] == persona_id)
+            base_set = tuple(
+                x for x in participant_infos.values() if x['persona_id'] == persona_id
+            )
             entry: CdEDBObject = {
                 'pevent_id': pevent_id,
                 'persona_id': persona_id,
                 'is_orga': any(x['is_orga'] for x in base_set),
                 'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
                 'instructor': set(
-                        x['pcourse_id'] for x in base_set if (
-                            x['is_instructor'] and (x['pcourse_id'] == pcourse_id
-                                                    or not pcourse_id))),
+                    x['pcourse_id']
+                    for x in base_set
+                    if (
+                        x['is_instructor']
+                        and (x['pcourse_id'] == pcourse_id or not pcourse_id)
+                    )
+                ),
             }
             if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                 # remove non-participants with respect to the relevant
@@ -153,9 +176,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
             # Commit to releasing the information
             participants = proto_participants
             personas = self.coreproxy.get_personas(rs, participants.keys())
-            participants = OrderedDict(xsorted(
-                participants.items(),
-                key=lambda x: EntitySorter.persona(personas[x[0]])))
+            participants = OrderedDict(
+                xsorted(
+                    participants.items(),
+                    key=lambda x: EntitySorter.persona(personas[x[0]]),
+                )
+            )
 
             # Delete unsearchable participants if we are not privileged
             if not privileged:
@@ -168,12 +194,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
         # Flag linkable user profiles (own profile + all searchable profiles
         # + all (if we are admin))
         for anid in participants:
-            participants[anid]['viewable'] = (self.is_admin(rs)
-                                              or anid == rs.user.persona_id)
+            participants[anid]['viewable'] = (
+                self.is_admin(rs) or anid == rs.user.persona_id
+            )
         if "searchable" in rs.user.roles:
             for anid in participants:
-                if (personas[anid]['is_searchable']
-                        and personas[anid]['is_member']):
+                if personas[anid]['is_searchable'] and personas[anid]['is_member']:
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
@@ -183,51 +209,69 @@ class CdEPastEventMixin(CdEBaseFrontend):
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         participants, personas, extra_participants = self._process_participants(
-            rs, pevent_id)
-        orgas, _, extra_orgas = self._process_participants(rs, pevent_id,
-                                                           orgas_only=True)
+            rs, pevent_id
+        )
+        orgas, _, extra_orgas = self._process_participants(
+            rs, pevent_id, orgas_only=True
+        )
         for p_id, p in participants.items():
             p['pcourses'] = {
-                pc_id: {
-                    k: courses[pc_id][k]
-                    for k in ('id', 'title', 'nr')
-                }
+                pc_id: {k: courses[pc_id][k] for k in ('id', 'title', 'nr')}
                 for pc_id in p['pcourse_ids']
                 if pc_id
             }
         participant_infos = self.pasteventproxy.list_participants(
-            rs, pevent_id=pevent_id)
-        is_participant = any(anid == rs.user.persona_id
-                             for anid, _ in participant_infos.keys())
-        return self.render(rs, "past_event/show_past_event", {
-            'courses': courses, 'personas': personas, 'participants': participants,
-            'extra_participants': extra_participants, 'orgas': orgas,
-            'extra_orgas': extra_orgas, 'is_participant': is_participant,
-        })
+            rs, pevent_id=pevent_id
+        )
+        is_participant = any(
+            anid == rs.user.persona_id for anid, _ in participant_infos.keys()
+        )
+        return self.render(
+            rs,
+            "past_event/show_past_event",
+            {
+                'courses': courses,
+                'personas': personas,
+                'participants': participants,
+                'extra_participants': extra_participants,
+                'orgas': orgas,
+                'extra_orgas': extra_orgas,
+                'is_participant': is_participant,
+            },
+        )
 
     @access("member", "cde_admin")
-    def show_past_course(self, rs: RequestState, pevent_id: int,
-                         pcourse_id: int) -> Response:
+    def show_past_course(
+        self, rs: RequestState, pevent_id: int, pcourse_id: int
+    ) -> Response:
         """Display concluded course."""
         participants, personas, extra_participants = self._process_participants(
-            rs, pevent_id, pcourse_id=pcourse_id)
-        return self.render(rs, "past_event/show_past_course", {
-            'participants': participants, 'personas': personas,
-            'extra_participants': extra_participants})
+            rs, pevent_id, pcourse_id=pcourse_id
+        )
+        return self.render(
+            rs,
+            "past_event/show_past_course",
+            {
+                'participants': participants,
+                'personas': personas,
+                'extra_participants': extra_participants,
+            },
+        )
 
     @access("member", "cde_admin")
     @REQUESTdata("institution")
-    def list_past_events(self, rs: RequestState,
-                         institution: Optional[const.PastInstitutions] = None,
-                         ) -> Response:
+    def list_past_events(
+        self, rs: RequestState, institution: Optional[const.PastInstitutions] = None
+    ) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
         events = self.pasteventproxy.list_past_events(rs)
         shortnames = {
             pevent_id: value['shortname']
-            for pevent_id, value in
-            self.pasteventproxy.get_past_events(rs, events).items()
+            for pevent_id, value in self.pasteventproxy.get_past_events(
+                rs, events
+            ).items()
         }
         stats = self.pasteventproxy.past_event_stats(rs)
 
@@ -242,26 +286,34 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 
-        return self.render(rs, "past_event/list_past_events", {
-            'events': events,
-            'stats': stats,
-            'years': years,
-            'shortnames': shortnames,
-            'institution': institution,
-        })
+        return self.render(
+            rs,
+            "past_event/list_past_events",
+            {
+                'events': events,
+                'stats': stats,
+                'years': years,
+                'shortnames': shortnames,
+                'institution': institution,
+            },
+        )
 
     @access("cde_admin")
-    def change_past_event_form(self, rs: RequestState, pevent_id: int,
-                               ) -> Response:
+    def change_past_event_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
-        return self.render(rs, "past_event/change_past_event", {},
-                           get_mandatory_form_fields(PAST_EVENT_FIELDS))
+        return self.render(
+            rs,
+            "past_event/change_past_event",
+            {},
+            get_mandatory_form_fields(PAST_EVENT_FIELDS),
+        )
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
-    def change_past_event(self, rs: RequestState, pevent_id: int,
-                          data: CdEDBObject) -> Response:
+    def change_past_event(
+        self, rs: RequestState, pevent_id: int, data: CdEDBObject
+    ) -> Response:
         """Modify a concluded event."""
         data['id'] = pevent_id
         data = check(rs, vtypes.PastEvent, data)
@@ -276,22 +328,28 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(
-            rs, "past_event/create_past_event", {},
-            get_mandatory_form_fields(PAST_EVENT_FIELDS, self.create_past_event))
+            rs,
+            "past_event/create_past_event",
+            {},
+            get_mandatory_form_fields(PAST_EVENT_FIELDS, self.create_past_event),
+        )
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
     @REQUESTdata("courses")
-    def create_past_event(self, rs: RequestState, courses: Optional[str],
-                          data: CdEDBObject) -> Response:
+    def create_past_event(
+        self, rs: RequestState, courses: Optional[str], data: CdEDBObject
+    ) -> Response:
         """Add new concluded event."""
         data = check(rs, vtypes.PastEvent, data, creation=True)
         thecourses: list[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
             reader = csv.DictReader(
-                courselines, fieldnames=("nr", "title", "description"),
-                dialect=CustomCSVDialect())
+                courselines,
+                fieldnames=("nr", "title", "description"),
+                dialect=CustomCSVDialect(),
+            )
             lineno = 0
             pcourse: Optional[CdEDBObject]
             for pcourse in reader:
@@ -304,8 +362,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 if pcourse:
                     thecourses.append(pcourse)
                 else:
-                    rs.notify("warning", n_("Line %(lineno)s is faulty."),
-                              {'lineno': lineno})
+                    rs.notify(
+                        "warning", n_("Line %(lineno)s is faulty."), {'lineno': lineno}
+                    )
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
         assert data is not None
@@ -319,32 +378,42 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
-    def delete_past_event(self, rs: RequestState, pevent_id: int,
-                          ack_delete: bool) -> Response:
+    def delete_past_event(
+        self, rs: RequestState, pevent_id: int, ack_delete: bool
+    ) -> Response:
         """Remove a past event."""
         if not ack_delete:
-            rs.append_validation_error(
-                ("ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
-            rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases"))
+            rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases")
+        )
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
     @access("cde_admin")
-    def change_past_course_form(self, rs: RequestState, pevent_id: int,
-                                pcourse_id: int) -> Response:
+    def change_past_course_form(
+        self, rs: RequestState, pevent_id: int, pcourse_id: int
+    ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
-        return self.render(rs, "past_event/change_past_course", {},
-                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
+        return self.render(
+            rs,
+            "past_event/change_past_course",
+            {},
+            get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS),
+        )
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
-    def change_past_course(self, rs: RequestState, pevent_id: int,
-                           pcourse_id: int, data: CdEDBObject) -> Response:
+    def change_past_course(
+        self, rs: RequestState, pevent_id: int, pcourse_id: int, data: CdEDBObject
+    ) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
         data = check(rs, vtypes.PastCourse, data)
@@ -356,16 +425,20 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_course")
 
     @access("cde_admin")
-    def create_past_course_form(self, rs: RequestState, pevent_id: int,
-                                ) -> Response:
+    def create_past_course_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
-        return self.render(rs, "past_event/create_past_course", {},
-                           get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS))
+        return self.render(
+            rs,
+            "past_event/create_past_course",
+            {},
+            get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS),
+        )
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
-    def create_past_course(self, rs: RequestState, pevent_id: int,
-                           data: CdEDBObject) -> Response:
+    def create_past_course(
+        self, rs: RequestState, pevent_id: int, data: CdEDBObject
+    ) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
         data = check(rs, vtypes.PastCourse, data, creation=True)
@@ -378,29 +451,38 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
-    def delete_past_course(self, rs: RequestState, pevent_id: int,
-                           pcourse_id: int, ack_delete: bool) -> Response:
+    def delete_past_course(
+        self, rs: RequestState, pevent_id: int, pcourse_id: int, ack_delete: bool
+    ) -> Response:
         """Delete a concluded course.
 
         This also deletes all participation information w.r.t. this course.
         """
         if not ack_delete:
-            rs.append_validation_error(
-                ("ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
-            rs, pcourse_id, cascade=("participants", "genesis_cases"))
+            rs, pcourse_id, cascade=("participants", "genesis_cases")
+        )
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "is_instructor", "is_orga")
-    def add_participants(self, rs: RequestState, pevent_id: int,
-                         pcourse_id: Optional[vtypes.ID],
-                         persona_ids: vtypes.CdedbIDList,
-                         is_instructor: bool, is_orga: bool) -> Response:
+    def add_participants(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        pcourse_id: Optional[vtypes.ID],
+        persona_ids: vtypes.CdedbIDList,
+        is_instructor: bool,
+        is_orga: bool,
+    ) -> Response:
         """Add participant to concluded event."""
         if rs.has_validation_errors():
             if pcourse_id:
@@ -410,13 +492,15 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         # Check presence of valid event users for the given ids
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
-            rs.append_validation_error(
-                ("persona_ids",
-                 ValueError(n_("Some of these users do not exist."))))
+            rs.append_validation_error((
+                "persona_ids",
+                ValueError(n_("Some of these users do not exist.")),
+            ))
         if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
-            rs.append_validation_error(
-                ("persona_ids",
-                 ValueError(n_("Some of these users are not event users."))))
+            rs.append_validation_error((
+                "persona_ids",
+                ValueError(n_("Some of these users are not event users.")),
+            ))
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
@@ -427,49 +511,62 @@ class CdEPastEventMixin(CdEBaseFrontend):
         # TODO: Check if participants are already present.
         for persona_id in persona_ids:
             code *= self.pasteventproxy.add_participant(
-                rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
+                rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga
+            )
         rs.notify_return_code(code)
         if pcourse_id:
-            return self.redirect(rs, "cde/show_past_course",
-                                 {'pcourse_id': pcourse_id})
+            return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
         else:
             return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
-    def remove_participant(self, rs: RequestState, pevent_id: int,
-                           persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID],
-                           ack_delete: bool,
-                           ) -> Response:
+    def remove_participant(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        persona_id: vtypes.ID,
+        pcourse_id: Optional[vtypes.ID],
+        ack_delete: bool,
+    ) -> Response:
         """Remove participant."""
         if not ack_delete:
-            rs.append_validation_error(
-                ("ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
-            rs, pevent_id, pcourse_id, persona_id)
+            rs, pevent_id, pcourse_id, persona_id
+        )
         rs.notify_return_code(code)
         if pcourse_id:
-            return self.redirect(rs, "cde/show_past_course", {
-                'pcourse_id': pcourse_id})
+            return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
         else:
             return self.redirect(rs, "cde/show_past_event")
 
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool,
-                      ) -> Response:
+    def view_past_log(
+        self, rs: RequestState, data: CdEDBObject, download: bool
+    ) -> Response:
         """View activities concerning concluded events."""
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         return self.generic_view_log(
-            rs, data, PastEventLogFilter, self.pasteventproxy.retrieve_past_log,
-            download=download, template="past_event/view_past_log", template_kwargs={
-                'pevents': pevents, 'pevent_entries': past_event_entries(pevents),
+            rs,
+            data,
+            PastEventLogFilter,
+            self.pasteventproxy.retrieve_past_log,
+            download=download,
+            template="past_event/view_past_log",
+            template_kwargs={
+                'pevents': pevents,
+                'pevent_entries': past_event_entries(pevents),
             },
         )

@@ -10,6 +10,7 @@ FORMAT_TARGETS= \
     cdedb/uncommon/ \
     cdedb/*.py \
     cdedb/frontend/core/complaint.py \
+    cdedb/frontend/cde/past_event.py \
     tests/backend_tests/complaint.py \
     tests/frontend_tests/complaint.py
 LINT_TARGETS=cdedb tests
