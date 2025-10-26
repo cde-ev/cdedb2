@@ -3314,7 +3314,7 @@ def _event_associated_fields(
     val = _mapping(val, argname, **kwargs)
 
     optional_fields: TypeMapping = {
-        str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
+        str(field.field_name): field.get_validator()
         for field in event.fields.values()
         if field.association == association
     }
@@ -3382,20 +3382,6 @@ def _lodgement(
     return val
 
 
-FIELD_DATATYPE_VALIDATORS = {
-    const.FieldDatatypes.str: str,
-    const.FieldDatatypes.bool: bool,
-    const.FieldDatatypes.int: int,
-    const.FieldDatatypes.float: float,
-    const.FieldDatatypes.date: datetime.date,
-    const.FieldDatatypes.datetime: datetime.datetime,
-    const.FieldDatatypes.non_negative_int: NonNegativeInt,
-    const.FieldDatatypes.non_negative_float: NonNegativeFloat,
-    const.FieldDatatypes.phone: Phone,
-    const.FieldDatatypes.iban: IBAN,
-}
-
-
 @_add_typed_validator
 def _by_field_datatype(
     val: Any,
@@ -3409,7 +3395,7 @@ def _by_field_datatype(
 
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[FIELD_DATATYPE_VALIDATORS[kind] | None](
+    val: Any = _ALL_TYPED[models_event.EventField._get_validator(kind)](
         val, argname, **kwargs
     )
 

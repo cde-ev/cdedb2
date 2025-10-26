@@ -7498,26 +7498,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("anton")
     def test_registration_strict_bool(self) -> None:
-        self.traverse("Veranstaltungen", "CdE-Party", "Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['registration_start'] = now()
-        self.submit(f)
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test"
-        f['entries_-1'] = ""
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test2"
-        f['entries_-1'] = "1;Ja\n0;Nein"
-        self.submit(f)
-        self.traverse("Anmeldung konfigurieren")
+        event_update = {
+            "registration_start": now(),
+            "fields": {
+                -1: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test1",
+                },
+                -2: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test2",
+                    "entries": {
+                        True: "Ja",
+                        False: "Nein",
+                    },
+                },
+                -3: {
+                    "kind": const.FieldDatatypes.int,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test3",
+                },
+            }
+        }
+        self.event.set_event(self.key, 2, event_update)
+        self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
@@ -7526,13 +7532,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        f['create_-1'] = True
+        f['field_id_-1'] = 1003
+        self.submit(f)
         self.traverse("Anmelden")
         f = self.response.forms['registerform']
-        f['fields.test'] = ""
-        f['fields.test2'] = ""
+        f["fields.test1"] = ""
+        f["fields.test2"] = ""
+        f["fields.test3"] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
-        f['fields.test2'] = False
+        self.assertValidationError('fields.test3', "Darf nicht leer sein.")
+        f["fields.test2"] = False
+        f["fields.test3"] = 0
         self.submit(f)
 
     @event_keeper

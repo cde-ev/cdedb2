@@ -337,7 +337,34 @@ class TestValidation(TestValidationBase):
             ("False", False, None),
             (54, True, None),
             (None, None, TypeError),
+            ("None", True, None),
         ))
+        self.do_validator_test(cast(type[Any], bool | None), [
+            (True, True, None),
+            (False, False, None),
+            ("a string", True, None),
+            ("", False, None),
+            ("True", True, None),
+            ("False", False, None),
+            (54, True, None),
+            (None, None, None),
+            ("None", True, None),
+        ])
+        self.do_validator_test(
+            vtypes.ByFieldDatatype,
+            [
+                (True, True, None),
+                (False, False, None),
+                ("a string", True, None),
+                ("", None, None),
+                ("True", True, None),
+                ("False", False, None),
+                (54, True, None),
+                (None, None, None),
+                ("None", True, None),
+            ],
+            extraparams={"kind": const.FieldDatatypes.bool, "argname": "foo"},
+        )
 
     def test_empty(self) -> None:
         self.do_validator_test(EmptyDict, (

@@ -33,6 +33,7 @@ import functools
 import logging
 import sys
 from collections.abc import Collection
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -710,6 +711,24 @@ class EventField(EventDataclass):
             # Also need to account for this accepting string and sequence input.
             optional["entries"] = Any
         return mandatory, optional
+
+    @classmethod
+    def _get_validator(cls, kind: const.FieldDatatypes) -> type[Any] | UnionType:
+        return {
+            const.FieldDatatypes.str: str,
+            const.FieldDatatypes.bool: bool,
+            const.FieldDatatypes.int: int,
+            const.FieldDatatypes.float: float,
+            const.FieldDatatypes.date: datetime.date,
+            const.FieldDatatypes.datetime: datetime.datetime,
+            const.FieldDatatypes.non_negative_int: vtypes.NonNegativeInt,
+            const.FieldDatatypes.non_negative_float: vtypes.NonNegativeFloat,
+            const.FieldDatatypes.phone: vtypes.Phone,
+            const.FieldDatatypes.iban: vtypes.IBAN,
+        }[kind] | None
+
+    def get_validator(self) -> type[Any] | UnionType:
+        return self._get_validator(self.kind)
 
     def get_sortkey(self) -> Sortkey:
         return (

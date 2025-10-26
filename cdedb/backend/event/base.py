@@ -45,6 +45,7 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
+    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
@@ -68,10 +69,6 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    validate_check_optional,
-)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.core import EventPersona
@@ -1275,11 +1272,9 @@ class EventBaseBackend(EventLowLevelBackend):
             row['kind'] = const.QuestionnaireUsages(row['kind'])
             if field := event.fields.get(row['field_id']):
                 # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = validate_check_optional(
-                    FIELD_DATATYPE_VALIDATORS[field.kind],
-                    row['default_value'],
-                    ignore_warnings=True,
-                )[0]
+                row['default_value'] = cast_field_value(
+                    row['default_value'], field.kind
+                )
                 # Special case for datetimes: Convert them to the default timezone so
                 #  they can be submitted again even without the timezone.
                 #  This is required for use with 'datetime-local' inputs.
